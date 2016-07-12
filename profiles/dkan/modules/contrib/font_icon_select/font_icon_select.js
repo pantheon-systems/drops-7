@@ -9,6 +9,7 @@
 Drupal.behaviors.font_icon_select = {
   attach: function (context, settings) {
     jQuery('.field-type-font-icon-select-icon', context).once('bind_font_icon_select_handlers', font_icon_select_options_behavior_each);
+    jQuery('.fontIconLabelVisibilityToggleWrapper input', context).once('bind_label_visibility_handler', font_icon_select_options_label_visibility_toggle_bind);
   }
 }
 
@@ -132,4 +133,27 @@ function default_options_onclick(e){
     }
     return true;
   }
+}
+
+/**
+ * Binds the icon label visibility toggle handler to an on change event.
+ */
+function font_icon_select_options_label_visibility_toggle_bind() {
+  jQuery(this).change(font_icon_select_options_label_visibility_toggle)
+}
+
+/**
+ * Toggles the hideLabels class.
+ * @param event
+ */
+function font_icon_select_options_label_visibility_toggle(event) {
+  console.log('inside')
+  var field_item = jQuery(event.currentTarget).parent().siblings('.form-item');
+  console.log(field_item)
+  if (jQuery(event.currentTarget).is(':checked')) {
+    jQuery('.font_icon_select_options', field_item).removeClass('hideLabels');
+    return;
+  }
+
+  jQuery('.font_icon_select_options', field_item).addClass('hideLabels');
 }

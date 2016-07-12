@@ -10,7 +10,7 @@
 function dkan_dataset_groups_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-dataset-og_group_ref'
+  // Exported field_instance: 'node-dataset-og_group_ref'.
   $field_instances['node-dataset-og_group_ref'] = array(
     'bundle' => 'dataset',
     'default_value' => NULL,
@@ -78,7 +78,7 @@ function dkan_dataset_groups_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-group-body'
+  // Exported field_instance: 'node-group-body'.
   $field_instances['node-group-body'] = array(
     'bundle' => 'group',
     'default_value' => NULL,
@@ -121,7 +121,7 @@ function dkan_dataset_groups_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-group-field_image'
+  // Exported field_instance: 'node-group-field_image'.
   $field_instances['node-group-field_image'] = array(
     'bundle' => 'group',
     'deleted' => 0,
@@ -207,7 +207,7 @@ function dkan_dataset_groups_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-group-group_group'
+  // Exported field_instance: 'node-group-group_group'.
   $field_instances['node-group-group_group'] = array(
     'bundle' => 'group',
     'default_value' => array(

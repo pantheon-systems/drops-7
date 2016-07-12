@@ -82,10 +82,13 @@ input.removeSelectedIcon.invisible {
 }
 
 /* hide the labels if there is a class on the wrappers */
-label.selectionWrapper.hideLabels .label,
+.font_icon_select_options.hideLabels label.selectionWrapper .label,
 div.label.hide {
   display: none;
 }
+/* checkbox to show the icon labels */
+.fontIconLabelVisibilityToggleWrapper {width:100%;}
+.fontIconLabelVisibilityToggleWrapper label {display:inline-block;margin-left:.5em;}
 
 div.field-name-field-icon.invisible {
   display: none;

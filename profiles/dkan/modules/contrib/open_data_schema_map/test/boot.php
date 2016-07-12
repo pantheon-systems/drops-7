@@ -7,22 +7,15 @@
 use Drupal\Driver\DrupalDriver;
 use Drupal\Driver\Cores\Drupal7;
 
-require 'vendor/autoload.php';
-
-$dir = explode('/sites/', getcwd());
-
-// No split may mean we are in a profiles folder:
-if (count($dir) == 1) {
-  $dir = explode('/profiles/', getcwd());
-}
+require __DIR__ . '/../vendor/autoload.php';
 
 // Path to Drupal.
-$path = $dir[0];
+$dir = implode('/', array(__DIR__, '..', '..', 'docroot'));
 
 // Host.
-$uri = 'http://localhost';
+$uri = getenv('DKAN_WEB_1_PORT_80_TCP') ? str_replace('tcp://', 'http://', getenv('DKAN_WEB_1_PORT_80_TCP')) : 'http://127.0.0.1:8888';
 
-$driver = new DrupalDriver($path, $uri);
+$driver = new DrupalDriver($dir, $uri);
 $driver->setCoreFromVersion();
 
 // Bootstrap Drupal.

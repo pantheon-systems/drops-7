@@ -7,7 +7,7 @@
 
 <div class="font_icon_selection_outer_wrapper">
   <?php print $element['field'];?>
-  <label class="selectionWrapper option hideLabels" for="<?php print $element['element_id'] . '-' . $element['key'];?>">
+  <label class="selectionWrapper option" for="<?php print $element['element_id'] . '-' . $element['key'];?>">
     <div class="selectionOuter">
       <div class="selectionInner<?php print $element['checked'] ? ' checked' : '';?>">
         <div class="selection"><?php print $element['value'];?></div>

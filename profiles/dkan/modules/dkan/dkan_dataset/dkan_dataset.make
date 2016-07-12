@@ -13,10 +13,10 @@ includes[leaflet_draw_widget_make] = https://raw.githubusercontent.com/NuCivic/l
 ; Recline specific
 projects[recline][download][type] = git
 projects[recline][download][url] = https://github.com/NuCivic/recline.git
-projects[recline][download][tag] = 7.x-1.12.2
+projects[recline][download][tag] = 7.x-1.12.4
 projects[recline][subdir] = contrib
 
-includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.2/recline.make
+includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.4/recline.make
 
 ; Contrib Modules
 projects[autocomplete_deluxe][subdir] = contrib
@@ -52,7 +52,6 @@ projects[entity][subdir] = contrib
 
 projects[entity_rdf][download][type] = git
 projects[entity_rdf][download][url] = http://git.drupal.org/project/entity_rdf.git
-projects[entity_rdf][download][branch] = 7.x-1.x
 projects[entity_rdf][download][revision] = 7d91983
 projects[entity_rdf][type] = module
 projects[entity_rdf][subdir] = contrib
@@ -81,6 +80,7 @@ projects[field_group][subdir] = contrib
 
 projects[field_group_table][download][type] = git
 projects[field_group_table][download][url] = "https://github.com/nuams/field_group_table.git"
+projects[field_group_table][download][revision] = 5b0aed9396a8cfd19a5b623a5952b3b8cacd361c
 projects[field_group_table][subdir] = contrib
 projects[field_group_table][type] = module
 
@@ -100,7 +100,6 @@ projects[gravatar][type] = module
 
 projects[imagecache_actions][download][type] = git
 projects[imagecache_actions][download][url] = "http://git.drupal.org/project/imagecache_actions.git"
-projects[imagecache_actions][download][branch] = 7.x-1.x
 projects[imagecache_actions][download][revision] = cd19d2a
 projects[imagecache_actions][subdir] = contrib
 projects[imagecache_actions][type] = module
@@ -123,7 +122,6 @@ projects[link_iframe_formatter][type] = module
 
 projects[multistep][download][type] = git
 projects[multistep][download][url] = "http://git.drupal.org/project/multistep.git"
-projects[multistep][download][branch] = 7.x-1.x
 projects[multistep][download][revision] = 3b0d40a
 projects[multistep][subdir] = contrib
 projects[multistep][type] = module
@@ -141,7 +139,7 @@ projects[og_extras][type] = module
 projects[open_data_schema_map][type] = module
 projects[open_data_schema_map][download][type] = git
 projects[open_data_schema_map][download][url] = https://github.com/NuCivic/open_data_schema_map.git
-projects[open_data_schema_map][download][revision] = b7f6d255855a1c950d5a7dadd8a33860ccf66d35
+projects[open_data_schema_map][download][revision] = 84104691bd2981522c14490e5ee379b257f4f2f2
 projects[open_data_schema_map][subdir] = contrib
 
 projects[open_data_schema_map_dkan][type] = module
@@ -194,7 +192,7 @@ projects[uuid][version] = 1.0-beta1
 projects[uuid][patch][1927474] = http://drupal.org/files/unknown-column-in-field-list-fix-1927474-2.patch
 projects[uuid][subdir] = contrib
 
-projects[views][version] = 3.13
+projects[views][version] = 3.14
 projects[views][subdir] = contrib
 
 projects[views_responsive_grid][version] = 1.3

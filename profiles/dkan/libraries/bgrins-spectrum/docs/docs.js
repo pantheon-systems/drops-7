@@ -215,18 +215,7 @@ $("#showPalette").spectrum({
         ['black', 'white', 'blanchedalmond'],
         ['rgb(255, 128, 0);', 'hsv 100 70 50', 'lightyellow']
     ],
-    hide: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Hidden: " + c.toHexString());
-    },
-    change: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Change called: " + c.toHexString());
-    },
-    move: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Move called: " + c.toHexString());
-    }
+    change: updateBorders
 });
 
 var textPalette = ["rgb(255, 255, 255)", "rgb(204, 204, 204)", "rgb(192, 192, 192)", "rgb(153, 153, 153)", "rgb(102, 102, 102)", "rgb(51, 51, 51)", "rgb(0, 0, 0)", "rgb(255, 204, 204)", "rgb(255, 102, 102)", "rgb(255, 0, 0)", "rgb(204, 0, 0)", "rgb(153, 0, 0)", "rgb(102, 0, 0)", "rgb(51, 0, 0)", "rgb(255, 204, 153)", "rgb(255, 153, 102)", "rgb(255, 153, 0)", "rgb(255, 102, 0)", "rgb(204, 102, 0)", "rgb(153, 51, 0)", "rgb(102, 51, 0)", "rgb(255, 255, 153)", "rgb(255, 255, 102)", "rgb(255, 204, 102)", "rgb(255, 204, 51)", "rgb(204, 153, 51)", "rgb(153, 102, 51)", "rgb(102, 51, 51)", "rgb(255, 255, 204)", "rgb(255, 255, 51)", "rgb(255, 255, 0)", "rgb(255, 204, 0)", "rgb(153, 153, 0)", "rgb(102, 102, 0)", "rgb(51, 51, 0)", "rgb(153, 255, 153)", "rgb(102, 255, 153)", "rgb(51, 255, 51)", "rgb(51, 204, 0)", "rgb(0, 153, 0)", "rgb(0, 102, 0)", "rgb(0, 51, 0)", "rgb(153, 255, 255)", "rgb(51, 255, 255)", "rgb(102, 204, 204)", "rgb(0, 204, 204)", "rgb(51, 153, 153)", "rgb(51, 102, 102)", "rgb(0, 51, 51)", "rgb(204, 255, 255)", "rgb(102, 255, 255)", "rgb(51, 204, 255)", "rgb(51, 102, 255)", "rgb(51, 51, 255)", "rgb(0, 0, 153)", "rgb(0, 0, 102)", "rgb(204, 204, 255)", "rgb(153, 153, 255)", "rgb(102, 102, 204)", "rgb(102, 51, 255)", "rgb(102, 0, 204)", "rgb(51, 51, 153)", "rgb(51, 0, 153)", "rgb(255, 204, 255)", "rgb(255, 153, 255)", "rgb(204, 102, 204)", "rgb(204, 51, 204)", "rgb(153, 51, 153)", "rgb(102, 51, 102)", "rgb(51, 0, 51)"];
@@ -239,15 +228,7 @@ $("#showPaletteOnly").spectrum({
         ['black', 'white', 'blanchedalmond',
         'rgb(255, 128, 0);', 'hsv 100 70 50'],
         ['red', 'yellow', 'green', 'blue', 'violet']
-    ],
-    change: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Change called: " + c.toHexString());
-    },
-    move: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Move called: " + c.toHexString());
-    }
+    ]
 });
 
 $("#hideAfterPaletteSelect").spectrum({
@@ -259,15 +240,7 @@ $("#hideAfterPaletteSelect").spectrum({
         ['black', 'white', 'blanchedalmond',
         'rgb(255, 128, 0);', 'hsv 100 70 50'],
         ['red', 'yellow', 'green', 'blue', 'violet']
-    ],
-    change: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Change called: " + c.toHexString());
-    },
-    move: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
-        label.text("Move called: " + c.toHexString());
-    }
+    ]
 });
 
 $("#togglePaletteOnly").spectrum({
@@ -313,14 +286,14 @@ $("#showInputInitialClear").spectrum({
 
 $("#changeOnMove").spectrum({
     move: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
+        var label = $("#changeOnMoveLabel");
         label.text("Move called: " + c.toHexString());
     }
 });
 $("#changeOnMoveNo").spectrum({
     showInput: true,
     change: function(c) {
-        var label = $("[data-label-for=" + this.id + "]");
+        var label = $("#changeOnMoveNoLabel");
         label.text("Change called: " + c.toHexString());
     }
 });

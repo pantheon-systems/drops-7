@@ -949,7 +949,12 @@ function open_data_schema_map_endpoint_special_arg(&$args, $type) {
  */
 function open_data_schema_map_open_data_schema_map_args_alter(&$field, &$arg) {
   if ($arg['token']['value'] == '[node:url:arg:last]' || $arg['token']['value'] == '[node:url:args:last]') {
-    $result = db_select('url_alias', 'url')->fields('url', array('source', 'alias'))->execute()->fetchAll();
+    // Query against a like statement to reduce forloop 
+    $result = db_select('url_alias', 'url')
+              ->fields('url', array('source', 'alias'))
+              ->condition('alias', '%/' . $arg['query'], 'LIKE')
+              ->execute()
+              ->fetchAll(); 
     $field[1] = 'nid';
     foreach ($result as $result) {
       $alias = explode('/', $result->alias);
@@ -959,6 +964,14 @@ function open_data_schema_map_open_data_schema_map_args_alter(&$field, &$arg) {
         return;
       }
     }
+    throw new OpenDataSchemaMapException(
+      t('"!query" does not return results', array('!query' => $arg['query'])),
+      404,
+      array(
+        '__type' => 'Query Error',
+        'name_or_id' => t('Query \'!query\' doesn\'t return results', array('!query' => $arg['query'])),
+      )
+    );
   }
   elseif ($arg['token']['value'] == '[node:url]') {
     $field[1] = 'nid';
@@ -1028,12 +1041,13 @@ function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
     $temp[] = 'open_data_schema_pod';
     $modules = $temp;
   }
-
+  if (!isset($ids)) {
+    $ids = array();
+  }
   foreach ($modules as $module) {
     $function = $module . '_open_data_schema_map_results_alter';
     $function($result, $api->machine_name, $api->api_schema, $ids);
   }
-
   return array(
     'result' => $result,
     'headers' => $headers,

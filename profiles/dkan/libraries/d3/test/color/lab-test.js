@@ -41,6 +41,9 @@ suite.addBatch({
     "parses color names (e.g., \"moccasin\")": function(d3) {
       assert.labEqual(d3.lab("moccasin"), 91.72317744746022, 2.4393469358685027, 26.359832514614844);
     },
+    "parses color names (e.g., \"Moccasin\")": function(d3) {
+      assert.labEqual(d3.lab("Moccasin"), 91.72317744746022, 2.4393469358685027, 26.359832514614844);
+    },
     "parses and converts RGB format (e.g., \"rgb(102, 102, 0)\")": function(d3) {
       assert.labEqual(d3.lab("rgb(102, 102, 0)"), 41.73251953866431, -10.998411255098816, 48.21006600604577);
     },
@@ -48,7 +51,7 @@ suite.addBatch({
       assert.labEqual(d3.lab(d3.rgb(12, 34, 56)), 12.65624852526134, 0.12256520883417721, -16.833209795877284);
     },
     "can convert from HSL": function(d3) {
-      assert.labEqual(d3.lab(d3.lab(20, .8, .3)), 20, 0.8, 0.3);
+      assert.labEqual(d3.lab(d3.lab(20, 0.8, 0.3)), 20, 0.8, 0.3);
     },
     "can convert to RGB": function(d3) {
       assert.rgbEqual(d3.lab("steelblue").rgb(), 70, 130, 180);
@@ -58,11 +61,11 @@ suite.addBatch({
     },
     "can derive a brighter color": function(d3) {
       assert.labEqual(d3.lab("steelblue").brighter(), 70.46551718768575, -4.0774710123572255, -32.19186122981343);
-      assert.labEqual(d3.lab("steelblue").brighter(.5), 61.46551718768575, -4.0774710123572255, -32.19186122981343);
+      assert.labEqual(d3.lab("steelblue").brighter(0.5), 61.46551718768575, -4.0774710123572255, -32.19186122981343);
     },
     "can derive a darker color": function(d3) {
       assert.labEqual(d3.lab("lightsteelblue").darker(), 60.45157936968134, -1.2815839134120433, -15.210996213841522);
-      assert.labEqual(d3.lab("lightsteelblue").darker(.5), 69.45157936968134, -1.2815839134120433, -15.210996213841522);
+      assert.labEqual(d3.lab("lightsteelblue").darker(0.5), 69.45157936968134, -1.2815839134120433, -15.210996213841522);
     },
     "string coercion returns RGB format": function(d3) {
       assert.strictEqual(d3.lab("hsl(60, 100%, 20%)") + "", "#666600");

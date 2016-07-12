@@ -33,6 +33,11 @@ function visualization_entity_eck_entity_type_info() {
           'type' => 'integer',
           'behavior' => 'changed',
         ),
+        'uuid' => array(
+          'behavior' => 'uuid',
+          'label' => 'UUID',
+          'type' => 'text',
+        )
       ),
     ),
   );

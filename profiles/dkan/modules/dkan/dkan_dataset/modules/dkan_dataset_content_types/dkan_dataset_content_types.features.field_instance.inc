@@ -607,6 +607,7 @@ uk-ogl|UK Open Government Licence (OGL)',
     'label' => 'Related Content',
     'required' => 0,
     'settings' => array(
+      'absolute_url' => 1,
       'attributes' => array(
         'class' => '',
         'configurable_title' => 0,
@@ -1097,6 +1098,7 @@ uk-ogl|UK Open Government Licence (OGL)',
     'label' => 'Link API',
     'required' => 0,
     'settings' => array(
+      'absolute_url' => 1,
       'attributes' => array(
         'class' => '',
         'configurable_title' => 0,

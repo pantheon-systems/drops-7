@@ -51,6 +51,12 @@ suite.addBatch({
       assert.rgbEqual(d3.rgb("moccasin"), 255, 228, 181);
       assert.rgbEqual(d3.rgb("aliceblue"), 240, 248, 255);
       assert.rgbEqual(d3.rgb("yellow"), 255, 255, 0);
+      assert.rgbEqual(d3.rgb("Moccasin"), 255, 228, 181);
+      assert.rgbEqual(d3.rgb("Aliceblue"), 240, 248, 255);
+      assert.rgbEqual(d3.rgb("Yellow"), 255, 255, 0);
+    },
+    "parses \"rebeccapurple\"": function(d3) {
+      assert.rgbEqual(d3.rgb("rebeccapurple"), 102, 51, 153);
     },
     "parses and converts HSL format (e.g., \"hsl(60, 100%, 20%)\")": function(d3) {
       assert.rgbEqual(d3.rgb("hsl(60, 100%, 20%)"), 102, 102, 0);
@@ -59,20 +65,20 @@ suite.addBatch({
       assert.rgbEqual(d3.rgb(d3.rgb(12, 34, 56)), 12, 34, 56);
     },
     "can convert from HSL": function(d3) {
-      assert.rgbEqual(d3.rgb(d3.hsl(0, 1, .5)), 255, 0, 0);
+      assert.rgbEqual(d3.rgb(d3.hsl(0, 1, 0.5)), 255, 0, 0);
     },
     "can convert to HSL": function(d3) {
-      assert.hslEqual(d3.rgb("red").hsl(), 0, 1, .5);
+      assert.hslEqual(d3.rgb("red").hsl(), 0, 1, 0.5);
     },
     "can derive a brighter color": function(d3) {
       assert.rgbEqual(d3.rgb("brown").brighter(), 235, 60, 60);
-      assert.rgbEqual(d3.rgb("brown").brighter(.5), 197, 50, 50);
+      assert.rgbEqual(d3.rgb("brown").brighter(0.5), 197, 50, 50);
       assert.rgbEqual(d3.rgb("brown").brighter(1), 235, 60, 60);
       assert.rgbEqual(d3.rgb("brown").brighter(2), 255, 85, 85);
     },
     "can derive a darker color": function(d3) {
       assert.rgbEqual(d3.rgb("coral").darker(), 178, 88, 56);
-      assert.rgbEqual(d3.rgb("coral").darker(.5), 213, 106, 66);
+      assert.rgbEqual(d3.rgb("coral").darker(0.5), 213, 106, 66);
       assert.rgbEqual(d3.rgb("coral").darker(1), 178, 88, 56);
       assert.rgbEqual(d3.rgb("coral").darker(2), 124, 62, 39);
     },
@@ -82,7 +88,7 @@ suite.addBatch({
       assert.strictEqual(d3.rgb("hsl(60, 100%, 20%)") + "", "#666600");
       assert.strictEqual(d3.rgb("rgb(12, 34, 56)") + "", "#0c2238");
       assert.strictEqual(d3.rgb(d3.rgb(12, 34, 56)) + "", "#0c2238");
-      assert.strictEqual(d3.rgb(d3.hsl(60, 1, .2)) + "", "#666600");
+      assert.strictEqual(d3.rgb(d3.hsl(60, 1, 0.2)) + "", "#666600");
     }
   }
 });

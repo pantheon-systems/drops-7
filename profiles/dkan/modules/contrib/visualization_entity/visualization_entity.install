@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * Implements hook_update_N().
+ */
+function visualization_entity_update_7001(){
+  features_revert(array('visualization_entity' => array('features')));
+  $entity_type = entity_type_load('visualization');
+  // Get all entity instances of this type.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $entity_type->name, '=');
+
+  $results = $query->execute();
+  if (!empty($results)) {
+    $entities = entity_load($entity_type->name, array_keys($results[$entity_type->name]));
+  }
+  else {
+    $entities = array();
+  }
+
+  // Even when we don't need to explicitily
+  // assign a uuid I'm doing that because
+  // code has more sense with this.
+  foreach($entities as $entity) {
+    $entity->uuid = uuid_generate();
+    entity_save('visualization', $entity);
+  }
+}

@@ -34,9 +34,11 @@ function visualization_entity_embed_admin_info($subtype, $conf, $contexts) {
   if (!empty($conf)) {
     $block = new stdClass();
     $block->title = $conf['override_title'] ? $conf['override_title_text'] : '';
-    $block->content = t('Source: @source', array(
-      '@source' => $conf['source'],
-    ));
+    if(isset($conf['source'])) {
+      $block->content = t('Source: @source', array(
+        '@source' => $conf['source'],
+      ));
+    }
 
     return $block;
   }
@@ -57,8 +59,8 @@ function visualization_entity_embed_edit_form($form, &$form_state) {
     '#description' => t(''),
     '#type' => 'radios',
     '#options' => array(
-      'local' => t('Local - created in DKAN'),
-      'remote' => t('External - paste your own url'),
+      'local' => t('DKAN Visualization'),
+      'remote' => t('URL - use for external visualization services, or embed URLs from DKAN resource previews'),
     ),
     '#default_value' => (!empty($conf['source_origin'])) ? $conf['source_origin'] : 'local',
     '#required' => FALSE,
@@ -79,7 +81,7 @@ function visualization_entity_embed_edit_form($form, &$form_state) {
   );
   $form['remote_source'] = array(
     '#title' => t('Url'),
-    '#description' => t('Place a remote visualization url'),
+    '#description' => t('Enter an embed URL for a visualization'),
     '#type' => 'textfield',
     '#default_value' => $conf['remote_source'],
     '#attributes' => array(
@@ -88,6 +90,7 @@ function visualization_entity_embed_edit_form($form, &$form_state) {
     '#process' => array('ctools_dependent_process'),
     '#dependency' => array('radio:source_origin' => array('remote')),
     '#required' => FALSE,
+    '#maxlength' => '500',
   );
   $form['width'] = array(
     '#title' => t('Width'),

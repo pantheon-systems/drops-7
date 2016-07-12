@@ -60,6 +60,20 @@ function open_data_schema_ckan_open_data_schema_map_load($machine_name) {
     $record->callback = 'open_data_schema_ckan_package_revision_list_callback';
     return $record;
   }
+  elseif ($machine_name == 'ckan_package_list') {
+    $record = new stdClass();
+    $record->name = 'CKAN Package List';
+    $record->enabled = TRUE;
+    $record->api_schema = 'ckan_dataset';
+    $record->entity = '';
+    $record->bundle = '';
+    $record->arguments = array();
+    $record->machine_name = 'ckan_package_list';
+    $record->outputformat = 'json';
+    $record->endpoint = 'api/3/action/package_list';
+    $record->callback = 'open_data_schema_ckan_package_list_callback';
+    return $record;
+  }
 }
 
 /**
@@ -75,6 +89,18 @@ function open_data_schema_ckan_site_read_callback() {
 function open_data_schema_ckan_revision_list_callback() {
   $revisions = open_data_schema_ckan_node_revision_list('dataset', array('vuuid'));
   return $revisions;
+}
+
+/**
+ * Package list callback.
+ */
+function open_data_schema_ckan_package_list_callback($args) {
+  $nids =  db_query("select nid from {node} where type = 'dataset' and status = 1");
+  $results = array();
+  foreach ($nids as $nid) {
+    $results[] = array('name' => preg_replace("/dataset\//","", drupal_get_path_alias('node/' . $nid->nid)));
+  }
+  return $results;
 }
 
 /**
@@ -129,7 +155,21 @@ function open_data_schema_ckan_node_revision_list($content_type = 'dataset', $fi
  * Check if $guid is a valid uuid.
  */
 function open_data_schema_ckan_is_valid_guid($guid) {
-  return !is_array($guid) && !empty($guid) && preg_match('/^(\{)?[a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8}(?(1)\})$/i', $guid);
+  return !is_array($guid) && !empty($guid) && open_data_schema_map_uuid_exists($guid);
+}
+
+/**
+ * Returns uuid if uuid exists (true) or false if not.
+ */
+function open_data_schema_map_uuid_exists($uuid) {
+  return db_query('select uuid from {node} where uuid = :uuid', array(':uuid' => $uuid))->fetchField();
+}
+
+/**
+ * Returns nid if nid exists (true) or false if not.
+ */
+function open_data_schema_map_nid_exists($nid) {
+  return db_query('select nid from {node} where nid = :nid', array(':nid' => $nid))->fetchField();
 }
 
 /**
@@ -207,11 +247,20 @@ function open_data_schema_ckan_open_data_schema_map_args_alter(&$field, &$args_v
     }
     $args_value['value'] = 'target_id';
   }
-  // CKAN accepts either uuid as name in the id parameter.
+  // CKAN accepts either uuid, nid, or name in the id parameter.
   if ($args_value['field'] == 'id' && !open_data_schema_ckan_is_valid_guid($args_value['query']) && $machine_name != 'ckan_group_package_show') {
-    $args_value['field'] = 'name';
-    $args_value['token']['value'] = '[node:url:args:last]';
-    $field[1] = 'name';
+    //  This checks for nid.
+    if (ctype_digit((string) $args_value['query']) && open_data_schema_map_nid_exists($args_value['query'])) {
+      $args_value['field'] = 'nid';
+      $args_value['token']['value'] = '[node:nid]';
+      $field[1] = 'nid';
+    }
+    // Assumes that the CKAN "name" is passed.
+    else {
+      $args_value['field'] = 'name';
+      $args_value['token']['value'] = '[node:url:args:last]';
+      $field[1] = 'name';
+    }
   }
 }
 

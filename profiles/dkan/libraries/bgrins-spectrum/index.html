@@ -335,8 +335,6 @@ $("#showPalette").spectrum({
             </pre>
             <div class='example'>
                     <input type='text' name='showPalette' id='showPalette' value='lightblue' />
-                    <em data-label-for="showPalette" class='em-label'></em>
-
             </div>
         </div>
 
@@ -364,7 +362,6 @@ $("#showPaletteOnly").spectrum({
             Result
             </span>
                 <input type='text' name='showPaletteOnly' id='showPaletteOnly'  />
-                <em data-label-for="showPaletteOnly" class='em-label'></em>
             </div>
         </div>
 
@@ -502,7 +499,6 @@ $("#hideAfterPaletteSelect").spectrum({
             Result
             </span>
                 <input type='text' name='hideAfterPaletteSelect' id='hideAfterPaletteSelect'  />
-                <em data-label-for="hideAfterPaletteSelect" class='em-label'></em>
             </div>
         </div>
 
@@ -779,7 +775,7 @@ change: function(color) {
 
             <div class='example'>
                 <input type='text' value='blanchedalmond' name='changeOnMoveNo' id='changeOnMoveNo' />
-                <em data-label-for="changeOnMoveNo" class='em-label'></em>
+                <em id='changeOnMoveNoLabel' class='em-label'></em>
             </div>
         </div>
 
@@ -798,7 +794,7 @@ move: function(color) {
 
             <div class='example'>
                 <input type='text' value='blanchedalmond' name='changeOnMove' id='changeOnMove' />
-                <em data-label-for="changeOnMove" class='em-label'></em>
+                <em id='changeOnMoveLabel'  class='em-label'></em>
             </div>
         </div>
 
@@ -882,9 +878,9 @@ beforeShow: function(color) {
             </div>
 
             <pre class='prettyprint'>
-$(element).on("dragstart.spectrum", function(e, color) {
+$(element).on("dragstart.spectrum"): function(e, color) {
     color.toHexString(); // #ff0000
-});
+}
             </pre>
 
             <div class='example'>
@@ -904,9 +900,9 @@ $(element).on("dragstart.spectrum", function(e, color) {
             </div>
 
             <pre class='prettyprint'>
-$(element).on("dragstop.spectrum", function(e, color) {
+$(element).on("dragstop.spectrum"): function(e, color) {
     color.toHexString(); // #ff0000
-});
+}
             </pre>
 
             <div class='example'>

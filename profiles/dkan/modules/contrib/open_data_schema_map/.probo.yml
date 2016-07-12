@@ -8,7 +8,13 @@ steps:
       # Fail right away.
       set -e
       # Start in the right folder of our checkout (/src)
-      cd $SRC_DIR
+      cd $SRC_DIR;
+      # Modify SRC_DIR so it matchs dkan-module-init.sh requirements.
+      DKAN_MODULE=`ls *.info | cut -d'.' -f1`
+      cd ..
+      mv $SRC_DIR ./$DKAN_MODULE
+      cd $DKAN_MODULE
+      export SRC_DIR=`pwd`
 
       echo ""
       echo "Build $BUILD_ID "
@@ -18,7 +24,8 @@ steps:
       echo "-------> Run 'bash dkan-init.sh':"
       echo ""
       # Create the proper folder structure
-      time bash dkan-module-init.sh --deps --build=mysql://root:strongpassword@127.0.0.1/dkan
+      export DATABASE_URL="mysql://root:strongpassword@127.0.0.1/dkan"
+      time bash dkan-module-init.sh --deps --build=$DATABASE_URL
       #Set a symlink so that probo can serve the site.
 
       echo ""
