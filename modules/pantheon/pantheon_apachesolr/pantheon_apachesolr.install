@@ -34,3 +34,13 @@ function pantheon_apachesolr_update_7001(&$sandbox) {
 function pantheon_apachesolr_update_7002() {
   variable_del('search_api_solr_connection_class');
 }
+
+/**
+ * Give "administer pantheon apachesolr" permission to roles that have administer search permission.
+ */
+function pantheon_apachesolr_update_7003() {
+  $roles = user_roles(FALSE, 'administer search');
+  foreach (array_keys($roles) as $rid) {
+    user_role_grant_permissions($rid, array('administer pantheon apachesolr'));
+  }
+}

@@ -8,7 +8,7 @@
  */
 
 /**
- * Implementation of hook_menu()
+ * Implements hook_menu().
  */
 function pantheon_login_menu() {
   $items = array();
