@@ -198,7 +198,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
           'type' => '',
         ),
         'last_modified' => array(
-          'value' => 'Date changed	[node:field-resources:Nth:changed]',
+          'value' => 'Date changed [node:field-resources:Nth:changed]',
           'type' => '',
         ),
       ),
@@ -766,7 +766,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
           'type' => '',
         ),
         'last_modified' => array(
-          'value' => 'Date changed	[node:field-resources:Nth:changed]',
+          'value' => 'Date changed  [node:field-resources:Nth:changed]',
           'type' => '',
         ),
       ),
@@ -1339,7 +1339,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
           'type' => '',
         ),
         'last_modified' => array(
-          'value' => 'Date changed	[node:field-resources:Nth:changed]',
+          'value' => 'Date changed  [node:field-resources:Nth:changed]',
           'type' => '',
         ),
       ),
@@ -1530,7 +1530,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
         'type' => 'string',
       ),
       'last_modified' => array(
-        'value' => 'Date changed	[node:changed]',
+        'value' => 'Date changed  [node:changed]',
         'type' => 'string',
       ),
     ),
@@ -1640,7 +1640,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
         'type' => 'string',
       ),
       'modified' => array(
-        'value' => '[node:changed]',
+        'value' => '[node:field_modified_source_date] || [node:changed]',
         'type' => 'string',
       ),
       'PrimaryITInvestmentUII' => array(
@@ -1811,7 +1811,7 @@ function open_data_schema_map_dkan_open_data_schema_apis_defaults() {
         'type' => 'string',
       ),
       'modified' => array(
-        'value' => '[node:changed:custom:Y-m-d]',
+        'value' => '[node:field_modified_source_date] || [node:changed:custom:Y-m-d]',
         'type' => 'string',
       ),
       'primaryITInvestmentUII' => array(
