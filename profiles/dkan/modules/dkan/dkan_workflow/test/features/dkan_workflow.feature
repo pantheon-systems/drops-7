@@ -520,3 +520,23 @@ Feature:
     When I click "Contributor RolePairing"
     And I click "Edit"
     Then the checkbox "content creator" should be checked
+
+  @api
+  Scenario: Modify user workflow roles as site manager
+    Given users:
+      | name     | roles           |
+      | Pat      | content creator |
+      | Chris    | site manager    |
+    Given pages:
+      | name          | url           |
+      | Users         | /admin/people |
+
+    Given I am logged in as "Chris"
+    And I am on "Users" page
+    When I click "edit" in the "Pat" row
+    And I check "Workflow Contributor"
+    And I press "Save"
+    And I wait for "People"
+    Then I should see "The changes have been saved"
+    When I am on "Users" page
+    Then I should see "Workflow Contributor" in the "Pat" row

@@ -23,11 +23,11 @@ function dkan_workflow_install() {
 
 /**
  * Implements hook_enable().
- *
- * Enable moderation for dkan_workflow enabled content types upon install. This
- * config is kept persistante using the hook_strongarm_alter().
  */
 function dkan_workflow_enable() {
+
+  // Enable moderation for dkan_workflow enabled content types upon install. This
+  // config is kept persistant using the hook_strongarm_alter().
 
   // Default dkan content types with moderation.
   $dkan_workflow_content_types = array('dataset', 'resource', 'feedback');
@@ -48,4 +48,33 @@ function dkan_workflow_enable() {
   }
   dkan_workflow_revert_views();
   variable_set('dkan_workflow_content_types', $dkan_workflow_content_types);
+
+  // Add dkan workflow roles to roleassign config.
+  $roleassign_roles = variable_get('roleassign_roles', array());
+  $roles_rids = array_flip(user_roles());
+
+  $add_roles = array('Workflow Contributor', 'Workflow Moderator', 'Workflow Supervisor');
+
+  foreach($add_roles as $role) {
+    $roleassign_roles[$roles_rids[$role]] = (string) $roles_rids[$role];
+  }
+
+  variable_set('roleassign_roles', $roleassign_roles);
+}
+
+/**
+ * Implements hook_disable().
+ */
+function dkan_workflow_disable() {
+  // Remove workflow roles from roleassign_roles variable
+  $roleassign_roles = variable_get('roleassign_roles', array());
+  $roles_rids = array_flip(user_roles());
+  $remove_roles = array('Workflow Contributor', 'Workflow Moderator', 'Workflow Supervisor');
+
+  foreach($remove_roles as $role) {
+    unset($roleassign_roles[$roles_rids[$role]]);
+  }
+
+  variable_set('roleassign_roles', $roleassign_roles);
+
 }

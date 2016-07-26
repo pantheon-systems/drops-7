@@ -23,8 +23,7 @@ h1,h2,h3,h4 {
 }
 
 .pane-dkan-sitewide-demo-front-dkan-demo-front .pane-content,
-#featured .tint,
-.panel-top .tint {
+.tint {
   background-color: @top_rgb;
 }
 
@@ -121,6 +120,8 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
   background-color: @top;
 }
 
+.node-blog .links a,
+.view-blog .node-teaser .links a,
 .view-group-block .views-field-nid a,
 .btn-primary,
 .links .btn,
@@ -130,6 +131,8 @@ input.btn {
   color:#ffffff;
 }
 
+.node-blog .links a:hover,
+.view-blog .node-teaser .links a:hover,
 .view-group-block .views-field-nid a:hover,
 .btn-primary:hover,
 .links .btn:hover,
@@ -157,6 +160,17 @@ input[type="submit"]:active {
 }
 input.form-submit.features-refresh-button {
   background: @top;
+}
+
+.form-tablefield input.tablefield-rebuild {
+  background-color: @top !important;
+  border-color: @top;
+}
+.form-tablefield input.tablefield-rebuild:hover,
+.form-tablefield input.tablefield-rebuild:focus,
+.form-tablefield input.tablefield-rebuild.active {
+  background-color: @bottom !important;
+  border-color: @bottom;
 }
 
 .region-sidebar-first .block-facetapi ul li.leaf a:hover,
@@ -192,19 +206,16 @@ div.autocomplete-deluxe-multiple,
   background:@bottom;
 }
 
-.radix-layouts-sidebar .pane-title {
-  background: @toolbarborder;
-  color: @title;
-}
-
 .radix-layouts-sidebar div[class*="pane-facetapi"] .pane-title,
 .radix-layouts-sidebar .pane-title.ctools-collapsible-handle {
   background: @toolbarbtn;
 }
 
+.radix-layouts-sidebar .pane-title,
 .radix-layouts-sidebar div[class*="pane-facetapi"] .facetapi-active {
   background: @toolbarbtn;
-  color: @toolbarborder;
+  border-color: @toolbarbtn;
+  color: @bg;
 }
 
 .horizontal-tabs ul.horizontal-tabs-list .selected strong {

@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Tests for the RoleAssign module.
+ */
+
+/**
+ * Test case for RoleAssign module.
+ */
+class RoleAssignWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implements getInfo().
+   *
+   * @return array
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'RoleAssign',
+      'description' => 'Tests RoleAssign losing unassignable role (#2406341).',
+      'group' => 'RoleAssign',
+    );
+  }
+
+  protected $user1;
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    parent::setUp('roleassign');
+
+    $this->user1 = user_load(1);
+    // Update uid 1's name and password so we know it.
+    $password = user_password();
+    require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+    $account = array(
+      'name' => 'user1',
+      'pass' => user_hash_password(trim($password)),
+    );
+    // We cannot use user_save() here or the password would be hashed again.
+    db_update('users')
+      ->fields($account)
+      ->condition('uid', 1)
+      ->execute();
+    // Reload and and fix up uid 1.
+    $this->user1 = user_load(1, TRUE);
+    $this->user1->pass_raw = $password;
+  }
+
+  /**
+   * Check for loss of unassignable/restricted roles.
+   */
+  function testRoleAssignIssue1954332() {
+    $assignableRid = $this->drupalCreateRole(array(), 'AssignableRole');
+    $restrictedRid = $this->drupalCreateRole(array(), 'RestrictedRole');
+
+    $deputy = $this->drupalCreateUser(array('administer users', 'assign roles'));
+    $account = $this->drupalCreateUser(array());
+
+    // As user 1, assign the RestrictedRole.
+    $this->drupalLogin($this->user1);
+
+    $this->drupalGet('user/' . $account->uid . '/edit');
+    $this->assertText('AssignableRole', 'AssignableRole text found.');
+    $this->assertText('RestrictedRole', 'RestrictedRole text found.');
+    $this->assertNoFieldChecked('edit-roles-' . $assignableRid, 'AssignableRole is not assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $assignableRid, FALSE);
+    $this->assertNoFieldChecked('edit-roles-' . $restrictedRid, 'RestrictedRole is not assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $restrictedRid, FALSE);
+
+    $this->drupalPost('user/' . $account->uid . '/edit', array("roles[$restrictedRid]" => $restrictedRid), t('Save'));
+    $this->assertText(t('The changes have been saved.'));
+    $this->assertFieldChecked('edit-roles-' . $restrictedRid, 'RestrictedRole is now assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $restrictedRid);
+
+    // Allow assigning AssignableRole.
+    $this->drupalPost('admin/people/permissions/roleassign', array("roleassign_roles[$assignableRid]" => $assignableRid), t('Save configuration'));
+    $this->assertText(t('The configuration options have been saved.'));
+    $this->assertFieldChecked('edit-roleassign-roles-' . $assignableRid, 'AssignableRole is now available for assignment.');
+
+    // Check that deputy can assign AssignableRole but not RestrictedRole.
+    $this->drupalLogin($deputy);
+    $this->drupalGet('user/' . $account->uid . '/edit');
+    $this->assertText(t('Assignable roles'), 'The "Assignable roles" widget is present.');
+    $this->assertField('edit-roleassign-roles-' . $assignableRid, 'AssignableRole checkbox exists.');
+    $this->assertNoFieldChecked('edit-roleassign-roles-' . $assignableRid, 'AssignableRole is not assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $assignableRid, FALSE);
+    $this->assertNoField('edit-roleassign-roles-' . $restrictedRid, 'There is no RestrictedRole checkbox.');
+    $this->userLoadAndCheckRoleAssigned($account, $restrictedRid);
+    $this->assertText(t('The user receives the combined permissions of all roles selected here and the following roles: @authuser, RestrictedRole.', array('@authuser' => t('authenticated user'))), 'Roles as expected, RestrictedRole is assigned.');
+
+    // As deputy, assign the AssignableRole.
+    $this->drupalPost('user/' . $account->uid . '/edit', array("roleassign_roles[$assignableRid]" => $assignableRid), t('Save'));
+    $this->assertText(t('The changes have been saved.'));
+    $this->assertFieldChecked('edit-roleassign-roles-' . $assignableRid, 'AssignableRole is now assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $assignableRid);
+
+    // Check that the RestrictedRole is still assigned.
+    $this->assertText(t('The user receives the combined permissions of all roles selected here and the following roles: @authuser, RestrictedRole.', array('@authuser' => t('authenticated user'))), 'Roles as expected, RestrictedRole is still assigned.');
+    $this->userLoadAndCheckRoleAssigned($account, $restrictedRid);
+  }
+
+  /**
+   * Check role on user object.
+   *
+   * @param object $account
+   *   The user account to check.
+   * @param string $rid
+   *   The role ID to search for.
+   * @param bool $is_assigned
+   *   (optional) Whether to assert that $rid exists (TRUE) or not (FALSE).
+   *   Defaults to TRUE.
+   */
+  private function userLoadAndCheckRoleAssigned($account, $rid, $is_assigned = TRUE) {
+    $account = user_load($account->uid, TRUE);
+    if ($is_assigned) {
+      $this->assertTrue(array_key_exists($rid, $account->roles), 'The role is present in the user object.');
+    }
+    else {
+      $this->assertFalse(array_key_exists($rid, $account->roles), 'The role is not present in the user object.');
+    }
+  }
+
+}
+

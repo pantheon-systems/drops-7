@@ -1,6 +1,12 @@
 //
 // Styles for main layout
 // --------------------------------------------------
+.container,
+.container-fluid,
+.row {
+  // Override Radix container and row overflow
+  overflow: visible;
+}
 
 aside.col-sm-3 {
   padding-left:0;

@@ -1,8 +1,16 @@
+7.x-1.12.6 2016-07-26
+--------------------------
+- Sanitize theme output for facets to avoid any security issue from search input
+- Fix a potential XSS vulnerability in search facets by adding some validation hooks for facet input
+- Theme updates back ported from dev branch, including topics icons in topics drop-down menu
+- Add RoleAssign module, update DKAN Permissions to give site managers permission to assign roles.
+- Make links and emails in metadata pages clickable
+
 7.x-1.12.5 2016-07-13
 --------------------------
 - Update restws to 7.x-2.6 (critical security update)
 - Update to latest version of recline.js to fix map tiles (Mapquest discontinued open access)
-- Upgrade Drupal core to 7.50 
+- Upgrade Drupal core to 7.50
 
 7.x-1.12.4 2016-07-12
 --------------------------
