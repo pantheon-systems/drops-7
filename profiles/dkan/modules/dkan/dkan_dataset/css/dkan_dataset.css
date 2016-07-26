@@ -252,14 +252,6 @@ div.vertical-tabs #edit-path-alias {
 .view-dkan-datasets .field-type-text-with-summary {
   padding-top: 0;
 }
-.view-dkan-datasets .view-content h2 {
-  margin: 1.5em 0 .5em 0;
-}
-.view-dkan-datasets .view-content h2 a {
-  color: #000;
-  font-weight: normal;
-  font-size: 1.4em;
-}
 .view-dkan-datasets .view-header {
   color: #c9c9c9;
   font-size: 32px;
@@ -361,24 +353,24 @@ li .heading:hover {
   -moz-border-radius: 0px 0px 0px 0px;
   -webkit-border-radius: 0px 0px 0px 0px;
 }
-.node-type-resource li.first a,
-.node-type-resource li.first .list-group-item:first-child,
-.node-type-resource li.first .list-group-item:last-child {
+.node-type-resource .panel-panel li.first a,
+.node-type-resource .panel-panel li.first .list-group-item:first-child,
+.node-type-resource .panel-panel li.first .list-group-item:last-child {
   margin-bottom: 0;
   border-radius: 4px 4px 0px 0px;
   -moz-border-radius: 4px 4px 0px 0px;
   -webkit-border-radius: 4px 4px 0px 0px;
 }
-.node-type-resource li.last a,
-.node-type-resource li.last .list-group-item:first-child,
-.node-type-resource li.last .list-group-item:last-child {
+.node-type-resource .panel-panel li.last a,
+.node-type-resource .panel-panel li.last .list-group-item:first-child,
+.node-type-resource .panel-panel li.last .list-group-item:last-child {
   border-radius: 0px 0px 4px 4px;
   -moz-border-radius: 0px 0px 4px 4px;
   -webkit-border-radius: 0px 0px 4px 4px;
 }
-.node-type-resource li.first.last a,
-.node-type-resource li.first.last .list-group-item:first-child,
-.node-type-resource li.first.last .list-group-item:last-child {
+.node-type-resource .panel-panel li.first.last a,
+.node-type-resource .panel-panel li.first.last .list-group-item:first-child,
+.node-type-resource .panel-panel li.first.last .list-group-item:last-child {
   border-radius: 4px;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -678,3 +670,5 @@ body .node-dataset #data-and-resources ul.resource-list li .orig {
 #data-and-resources .btn .fa-share {
   padding: 0 8px 0 0;
 }
+.field-name-field-additional-info table p,
+.field-name-field-additional-info table p:last-child { margin: 0; }

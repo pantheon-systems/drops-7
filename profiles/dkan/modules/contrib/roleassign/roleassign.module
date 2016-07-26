@@ -1,0 +1,147 @@
+<?php
+
+/**
+ * @file
+ * Allows site administrators to further delegate the task of managing user's
+ * roles.
+ */
+
+/**
+ * Implements hook_permission().
+ *
+ * While editing a user's account information, a user with the <code>assign
+ * roles</code> permission will be able to select roles for the user from
+ * a set of available roles. Roles available are configured by the site
+ * administrator.
+ *
+ * @return array
+ */
+function roleassign_permission() {
+  $perm = user_permission();
+  $perm = $perm['administer users']['title'];
+  return array(
+    'assign roles' => array(
+      'title' => t('Assign roles'),
+      'description' => t('Allow users with the %Administer_users permission to assign a restricted set of roles.', array('%Administer_users' => $perm)),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Adds <code>role assign</code> to <code>Administration » People</code>.
+ *
+ * @return array
+ */
+function roleassign_menu() {
+  $items = array();
+
+  $items['admin/people/permissions/roleassign'] = array(
+    'title' => 'Role assign',
+    'description' => "Define the set of roles that can be assigned by admins with the 'Assign roles' permission.",
+    'type' => MENU_LOCAL_TASK | MENU_VISIBLE_IN_TREE,
+    'file' => 'roleassign.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('roleassign_admin_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer permissions'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds checkboxes for assignable roles to the user edit form.
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param string $form_id
+ */
+function roleassign_form_alter(array &$form, array &$form_state, $form_id) {
+
+  // Do nothing if the user already has 'administer permissions' permission.
+  if (user_access('administer permissions')) {
+    return;
+  }
+
+  // Do nothing if the user doesn't have both 'administer users' and
+  // 'assign roles' permissions.
+  if (!user_access('administer users') || !user_access('assign roles')) {
+    return;
+  }
+
+  // Do nothing if right form isn't shown.
+  if ($form_id == 'user_register_form' || ($form_id == 'user_profile_form' && isset($form['account']))) {
+    // Add the checkboxes to the user edit page.
+    _roleassign_module_load_include('admin.inc');
+    _roleassign_form_alter($form, $form_state, $form_id);
+  }
+  elseif ($form_id == 'system_modules' && !user_access('administer roles')) {
+    // Keep the (restricted) user from disabling this module.
+    $form['modules']['roleassign']['enable']['#disabled'] = TRUE;
+    $form['modules']['roleassign']['description']['#markup'] .= '<br /><span class="warning" title="' . t('You are not allowed to disable this module.') . '">' . t('(protected)') . '</span>';
+  }
+}
+
+  /**
+   * Implements hook_user_presave().
+   *
+   * @param array $edit
+   * @param object $account
+   * @param string $category
+   */
+function roleassign_user_presave(array &$edit, $account, $category) {
+  _roleassign_module_load_include('admin.inc');
+  return _roleassign_user_presave($edit, $account, $category);
+}
+
+/**
+ * Implements hook_user_operations().
+ *
+ * Add or remove roles to selected users.
+ *
+ * @return array|null
+ */
+function roleassign_user_operations() {
+  // Do nothing if add and remove roles operations already is shown or
+  // the user hasn't right to assign roles.
+  if (user_access('administer permissions') || !user_access('assign roles')) {
+    return NULL;
+  }
+
+  _roleassign_module_load_include('admin.inc');
+  return _roleassign_user_operations();
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Returns various help texts.
+ *
+ * @param string $path
+ * @param $arg
+ *
+ * @return string|null
+ */
+function roleassign_help($path = "admin/help#roleassign", $arg) {
+  _roleassign_module_load_include('admin.inc');
+  return _roleassign_help($path, $arg);
+}
+
+/**
+ * Helper function to load include files.
+ *
+ * @param string $type
+ */
+function _roleassign_module_load_include($type) {
+  static $loaded = array();
+
+  if (!isset($loaded[$type])) {
+    $loaded[$type] = (bool) module_load_include($type, 'roleassign');
+  }
+  return $loaded[$type];
+}

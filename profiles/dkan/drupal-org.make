@@ -2,9 +2,9 @@
 api: '2'
 core: 7.x
 includes:
-- https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.12.5/dkan_dataset.make
-- https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.12.5/dkan_datastore.make
-- https://raw.githubusercontent.com/NuCivic/dkan_workflow/7.x-1.12.5/dkan_workflow.make
+- https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.12.6/dkan_dataset.make
+- https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.12.6/dkan_datastore.make
+- https://raw.githubusercontent.com/NuCivic/dkan_workflow/7.x-1.12.6/dkan_workflow.make
 - https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.0-beta1/visualization_entity.make
 - modules/dkan/dkan_data_story/dkan_data_story.make
 - modules/dkan/dkan_topics/dkan_topics.make
@@ -43,19 +43,19 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/dkan_dataset.git
-      tag: 7.x-1.12.5
+      tag: 7.x-1.12.6
   dkan_datastore:
     subdir: dkan
     download:
       type: git
       url: https://github.com/NuCivic/dkan_datastore.git
-      tag: 7.x-1.12.5
+      tag: 7.x-1.12.6
   dkan_workflow:
     subdir: dkan
     download:
       type: git
       url: https://github.com/NuCivic/dkan_workflow.git
-      tag: 7.x-1.12.5
+      tag: 7.x-1.12.6
   visualization_entity:
     download:
       type: git
@@ -138,6 +138,8 @@ projects:
     version: '2.9'
   restws:
     version: '2.6'
+  roleassign:
+    version: '1.1'
   schema:
     version: '1.2'
   adminrole:
@@ -159,7 +161,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/nuboot_radix.git
-      tag: 7.x-1.12.5
+      tag: 7.x-1.12.6
     type: theme
   radix:
     type: theme

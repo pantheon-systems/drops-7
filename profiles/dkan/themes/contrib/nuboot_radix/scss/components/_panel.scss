@@ -1,9 +1,7 @@
 //
 // Styles for panels and panes.
 // --------------------------------------------------
-.region-content {
-	margin: 0 15px;
-}
+
 .panel-body {
 	overflow: visible;
 }
@@ -12,33 +10,12 @@
     line-height: 2em;
   }
 }
-
-.breadcrumb,
-.alert,
-.tabs--primary,
-.page-header {
-  margin: 0 15px 15px;
+.main .panel-pane {
+	margin-bottom: 3em;
 }
-
-.page-admin {
-	.region-content {
-		margin: 0;
-	}
-	.breadcrumb,
-	.alert,
-	.tabs--primary,
-	.page-header {
-		margin: 0 0 15px;
-	}
-}
-
-.front {
-	.region-content {
-		margin: 0;
-	}
-	.alert {
-		margin: 10px 15px;
-	}
+h2.pane-title {
+	border-bottom: 1px solid $border;
+	padding-bottom: 10px;
 }
 
 #panels-choose-layout .form-type-radio input,
@@ -52,23 +29,21 @@
 	}
 	.pane-block {
 		@include blockbox;
-		&.pane-facetapi {
-			border: none;
-		}
 	}
 }
-.page-user .radix-layouts-content .pane-content {
-  padding: 0;
-  .profile {
-  	margin-top: 0;
-  }
+.page-user {
+	.radix-layouts-content .pane-content {
+  	padding: 0;
+	  .profile {
+	  	margin-top: 0;
+	  }
+	}
 }
 .radix-layouts-content {
 	.pane-title {
-		font-size: 30px;
-  	line-height: 36px;
+		font-size: 36px;
+  	line-height: 42px;
 		margin:0 0 15px 0;
-		padding:0;
 	}
 	.pane-content {
 		padding: 20px 0;

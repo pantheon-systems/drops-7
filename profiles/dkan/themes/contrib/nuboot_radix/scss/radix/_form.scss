@@ -47,7 +47,7 @@ form {
 .media-widget {
   > a {
     margin: 0 10px 0 0;
-    @extend %btn;
+    @extend .btn;
   }
 }
 
@@ -132,14 +132,14 @@ html.js {
     width: 90%;
   }
   .form-item-path-alias {
-    @extend %clearfix;
+    @include clearfix;
     label, input {
       display: inline;
     }
   }
   .burr-flipped-sidebar {
     .panel-pane {
-      @extend %well;
+      @include well;
       padding: 10px;
       .pane-title {
         margin-top: 0;
@@ -160,7 +160,7 @@ html.js {
 }
 
 .filter-wrapper {
-  @extend %well;
+  @include well;
   margin-top: 10px;
   .form-item {
     margin: 0 0 10px;

@@ -56,7 +56,7 @@ function nuboot_radix_preprocess_page(&$variables) {
   $external_css = array(
     '#attached' => array(
       'css' => array(
-        '//fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic,600,600italic' => array(
+        '//fonts.googleapis.com/css?family=Open+Sans::400,300,700' => array(
           'type' => 'external'),
       ),
     ),
