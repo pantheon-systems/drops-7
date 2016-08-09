@@ -1,0 +1,14 @@
+/**
+ * @file
+ * Custom CSS for use with Panelizer and IPE.
+ */
+
+body.panels-ipe .panels-ipe-form-container .form-item-revision,
+body.panels-ipe .panels-ipe-form-container .form-item-log {
+  margin-bottom: 0;
+}
+
+body.panels-ipe .panels-ipe-form-container .form-item-revision label,
+body.panels-ipe .panels-ipe-form-container .form-item-log label {
+  color: white;
+}

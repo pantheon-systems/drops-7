@@ -1,0 +1,262 @@
+<?php
+/**
+ * @file
+ * Test integration for the panelizer module.
+ */
+
+/**
+ * This will be extended by other tests to simplify them and make the code more
+ * reusable.
+ */
+class PanelizerTestHelper extends DrupalWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'ctools';
+    $modules[] = 'panels';
+    $modules[] = 'panelizer';
+    parent::setUp($modules);
+  }
+
+  /**
+   * Helper function to quickly enable or disable Panelizer for an entity type.
+   *
+   * @param string $entity_type
+   *   The entity type to configure, defaults to 'node'.
+   * @param string $bundle
+   *   The entity bundle to enable, defaults to 'page'.
+   * @param string $view_mode
+   *   The entity view mode to be panelized; defaults to 'page_manager'.
+   * @param boolean $status
+   *   Indicate whther the view mode is enabled or disabled; defaults to TRUE.
+   * @param boolean $use_default
+   *   Whether to enable a default display; defaults to TRUE.
+   * @param boolean $choice
+   *   Whether to enable a display choice may be made; defaults to TRUE.
+   */
+  protected function togglePanelizer($entity_type = 'node', $bundle = 'page', $view_mode = 'page_manager', $status = 1, $use_default = 1, $choice = 1) {
+    variable_set('panelizer_defaults_' . $entity_type . '_' . $bundle, array(
+      'status' => 1,
+      'help' => '',
+      'view modes' => array(
+        $view_mode => array(
+          'status' => $status,
+          'substitute' => FALSE,
+          'default' => $use_default,
+          'choice' => $choice,
+        ),
+      ),
+    ));
+
+    // Update the handler's plugin definition. Because of the way Panelizer is
+    // caching the handler objects, the entity node handler has already been
+    // loaded and has already identified what bundles are configured for this
+    // page execution. In order to work around that, so that
+    // hook_entity_update() can be called, need to reload the handler and rejig
+    // the plugin defintion.
+    ctools_include('plugins');
+    ctools_plugin_get_plugin_type_info(TRUE);
+    $handler = panelizer_entity_plugin_get_handler($entity_type);
+    $plugin = panelizer_get_entity_plugin($entity_type);
+    $info = ctools_plugin_get_info('panelizer', 'entity');
+    panelizer_entity_plugin_process($plugin, $info);
+    $handler->plugin = $plugin;
+    $this->verbose(print_r($handler, TRUE));
+    $this->assertTrue($handler->is_panelized($bundle), 'Entity bundle is panelized.');
+    return $handler;
+  }
+
+  /**
+   * Enable a Page Manager page handler.
+   *
+   * @param string $page_name
+   *   The Page Manager page handler that needs to be enabled.
+   */
+  function simpleEnablePage($page_name) {
+    $page = page_manager_get_page_cache($page_name);
+    $function = ctools_plugin_get_function($page->subtask, 'enable callback');
+    $function($page, FALSE);
+    menu_rebuild();
+  }
+
+  /**
+   * Get the default Panelizer display for a specific entity bundle.
+   *
+   * @param string $entity_type
+   * @param string $bundle
+   * @param string $view_mode
+   */
+  function getDefaultPanelizerDisplay($entity_type, $bundle, $view_mode) {
+    $handler = panelizer_entity_plugin_get_handler($entity_type);
+    $this->verbose(print_r($handler, TRUE));
+    $this->assertTrue($handler->is_panelized($bundle), 'Entity bundle is panelized.');
+    return $handler->get_default_display($bundle, $view_mode);
+  }
+
+  /**
+   * Add a custom text pane to a display.
+   */
+  function addTestPane(&$display, $text = 'Hello world') {
+    $custom = ctools_get_content_type('custom');
+
+    // Create a basic 'custom' pane.
+    $pane = panels_new_pane('custom', 'custom');
+    $pane->configuration = ctools_content_get_defaults($custom, 'custom');
+    $pane->configuration['title'] = 'test';
+    $pane->configuration['body'] = $text;
+
+    // Add the pane to the display.
+    $display->add_pane($pane, 'center');
+  }
+
+  /**
+   * Enable some extra languages.
+   */
+  function setupLocales() {
+    // Add French.
+    $this->addSiteLanguage('fr');
+
+    // Add Spanish.
+    $this->addSiteLanguage('es');
+
+    // Enable URL language detection and selection.
+    $edit = array('language[enabled][locale-url]' => '1');
+    $this->drupalPost('admin/config/regional/language/configure', $edit, t('Save settings'));
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Add a locale to the site.
+   *
+   * This assumes the Locale module is enabled.
+   */
+  public function addSiteLanguage($langcode) {
+    // Load the language-add page.
+    $this->drupalGet('admin/config/regional/language/add');
+    $this->assertResponse(200, 'Loaded the language-add admin page.');
+
+    // Submit the language-add form.
+    $args = array(
+      'langcode' => $langcode,
+    );
+    $this->drupalPost(NULL, $args, t('Add language'));
+    $this->assertResponse(200);
+
+    // Verify that the browser was returned to the main languages admin page.
+    $this->assertEqual($this->getUrl(), url('admin/config/regional/language', array('absolute' => TRUE)), 'Redirected back to the main languages admin page.');
+
+    // Clear the language list cache so it can be reloaded.
+    drupal_static_reset('language_list');
+
+    // Get all language definitions.
+    $languages = language_list();
+    $language = $languages[$langcode]->name;
+    $this->assertText(strip_tags(t('The language %language has been created and can now be used. More information is available on the <a href="@locale-help">help screen</a>.', array('%language' => t($language), '@locale-help' => url('admin/help/locale')))), 'A new language has been added.');
+  }
+
+  /**
+   * Create a node for testing.
+   *
+   * @params array $options
+   *   A list of additional arguments to be passed to the node/add/page form.
+   *
+   * @return object
+   *   A node object.
+   */
+  function createNode(array $options = array()) {
+    // Create a node.
+    $this->drupalGet('node/add/page');
+    $this->assertResponse(200);
+    $langcode = LANGUAGE_NONE;
+    $edit = array(
+      'title' => $this->randomName(8),
+      "body[$langcode][0][value]" => $this->randomName(16),
+    ) + $options;
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    return $this->drupalGetNodeByTitle($edit['title']);
+  }
+
+  /**
+   * Compare panes from two different displays to make sure they're the same.
+   *
+   * @param object $panelizer1
+   *   The first display object.
+   * @param object $panelizer2
+   *   The second display object.
+   */
+  function compareDisplayPanes($panelizer1, $panelizer2) {
+    $this->verbose('<pre>' . print_r(func_get_args(), TRUE) . '</pre>');
+
+    // Confirm the UUID values are different.
+    // @todo Dependent upon https://www.drupal.org/node/2750545.
+    // $this->assertNotEqual($panelizer1->display->uuid, $panelizer2->display->uuid);
+
+    // Make simpler structure of the two display's panes, to make them easier to
+    // examine later.
+    $panes1 = array();
+    $panes2 = array();
+    foreach ($panelizer1->display->content as $key => $pane) {
+      $panes1[] = $pane;
+    }
+    foreach ($panelizer2->display->content as $key => $pane) {
+      $panes2[] = $pane;
+    }
+
+    // Compare the two sets of panes.
+    foreach ($panes1 as $key => $pane) {
+      // Verify that the pane exists in the second display.
+      $this->assertTrue(isset($panes2[$key]));
+
+      // Confirm the two panes are of the same type.
+      $this->assertEqual($pane->type, $panes2[$key]->type);
+      $this->assertEqual($pane->subtype, $panes2[$key]->subtype);
+
+      // Confirm the pid values are different.
+      $this->assertNotEqual($pane->pid, $panes2[$key]->pid);
+
+      // Confirm the UUID values are different.
+      // @todo Dependent upon https://www.drupal.org/node/2750545.
+      // $this->assertNotEqual($pane->uuid, $panes2[$key]->uuid);
+    }
+  }
+
+  /**
+   * Get the {panelizer_entity} records exist for an entity.
+   *
+   * @param string $entity_type
+   *   The entity type to check.
+   * @param int $entity_id
+   *   The entity's primary ID.
+   * @param int $revision_id
+   *   The entity's revision ID.
+   *
+   * @return array
+   *   The records that were found.
+   */
+  function getPanelizerEntityRecords($entity_type, $entity_id, $revision_id = NULL) {
+    $query = db_select('panelizer_entity', 'pe')
+      ->fields('pe')
+      ->condition('entity_type', $entity_type);
+
+    // If the revision ID was passed in, use it, otherwise use the entity ID.
+    if (!empty($revision_id)) {
+      $query->condition('revision_id', $revision_id);
+    }
+    else {
+      $query->condition('entity_id', $entity_id);
+    }
+
+    $records = $query->orderBy('pe.revision_id')
+      ->execute()
+      ->fetchAll();
+
+    // Debug output, for local testing.
+    $this->verbose('<pre>' . print_r($records, TRUE) . '</pre>');
+
+    return $records;
+  }
+
+}

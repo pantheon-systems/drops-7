@@ -1,0 +1,52 @@
+<?php
+/**
+ * @file
+ * Test the Views integration for Panelizer.
+ */
+
+/**
+ *
+ */
+class PanelizerWithViewsTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer w Views',
+      'description' => 'Test Views integration.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'views';
+    $modules[] = 'views_ui';
+    parent::setUp($modules);
+
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Panelizer.
+      'administer panelizer',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   *
+   */
+  function testSomething() {
+    // @todo
+  }
+
+}

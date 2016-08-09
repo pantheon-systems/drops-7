@@ -32,17 +32,38 @@ function dkan_datastore_datastore_api($node) {
  */
 function dkan_datastore_download($node) {
   $node_wrapper = entity_metadata_wrapper('node', $node);
-  $file_field = dkan_datastore_file_upload_field();
-  $type = dkan_datastore_node_type();
+  $link_type = dkan_datastore_resource_link_type($node);
+  $url = $link_type['url'];
+  $type = $link_type['type'];
 
-  if ($node->type == $type && $file = $node_wrapper->{$file_field}->value()) {
-    $uri = isset($file->uri) ? $file->uri : $file['uri'];
-    $url = file_create_url($uri);
+  if($type == 'upload') {
     return drupal_goto($url);
-  }
-  else {
+  } else if($type == 'remote') {
+    dkan_datastore_proxy($node);
+  } else if($type == 'link'){
+    return drupal_goto($url);
+  } else {
     drupal_set_message(t('No download available for this resource'));
-    return '';
+    return '';    
+  }
+}
+
+/**
+ * Proxy remote resources.
+ */
+function dkan_datastore_proxy($node) {
+  $allowed_types = array('csv');
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+  $remote_file = $node_wrapper->field_link_remote_file->value();
+  $uri = $remote_file['uri'];
+  $filename = $remote_file['filename'];
+  $mime = $remote_file['filemime'];
+  $type = recline_get_data_type($remote_file['filemime']);
+
+  if(in_array($type, $allowed_types)) {
+    drupal_add_http_header('Content-Type', $mime);
+    drupal_add_http_header('Content-Disposition', 'attachment; filename=' . $filename);
+    print file_get_contents($uri);
   }
 }
 

@@ -141,7 +141,7 @@ function filefield_source_remotefile_value($element, &$item) {
           }
           elseif (preg_match('/Content-Type:[ ]*([a-z0-9_\-]+\/[a-z0-9_\-]+)/i', $header, $matches)) {
             $mime_type = $matches[1];
-            $file->filemime = _remote_file_source_mime_extension($mime_type);
+            $file->filemime = $mime_type;
           }
         }
         $file->status = FALSE;

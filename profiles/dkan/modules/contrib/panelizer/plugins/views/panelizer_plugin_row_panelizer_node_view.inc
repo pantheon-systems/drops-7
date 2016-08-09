@@ -1,11 +1,11 @@
 <?php
 /**
  * @file
- * Contains the panelizer node view row style plugin.
+ * Contains the Panelizer node view row style plugin.
  */
 
 /**
- * Plugin which renders a panelizer node.
+ * Plugin which renders a Panelizer node.
  */
 class panelizer_plugin_row_panelizer_node_view extends views_plugin_row_node_view {
   // Basic properties that let the row style follow relationships.
@@ -29,18 +29,11 @@ class panelizer_plugin_row_panelizer_node_view extends views_plugin_row_node_vie
     parent::options_form($form, $form_state);
     $form['render_anything'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Also display content that is not handled by panelizer'),
-      '#description' => t('If any content is not panelized, it will be hidden unless this is checked.'),
+      '#title' => t('Display content that is not handled by Panelizer.'),
+      '#description' => t('If content is not panelized it will be hidden unless this is checked.'),
       '#default_value' => $this->options['render_anything'],
-      '#weight' => -1,
+      '#weight' => 1,
     );
-
-    // Force the row options from the parent plugin to depend on this checkbox.
-    foreach (array('view_mode', 'links', 'comments') as $element_name) {
-      $form[$element_name]['#dependency'] = array(
-        'edit-row-options-render-anything' => array(1),
-      );
-    }
   }
 
   function render($row) {
@@ -49,16 +42,25 @@ class panelizer_plugin_row_panelizer_node_view extends views_plugin_row_node_vie
       return;
     }
 
+    if (empty($this->options['view_mode'])) {
+      $view_mode = 'page_manager';
+    }
+    else {
+      $view_mode = $this->options['view_mode'];
+    }
+
     $handler = panelizer_entity_plugin_get_handler('node');
-    $info = $handler->render_entity($node, 'page_manager');
+    $info = $handler->render_entity($node, $view_mode);
 
     if (empty($info)) {
       if (!empty($this->options['render_anything'])) {
         return parent::render($row);
       }
     }
-    else {
+    elseif (!empty($info['content'])) {
       return $info['content'];
     }
+
+    return NULL;
   }
 }

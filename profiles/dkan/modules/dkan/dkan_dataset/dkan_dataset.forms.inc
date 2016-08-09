@@ -25,7 +25,7 @@ function dkan_dataset_field_group_build_pre_render_alter(&$element) {
  * Implements hook_field_group_pre_render().
  */
 function dkan_dataset_field_group_pre_render(&$element, $group, &$form) {
-  
+
   // Only pre_render if additional info form should appear on separate page
   if (variable_get('dkan_dataset_form_additional_info', 1 )) {
     if (module_exists('context')) {

@@ -17,6 +17,13 @@ function manualcrop_global_settings_form() {
     '#default_value' => variable_get('manualcrop_cache_control', TRUE),
   );
 
+  $form['manualcrop_skip_js_check'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Skip javascript cookie check'),
+    '#description' => t('Enable Manual Crop even if the <em>has_js</em> cookie (which is set by Drupal when the brower supports javascript) is missing.'),
+    '#default_value' => variable_get('manualcrop_skip_js_check', FALSE),
+  );
+
   $form['#submit'] = array('manualcrop_global_settings_form_submit');
 
   return system_settings_form($form);
@@ -320,7 +327,7 @@ function manualcrop_auto_reuse_form($data) {
     $form['style_priority'][$style_name] = &$weight;
     $form['style_priority']['#rows'][] = array(
       'data' => array(
-        array('data' => check_plain($label)),
+        array('data' => $label),
         array('data' => &$weight),
       ),
       'class' => array('draggable'),
@@ -719,8 +726,6 @@ function manualcrop_field_widget_settings_form($widget_type, $settings) {
     ),
     '#default_value' => $settings['manualcrop_styles_mode'],
   );
-
-  $style_options = array_map('check_plain', $style_options);
 
   $form['manualcrop']['manualcrop_styles_list'] = array(
     '#type' => 'checkboxes',

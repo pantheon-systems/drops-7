@@ -104,7 +104,7 @@ function manualcrop_libraries_info() {
 
   $libraries['jquery.imagesloaded'] = array(
     'name' => 'imagesLoaded',
-    'vendor url' => 'https://github.com/desandro/imagesloaded/tree/v2.1.1',
+    'vendor url' => 'http://desandro.github.io/imagesloaded',
     'version arguments' => array(
       'file' => 'jquery.imagesloaded.js',
       'pattern' => '# v([0-9\.]+)#',
@@ -129,19 +129,41 @@ function manualcrop_libraries_info() {
 
   $libraries['jquery.imgareaselect'] = array(
     'name' => 'imgAreaSelect',
-    'vendor url' => 'https://github.com/odyniec/imgareaselect/tree/v0.9.11-rc.1',
+    'vendor url' => 'http://odyniec.net/projects/imgareaselect',
     'version arguments' => array(
-      'file' => 'imgareaselect.jquery.json',
-      'pattern' => '#"version"[\t ]*:[\t ]*"([^"]+)"#',
-      'lines' => 6,
-      'cols' => 30,
+      'file' => 'scripts/jquery.imgareaselect.js',
+      'pattern' => '#version ([0-9\.]+)#',
+      'lines' => 10,
+      'cols' => 20,
     ),
     'files' => array(
       'js' => array(
-        'jquery.imgareaselect.dev.js',
+        'scripts/jquery.imgareaselect.min.js',
       ),
       'css' => array(
-        'distfiles/css/imgareaselect-animated.css',
+        'css/imgareaselect-animated.css',
+      ),
+    ),
+    'variants' => array(
+      'source' => array(
+        'files' => array(
+          'js' => array(
+            'scripts/jquery.imgareaselect.js',
+          ),
+          'css' => array(
+            'css/imgareaselect-animated.css',
+          ),
+        ),
+      ),
+      'packed' => array(
+        'files' => array(
+          'js' => array(
+            'scripts/jquery.imgareaselect.pack.js',
+          ),
+          'css' => array(
+            'css/imgareaselect-animated.css',
+          ),
+        ),
       ),
     ),
   );
@@ -379,11 +401,10 @@ function manualcrop_media_element_process($element) {
   // Attach the options as javascript settings.
   foreach ($element['#attached']['js'] as &$js) {
     if (isset($js['data']['media'])) {
-      if (!isset($js['data']['media']['elements']['#' . $element['#id']]['global'])) {
-        $js['data']['media']['elements']['#' . $element['#id']]['global'] = array();
+      if (!isset($js['data']['media']['elements'][$element['#id']]['global'])) {
+        $js['data']['media']['elements'][$element['#id']]['global'] = array();
       }
-
-      $js['data']['media']['elements']['#' . $element['#id']]['global'] += $data;
+      $js['data']['media']['elements'][$element['#id']]['global'] += $data;
       break;
     }
   }
@@ -478,9 +499,7 @@ function manualcrop_croptool_validate($element, &$form_state) {
  * Form submit handler; Saves each crop selection.
  */
 function manualcrop_croptool_submit($form, &$form_state) {
-  static $submitted = FALSE;
-
-  if (!$submitted && !empty($form_state['manualcrop_data']['selections'])) {
+  if (!empty($form_state['manualcrop_data']['selections'])) {
     // Loop trough the selections to save them.
     foreach ($form_state['manualcrop_data']['selections'] as $fid => $data) {
       // In general this file entity should be loaded from a cache, so this
@@ -501,8 +520,8 @@ function manualcrop_croptool_submit($form, &$form_state) {
       drupal_set_message(t('The crop selections have been saved.'));
     }
 
-    // Prevent additional submits.
-    $submitted = TRUE;
+    // Unset the form state data to prevent submitting twice.
+    unset($form_state['manualcrop_data']);
   }
 }
 
@@ -816,10 +835,10 @@ function manualcrop_crop_and_scale_effect(&$image, $data) {
     return TRUE;
   }
   else {
-    // Automated crop, don't use image_scale_and_crop_effect() unless
-    // upscaling is allowed or both image dimensions are bigger than
-    // the desired dimensions.
-    if ($scale_data['upscale'] || ($image->info['width'] > $scale_data['width'] && $image->info['height'] > $scale_data['height'])) {
+    // Automated crop, don't use image_scale_and_crop_effect() unless both
+    // imagedimensions are bigger than the desired dimensions. This way
+    // unwanted upscaling is prevented.
+    if ($image->info['width'] > $scale_data['width'] && $image->info['height'] > $scale_data['height']) {
       if (!image_scale_and_crop_effect($image, $scale_data)) {
         return FALSE;
       }

@@ -27,7 +27,7 @@ projects[schema][subdir] = contrib
 projects[schema][download][revision] = "08b02458694d186f8ab3bd0b24fbc738f9271108"
 
 projects[services][subdir] = contrib
-projects[services][version] = 3.14
+projects[services][version] = 3.16
 
 projects[data][subdir] = contrib
 projects[data][version] = 1.x

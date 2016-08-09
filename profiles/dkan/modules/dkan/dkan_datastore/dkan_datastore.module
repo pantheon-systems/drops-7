@@ -20,7 +20,8 @@ include_once "dkan_datastore.features.inc";
  */
 function dkan_datastore_menu() {
   $items['node/%dkan_datastore_resource/download'] = array(
-    'title' => 'Download',
+    'title callback' => 'dkan_datastore_download_title',
+    'title arguments' => array(1),
     'page callback' => 'dkan_datastore_download',
     'page arguments' => array(1),
     'access callback' => 'dkan_datastore_download_access',
@@ -29,6 +30,16 @@ function dkan_datastore_menu() {
     'weight' => '20',
     'type' => MENU_LOCAL_TASK,
   );
+  
+  $items['node/%dkan_datastore_resource/data'] = array(
+    'page callback' => 'dkan_datastore_proxy',
+    'page arguments' => array(1),
+    'access callback' => 'dkan_datastore_download_access',
+    'access arguments' => array('view', 1),
+    'file' => 'dkan_datastore.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+
   $items['node/%node/api'] = array(
     'title' => 'Data API',
     'page callback' => 'dkan_datastore_datastore_api',
@@ -90,6 +101,40 @@ function dkan_datastore_menu() {
     'type' => MENU_LOCAL_TASK,
   );
   return $items;
+}
+
+/**
+ * Retrieves the url to the physical resource and 
+ * the type of it.
+ */
+function dkan_datastore_resource_link_type($node) {
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+  $file_field = dkan_datastore_file_upload_field();
+  $remote_file_field = dkan_datastore_file_link_field();
+  $api_field = dkan_datastore_api_link_field();
+  $type = dkan_datastore_node_type();
+
+  if($node->type == $type && $file = $node_wrapper->{$file_field}->value()) {
+    $uri = isset($file->uri) ? $file->uri : $file['uri'];
+    $url = file_create_url($uri);
+    return array('url' => $url, 'type' => 'upload');
+  } else if($remote_file = $node_wrapper->{$remote_file_field}->value()) {
+    return array('url' => $remote_file['uri'], 'type' => 'remote');
+  } else if($link = $node_wrapper->{$api_field}->value()){
+    return array('url' => $link['url'], 'type' => 'link');
+  } else {
+    drupal_set_message(t('No download available for this resource'));
+    return array('type' => 'upload');
+  }  
+}
+
+/**
+ * Title callback to change the download link text
+ * based on the type of the resource link.
+ */
+function dkan_datastore_download_title($node) {
+  $resource_link_type = dkan_datastore_resource_link_type($node);
+  return ($resource_link_type['type'] == 'link') ? t('Go to resource') : t('Download');
 }
 
 /**
@@ -347,7 +392,7 @@ function dkan_datastore_status($node) {
  * Determines if a resource can be imported
  */
 function dkan_datastore_is_importable($file) {
-  return (is_object($file) && $file->filemime == 'text/csv') || (is_array($file) && $file['filemime'] == 'text/csv');
+  return (is_object($file) && $file->filemime == 'text/csv') || (is_array($file) && array_key_exists('filemime', $file) && $file['filemime'] == 'text/csv');
 }
 
 /**
@@ -487,7 +532,19 @@ function dkan_datastore_file_upload_field() {
 }
 
 /**
- * Returns name of link field.
+ * Returns name of link api field.
+ */
+function dkan_datastore_api_link_field() {
+  static $field;
+  if (!$field) {
+    $field = 'field_link_api';
+    drupal_alter('dkan_datastore_field_link_api', $field);
+  }
+  return $field;
+}
+
+/**
+ * Returns name of remote file field.
  */
 function dkan_datastore_file_link_field() {
   static $field;

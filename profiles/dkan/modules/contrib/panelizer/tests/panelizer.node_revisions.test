@@ -1,0 +1,300 @@
+<?php
+/**
+ * @file
+ * Test the node revisions functionality for Panelizer.
+ */
+
+/**
+ * Verifies Panelizer configuration options for node revisions.
+ */
+class PanelizerNodeRevisionTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer node revisions (excluding IPE)',
+      'description' => 'Test panelizer customization in node revisions, excluding IPE.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    parent::setUp();
+
+    $perms = array(
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+      'administer page manager',
+      'use page manager',
+      'administer panelizer',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   * Confirm various aspects of revision handling work correctly.
+   */
+  function testRevisionHandling() {
+    // Finding this class on the page will indicate it is using a default
+    // display.
+    $css_default_class = 'panelizer-default';
+
+    // Enable the node_view display in Page Manager.
+    $this->simpleEnablePage('node_view');
+
+    // Check the Page Manager admin page.
+    $this->drupalGet('admin/structure/pages');
+    $this->assertResponse(200);
+    $this->assertLink(t('Disable'));
+
+    // Panelize "Basic page" content type and the 'page_manager' display, give
+    // it a default display and allow multiple displays.
+    $edit = array();
+    $edit['panelizer[status]'] = TRUE;
+    $edit['panelizer[view modes][page_manager][status]'] = TRUE;
+    $edit['panelizer[view modes][page_manager][default]'] = TRUE;
+    $edit['panelizer[view modes][page_manager][choice]'] = TRUE;
+    $this->drupalPost('admin/structure/types/manage/page', $edit, t('Save content type'));
+    $this->assertResponse(200);
+
+    // Add a custom class to the default display.
+    $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/node:page:default/settings');
+    $edit = array(
+      'css_class' => $css_default_class,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Clone the default display.
+    $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/node:page:default/clone');
+    $this->assertResponse(200);
+    $this->assertText(t('Name'));
+    $this->assertFieldById('edit-title', "Clone of Default", "Administrative Title");
+
+    // Manually set the machine name here as it's normally set by
+    // machine-name.js, which doesn't work via SimpleTest.
+    $this->drupalPost(NULL, array('name' => 'clone_of_default'), t('Save'));
+    $this->assertResponse(200);
+    // Confirm the status message.
+    $this->assertText(t('!item has been created.', array('!item' => 'node:page:clone_of_default')));
+
+    // Set a custom css class to identify this cloned display.
+    $edit = array();
+    $clone_css_class = 'panelizer-test-page-node-revisions-clone';
+    $edit['css_class'] = $clone_css_class;
+    $this->drupalPost('admin/structure/types/manage/page/panelizer/page_manager/node:page:clone_of_default/settings', $edit, t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('The settings have been updated.'));
+
+    // Clone the cloned display.
+    $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/node:page:clone_of_default/clone');
+    $this->assertResponse(200);
+    $this->assertText(t('Name'));
+    $this->assertFieldById('edit-title', "Clone of Clone of Default", "Administrative Title");
+
+    // Manually set the machine name here as it's normally set by
+    // machine-name.js, which doesn't work via SimpleTest.
+    $this->drupalPost(NULL, array('name' => 'clone_of_clone_of_default'), t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('!item has been created.', array('!item' => 'node:page:clone_of_clone_of_default')));
+
+    // Set a custom css class to identify this cloned-cloned display.
+    $edit = array();
+    $clone_of_clone_css_class = 'panelizer-test-page-node-revisions-cloned-clone';
+    $edit['css_class'] = $clone_of_clone_css_class;
+    $this->drupalPost('admin/structure/types/manage/page/panelizer/page_manager/node:page:clone_of_clone_of_default/settings', $edit, t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('The settings have been updated.'));
+
+    // Assert panel choice for new pages.
+    $this->drupalGet('node/add/page');
+    $this->assertField('panelizer[page_manager][name]', 'Display can be chosen on new page form');
+
+    // Create a node with default panelizer display.
+    $edit = array();
+    $langcode = LANGUAGE_NONE;
+    $edit["title"] = $this->randomName(8);
+    $edit["body[$langcode][0][value]"] = $this->randomName(16);
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertResponse(200);
+
+    // Check that the post can be panelized.
+    $node = $this->drupalGetNodeByTitle($edit["title"]);
+    $this->assertLink('Customize display', 0, 'The customize display link appears on the page');
+    $this->assertLinkByHref('node/' . $node->nid . '/panelizer', 0, 'A link to customize the node appears on the page');
+
+    // Assert panel choice for existing pages.
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertResponse(200);
+    $this->assertField('panelizer[page_manager][name]', 'Display can be chosen on edit page form');
+
+    // Create a new revision with a different display.
+    $langcode = LANGUAGE_NONE;
+    $edit["revision"] = 1;
+    $edit["log"] = "Changed panelizer display in a revision";
+    $edit["panelizer[page_manager][name]"] = 'node:page:clone_of_default';
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertResponse(200);
+    $this->assertLink(t('Revisions'), 0, 'The node has multiple revisions');
+
+    // Check that the new revision is rendered using the cloned display.
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_css_class));
+    $this->assertEqual(count($elements), 1, 'The node is using the cloned display.');
+
+    // Confirm that the revisions tab is now available.
+    $this->drupalGet('node/' . $node->nid . '/revisions');
+    $this->assertResponse(200);
+
+    // Check that the old revision is still using the default display.
+    $revisions = node_revision_list($node);
+    $oldest_revision = array_pop($revisions);
+    $this->assertNotNull($oldest_revision->vid);
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $oldest_revision->vid . '/view');
+    $this->assertResponse(200);
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_css_class));
+    $this->assertEqual(count($elements), 0, 'The node revision is not using the cloned display.');
+    // @todo Panelizer doesn't add a body class for default displays, need to
+    // add a default class.
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $css_default_class));
+    $this->assertEqual(count($elements), 1, 'The node is using the default display.');
+
+    // Create a new revision with another different display.
+    $langcode = LANGUAGE_NONE;
+    $edit = array();
+    $edit['title'] = $node->title;
+    $edit["body[$langcode][0][value]"] = $node->body[$langcode][0]["value"];
+    $edit["revision"] = 1;
+    $edit["log"] = "Changed panelizer display in another revision";
+    $edit["panelizer[page_manager][name]"] = 'node:page:clone_of_clone_of_default';
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertResponse(200);
+
+    // Check that the new revision is rendered using the cloned display.
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_of_clone_css_class));
+    $this->assertEqual(count($elements), 1, 'The node is using the cloned display.');
+
+    // Check that the oldest revision is still using the default display.
+    $revisions = node_revision_list($node);
+    $this->assertEqual(count($revisions), 3, "The node has one published and two former revisions");
+    $oldest_revision = array_pop($revisions);
+    $this->assertNotNull($oldest_revision->vid);
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $oldest_revision->vid . '/view');
+    $this->assertResponse(200);
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_of_clone_css_class));
+    $this->assertEqual(count($elements), 0, 'The node revision is NOT using the clone of cloned display.');
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_css_class));
+    $this->assertEqual(count($elements), 0, 'The node revision is NOT using the cloned display.');
+    // @todo Panelizer doesn't add a body class for default displays, need to
+    // add a default class.
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $css_default_class));
+    $this->assertEqual(count($elements), 1, 'The node revision is using the default display.');
+
+    // Check that the previous revision is still using the original cloned
+    // display.
+    $node_revision = array_pop($revisions);
+    $this->assertNotNull($node_revision->vid);
+    $node_revision = node_load(NULL, $node_revision->vid);
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $node_revision->vid . '/view');
+    $this->assertResponse(200);
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_of_clone_css_class));
+    $this->assertEqual(count($elements), 0, 'The node revision is NOT using the clone of cloned display.');
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_css_class));
+    $this->assertEqual(count($elements), 1, 'The node revision is using the default display.');
+
+    // Get the number of {panelizer_entity} records currently recorded for this
+    // node.
+    $old_count = db_select('panelizer_entity', 'pe')
+      ->fields('pe')
+      ->condition('entity_type', 'node')
+      ->condition('entity_id', $node->nid)
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    // Delete a revision.
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $node_revision->vid . '/delete');
+    $this->assertResponse(200);
+    $t_args = array(
+      '%revision-date' => format_date($node_revision->revision_timestamp),
+    );
+    $this->assertText(strip_tags(t('Are you sure you want to delete the revision from %revision-date?', $t_args)));
+    $this->assertText(t('This action cannot be undone.'));
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertResponse(200);
+    $t_args = array(
+      '%revision-date' => format_date($node_revision->revision_timestamp),
+      '@type' => node_type_get_name($node_revision),
+      '%title' => $node_revision->title,
+    );
+    $this->assertText(strip_tags(t('Revision from %revision-date of @type %title has been deleted.', $t_args)));
+
+    // Confirm only one {panelizer_entity} record was deleted.
+    $records = db_select('panelizer_entity', 'pe')
+      ->fields('pe')
+      ->condition('entity_type', 'node')
+      ->condition('entity_id', $node->nid)
+      ->orderBy('pe.revision_id')
+      ->execute()
+      ->fetchAll();
+    $this->assertEqual($old_count, count($records) + 1);
+    $this->verbose('<pre>' . print_r($records, TRUE) . '</pre>');
+
+    // Revert to the first revision.
+    $revisions = node_revision_list($node);
+    $node_revision = array_pop($revisions);
+    $node_revision = node_load(NULL, $node_revision->vid);
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $node_revision->vid . '/revert');
+    $this->assertResponse(200);
+    $t_args = array(
+      '%revision-date' => format_date($node_revision->revision_timestamp),
+    );
+    $this->assertText(strip_tags(t('Are you sure you want to revert to the revision from %revision-date?', $t_args)));
+    $this->drupalPost(NULL, array(), t('Revert'));
+    $this->assertResponse(200);
+    $t_args = array(
+      '@type' => node_type_get_name($node_revision),
+      '%title' => $node_revision->title,
+      '%revision-date' => format_date($node_revision->revision_timestamp),
+    );
+    $this->assertText(strip_tags(t('@type %title has been reverted back to the revision from %revision-date.', $t_args)));
+
+    // Confirm one more {panelizer_entity} record was added.
+    $records = db_select('panelizer_entity', 'pe')
+      ->fields('pe')
+      ->condition('entity_type', 'node')
+      ->condition('entity_id', $node->nid)
+      ->orderBy('pe.revision_id')
+      ->execute()
+      ->fetchAll();
+    // Because one of the displays is now using a default, there'll be one less
+    // record.
+    $this->assertEqual($old_count, count($records) + 1);
+    $this->verbose('<pre>' . print_r($records, TRUE) . '</pre>');
+
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $clone_css_class));
+    $this->assertEqual(count($elements), 0, 'The node revision is not using the cloned display.');
+    // @todo Panelizer doesn't add a body class for default displays, need to
+    // add a default class.
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => $css_default_class));
+    $this->assertEqual(count($elements), 1, 'The node is using the default display again.');
+
+    // Confirm there is no record for this object that is now using the default.
+    $new_display = NULL;
+    foreach ($records as $record) {
+      if ($record->revision_id == $node_revision->vid) {
+        $new_display = $record->name;
+        break;
+      }
+    }
+    $this->assertNull($new_display);
+  }
+
+}

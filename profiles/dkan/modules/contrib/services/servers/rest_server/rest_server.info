@@ -20,9 +20,9 @@ dependencies[] = libraries (>=2.x)
 
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2016-03-11
-version = "7.x-3.14"
+; Information added by Drupal.org packaging script on 2016-08-01
+version = "7.x-3.16"
 core = "7.x"
 project = "services"
-datestamp = "1457714649"
+datestamp = "1470071341"
 

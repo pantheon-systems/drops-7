@@ -186,6 +186,35 @@ function _user_resource_definition() {
           'access callback' => 'services_access_menu',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
         ),
+        'user_pass_reset' => array(
+          'help' => 'Process one time login link and return the pass_reset_{uid} token to be used on user update operation',
+          'callback' => '_user_resource_user_pass_reset_login',
+          'args' => array(
+            array(
+              'name' => 'uid',
+              'optional' => FALSE,
+              'type' => 'int',
+              'description' => 'The uid of the user in the operation.',
+              'source' => array('data' => 'uid'),
+            ),
+            array(
+              'name' => 'timestamp',
+              'optional' => FALSE,
+              'type' => 'int',
+              'description' => 'The timestamp value from the reset password link.',
+              'source' => array('data' => 'timestamp'),
+            ),
+            array(
+              'name' => 'hashed_pass',
+              'optional' => FALSE,
+              'type' => 'string',
+              'description' => 'The hashed pass value from the reset password link.',
+              'source' => array('data' => 'hashed_pass'),
+            ),
+          ),
+          'access callback' => 'services_access_menu',
+          'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
+        ),
       ),
       'targeted_actions' => array(
         'cancel' => array(
@@ -704,6 +733,64 @@ function _user_resource_request_new_password($name) {
   }
   else {
     return FALSE;
+  }
+}
+
+function _user_resource_user_pass_reset_login($uid, $timestamp, $hashed_pass) {
+  global $user;
+
+  // When processing the one-time login link, we have to make sure that a user
+  // isn't already logged in.
+  if ($user->uid) {
+    // The existing user is already logged in.
+    if ($user->uid == $uid) {
+      return services_error(t('You are logged in as %user. Please edit your profile to update your password.', array('%user' => $user->name)), 403);
+    }
+    // A different user is already logged in on the computer.
+    else {
+      $reset_link_account = user_load($uid);
+      if (!empty($reset_link_account)) {
+        return services_error(t('Another user (%other_user) is already logged into the site on this computer, but you tried to use a one-time link for user %resetting_user. Please logout and try using the link again.', array('%other_user' => $user->name, '%resetting_user' => $reset_link_account->name)), 405);
+      }
+      else {
+        // Invalid one-time link specifies an unknown user.
+       return services_error(t('The one-time login link you clicked is invalid.'), 406);
+      }
+    }
+  }
+  else {
+    // Time out, in seconds, until login URL expires. Defaults to 24 hours =
+    // 86400 seconds.
+    $timeout = variable_get('user_password_reset_timeout', 86400);
+    $current = REQUEST_TIME;
+    // Some redundant checks for extra security ?
+    $users = user_load_multiple(array($uid), array('status' => '1'));
+    if ($timestamp <= $current && $account = reset($users)) {
+      // No time out for first time login.
+      if ($account->login && $current - $timestamp > $timeout) {
+        return services_error(t('You have tried to use a one-time login link that has expired. Please request a new one.'), 406);
+      }
+      elseif ($account->uid && $timestamp >= $account->login && $timestamp <= $current && $hashed_pass == user_pass_rehash($account->pass, $timestamp, $account->login, $account->uid)) {
+        // Set the new user.
+        $user = $account;
+        // user_login_finalize() also updates the login timestamp of the
+        // user, which invalidates further use of the one-time login link.
+        user_login_finalize();
+        watchdog('user', 'User %name used one-time login link at time %timestamp.', array('%name' => $account->name, '%timestamp' => $timestamp));
+        // Let the user's password be changed without the current password check.
+        $token = drupal_random_key();
+        $_SESSION ['pass_reset_' . $user->uid] = $token;
+        return array('pass_reset_token' => $token, 'message' => t('You have just used your one-time login link. It is no longer necessary to use this link to log in. <strong>Please change your password</strong>.'));
+      }
+      else {
+        return services_error(t('You have tried to use a one-time login link that has either been used or is no longer valid. Please request a new one.'), 406);
+      }
+    }
+    else {
+      // Deny access, no more clues.
+      // Everything will be in the watchdog's URL for the administrator to check.
+      return services_error(t('Access denied.'), 403);
+    }
   }
 }
 

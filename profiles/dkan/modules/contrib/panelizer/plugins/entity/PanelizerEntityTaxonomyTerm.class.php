@@ -15,6 +15,13 @@ class PanelizerEntityTaxonomyTerm extends PanelizerEntityDefault {
   public $views_table = 'taxonomy_term_data';
   public $uses_page_manager = TRUE;
 
+  public function init($plugin) {
+    if (module_exists('taxonomy_revision')) {
+      $this->supports_revisions = TRUE;
+    }
+    parent::init($plugin);
+  }
+
   public function entity_access($op, $entity) {
     // This must be implemented by the extending class.
     if ($op == 'update' || $op == 'delete') {
@@ -33,30 +40,6 @@ class PanelizerEntityTaxonomyTerm extends PanelizerEntityDefault {
    */
   public function entity_save($entity) {
     taxonomy_term_save($entity);
-  }
-
-  public function settings_form(&$form, &$form_state) {
-    parent::settings_form($form, $form_state);
-
-    $warn = FALSE;
-    foreach ($this->plugin['bundles'] as $info) {
-      if (!empty($info['status']) && !empty($info['view modes']['page_manager']['status'])) {
-        $warn = TRUE;
-        break;
-      }
-    }
-
-    if ($warn) {
-      $task = page_manager_get_task('term_view');
-      if (!empty($task['disabled'])) {
-        drupal_set_message('The taxonomy term template page is currently not enabled in page manager. You must enable this for Panelizer to be able to panelize taxonomy terms using the "Full page override" view mode.', 'warning');
-      }
-
-      $handler = page_manager_load_task_handler($task, '', 'term_view_panelizer');
-      if (!empty($handler->disabled)) {
-        drupal_set_message('The panelizer variant on the taxonomy term template page is currently not enabled in page manager. You must enable this for Panelizer to be able to panelize taxonomy terms using the "Full page override" view mode.', 'warning');
-      }
-    }
   }
 
   public function entity_identifier($entity) {
@@ -125,6 +108,31 @@ class PanelizerEntityTaxonomyTerm extends PanelizerEntityDefault {
     if (isset($build[$element])) {
       return $build[$element];
     }
+  }
+
+  /**
+   * Obtain the machine name of the Page Manager task.
+   *
+   * The Page Manager task for the taxonomy_term entity is "term_view", and not
+   * the expected "taxonomy_term_view".
+   */
+  public function get_page_manager_task_name() {
+    if (empty($this->plugin['uses page manager'])) {
+      return FALSE;
+    }
+    else {
+      return 'term_view';
+    }
+  }
+
+  /**
+   * Identify whether page manager is enabled for this entity type.
+   *
+   * Need to override this as Page Manager uses a different string for taxonomy
+   * terms than other entities.
+   */
+  public function is_page_manager_enabled() {
+    return variable_get('page_manager_term_view_disabled', TRUE);
   }
 
 }

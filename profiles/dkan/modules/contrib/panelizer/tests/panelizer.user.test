@@ -1,0 +1,164 @@
+<?php
+/**
+ * @file
+ * Panelizer tests.
+ */
+
+/**
+ * Verifies Panelizer configuration options for user entities.
+ */
+class PanelizerUserTest extends PanelizerTestHelper {
+
+  protected $admin_user;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer user workflow (excluding IPE)',
+      'description' => 'Test the typical workflow of working with users, excluding IPE.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    parent::setUp();
+
+    // Create a user with the necessary permissions.
+    $perms = array(
+      // Master permission for all Panelizer operations.
+      'administer panelizer',
+
+      // Full control over this entity.
+      'administer users',
+    );
+    $this->admin_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($this->admin_user);
+  }
+
+  /**
+   * Test the user configuration functionality.
+   */
+  function testUserConfiguration() {
+    // Load the users settings page.
+    $this->drupalGet('admin/config/people/accounts');
+    $this->assertResponse(200);
+
+    // Confirm that the appropriate fields are present.
+    $this->assertFieldByName('panelizer[status]');
+    $this->assertFieldByName('panelizer[help]');
+    foreach (array('page_manager', 'default') as $view_mode) {
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][status]');
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][default]');
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][choice]');
+    }
+
+    // Submit the form to panelize the user entity.
+    $edit = array(
+      // Enable Panelzier.
+      'panelizer[status]' => TRUE,
+      'panelizer[view modes][page_manager][status]' => TRUE,
+      'panelizer[view modes][page_manager][default]' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save configuration'));
+    $this->assertResponse(200);
+
+    // Confirm the settings saved correctly.
+    $pm_links = array(
+      '!pm' => l('Page Manager', 'admin/structure/pages'),
+      '!panels' => l('Panels', 'admin/structure/panels'),
+      '!task_name' => 'user_view',
+      '!entity_type' => 'user',
+    );
+    $this->assertText(strip_tags(t('Note: "!task_name" display must be enabled in !pm in order for the !entity_type full page display ("Full page override") to work correctly.', $pm_links)));
+    $this->assertText(t('The configuration options have been saved.'));
+
+    // Verify the user can be panelized.
+    $this->drupalGet('user/' . $this->admin_user->uid);
+    $this->assertResponse(200);
+    $this->assertLink('Customize display', 0, 'The "Customize display" link appears on the page');
+    $this->assertLinkByHref('user/' . $this->admin_user->uid . '/panelizer', 0, 'A link to customize the user page display appears on the page');
+
+    // Check that the view mode has not been panelized yet.
+    $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panelizer-view-mode'));
+    $this->assertEqual(count($elements), 0, 'The user object display is not panelized yet.');
+    $this->assertText(t('Member for'));
+
+    // Enable the Page Manager handler for the user_view display.
+    variable_set('page_manager_user_view_disabled', FALSE);
+
+    drupal_flush_all_caches();
+
+    // Check that the view mode has now been panelized.
+    $this->drupalGet('user/' . $this->admin_user->uid);
+    $this->assertResponse(200);
+    $this->assertLink('Customize display', 0, 'The "Customize display" link appears on the page');
+    $this->assertLinkByHref('user/' . $this->admin_user->uid . '/panelizer', 0, 'A link to customize the user page display appears on the page');
+    $this->assertNoText(t('Member for'));
+    // This won't be available because there's no default display for the user
+    // entity.
+    // $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panelizer-view-mode'));
+    // $this->assertEqual(count($elements), 1, 'The user object display is now panelized.');
+  }
+
+  /**
+   * Confirm that individual objects can be panelized.
+   */
+  function testUserPanelizeIt() {
+    $this->togglePanelizer('user', 'user', 'default', 1, 0, 0);
+
+    // Check that the view mode can be panelized.
+    $this->drupalGet('user/' . $this->admin_user->uid . '/panelizer');
+    $this->assertResponse(200);
+    $this->assertText('Default');
+    $this->assertLink('panelize', 0, 'The panelize link for the default view mode appears on the page');
+    $this->assertLinkByHref('user/' . $this->admin_user->uid . '/panelizer/default', 0, 'A link to panelize the default view mode appears on the page');
+
+    // Verify that the view mode is not currently panelized.
+    $this->drupalGet('user/' . $this->admin_user->uid . '/panelizer/default');
+    $this->assertResponse(200);
+    $this->assertRaw(t('This %entity is not currently panelized.', array('%entity' => 'User')));
+
+    // Panelize the view mode.
+    $this->drupalPost(NULL, array(), t('Panelize it!'));
+    $this->assertResponse(200);
+
+    // Check that the view mode has been panelized.
+    $this->drupalGet('user/' . $this->admin_user->uid);
+    $this->assertResponse(200);
+    $this->assertNoText(t('Member for'), 'The user is panelized');
+
+    // This won't be available because there's no default display for the user
+    // entity.
+    // $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panelizer-view-mode'));
+    // $this->assertEqual(count($elements), 1, 'The user is panelized.');
+  }
+
+  /**
+   *
+   */
+  // function testUserPanelsDefault() {
+  //   $this->enableVocabPanelizer(1, 1);
+  //   $term = $this->createTestTerm();
+  //
+  //   // Verify that the view mode has a default panel.
+  //   $this->drupalGet('admin/structure/taxonomy/panelizer_vocabulary/panelizer');
+  //   $this->assertResponse(200);
+  //   $this->assertLinkByHref('admin/structure/taxonomy/panelizer_vocabulary/panelizer/default', 0, 'User is able to provide default panel for default');
+  //
+  //   $edit = array();
+  //   $edit['layout'] = 'twocol_bricks';
+  //   $this->drupalPost('admin/structure/taxonomy/panelizer_vocabulary/panelizer/default/layout', $edit, t('Save'));
+  //
+  //   // Check that the layout has been set.
+  //   $this->drupalGet('taxonomy/term/' . $term->tid);
+  //   $this->assertResponse(200);
+  //   $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panel-2col-bricks'));
+  //   $this->assertEqual(count($elements), 1, 'The default term layout has been set.');
+  // }
+
+}
