@@ -197,10 +197,10 @@ ManualCrop.showCroptool = function(identifier, style, fid) {
               options.aspectRatio = styleSettings.data.width + ':' + styleSettings.data.height;
             }
         }
-
-        // Set the image style name.
-        $('.manualcrop-style-name', ManualCrop.croptool).text(styleSettings.label);
       }
+
+      // Set the image style name.
+      $('.manualcrop-style-name', ManualCrop.croptool).text(styleName);
 
       if (typeof styleSelect != 'undefined') {
         // Reset the image style selection list.

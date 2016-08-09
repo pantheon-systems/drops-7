@@ -32,7 +32,7 @@ class panelizer_handler_panelizer_status extends views_handler_field_entity {
       '#type' => 'textfield',
       '#title' => t('Customized text'),
       '#default_value' => $this->options['custom'],
-      '#description' => t('Text to display if the entity has a custom panel.'),
+      '#description' => t('Text to display if the entity has a custom display.'),
     );
     $form['not_panelized'] = array(
       '#type' => 'textfield',

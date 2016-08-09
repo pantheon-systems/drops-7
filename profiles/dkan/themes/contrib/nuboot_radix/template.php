@@ -295,8 +295,8 @@ function nuboot_radix_preprocess_node(&$variables) {
     $body_value = $wrapper->body->value();
     $variables['body'] = empty($body_value) ? '' : $wrapper->body->value->value();
     $variables['node_url'] = drupal_lookup_path('alias', "node/" . $wrapper->getIdentifier());
-    if ($variables['type'] == 'resource' && $wrapper->field_dataset_ref->count() > 0) { 
-      foreach ($wrapper->field_dataset_ref as $dataset) { 
+    if ($variables['type'] == 'resource' && $wrapper->field_dataset_ref->count() > 0) {
+      foreach ($wrapper->field_dataset_ref as $dataset) {
         $variables['dataset_list'] .= '<li>' . $dataset->label() . '</li>';
       }
     }

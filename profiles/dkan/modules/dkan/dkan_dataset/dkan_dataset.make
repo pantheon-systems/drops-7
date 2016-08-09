@@ -13,10 +13,10 @@ includes[leaflet_draw_widget_make] = https://raw.githubusercontent.com/NuCivic/l
 ; Recline specific
 projects[recline][download][type] = git
 projects[recline][download][url] = https://github.com/NuCivic/recline.git
-projects[recline][download][tag] = 7.x-1.12.6
+projects[recline][download][tag] = 7.x-1.12.7
 projects[recline][subdir] = contrib
 
-includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.6/recline.make
+includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.7/recline.make
 
 ; Contrib Modules
 projects[autocomplete_deluxe][subdir] = contrib
@@ -145,7 +145,7 @@ projects[open_data_schema_map][subdir] = contrib
 projects[open_data_schema_map_dkan][type] = module
 projects[open_data_schema_map_dkan][download][type] = git
 projects[open_data_schema_map_dkan][download][url] = https://github.com/NuCivic/open_data_schema_map_dkan.git
-projects[open_data_schema_map_dkan][download][revision] = 80d882df888bc0cf8d69947aa579a99b73442d66
+projects[open_data_schema_map_dkan][download][revision] = 0d56426897f7736076fb10b275a035a7dbb7ab2b
 projects[open_data_schema_map_dkan][subdir] = contrib
 
 projects[pathauto][version] = 1.2
@@ -167,7 +167,7 @@ projects[ref_field][subdir] = contrib
 projects[ref_field][type] = module
 
 projects[remote_file_source][version] = 1.x
-projects[remote_file_source][patch][2362487] = https://www.drupal.org/files/issues/remote_file_source-location-content-dist.patch
+projects[remote_file_source][patch][2362487] = https://www.drupal.org/files/issues/remote_file_source-location-content-dist_1.patch
 projects[remote_file_source][subdir] = contrib
 
 projects[remote_stream_wrapper][version] = 1.0-rc1
@@ -188,8 +188,7 @@ projects[strongarm][subdir] = contrib
 projects[token][version] = 1.6
 projects[token][subdir] = contrib
 
-projects[uuid][version] = 1.0-beta1
-projects[uuid][patch][1927474] = http://drupal.org/files/unknown-column-in-field-list-fix-1927474-2.patch
+projects[uuid][version] = 1.0-beta2
 projects[uuid][subdir] = contrib
 
 projects[views][version] = 3.14

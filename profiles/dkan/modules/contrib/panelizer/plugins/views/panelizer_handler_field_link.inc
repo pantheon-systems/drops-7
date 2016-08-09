@@ -63,7 +63,7 @@ class panelizer_handler_field_link extends views_handler_field_node_link {
 
     list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
 
-    if ($handler && $handler->is_panelized($bundle) && $handler->panelizer_access($this->options['panelizer_tab'], $entity)) {
+    if ($handler && $handler->is_panelized($bundle) && $handler->panelizer_access($this->options['panelizer_tab'], $entity, $this->options['view_mode'])) {
       $this->options['alter']['make_link'] = TRUE;
 
       $path = str_replace("%$entity_type", $entity_id, $handler->plugin['entity path']) . '/panelizer/' . $this->options['view_mode'] . '/' . $this->options['panelizer_tab'];

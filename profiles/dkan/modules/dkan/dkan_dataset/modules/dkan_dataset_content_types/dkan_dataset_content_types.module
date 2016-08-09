@@ -132,3 +132,47 @@ function dkan_dataset_content_types_preprocess_field(&$vars) {
   return;
 
 }
+
+/**
+ * Map of iso frequency ranges to field frequency allowed values.
+ */
+function dkan_dataset_content_types_iso_frecuency_map() {
+  return array(
+    'R/P10Y' => 6,
+    'R/P4Y' => 7,
+    'R/P1Y' => 3,
+    'R/P2M' => 8,
+    'R/P0.5M' => 8,
+    'R/P3.5D' => 9,
+    'R/P1D' => 0,
+    'R/P2W' => 10,
+    'R/P0.5W' => 10,
+    'R/P6M' => 11,
+    'R/P2Y' => 12,
+    'R/P3Y' => 13,
+    'R/P0.33W' => 14,
+    'R/P0.33M' => 15,
+    'R/PT1S' => 4,
+    'R/P1M' => 2,
+    'R/P3M' => 16,
+    'R/P0.5M' => 18,
+    'R/P4M' => 17,
+    'R/P1W' => 1,
+  );
+}
+
+/**
+ * Convert a frequency from iso to the field value representation.
+ */
+function dkan_dataset_content_types_iso2frequency($accrualPeriodicity) {
+  $map = dkan_dataset_content_types_iso_frecuency_map();
+  return $map[$accrualPeriodicity];
+}
+
+/**
+ * Convert a frequency from a field value to the iso representation.
+ */
+function dkan_dataset_content_types_frequency2iso($frecuencyIndex) {
+  $map = array_flip(dkan_dataset_content_types_iso_frecuency_map());
+  return $map[$accrualPeriodicity];
+}

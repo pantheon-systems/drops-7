@@ -82,7 +82,9 @@ $plugin = array(
  * Figure out the correct context to use for this panelizer.
  */
 function _panelizer_panelizer_task_get_context($handler, $contexts) {
-  if (isset($handler->conf['context']) && !empty($contexts[$handler->conf['context']])) {
+  $contexts = ctools_context_handler_get_handler_contexts($contexts, $handler);
+
+  if (isset($handler->conf['context']) && is_string($handler->conf['context']) && !empty($contexts[$handler->conf['context']])) {
     return $contexts[$handler->conf['context']];
   }
 
@@ -93,11 +95,37 @@ function _panelizer_panelizer_task_get_context($handler, $contexts) {
   }
 
   // Fail!
-  return stdClass();
+  return new stdClass();
 }
 
 /**
- * Provide appropriate contextual links for Panelizer controled entities.
+ * Get extra contexts to pass from page manager to panelizer.
+ *
+ * @param $handler
+ *   The handler object.
+ * @param $base_contexts
+ *   The base contexts from page manager.
+ *
+ * @return array
+ *   All contexts defined in page manager other than the panelized entity
+ *   context.
+ */
+function _panelizer_panelizer_task_get_extra_contexts($handler, $base_contexts) {
+  $extra_contexts = ctools_context_handler_get_handler_contexts($base_contexts, $handler);
+
+  // Remove the panelized context to prevent duplication in the extra contexts.
+  if (isset($handler->conf['context']) && !empty($extra_contexts[$handler->conf['context']])) {
+    unset($extra_contexts[$handler->conf['context']]);
+  }
+  elseif (!empty($extra_contexts)) {
+    array_shift($extra_contexts);
+  }
+
+  return $extra_contexts;
+}
+
+/**
+ * Provide appropriate contextual links for Panelizer controlled entities.
  */
 function panelizer_panelizer_task_contextual_link($handler, $plugin, $contexts, $args) {
   $links = array();
@@ -109,11 +137,14 @@ function panelizer_panelizer_task_contextual_link($handler, $plugin, $contexts, 
 
   $entity = &$context->data;
 
-  if (empty($entity->panelizer['page_manager'])) {
+  // Only show links for this view mode.
+  $view_mode = 'page_manager';
+
+  if (empty($entity->panelizer[$view_mode])) {
     return FALSE;
   }
 
-  $panelizer = $entity->panelizer['page_manager'];
+  $panelizer = $entity->panelizer[$view_mode];
   // One of these two will always be set.
   $entity_type = !empty($panelizer->entity_type) ? $panelizer->entity_type : $panelizer->panelizer_type;
 
@@ -129,32 +160,63 @@ function panelizer_panelizer_task_contextual_link($handler, $plugin, $contexts, 
     }
 
     $bits[] = 'panelizer';
-    $bits[] = 'page_manager';
+    $bits[] = $view_mode;
 
     $base_path = implode('/', $bits);
-    if ($entity_handler->panelizer_access('settings', $entity, 'page_manager')) {
+    if ($entity_handler->panelizer_access('settings', $entity, $view_mode)) {
       $links['settings'] = array(
-        'title' => t('Edit panelizer settings'),
+        'title' => t("Edit custom display settings"),
         'href' => "$base_path/settings",
       );
     }
-    if ($entity_handler->panelizer_access('context', $entity, 'page_manager')) {
+    if ($entity_handler->panelizer_access('context', $entity, $view_mode)) {
       $links['context'] = array(
-        'title' => t('Edit panelizer contexts'),
+        'title' => t('Edit custom display contexts'),
         'href' => "$base_path/context",
       );
     }
-    if ($entity_handler->panelizer_access('layout', $entity, 'page_manager')) {
+    if ($entity_handler->panelizer_access('layout', $entity, $view_mode)) {
       $links['layout'] = array(
-        'title' => t('Edit panelizer layout'),
+        'title' => t('Edit custom display layout'),
         'href' => "$base_path/layout",
       );
     }
-    if ($entity_handler->panelizer_access('content', $entity, 'page_manager')) {
+    if ($entity_handler->panelizer_access('content', $entity, $view_mode)) {
       $links['content'] = array(
-        'title' => t('Edit panelizer content'),
+        'title' => t('Edit custom display content'),
         'href' => "$base_path/content",
       );
+    }
+
+    // Work out what the default display is called.
+    $default_display_name = $entity_handler->get_default_display_default_name($bundle, $view_mode);
+    // If the default display is defined, add links to edit it.
+    if (!empty($default_display_name)) {
+      $template_base_path = "admin/structure/types/manage/{$bundle}/panelizer/{$view_mode}/{$default_display_name}";
+      if ($entity_handler->panelizer_access('settings', $entity, $view_mode)) {
+        $links['default_settings'] = array(
+          'title' => t('Edit default display settings'),
+          'href' => "$template_base_path/settings",
+        );
+      }
+      if ($entity_handler->panelizer_access('context', $entity, $view_mode)) {
+        $links['default_context'] = array(
+          'title' => t('Edit default display contexts'),
+          'href' => "$template_base_path/context",
+        );
+      }
+      if ($entity_handler->panelizer_access('layout', $entity, $view_mode)) {
+        $links['default_layout'] = array(
+          'title' => t('Edit default display layout'),
+          'href' => "$template_base_path/layout",
+        );
+      }
+      if ($entity_handler->panelizer_access('content', $entity, $view_mode)) {
+        $links['default_content'] = array(
+          'title' => t('Edit default display content'),
+          'href' => "$template_base_path/content",
+        );
+      }
     }
   }
 
@@ -240,12 +302,14 @@ function panelizer_panelizer_task_render($handler, $base_contexts, $args, $test 
   $address = implode('::', array('page_manager', $handler->task, $handler->subtask, $handler->name, implode('..', $args)));
 
   if ($entity_handler = panelizer_entity_plugin_get_handler($entity_type)) {
-    $info = $entity_handler->render_entity($context->data, 'page_manager', NULL, $args, $address);
+    $extra_contexts = _panelizer_panelizer_task_get_extra_contexts($handler, $base_contexts);
+    $info = $entity_handler->render_entity($context->data, 'page_manager', NULL, $args, $address, $extra_contexts);
 
-    // Remove and add body element classes
-    $panel_body_css = &drupal_static('panel_body_css');
-    if (!empty($info['classes_array']) && !isset($panel_body_css['body_classes_to_add'])) {
-      $panel_body_css['body_classes_to_add'] = implode(' ', $info['classes_array']);
+    // Add body element classes, appending to the existing value.
+    $panel_body_css = &drupal_static('panel_body_css', array());
+    if (!empty($info['classes_array'])){
+      $panel_body_css += array('body_classes_to_add' => '');
+      $panel_body_css['body_classes_to_add'] = trim($panel_body_css['body_classes_to_add'] . ' ' . implode(' ', $info['classes_array']));
     }
 
     return $info;
@@ -259,9 +323,7 @@ function panelizer_panelizer_task_render($handler, $base_contexts, $args, $test 
  * a display.
  */
 function panelizer_panelizer_task_test($handler, $base_contexts) {
-  if (empty($base_contexts)) {
-    return;
-  }
+  ctools_include('context');
 
   if (!ctools_context_handler_select($handler, $base_contexts)) {
     return;
@@ -358,6 +420,22 @@ function panelizer_panelizer_task_edit_settings($form, &$form_state) {
     '#title' => t('Administrative title'),
     '#description' => t('Administrative title of this variant.'),
   );
+  $name = isset($conf['name']) ? $conf['name'] : FALSE;
+  $form['name'] = array(
+    '#type' => 'machine_name',
+    '#title' => t('Machine name'),
+    '#required' => FALSE,
+    '#default_value' => $name,
+    '#description' => t("A unique machine-readable name for this variant. It must only contain lowercase letters, numbers, and underscores. This name will be used when exporting the variant. If left empty the variant's name will be used instead."),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#machine_name' => array(
+      'exists' => 'page_manager_handler_check_machine_name',
+      'source' => array('title'),
+    ),
+    '#field_prefix' => '<span dir="ltr">' . $form_state['task_name'] . '__',
+    '#field_suffix' => '</span>&lrm;',
+  );
 
   $contexts = ctools_context_handler_get_all_contexts($form_state['task'], $form_state['subtask'], $form_state['handler']);
 
@@ -368,12 +446,24 @@ function panelizer_panelizer_task_edit_settings($form, &$form_state) {
 }
 
 function panelizer_panelizer_task_edit_settings_submit($form, &$form_state) {
+  $machine_name = $form_state['handler']->name;
+  $name = $form_state['task_id'] . '__' . $form_state['values']['name'];
+
+  // If new name doesn't equal machine name, we need to update and redirect.
+  if ($machine_name !== $name) {
+    $form_state['new trail'] = $form_state['trail'];
+    $delta = array_search($machine_name, $form_state['new trail']);
+    $form_state['new trail'][$delta] = $name;
+    $form_state['handler']->name = $name;
+  }
+
   $form_state['handler']->conf['title'] = $form_state['values']['title'];
+  $form_state['handler']->conf['name'] = $form_state['values']['name'];
   $form_state['handler']->conf['context'] = $form_state['values']['context'];
 }
 
 /**
- * Set up a title for the panel based upon the selection rules.
+ * Set up a title for the display based upon the selection rules.
  */
 function panelizer_panelizer_task_title($handler, $task, $subtask) {
   if (isset($handler->conf['title'])) {

@@ -119,11 +119,14 @@ function services_requirements($phase) {
   // Warn users of the possible threat.
   if ($phase == 'runtime') {
     //Pull endpoints that do not have services authentication enabled
-    $result = db_query('SELECT * FROM {services_endpoint} AS se WHERE se.authentication NOT LIKE :services', array(':services' => '%services%'));
+    module_load_include('module', 'services');
+    $endpoints = services_endpoint_load_all();
     $items = array();
     // Build our items array
-    foreach ($result as $endpoint) {
-      $items[] = l($endpoint->name, 'admin/structure/services/list/'. $endpoint->name .'/edit');
+    foreach ($endpoints as $endpoint) {
+      if (empty($endpoint->disabled) && empty($endpoint->authentication)) {
+        $items[] = l($endpoint->name, 'admin/structure/services/list/' . $endpoint->name . '/edit');
+      }
     }
     // theme the endpoints list
     $endpoints = '';

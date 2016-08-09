@@ -17,7 +17,7 @@ function panelizer_admin_hook_menu(&$items) {
     'file' => 'includes/admin.inc',
   );
 
-  $items['admin/config/content/panelizer'] = array(
+  $items['admin/structure/panelizer'] = array(
     'title' => 'Panelizer',
     'description' => 'Configure panelizer availability and defaults',
     'page callback' => 'drupal_get_form',
@@ -25,25 +25,25 @@ function panelizer_admin_hook_menu(&$items) {
     'type' => MENU_NORMAL_ITEM,
   ) + $settings_base;
 
-  $items['admin/config/content/panelizer/%panelizer_handler/%/allowed'] = array(
+  $items['admin/structure/panelizer/%panelizer_handler/%/allowed'] = array(
     'title' => 'Allowed content',
     'page callback' => 'panelizer_allowed_content_page',
-    'page arguments' => array(4, 5),
+    'page arguments' => array(3, 4),
     'type' => MENU_CALLBACK,
     'weight' => -10,
   ) + $settings_base;
 
   $tabs_base = array(
     'access callback' => 'panelizer_has_no_choice_callback',
-    'access arguments' => array(4, 5),
-    'page arguments' => array(4, 5, 'default', ''),
+    'access arguments' => array(3, 4),
+    'page arguments' => array(3, 4, 'default', ''),
     'type' => MENU_LOCAL_TASK,
     'file' => 'includes/admin.inc',
   );
 
-  $items['admin/config/content/panelizer/%panelizer_handler/%'] = array(
+  $items['admin/structure/panelizer/%panelizer_handler/%'] = array(
     'title callback' => 'panelizer_default_title_callback',
-    'title arguments' => array(4, 5),
+    'title arguments' => array(3, 4),
     'title' => 'Settings',
     'page callback' => 'panelizer_default_settings_page',
     'weight' => -5,
@@ -52,30 +52,30 @@ function panelizer_admin_hook_menu(&$items) {
 
   $index = 0;
   foreach (panelizer_operations() as $path => $operation) {
-    $items['admin/config/content/panelizer/%panelizer_handler/%/' . $path] = array(
+    $items['admin/structure/panelizer/%panelizer_handler/%/' . $path] = array(
       'title' => $operation['menu title'],
       'page callback' => $operation['admin callback'],
       'weight' => $index - 5,
       'type' => ($index === 0) ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
     ) + $tabs_base;
     if (isset($operation['file'])) {
-      $items['admin/config/content/panelizer/%panelizer_handler/%/' . $path]['file'] = $operation['file'];
+      $items['admin/structure/panelizer/%panelizer_handler/%/' . $path]['file'] = $operation['file'];
     }
     if (isset($operation['file path'])) {
-      $items['admin/config/content/panelizer/%panelizer_handler/%/' . $path]['file path'] = $operation['file path'];
+      $items['admin/structure/panelizer/%panelizer_handler/%/' . $path]['file path'] = $operation['file path'];
     }
     $index++;
   }
 
   $subtabs_base = array(
     'access callback' => 'panelizer_administer_panelizer_default',
-    'access arguments' => array(4, 5, 7),
-    'page arguments' => array(4, 5, 7, ''),
+    'access arguments' => array(3, 4, 6),
+    'page arguments' => array(3, 4, 6, ''),
     'type' => MENU_LOCAL_TASK,
     'file' => 'includes/admin.inc',
   );
 
-  $items['admin/config/content/panelizer/%panelizer_handler/%/list/%'] = array(
+  $items['admin/structure/panelizer/%panelizer_handler/%/list/%'] = array(
     'title' => 'Settings',
     'page callback' => 'panelizer_default_settings_page',
     'title callback' => 'panelizer_default_name_title_callback',
@@ -84,21 +84,21 @@ function panelizer_admin_hook_menu(&$items) {
 
   $index = 0;
   foreach (panelizer_operations() as $path => $operation) {
-    $items['admin/config/content/panelizer/%panelizer_handler/%/list/%/' . $path] = array(
+    $items['admin/structure/panelizer/%panelizer_handler/%/list/%/' . $path] = array(
       'title' => $operation['menu title'],
       'page callback' => $operation['admin callback'],
       'weight' => $index - 5,
     ) + $subtabs_base;
     if (isset($operation['file'])) {
-      $items['admin/config/content/panelizer/%panelizer_handler/%/list/%/' . $path]['file'] = $operation['file'];
+      $items['admin/structure/panelizer/%panelizer_handler/%/list/%/' . $path]['file'] = $operation['file'];
     }
     if (isset($operation['file path'])) {
-      $items['admin/config/content/panelizer/%panelizer_handler/%/list/%/' . $path]['file path'] = $operation['file path'];
+      $items['admin/structure/panelizer/%panelizer_handler/%/list/%/' . $path]['file path'] = $operation['file path'];
     }
     $index++;
   }
 
-  $items['admin/config/content/panelizer/%panelizer_handler/%/list/%/access'] = array(
+  $items['admin/structure/panelizer/%panelizer_handler/%/list/%/access'] = array(
     'title' => 'Access',
     'page callback' => 'panelizer_default_access_page',
     'weight' => -2,
@@ -237,7 +237,7 @@ function panelizer_default_settings_page($handler, $bundle, $name, $view_mode) {
 
   $panelizer = $handler->get_default_panelizer_object($bundle, $name);
   if (empty($panelizer)) {
-    return MENU_NOT_FOUND;
+    return t('No default display has been configured for this view mode.');
   }
 
   $form_state = array(
@@ -270,6 +270,10 @@ function panelizer_default_settings_page($handler, $bundle, $name, $view_mode) {
  * Delete a panelizer node panel from the database.
  */
 function panelizer_delete_panelizer_defaults($panelizer) {
+  // Allow modules to react on a default Panelizer object before deletion.
+  // Triggers hook_panelizer_delete_default().
+  module_invoke_all('panelizer_delete_default', $panelizer);
+
   if (!empty($panelizer->pnid)) {
     if (!empty($panelizer->did)) {
       panels_delete_display($panelizer->did);
@@ -292,10 +296,16 @@ function panelizer_default_context_page($handler, $bundle, $name, $view_mode) {
     $bundle .= '.' . $view_mode;
   }
 
-  $cache_key = $handler->entity_type . ':' . $bundle . ':' . $name;
+  // Verify there's a Panelizer display available.
+  $panelizer = $handler->get_default_panelizer_object($bundle, $name);
+  if (empty($panelizer)) {
+    return t('No default display has been configured for this view mode.');
+  }
+
+  $cache_key = implode(':', array($handler->entity_type, $bundle, $name));
   $panelizer = panelizer_context_cache_get('default', $cache_key);
   if (empty($panelizer)) {
-    return MENU_NOT_FOUND;
+    return t('No default display has been configured for this view mode.');
   }
 
   $form_state = array(
@@ -336,29 +346,30 @@ function panelizer_default_layout_page($handler, $bundle, $name, $view_mode, $st
     $handler = panelizer_entity_plugin_get_handler($handler);
   }
 
+  $original_bundle = $bundle;
   if ($view_mode) {
     $bundle .= '.' . $view_mode;
   }
 
   $panelizer = $handler->get_default_panelizer_object($bundle, $name);
   if (empty($panelizer)) {
-    return MENU_NOT_FOUND;
+    return t('No default display has been configured for this view mode.');
   }
 
   $display = $panelizer->display;
   $display->context = $handler->get_contexts($panelizer);
 
   if ($name == 'default' && $handler->has_default_panel($bundle)) {
-    $path = 'admin/config/content/panelizer/' . $handler->entity_type . '/' . $bundle;
+    $path = 'admin/structure/panelizer/' . $handler->entity_type . '/' . $bundle;
   }
   else {
-    $path = 'admin/config/content/panelizer/' . $handler->entity_type . '/' . $bundle . '/list/' . $name ;
+    $path = 'admin/structure/panelizer/' . $handler->entity_type . '/' . $bundle . '/list/' . $name ;
   }
 
   $form_state = array(
     'display' => $display,
     'wizard path' => $path . '/layout/%step',
-    'allowed_layouts' => 'panelizer_' . $handler->entity_type . ':' . $bundle,
+    'allowed_layouts' => panelizer_get_allowed_layouts_option($handler->entity_type, $original_bundle),
   );
 
   ctools_include('common', 'panelizer');
@@ -391,9 +402,8 @@ function panelizer_default_access_page($handler, $bundle, $name, $view_mode) {
 
   $panelizer = $handler->get_default_panelizer_object($bundle, $name);
   if (empty($panelizer)) {
-    return MENU_NOT_FOUND;
+    return t('No default display has been configured for this view mode.');
   }
-
   $argument = $name;
 
   ctools_include('context-access-admin');
@@ -453,10 +463,10 @@ function panelizer_default_content_page($handler, $bundle, $name, $view_mode) {
 
   $panelizer = $handler->get_default_panelizer_object($bundle, $name);
   if (empty($panelizer)) {
-    return MENU_NOT_FOUND;
+    return t('No default display has been configured for this view mode.');
   }
 
-  $cache_key = 'panelizer:default:' . $handler->entity_type . ':' . $bundle . ':' . $name;
+  $cache_key = implode(':', array('panelizer', 'default', $handler->entity_type, $bundle, $name));
 
   $form_state = array(
     'display cache' => panels_edit_cache_get($cache_key),
@@ -477,6 +487,9 @@ function panelizer_default_content_page($handler, $bundle, $name, $view_mode) {
 
     panels_edit_cache_clear($form_state['display cache']);
     drupal_goto($_GET['q']);
+  }
+  elseif ($form_state['display cache']->display->did === 'new') {
+    panels_edit_cache_set($form_state['display cache']);
   }
 
   ctools_set_no_blocks(FALSE);

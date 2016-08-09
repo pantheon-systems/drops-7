@@ -16,6 +16,7 @@ class panelizer_handler_filter_panelizer_status extends views_handler_filter_in_
       );
 
       ctools_include('export');
+      $options = array();
       $defaults = ctools_export_load_object('panelizer_defaults', 'conditions', $conditions);
 
       foreach ($defaults as $name => $default) {

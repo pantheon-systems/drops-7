@@ -13,7 +13,7 @@ Dependencies
         + Download: https://github.com/desandro/imagesloaded/archive/v2.1.2.tar.gz
     - imgAreaSelect:
         + Website: http://odyniec.net/projects/imgareaselect
-        + Download: https://github.com/odyniec/imgareaselect/archive/v0.9.11-rc.1.tar.gz
+        + Download: http://odyniec.net/projects/imgareaselect/jquery.imgareaselect-0.9.10.zip
 
 Installation
 ------------
@@ -28,7 +28,7 @@ which can only be obtained by installing the jQuery Update module.
 
 Now download and extract the imgAreaSelect plugin, rename extracted folder to
 "jquery.imgareaselect" and copy it into "sites/all/libraries". The plugin should
-now be located at "sites/all/libraries/jquery.imgareaselect/jquery.imgareaselect.dev.js".
+now be located at "sites/all/libraries/jquery.imgareaselect/scripts/jquery.imgareaselect.min.js".
 
 When finished you can activate the module via the Modules page!
 

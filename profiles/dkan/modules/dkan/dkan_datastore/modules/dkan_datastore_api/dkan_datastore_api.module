@@ -322,7 +322,7 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
     }
   }
   catch (Exception $ex) {
-    return array('Caught exception: ' . $ex->getMessage());
+    return array('error' => array('message' => 'Caught exception: ' . $ex->getMessage()));
   }
   $count = dkan_datastore_api_count($table, $offset, $limit, $fields, $filters, $query);
   $results = services_resource_execute_index_query($data_select);

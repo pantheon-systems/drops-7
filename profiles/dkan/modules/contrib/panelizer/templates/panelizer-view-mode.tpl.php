@@ -1,5 +1,17 @@
 <?php
-// @todo document this!
+/**
+ * Default template for rendering a Panelizer-managed view mode.
+ *
+ * Available variables:
+ * - $classes_array - An array of classes determined in
+ *   template_preprocess_views_view().
+ * - $title - The label/title for this entity.
+ * - $title_element - HTML tag used by the title, defaults to 'h2'.
+ * - $content - Rendered entity output for this view mode.
+ * - $entity_url - The full URL for this entity.
+ *
+ * @see preprocess_panelizer_view_mode()
+ */
 ?>
 
 <div class="<?php print $classes; ?>"<?php print $attributes; ?>>

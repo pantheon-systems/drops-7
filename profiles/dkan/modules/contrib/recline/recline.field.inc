@@ -413,9 +413,7 @@ function theme_recline_default_formatter($variables) {
  */
 function recline_default_formatter_output($variables) {
   $file = $variables['item'];
-
   $url = file_create_url($file['uri']);
-
   $icon = '';
 
   $format = recline_get_data_type($file['filemime']);
@@ -439,18 +437,18 @@ function recline_default_formatter_output($variables) {
     $link_text = $file->description;
     $options['attributes']['title'] = check_plain($file['filename']);
   }
-  $dkan = $table = FALSE;
+  $datastoreStatus = $table = FALSE;
   // See if datastore is loaded, if so, prepare recline to view from it.
   if (module_exists('dkan_datastore_api') && module_exists('feeds_flatstore_processor') && function_exists('dkan_datastore_api_get_feeds_source')) {
     $source_id = dkan_datastore_api_get_feeds_source($variables['item']['entity']->nid);
     if ($table = feeds_flatstore_processor_table_name($source_id, $variables['item']['entity']->nid)) {
       if (db_table_exists($table)) {
-        $dkan = $table;
+        $datastoreStatus = $table;
       }
     }
   }
   $recline = '';
-
+  $module_path = drupal_get_path('module', 'recline');
   libraries_load('lodash');
   libraries_load('backbone');
   $recline = libraries_load('recline');
@@ -459,63 +457,58 @@ function recline_default_formatter_output($variables) {
   libraries_load('moment');
   libraries_load('slickgrid');
   libraries_load('leaflet');
-
   libraries_load('flot');
   libraries_load('deep_diff');
   libraries_load('recline_deeplink');
   libraries_load('leaflet_markercluster');
+  drupal_add_library('system', 'ui.sortable');
+  drupal_add_js($module_path . '/backend.ckan_get.js');
+  drupal_add_js($module_path . '/recline.js');
+  drupal_add_css($module_path . '/recline.css');
 
   if (isset($variables['item']['grid']) &&
     isset($variables['item']['graph']) &&
     isset($variables['item']['map']) &&
     isset($variables['item']['embed'])) {
+
     if ($variables['item']['map'] || $variables['item']['grid'] || $variables['item']['graph'] || $variables['item']['embed']) {
       $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
-      drupal_add_library('system', 'ui.sortable');
-
-      $module_path = drupal_get_path('module', 'recline');
-      drupal_add_js($module_path . '/backend.ckan_get.js');
-      drupal_add_js($module_path . '/recline.app.js');
-      drupal_add_css($module_path . '/recline.css');
-      $file_path = isset($variables['item']['uri']) ? file_create_url($variables['item']['uri']) : "";
+      $file_path = isset($variables['item']['uri']) ? file_create_url($variables['item']['uri']) : '';
+      $real_path = drupal_realpath($variables['item']['uri']);
       $settings['recline'] = array(
         'file' => $file_path,
+        'fileType' => $variables['item']['filemime'],
+        'fileSize' => (file_exists($real_path)) ? filesize($real_path) : 0,
         'delimiter' => $variables['item']['delimiter'],
         'grid' => (int) $variables['item']['grid'],
         'graph' => (int) $variables['item']['graph'],
         'map' => (int) $variables['item']['map'],
         'embed' => (int) $variables['item']['embed'],
         'uuid' => $uuid,
-        'fileType' => $variables['item']['filemime'],
-        'dkan' => $dkan,
-        'ajax_timeout' => variable_get(RECLINE_AJAX_CALL_TIMEOUT, RECLINE_AJAX_CALL_DEFAULT_TIMEOUT),
+        'datastoreStatus' => $datastoreStatus,
+        'maxSizePreview' => variable_get('file_size_preview_limit', FILE_SIZE_PREVIEW_LIMIT),
       );
       drupal_add_js($settings, 'setting');
     }
   }
   else {
-    $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
-    drupal_add_library('system', 'ui.sortable');
-
-
-
     $module_path = drupal_get_path('module', 'recline');
-    drupal_add_js($module_path . '/backend.ckan_get.js');
-    drupal_add_js($module_path . '/recline.app.js');
-    drupal_add_css($module_path . '/recline.css');
-    $file_path = isset($variables['item']['uri']) ? file_create_url($variables['item']['uri']) : "";
-    $delimiter = isset($variables['item']['delimiter']) ? $variables['item']['delimiter'] : ",";
+    $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
+    $file_path = isset($variables['item']['uri']) ? file_create_url($variables['item']['uri']) : '';
+    $delimiter = isset($variables['item']['delimiter']) ? $variables['item']['delimiter'] : ',';
+    $real_path = drupal_realpath($variables['item']['uri']);
     $settings['recline'] = array(
       'file' => $file_path,
+      'fileType' => $variables['item']['filemime'],
+      'fileSize' => (file_exists($real_path)) ? filesize($real_path) : 0,
       'delimiter' => $delimiter,
       'uuid' => $uuid,
       'grid' => 1,
       'graph' => 1,
       'map' => 1,
       'embed' => 1,
-      'fileType' => $variables['item']['filemime'],
-      'dkan' => $dkan,
-      'ajax_timeout' => variable_get(RECLINE_AJAX_CALL_TIMEOUT, RECLINE_AJAX_CALL_DEFAULT_TIMEOUT),
+      'datastoreStatus' => $datastoreStatus,
+      'maxSizePreview' => variable_get('file_size_preview_limit', FILE_SIZE_PREVIEW_LIMIT),
     );
     drupal_add_js($settings, 'setting');
   }
@@ -526,22 +519,22 @@ function recline_default_formatter_output($variables) {
   }
 
   $file = l($file['filename'], $url, $options);
-
   $node = $variables['item']['entity'];
   $embed = theme('recline_embed_button', array('node' => $node));
-
   $output = array(
     'download' => array(
       '#type' => 'markup',
       '#markup' => '<div class="download">' . $file . '</div>',
     ),
   );
+
   if (isset($settings['recline']['embed']) && $settings['recline']['embed']) {
     $output['embed'] = array(
       '#type' => 'markup',
       '#markup' => $embed,
     );
   }
+
   $output['data_explorer'] = array(
     '#type' => 'markup',
     '#markup' => '<span class="data-explorer"></span>',

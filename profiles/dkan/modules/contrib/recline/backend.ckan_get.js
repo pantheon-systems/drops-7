@@ -8,7 +8,7 @@ this.recline.Backend.Ckan = this.recline.Backend.Ckan || {};
   // This provides connection to the CKAN DataStore (v2)
   //
   // General notes
-  // 
+  //
   // We need 2 things to make most requests:
   //
   // 1. CKAN API endpoint
@@ -16,13 +16,13 @@ this.recline.Backend.Ckan = this.recline.Backend.Ckan || {};
   //
   // There are 2 ways to specify this information.
   //
-  // EITHER (checked in order): 
+  // EITHER (checked in order):
   //
   // * Every dataset must have an id equal to its resource id on the CKAN instance
   // * The dataset has an endpoint attribute pointing to the CKAN API endpoint
   //
   // OR:
-  // 
+  //
   // Set the url attribute of the dataset to point to the Resource on the CKAN instance. The endpoint and id will then be automatically computed.
 
   my.__type__ = 'ckan_get';
@@ -47,17 +47,26 @@ this.recline.Backend.Ckan = this.recline.Backend.Ckan || {};
     }
     var dfd = new Deferred();
     var jqxhr = wrapper.search({resource_id: dataset.id, limit: 0});
-    jqxhr.done(function(results) {
-      // map ckan types to our usual types ...
-      var fields = _.map(results.result.fields, function(field) {
-        field.type = field.type in CKAN_TYPES_MAP ? CKAN_TYPES_MAP[field.type] : field.type;
-        return field;
-      });
-      var out = {
-        fields: fields,
-        useMemoryStore: false
-      };
-      dfd.resolve(out);
+
+    jqxhr.done(function(results, status, req) {
+      if(results.error) {
+        results.error.request = req;
+        dfd.reject(results);
+      } else {
+        // map ckan types to our usual types ...
+        var fields = _.map(results.result.fields, function(field) {
+          field.type = field.type in CKAN_TYPES_MAP ? CKAN_TYPES_MAP[field.type] : field.type;
+          return field;
+        });
+        var out = {
+          fields: fields,
+          useMemoryStore: false
+        };
+        dfd.resolve(out);
+      }
+
+    }).fail(function(req, status){
+      dfd.reject({error: {message: status, request: req}});
     });
     return dfd.promise();
   };
@@ -137,7 +146,7 @@ this.recline.Backend.Ckan = this.recline.Backend.Ckan || {};
       var filters = "";
       if (data.filters) {
         for (var filter in data.filters) {
-          filters = "&filters[" + filter + "]=" + data.filters[filter];
+          filters += "&filters[" + filter + "]=" + data.filters[filter];
         }
       }
       var searchUrl = that.endpoint + '/3/action/datastore_search?=' + objToQuery(data) + filters;

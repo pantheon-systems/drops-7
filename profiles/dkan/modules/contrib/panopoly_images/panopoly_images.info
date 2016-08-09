@@ -27,9 +27,9 @@ features[image][] = panopoly_image_square
 features[image][] = panopoly_image_thumbnail
 features[image][] = panopoly_image_video
 
-; Information added by Drupal.org packaging script on 2016-05-04
-version = "7.x-1.35"
+; Information added by Drupal.org packaging script on 2016-06-16
+version = "7.x-1.37"
 core = "7.x"
 project = "panopoly_images"
-datestamp = "1462395875"
+datestamp = "1466091842"
 
