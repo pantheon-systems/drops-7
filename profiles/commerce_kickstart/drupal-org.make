@@ -20,12 +20,12 @@ projects[features][patch][2479803] = "https://www.drupal.org/files/issues/ignore
 projects[features_override][version] = 2.0-rc3
 projects[strongarm][version] = 2.0
 projects[taxonomy_menu][version] = 1.5
-projects[libraries][version] = 2.2
+projects[libraries][version] = 2.3
 projects[views_megarow][version] = 1.6
 
 ; Drupal Commerce and Commerce contribs.
 projects[commerce][version] = 1.13
-projects[commerce_features][version] = 1.1
+projects[commerce_features][version] = 1.2
 projects[commerce_addressbook][version] = 2.0-rc9
 projects[commerce_shipping][version] = 2.2
 projects[commerce_flat_rate][version] = 1.0-beta2
@@ -81,7 +81,7 @@ projects[oauth][version] = 3.2
 projects[oauth][patch][] = "http://drupal.org/files/980340-d7.patch"
 projects[connector][version] = 1.0-beta2
 projects[oauthconnector][version] = 1.0-beta2
-projects[inline_entity_form][version] = 1.6
+projects[inline_entity_form][version] = 1.8
 projects[inline_conditions][version] = 1.0-alpha7
 projects[field_extractor][version] = 1.3
 projects[service_links][version] = 2.x-dev
@@ -95,8 +95,7 @@ projects[mimemail][version] = 1.0-beta4
 projects[token][version] = 1.6
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
 projects[eva][version] = 1.2
-projects[message][version] = 1.11
-projects[message][patch][2629474] = https://www.drupal.org/files/issues/message-mysql57_compatibility-2629474-4.patch
+projects[message][version] = 1.12
 projects[message_notify][version] = 2.5
 projects[migrate][version] = 2.8
 projects[migrate_extras][version] = 2.5
@@ -111,7 +110,7 @@ projects[mailup][version] = "1.1"
 projects[mailjet][version] = "2.5"
 
 ; Search related modules.
-projects[search_api][version] = 1.18
+projects[search_api][version] = 1.19
 projects[search_api_db][version] = 1.5
 projects[search_api_ranges][version] = 1.5
 projects[search_api_ranges][patch][] = "https://drupal.org/files/issues/search_api_ranges-rewrite-data-alteration-callback-2001846-4.patch"
@@ -134,7 +133,7 @@ projects[chosen][version] = 2.x-dev
 projects[chosen][download][type] = git
 projects[chosen][download][revision] = e7a0d22
 projects[chosen][download][branch] = 7.x-2.x
-projects[admin_views][version] = 1.5
+projects[admin_views][version] = 1.6
 projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization

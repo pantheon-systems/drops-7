@@ -5,9 +5,9 @@ core = 7.x
 
 dependencies[] = features
 dependencies[] = commerce
-; Information added by Drupal.org packaging script on 2015-07-21
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2016-04-29
+version = "7.x-1.2"
 core = "7.x"
 project = "commerce_features"
-datestamp = "1437515562"
+datestamp = "1461949740"
 

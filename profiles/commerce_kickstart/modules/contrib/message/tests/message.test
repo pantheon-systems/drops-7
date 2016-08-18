@@ -39,7 +39,7 @@ class MessageCrud extends DrupalWebTestCase {
 
     // Make sure an exception is thrown if message type already exists.
     try {
-      $message_type = message_type_create('foo');
+      message_type_create('foo');
       $this->fail("Creating the same message type hasn't created an exception.");
     }
     catch (Exception $e) {
@@ -96,7 +96,7 @@ class MessageShowMessage extends DrupalWebTestCase {
     );
     $message_type->save();
 
-    // Reload the message type to see it was saved
+    // Reload the message type to see it was saved.
     $message_type = message_type_load('foo');
     $this->assertTrue(!empty($message_type->id), t('Message type was saved to the database.'));
 
@@ -117,7 +117,8 @@ class MessageShowMessage extends DrupalWebTestCase {
     $output = $message->getText('l1');
     $this->assertEqual(trim(strip_tags($output)), strtr($text2, $arguments), t('Arguments in the second language message were replaced.'));
 
-    // Assert value is of current language when Locale is enabled and langocde is NULL.
+    // Assert value is of current language when Locale is enabled and langocde
+    // is NULL.
     global $language;
     $output = $message->getText(NULL);
     $this->assertEqual(trim(strip_tags($output)), 'english text', 'Assert value is of current language when Locale is enabled and langocde is NULL.');
@@ -400,9 +401,8 @@ class MessageTokens extends DrupalWebTestCase {
     $this->assertTrue(empty($message->arguments), t('No message arguments created after saving the message, when "skip token hardcode" is enabled.'));
 
   }
+
 }
-
-
 
 /**
  * Test the Rules integration.

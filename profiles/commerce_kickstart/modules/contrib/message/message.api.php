@@ -72,7 +72,7 @@ function hook_message_view_alter(&$build) {
  * @see hook_default_message_type_alter()
  */
 function hook_default_message_type() {
-  $defaults['main'] = entity_create('message_type', array(
+  $defaults['main'] = message_type_create('example_create_node', array(
     'description' => 'Type description',
     'argument_keys' => array(
       '!teaser',

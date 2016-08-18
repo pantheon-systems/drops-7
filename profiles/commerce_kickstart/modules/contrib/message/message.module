@@ -16,6 +16,52 @@ define('MESSAGE_FIELD_MESSAGE_TEXT', 'message_text');
 define('MESSAGE_PURGE_LIMIT', 100);
 
 /**
+ * Implements hook_ctools_plugin_type().
+ */
+function message_ctools_plugin_type() {
+  $plugins['computed_arguments'] = array(
+    'classes' => array('class'),
+    'child plugins' => TRUE,
+  );
+
+  return $plugins;
+}
+
+/**
+ * Return message arguments plugin by the message type.
+ *
+ * @param Message $message
+ *   The message object.
+ *
+ * @return MessageArgumentsBase | NULL
+ *   The handler object if found else NULL.
+ */
+function message_get_computed_arguments_handler(Message $message) {
+  $plugin = message_get_computed_arguments_plugin($message->bundle());
+
+  if (!$class = ctools_plugin_load_class('message', 'computed_arguments', $message->bundle(), 'class')) {
+    return NULL;
+  }
+
+  $handler = new $class($plugin);
+  return $handler->setMessage($message);
+}
+
+/**
+ * Get the specified message arguments plugin.
+ *
+ * @param string $plugin_name
+ *   Optional. If provided the function will return the desired plugin.
+ *
+ * @return array
+ *   The selected plugin for the message arguments.
+ */
+function message_get_computed_arguments_plugin($plugin_name = '') {
+  ctools_include('plugins');
+  return ctools_get_plugins('message', 'computed_arguments', $plugin_name);
+}
+
+/**
  * Implementation of hook_views_api().
  */
 function message_views_api() {
@@ -835,6 +881,8 @@ function message_type_delete($message) {
  * @param $account
  *   Optional; The user object to associate the message with. If empty, the
  *   current user will be used.
+ *
+ * @return Message
  */
 function message_create($type, $values = array(), $account = NULL) {
   global $language;

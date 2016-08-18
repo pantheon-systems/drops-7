@@ -1,37 +1,51 @@
 language: php
+sudo: false
 
 php:
-  - 5.3
+  - 5.4
+  - 5.5
+  - 5.6
 
 mysql:
-  database: drupal
+  database: message
   username: root
   encoding: utf8
 
+addons:
+  apt:
+    packages:
+    - php5-cgi
+    - php5-mysql
+
+install:
+
+  # Add composer's global bin directory to the path
+  # See: https://github.com/drush-ops/drush#install---composer
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # Install drush globally
+  - composer global require drush/drush:7.0
+
 before_script:
-  # navigate out of module directory to prevent blown stack by recursive module lookup
+  # Navigate out of module directory to prevent blown stack by recursive module
+  # lookup.
   - cd ../..
 
-  # install drush
-  - pear channel-discover pear.drush.org
-  - pear install drush/drush-5.8.0
-  - phpenv rehash
+  # Create new site, stubbing sendmail path with true to prevent delivery errors
+  # and manually resolving drush path
+  - mysql -e 'create database message'
+  - php -d sendmail_path=`which true` ~/.composer/vendor/bin/drush.php --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/message --enable=simpletest message
 
-  # install php packages required for running a web server from drush on php 5.3
-  - sudo apt-get update > /dev/null
-  - sudo apt-get install -y --force-yes php5-cgi php5-mysql
-
-  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
-  - mysql -e 'create database drupal'
-  - php -d sendmail_path=`which true` `pear config-get php_dir`/drush/drush.php --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/drupal --enable=simpletest message
-
-  # reference and enable module in build site
+  # Reference and enable message in build site.
   - ln -s $(readlink -e $(cd -)) message/drupal/sites/all/modules/message
   - cd message/drupal
-  - drush --yes pm-enable message
+  - drush dl entity ctools features views token
+  - drush --yes pm-enable message message_example
 
-  # start a web server on port 8080, run in the background; wait for initialization
-  - drush runserver 127.0.0.1:8080 &
-  - until netstat -an 2>/dev/null | grep '8080.*LISTEN'; do true; done
+  # Start a web server on port 8080, run in the background.
+  - drush runserver 127.0.0.1:8080 > ~/php-server.log 2>&1 &
 
-script: drush test-run Message --uri=http://127.0.0.1:8080
+script:
+  - php scripts/run-tests.sh --php $(which php) --concurrency 4 --verbose --color --url 127.0.0.1:8080 Message 2>&1 | tee /tmp/simpletest-result.txt
+  - egrep -i "([1-9]+ fail)|(Fatal error)|([1-9]+ exception)" /tmp/simpletest-result.txt && exit 1
+  - exit 0

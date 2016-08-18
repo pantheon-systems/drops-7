@@ -10,43 +10,34 @@
  */
 function commerce_features_features_api() {
   $features = array();
+  $path = drupal_get_path('module', 'commerce_features');
 
   if (module_exists('commerce_product') && module_exists('commerce_product_ui')) {
     $features['commerce_product_type'] = array(
       'name' => t('Commerce product types'),
-      'feature_source' => TRUE,
       'default_hook' => 'commerce_product_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_product_type.features.inc',
     );
   }
   if (module_exists('commerce_tax')) {
     $features['commerce_tax_type'] = array(
       'name' => t('Commerce tax types'),
-      'feature_source' => TRUE,
       'default_hook' => 'commerce_tax_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_tax_type.features.inc',
     );
     $features['commerce_tax_rate'] = array(
       'name' => t('Commerce tax rates'),
-      'feature_source' => TRUE,
       'default_hook' => 'commerce_tax_default_rates',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_tax_rate.features.inc',
     );
   }
   if (module_exists('commerce_order') && module_exists('commerce_order_types')) {
     $features['commerce_order_type'] = array(
       'name' => t('Commerce order types'),
-      'features_source' => TRUE,
       'default_hook' => 'commerce_order_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_order_type.features.inc',
     );
   }
   if (module_exists('commerce_line_item') && module_exists('commerce_custom_product')) {
     $features['commerce_line_item_type'] = array(
       'name' => t('Commerce line item types'),
-      'feature_source' => TRUE,
       'default_hook' => 'commerce_line_item_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_line_item_type.features.inc',
     );
   }
   if (module_exists('commerce_coupon')) {
@@ -54,26 +45,42 @@ function commerce_features_features_api() {
     if (version_compare($module_info['version'], '7.x-2', '<')) {
       $features['commerce_coupon_type'] = array(
         'name' => t('Commerce coupon types'),
-        'feature_source' => TRUE,
         'default_hook' => 'commerce_coupon_default_types',
-        'file' => drupal_get_path('module', 'commerce_features') . '/commerce_coupon_type.features.inc',
       );
     }
   }
   if (module_exists('commerce_customer')) {
     $features['commerce_customer'] = array(
       'name' => t('Commerce customer profile types'),
-      'features_source' => TRUE,
       'default_hook' => 'commerce_customer_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_customer.features.inc',
     );
   }
   if (module_exists('commerce_flat_rate')) {
     $features['commerce_flat_rate_services'] = array(
       'name' => t('Commerce flat rate services'),
-      'features_source' => TRUE,
       'default_hook' => 'commerce_flat_rate_default_services',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_flat_rate_services.features.inc',
+    );
+  }
+  if (module_exists('commerce_checkout')) {
+    $features['commerce_checkout_panes'] = array(
+      'name' => t('Commerce checkout panes'),
+      'default_hook' => 'commerce_checkout_panes_default',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+    );
+  }
+
+  foreach ($features as $name => $integration) {
+    $features[$name] = $integration + array(
+      'file' => "$path/$name.features.inc",
+      'feature_source' => TRUE,
+    );
+  }
+  if (module_exists('commerce_payment')) {
+    $features['commerce_payment_method'] = array(
+      'name' => t('Commerce payment methods'),
+      'features_source' => TRUE,
+      'default_hook' => 'commerce_payment_default_methods',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_payment_method.features.inc',
     );
   }
 

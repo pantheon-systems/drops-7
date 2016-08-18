@@ -85,6 +85,8 @@ class Message extends Entity {
   }
 
   /**
+   * {@inheritdoc}
+   *
    * Generate an array for rendering the entity's content.
    *
    * Iterate over the extra field settings, and show the visible partials.
@@ -140,10 +142,14 @@ class Message extends Entity {
    * Replace arguments with their placeholders.
    *
    * @param $langcode
-   *   Optional; The language to get the text in. If not set the current language
-   *   will be used.
+   *   Optional; The language to get the text in. If not set the current
+   *   language will be used.
    * @param $options
    *   Optional; Array to be passed to MessageType::getText().
+   *
+   * @return mixed|string
+   *   The message text compiled into a string or an array of the message
+   *   partials.
    */
   public function getText($langcode = LANGUAGE_NONE, $options = array()) {
     $message_type = $this->getType();
@@ -154,6 +160,13 @@ class Message extends Entity {
     }
 
     $arguments = message_get_property_values($this, 'arguments');
+
+    // Check if the current message have any arguments plugin.
+    $handler = message_get_computed_arguments_handler($this);
+    if ($handler && $handler_arguments = $handler->getArguments()) {
+      $arguments = array_merge($arguments, $handler_arguments);
+    }
+
     $output = $message_type->getText($langcode, $options);
 
     if (!empty($arguments)) {

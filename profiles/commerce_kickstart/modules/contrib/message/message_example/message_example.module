@@ -8,6 +8,15 @@
 include_once('message_example.features.inc');
 
 /**
+ * Implements hook_ctools_plugin_directory().
+ */
+function message_example_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'message') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
  * Implements hook_node_insert().
  */
 function message_example_node_insert($node) {

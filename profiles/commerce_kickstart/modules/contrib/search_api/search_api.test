@@ -1062,7 +1062,7 @@ class SearchApiUnitTest extends DrupalWebTestCase {
   protected function checkHtmlFilter() {
     $orig = <<<END
 This is <em lang="en" title =
-"something">a test</em>.
+"something">a test</em>.<h3>Header</h3>
 How to write <strong>links to <em>other sites</em></strong>: &lt;a href="URL" title="MOUSEOVER TEXT"&gt;TEXT&lt;/a&gt;.
 &lt; signs can be <A HREF="http://example.com/topic/html-escapes" TITLE =  'HTML &quot;escapes&quot;'
 TARGET = '_blank'>escaped</A> with "&amp;lt;".
@@ -1071,6 +1071,7 @@ END;
     $tags = <<<END
 em = 1.5
 strong = 2
+h3 = 3
 END;
     $processed1 = array(
       array('value' => 'This', 'score' => 1),
@@ -1078,6 +1079,7 @@ END;
       array('value' => 'something', 'score' => 1.5),
       array('value' => 'a', 'score' => 1.5),
       array('value' => 'test', 'score' => 1.5),
+      array('value' => 'Header', 'score' => 3),
       array('value' => 'How', 'score' => 1),
       array('value' => 'to', 'score' => 1),
       array('value' => 'write', 'score' => 1),

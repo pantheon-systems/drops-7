@@ -195,6 +195,7 @@ function message_schema() {
         'not null' => TRUE,
         'unsigned' => TRUE,
         'description' => 'The Unique ID of the message.',
+        'not null' => TRUE,
       ),
       'type' => array(
         'description' => 'Reference to a message a type.',
@@ -527,4 +528,36 @@ function message_update_7011() {
 function message_update_7012() {
   db_drop_index('message', 'type');
   db_add_index('message', 'type_index', array('type'));
+}
+
+/**
+ * message.mid is part of the primary key but is not specified to be 'not
+ * null'.
+ */
+function message_update_7013() {
+  // Here we have some special concern:
+  // 1. Keep the field as serial so the auto_increment will not affected.
+  // 2. Before setting (or change) a field as serial PK should be dropped.
+  // 3. BTW, if change a serial field without any index will fail in MySQL.
+
+  // Let's add a temporary unique key for mid so MySQL will let it go.
+  db_add_unique_key('message', 'temp_key', array('mid'));
+
+  // Now remove the PK before changing a field as serial (well, even it is
+  // already a serial field, originally).
+  db_drop_primary_key('message');
+
+  // Here we can successfully alter the serial field without error message.
+  // See https://api.drupal.org/api/drupal/includes!database!database.inc/function/db_change_field/7
+  db_change_field('message', 'mid', 'mid', array(
+    'type' => 'serial',
+    'unsigned' => TRUE,
+    'description' => 'The Unique ID of the message.',
+    'not null' => TRUE,
+  ), array(
+    'primary key' => array('mid'),
+  ));
+
+  // Finally, remove the temporary unique key because no longer useful.
+  db_drop_unique_key('message', 'temp_key');
 }

@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.org/Gizra/message.svg?branch=7.x-1.x)](https://travis-ci.org/Gizra/message)
 
-Overview
-========
 A general logging utility that can be used as activity module.
 
+Overview
+========
 * In message module, the arguments of a sentence can use tokens, custom
   callbacks or be hard-coded. Making the arguments dynamic means that the
   rendering time is slower than activity, on the other hand you can use
@@ -89,3 +89,56 @@ definition.
   "Override global settings" checkbox will make the global settings ignore the
   current message type and will allow to set purging definitions for the current
   type.
+
+Computed arguments plugin
+============
+When saving a message to the DB the reference to the arguments callbacks stored
+in the DB as well. This will be a problem when we want to change the name of the
+function.
+
+Message allows you to keep the message text with the arguments but the callbacks
+will be handled with a CTools plugin.
+
+Message example define a 'Computed arguments' plugin for the 'Example arguments'
+message type. The name of the plugin need to be the name of the message type.
+
+`example_arguments.inc`:
+```php
+<?php
+
+$plugin = array(
+  'label' => t('Message example create node'),
+  'description' => t('Supply arguments handler for the message example create node bundle.'),
+  'class' => 'ExampleArguments',
+);
+```
+
+The class is implemented in `ExampleArguments.class.php`:
+```php
+<?php
+
+class ExampleArguments extends MessageArgumentsBase {
+
+  /**
+   * @return mixed
+   */
+  public function getNameArgument() {
+    return array(
+      '@name' => array($this, 'processName'),
+      '%time' => array($this, 'processTime'),
+      '!link' => array($this, 'processLink'),
+    );
+  }
+```
+
+The `getNameArgument` method define for each argument which method should handle
+it and calculate the value:
+```php
+  /**
+   * Process the current time.
+   */
+  public function processTime() {
+    return format_date($this->getMessage()->timestamp);
+  }
+}
+```

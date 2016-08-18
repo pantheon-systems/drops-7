@@ -6,9 +6,9 @@ dependencies[] = service_links
 dependencies[] = forward
 
 
-; Information added by drush on 2016-06-17
+; Information added by drush on 2016-08-18
 version = "7.x-2.3+0-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1466186418"
+datestamp = "1471524571"
 

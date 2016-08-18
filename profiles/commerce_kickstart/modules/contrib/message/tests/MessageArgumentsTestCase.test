@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * Testing the arguments handler for messages.
+ */
+class MessageArgumentsTestCase extends DrupalWebTestCase {
+
+  /**
+   * @var \stdClass
+   *
+   * The user object.
+   */
+  protected $user;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Message arguments',
+      'description' => 'Test the Message and arguments handling.',
+      'group' => 'Message',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('message', 'message_example');
+
+    $this->user = $this->drupalCreateUser();
+  }
+
+  /**
+   * Testing ctools message arguments plugin.
+   */
+  public function testCtoolsArguments() {
+    $uri = entity_uri('user', $this->user);
+
+    $message = message_create('example_arguments', array('uid' => $this->user->uid));
+    $message->save();
+
+    if (!$handler = message_get_computed_arguments_handler($message)) {
+      throw new Exception('No arguments handler was found for the Message example message type.');
+    }
+
+    $arguments = $handler->getArguments();
+
+    $expected_arguments = array(
+      '@name' => $this->user->name,
+      '%time' => format_date($message->timestamp),
+      '!link' => l(t('link'), $uri['path'], array('absolute' => TRUE)),
+    );
+
+    // Verify we got the correct arguments.
+    $this->assertEqual($arguments, $expected_arguments, 'The arguments plugin returned the expected values.');
+
+    $text = $message->getText();
+    // Verifying we got the correct text.
+    foreach ($expected_arguments as $name => $argument) {
+      $this->assertTrue(strpos($text, $argument) !== FALSE, format_string('The rendered message contain the text for the argument @name', array('@name' => $name)));
+    }
+  }
+
+}
