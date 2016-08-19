@@ -152,6 +152,15 @@ class panels_renderer_standard {
   var $suffix = '';
 
   /**
+   * Boolean flag indicating whether to render the layout even if all rendered
+   * regions are blank. If FALSE, the layout renders as an empty string (without
+   * prefix or suffix) if not in administrative mode.
+   *
+   * @var bool
+   */
+  var $show_empty_layout = TRUE;
+
+  /**
    * Receive and store the display object to be rendered.
    *
    * This is a psuedo-constructor that should typically be called immediately
@@ -174,6 +183,19 @@ class panels_renderer_standard {
     if (empty($this->plugins['layout'])) {
       watchdog('panels', "Layout: @layout couldn't been found, maybe the theme is disabled.", array('@layout' => $display->layout));
     }
+  }
+
+  /**
+   * Get the Panels storage oparation for a given renderer AJAX method.
+   *
+   * @param string $method
+   *   The method name.
+   *
+   * @return string
+   *   The Panels storage op.
+   */
+  function get_panels_storage_op_for_ajax($method) {
+    return 'read';
   }
 
   /**
@@ -396,6 +418,22 @@ class panels_renderer_standard {
       $theme = $this->plugins['layout']['theme'];
     }
 
+    // Determine whether to render layout.
+    $show = TRUE;
+    if (!$this->show_empty_layout && !$this->admin) {
+      $show = FALSE;
+      // Render layout if any region is not empty.
+      foreach ($this->rendered['regions'] as $region) {
+        if (is_string($region) && $region !== '') {
+          $show = TRUE;
+          break;
+        }
+      }
+    }
+    if (!$show) {
+      return;
+    }
+
     $this->rendered['layout'] = theme($theme, array('css_id' => check_plain($this->display->css_id), 'content' => $this->rendered['regions'], 'settings' => $this->display->layout_settings, 'display' => $this->display, 'layout' => $this->plugins['layout'], 'renderer' => $this));
     return $this->prefix . $this->rendered['layout'] . $this->suffix;
   }
@@ -474,6 +512,7 @@ class panels_renderer_standard {
    *   The array of rendered panes, keyed on pane pid.
    */
   function render_panes() {
+    drupal_alter('panels_prerender_panes', $this);
     ctools_include('content');
 
     // First, render all the panes into little boxes.
@@ -581,12 +620,14 @@ class panels_renderer_standard {
     if (!empty($content)) {
       // Pass long the css_id that is usually available.
       if (!empty($pane->css['css_id'])) {
-        $content->css_id = check_plain($pane->css['css_id']);
+        $id = ctools_context_keyword_substitute($pane->css['css_id'], array(), $this->display->context);
+        $content->css_id = drupal_html_id($id);
       }
 
       // Pass long the css_class that is usually available.
       if (!empty($pane->css['css_class'])) {
-        $content->css_class = check_plain($pane->css['css_class']);
+        $class = ctools_context_keyword_substitute($pane->css['css_class'], array(), $this->display->context, array('css safe' => TRUE));
+        $content->css_class = check_plain(drupal_strtolower($class));
       }
     }
 
@@ -601,6 +642,7 @@ class panels_renderer_standard {
    *   An array of rendered panel regions, keyed on the region name.
    */
   function render_regions() {
+    drupal_alter('panels_prerender_regions', $this);
     $this->rendered['regions'] = array();
 
     // Loop through all panel regions, put all panes that belong to the current

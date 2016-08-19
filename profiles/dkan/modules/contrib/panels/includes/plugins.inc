@@ -125,7 +125,7 @@ class panels_cache_object {
   /**
    * When constructed, take a snapshot of our existing out of band data.
    */
-  function panels_cache_object() {
+  function __construct() {
     $this->head = drupal_add_html_head();
     $this->css = drupal_add_css();
     $this->tokens = ctools_set_page_token();
@@ -476,6 +476,31 @@ function panels_get_renderer_pipelines($sort = TRUE) {
   }
 
   return $pipelines;
+}
+
+/**
+ * Fetch metadata on a specific panels_storage plugin.
+ *
+ * @param $storage
+ *   Name of a panel_storage plugin.
+ *
+ * @return
+ *   An array with information about the requested panels_storage plugin
+ */
+function panels_get_panels_storage_plugin($storage) {
+  ctools_include('plugins');
+  return ctools_get_plugins('panels', 'panels_storage', $storage);
+}
+
+/**
+ * Fetch metadata for all panels_storage plugins.
+ *
+ * @return
+ *   An array of arrays with information about all available panels_storage plugins.
+ */
+function panels_get_panels_storage_plugins() {
+  ctools_include('plugins');
+  return ctools_get_plugins('panels', 'panels_storage');
 }
 
 /**

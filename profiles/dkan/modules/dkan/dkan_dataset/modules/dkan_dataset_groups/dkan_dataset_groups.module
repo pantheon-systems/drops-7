@@ -229,3 +229,19 @@ function dkan_dataset_groups_form_alter(&$form, $form_state, $form_id) {
       break;
   }
 }
+
+/**
+ * Implements hook_node_validate().
+ *
+ * Check if we have some group with same title.
+ */
+function dkan_dataset_groups_node_validate($node, $form, &$form_state) {
+  if ($node->type == 'group') {
+    $nid = isset($node->nid) ? $node->nid : 0;
+    $duplicate = db_query("SELECT nid FROM {node} WHERE LOWER(title)=LOWER(:title) AND nid != :nid AND type='group'", array(':title' => $node->title, ':nid' => $nid))->fetchField();
+
+    if ($duplicate) {
+      form_set_error('title', t('A group with title %title exists on the site. Please use another title.', array('%title' => $node->title)));
+    }
+  }
+}

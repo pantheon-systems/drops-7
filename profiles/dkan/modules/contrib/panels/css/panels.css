@@ -40,11 +40,6 @@ div.panel-pane:hover div.panel-hide {
   margin-top: -1.5em;
 }
 
-div.panel-pane div.node {
-  margin: 0;
-  padding: 0;
-}
-
 div.panel-pane div.feed a {
   float: right;
 }

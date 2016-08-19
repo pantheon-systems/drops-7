@@ -89,7 +89,7 @@ class panels_allowed_layouts {
    *  as allowed or not allowed on the initial call to panels_allowed_layouts::set_allowed()
    *
    */
-  function panels_allowed_layouts($start_allowed = TRUE) {
+  function __construct($start_allowed = TRUE) {
     // TODO would be nice if there was a way to just fetch the names easily
     foreach ($this->list_layouts() as $layout_name) {
       $this->allowed_layout_settings[$layout_name] = $start_allowed ? 1 : 0;
@@ -352,11 +352,21 @@ function panels_common_settings_submit($form, &$form_state) {
   $module_name = $form_state['values']['module_name'];
   variable_set($module_name . '_default', $form_state['values']['panels_common_default']);
   if (!$form_state['skip']) {
-    // merge the broken apart array neatly back together
-    $allowed = $form_state['values']['allowed'];
+    // Merge the broken apart array neatly back together.
     $allowed_content_types = array();
     foreach ($form_state['values']['allowed'] as $allowed) {
-      $allowed_content_types = array_merge($allowed_content_types, $form_state['values']['content_types'][$allowed]['options']);
+      $values = $form_state['values']['content_types'][$allowed]['options'];
+      // If new content of the type is not added, storing a lisy of disabled
+      // content is not needed.
+      if (!$form_state['values']['panels_common_default'][$allowed]) {
+        $values = array_filter($values);
+      }
+      $allowed_content_types = array_merge($allowed_content_types, $values);
+    }
+    // Values from checkboxes are the same string as they key, but we only need
+    // to store the boolean value.
+    foreach ($allowed_content_types as &$value) {
+      $value = (bool) $value;
     }
     variable_set($module_name . '_allowed_types', $allowed_content_types);
   }

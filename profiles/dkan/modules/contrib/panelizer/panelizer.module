@@ -163,6 +163,25 @@ function panelizer_admin_paths() {
 }
 
 /**
+ * Implements hook_panels_ipe_access().
+ */
+function panelizer_panels_ipe_access($display) {
+  // We only care about Panels displays from panelizer.
+  if (isset($display->context['panelizer'])) {
+    // The type array contains 3 elements, where the first is the full context
+    // type (ie. 'entity:ENTITY_TYPE'), and the remaining two are the parts
+    // seperated by ':', so 'entity' and the entity type name.
+    $entity_type = $display->context['panelizer']->type[2];
+    if ($handler = panelizer_entity_plugin_get_handler($entity_type)) {
+      // Only allow access to use the IPE if the user has 'update' access to
+      // the underlying entity.
+      $entity = $display->context['panelizer']->data;
+      return $handler->entity_access('update', $entity);
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Check whether a given view mode is panelized. Set an error message if there
@@ -445,6 +464,9 @@ function panelizer_ctools_plugin_directory($module, $plugin) {
   if (in_array($module, array('panelizer', 'ctools', 'page_manager'))) {
     return 'plugins/' . $plugin;
   }
+  if ($module == 'panels' && $plugin == 'panels_storage') {
+    return 'plugins/' . $plugin;
+  }
 }
 
 /**
@@ -494,6 +516,15 @@ function panelizer_panelizer_defaults_alter(&$items) {
   // Delegate.
   foreach (panelizer_get_plugins_with_hook('panelizer_defaults') as $handler) {
     $handler->hook_panelizer_defaults($items);
+  }
+
+  // If a default Panels display has no storage type, set it.
+  foreach ($items as &$panelizer) {
+    $display =& $panelizer->display;
+    if (empty($display->storage_type)) {
+      $display->storage_type = 'panelizer_default';
+      $display->storage_id = $panelizer->name;
+    }
   }
 
   // Allow features_overrides to alter the config.
@@ -1063,6 +1094,7 @@ function panelizer_node_type_load($name) {
  */
 function panelizer_export_save_callback(&$object) {
   if (!empty($object->display)) {
+    $object->display->storage_id = $object->name;
     // First write the display.
     panels_save_display($object->display);
 
@@ -1260,6 +1292,14 @@ function panelizer_panels_cache_get($argument) {
     if (!empty($get_default)) {
       $panelizer = $handler->get_default_panelizer_object($bundle, $name);
       $cache->display->context = $handler->get_contexts($panelizer);
+
+      // Set the storage_type and storage_id if either is empty.
+      if (empty($cache->display->storage_type)) {
+        $cache->display->storage_type = 'panelizer_default';
+      }
+      if (empty($cache->display->storage_id)) {
+        $cache->display->storage_id = $panelizer->name;
+      }
     }
     else {
       $conditions = (isset($vid) ? array('vid' => $vid) : array());
@@ -1280,6 +1320,14 @@ function panelizer_panels_cache_get($argument) {
     $panelizer = $handler->get_default_panelizer_object($bundle, $name);
     $cache->display = $panelizer->display;
     $cache->display->context = $handler->get_contexts($panelizer);
+    
+    // Set the storage_type and storage_id if either is empty.
+     if (empty($cache->display->storage_type)) {
+       $cache->display->storage_type = 'panelizer_default';
+     }
+     if (empty($cache->display->storage_id)) {
+       $cache->display->storage_id = $panelizer->name;
+     }
   }
   else {
     $conditions = (isset($vid) ? array('vid' => $vid) : array());

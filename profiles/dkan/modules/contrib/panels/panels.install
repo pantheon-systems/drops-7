@@ -47,7 +47,36 @@ function panels_requirements_install() {
 function panels_schema() {
   // This should always point to our 'current' schema. This makes it relatively
   // easy to keep a record of schema as we make changes to it.
-  return panels_schema_6();
+  return panels_schema_8();
+}
+
+function panels_schema_8() {
+  $schema = panels_schema_7();
+
+  // Add the storage type and id columns.
+  $schema['panels_display']['fields']['storage_type'] = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'default' => '',
+  );
+  $schema['panels_display']['fields']['storage_id'] = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'default' => '',
+  );
+
+  return $schema;
+}
+
+function panels_schema_7() {
+  $schema = panels_schema_6();
+
+  // Update field lengths to 255 chars.
+  $schema['panels_pane']['fields']['subtype']['length'] = '255';
+  $schema['panels_pane']['fields']['panel']['length'] = '255';
+  $schema['panels_pane']['fields']['type']['length'] = '255';
+
+  return $schema;
 }
 
 function panels_schema_6() {
@@ -490,5 +519,72 @@ function panels_update_7303() {
   $table_name = 'cache_panels';
   if (!db_table_exists($table_name)) {
     db_create_table($table_name, $schema[$table_name]);
+  }
+}
+
+/**
+ * Update "panels_pane" table field lengths to 255 chars.
+ */
+function panels_update_7304() {
+  $schema = panels_schema_7();
+
+  $update_fields = array(
+    'panels_pane' => array('subtype', 'panel', 'type'),
+  );
+
+  foreach($update_fields as $table => $fields) {
+    foreach($fields as $field_name) {
+      db_change_field($table, $field_name, $field_name, $schema[$table]['fields'][$field_name]);
+    }
+  }
+}
+
+/**
+ * Add the "storage_type" and "storage_id" columns to "panels_display".
+ */
+function panels_update_7305() {
+  $schema = panels_schema_8();
+
+  $new_fields = array(
+    'panels_display' => array('storage_type', 'storage_id'),
+  );
+
+  foreach ($new_fields as $table => $fields) {
+    foreach ($fields as $field_name) {
+      db_add_field($table, $field_name, $schema[$table]['fields'][$field_name]);
+    }
+  }
+}
+
+/**
+ * Set the storage type and id on existing page manager panels displays.
+ */
+function panels_update_7306() {
+  if (!db_table_exists('page_manager_handlers')) {
+    return t('Skipping update - page_manager is not installed.');
+  }
+
+  // Get all page_manager_handlers that have a panels context.
+  $result = db_query("SELECT pm.name, pm.conf FROM {page_manager_handlers} pm WHERE pm.handler = 'panel_context'");
+  $page_manager_panels = array();
+  foreach ($result as $row) {
+    $conf = unserialize($row->conf);
+    if (isset($conf['did'])) {
+      $page_manager_panels[$conf['did']] = $row->name;
+    }
+  }
+
+  if (!empty($page_manager_panels)) {
+    // Check panels displays that only have empty storage types
+    $result = db_query("SELECT pd.did FROM {panels_display} pd WHERE pd.did IN (:dids) AND storage_type = ''", array(':dids' => array_keys($page_manager_panels)));
+    foreach ($result as $row) {
+      db_update('panels_display')
+        ->fields(array(
+          'storage_type' => 'page_manager',
+          'storage_id' => $page_manager_panels[$row->did],
+        ))
+        ->condition('did', $row->did)
+        ->execute();
+    }
   }
 }

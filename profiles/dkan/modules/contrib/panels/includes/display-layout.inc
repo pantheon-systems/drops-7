@@ -321,6 +321,8 @@ function panels_change_layout_submit($form, &$form_state) {
   $display->panels = $content;
 
   $display->layout = $form_state['layout'];
+
+  panels_edit_display_settings_form_submit($form, $form_state);
 }
 
 /**

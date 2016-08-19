@@ -17,31 +17,20 @@
  */
 function panels_node_permission() {
   return array(
-    'create panel-nodes' => array(
-      'title' => t('Create panel nodes'),
-      'description' => t('Create new panel nodes.'),
-    ),
-    'edit any panel-nodes' => array(
-      'title' => t('Edit any panel-nodes'),
-      'description' => t('Edit all pre-existing panel nodes regardless of ownership.'),
-    ),
-    'edit own panel-nodes' => array(
-      'title' => t('Edit own panel nodes'),
-      'description' => t('Edit panel nodes owned by this user.'),
-    ),
     'administer panel-nodes' => array(
       'title' => t('Administer panel nodes'),
       'description' => t('Full administrative access to panel nodes including create, update and delete all'),
     ),
-    'delete any panel-nodes' => array(
-      'title' => t('Delete any panel nodes'),
-      'description' => t('Delete any panel node regardless of ownership'),
-    ),
-    'delete own panel-nodes' => array(
-      'title' => t('Delete own panel nodes'),
-      'description' => t('Delete any panel node owned by this user.'),
-    ),
   );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function panels_node_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'panels' && $plugin == 'panels_storage') {
+    return 'plugins/' . $plugin;
+  }
 }
 
 /**
@@ -113,7 +102,7 @@ function panels_node_add() {
   ctools_include('common', 'panels');
 
   $layouts = panels_common_get_allowed_layouts('panels_node');
-  return panels_common_print_layout_links($layouts, 'node/add/panel', array('query' => $_GET));
+  return panels_common_print_layout_links($layouts, 'node/add/panel', array('query' => drupal_get_query_parameters()));
 }
 
 // ---------------------------------------------------------------------------
@@ -156,19 +145,6 @@ function panels_node_node_access($node, $op, $account) {
   if (user_access('administer panel-nodes', $account)) {
     return NODE_ACCESS_ALLOW;
   }
-
-  if ($op == 'create' && user_access('create panel-nodes', $account)) {
-    return NODE_ACCESS_ALLOW;
-  }
-
-  if ($op == 'update' && (user_access('edit any panel-nodes', $account) || $node->uid == $account->uid && user_access('edit own panel-nodes', $account))) {
-    return NODE_ACCESS_ALLOW;
-  }
-
-
-  if ($op == 'delete' && (user_access('delete any panel-nodes') || $node->uid == $account->uid && user_access('delete own panel-nodes'))) {
-    return NODE_ACCESS_ALLOW;
-  }
 }
 
 /**
@@ -183,14 +159,12 @@ function panels_node_hook_form(&$node, &$form_state) {
     // and if that doesn't work present them with a list to pick from.
     $panel_layout = isset($node->panel_layout) ? $node->panel_layout : arg(3);
     if (empty($panel_layout)) {
-      $opts = $_GET;
-      unset($opts['q']);
-      return drupal_goto('node/add/panel/choose-layout', $opts);
+      drupal_goto('node/add/panel/choose-layout', array('query' => drupal_get_query_parameters()));
     }
 
     $layout = panels_get_layout($panel_layout);
     if (empty($layout)) {
-      return drupal_not_found();
+      return MENU_NOT_FOUND;
     }
     $form['panels_node']['layout'] = array(
       '#type' => 'value',
@@ -233,7 +207,7 @@ function panels_node_hook_form(&$node, &$form_state) {
     '#type' => 'radios',
     '#options' => $options,
     '#title' => t('Renderer'),
-    '#default_value' => isset($node->panels_node['pipeline']) ? $node->panels_node['pipeline'] : 'standard',
+    '#default_value' => isset($node->panels_node['pipeline']) ? $node->panels_node['pipeline'] : variable_get('panels_renderer_default', 'standard'),
   );
 
   return $form;
@@ -271,6 +245,8 @@ function panels_node_hook_insert(&$node) {
   // Create a new display and record that.
   $display = panels_new_display();
   $display->layout = $node->panels_node['layout'];
+  $display->storage_type = 'panels_node';
+  $display->storage_id = $node->nid;
 
   // Special handling for nodes being imported from an export.module data dump.
   if (!empty($node->export_display)) {
@@ -429,6 +405,19 @@ function panels_node_panels_dashboard_blocks(&$vars) {
     'description' => t('Panel nodes are node content and appear in your searches, but are more limited than panel pages.'),
     'weight' => -1,
   );
+}
+
+/**
+ * Implements hook_panels_ipe_access().
+ */
+function panels_node_panels_ipe_access($display) {
+  // We only care about Panels displays from panels_node.
+  if (isset($display->context['panel-node'])) {
+    // Only allow access to use the IPE if the user has 'update' access to
+    // the underlying node.
+    $node = $display->context['panel-node']->data;
+    return node_access('update', $node); 
+  }
 }
 
 // ---------------------------------------------------------------------------

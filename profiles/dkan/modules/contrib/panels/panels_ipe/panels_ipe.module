@@ -221,6 +221,7 @@ function panels_ipe_get_cache_key($key = NULL) {
  */
 function panels_ipe_toolbar_add_button($cache_key, $id, $button) {
   $buttons = &drupal_static('panels_ipe_toolbar_buttons', array());
+  drupal_alter('panels_ipe_button', $button, $id, $cache_key);
   $buttons[$cache_key][$id] = $button;
 }
 
@@ -246,9 +247,11 @@ function panels_ipe_page_alter(&$page) {
 
 function theme_panels_ipe_toolbar($vars) {
   $buttons = $vars['buttons'];
+  ctools_include('cleanstring');
 
   $output = "<div id='panels-ipe-control-container' class='clearfix'>";
   foreach ($buttons as $key => $ipe_buttons) {
+    $key = ctools_cleanstring($key);
     $output .= "<div id='panels-ipe-control-$key' class='panels-ipe-control'>";
 
     // Controls in this container will appear when the IPE is not on.

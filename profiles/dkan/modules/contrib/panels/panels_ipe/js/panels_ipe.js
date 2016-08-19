@@ -2,12 +2,7 @@
 // Ensure the $ alias is owned by jQuery.
 (function($) {
 
-// randomly lock a pane.
-// @debug only
 Drupal.settings.Panels = Drupal.settings.Panels || {};
-Drupal.settings.Panels.RegionLock = {
-  10: { 'top': false, 'left': true, 'middle': true }
-}
 
 Drupal.PanelsIPE = {
   editors: {},
@@ -233,7 +228,7 @@ function DrupalPanelsIPE(cache_key, cfg) {
     // it clears out inline styles.
     $('.panels-ipe-on').show();
     ipe.showForm();
-    ipe.topParent.addClass('panels-ipe-editing');
+    $('body').add(ipe.topParent).addClass('panels-ipe-editing');
 
   };
 

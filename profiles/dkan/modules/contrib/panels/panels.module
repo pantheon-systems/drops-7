@@ -20,7 +20,7 @@ define('PANELS_REQUIRED_CTOOLS_API', '2.0.8');
  *   ; Requires Panels v7.x-3.4 or newer.
  *   dependencies[] = panels (>=3.4)
  */
-define('PANELS_VERSION', '7.x-3.5');
+define('PANELS_VERSION', '7.x-3.6');
 
 
 define('PANELS_TITLE_FIXED', 0); // Hide title use to be true/false. So false remains old behavior.
@@ -302,6 +302,11 @@ function panels_permission() {
       'title' => t("Change layouts with the Panels In-Place Editor"),
       'description' => t("Allows a user to change layouts with the IPE."),
     ),
+    'bypass access in place editing' => array(
+      'title' => t("Bypass access checks when using Panels In-Place Editor"),
+      'description' => t("Allows using IPE even if user does not have additional permissions granted by other modules."),
+      'restrict access' => TRUE,
+    ),
     'administer advanced pane settings' => array(
       'title' => t("Configure advanced settings on Panel panes"),
       'description' => t(""),
@@ -404,6 +409,7 @@ function panels_ctools_plugin_type() {
     'display_renderers' => array(
       'classes' => array('renderer'),
     ),
+    'panels_storage' => array(),
   );
 }
 
@@ -770,6 +776,55 @@ class panels_display {
     }
     return $output;
   }
+
+  /**
+   * Determine if the given user can perform the requested operation.
+   *
+   * @param string $op
+   *   An operation like: create, read, update, or delete.
+   * @param object $account
+   *   (optional) The account to check access for.
+   *
+   * @return bool
+   *   TRUE if access is granted; otherwise FALSE.
+   */
+  function access($op, $account = NULL) {
+    global $user;
+
+    if (!$account) {
+      $account = $user;
+    }
+
+    // Even administrators need to go through the access system. However, to
+    // support legacy plugins, user 1 gets full access no matter what.
+    if ($account->uid == 1) {
+      return TRUE;
+    }
+
+    if (!in_array($op, array('create', 'read', 'update', 'delete', 'change layout'))) {
+      return FALSE;
+    }
+
+    if (empty($this->storage_type) || empty($this->storage_id)) {
+      return FALSE;
+    }
+
+    if ($this->storage_type == 'unknown') {
+      return FALSE;
+    }
+
+    $storage_plugin = panels_get_panels_storage_plugin($this->storage_type);
+    if (!$storage_plugin) {
+      return FALSE;
+    }
+
+    $access_callback = panels_plugin_get_function('panels_storage', $storage_plugin, 'access callback');
+    if (!$access_callback) {
+      return FALSE;
+    }
+
+    return $access_callback($this->storage_type, $this->storage_id, $op, $account);
+  }
 }
 
 /**
@@ -1079,12 +1134,12 @@ function panels_export_display($display, $prefix = '') {
         $title_pid = $pid;
       }
       $pane->pid = $pid;
-      $output .= ctools_export_object('panels_pane', $pane, $prefix . '  ');
-      $output .= "$prefix  " . '$display->content[\'' . $pane->pid . '\'] = $pane' . ";\n";
+      $output .= ctools_export_object('panels_pane', $pane, $prefix);
+      $output .= $prefix . '$display->content[\'' . $pane->pid . '\'] = $pane' . ";\n";
       if (!isset($region_counters[$pane->panel])) {
         $region_counters[$pane->panel] = 0;
       }
-      $output .= "$prefix  " . '$display->panels[\'' . $pane->panel . '\'][' . $region_counters[$pane->panel]++ .'] = \'' . $pane->pid . "';\n";
+      $output .= $prefix . '$display->panels[\'' . $pane->panel . '\'][' . $region_counters[$pane->panel]++ .'] = \'' . $pane->pid . "';\n";
     }
   }
   $output .= $prefix . '$display->hide_title = ';
@@ -1334,7 +1389,7 @@ function template_preprocess_panels_pane(&$vars) {
   $vars['pane_suffix'] = !empty($content->pane_suffix) ? $content->pane_suffix : '';
 
   $vars['title'] = !empty($content->title) ? $content->title : '';
-  $vars['title_heading'] = !empty($content->title_heading) ? $content->title_heading : 'h2';
+  $vars['title_heading'] = !empty($content->title_heading) ? $content->title_heading : variable_get('override_title_heading', 'h2');
   $vars['title_attributes_array']['class'][] = 'pane-title';
 
   $vars['feeds'] = !empty($content->feeds) ? implode(' ', $content->feeds) : '';
@@ -1409,6 +1464,11 @@ function panels_ajax_router() {
   $renderer->cache = &$cache;
   ctools_include('cleanstring');
   $renderer->clean_key = ctools_cleanstring($cache_key);
+
+  $op = $renderer->get_panels_storage_op_for_ajax($method);
+  if (!$cache->display->access($op)) {
+    return MENU_ACCESS_DENIED;
+  }
 
   $output = call_user_func_array(array($renderer, $method), $args);
 
@@ -1719,6 +1779,64 @@ function panels_page_wizard_panels_cache_set($key, $cache) {
   $wizard_cache = page_manager_get_wizard_cache($key);
   $wizard_cache->display_cache = $cache;
   page_manager_set_wizard_cache($wizard_cache);
+}
+
+/**
+ * Alter the page wizard basic page, when panels is selected, to inject page
+ * manager as the storage plugin for panels.
+ * @param $form
+ * @param $form_state
+ */
+function panels_form_page_manager_page_form_basic_alter(&$form, &$form_state) {
+  $form['#validate'][] = 'panels_page_manager_handler_add_validate';
+}
+
+/**
+ * Alter the variant add page, so when panels is selected, page manager is the
+ * storage plugin for panels.
+ * @param $form
+ * @param $form_state
+ */
+function panels_form_page_manager_handler_add_alter(&$form, &$form_state) {
+  $form['#validate'][] = 'panels_page_manager_handler_add_validate';
+}
+
+/**
+ * Perform the validation check to see if panel context is selected to use
+ * page manager as the storage plugin.
+ * @param $form
+ * @param $form_state
+ */
+function panels_page_manager_handler_add_validate($form, &$form_state) {
+  if($form_state['values']['handler'] == 'panel_context') {
+    $form_state['page']->storage_type = 'page_manager';
+  }
+}
+
+/**
+ * Implements hook_default_page_manager_handlers_alter().
+ *
+ * If a default Panels display has no storage type, set it.
+ */
+function panels_default_page_manager_handlers_alter(&$handlers) {
+  foreach ($handlers as &$handler) {
+    if ($handler->handler == 'panel_context') {
+      $display =& $handler->conf['display'];
+      if (empty($display->storage_type)) {
+        $display->storage_type = 'page_manager';
+        $display->storage_id = $handler->name;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_default_page_manager_pages_alter().
+ */
+function panels_default_page_manager_pages_alter(&$pages) {
+  foreach ($pages as &$page) {
+    panels_default_page_manager_handlers_alter($page->default_handlers);
+  }
 }
 
 // --------------------------------------------------------------------------

@@ -229,18 +229,6 @@ function panelizer_uninstall() {
 }
 
 /**
- * Implements hook_update_dependencies().
- */
-function panelizer_update_dependencies() {
-  // Update 7115 requires UUID support in CTools and Panels.
-  $dependencies['panelizer'][7115] = array(
-    'panels' => 7302,
-  );
-
-  return $dependencies;
-}
-
-/**
  * Implements hook_requirements().
  */
 function panelizer_requirements($phase) {
@@ -358,6 +346,27 @@ function panelizer_hide_fields_on_panelized_view_mode($entity_type, $bundle, $vi
       field_update_instance($instance);
     }
   }
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function panelizer_update_dependencies() {
+  // Update 7115 requires UUID support in CTools and Panels.
+  $dependencies['panelizer'][7115] = array(
+    'panels' => 7302,
+  );
+
+  // These updates requires Panels storage support, which was added in
+  // panels_update_7305.
+  $dependencies['panelizer'][7302] = array(
+    'panels' => 7305,
+  );
+  $dependencies['panelizer'][7303] = array(
+    'panels' => 7305,
+  );
+
+  return $dependencies;
 }
 
 /**
@@ -1151,6 +1160,11 @@ function panelizer_update_7300(&$sandbox) {
     // Get a list of all records using a default display.
     $sandbox['max'] = db_query('SELECT COUNT(DISTINCT entity_type) FROM {panelizer_entity} WHERE did = 0')->fetchField();
 
+    // Bail if no records found.
+    if (empty($sandbox['max'])) {
+      return t('No records need to be fixed.');
+    }
+
     watchdog('panelizer', 'Default panelizer records will be removed for @count entity types.', array('@count' => $sandbox['max']));
   }
 
@@ -1214,5 +1228,104 @@ function panelizer_update_7301() {
   }
   else {
     return t('There was already an index on the {panelizer_entity} table for the revision_id column, so nothing was done.');
+  }
+}
+
+/**
+ * Set the storage type and ID on existing {panelizer_default} records.
+ */
+function panelizer_update_7302(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    // Initialize batch update information.
+    $sandbox['progress'] = (float)0;
+    $sandbox['current_did'] = -1;
+    $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+      FROM {panels_display} pd
+        JOIN {panelizer_defaults} p ON p.did = pd.did
+      WHERE pd.storage_type = ''")->fetchField();
+    if (empty($sandbox['max'])) {
+      return t('Nothing to be fixed in Panelizer update 7302.');
+    }
+  }
+
+  // Set a limit of how many rows to process per batch. 1000 rows is probably
+  // good.
+  $limit = 1000;
+
+  // Run the query
+  $result = db_query_range("SELECT pd.did, p.name
+    FROM {panels_display} pd
+      JOIN {panelizer_defaults} p ON p.did = pd.did
+    WHERE pd.storage_type = '' AND pd.did > :current_did", 0, $limit, array(':current_did' => $sandbox['current_did']));
+
+  foreach ($result as $row) {
+    db_update('panels_display')
+      ->fields(array(
+        'storage_type' => 'panelizer_default',
+        'storage_id' => $row->name,
+      ))
+      ->condition('did', $row->did)
+      ->execute();
+
+    // Update our progress information.
+    $sandbox['progress']++;
+    $sandbox['current_did'] = $row->did;
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    return t('Added the storage type for panelizer_defaults to relevant panels displays');
+  }
+}
+
+/**
+ * Set the storage type and ID on existing {panelizer_entity} records.
+ */
+function panelizer_update_7303(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    // Initialize batch update information.
+    $sandbox['progress'] = (float)0;
+    $sandbox['current_did'] = -1;
+    $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+      FROM {panels_display} pd
+        JOIN {panelizer_entity} p ON p.did = pd.did
+      WHERE pd.storage_type = ''")->fetchField();
+    if (empty($sandbox['max'])) {
+      return t('Nothing to be fixed in Panelizer update 7303.');
+    }
+  }
+
+  // Set a limit of how many rows to process per batch.
+  $limit = 1000;
+
+  // Look for records to be updated.
+  $result = db_query_range("SELECT pd.did, p.entity_type, p.entity_id, p.view_mode
+    FROM {panels_display} pd
+      JOIN {panelizer_entity} p ON p.did = pd.did
+    WHERE pd.storage_type = '' AND pd.did > :current_did", 0, $limit, array(':current_did' => $sandbox['current_did']));
+
+  foreach ($result as $row) {
+    db_update('panels_display')
+      ->fields(array(
+        'storage_type' => 'panelizer_entity',
+        'storage_id' => implode(':', array($row->entity_type, $row->entity_id, $row->view_mode)),
+      ))
+      ->condition('did', $row->did)
+      ->execute();
+
+    // Update our progress information.
+    $sandbox['progress']++;
+    $sandbox['current_did'] = $row->did;
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    return t('Added the storage type for panelizer_entities to relevant panels displays');
   }
 }

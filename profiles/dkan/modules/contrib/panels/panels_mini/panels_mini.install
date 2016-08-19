@@ -114,11 +114,69 @@ function panels_mini_uninstall() {
     $deltas[] = $panel_mini->pid;
   }
 
-  if ($deltas) {
+  if (db_table_exists('block') && $deltas) {
     // Delete all configured blocks.
     db_delete('block')
       ->condition('module', 'panels_mini')
       ->condition('delta', $deltas)
       ->execute();
+  }
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function panels_mini_update_dependencies() {
+  // Update 7301 requires panels storage support
+  $dependencies['panels_mini'][7301] = array(
+    'panels' => 7305,
+  );
+
+  return $dependencies;
+}
+
+/**
+ * Set the storage type and id on existing mini panels.
+ */
+function panels_mini_update_7301() {
+  if (!isset($sandbox['progress'])) {
+     // Initialize batch update information.
+     $sandbox['progress'] = (float)0;
+     $sandbox['current_did'] = -1;
+     $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+         FROM {panels_display} pd
+           JOIN {panels_mini} pm ON pm.did = pd.did
+         WHERE pd.storage_type = ''")->fetchField();
+   }
+
+  // Set a limit of how many rows to process per batch.
+  $limit = 1000;
+
+  // Run the query
+  $result = db_query_range("SELECT pd.did, pm.name
+      FROM {panels_display} pd
+        JOIN {panels_mini} pm ON pm.did = pd.did
+      WHERE pd.storage_type = '' AND pd.did > :current_did", 0, $limit, array(':current_did' => $sandbox['current_did']));
+
+  foreach ($result as $row) {
+    db_update('panels_display')
+      ->fields(array(
+        'storage_type' => 'panels_mini',
+        'storage_id' => $row->name,
+      ))
+      ->condition('did', $row->did)
+      ->execute();
+
+    // Update our progress information.
+    $sandbox['progress']++;
+    $sandbox['current_did'] = $row->did;
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    return t('Added the storage type for panels_mini to relevant panels displays');
   }
 }

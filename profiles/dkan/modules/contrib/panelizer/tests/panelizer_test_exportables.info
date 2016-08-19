@@ -1,0 +1,8 @@
+name = Panelizer Test Exportables
+description = "Helper module for testing Panelizer's exportables."
+core = 7.x
+
+; Don't show this on the modules admin page.
+hidden = TRUE
+
+dependencies[] = panelizer
