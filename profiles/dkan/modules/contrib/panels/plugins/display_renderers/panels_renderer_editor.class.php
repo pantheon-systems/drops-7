@@ -61,6 +61,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       ctools_add_js('display_editor', 'panels');
       ctools_add_css('panels_dnd', 'panels');
       ctools_add_css('panels_admin', 'panels');
+      drupal_add_library('system', 'ui');
     }
   }
 
@@ -514,6 +515,40 @@ class panels_renderer_editor extends panels_renderer_standard {
   }
 
   /**
+   * Get the Panels storage oparation for a given renderer AJAX method.
+   *
+   * @param string $method
+   *   The method name.
+   *
+   * @return string
+   *   The Panels storage op.
+   */
+  function get_panels_storage_op_for_ajax($method) {
+    switch ($method) {
+      case 'ajax_show':
+      case 'ajax_hide':
+      case 'ajax_select_content':
+      case 'ajax_add_pane':
+      case 'ajax_edit_pane':
+      case 'ajax_panel_title':
+      case 'ajax_cache_method':
+      case 'ajax_cache_settings':
+      case 'ajax_style_type':
+      case 'ajax_style_settings':
+      case 'ajax_pane_css':
+      case 'ajax_lock':
+      case 'ajax_access_settings':
+      case 'ajax_access_add_test':
+      case 'ajax_access_configure_test':
+      case 'ajax_layout':
+      case 'ajax_style':
+        return 'update';
+    }
+
+    return parent::get_panels_storage_op($method);
+  }
+
+  /**
    * AJAX command to show a pane.
    */
   function ajax_show($pid = NULL) {
@@ -560,6 +595,11 @@ class panels_renderer_editor extends panels_renderer_standard {
       $output = theme('panels_add_content_modal', array('renderer' => $this, 'categories' => $categories, 'category' => $category, 'region' => $region));
     }
     $this->commands[] = ctools_modal_command_display($title, $output);
+
+    // Give keybord focus to the first item in the category we just loaded.
+    if (!empty($category)) {
+      $this->commands[] = ajax_command_invoke(".panels-add-content-modal .panels-section-columns :focusable:first", 'focus');
+    }
   }
 
   /**
@@ -1500,7 +1540,7 @@ function panels_ajax_edit_pane_next(&$form_state) {
 }
 
 /**
- * Handle the 'finish' click on teh add/edit pane form wizard.
+ * Handle the 'finish' click on the add/edit pane form wizard.
  *
  * All we need to do is set a flag so the return can handle adding
  * the pane.
@@ -1773,13 +1813,13 @@ function panels_edit_configure_pane_css_form($form, &$form_state) {
     '#type' => 'textfield',
     '#default_value' => isset($pane->css['css_id']) ? $pane->css['css_id'] : '',
     '#title' => t('CSS ID'),
-    '#description' => t('CSS ID to apply to this pane. This may be blank.'),
+    '#description' => t('CSS ID to apply to this pane. This may be blank. Keywords from context are allowed.'),
   );
   $form['css_class'] = array(
     '#type' => 'textfield',
     '#default_value' => isset($pane->css['css_class']) ? $pane->css['css_class'] : '',
     '#title' => t('CSS class'),
-    '#description' => t('CSS class to apply to this pane. This may be blank.'),
+    '#description' => t('CSS class to apply to this pane. This may be blank. Keywords from context are allowed.'),
   );
 
   $form['next'] = array(

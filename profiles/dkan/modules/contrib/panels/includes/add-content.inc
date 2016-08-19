@@ -9,6 +9,8 @@
  * Preprocess the primary entry level theme.
  */
 function template_preprocess_panels_add_content_modal(&$vars) {
+  $vars['categories_array'] = array();
+
   // Process the list of categories.
   foreach ($vars['categories'] as $key => $category_info) {
     // 'root' category is actually displayed under the categories, so

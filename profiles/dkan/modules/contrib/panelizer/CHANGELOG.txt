@@ -1,3 +1,14 @@
+Panelizer 7.x-3.3, 2016-08-17
+-----------------------------
+#2762351 by DamienMcKenna: Skip update 7300 if there are no records to process.
+By dsnopek, japerry, mpotter, DamienMcKenna: Add support for the new Panels
+  Storage API.
+By dsnopek, japerry, mpotter, DamienMcKenna: Add support for the new Panels IPE
+  access hook.
+By DamienMcKenna: Moved panelizer_update_dependencies() to in front of the
+  update scripts.
+
+
 Panelizer 7.x-3.2, 2016-06-30
 -----------------------------
 #2416977 by Andrew M Riley: Confirm Navigation: Leave this Page (IPE w/

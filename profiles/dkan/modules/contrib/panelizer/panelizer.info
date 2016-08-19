@@ -1,8 +1,8 @@
 name = Panelizer
 description = Allow any node type to have custom panel displays, similar to the panel node type.
 package = "Panels"
-dependencies[] = panels (>= 3.5)
-dependencies[] = ctools (>= 1.9)
+dependencies[] = panels
+dependencies[] = ctools
 dependencies[] = page_manager
 core = 7.x
 configure = admin/structure/panelizer
@@ -34,6 +34,12 @@ files[] = tests/panelizer.node_revisions.test
 ; Tests: Standard node translations.
 files[] = tests/panelizer.node_content_translation.test
 
+; Tests: Exportables.
+files[] = tests/panelizer.exportables.test
+
+; Tests: Panels IPE.
+files[] = tests/panelizer.with_panels_ipe.test
+
 ; Todo: Tests: Pathauto integration.
 test_dependencies[] = pathauto
 files[] = tests/panelizer.with_pathauto.test
@@ -50,9 +56,9 @@ files[] = tests/panelizer.with_views.test
 test_dependencies[] = workbench_moderation (>= 3.x)
 files[] = tests/panelizer.with_workbench_moderation.test
 
-; Information added by Drupal.org packaging script on 2016-07-01
-version = "7.x-3.2"
+; Information added by Drupal.org packaging script on 2016-08-17
+version = "7.x-3.3"
 core = "7.x"
 project = "panelizer"
-datestamp = "1467340740"
+datestamp = "1471449520"
 

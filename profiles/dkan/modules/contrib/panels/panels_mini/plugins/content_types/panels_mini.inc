@@ -4,7 +4,7 @@
  * @file
  * Contains the content type plugin for a mini panel. While this does not
  * need to be broken out into a .inc file, it's convenient that we do so
- * that we don't load code unneccessarily. Plus it demonstrates plugins
+ * that we don't load code unnecessarily. Plus it demonstrates plugins
  * in modules other than Panels itself.
  *
  */
@@ -68,8 +68,13 @@ function _panels_mini_panels_mini_content_type_content_type($mini) {
     $type['required context'] = array();
     foreach ($mini->requiredcontexts as $context) {
       $info = ctools_get_context($context['name']);
-      // TODO: allow an optional setting
-      $type['required context'][] = new ctools_context_required($context['identifier'], $info['context name']);
+      // Check if the required context is actually required.
+      if (!empty($context['optional'])) {
+        $type['required context'][] = new ctools_context_optional($context['identifier'], $info['context name']);
+      }
+      else {
+        $type['required context'][] = new ctools_context_required($context['identifier'], $info['context name']);
+      }
     }
   }
   return $type;

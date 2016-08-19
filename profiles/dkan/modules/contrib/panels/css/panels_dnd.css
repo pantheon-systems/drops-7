@@ -305,9 +305,17 @@ a.close img {
   background: url(../images/bg-content-modal.png);
   height: 100%;
   margin: -1em;
-  padding-top: 1em;
+  padding-bottom: 1em;
   padding-left: 175px;
   position: relative;
+}
+
+.panels-section-columns-quickfilter {
+  padding-top: 1em;
+  padding-left: 1em;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+  background-color: #EEEEEE;
 }
 
 .panels-section-columns {
@@ -371,7 +379,11 @@ a.close img {
 
 .content-type-button a {
   display: inline-block;
-  width: 100%;
+  width: 99%;
+}
+
+.content-type-button a:focus {
+  border: 1px dotted black;
 }
 
 .content-type-button img {
