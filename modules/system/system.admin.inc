@@ -1856,7 +1856,7 @@ function system_image_toolkit_settings() {
   if (count($toolkits_available) == 0) {
     variable_del('image_toolkit');
     $form['image_toolkit_help'] = array(
-      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('gd-link' => url('http://php.net/gd'))),
+      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('!gd-link' => url('http://php.net/gd'))),
     );
     return $form;
   }
@@ -2202,6 +2202,11 @@ function system_add_date_format_type_form_submit($form, &$form_state) {
  * Return the date for a given format string via Ajax.
  */
 function system_date_time_lookup() {
+  // This callback is protected with a CSRF token because user input from the
+  // query string is reflected in the output.
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'admin/config/regional/date-time/formats/lookup')) {
+    return MENU_ACCESS_DENIED;
+  }
   $result = format_date(REQUEST_TIME, 'custom', $_GET['format']);
   drupal_json_output($result);
 }
@@ -2875,13 +2880,14 @@ function system_date_time_formats() {
  * Allow users to add additional date formats.
  */
 function system_configure_date_formats_form($form, &$form_state, $dfid = 0) {
+  $ajax_path = 'admin/config/regional/date-time/formats/lookup';
   $js_settings = array(
     'type' => 'setting',
     'data' => array(
       'dateTime' => array(
         'date-format' => array(
           'text' => t('Displayed as'),
-          'lookup' => url('admin/config/regional/date-time/formats/lookup'),
+          'lookup' => url($ajax_path, array('query' => array('token' => drupal_get_token($ajax_path)))),
         ),
       ),
     ),
