@@ -1,9 +1,9 @@
 ; Packaging information for express
-name = "express"
-description = "University of Colorado Boulder"
+name = "Express"
+description = "Express installation profile"
 exclusive = "1"
 core = "7.x"
-version = 2.0
+version = 7.x-2.2
 
 ; ----------
 ; Dependencies
@@ -12,7 +12,6 @@ dependencies[] = express_field_bases
 dependencies[] = express_add_content
 dependencies[] = express_help
 dependencies[] = express_theme_picker
-dependencies[] = express_layout
 dependencies[] = express_settings
 dependencies[] = cu_colorbox
 ;dependencies[] = express_permissions
@@ -41,10 +40,10 @@ dependencies[] = system
 dependencies[] = taxonomy
 dependencies[] = text
 dependencies[] = user
+dependencies[] = views_content_cache
 
 ; Layout Contib Dependencies
 dependencies[] = entity
-dependencies[] = entityreference
 dependencies[] = entitycache
 dependencies[] = inline_entity_form
 dependencies[] = bean
@@ -61,8 +60,6 @@ dependencies[] = field_group
 dependencies[] = link
 dependencies[] = linkit
 dependencies[] = features
-dependencies[] = ldap_authentication
-dependencies[] = ldap_servers
 dependencies[] = user_external_invite
 dependencies[] = libraries
 dependencies[] = views
@@ -80,7 +77,7 @@ dependencies[] = auto_entitylabel
 ; Admin UI Improvements
 dependencies[] = navbar
 dependencies[] = module_filter
-dependencies[] = escape_admin
+dependencies[] = responsive_preview
 
 ; Site Structure
 dependencies[] = cu_site_info
@@ -96,7 +93,6 @@ dependencies[] = cu_accessibility
 dependencies[] = profile_module_manager
 
 ; ============ CU AUTHENTICATION AND PERMISSIONS ============
-dependencies[] = cu_ldap
 dependencies[] = administerusersbyrole
 dependencies[] = role_delegation
 dependencies[] = chain_menu_access
@@ -124,6 +120,10 @@ dependencies[] = cu_slider
 dependencies[] = cu_faq
 dependencies[] = cu_hero_unit
 
+; ============ DASHBOARD ============
+dependencies[] = express_dashboards
+dependencies[] = express_dashboard_user
+
 ; ============ FILES ============
 dependencies[] = files
 dependencies[] = file_entity
@@ -132,7 +132,6 @@ dependencies[] = files_undo_remove
 ; ============ IMAGES ============
 dependencies[] = focal_point
 dependencies[] = cu_image_styles
-dependencies[] = cu_default_image_style_override
 dependencies[] = image_url_formatter
 
 ; ============ DATE ============
@@ -164,13 +163,11 @@ dependencies[] = menu_block
 dependencies[] = disable_node_menu_item
 dependencies[] = bigmenu
 dependencies[] = menu_firstchild
-dependencies[] = more_menus
 
 ; ============ BLOCK ============
 dependencies[] = blocktheme
 dependencies[] = block_styles
 dependencies[] = cu_block
-dependencies[] = block_title_icons
 
 ; ============ FLEXSLIDER ============
 dependencies[] = flexslider
@@ -190,29 +187,26 @@ dependencies[] = ds
 dependencies[] = modernizr
 dependencies[] = smartcrop
 dependencies[] = honeypot
-dependencies[] = metatag
 dependencies[] = transliteration
-dependencies[] = advanced_link
 dependencies[] = vppr
 dependencies[] = content_menu
-dependencies[] = grid_images
 dependencies[] = cu_back_to_top
 dependencies[] = cu_give_buttons
 dependencies[] = cu_font_awesome
 dependencies[] = eva
 dependencies[] = smart_trim
 dependencies[] = stringoverrides
+dependencies[] = cu_content_lock
+dependencies[] = content_lock
+dependencies[] = context_sitewide_public
 
 ; ============ FEATURE EXPORTS ============
 dependencies[] = express_linkit_profiles
 
 ; REMOVE IN FUTURE
 dependencies[] = grid_size_blocks
-dependencies[] = cu_livechat
 
 ; STILL NEEDS WORK?
-; dependencies[] = cu_extended_content_search
 dependencies[] = cu_bean_override_view
 dependencies[] = cu_people_administration_override
 dependencies[] = cu_content_administration_override
-dependencies[] = cu_bucket

@@ -37,6 +37,8 @@ function cu_wysiwyg_wysiwyg_default_profiles() {
           'Unlink' => 1,
           'Anchor' => 1,
           'Image' => 1,
+          'Superscript' => 1,
+          'Subscript' => 1,
           'Blockquote' => 1,
           'HorizontalRule' => 1,
           'Cut' => 1,
@@ -46,6 +48,7 @@ function cu_wysiwyg_wysiwyg_default_profiles() {
           'PasteFromWord' => 1,
           'ShowBlocks' => 1,
           'RemoveFormat' => 1,
+          'SpecialChar' => 1,
           'Format' => 1,
           'Styles' => 1,
           'Table' => 1,
@@ -110,7 +113,7 @@ Small Table=table.table-small
 Columns=table.table-vertical
 Rows=table.table-horizontal',
       'block_formats' => 'p,h2,h3,h4,h5,h6,div,blockquote',
-      'advanced__active_tab' => 'edit-css',
+      'advanced__active_tab' => 'edit-basic',
       'forcePasteAsPlainText' => 0,
     ),
   );

@@ -10,7 +10,7 @@ function cu_test_content_people_install() {
     'Alumni' => array(),
   );
   _cu_test_content_people_create_taxonomy_terms_insert('person_type', $terms);
-  
+
   $terms = array(
     'Test Department One' => array(),
     'Test Department Two' => array(),
@@ -36,21 +36,21 @@ function cu_test_content_people_install() {
 
 function _cu_test_content_people_generate($user) {
   $temp_people = variable_get('cu_test_content_people', array());
-  $first = ucfirst($user['user']['name']['first']);
-  $last = ucfirst($user['user']['name']['last']);
-  $email = $user['user']['email'];
-  $phone = $user['user']['phone'];
+  $first = ucfirst($user['name']['first']);
+  $last = ucfirst($user['name']['last']);
+  $email = $user['email'];
+  $phone = $user['phone'];
   $web = array(
-    'url' => 'http://www.example.com/' . $user['user']['name']['last'],
+    'url' => 'http://www.example.com/' . $user['name']['last'],
     'title' => 'My Website',
   );
-  $photo = $user['user']['picture']['large'];
-  $address = $user['user']['location']['street'] . '<br />' . $user['user']['location']['city'] . ', ' . $user['user']['location']['state'] . ' ' . $user['user']['location']['zip'];
-  
+  $photo = $user['picture']['large'];
+  $address = $user['location']['street'] . '<br />' . $user['location']['city'] . ', ' . $user['location']['state'] . ' ' . $user['location']['zip'];
+
   $node = new StdClass();
   $node->language = LANGUAGE_NONE;
   $node->type = 'person';
-  
+
   $node->field_person_first_name[$node->language][0]['value'] = $first;
   $node->field_person_last_name[$node->language][0]['value'] = $last;
   $node->field_person_email[$node->language][0]['email'] = $email;
@@ -59,20 +59,20 @@ function _cu_test_content_people_generate($user) {
   $node->field_person_website[$node->language][0]['url'] = $web['url'];
   $node->field_person_address[$node->language][0]['value'] = ucwords($address);
   $node->field_person_address[$node->language][0]['format']  = 'wysiwyg';
-  
+
   $vocabulary = taxonomy_vocabulary_machine_name_load('person_type');
-  $terms = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid)); 
+  $terms = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
   $rand_terms = array_rand($terms, 2);
   $rand_term = $rand_terms[0];
   $node->field_person_job_type[$node->language][0]['tid'] = $rand_term;
 
   $vocabulary = taxonomy_vocabulary_machine_name_load('department');
   $terms = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
-  
+
   $rand_terms = array_rand($terms, 2);
   $rand_term = $rand_terms[0];
   $node->field_person_department[$node->language][0]['tid'] = $rand_term;
-  
+
   $titles = array(
     'Professor',
     'Assistant Professor',
@@ -84,8 +84,8 @@ function _cu_test_content_people_generate($user) {
   );
   $title = $titles[array_rand($titles)];
   $node->field_person_title[$node->language][0]['value'] = $title;
-  
-  
+
+
   $file_path = system_retrieve_file($photo);
   $file = (object) array(
     'uid' => $count,
@@ -96,13 +96,13 @@ function _cu_test_content_people_generate($user) {
   // You can specify a subdirectory, e.g. public://foo/
   $file = file_copy($file, 'public://');
   $node->field_person_photo[LANGUAGE_NONE][0] = (array) $file;
-  $node->field_person_photo[LANGUAGE_NONE][0]['alt'] = "$first $last"; 
-  
+  $node->field_person_photo[LANGUAGE_NONE][0]['alt'] = "$first $last";
+
   $text = _cu_test_content_people_dummy_text();
   $node->body[$node->language][0]['value'] = $text;
-  $node->body[$node->language][0]['safe_value'] = $text; 
+  $node->body[$node->language][0]['safe_value'] = $text;
   $node->body[$node->language][0]['format']  = 'wysiwyg';
-  
+
   $node->uid = 1;
   node_save($node);
   $temp_people[$node->nid] = $node->title;
@@ -116,7 +116,7 @@ function _cu_test_content_people_dummy_text() {
     return $response->data;
   } else {
     return 'No dummy text.';
-  } 
+  }
 }
 
 function _cu_test_content_people_list_node() {
@@ -173,7 +173,7 @@ function _cu_test_content_people_create_taxonomy_terms_insert($vocab_name, $term
       _cu_test_content_people_create_taxonomy_terms_insert($vocab_name, $children, $term->tid);
     }
     $temp_term = taxonomy_get_term_by_name($term->name, $vocab_name);
-    $temp_term = current($temp_term);    
+    $temp_term = current($temp_term);
     $temp_terms[$temp_term->tid] = $term->name;
     drupal_set_message("Term $term->name - $temp_term->tid created.");
     if ($vocab_name == 'tags') {
@@ -194,7 +194,7 @@ function cu_test_content_people_uninstall() {
     }
     variable_del('cu_test_content_terms');
   }
-  
+
   $temp_people_list = variable_get('cu_test_content_people_list_page', NULL);
   if ($temp_people_list) {
     node_delete($temp_people_list);

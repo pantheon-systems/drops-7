@@ -21,7 +21,7 @@ function cu_article_taxonomy_default_vocabularies() {
       'name' => 'Category',
       'machine_name' => 'category',
       'description' => 'Categories are general topics for broad grouping of articles.',
-      'hierarchy' => 0,
+      'hierarchy' => 1,
       'module' => 'taxonomy',
       'weight' => 0,
     ),

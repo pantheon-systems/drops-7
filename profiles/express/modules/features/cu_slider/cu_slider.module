@@ -109,17 +109,56 @@ function cu_slider_preprocess_entity(&$vars) {
   $entity_type = $vars['elements']['#entity_type'];
   $bundle = $vars['elements']['#bundle'];
 
-  // Only preprocess social_link beans.
+  // Only preprocess slider beans.
   if ($entity_type == 'bean' && $bundle == 'slider') {
+    //global $cu_slider_image_size;
+
+    //$vars['content']['field_slider_image'][0]['#image_style'] = $cu_slider_image_size;
+    //$cu_slider_image_size = $vars['content']['field_slider_size'][0]['#markup'];
+    //global $cu_slider_style;
+    //$cu_slider_style = $vars['content']['field_slider_design_style'][0]['#markup'];
+    //dpm($vars);
+  }
+  // Only preprocess slider field collections.
+  if ($entity_type == 'field_collection_item' && $bundle == 'field_slider_slide') {
+    // Provide theme suggestion based on slider design style
+    global $cu_slider_style;
+    $vars['theme_hook_suggestions'][] = 'field_collection_item__field_slider_slide__style_' . $cu_slider_style;
+
+    // Set image style based on slider image size
     global $cu_slider_image_size;
-    $cu_slider_image_size = $vars['content']['field_slider_size'][0]['#markup'];
+    $vars['content']['field_slider_image'][0]['#image_style'] = $cu_slider_image_size;
+
+    // Prepare slide content variables
+    if (!empty($vars['content']['field_slider_link']['#items'])) {
+      $link = trim(render($vars['content']['field_slider_link']));
+      if (!empty($vars['content']['field_slider_image'])) {
+        $vars['slide_image'] = l(render($vars['content']['field_slider_image']), $link, array('html' => TRUE));
+      }
+      if (!empty($vars['content']['field_slider_caption'])) {
+        $text = $vars['content']['field_slider_caption'][0]['#markup'] . '&nbsp;<i class="fa fa-external-link-square"></i>';
+        $vars['slide_caption'] = l($text, $link, array('html' => TRUE));
+      }
+    } else {
+      if (!empty($vars['content']['field_slider_image'])) {
+        $vars['slide_image'] = render($vars['content']['field_slider_image']);
+      }
+      if (!empty($vars['content']['field_slider_caption'])) {
+        $vars['slide_caption'] = render($vars['content']['field_slider_caption']);
+      }
+    }
   }
 }
-
+/**
+ * Implements hook_preprocess_field().
+ * Set global variables for slider image size and style.
+ */
 function cu_slider_preprocess_field(&$vars) {
   global $cu_slider_image_size;
   if ($vars['element']['#field_name'] == 'field_slider_slide') {
     $cu_slider_image_size = $vars['element']['#object']->field_slider_size['und'][0]['value'];
+    global $cu_slider_style;
+    $cu_slider_style = $vars['element']['#object']->field_slider_design_style['und'][0]['value'];
   }
 }
 

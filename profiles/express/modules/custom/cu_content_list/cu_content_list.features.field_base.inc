@@ -10,14 +10,13 @@
 function cu_content_list_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_content_list_display'
+  // Exported field_base: 'field_content_list_display'.
   $field_bases['field_content_list_display'] = array(
     'active' => 1,
     'cardinality' => 1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_content_list_display',
-    'foreign keys' => array(),
     'indexes' => array(
       'value' => array(
         0 => 'value',
@@ -34,21 +33,13 @@ function cu_content_list_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_content_list_reference'
+  // Exported field_base: 'field_content_list_reference'.
   $field_bases['field_content_list_reference'] = array(
     'active' => 1,
     'cardinality' => -1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_content_list_reference',
-    'foreign keys' => array(
-      'node' => array(
-        'columns' => array(
-          'target_id' => 'nid',
-        ),
-        'table' => 'node',
-      ),
-    ),
     'indexes' => array(
       'target_id' => array(
         0 => 'target_id',
@@ -69,6 +60,7 @@ function cu_content_list_field_default_field_bases() {
         ),
         'target_bundles' => array(
           'article' => 'article',
+          'issue' => 'issue',
           'page' => 'page',
           'person' => 'person',
           'photo_gallery' => 'photo_gallery',
@@ -80,14 +72,13 @@ function cu_content_list_field_default_field_bases() {
     'type' => 'entityreference',
   );
 
-  // Exported field_base: 'field_content_list_sort'
+  // Exported field_base: 'field_content_list_sort'.
   $field_bases['field_content_list_sort'] = array(
     'active' => 1,
     'cardinality' => 1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_content_list_sort',
-    'foreign keys' => array(),
     'indexes' => array(
       'value' => array(
         0 => 'value',

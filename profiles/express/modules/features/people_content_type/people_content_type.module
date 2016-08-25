@@ -33,12 +33,12 @@ function people_content_type_menu() {
     'weight' => 1,
   );
   $items['admin/settings/people/settings'] = array(
-	'title' => 'People Filter Labels',
-	'description' => 'Create text labels for People filters',
-	'type' => MENU_NORMAL_ITEM,
-	'page callback' => 'drupal_get_form',
-	'page arguments' => array('people_content_type_admin_settings_form'),
-	'access arguments' => array('administer express settings'),
+    'title' => 'People Filter Labels',
+    'description' => 'Create text labels for People filters',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('people_content_type_admin_settings_form'),
+    'access arguments' => array('administer express settings'),
   );
   return $items;
 }
@@ -57,48 +57,11 @@ function people_content_type_permission() {
 
 
 /**
- * Provide a form-specific alteration for shared ('base') forms.
+ * Implements hook_form/-form_ID_alter().
  *
- * By default, when drupal_get_form() is called, Drupal looks for a function
- * with the same name as the form ID, and uses that function to build the form.
- * In contrast, base forms allow multiple form IDs to be mapped to a single base
- * (also called 'factory') form function.
- *
- * Modules can implement hook_form_BASE_FORM_ID_alter() to modify a specific
- * base form, rather than implementing hook_form_alter() and checking for
- * conditions that would identify the shared form constructor.
- *
- * To identify the base form ID for a particular form (or to determine whether
- * one exists) check the $form_state. The base form ID is stored under
- * $form_state['build_info']['base_form_id'].
- *
- * See hook_forms() for more information on how to implement base forms in
- * Drupal.
- *
- * Form alter hooks are called in the following order: hook_form_alter(),
- * hook_form_BASE_FORM_ID_alter(), hook_form_FORM_ID_alter(). See
- * hook_form_alter() for more details.
- *
- * hide old fields we need for migration.
- *
- * @param array $form
- *   Nested array of form elements that comprise the form.
- * @param array $form_state
- *   A keyed array containing the current state of the form.
- * @param string $form_id
- *   String representing the name of the form itself. Typically this is the
- *   name of the function that generated the form.
- *
- * @see hook_form_alter()
- * @see hook_form_FORM_ID_alter()
- * @see drupal_prepare_form()
- * @see hook_forms()
+ * Adds labels to filter options and hides legacy fields on form.
  */
 function people_content_type_form_person_node_form_alter(&$form, &$form_state, $form_id) {
-  // Hide legacy fields.
-  $form['field_extra']['#access'] = FALSE;
-  $form['field_person_interests']['#access'] = FALSE;
-  $form['field_person_bio']['#access'] = FALSE;
 
   // Get filter field custom labels and apply them to form fields.
   $settings = variable_get('people_content_type_label_settings');
@@ -121,7 +84,9 @@ function people_content_type_form_person_node_form_alter(&$form, &$form_state, $
 }
 
 /**
- * TODO: DOCO.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds custom labels to people list page form.
  */
 function people_content_type_form_people_list_page_node_form_alter(&$form, &$form_state, $form_id) {
   // Only do this for new nodes
@@ -208,6 +173,64 @@ function people_content_type_preprocess_node(&$vars) {
       $vars['content']['departments'] = join(' &bull; ', $departments);
       if (isset($vars['content']['attributes']['classes'])) {
         $vars['content']['grid_classes'] = join(' ', $vars['content']['attributes']['classes']);
+      }
+      // Add thumbnail to OpenGraph meta for facebook sharing
+      if (!empty($vars['field_person_photo'])) {
+        if (!empty($vars['field_person_photo'][LANGUAGE_NONE])) {
+          $thumbnail_uri = $vars['field_person_photo'][LANGUAGE_NONE][0]['uri'];
+        }
+        else {
+          $thumbnail_uri = $vars['field_person_photo'][0]['uri'];
+        }
+        $thumbnail_path = image_style_url('medium', $thumbnail_uri);
+        $image_style_uri = image_style_path('medium', $thumbnail_uri);
+        if (!file_exists($image_style_uri)) {
+          image_style_create_derivative(image_style_load('medium'), $thumbnail_uri, $image_style_uri);
+        }
+        $image_info = image_get_info($image_style_uri);
+
+        // build and add meta element
+        $element = array(
+          '#tag' => 'meta', // The #tag is the html tag -
+          '#attributes' => array( // Set up an array of attributes inside the tag
+            'property' => 'og:image',
+            'content' => $thumbnail_path,
+          ),
+        );
+        drupal_add_html_head($element, 'open_graph_image');
+        $og_parameters = array(
+          'width' => $image_info['width'],
+          'height' => $image_info['height'],
+          'type' => $image_info['mime_type'],
+        );
+        foreach ($og_parameters as $key => $param) {
+          $element = array(
+            '#tag' => 'meta', // The #tag is the html tag -
+            '#attributes' => array( // Set up an array of attributes inside the tag
+              'property' => 'og:image:' . $key,
+              'content' => $param,
+            ),
+          );
+          drupal_add_html_head($element, 'open_graph_image_' . $key);
+        }
+
+        $element = array(
+          '#tag' => 'meta', // The #tag is the html tag -
+          '#attributes' => array( // Set up an array of attributes inside the tag
+            'property' => 'og:url',
+            'content' => url(current_path(), array('absolute' => TRUE)),
+          ),
+        );
+        drupal_add_html_head($element, 'open_graph_url');
+
+        $element = array(
+          '#tag' => 'meta', // The #tag is the html tag -
+          '#attributes' => array( // Set up an array of attributes inside the tag
+            'property' => 'og:title',
+            'content' => drupal_get_title(),
+          ),
+        );
+        drupal_add_html_head($element, 'open_graph_title');
       }
       break;
 
@@ -368,9 +391,9 @@ function people_content_type_preprocess_node(&$vars) {
 }
 
 
-/*
+/**
  * Provide a list of grouping options
- * allowed_values_function for field_people_group_by
+ * allowed_values_function for field_people_group_by.
  */
 function _people_content_type_allowed_grouping() {
   return array(
@@ -383,9 +406,9 @@ function _people_content_type_allowed_grouping() {
   );
 }
 
-/*
+/**
  * Provide a list of sorting options
- * allowed_values_function for field_people_group_by
+ * allowed_values_function for field_people_group_by.
  */
 function _people_content_type_allowed_sorting() {
   return array(
@@ -394,16 +417,16 @@ function _people_content_type_allowed_sorting() {
   );
 }
 
-/*
- * Provide a set of filters for people list pages that vistors can use to further filter list
+/**
+ * Provide a set of filters for people list pages that vistors can use to further filter list.
  */
 function people_content_type_list_filter_form($form, &$form_state) {
   $form = array();
 
-  // Get saved filter settings
+  // Get saved filter settings.
   $settings = variable_get('people_content_type_label_settings', '');
 
-  // Create array of filter types
+  // Create array of filter types.
   $filters = array();
   $filters['person_type']['name'] = 'person_type';
   $filters['person_type']['machine_name'] = 'type';
@@ -427,10 +450,10 @@ function people_content_type_list_filter_form($form, &$form_state) {
 
   $filter_count = 5;
 
-  // Load people list page node
+  // Load people list page node.
   $node = menu_get_object();
 
-  // If filters are already set on node, remove them from filter array so they are not built/don't display
+  // If filters are already set on node, remove them from filter array so they are not built/don't display.
   if (!empty($node->field_people_list_person_type) || ($node->field_people_pos_filter_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
     unset($filters['person_type']);
     $filter_count--;
@@ -452,7 +475,7 @@ function people_content_type_list_filter_form($form, &$form_state) {
     $filter_count--;
   }
 
-  // Loop through the filters array to build the filter fields
+  // Loop through the filters array to build the filter fields.
   foreach ($filters as $key => $filter) {
     // Load vocabulary for filter
     $vocabulary = taxonomy_vocabulary_machine_name_load($filter['name']);
@@ -465,17 +488,17 @@ function people_content_type_list_filter_form($form, &$form_state) {
     foreach ($terms as $key => $term) {
       $options[$term->tid] = $term->name;
     }
-    // If there are more than 2 options ('All" + 1), build form field
+    // If there are more than 2 options ('All" + 1), build form field.
     if (count($options) > 2) {
       $form['people_list_filter'][$filter['machine_name']] = array(
        '#type' => 'select',
        '#title' => t($filter['label']),
        '#options' => $options,
-       '#default_value' => $_GET[$filter['machine_name']],
+       '#default_value' => isset($_GET[$filter['machine_name']]) ? $_GET[$filter['machine_name']] : '',
       );
     }
   }
-  // If filters are added, also add submit button and set method
+  // If filters are added, also add submit button and set method.
   if (!empty($form)) {
     $form['submit'] = array(
       '#type' => 'submit',

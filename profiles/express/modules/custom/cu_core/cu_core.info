@@ -1,5 +1,11 @@
 name = CU Core
 description = Provides CU-specific functionality, like adding variables, to Express Core.
 core = 7.x
-version = 7.x-1.0
+version = 7.x-2.5
 package = CU-Core
+
+dependencies[] = ldap_authentication
+dependencies[] = ldap_servers
+dependencies[] = cu_ldap
+dependencies[] = cu_redirect
+dependencies[] = cu_help

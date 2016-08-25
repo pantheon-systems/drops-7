@@ -8,11 +8,14 @@
 /**
  * Returns HTML for an Colorbox image field formatter.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - item: An array of image data.
  *   - image_style: An optional image style.
  *   - path: An array containing the link 'path' and link 'options'.
+ *
+ * @return string
+ *   An HTML string representing the themed output.
  *
  * @ingroup themeable
  */
@@ -125,8 +128,8 @@ function theme_colorbox_image_formatter($variables) {
   }
 
   // If gallery id is not empty add unique per-request token to avoid images being added manually to galleries.
-  if (!empty($gallery_id)) {
-    // Check if gallery token has alrady been set, we need to reuse the token for the whole request.
+  if (!empty($gallery_id) && variable_get('colorbox_unique_token', 1)) {
+    // Check if gallery token has already been set, we need to reuse the token for the whole request.
     if (is_null($gallery_token)) {
       // We use a short token since randomness is not critical.
       $gallery_token = drupal_random_key(8);
@@ -147,12 +150,15 @@ function theme_colorbox_image_formatter($variables) {
 /**
  * Returns HTML for an image using a specific Colorbox image style.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - image: image item as array.
  *   - path: The path of the image that should be displayed in the Colorbox.
  *   - title: The title text that will be used as a caption in the Colorbox.
  *   - gid: Gallery id for Colorbox image grouping.
+ *
+ * @return string
+ *   An HTML string containing a link to the given path.
  *
  * @ingroup themeable
  */
@@ -176,9 +182,8 @@ function theme_colorbox_imagefield($variables) {
     'attributes' => array(
       'title' => $variables['title'],
       'class' => $class,
-      'rel' => $variables['gid'],
+      'data-colorbox-gallery' => $variables['gid'],
     ),
-    'language' => array('language' => NULL),
   );
 
   return l($image, $options['path'], $options);
@@ -186,6 +191,8 @@ function theme_colorbox_imagefield($variables) {
 
 /**
  * Preprocess variables for the colorbox-insert-image.tpl.php file.
+ *
+ * @param array $variables
  */
 function template_preprocess_colorbox_insert_image(&$variables) {
   $item = $variables['item'];

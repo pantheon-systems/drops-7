@@ -1,15 +1,12 @@
 name = Content locking (edit lock) timeouts
 description = Provides mechanisms for automatically unlocking nodes that have been locked for a certain length of time.
 core = 7.x
-project = "content_lock"
 dependencies[] = content_lock
-files[] = content_lock_timeout.install
-files[] = content_lock_timeout.module
-configure = admin/settings/content_lock
+configure = admin/config/content/content_lock
 
-; Information added by Drupal.org packaging script on 2014-09-12
-version = "7.x-2.0"
+; Information added by Drupal.org packaging script on 2016-03-24
+version = "7.x-2.1"
 core = "7.x"
 project = "content_lock"
-datestamp = "1410528829"
+datestamp = "1458814745"
 

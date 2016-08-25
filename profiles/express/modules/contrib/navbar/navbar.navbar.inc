@@ -71,7 +71,7 @@ function navbar_navbar() {
       '#type' => 'navbar_item',
       'tab' => array(
         '#type' => 'link',
-        '#title' => t('Menu'),
+        '#title' => t('Manage'),
         '#href' => 'admin',
         '#options' => array(
           'attributes' => array(

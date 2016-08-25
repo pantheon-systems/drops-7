@@ -247,6 +247,7 @@ function webform_views_data() {
   );
 
   // Modified timestamp.
+
   $data['webform_submissions']['modified'] = array(
     'title' => t('Modified'),
     'help' => t('Timestamp when the form was last saved (complete or draft).'),
@@ -265,6 +266,7 @@ function webform_views_data() {
       'handler' => 'views_handler_argument_date',
     ),
   );
+
 
   // IP Address (remote_addr).
   $data['webform_submissions']['remote_addr'] = array(

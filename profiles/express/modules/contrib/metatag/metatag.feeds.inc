@@ -12,7 +12,7 @@ function metatag_feeds_processor_targets_alter(&$targets, $entity_type, $bundle)
     $info = metatag_get_info();
     foreach ($info['tags'] as $name => $tag) {
       $targets['meta_' . $name] = array(
-        'name' => 'Meta tag: ' . check_plain($tag['label']),
+        'name' => t('Meta tag: !label', array('!label' => $tag['label'])),
         'callback' => 'metatag_feeds_set_target',
         'description' => $tag['description'],
       );

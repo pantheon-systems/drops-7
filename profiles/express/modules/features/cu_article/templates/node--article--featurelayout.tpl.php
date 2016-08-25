@@ -4,8 +4,9 @@
 <?php hide($content['article_meta']); ?>
 <?php $tag = isset($heading_tag['#tag']) ? $heading_tag['#tag'] : 'h2'; ?>
 <?php if (!empty($author_meta)): ?>
+  <?php $author_meta = array_reverse($author_meta, true) ?>
   <div class="author-meta element-max-width">
-    <?php print join(' <span class="author-meta-separator">&bull;</span> ', $author_meta); ?>
+    <?php print join('', $author_meta); ?>
   </div>
 <?php endif; ?>
 <?php if (!empty($content['body'])): ?>

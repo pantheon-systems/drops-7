@@ -1,7 +1,7 @@
 name = CU People Administration Override
 description = This Feature extends the filter functionality of the admin/people overview screen
 core = 7.x
-package = CU-Active
+package = CU-Core
 version = 7.x-1.0
 dependencies[] = views
 features[ctools][] = views:views_default:3.0

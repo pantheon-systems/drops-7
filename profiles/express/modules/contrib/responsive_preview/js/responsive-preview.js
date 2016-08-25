@@ -446,7 +446,7 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
       var dir = this.envModel.get('dir');
       var edge = (dir === 'rtl') ? 'left' : 'right';
       this.$el
-        .find('.item-list')
+        .find('.responsive-preview-options')
         .position_responsive_preview({
           'my': edge +' top',
           'at': edge + ' bottom',
@@ -669,9 +669,9 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
         // Append the container to the body to initialize the iframe document.
         .appendTo('body');
       // Load the path into the iframe.
-      // Create a path from the basePath and the current path, chopping off the
-      // trailing slash of the basePath. The pathname already includes it.
-      $frame.get(0).contentWindow.location = Drupal.settings.basePath.slice(0, -1) + window.location.pathname;
+      // Create a path from the basePath and the current path, trimming the
+      // base away from the pathname to avoid duplication.
+      $frame.get(0).contentWindow.location = Drupal.settings.basePath + window.location.pathname.replace(Drupal.settings.basePath, '');
       // Mark the preview element processed.
       this.model.set('isBuilt', true);
     },

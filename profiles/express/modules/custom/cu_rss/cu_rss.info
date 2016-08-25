@@ -1,0 +1,9 @@
+name = RSS Feeds
+description = Provides rss feeds of articles
+core = 7.x
+package = CU-Feeds
+version = 7.x-1.0
+project = cu_rss
+dependencies[] = cu_article
+
+stylesheets[screen][] = css/cu-rss.css

@@ -171,6 +171,11 @@ function honeypot_admin_form_validate($form, &$form_state) {
     form_set_error('honeypot_element_name', t("The element name cannot contain spaces or other special characters."));
   }
 
+  // Make sure Honeypot element name starts with a letter.
+  if (!preg_match("/^[a-zA-Z].+$/", $form_state['values']['honeypot_element_name'])) {
+    form_set_error('honeypot_element_name', t("The element name must start with a letter."));
+  }
+
   // Make sure Honeypot element name isn't one of the reserved names.
   $reserved_element_names = array(
     'name',

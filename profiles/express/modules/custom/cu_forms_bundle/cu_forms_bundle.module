@@ -99,50 +99,54 @@ function cu_forms_bundle_express_help($variables) {
     'short_title' => 'Webform Help',
     'url' => 'http://www.colorado.edu/node/610',
   );
-  $variables['node/add/webform'][] = array(
-    'title' => 'Webform Overview Help',
-    'short_title' => 'Webform Overview',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/webform-overview',
-  );
   $variables['node/%/webform'][] = array(
     'title' => 'Adding Webform Components',
     'short_title' => 'Webform Components',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/second-add-form-components',
+    'url' => '/tutorial/v2/second-add-form-components',
   );
   $variables['node/%/webform/components/new/select'][] = array(
     'title' => 'Adding Select Options to Webforms',
     'short_title' => 'Webform Select Options',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/checkboxes-radio-buttons-select-lists',
+    'url' => '/tutorial/v2/checkboxes-radio-buttons-select-lists',
   );
-  $variables['node/%/webform/configure'][] = array(
-    'title' => 'Add Spam Prevention to Webforms',
-    'short_title' => 'Webform Spam Prevention',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-spam-prevention-webforms',
+  $variables['node/%/webform/conditionals'][] = array(
+    'title' => 'Webform Conditionals Help',
+    'short_title' => 'Webform Conditionals',
+    'url' => '/tutorial/v2/webform-conditional-actions',
   );
   $variables['node/%/webform/configure'][] = array(
     'title' => 'Adjust Webform Settings',
     'short_title' => 'Webform Settings',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/fourth-adjust-webform-settings',
-  );
-  $variables['node/%/webform/emails'][] = array(
-    'title' => 'Configure Email for Webforms',
-    'short_title' => 'Webform Emails',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/third-configure-email-submissions',
+    'url' => '/tutorial/v2/fourth-adjust-webform-settings',
   );
   $variables['node/%/webform/emails'][] = array(
     'title' => 'Configure Email Templates for Webforms',
     'short_title' => 'Webform Email Template',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/edit-email-submission-template',
+    'url' => '/tutorial/v2/edit-email-submission-template',
   );
   $variables['node/%/webform-results'][] = array(
     'title' => 'Check Webform Results',
     'short_title' => 'Webform Results',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/check-webform-results',
+    'url' => '/tutorial/v2/check-webform-results',
   );
   $variables['admin/settings/feedback/settings'][] = array(
     'title' => 'Feedback Form Help',
     'short_title' => 'Feedback Form Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/16',
+    'url' => '/node/16',
+  );
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help_field().
+ */
+function cu_forms_bundle_express_help_fields($variables) {
+  $variables['webform_configure_form']['fields'] = array(
+    'webform-captcha' => array(
+      'title' => 'Add Spam Prevention to Webforms',
+      'short_title' => 'Webform Spam Prevention',
+      'url' => '/tutorial/v2/add-spam-prevention-webforms',
+    ),
   );
   return $variables;
 }

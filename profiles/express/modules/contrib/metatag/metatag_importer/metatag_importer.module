@@ -12,7 +12,7 @@ function metatag_importer_menu() {
     'title' => 'Importer',
     'description' => 'Migrate settings and data from various modules to the Metatag module.',
     'page callback' => 'metatag_importer_admin_page',
-    'access arguments' => array('administer meta tags.'),
+    'access arguments' => array('administer meta tags'),
     'file' => 'metatag_importer.admin.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -22,7 +22,7 @@ function metatag_importer_menu() {
     'description' => 'Migrate settings and data from the Drupal 6 Nodewords module to the Drupal 7 Metatag module.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('metatag_importer_nodewords_form'),
-    'access arguments' => array('administer meta tags.'),
+    'access arguments' => array('administer meta tags'),
     'file' => 'metatag_importer.nodewords.inc',
     'type' => MENU_LOCAL_ACTION,
   );
@@ -32,7 +32,7 @@ function metatag_importer_menu() {
     'description' => 'Migrate settings and data from the Drupal 6 Nodewords module to the Drupal 7 Metatag module.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('metatag_importer_page_title_form'),
-    'access arguments' => array('administer meta tags.'),
+    'access arguments' => array('administer meta tags'),
     'file' => 'metatag_importer.page_title.inc',
     'type' => MENU_LOCAL_ACTION,
   );

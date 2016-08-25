@@ -1,0 +1,226 @@
+<?php
+/**
+ * @file
+ * Provides a simple custom entity type named 'video' for tracking embed codes.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function cu_tracking_pixel_entity_info() {
+  $info = array();
+  // Our custom video entity needs to be defined here.
+  // See http://drupal.org/node/1026420 and http://drupal.org/node/878804
+  // for more documentation.
+  $info['tracking_pixel'] = array(
+    // Human readable label.
+    'label' => t('Tracking Pixel'),
+    // Table for storing entity data, defined in hook_schema().
+    'base table' => 'tracking_pixel',
+    // This helps Entity API know how to query your custom table.
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    // This is a uri function provided by the Entity contrib module.
+    // It's a simple wrapper around the uri method in the controller class.
+    'uri callback' => 'entity_class_uri',
+    // These are the default controllers.
+    // 'entity class' => 'Entity',
+    'entity class' => 'Entity',
+    // 'controller class' => 'DrupalDefaultEntityController',
+    // Other options provided by the EntityAPI contrib module:
+    // 'controller class' => 'EntityAPIController ',
+    // 'controller class' => 'EntityAPIControllerExportable',
+    'controller class' => 'EntityAPIController',
+     // The information below is used to extend the EntityDefaultUIController
+
+     'module' => 'cu_tracking_pixel',
+     // Access callback to determine permisisons.
+     'access callback' => 'cu_tracking_pixel_access_callback',
+     // Tell FieldAPI that fields can be attached to our video entity
+     'fieldable' => TRUE,
+     'bundles' => array(
+        'tracking_pixel' => array(
+          'label' => t('Tracking Pixel'),
+          'admin' => array(
+            'path' => 'admin/trackingpixel',
+            'access arguments' => array('administer tracking pixels'),
+          ),
+        ),
+      ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_tracking_pixel_menu() {
+  $items = array();
+
+  $items['admin/content/trackingpixels/add'] = array(
+    'title' => 'Create Tracking Pixel',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tracking_pixel_form'),
+    'access arguments' => array('administer tracking pixels'),
+    'file' => 'cu_tracking_pixel.admin.inc'
+  );
+  $items['admin/content/trackingpixels/%cu_tracking_pixel/edit'] = array(
+    'title' => 'Edit Tracking Pixel',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tracking_pixel_form', 3),
+    'access arguments' => array('administer tracking pixels'),
+    'file' => 'cu_tracking_pixel.admin.inc'
+  );
+  $items['admin/content/trackingpixels/%cu_tracking_pixel/delete'] = array(
+    'title' => 'Delete Tracking Pixel',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_tracking_pixel_delete_confirm_form', 3),
+    'access arguments' => array('administer tracking pixels'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function cu_tracking_pixel_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'node/add' on 'admin/content' page.
+  if ($root_path == 'admin/content/trackingpixels') {
+    $item = menu_get_item('admin/content/trackingpixels/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+/**
+ * Callback for admin/content/trackingpixels/%/delete.
+ * Confirm the tracking pixel is going to be deleted.
+ */
+function cu_tracking_pixel_delete_confirm_form($form, &$form_state, $tracking_pixel) {
+  $id = $tracking_pixel->id;
+  // Always provide entity id in the same form key as in the entity edit form.
+  $form['id'] = array('#type' => 'value', '#value' => $id);
+  $form['message']['#markup'] = '<p>' . t('You are about to delete @name. Are you sure you want to delete?',array('@name' => $tracking_pixel->name)) . '</p>';
+  $form['#submit'][] = 'cu_tracking_pixel_delete';
+  return confirm_form($form, t('Delete @name',array('@name' => $tracking_pixel->name)), 'admin/content/trackingpixels');
+}
+
+/**
+ * Submit function for cu_tracking_pixel_delete_confirm().
+ * Deletes tracking pixel entity.
+ */
+function cu_tracking_pixel_delete($form) {
+  $id = $form['id']['#value'];
+  entity_delete('tracking_pixel', $id);
+  drupal_goto('admin/content/trackingpixels');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_tracking_pixel_permission() {
+  return array(
+    'administer tracking pixels' => array(
+      'title' => t('Administer Tracking Pixels'),
+    ),
+    'view tracking pixels overview' => array(
+      'title' => t('View Tracking Pixels Overview'),
+    ),
+  );
+}
+
+/**
+ * Check access permissions for pixel entities.
+ */
+function cu_tracking_pixel_access_callback($op, $trackingpixel = NULL, $account = NULL) {
+  if (($op == 'view') || user_access('administer tracking pixels', $account)) {
+    return TRUE;
+  }
+  else if (user_access('administer tracking pixels', $account)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Menu autoloader for /video.
+ */
+function cu_tracking_pixel_load($id) {
+  $tracking_pixel = entity_load('tracking_pixel', array($id));
+  return array_pop($tracking_pixel);
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Adds tracking pixel entities to page_top/page_bottom.
+ */
+function cu_tracking_pixel_page_alter(&$page) {
+  $path = current_path();
+  // Look for tracking pixels at current path
+  $query = db_select('tracking_pixel', 'tr');
+  $query->fields('tr', array('id', 'name', 'path', 'status', 'position'));
+  $query->condition('tr.status', 1, '=');
+  $query->condition('tr.path', $path, '=');
+  // Join tracking code table
+  $query->join('field_data_field_tracking_code', 'code', 'code.entity_id = tr.id');
+  $query->fields('code', array('field_tracking_code_value'));
+  $pixels = $query->execute();
+  $results = array();
+  // Check for results
+  while($pixel = $pixels->fetchAssoc()) {
+    $results[] = $pixel;
+  }
+  if (!empty($results)){
+    // Tracking pixel containers
+    $page['page_top']['tracking_pixels'] = array();
+    $page['page_bottom']['tracking_pixels'] = array();
+
+    $page['page_top']['tracking_pixels']['#prefix'] = '<div class="tracking-pixels-top" style="display:none;">';
+    $page['page_bottom']['tracking_pixels']['#prefix'] = '<div class="tracking-pixels-top" style="display:none;">';
+
+    $page['page_top']['tracking_pixels']['#suffix'] = '</div>';
+    $page['page_bottom']['tracking_pixels']['#suffix'] = '</div>';
+
+    // Add tracking pixels
+    foreach ($results as $result) {
+      $id = $result['id'];
+      $position = 'page_' . $result['position'];
+      $page[$position]['tracking_pixels'][$id]['#markup'] = base64_decode($result['field_tracking_code_value']);
+    }
+  }
+}
+
+/*
+ * Implements hook_secure_permissions
+ *
+ * Adding permissions for RSS bean
+ */
+function cu_tracking_pixel_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'administrator' => array(
+      'view tracking pixels overview',
+    ),
+    'content_editor' => array(
+    ),
+    'developer' => array(
+      'administer tracking pixels',
+    ),
+    'site_owner' => array(
+      'view tracking pixels overview',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

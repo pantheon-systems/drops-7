@@ -1,6 +1,6 @@
 name = Block Section
 core = 7.x
-package = CU-Active
+package = CU-Advanced Layout
 version = 7.x-1.0
 dependencies[] = bean_admin_ui
 dependencies[] = ctools

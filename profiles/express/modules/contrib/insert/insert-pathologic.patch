@@ -1,0 +1,52 @@
+diff --git a/modules/contrib/insert/insert.module b/modules/contrib/insert/insert.module
+index a0e9553..59787a2 100644
+--- a/modules/contrib/insert/insert.module
++++ b/modules/contrib/insert/insert.module
+@@ -307,13 +307,21 @@ function insert_field_widget_settings_form($field, $instance) {
+     '#weight' => -10,
+   );
+ 
++
+   $form['insert']['insert_absolute'] = array(
+-    '#type' => 'checkbox',
++    '#type' => 'radios',
++    '#options' => array(
++      '0' => t('Root: Includes the root path prefix "@base_url" in all links and image tags.', array('@base_url' => $GLOBALS['base_path'])),
++      '1' => t('Absolute: Includes the full URL prefix "@base_url" in all links and image tags.', array('@base_url' => $GLOBALS['base_url'])),
++    ),
+     '#title' => t('Use absolute paths'),
+-    '#default_value' => isset($settings['insert_absolute']) ? $settings['insert_absolute'] : variable_get('insert_absolute_paths', FALSE),
+-    '#description' => t('Includes the full URL prefix "@base_url" in all links and image tags.', array('@base_url' => $GLOBALS['base_url'])),
++    '#default_value' => isset($settings['insert_absolute']) ? $settings['insert_absolute'] : variable_get('insert_absolute_paths', 'root'),
++    '#description' => t('Options for inserted URLs.'),
+     '#weight' => -9,
+   );
++  if (module_exists('pathologic')) {
++    $form['insert']['insert_absolute']['#options']['2'] = t('Pathologic: Includes the "sites/" prefix in all links and image tags. Requires Pathologic rules to work properly');
++  }
+ 
+   $form['insert']['insert_styles'] = array(
+     '#title' => t('Enabled insert styles'),
+@@ -393,7 +401,7 @@ function theme_insert_field_widget_settings_styles($variables) {
+  * setting.
+  */
+ function insert_create_url($uri, $absolute = NULL, $clean_urls = TRUE) {
+-  $absolute = isset($absolute) ? $absolute : variable_get('insert_absolute_paths', FALSE);
++  $absolute = isset($absolute) ? $absolute : variable_get('insert_absolute_paths', 'root');
+ 
+   // If not using clean URLs, the image derivative callback is only available
+   // with the query string. Always use the non-clean URL in the event that the
+@@ -406,9 +414,12 @@ function insert_create_url($uri, $absolute = NULL, $clean_urls = TRUE) {
+     $url = file_create_url($uri);
+   }
+ 
+-  if (!$absolute && strpos($url, $GLOBALS['base_url']) === 0) {
++  if ($absolute == '1' && strpos($url, $GLOBALS['base_url']) === 0) {
+     $url = base_path() . ltrim(str_replace($GLOBALS['base_url'], '', $url), '/');
+   }
++  elseif ($absolute == '2' && strpos($url, $GLOBALS['base_url']) === 0) {
++    $url = ltrim(str_replace($GLOBALS['base_url'], '', $url), '/');
++  }
+   return $url;
+ }
+ 

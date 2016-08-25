@@ -1,4 +1,13 @@
 @import "zen";
+
+@mixin clearfloats {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
 $zen-gutter-width:  40px;
 .feature-callout {
   @include zen-grid-container();
@@ -18,8 +27,8 @@ $zen-column-count:  1;
     height: auto;
   }
   .feature-callout-text {
-    overflow: hidden;
-  } 
+    @include clearfloats;
+  }
 }
 @media screen and (min-width: 760px) {
   .feature-callout-item {
@@ -41,8 +50,8 @@ $zen-column-count:  1;
       height: auto;
     }
     .feature-callout-text {
-      overflow: hidden;
-    } 
+      @include clearfloats;
+    }
     .feature-callout-column-1 {
       @include zen-grid-item(1,1);
       clear: both;
@@ -143,6 +152,7 @@ $zen-column-count:  1;
 }
 /* TYPOGRAPHY */
 
+h2.feature-callout-title,
 h3.feature-callout-title {
   font-size: 110%;
 }

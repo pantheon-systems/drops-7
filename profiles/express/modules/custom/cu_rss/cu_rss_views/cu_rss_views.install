@@ -1,0 +1,19 @@
+<?php
+/**
+ * Add missing uuids.
+ */
+function cu_rss_views_install() {
+  if (function_exists('uuid_admin_sync_submit')) {
+    uuid_admin_sync_submit();
+  }
+
+}
+/**
+ * Enable uuid module and add missing uuids.
+ */
+function cu_rss_views_update_7000() {
+  module_enable(array('uuid'));
+  if (function_exists('uuid_admin_sync_submit')) {
+    uuid_admin_sync_submit();
+  }
+}

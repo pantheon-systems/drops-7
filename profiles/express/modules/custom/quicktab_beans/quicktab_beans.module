@@ -36,8 +36,14 @@ function quicktab_beans_form_quicktabs_form_alter(&$form, $form_state) {
     '#description' => t('The Quicktab title will appear above the quicktabs. Leave blank for none.'),
   );
 
+  // Define default value in order to not get PHP notice.
+  $default_value = '';
+  if (isset($form['machine_name']['#default_value'])) {
+    $default_value = $form['machine_name']['#default_value'];
+  }
+
   // Populate our new "title" field with a default_value from the bean title.
-  $bean = bean_load_delta($form['machine_name']['#default_value']);
+  $bean = bean_load_delta($default_value);
   if (!empty($bean->title)) {
     $form['quicktab_beans_title']['#default_value'] = $bean->title;
   }
@@ -133,3 +139,14 @@ function quicktab_beans_form_bean_form_alter(&$form, &$form_state) {
     $form['title']['#disabled'] = TRUE;
   }
 }
+
+/**
+ * Alter the Quicktabs instance before it gets rendered.
+ *
+ * @param &$quicktabs
+ *   A loaded Quicktabs object, either from the database or from code.
+ */
+function quicktab_beans_quicktabs_alter(&$quicktabs) {
+  drupal_add_js(drupal_get_path('module', 'quicktab_beans') . '/js/qt_pager.js');
+}
+

@@ -24,7 +24,7 @@ function cu_sitewide_context_block_info_alter(&$block_info) {
         ->execute()
         ->fetchField();
       // Set context group to group beans - set to lowercase so list sorts correctly.
-      if ($type) {
+      if (isset($bean_types[$type])) {
         $block->context_group = strtolower($bean_types[$type]['label']);
       }
     }

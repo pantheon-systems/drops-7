@@ -2,6 +2,10 @@
 <div class="person-photo"><?php print render($content['field_person_photo']); ?></div>
 
 <?php
+  // Add check for $person_title due to warning notice.
+  if (!isset($person_title)) {
+    $person_title = array();
+  }
   if (!empty($content['field_person_title'])) {
     $person_title[] = render($content['field_person_title']);
   }
@@ -16,10 +20,10 @@
 <?php if(!empty($content['field_person_email']) || !empty($content['field_person_phone'])): ?>
 <div class="people-contact people-section">
   <?php if(!empty($content['field_person_email'])): ?>
-    <div class="person-email"><i class="fa fa-envelope"></i> <?php print render($content['field_person_email']); ?></div>
+    <div class="person-email person-contact-info-item"><i class="fa fa-envelope"></i> <?php print render($content['field_person_email']); ?></div>
   <?php endif; ?>
   <?php if(!empty($content['field_person_phone'])): ?>
-    <div class="person-phone"><i class="fa fa-phone"></i> <?php print render($content['field_person_phone']); ?></div>
+    <div class="person-phone person-contact-info-item"><i class="fa fa-phone"></i> <?php print render($content['field_person_phone']); ?></div>
   <?php endif; ?>
 </div>
 <?php endif; ?>

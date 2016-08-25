@@ -134,7 +134,7 @@ function metatag_config_overview() {
       'title' => t('Export'),
       'href' => 'admin/config/search/metatags/config/' . $config->instance . '/export',
     );
-    if (module_exists('i18n_string')) {
+    if (module_exists('i18n_string') && !variable_get('metatag_i18n_disabled', FALSE)) {
       $operations['translate'] = array(
         'title' => t('Translate'),
         'href' => 'admin/config/search/metatags/config/' . $config->instance . '/translate',
@@ -264,7 +264,8 @@ function metatag_config_edit_form($form, &$form_state, $config) {
     else {
       $options['token types'] = array($contexts[0]);
     }
-    // Allow hook_metatag_token_types_alter() to modify the defined tokens.
+    // Trigger hook_metatag_token_types_alter().
+    // Allow the defined tokens to be modified.
     drupal_alter('metatag_token_types', $options);
   }
 
@@ -363,7 +364,7 @@ function metatag_config_delete_form($form, &$form_state, $config) {
 
 function metatag_config_delete_form_submit($form, &$form_state) {
   $config = metatag_config_load($form_state['values']['instance']);
-  metatag_config_delete($config->instance);
+  metatag_config_delete($config);
 
   $label = metatag_config_instance_label($config->instance);
   $delete = metatag_config_access('delete', $config);
@@ -599,9 +600,17 @@ function metatag_admin_settings_form() {
   $form['i18n'] = array(
     '#type' => 'fieldset',
     '#title' => t('Internationalization options'),
-    '#description' => t('Additional options are available when using the Internationalization module.'),
+    '#description' => t('Additional options are available when using the <a href="@url">Internationalization module</a>.', array('@url' => 'https://www.drupal.org/project/i18n')),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+  );
+
+  $form['i18n']['metatag_i18n_disabled'] = array(
+    '#title' => t('Disable i18n integration'),
+    '#type' => 'checkbox',
+    '#description' => t('If the i18n_string module is enabled but the site does not need to translate Metatag strings, the integration may be disabled to avoid a large volume of records being added to the translation system.'),
+    '#default_value' => variable_get('metatag_i18n_disabled', FALSE),
+    '#disabled' => !module_exists('i18n_string'),
   );
 
   $form['i18n']['metatag_i18n_translate_output'] = array(
@@ -669,12 +678,26 @@ function metatag_admin_settings_form() {
     '#default_value' => variable_get('metatag_cache_output', TRUE),
   );
 
+  $form['advanced']['metatag_leave_core_tags'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Leave core's meta tags as-is"),
+    '#description' => t("Drupal core outputs a number of meta tags itself: canonical, shortlink, and generator. Metatag can be used to replace these with custom values. Should Metatag not have values for these meta tags, core's tags will normally be removed. Enabling this option will leave those meta tags on the page, even if Metatag is not replacing them."),
+    '#default_value' => variable_get('metatag_leave_core_tags', FALSE),
+  );
+
   $form['advanced']['metatag_page_region'] = array(
     '#type' => 'select',
     '#title' => t("Page region to use"),
     '#description' => t("By default Metatag uses the 'Content' region to trigger output of the meta tags. Some themes do not have this region, so it can be necessary to pick another."),
     '#options' => system_region_list(variable_get('theme_default', 'bartik')),
     '#default_value' => variable_get('metatag_page_region', 'content'),
+  );
+
+  $form['advanced']['metatag_token_sanitize'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Sanitize content during token replacement'),
+    '#description' => t('If checked, will ensure that metatag value output is encoded and text filters are processed.'),
+    '#default_value' => variable_get('metatag_token_sanitize', FALSE),
   );
 
   // Extra submission logic.

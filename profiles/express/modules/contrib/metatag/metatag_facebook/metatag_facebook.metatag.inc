@@ -51,5 +51,14 @@ function metatag_facebook_metatag_info() {
     $info['tags']['fb:app_id']['form']['#description'] = t('The FB_Social module will automatically output this meta tag, go to the <a href="!fb_social">FB_Social settings page</a> to customize it.', array('!fb_social' => url('admin/structure/fbsocial')));
   }
 
+  $info['tags']['fb:pages'] = array(
+    'label' => t('Pages'),
+    'description' => t('Facebook Instant Articles claim URL token.'),
+    'weight' => ++$weight,
+    'devel_generate' => array(
+      'type' => 'integer',
+    ),
+  ) + $tag_info_defaults;
+
   return $info;
 }

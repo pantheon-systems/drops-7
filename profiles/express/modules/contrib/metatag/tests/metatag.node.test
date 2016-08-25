@@ -97,6 +97,15 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     ), t('Save'));
     $this->assertResponse(200);
 
+    // The meta tags that will be checked for.
+    $expected = array(
+      'und' => array(
+        'dcterms.subject' => array(
+          'value' => '[node:title] ponies',
+        ),
+      ),
+    );
+
     // Verify that the node saved correctly.
     // $xpath = $this->xpath("//h1");
     $t_args = array('@type' => 'Test', '%title' => 'Who likes magic');
@@ -112,16 +121,26 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     if (preg_match('@node/(\d+)$@', $this->getUrl(), $matches)) {
       $nid = end($matches);
       $node = node_load($nid);
+      $this->verbose('<p>node_load(' . $nid . ')</p><pre>' . print_r($node, TRUE) . '</pre>');
 
       // Only the non-default values are stored.
-      $expected = array(
-        'und' => array(
-          'dcterms.subject' => array(
-            'value' => '[node:title] ponies',
-          ),
-        ),
-      );
       $this->assertEqual($expected, $node->metatags);
+
+      // Confirm the APIs can load the data for this node.
+      $metatags = metatag_metatags_load('node', $node->nid);
+      $this->verbose('<p>metatag_metatags_load("node", ' . $node->nid . ')</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+      $this->assertEqual($expected, $metatags);
+      $metatags = metatag_metatags_load_multiple('node', array($node->nid));
+      $this->verbose('<p>metatag_metatags_load_multiple("node", array(' . $node->nid . '))</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+      $this->assertEqual(array($node->nid => array($node->vid => $expected)), $metatags);
+
+      // Confirm the APIs can load the data for this node revision.
+      $metatags = metatag_metatags_load('node', $node->nid, $node->vid);
+      $this->verbose('<p>metatag_metatags_load("node", ' . $node->nid . ', ' . $node->vid . ')</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+      $this->assertEqual($expected, $metatags);
+      $metatags = metatag_metatags_load_multiple('node', array($node->nid), array($node->vid));
+      $this->verbose('<p>metatag_metatags_load_multiple("node", array(' . $node->nid . '), array(' . $node->vid . '))</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+      $this->assertEqual(array($node->nid => array($node->vid => $expected)), $metatags);
     }
 
     // This shouldn't happen, it indicates a problem.
@@ -133,6 +152,17 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $xpath = $this->xpath("//meta[@name='dcterms.subject']");
     $this->assertEqual(count($xpath), 1, 'Exactly one dcterms.subject meta tag found.');
     $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
+
+    // Core's canonical tag is a relative URL, whereas Metatag outputs an
+    // absolute URL.
+    $old_canonical = url('node/' . $node->nid);
+    $new_canonical = url('node/' . $node->nid, array('absolute' => TRUE));
+
+    // Confirm that the canonical tag is in the correct format.
+    $xpath = $this->xpath("//link[@rel='canonical']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one canonical meta tag found.');
+    $this->assertEqual($xpath[0]['href'], $new_canonical);
+    $this->assertNotEqual($xpath[0]['href'], $old_canonical);
 
     // Try loading the node revisions page.
     $this->drupalGet('node/' . $node->nid . '/revisions');
@@ -158,6 +188,15 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $this->drupalPost(NULL, $args, t('Save'));
     // Verify the page submission loaded correctly.
     $this->assertResponse(200);
+
+    // A new version of the expected results
+    $expected_updated = array(
+      'und' => array(
+        'dcterms.subject' => array(
+          'value' => '[node:title] kittens',
+        ),
+      ),
+    );
 
     // Verify that the node saved correctly.
     // $xpath = $this->xpath("//h1");
@@ -195,6 +234,27 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     // Load the updated node; force-load it to make sure it's loaded properly.
     $updated_node = node_load($node->nid, NULL, TRUE);
     $updated_vid = $updated_node->vid;
+    $this->verbose('<p>node_load(' . $node->nid . ', NULL, TRUE)</p><pre>' . print_r($updated_node, TRUE) . '</pre>');
+
+    // Confirm the APIs can load the data for this node.
+    $metatags = metatag_metatags_load('node', $updated_node->nid);
+    $this->verbose('<p>metatag_metatags_load("node", ' . $updated_node->nid . ')</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+    $this->assertEqual($expected_updated, $metatags);
+    $this->assertNotEqual($expected, $metatags);
+    // This one is complicated. If only the entity id is passed in it will load
+    // the {metatag} records for *all* of the entity's revisions.
+    $metatags = metatag_metatags_load_multiple('node', array($updated_node->nid));
+    $this->verbose('<p>metatag_metatags_load_multiple("node", array(' . $updated_node->nid . '))</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+    $this->assertEqual(array($updated_node->nid => array($node->vid => $expected, $updated_node->vid => $expected_updated)), $metatags);
+
+    // Confirm the APIs can load the data for this node revision.
+    $metatags = metatag_metatags_load('node', $updated_node->nid, $updated_vid);
+    $this->verbose('<p>metatag_metatags_load("node", ' . $updated_node->nid . ', ' . $updated_node->vid . ')</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+    $this->assertEqual($expected_updated, $metatags);
+    $this->assertNotEqual($expected, $metatags);
+    $metatags = metatag_metatags_load_multiple('node', array($updated_node->nid), array($updated_node->vid));
+    $this->verbose('<p>metatag_metatags_load_multiple("node", array(' . $updated_node->nid . '), array(' . $updated_node->vid . '))</p><pre>' . print_r($metatags, TRUE) . '</pre>');
+    $this->assertEqual(array($updated_node->nid => array($updated_node->vid => $expected_updated)), $metatags);
 
     // Load the current revision again.
     $this->drupalGet('node/' . $node->nid);

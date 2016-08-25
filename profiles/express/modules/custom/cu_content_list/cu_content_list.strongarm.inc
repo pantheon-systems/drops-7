@@ -85,19 +85,19 @@ function cu_content_list_strongarm() {
     'extra_fields' => array(
       'form' => array(
         'label' => array(
-          'weight' => '-10',
+          'weight' => '0',
         ),
         'title' => array(
-          'weight' => '-9',
+          'weight' => '1',
         ),
         'revision' => array(
-          'weight' => '10',
+          'weight' => '5',
         ),
         'view_mode' => array(
-          'weight' => '10',
+          'weight' => '6',
         ),
         'redirect' => array(
-          'weight' => '30',
+          'weight' => '7',
         ),
       ),
       'display' => array(
@@ -155,16 +155,16 @@ function cu_content_list_strongarm() {
     'extra_fields' => array(
       'form' => array(
         'metatags' => array(
-          'weight' => '5',
+          'weight' => '3',
         ),
         'title' => array(
           'weight' => '0',
         ),
         'path' => array(
-          'weight' => '1',
+          'weight' => '5',
         ),
         'redirect' => array(
-          'weight' => '2',
+          'weight' => '6',
         ),
       ),
       'display' => array(),

@@ -89,7 +89,7 @@ $zen-column-count:  1;
     }
   }
   @media (min-width: 960px) {
-    .article-view-mode-sidebar img {
+    .article-view-mode-sidebar img.image-square {
       width:80px;
       height: auto;
     }
@@ -161,7 +161,7 @@ $zen-column-count:  1;
   }
 
   @media all and (min-width: 960px) {
-    .article-view-mode-sidebar img {
+    .article-view-mode-sidebar img.image-square {
       width:75px;
     }
   }

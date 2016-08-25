@@ -27,4 +27,6 @@
  *   use the file's name. i.e. __title_or_filename__.
  */
 ?>
-<a href="<?php print $path; ?>" title="__title__" class="colorbox colorbox-insert-image" rel="<?php print $gallery_id; ?>"><img src="<?php print $url; ?>" <?php if ($width && $height): ?>width="<?php print $width; ?>" height="<?php print $height; ?>" <?php endif; ?>alt="__alt__" title="__title__" class="<?php print $class; ?>" /></a>
+<a href="<?php print $path; ?>" title="__title__" class="colorbox colorbox-insert-image" data-colorbox-gallery="<?php print $gallery_id; ?>">
+  <img src="<?php print $url; ?>" <?php if ($width && $height): ?>width="<?php print $width; ?>" height="<?php print $height; ?>" <?php endif; ?>alt="__alt__" title="__title__" class="<?php print $class; ?>" />
+</a>

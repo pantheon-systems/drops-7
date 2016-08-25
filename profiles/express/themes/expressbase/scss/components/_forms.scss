@@ -52,6 +52,13 @@ html.js input.throbbing {
 fieldset {
   padding:10px;
   border:1px solid #e5e5e5;
+  legend {
+    font-weight: bold;
+    font-size: 120%;
+    padding:0 10px;
+    border-left:1px solid #e5e5e5;
+    border-right:1px solid #e5e5e5;
+  }
 }
 form label {
   font-weight: bold;

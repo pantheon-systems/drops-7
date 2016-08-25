@@ -1,7 +1,7 @@
 name = Block
 description = A content block that can contain text and images
 core = 7.x
-package = CU-Active
+package = CU-Core
 version = 7.x-1.0
 project = cu_block
 dependencies[] = bean

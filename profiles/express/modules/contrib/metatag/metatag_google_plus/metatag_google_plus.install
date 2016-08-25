@@ -17,7 +17,7 @@ function metatag_google_plus_install() {
  */
 
 /**
- * Notify
+ * Notify the site builder that the html.tpl.php file needs to be changed.
  */
 function metatag_google_plus_update_7100() {
   drupal_set_message(t("Note that the template's html.tpl.php must be updated in order for the Metatag: Google+ module to work correctly. Please see its README.txt file for details."));

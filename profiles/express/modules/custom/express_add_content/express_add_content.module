@@ -1,79 +1,17 @@
 <?php
 
 /**
- * Function to return content type bundles.
- * Store as variable(express_add_content_node_bundles), or edit array.
- * $bundles['bundle_name']['title'] = 'Bundle Title';
- * $bundles['bundle_name']['weight'] = -99 (optional);
- * $bundles['bundle_name']['types'][] = 'Content Type Name';
+ * Update hook_node_bundles, hook_bean_bundles caches.
  */
-function express_add_content_node_bundles() {
-  $bundles['express_core']['title'] = 'Express Core';
-  $bundles['express_core']['weight'] = -99;
-  $bundles['express_core']['types'][] = 'Basic page';
-  $bundles['express_core']['types'][] = 'File';
-  $bundles['express_core']['types'][] = 'Frequently Asked Questions';
-
-  $bundles['news']['title'] = 'News and Articles';
-  $bundles['news']['types'][] = 'Article';
-  $bundles['news']['types'][] = 'Article List Page';
-
-  $bundles['people']['title'] = 'People';
-  $bundles['people']['types'][] = 'Person';
-  $bundles['people']['types'][] = 'People List Page';
-
-  $bundles['photo']['title'] = 'Photo Gallery';
-  $bundles['photo']['types'][] = 'Photo Gallery';
-
-  $bundles['forms']['title'] = 'Forms';
-  $bundles['forms']['types'][] = 'Webform';
-  return $bundles;
-}
-
-/**
- * Function to return block type bundles.
- * Store as variable(express_add_content_bean_bundles), or edit array.
- * $bundles['bundle_name']['title'] = 'Bundle Title';
- * $bundles['bundle_name']['weight'] = -99 (optional);
- * $bundles['bundle_name']['types'][] = 'Content Type Name';
- */
-function express_add_content_bean_bundles() {
-  $bundles['express_core']['title'] = 'Express Core';
-  $bundles['express_core']['weight'] = -99;
-  $bundles['express_core']['types'][] = 'Hero Unit';
-  $bundles['express_core']['types'][] = 'Slider';
-  $bundles['express_core']['types'][] = 'Text Block';
-
-  $bundles['news']['title'] = 'News and Articles';
-  $bundles['news']['types'][] = 'Article List';
-  $bundles['news']['types'][] = 'Article Feature';
-  $bundles['news']['types'][] = 'Article Grid';
-  $bundles['news']['types'][] = 'Article Slider';
-
-  $bundles['people']['title'] = 'People';
-  $bundles['people']['types'][] = 'People List Block';
-
-  $bundles['events']['title'] = 'Events';
-  $bundles['events']['types'][] = 'Events Calendar Block';
-  $bundles['events']['types'][] = 'Events Calendar Grid';
-
-  $bundles['social']['title'] = 'Social Media';
-  $bundles['social']['types'][] = 'Social Links';
-  $bundles['social']['types'][] = 'Facebook Activity';
-  $bundles['social']['types'][] = 'Facebook Like Button';
-  $bundles['social']['types'][] = 'Twitter Block';
-
-  $bundles['advanced_content']['title'] = 'Advanced Content';
-  $bundles['advanced_content']['types'][] = 'Content Grid';
-  $bundles['advanced_content']['types'][] = 'Quicktab';
-  $bundles['advanced_content']['types'][] = 'Video Reveal';
-
-  $bundles['advanced_layout']['title'] = 'Advanced Layout';
-  $bundles['advanced_layout']['types'][] = 'Block Row';
-  $bundles['advanced_layout']['types'][] = 'Block Section';
-
-
-  return $bundles;
+function express_add_content_modules_enabled($modules) {
+  $bundles = array();
+  $bundles = module_invoke_all('express_node_list_groups', $variables = NULL);
+  // Save this for 30 days - it should only be cleared on a code update
+  cache_set('express_add_content_express_node_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+  $bundles = array();
+  $bundles = module_invoke_all('express_bean_list_groups', $variables = NULL);
+  // Save this for 30 days - it should only be cleared on a code update
+  cache_set('express_add_content_express_bean_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
 }
 
 function express_add_content_node_add($vars) {
@@ -81,7 +19,13 @@ function express_add_content_node_add($vars) {
   if ($vars['content']) {
     $output = array();
     // Get node bundles
-    $bundles = variable_get('express_add_content_node_bundles', express_add_content_node_bundles());
+    if ($cache = cache_get('express_add_content_express_node_list_groups')) {
+      $bundles = $cache->data;
+    } else {
+      $bundles = module_invoke_all('express_node_list_groups', $variables = NULL);
+      // Save this for 30 days - it should only be cleared on a code update
+      cache_set('express_add_content_express_node_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+    }
     uasort($bundles, '_express_add_content_sort_types');
     // Links fromt node_add_list().
     $content = $vars['content'];
@@ -121,7 +65,7 @@ function express_add_content_node_add($vars) {
     // Output leftover links that were not assigned to a bundle
     if (!empty($links)) {
       $output['other']['title']['#markup'] = '<h2>Other</h2>';
-      $output['other']['#prefix'] = '<div class="express-add-group">';
+      $output['other']['#prefix'] = '<div class="admin-panel express-add-group">';
       $output['other']['#suffix'] = '</div>';
       $types = '<ul class="admin-list">';
       foreach ($links as $link) {
@@ -144,8 +88,14 @@ function express_add_content_bean_add($vars) {
   // Check to see if any content types exist yet
   if ($vars['content']) {
     $output = array();
-    // Get node bundles
-    $bundles = variable_get('express_add_content_bean_bundles', express_add_content_bean_bundles());
+    // Get bean bundles
+    if ($cache = cache_get('express_add_content_express_bean_list_groups')) {
+      $bundles = $cache->data;
+    } else {
+      $bundles = module_invoke_all('express_bean_list_groups', $variables = NULL);
+      // Save this for 30 days - it should only be cleared on a code update
+      cache_set('express_add_content_express_bean_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+    }
     uasort($bundles, '_express_add_content_sort_types');
     // Links fromt node_add_list().
     $content = $vars['content'];
@@ -156,8 +106,7 @@ function express_add_content_bean_add($vars) {
       $key = $bean->getLabel();
       // build bean add path and check access
       $path = 'block/add/' . $bean->buildURL();
-      $item = menu_get_item($path);
-      if (drupal_valid_path($item)) {
+      if (drupal_valid_path($path)) {
         $links[$key] = array(
           'title' => $key,
           'href' => $path,
@@ -169,7 +118,7 @@ function express_add_content_bean_add($vars) {
     foreach ($bundles as $key => $bundle) {
       $output[$key]['title']['#markup'] = '<h2>' . $bundle['title'] . '</h2>';
       $bundle_class = 'bundle-type-' . _express_add_content_string_to_machine($bundle['title']);
-      $output[$key]['#prefix'] = '<div class="express-add-group ' . $bundle_class . '">';
+      $output[$key]['#prefix'] = '<div class="admin-panel express-add-group ' . $bundle_class . '">';
       $output[$key]['#suffix'] = '</div>';
       // Add content types for each bundle
       $types = '';
@@ -195,7 +144,7 @@ function express_add_content_bean_add($vars) {
     // Output leftover links that were not assigned to a bundle
     if (!empty($links)) {
       $output['other']['title']['#markup'] = '<h2>Other</h2>';
-      $output['other']['#prefix'] = '<div class="express-add-group">';
+      $output['other']['#prefix'] = '<div class="admin-panel express-add-group">';
       $output['other']['#suffix'] = '</div>';
       $types = '<ul class="admin-list">';
       foreach ($links as $link) {

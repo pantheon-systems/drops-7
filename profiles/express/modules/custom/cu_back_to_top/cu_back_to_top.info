@@ -1,5 +1,5 @@
 name = Back to Top
 description = Adds a back to top link at the bottom of the browser window.
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0

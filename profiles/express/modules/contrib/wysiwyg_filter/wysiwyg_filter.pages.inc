@@ -22,7 +22,7 @@
  * @return string
  *   Filtered HTML text.
  */
-function wysiwyg_filter_filter_wysiwyg_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+function wysiwyg_filter_filter_wysiwyg_process($text, $filter, $format, $langcode = NULL, $cache = NULL, $cache_id = NULL) {
   // Only operate on valid UTF-8 strings. This is necessary to prevent cross
   // site scripting issues on Internet Explorer 6.
   if (!drupal_validate_utf8($text)) {
@@ -429,6 +429,9 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
         // Element ID is valid, check_plain result.
         $attrinfo['value'] = check_plain($attrinfo['value']);
       }
+      elseif ($attrname == 'media') {
+        $attrinfo['value'] = check_plain($attrinfo['value']);
+      }
       else {
         // All attribute values are checked for bad protocols. This is the same
         // exact method used by Drupal's filter_xss().
@@ -447,6 +450,15 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
           if (($nofollow_policy == 'blacklist' && $domain_found) || ($nofollow_policy == 'whitelist' && !$domain_found)) {
             $add_nofollow = TRUE;
           }
+        }
+      }
+
+      // Fix for IE8 broken handling of ` character.
+      if (strpos($attrinfo['value'], '`') !== FALSE) {
+        // IE8 quoting would already be triggered by the presence of any "' <>
+        if (!preg_match('/["\' <>]/', $attrinfo['value'])) {
+          // Trailing space triggers IE8 to correctly quote the value.
+          $attrinfo['value'] .= ' ';
         }
       }
 

@@ -77,14 +77,26 @@ ul#action-menu a {
   line-height: 20px;
   margin:20px 0 20px 10px;
 }
+#navigation ul.action-menu {
+  a {
+    margin: 18px 5px;
+  }
+}
 
 
 #intro-wide-wrapper,
 #slider-wrapper {
   background-color: #171717;
 }
-#slider-wrapper {
+.slider-wrapper {
   padding: 20px;
+  color:#fff;
+  a {
+    color: $cugold;
+  }
+  a:hover {
+    color: #fff;
+  }
 }
 #page-title-wrapper {
   background-color: $bg_dark2;
@@ -104,6 +116,7 @@ ul#action-menu a {
   background-color: #fff;
 }
 #content-wrapper,
+#post-wide-wrapper,
 #after-content-wrapper {
   background-color: #fff;
 }
@@ -273,5 +286,11 @@ $border: #e7e7e7;
   ul#secondary-menu-mobile,
   ul#footer-menu-mobile {
     border-top:3px solid #666;
+  }
+}
+
+.has-feature-title-image {
+  #page-title-wrapper {
+    display: none;
   }
 }

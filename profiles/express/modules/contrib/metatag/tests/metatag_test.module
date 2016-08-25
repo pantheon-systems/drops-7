@@ -8,3 +8,39 @@ function metatag_test_ctools_plugin_api($owner, $api) {
     return array('version' => 1);
   }
 }
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides simple pages to test against.
+ */
+function metatag_test_menu() {
+  $string = 'moosqueakoinkmeow';
+  $defaults = array(
+    'page callback' => 'metatag_test_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items[$string] = array(
+    'title' => 'Test page',
+    'description' => 'An average page.',
+  ) + $defaults;
+
+  // 255 / 19 chars = 13.
+  $long_path = implode('/', array_pad(array(), 13, $string));
+  $items[$long_path . '/%'] = array(
+    'title' => 'Test page with really long URL',
+    'description' => 'The URL is really, really, really long.',
+    'page arguments' => array(13),
+  ) + $defaults;
+
+  return $items;
+}
+
+/**
+ * Simple page callback for test pages.
+ */
+function metatag_test_page_callback() {
+  return t('Test page.');
+}

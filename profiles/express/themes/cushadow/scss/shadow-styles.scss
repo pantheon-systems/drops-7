@@ -67,6 +67,17 @@ body {
 .top-content {
   background-color: $bg_dark2;
 }
+.slider-wrapper {
+  background-color: $bg_dark2;
+  padding: 20px;
+  color:#fff;
+  a {
+    color:$cugold;
+  }
+  a:hover {
+    color:#fff;
+  }
+}
 #slider {
   padding:20px 0;
 }

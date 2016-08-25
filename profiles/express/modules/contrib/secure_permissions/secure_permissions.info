@@ -4,9 +4,9 @@ core = 7.x
 files[] = secure_permissions.module
 configure = admin/config/people/secure_permissions
 
-; Information added by Drupal.org packaging script on 2015-06-15
+; Information added by Drupal.org packaging script on 2016-03-31
 version = "7.x-2.x-dev"
 core = "7.x"
 project = "secure_permissions"
-datestamp = "1434404588"
+datestamp = "1459449540"
 

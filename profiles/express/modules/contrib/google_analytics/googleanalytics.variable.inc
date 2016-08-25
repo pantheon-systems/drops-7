@@ -40,6 +40,10 @@ function googleanalytics_variable_group_info() {
 
 /**
  * Validate Web Property ID variable.
+ *
+ * @param array $variable
+ *
+ * @return string
  */
 function googleanalytics_validate_googleanalytics_account($variable) {
   // Replace all type of dashes (n-dash, m-dash, minus) with the normal dashes.

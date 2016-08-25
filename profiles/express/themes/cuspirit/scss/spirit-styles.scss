@@ -39,9 +39,16 @@ a:visited {
 a:hover {
   color: $red;
 }
-#slider-wrapper {
+.slider-wrapper {
   background-color: $bg_dark1;
   padding: 20px;
+  color: #fff;
+  a {
+    color: $cugold;
+  }
+  a:hover {
+    color: #fff;
+  }
 }
 #main-menu-wrapper {
   background: #fff;

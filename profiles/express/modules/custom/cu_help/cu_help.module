@@ -8,181 +8,193 @@ function cu_help_express_help($variables) {
   $variables['/admin/config/user-interface/shortcut/shortcut-set-1'][] = array(
     'title' => 'Shortcuts Help',
     'short_title' => 'Shortcuts Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/16',
+    'url' => '/node/16',
   );
 
   $variables['admin/content'][] = array(
     'title' => 'Find Content Help',
     'short_title' => 'Find Content',
-    'url' => 'http://www.colorado.edu/webcentral/node/412',
+    'url' => '/node/412',
   );
 
   $variables['node/add'][] = array(
-    'title' => 'Add-on Bundles',
-    'short_title' => 'Add-on Bundles',
-    'url' => 'http://www.colorado.edu/webcentral/node/632',
+    'title' => 'Adding Bundles',
+    'short_title' => 'Adding Bundles',
+    'url' => '/node/656',
   );
 
   $variables['node/add/page'][] = array(
     'title' => 'Basic Page Help',
     'short_title' => 'Basic Page Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/452',
+    'url' => '/node/452',
   );
 
   $variables['node/add/file'][] = array(
     'title' => 'Upload File Help',
     'short_title' => 'Upload File Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/424',
+    'url' => '/node/424',
   );
 
   $variables['node/add/faqs'][] = array(
     'title' => 'FAQs Help',
     'short_title' => 'FAQs Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/478',
+    'url' => '/node/478',
   );
 
-  $variables['node/%/blocks'][] = array(
-    'title' => 'Editing Blocks Help',
-    'short_title' => 'Editing Blocks',
-    'url' => 'http://www.colorado.edu/webcentral/node/420',
-  );
-
-  $variables['node/%/blocks'][] = array(
+  $variables['node/%/layout'][] = array(
     'title' => 'Placing Blocks While Editing a Page',
     'short_title' => 'Placing Blocks While Editing a Page',
-    'url' => 'http://www.colorado.edu/webcentral/node/436',
+    'url' => '/node/436',
   );
 
   $variables['admin/content/blocks'][] = array(
     'title' => 'Blocks Tutorial',
     'short_title' => 'Blocks Tutorial',
-    'url' => 'http://www.colorado.edu/webcentral/node/602',
+    'url' => '/node/602',
   );
 
   $variables['block/add'][] = array(
-    'title' => 'Blocks Tutorial',
-    'short_title' => 'Blocks Tutorial',
-    'url' => 'http://www.colorado.edu/webcentral/node/602',
+   	'title' => 'Adding Bundles',
+    'short_title' => 'Adding Bundles',
+    'url' => '/node/656',
   );
 
   $variables['block/add/hero-unit'][] = array(
     'title' => 'Hero Unit Block Help',
     'short_title' => 'Hero Unit',
-    'url' => 'http://www.colorado.edu/webcentral/node/438',
+    'url' => '/node/438',
+    );
+    
+  $variables['block/edit/hero-unit'][] = array(
+    'title' => 'Hero Unit Block Help',
+    'short_title' => 'Hero Unit',
+    'url' => '/node/438',
     );
 
   $variables['block/add/slider'][] = array(
     'title' => 'Slider Block Help',
     'short_title' => 'Slider Block',
-    'url' => 'http://www.colorado.edu/webcentral/node/440',
+    'url' => '/node/440',
   );
 
+  $variables['block/edit/slider'][] = array(
+    'title' => 'Slider Block Help',
+    'short_title' => 'Slider Block',
+    'url' => '/node/440',
+  );
+  
   $variables['block/add/block'][] = array(
     'title' => 'Text Block Help',
     'short_title' => 'Text Block Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/426',
+    'url' => '/node/426',
   );
 
+  $variables['block/edit/block'][] = array(
+    'title' => 'Text Block Help',
+    'short_title' => 'Text Block Help',
+    'url' => '/node/426',
+  );
+  
   $variables['admin/content/files'][] = array(
     'title' => 'Files Help',
     'short_title' => 'Files Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/424',
+    'url' => '/node/424',
   );
 
   $variables['admin/structure/menu'][] = array(
     'title' => 'Navigation and Menu Tutorials',
     'short_title' => 'Navigation and Menu Tutorials',
-    'url' => 'http://www.colorado.edu/webcentral/node/600',
+    'url' => '/node/600',
   );
 
   $variables['admin/structure/menu/manage/main-menu'][] = array(
     'title' => 'Main Menu Tutorial',
     'short_title' => 'Main Menu Tutorial',
-    'url' => 'http://www.colorado.edu/webcentral/node/422',
+    'url' => '/node/422',
   );
 
   $variables['admin/structure/menu/settings'][] = array(
     'title' => 'Navigation and Menu Tutorials',
     'short_title' => 'Navigation and Menu Tutorials',
-    'url' => 'http://www.colorado.edu/webcentral/node/600',
+    'url' => '/node/600',
   );
 
   $variables['admin/structure/menu/dnmi'][] = array(
     'title' => 'Navigation and Menu Tutorials',
     'short_title' => 'Navigation and Menu Tutorials',
-    'url' => 'http://www.colorado.edu/webcentral/node/600',
+    'url' => '/node/600',
   );
 
   $variables['admin/structure/menu/manage/menu-footer-menu'][] = array(
     'title' => 'Footer Menu Help',
     'short_title' => 'Footer Menu',
-    'url' => 'http://www.colorado.edu/webcentral/node/406',
+    'url' => '/node/406',
   );
 
   $variables['admin/structure/menu/manage/menu-secondary-menu'][] = array(
     'title' => 'Secondary Menu Help',
     'short_title' => 'Secondary Menu',
-    'url' => 'http://www.colorado.edu/webcentral/node/502',
+    'url' => '/node/502',
   );
 
   $variables['admin/structure/taxonomy'][] = array(
     'title' => 'Taxonomy Tutorial',
     'short_title' => 'Taxonomy Tutorial',
-    'url' => 'http://www.colorado.edu/webcentral/node/630',
+    'url' => '/node/970',
   );
 
   $variables['admin/people'][] = array(
     'title' => 'Access & Roles Help',
     'short_title' => 'Access & Roles',
-    'url' => 'http://www.colorado.edu/webcentral/node/622',
+    'url' => '/node/622',
   );
 
   $variables['admin/theme'][] = array(
     'title' => 'Design/Theme Help',
     'short_title' => 'Design/Theme Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/628',
+    'url' => '/node/628',
   );
 
   $variables['admin/settings'][] = array(
     'title' => 'Settings Help',
     'short_title' => 'Settings Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/626',
+    'url' => '/node/626',
   );
 
   $variables['admin/settings/site-configuration/contact'][] = array(
     'title' => 'Contact Information Help',
     'short_title' => 'Contact Information',
-    'url' => 'http://www.colorado.edu/webcentral/node/408',
+    'url' => '/node/408',
   );
 
   $variables['admin/settings/site-configuration/error'][] = array(
     'title' => 'Error Pages Help',
     'short_title' => 'Error Pages',
-    'url' => 'http://www.colorado.edu/webcentral/node/402',
+    'url' => '/node/402',
   );
 
   $variables['admin/config/search/redirect'][] = array(
     'title' => 'Adding Redirects Help',
     'short_title' => 'Adding Redirects',
-    'url' => 'http://www.colorado.edu/webcentral/node/584',
+    'url' => '/node/584',
   );
 
   $variables['admin/settings/site-configuration/site-name'][] = array(
     'title' => 'Site Name Help',
     'short_title' => 'Site Name',
-    'url' => 'http://www.colorado.edu/webcentral/node/408',
+    'url' => '/node/408',
   );
 
   $variables['admin/settings/site-configuration/google-analytics'][] = array(
     'title' => 'Google Analytics Help',
     'short_title' => 'Google Analytics',
-    'url' => 'http://www.colorado.edu/webcentral/node/400',
+    'url' => '/node/400',
   );
 
   $variables['admin/settings/bundles/list'][] = array(
     'title' => 'Adding Bundles',
     'short_title' => 'Adding Bundles',
-    'url' => 'http://www.colorado.edu/webcentral/node/632',
+    'url' => '/node/656',
   );
 
   return $variables;
@@ -197,21 +209,21 @@ function cu_help_express_help_fields($variables) {
     'field_callout_columns' => array(
       'title' => 'Content Grid Columns Help',
       'short_title' => 'Content Grid Columns',
-      'url' => 'http://www.colorado.edu/webcentral/node/428',
+      'url' => '/node/428',
     ),
   );
   $variables['page_node_form']['fields'] = array(
     'field_photo' => array(
       'title' => 'Adding Images Help',
       'short_title' => 'Images',
-      'url' => 'http://www.colorado.edu/webcentral/node/458',
+      'url' => '/node/458',
     ),
   );
   $variables['system_theme_settings']['fields'] = array(
     'cu_omega_theme_settings' => array(
       'title' => 'Configuring Theme Settings',
       'short_title' => 'Theme Settings',
-      'url' => 'http://www.colorado.edu/webcentral/node/450',
+      'url' => '/node/450',
     ),
   );
 
@@ -224,15 +236,33 @@ function cu_help_express_help_fields($variables) {
  */
 function cu_help_page_alter(&$page) {
   $path = current_path();
-  // If on node/add page
-  if ($path == 'node/add') {
-    $link = l(t('<i class="fa fa-plus-circle"></i> Add Content Types'), '/admin/settings/bundles/list', array('attributes' => array('class' => array('btn', 'btn-info')), 'html' => TRUE));
-    $page['content']['system_main']['main']['#suffix'] = '<p>' . $link . '</p>';
+  switch ($path) {
+    case 'node/add':
+      if (drupal_valid_path('admin/settings/bundles/list')) {
+        $link = l(t('<i class="fa fa-plus-circle"></i> Enable bundles for additional content types'), '/admin/settings/bundles/list', array(
+          'attributes' => array(
+            'class' => array(
+            ),
+          ),
+          'html' => TRUE
+        ));
+        $page['content']['system_main']['main']['#suffix'] = '<p>' . $link . '</p>';
+      }
+      break;
+    case 'block/add':
+      if (drupal_valid_path('admin/settings/bundles/list')) {
+        $link = l(t('<i class="fa fa-plus-circle"></i> Enable bundles for additional block types'), '/admin/settings/bundles/list', array(
+          'attributes' => array(
+            'class' => array(
+            ),
+          ),
+          'html' => TRUE
+        ));
+        $page['content']['system_main']['main']['#suffix'] = '<p>' . $link . '</p>';
+      }
+      break;
+    case 'admin/structure/taxonomy':
+      $page['help']['system_help']['#markup'] = '<p>Taxonomy is the method used to classify, organize and cross-reference content.</p>';
+      break;
   }
-  // If on block/add page
-  if ($path == 'block/add') {
-    $link = l(t('<i class="fa fa-plus-circle"></i> Add Block Types'), '/admin/settings/bundles/list', array('attributes' => array('class' => array('btn', 'btn-info')), 'html' => TRUE));
-    $page['content']['system_main']['main']['#suffix'] = '<p>' . $link . '</p>';
-  }
-
 }

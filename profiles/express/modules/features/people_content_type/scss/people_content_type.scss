@@ -1,6 +1,23 @@
 $border_color: rgba(0,0,0,.12) !important;
 $border_color_solid: #e0e0e0;
 
+@mixin element-invisible {
+  border: 0;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute !important;
+  width: 1px;
+}
+
+@mixin clearfloats {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
 .person-name {
   font-weight: bold;
 }
@@ -11,20 +28,19 @@ $border_color_solid: #e0e0e0;
   white-space: nowrap;
 }
 .person-thumbnail {
-  border:1px solid red;
+
 }
-table.people-list-table img.image-small_thumbnail,
-.person-view-mode-teaser img.image-small_thumbnail {
+table.people-list-table img.image-small_thumbnail {
   width:50px;
   height: auto;
   max-width: none;
 }
 @media screen and (min-width:740px) {
-  table.people-list-table img.image-small_thumbnail,
-  .person-view-mode-teaser img.image-small_thumbnail {
+  table.people-list-table img.image-small_thumbnail {
     width: 100px;
   }
 }
+
 table.people-list-table td {
   vertical-align: top;
 }
@@ -65,11 +81,14 @@ span.responsive-label {
   margin: 0 0 20px 20px;
   max-width:320px;
   height: auto;
-  @media screen and (max-width:600px) and (min-width:420px) {
+
+  @media screen and (max-width:960px) and (min-width:420px) {
     max-width:180px;
   }
   @media screen and (max-width:419px) {
     max-width:120px;
+    float:none;
+    margin: 0 0 20px;
   }
 }
 
@@ -149,6 +168,18 @@ table.people-list-table {
 td.people-table-photo-none {
   display: none;
 }
+td.person-table-phone,
+td.person-table-email,
+td.person-table-office {
+  font-size: 85%;
+}
+td.person-table-email a {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.people-list-directory .person-table-name {
+  width:50%;
+}
 
 .people-bio {
   padding-top: 10px;
@@ -208,13 +239,23 @@ ul.cu-person-directory .person-field-three {
 
 .person-view-mode-teaser img.image-thumbnail,
 .person-view-mode-teaser img.image-small_thumbnail {
-  float: left;
-  margin: 0 20px 0 0;
+  float: right;
+  margin: 0 0 20px 20px;
+  width: 100px;
+  height: auto;
+}
+@media screen and (min-width:640px) {
+  .person-view-mode-teaser img.image-thumbnail,
+  .person-view-mode-teaser img.image-small_thumbnail {
+    float:left;
+    margin: 0 20px 0 0;
+  }
+  .person-view-mode-teaser-content {
+    @include clearfloats;
+  }
 }
 
-.person-view-mode-teaser-content {
-  overflow: hidden;
-}
+
 .view-people-list table {
   width:100%;
 }
@@ -289,6 +330,21 @@ td.person-table-contact .fa {
 .person-email a {
   background-image: none;
   padding-right: 0;
+}
+.person-contact-info-item {
+  white-space: nowrap;
+
+}
+@media (max-width:480px) {
+  .person-view-mode-teaser-contact {
+    .person-contact-info-item {
+      display: block;
+      font-size: 85%;
+    }
+    .person-contact-separator {
+      display: none;
+    }
+  }
 }
 
 

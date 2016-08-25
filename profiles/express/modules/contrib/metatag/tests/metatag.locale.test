@@ -101,6 +101,9 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
     $this->assertNotEqual($lid, 0, 'Found the locales_source string for the description tag.');
     $this->saveTranslationString($lid, $context, $langcode, $desc_source, $desc_target);
 
+    // Clear the metatag_get_info() cache since translated strings have changed.
+    metatag_config_cache_clear();
+
     // Load the French node form again.
     $this->drupalGet('fr/node/add/' . $content_type_path);
     $this->assertResponse(200);

@@ -1,7 +1,7 @@
 name = Default Home Page
 description = Creates a default home page.
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = cu_home_page
 dependencies[] = context

@@ -14,29 +14,51 @@ $(document).ready(function() {
       // Is the clicked URL internal?
       if (Drupal.googleanalytics.isInternal(this.href)) {
         // Skip 'click' tracking, if custom tracking events are bound.
-        if ($(this).is('.colorbox')) {
+        if ($(this).is('.colorbox') && (Drupal.settings.googleanalytics.trackColorbox)) {
           // Do nothing here. The custom event will handle all tracking.
           //console.info("Click on .colorbox item has been detected.");
         }
         // Is download tracking activated and the file extension configured for download tracking?
         else if (Drupal.settings.googleanalytics.trackDownload && Drupal.googleanalytics.isDownload(this.href)) {
           // Download link clicked.
-          ga("send", "event", "Downloads", Drupal.googleanalytics.getDownloadExtension(this.href).toUpperCase(), Drupal.googleanalytics.getPageUrl(this.href));
+          ga("send", {
+            "hitType": "event",
+            "eventCategory": "Downloads",
+            "eventAction": Drupal.googleanalytics.getDownloadExtension(this.href).toUpperCase(),
+            "eventLabel": Drupal.googleanalytics.getPageUrl(this.href),
+            "transport": "beacon"
+          });
         }
         else if (Drupal.googleanalytics.isInternalSpecial(this.href)) {
           // Keep the internal URL for Google Analytics website overlay intact.
-          ga("send", "pageview", { "page": Drupal.googleanalytics.getPageUrl(this.href) });
+          ga("send", {
+            "hitType": "pageview",
+            "page": Drupal.googleanalytics.getPageUrl(this.href),
+            "transport": "beacon"
+          });
         }
       }
       else {
         if (Drupal.settings.googleanalytics.trackMailto && $(this).is("a[href^='mailto:'],area[href^='mailto:']")) {
           // Mailto link clicked.
-          ga("send", "event", "Mails", "Click", this.href.substring(7));
+          ga("send", {
+            "hitType": "event",
+            "eventCategory": "Mails",
+            "eventAction": "Click",
+            "eventLabel": this.href.substring(7),
+            "transport": "beacon"
+          });
         }
         else if (Drupal.settings.googleanalytics.trackOutbound && this.href.match(/^\w+:\/\//i)) {
-          if (Drupal.settings.googleanalytics.trackDomainMode != 2 || (Drupal.settings.googleanalytics.trackDomainMode == 2 && !Drupal.googleanalytics.isCrossDomain(this.hostname, Drupal.settings.googleanalytics.trackCrossDomains))) {
+          if (Drupal.settings.googleanalytics.trackDomainMode !== 2 || (Drupal.settings.googleanalytics.trackDomainMode === 2 && !Drupal.googleanalytics.isCrossDomain(this.hostname, Drupal.settings.googleanalytics.trackCrossDomains))) {
             // External link clicked / No top-level cross domain clicked.
-            ga("send", "event", "Outbound links", "Click", this.href);
+            ga("send", {
+              "hitType": "event",
+              "eventCategory": "Outbound links",
+              "eventAction": "Click",
+              "eventLabel": this.href,
+              "transport": "beacon"
+            });
           }
         }
       }
@@ -46,18 +68,26 @@ $(document).ready(function() {
   // Track hash changes as unique pageviews, if this option has been enabled.
   if (Drupal.settings.googleanalytics.trackUrlFragments) {
     window.onhashchange = function() {
-      ga('send', 'pageview', location.pathname + location.search + location.hash);
-    }
+      ga("send", {
+        "hitType": "pageview",
+        "page": location.pathname + location.search + location.hash
+      });
+    };
   }
 
   // Colorbox: This event triggers when the transition has completed and the
   // newly loaded content has been revealed.
-  $(document).bind("cbox_complete", function () {
-    var href = $.colorbox.element().attr("href");
-    if (href) {
-      ga("send", "pageview", { "page": Drupal.googleanalytics.getPageUrl(href) });
-    }
-  });
+  if (Drupal.settings.googleanalytics.trackColorbox) {
+    $(document).bind("cbox_complete", function () {
+      var href = $.colorbox.element().attr("href");
+      if (href) {
+        ga("send", {
+          "hitType": "pageview",
+          "page": Drupal.googleanalytics.getPageUrl(href)
+        });
+      }
+    });
+  }
 
 });
 

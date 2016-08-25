@@ -12,3 +12,9 @@ function photo_gallery_install() {
     ->execute();
 }
 
+/**
+ * Enable views_content_cache.
+ */
+function photo_gallery_update_7001() {
+  module_enable(array('views_content_cache'));
+}

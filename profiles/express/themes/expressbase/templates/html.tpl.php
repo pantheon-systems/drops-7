@@ -20,8 +20,8 @@
   <?php if (theme_get_setting('alpha_responsive')): ?>
     <meta name="MobileOptimized" content="width">
     <meta name="HandheldFriendly" content="true">
-    <meta name="viewport" content="width=device-width">
   <?php endif; ?>
+  <meta name="viewport" content="width=device-width">
   <meta http-equiv="cleartype" content="on">
 
   <?php print $styles; ?>

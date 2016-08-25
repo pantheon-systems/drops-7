@@ -1,7 +1,12 @@
-<?php /* -*- mode: php; indent-tabs-mode: nil; tab-width: 2; -*- */
+<?php
 
 /**
- * Implement hook_install().
+ * @file
+ * Install file.
+ */
+
+/**
+ * Implements hook_install().
  *
  * Enable the 'check out documents' permission for authenticated users
  * by default since this is the most common use-case.
@@ -11,21 +16,21 @@ function content_lock_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function content_lock_uninstall() {
   variable_del('content_lock_clear');
   variable_del('content_lock_unload_js');
   variable_del('content_lock_unload_js_message');
-  variable_del('content_lock_unload_js_message_enable');  
+  variable_del('content_lock_unload_js_message_enable');
   variable_del('content_lock_admin_cancelbutton');
   variable_del('content_lock_admin_verbose');
   variable_del('content_lock_allowed_node_types');
   variable_del('content_lock_allowed_formats');
 }
 
-/*
- * Implementaion of hook_schema().
+/**
+ * Implements hook_schema().
  */
 function content_lock_schema() {
   $schema['content_lock'] = array(
@@ -48,7 +53,7 @@ function content_lock_schema() {
         'default' => 0,
       ),
       'timestamp' => array(
-        'description' => 'Time the lock occured.',
+        'description' => 'Time the lock occurred.',
         'size' => 'normal',
         'type' => 'int',
         'unsigned' => TRUE,
@@ -69,14 +74,14 @@ function content_lock_schema() {
     ),
     'primary key' => array('nid'),
   );
+
   return $schema;
 }
 
 /**
- * Implementation of hook_update_N().
+ * Implements hook_update_N().
  */
-function content_lock_update_6200()
-{
+function content_lock_update_6200() {
   $ret = array();
 
   db_add_field($ret, 'content_lock', 'ajax_key',

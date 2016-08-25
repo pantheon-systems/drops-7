@@ -5,9 +5,9 @@ dependencies[] = token
 
 configure = admin/config/people/invite
 
-; Information added by Drupal.org packaging script on 2016-01-13
-version = "7.x-1.0+14-dev"
+; Information added by Drupal.org packaging script on 2016-01-15
+version = "7.x-1.0+18-dev"
 core = "7.x"
 project = "user_external_invite"
-datestamp = "1452700443"
+datestamp = "1452876541"
 

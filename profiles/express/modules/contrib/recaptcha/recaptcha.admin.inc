@@ -56,6 +56,16 @@ function recaptcha_admin_settings() {
     ),
     '#default_value' => variable_get('recaptcha_type', 'image'),
   );
+  $form['recaptcha_widget_settings']['recaptcha_size'] = array(
+    '#default_value' => variable_get('recaptcha_size', ''),
+    '#description' => t('The size of CAPTCHA to serve.'),
+    '#options' => array(
+      '' => t('Normal (default)'),
+      'compact' => t('Compact'),
+    ),
+    '#title' => t('Size'),
+    '#type' => 'select',
+  );
   $form['recaptcha_widget_settings']['recaptcha_tabindex'] = array(
     '#type' => 'textfield',
     '#title' => t('Tabindex'),

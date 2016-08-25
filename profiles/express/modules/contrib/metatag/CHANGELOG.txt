@@ -1,3 +1,137 @@
+Metatag 7.x-1.16, 2016-06-03
+----------------------------
+#2742063 by jalpesh, DamienMcKenna: Fix syntax error in verification module.
+#2742123 by DamienMcKenna: Added test for all submodules to ensure they could be
+  enabled.
+
+
+Metatag 7.x-1.15, 2016-06-03
+----------------------------
+#2700217 by DamienMcKenna: Added Media module as a test dependency.
+#2700217 by DamienMcKenna: Automatically filter out Media embed codes from meta
+  tags when the Media WYSIWYG module is installed.
+#2709985 by alzz: Added fb:pages meta tag for Facebook Instant Pages.
+#2703081 by DylanUnderwood: Added apple-mobile-web-app-title meta tag.
+#2704805 by jcnventura: Fixed the hreflang meta tag.
+#2678004 by alvar0hurtad0: Improvements to the API documentation.
+By DamienMcKenna: Corrected some messages in metatag_update_7104.
+By DamienMcKenna: Incorrect indenting in metatag_favicons.metatag.inc.
+#2687309 by das-peter, skein, DamienMcKenna, k_zoltan: Fixed output translations
+  so it's actually disabled when it's turned off.
+#2712815 by Chalk, DamienMcKenna: Rewrote update scripts that rename meta tags
+  to use two new shared functions, and always use a sandbox for it.
+#2720463 by DamienMcKenna: Rename the icon_any favicon to mask-icon.
+#2276855 by ben.kyriakou: Properly handle the 'disabled' state when featurized
+  configs are reverted.
+#2687309 by das-peter, DamienMcKenna: Submodules shouldn't update translations
+  during page load.
+#2725251 by DamienMcKenna, Jim.M: Added validation tags for Alexa, Baidu, Norton
+  Safe Web and Yahoo.
+#2725741 by DamienMcKenna: Ensure the Locale module is enabled before running db
+  queries against the {locales_source} table.
+By DamienMcKenna: Updated the docblock comment for metatag_metatags_save().
+#2728919 by DYdave: Workaround for CTools bug that causes the Views popup to be
+  tiny.
+#2728933 by DYdave, DamienMcKenna: Trigger hook_metatag_token_types() from
+  metatag_metatags_form() instead of metatag_field_attach_form() so it works
+  with all submodules too.
+#2710377 by DamienMcKenna: Updated the message for og:image:url to make it
+  clear it might be better to not use it.
+#2539388 by DamienMcKenna: All image meta tags will be output with absolute URLs
+  and spaces will be replaced with '%20'.
+#2692877 by stefan.r, DamienMcKenna, Drunkey Monkey: Search API integration.
+#2720221 by dnmurray: Allow sanitizing of values through token_replace(); for
+  advanced usage only, may lead to other issues.
+#2497043 by marcelovani, uzlov: Allow Metatag:Context configs to be sorted by a
+  'weight' value.
+
+
+Metatag 7.x-1.14, 2016-04-02
+----------------------------
+By DamienMcKenna: Corrected return code from update 7107.
+#2664624 by DamienMcKenna: Added a space in front of the Google Plus schemaorg
+  variable to avoid HTML validation errors because of the lack of space.
+#2658902 by DamienMcKenna, swentel: Renamed the 'Add a Metatag default' link to
+  match the D8 wording.
+#2665206 by DamienMcKenna: Don't add an index in 7029 if it already exists.
+#2670842 by Ambient.Impact: Fixed permissions in the Importer submodule.
+#2613598 by DamienMcKenna: Removed the Contributor Covenant, replaced it with a
+  link to https://www.drupal.org/dcoc.
+#2692933 by doostinharrell, DamienMcKenna: $metatags variable in
+  metatag_field_attach_form() may not be an array in certain circumstances.
+#2658808 by tommik: Rewrote query in update 7040 so it works better.
+#2688963 by DamienMcKenna: Added a note about the Yoast SEO module.
+#2687847 by DamienMcKenna: Added a note about the Parse.ly module.
+#2696445 by Simon Georges: Added the twitter:image:alt meta tag.
+#2678896 by Dave Reid: Fixed double-encoding of form fields.
+#2667214 by DamienMcKenna: Improved tests for string encoding.
+#2667214 by joelstein, DamienMcKenna: Decode HTML entities prior to rendering
+  meta tags.
+
+
+Metatag 7.x-1.13, 2016-03-04
+----------------------------
+#2662952 by DamienMcKenna: Fixed logic on hook_requirements for checking the
+  version of Token that is installed.
+
+
+Metatag 7.x-1.12, 2016-03-04
+----------------------------
+#2644742 by kev5873, DamienMcKenna: Variable scoping issue with Metatag:Panels
+  could lead to incorrect meta tag output.
+#2309017 by DamienMcKenna, rodrigoaguilera: Tidied up the install file a little.
+#2658808 by DamienMcKenna: Improved query to skip update 7040 if it isn't
+  needed.
+#2658262 by Devin Carlson, DamienMcKenna: Fixed hook_metatag_config_delete(),
+  this time with tests.
+#2661378 by DamienMcKenna: No longer require Token v7.x-1.6, just highly
+  recommend it.
+#2661408 by DamienMcKenna: Removed the status message when core is up-to-date.
+#2661412 by DamienMcKenna: Improve hook_requirements check for Entity
+  Translation.
+#2661434 by DamienMcKenna: Removed the status message about alt_hreflang.
+#2652120 by DamienMcKenna: Fixes for old config translations that weren't
+  fixed with previous updates.
+
+
+Metatag 7.x-1.11, 2016-01-26
+----------------------------
+#2568499 by DamienMcKenna, DD 85: Removed an errant space.
+#2655582 by DamienMcKenna, MihaiMiculescu: Fixed automatic image parsing.
+By DamienMcKenna: Minor changes to the README.txt file.
+#2655614 by DamienMcKenna: Added tests for image handling.
+#2655662 by DamienMcKenna: Fixed handling of output translation on pages with
+  really long paths.
+
+
+Metatag 7.x-1.10, 2016-01-22
+----------------------------
+#2654838 by Plazik, DamienMcKenna: Disabling output caching lead to Undefined
+  Variable errors.
+#2654638 by DamienMcKenna, noah, marleythedog: Allow updates 7104 and 7105 to
+  run if Locale is not enabled.
+#2654530 by DamienMcKenna, Adenn, deja711: Twitter Cards update 7100 and
+  OpenGraph update 7103 cannot run until Metatag update 7100 has finished.
+
+
+Metatag 7.x-1.9, 2016-01-21
+---------------------------
+#2652772 by DamienMcKenna: Fix update 7101 and rerun it to correct translation
+  data.
+#2651812 by DamienMcKenna: Added an option to disable the i18n integration.
+#2420489 by Les Lim, DamienMcKenna: New caching process for entities.
+#2652260 by DamienMcKenna: Remove the revision_id from translation string IDs.
+#2509246 by DamienMcKenna, zniki.ru: Remove meta tags added by core, with option
+  to leave them as-is.
+#2652294 by DamienMcKenna: Incorrect string context was being used for meta tag
+  output translation.
+#2653434 by DamienMcKenna, reinchek: Fixed metatag_metatags_load().
+#2653446 by DamienMcKenna: Wrong variable name passed to
+  metatag_config_delete().
+#1858540 by DamienMcKenna, friera: Added the pragma, cache-control and expires
+  meta tags.
+
+
 Metatag 7.x-1.8, 2016-01-14
 ---------------------------
 #2546636 by DamienMcKenna: Fixes to the custom Panels pane for editing tags.

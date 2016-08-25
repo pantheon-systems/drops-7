@@ -12,11 +12,12 @@
  * @return
  *   An array defining all the permissions for the site.
  */
-  
+
 function cu_people_bundle_secure_permissions($role) {
   // INSERT PERMISSIONS FOR THIS BUNDLE
   $permissions = array(
     'administrator' => array(
+      'administer department vocabulary terms',
       'administer people_filter_1 vocabulary terms',
       'administer people_filter_2 vocabulary terms',
       'administer people_filter_3 vocabulary terms',
@@ -43,6 +44,7 @@ function cu_people_bundle_secure_permissions($role) {
       'view any people_list_block bean',
     ),
     'content_editor' => array(
+      'administer department vocabulary terms',
       'administer people_filter_1 vocabulary terms',
       'administer people_filter_2 vocabulary terms',
       'administer people_filter_3 vocabulary terms',
@@ -63,9 +65,11 @@ function cu_people_bundle_secure_permissions($role) {
       'view any people_list_block bean',
     ),
     'developer' => array(
+      'administer department vocabulary terms',
       'administer people_filter_1 vocabulary terms',
       'administer people_filter_2 vocabulary terms',
       'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
       'create any people_list_block bean',
       'create people_list_page content',
       'create person content',
@@ -85,6 +89,7 @@ function cu_people_bundle_secure_permissions($role) {
       'view any people_list_block bean',
     ),
     'site_owner' => array(
+      'administer department vocabulary terms',
       'administer people_filter_1 vocabulary terms',
       'administer people_filter_2 vocabulary terms',
       'administer people_filter_3 vocabulary terms',
@@ -124,23 +129,46 @@ function cu_people_bundle_express_help($variables) {
   $variables['admin/settings/people/settings'][] = array(
     'title' => 'People Filter Labels Help',
     'short_title' => 'People Filter Labels Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/556',
+    'url' => '/node/556',
   );
   $variables['block/add/people-list-block'][] = array(
     'title' => 'People List Block Help',
     'short_title' => 'People List Block Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/586',
+    'url' => '/node/586',
+  );
+  $variables['block/edit/people-list-block'][] = array(
+    'title' => 'People List Block Help',
+    'short_title' => 'People List Block Help',
+    'url' => '/node/586',
   );
   $variables['node/add/person'][] = array(
     'title' => 'People Help',
     'short_title' => 'People Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/620',
+    'url' => '/node/620',
   );
   $variables['node/add/people-list-page'][] = array(
     'title' => 'People Help',
     'short_title' => 'People Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/620',
+    'url' => '/node/620',
   );
 
   return $variables;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_people_bundle_menu() {
+  $items = array();
+  $items['admin/settings/people'] = array(
+    'title' => 'People',
+    'description' => 'Menu Options Related to Feedback',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  return $items;
 }

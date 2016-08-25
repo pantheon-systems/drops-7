@@ -367,42 +367,7 @@ input[type="reset"].btn-block,
 input[type="button"].btn-block {
   width: 100%;
 }
-/* VIEWS */
-.form-buttons input#edit-submit,
-input#edit-actions-save,
-input#edit-save,
-input#edit-continue,
-input#edit-submit {
-  @extend .btn;
-  color: #fff;
-  background-color: #5cb85c;
-  border-color: #4cae4c;
-  &:hover,
-  &:focus {
-    color: #fff;
-    background-color: #449d44;
-    border-color: #398439;
-  }
-}
-input#preview-submit {
-  @extend .btn;
-  @extend .btn-default;
-}
-.form-buttons input#edit-cancel,
-input#edit-actions-cancel,
-input#edit-cancel,
-input#edit-remove {
-  @extend .btn;
-  color: #fff;
-  background-color: #d9534f;
-  border-color: #d43f3a;
-  &:hover,
-  &:focus {
-    color: #fff;
-    background-color: #c9302c;
-    border-color: #ac2925;
-  }
-}
+
 .views-display-column > .ctools-toggle {
   margin-top: 20px;
 }

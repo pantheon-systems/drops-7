@@ -9,10 +9,7 @@ require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/ReCaptcha.php';
 require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/RequestMethod.php';
 require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/RequestParameters.php';
 require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/Response.php';
-require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/RequestMethod/Post.php';
-require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/RequestMethod/Socket.php';
-require_once dirname(__FILE__) . '/recaptcha-php/src/ReCaptcha/RequestMethod/SocketPost.php';
-require_once dirname(__FILE__) . '/src/ReCaptcha/RequestMethod/Drupal7.php';
+require_once dirname(__FILE__) . '/src/ReCaptcha/RequestMethod/Drupal7Post.php';
 
 /**
  * Implements hook_help().
@@ -21,7 +18,6 @@ function recaptcha_help($path, $arg) {
   switch ($path) {
     case 'admin/config/people/captcha/recaptcha':
       return t('Google <a href="@url">reCAPTCHA</a> is a free service to protect your website from spam and abuse. reCAPTCHA uses an advanced risk analysis engine and adaptive CAPTCHAs to keep automated software from engaging in abusive activities on your site. It does this while letting your valid users pass through with ease.', array('@url' => 'https://www.google.com/recaptcha'));
-      break;
   }
 }
 
@@ -109,9 +105,10 @@ function recaptcha_captcha($op, $captcha_type = '') {
             'data-sitekey' => $recaptcha_site_key,
             'data-theme' => variable_get('recaptcha_theme', 'light'),
             'data-type' => variable_get('recaptcha_type', 'image'),
+            'data-size' => variable_get('recaptcha_size', ''),
             'data-tabindex' => variable_get('recaptcha_tabindex', 0),
           );
-          // Filter out empty tabindex.
+          // Filter out empty tabindex/size.
           $attributes = array_filter($attributes);
 
           $captcha['form']['recaptcha_widget'] = array(
@@ -151,7 +148,7 @@ function recaptcha_captcha_validation($solution, $response, $element, $form_stat
   }
 
   // Use drupal_http_request() to circumvent all issues with the Google library.
-  $recaptcha = new \ReCaptcha\ReCaptcha($recaptcha_secret_key, new \ReCaptcha\RequestMethod\Drupal7());
+  $recaptcha = new \ReCaptcha\ReCaptcha($recaptcha_secret_key, new \ReCaptcha\RequestMethod\Drupal7Post());
 
   $resp = $recaptcha->verify(
     $_POST['g-recaptcha-response'],

@@ -23,7 +23,7 @@
     jQuery('#video-reveal-container-<?php print $bid; ?>').fadeIn();
     var iframeSrc = jQuery('#video-reveal-container-<?php print $bid; ?> iframe').attr('src');
     var iframeSrc2 = iframeSrc.replace("autoplay=0", "autoplay=1");
-    jQuery('#video-reveal-wrapper-<?php print $bid; ?> iframe').attr('src', iframeSrc2);
+    jQuery('#video-reveal-container-<?php print $bid; ?> iframe').attr('src', iframeSrc2);
     return false;
   });
   jQuery('#video-reveal-close-<?php print $bid; ?>').click(function(){
@@ -31,7 +31,7 @@
     jQuery('#video-reveal-wrapper-<?php print $bid; ?> .video-reveal-teaser').show();
     var iframeSrc = jQuery('#video-reveal-container-<?php print $bid; ?> iframe').attr('src');
     var iframeSrc2 = iframeSrc.replace("autoplay=1", "autoplay=0");
-    jQuery('#video-reveal-wrapper-<?php print $bid; ?> iframe').attr('src', iframeSrc2);
+    jQuery('#video-reveal-container-<?php print $bid; ?> iframe').attr('src', iframeSrc2);
     return false;
   });
 </script>

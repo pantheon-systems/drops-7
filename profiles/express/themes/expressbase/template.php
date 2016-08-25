@@ -1,4 +1,26 @@
 <?php
+
+/**
+ * Implements hook_css_alter().
+ *
+ * Remove jquery UI styles, alter stylesheet type for better printing.
+ */
+function expressbase_css_alter(&$css) {
+  // Remove jquery ui stylesheet.
+  unset($css['misc/ui/jquery.ui.theme.css']);
+  // Set all non-print css to screen so print css is cleaner
+  foreach ($css as $key => $stylesheet) {
+    if ($stylesheet['media'] == 'all') {
+      //swap these lines for browser debugging
+      $css[$key]['media'] = 'screen';
+      //unset($css[$key]);
+    } elseif ($stylesheet['media'] == 'print') {
+      // uncomment line below for browser debugging
+      //$css[$key]['media'] = 'screen';
+    }
+  }
+}
+
 /**
  * Implements theme_preprocess_html.
  */
@@ -26,8 +48,10 @@ function expressbase_preprocess_html(&$vars) {
   );
   drupal_add_html_head($element, 'ie_compatibility_mode');
 
-  // Add campus name to title
-  $vars['head_title_array']['slogan'] = 'University of Colorado Boulder';
+  // Build title array
+  // Add Campus name to title
+  $slogan_title = variable_get('site_slogan_title', 'University of Colorado Boulder');
+  $vars['head_title_array']['slogan'] = $slogan_title;
   $vars['head_title'] = implode(' | ', $vars['head_title_array']);
 
   // set classes for theme configs
@@ -89,6 +113,22 @@ function expressbase_page_alter(&$page) {
       );
     }
   }
+
+  $is_responsive = theme_get_setting('alpha_responsive', variable_get('theme_default', ''));
+  if (!$is_responsive && user_access('administer express settings')) {
+    $link['href'] = 'admin/theme/config/' . variable_get('theme_default' , '');
+    $link['html'] = TRUE;
+    $link['fragment'] = 'edit-expressbase-theme-settings';
+    $link['query']['responsive'] = 1;
+    $link['attributes'] = array(
+      'target' => 'parent',
+    );
+    $link = l('<i class="fa fa-cog"></i> Make your site mobile friendly', $link['href'], $link);
+    $page['page_top']['notice']['warning']['#markup'] = '<p>This site is not responsive.</p>';
+    $page['page_top']['notice']['link']['#markup'] = $link;
+    $page['page_top']['notice']['#prefix'] = '<div class="responsive-notice">';
+    $page['page_top']['notice']['#suffix'] = '</div>';
+  }
 }
 
 /**
@@ -97,7 +137,8 @@ function expressbase_page_alter(&$page) {
 function expressbase_preprocess_page(&$vars) {
   global $base_url;
   // Set site slogan so it can't be overriden
-  $vars['site_slogan'] = 'University of Colorado <strong>Boulder</strong>';
+  $slogan_display = variable_get('site_slogan_display', 'University of Colorado <strong>Boulder</strong>');
+  $vars['site_slogan'] = $slogan_display;
   // add print logo
   $vars['print_logo'] = '<img src="' . $base_url . '/' . drupal_get_path('theme','expressbase') . '/images/print-logo.png" alt="University of Colorado Boulder" />';
   // hide title on homepage
@@ -217,7 +258,8 @@ function expressbase_image_style(&$vars) {
  * Implements theme_breadcrumb().
  */
 function expressbase_breadcrumb($vars) {
-  $breadcrumb = $vars['breadcrumb'];
+  $breadcrumb = !empty($vars['breadcrumb']) ? $vars['breadcrumb'] : drupal_get_breadcrumb();
+  $theme = variable_get('theme_default','');
   if (!empty($breadcrumb) && theme_get_setting('use_breadcrumbs', $theme)) {
     // Replace the Home breadcrumb with a Home icon
     //$breadcrumb[0] = str_replace('Home','<i class="fa fa-home"></i> <span class="home-breadcrumb element-invisible">Home</span>',$breadcrumb[0]);
@@ -243,6 +285,9 @@ function expressbase_preprocess_node(&$vars) {
 
   // Don't print link variables
   unset($vars['content']['links']);
+
+  // Add node title class to node titles
+  $vars['title_attributes_array']['class'][] = 'node-title';
 }
 
 /**
@@ -274,8 +319,8 @@ function expressbase_preprocess_region(&$vars) {
       } else {
         $vars['site_name'] = variable_get('site_name', NULL);
       }
-
-      $vars['site_slogan'] = 'University of Colorado <strong>Boulder</strong>';
+      $slogan_display = variable_get('site_slogan_display', 'University of Colorado <strong>Boulder</strong>');
+      $vars['site_slogan'] = $slogan_display;
       $vars['print_logo'] = '<img src="' . $base_url . '/' . drupal_get_path('theme','expressbase') . '/images/print-logo.png" alt="University of Colorado Boulder" />';
 
       break;
@@ -423,6 +468,7 @@ function expressbase_menu_link(array $vars) {
   if ($element['#below']) {
     $sub_menu = drupal_render($element['#below']);
   }
+  $element['#localized_options']['attributes']['class'][] = 'menu__link';
   $output = l($element['#title'], $element['#href'], $element['#localized_options']);
   return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
 }
@@ -707,4 +753,142 @@ function expressbase_size_column_classes() {
     'path' => $template_dir,
   );
   return $registry;
+}
+
+function expressbase_pager($variables) {
+  $tags = $variables['tags'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  $quantity = $variables['quantity'];
+  // Setting qty to 5 because 10 is too much for tablets
+  $quantity = 5;
+  global $pager_page_array, $pager_total;
+
+  // Calculate various markers within this pager piece:
+  // Middle is used to "center" pages around the current page.
+  $pager_middle = ceil($quantity / 2);
+  // current is the page we are currently paged to
+  $pager_current = $pager_page_array[$element] + 1;
+  // first is the first page listed by this pager piece (re quantity)
+  $pager_first = $pager_current - $pager_middle + 1;
+  // last is the last page listed by this pager piece (re quantity)
+  $pager_last = $pager_current + $quantity - $pager_middle;
+  // max is the maximum page number
+  $pager_max = $pager_total[$element];
+  // End of marker calculations.
+
+  // Prepare for generation loop.
+  $i = $pager_first;
+  if ($pager_last > $pager_max) {
+    // Adjust "center" if at end of query.
+    $i = $i + ($pager_max - $pager_last);
+    $pager_last = $pager_max;
+  }
+  if ($i <= 0) {
+    // Adjust "center" if at start of query.
+    $pager_last = $pager_last + (1 - $i);
+    $i = 1;
+  }
+  // End of generation loop preparation.
+
+  $li_first = theme('pager_first', array('text' => (isset($tags[0]) ? $tags[0] : t('« first')), 'element' => $element, 'parameters' => $parameters));
+  $li_previous = theme('pager_previous', array('text' => (isset($tags[1]) ? $tags[1] : t('‹ previous')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
+  $li_next = theme('pager_next', array('text' => (isset($tags[3]) ? $tags[3] : t('next ›')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
+  $li_last = theme('pager_last', array('text' => (isset($tags[4]) ? $tags[4] : t('last »')), 'element' => $element, 'parameters' => $parameters));
+
+  if ($pager_total[$element] > 1) {
+    if ($li_first) {
+      $items[] = array(
+        'class' => array('pager-first'),
+        'data' => $li_first,
+      );
+      $items_small[] = array(
+        'class' => array('pager-first'),
+        'data' => $li_first,
+      );
+    }
+    if ($li_previous) {
+      $items[] = array(
+        'class' => array('pager-previous'),
+        'data' => $li_previous,
+      );
+      $items_small[] = array(
+        'class' => array('pager-previous'),
+        'data' => $li_previous,
+      );
+    }
+
+    // When there is more than one page, create the pager list.
+    if ($i != $pager_max) {
+      if ($i > 1) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+      // Now generate the actual pager piece.
+      for (; $i <= $pager_last && $i <= $pager_max; $i++) {
+        if ($i < $pager_current) {
+          $items[] = array(
+            'class' => array('pager-item'),
+            'data' => theme('pager_previous', array('text' => $i, 'element' => $element, 'interval' => ($pager_current - $i), 'parameters' => $parameters)),
+          );
+        }
+        if ($i == $pager_current) {
+          $items[] = array(
+            'class' => array('pager-current'),
+            'data' => $i,
+          );
+          $items_small[] = array(
+            'class' => array('pager-current'),
+            'data' => $i,
+          );
+        }
+        if ($i > $pager_current) {
+          $items[] = array(
+            'class' => array('pager-item'),
+            'data' => theme('pager_next', array('text' => $i, 'element' => $element, 'interval' => ($i - $pager_current), 'parameters' => $parameters)),
+          );
+        }
+      }
+      if ($i < $pager_max) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+    }
+    // End generation.
+    if ($li_next) {
+      $items[] = array(
+        'class' => array('pager-next'),
+        'data' => $li_next,
+      );
+      $items_small[] = array(
+        'class' => array('pager-next'),
+        'data' => $li_next,
+      );
+    }
+    if ($li_last) {
+      $items[] = array(
+        'class' => array('pager-last'),
+        'data' => $li_last,
+      );
+      $items_small[] = array(
+        'class' => array('pager-last'),
+        'data' => $li_last,
+      );
+    }
+    // Full pager for tablet/desktop
+    $pager['pager_full']['#markup'] =  '<h2 class="element-invisible">' . t('Pages') . '</h2>' . theme('item_list', array(
+      'items' => $items,
+      'attributes' => array('class' => array('pager'), 'id' => 'pager-full'),
+    ));
+    // Smaller pager for mobile
+    $pager['pager_mobile']['#markup'] =  '<h2 class="element-invisible">' . t('Pages') . '</h2>' . theme('item_list', array(
+      'items' => $items_small,
+      'attributes' => array('class' => array('pager'), 'id' => 'pager-mobile'),
+    ));
+    return render($pager);
+  }
 }

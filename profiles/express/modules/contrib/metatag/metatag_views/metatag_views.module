@@ -51,7 +51,7 @@ function metatag_views_views_preview_info_alter(&$rows, $view) {
   $values = metatag_metatags_values($instance, $metatags, $options);
   foreach ($values as $metatag => $value) {
     $metatag_info = metatag_get_info('tags', $metatag);
-    $values[$metatag] = check_plain($metatag_info['label']) . ': ' . check_plain($value);
+    $values[$metatag] = $metatag_info['label'] . ': ' . check_plain($value);
   }
   if (!empty($values)) {
     $rows['query'][] = array(
@@ -111,8 +111,9 @@ function metatag_views_page_alter(&$page) {
         $metatags = array(LANGUAGE_NONE => $metatags);
       }
 
-      // Translate all of the meta tags using i18n.
-      metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display);
+      // Translate all of the meta tags using i18n, but don't update the
+      // strings.
+      metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display, NULL, FALSE);
 
       // Build options for meta tag rendering.
       $options = array();

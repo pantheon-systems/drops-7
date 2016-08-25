@@ -13,23 +13,9 @@ function cu_googleanalytics_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'googleanalytics_account';
-  $strongarm->value = 'UA-25752450-1';
-  $export['googleanalytics_account'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
   $strongarm->name = 'googleanalytics_cache';
   $strongarm->value = 0;
   $export['googleanalytics_cache'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'googleanalytics_codesnippet_after';
-  $strongarm->value = '';
-  $export['googleanalytics_codesnippet_after'] = $strongarm;
 
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -51,6 +37,30 @@ function cu_googleanalytics_strongarm() {
   $strongarm->name = 'googleanalytics_custom';
   $strongarm->value = '0';
   $export['googleanalytics_custom'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'googleanalytics_custom_dimension';
+  $strongarm->value = array(
+    1 => array(
+      'index' => 1,
+      'value' => '[node:nid]',
+    ),
+    2 => array(
+      'index' => 2,
+      'value' => '[node:title]',
+    ),
+    3 => array(
+      'index' => 3,
+      'value' => '[node:content-type]',
+    ),
+    4 => array(
+      'index' => 4,
+      'value' => '[node:created]',
+    ),
+  );
+  $export['googleanalytics_custom_dimension'] = $strongarm;
 
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -111,10 +121,15 @@ function cu_googleanalytics_strongarm() {
   $strongarm->api_version = 1;
   $strongarm->name = 'googleanalytics_pages';
   $strongarm->value = 'admin
+
 admin/*
+
 batch
+
 node/add*
+
 node/*/*
+
 user/*/*';
   $export['googleanalytics_pages'] = $strongarm;
 
@@ -132,7 +147,11 @@ user/*/*';
   $strongarm->value = array(
     1 => 0,
     2 => 0,
+    6 => 0,
+    4 => 0,
+    7 => 0,
     3 => 0,
+    5 => 0,
   );
   $export['googleanalytics_roles'] = $strongarm;
 

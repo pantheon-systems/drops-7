@@ -1,12 +1,6 @@
 <?php
 
 /**
- * @file
- * Secure permissions for CU-Boulder.
- */
-
-
-/**
  * Implements hook_install().
  *
  * Creates a set of default users with specified roles.
@@ -17,17 +11,19 @@ function cu_users_install() {
   db_query("UPDATE {system} SET weight = 98 WHERE name = 'cu_users'");
 
   $developer_role = user_role_load_by_name('developer');
-  $content_admin_role = user_role_load_by_name('content_admin');
   $administrator_role = user_role_load_by_name('administrator');
+  $site_owner_role = user_role_load_by_name('site_owner');
+  $content_editor_role = user_role_load_by_name('content_editor');
+  $edit_own_role = user_role_load_by_name('edit_my_content');
 
   // Create default users keyed by role id.
   $default_users = array(
     $developer_role->rid => cu_users_get_users('developer'),
     $administrator_role->rid => cu_users_get_users('administrator'),
+	  $site_owner_role->rid => cu_users_get_users('site_owner'),
+	  $content_editor_role->rid => cu_users_get_users('content_editor'),
+	  $edit_own_role->rid => cu_users_get_users('edit_my_content'),
   );
-
-  // Final sanity check.
-  _cu_users_grant_all_perms($developer_role->rid);
 
   foreach ($default_users as $rid => $users) {
     foreach ($users as $name => $mail) {
@@ -43,57 +39,6 @@ function cu_users_install() {
       $query->values(array('uid' => $account->uid, 'rid' => $rid));
       $query->execute();
     }
-  }
-
-  // force roles to be wieghted by increasing permissions
-  $role = user_role_load_by_name('edit_my_content');
-  $role->weight = 2;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('content_editor');
-  $role->weight = 3;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('site_owner');
-  $role->weight = 4;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('administrator');
-  $role->weight = 5;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('developer');
-  $role->weight = 6;
-  user_role_save($role);
-
-}
-
-
-/**
- * Grants all perms to specified role ID.
- *
- * This is sort of a "last check" just in case we haven't
- * exported *every* permission.
- */
-function _cu_users_grant_all_perms($rid) {
-  // Grant every permission to role.
-  $module_info = system_get_info('module');
-  foreach (module_implements('permission') as $module) {
-    $modules[$module] = $module_info[$module]['name'];
-  }
-  $permissions = array();
-  foreach ($modules as $module => $display_name) {
-    $perms = array();
-    $perms = module_invoke($module, 'permission');
-    $permissions += $perms;
-  }
-  if ($rid > 2) {
-    user_role_grant_permissions($rid, array_keys($permissions));
-    return TRUE;
-  }
-  else {
-    // We wont grant perms to anon or auth.. only a new role (>2).
-    return FALSE;
   }
 }
 
@@ -172,7 +117,7 @@ function cu_users_update_7016() {
   // If kere7580 user does not exist.
   $new_account = user_load_by_name('kere7580');
   if (!isset($new_account->uid)) {
-    // Create new drupalcs user.
+    // Create new user.
     $account = new stdClass();
     $account->name = 'kere7580';
     $account->mail = 'Kevin.Reynen@Colorado.EDU';
@@ -193,7 +138,7 @@ function cu_users_update_7017() {
   // If jafu6031 user does not exist.
   $new_account = user_load_by_name('jafu6031');
   if (!isset($new_account->uid)) {
-    // Create new drupalcs user.
+    // Create new user.
     $account = new stdClass();
     $account->name = 'jafu6031';
     $account->mail = 'James.W.Fuller@Colorado.EDU';
@@ -251,7 +196,7 @@ function cu_users_update_7020() {
   // If new user does not exist.
   $new_account = user_load_by_name('mortone');
   if (!isset($new_account->uid)) {
-    // Create new drupalcs user.
+    // Create new user.
     $account = new stdClass();
     $account->name = 'mortone';
     $account->mail = 'Emily.Kellagher@Colorado.EDU';
@@ -282,7 +227,7 @@ function cu_users_update_7022() {
   // If alfi2595 user does not exist.
   $new_account = user_load_by_name('alfi2595');
   if (!isset($new_account->uid)) {
-    // Create new drupalcs user.
+    // Create new user.
     $account = new stdClass();
     $account->name = 'alfi2595';
     $account->mail = 'alexander.finnarn@colorado.edu';
@@ -294,25 +239,59 @@ function cu_users_update_7022() {
     $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
     $query->execute();
   }
-
-  // force roles to be wieghted by increasing permissions
-  $role = user_role_load_by_name('edit_my_content');
-  $role->weight = 2;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('content_editor');
-  $role->weight = 3;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('site_owner');
-  $role->weight = 4;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('administrator');
-  $role->weight = 5;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('developer');
-  $role->weight = 6;
-  user_role_save($role);
 }
+
+/**
+ * Add test users for edit-my-content, content-editor and site-owner
+ */
+function cu_users_update_7023() {
+  // If edit-own-content user does not exist.
+  $new_account = user_load_by_name('osr-test-edit-own');
+  if (!isset($new_account->uid)) {
+    // Create new edit-own-content user.
+    $account = new stdClass();
+    $account->name = 'osr-test-edit-own';
+    $account->mail = 'osr-test-edit-own@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $edit_own_role = user_role_load_by_name('edit_my_content');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $edit_own_role->rid));
+    $query->execute();
+  }
+
+   // If content-editor user does not exist.
+  $new_account = user_load_by_name('osr-test-content');
+  if (!isset($new_account->uid)) {
+    // Create new content-editor user.
+    $account = new stdClass();
+    $account->name = 'osr-test-content';
+    $account->mail = 'osr-test-content@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $content_editor_role = user_role_load_by_name('content_editor');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $content_editor_role->rid));
+    $query->execute();
+  }
+
+   // If site-owner user does not exist.
+  $new_account = user_load_by_name('osr-test-owner');
+  if (!isset($new_account->uid)) {
+    // Create new site-owner user.
+    $account = new stdClass();
+    $account->name = 'osr-test-owner';
+    $account->mail = 'osr-test-owner@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $site_owner_role = user_role_load_by_name('site_owner');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $site_owner_role->rid));
+    $query->execute();
+  }
+}
+
+

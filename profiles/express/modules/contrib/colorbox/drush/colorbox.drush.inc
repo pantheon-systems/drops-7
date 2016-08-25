@@ -23,7 +23,7 @@ define('COLORBOX_DOWNLOAD_PREFIX', 'colorbox-');
  *
  * See `drush topic docs-commands` for a list of recognized keys.
  *
- * @return
+ * @return array
  *   An associative array describing your command(s).
  */
 function colorbox_drush_command() {
@@ -49,10 +49,10 @@ function colorbox_drush_command() {
  * This function is called whenever a drush user calls
  * 'drush help <name-of-your-command>'
  *
- * @param
+ * @param string $section
  *   A string with the help section (prepend with 'drush:')
  *
- * @return
+ * @return string
  *   A string with the help text for your command.
  */
 function colorbox_drush_help($section) {
@@ -63,14 +63,14 @@ function colorbox_drush_help($section) {
 }
 
 /**
- * Implements drush_MODULE_post_pm_enable().
+ * Implements drush_MODULE_pre_pm_enable().
  */
-// function drush_colorbox_post_pm_enable() {
-//   $modules = func_get_args();
-//   if (in_array('colorbox', $modules)) {
-//     drush_colorbox_plugin();
-//   }
-// }
+function drush_colorbox_pre_pm_enable() {
+   $modules = drush_get_context('PM_ENABLE_MODULES');
+   if (in_array('colorbox', $modules) && !drush_get_option('skip')) {
+     drush_colorbox_plugin();
+   }
+}
 
 /**
  * Command to download the Colorbox plugin.

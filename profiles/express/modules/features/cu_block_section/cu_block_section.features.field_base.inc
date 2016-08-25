@@ -10,7 +10,7 @@
 function cu_block_section_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_block_section_bg_image'
+  // Exported field_base: 'field_block_section_bg_image'.
   $field_bases['field_block_section_bg_image'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -32,7 +32,7 @@ function cu_block_section_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_block_section_content_bg'
+  // Exported field_base: 'field_block_section_content_bg'.
   $field_bases['field_block_section_content_bg'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -58,7 +58,7 @@ function cu_block_section_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_block_section_mobile_pad'
+  // Exported field_base: 'field_block_section_mobile_pad'.
   $field_bases['field_block_section_mobile_pad'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -79,7 +79,7 @@ function cu_block_section_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_block_section_padding'
+  // Exported field_base: 'field_block_section_padding'.
   $field_bases['field_block_section_padding'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -100,7 +100,7 @@ function cu_block_section_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_block_section_tablet_pad'
+  // Exported field_base: 'field_block_section_tablet_pad'.
   $field_bases['field_block_section_tablet_pad'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -121,7 +121,7 @@ function cu_block_section_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_blocks_section_blocks'
+  // Exported field_base: 'field_blocks_section_blocks'.
   $field_bases['field_blocks_section_blocks'] = array(
     'active' => 1,
     'cardinality' => -1,

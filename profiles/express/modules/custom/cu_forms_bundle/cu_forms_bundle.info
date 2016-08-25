@@ -1,5 +1,5 @@
 name = Forms
-description = This bundle allows you to easily create contact forms, requests for appointments, questionnaires, and surveys.
+description = Easily create contact forms, requests for appointments, questionnaires and surveys.
 core = 7.x
 package = CU-Forms
 project_demo_url = http://www.colorado.edu/webcentral/node/674
@@ -9,5 +9,6 @@ dependencies[] = cu_feedback
 dependencies[] = captcha
 dependencies[] = recaptcha
 dependencies[] = captcha_webform
+dependencies[] = webform
 
 bundle_cache_clear = 1

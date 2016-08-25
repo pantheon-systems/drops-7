@@ -1,13 +1,12 @@
 name = CU Search
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.1
 dependencies[] = google_appliance
 dependencies[] = strongarm
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
 features[variable][] = google_appliance_autofilter
-features[variable][] = google_appliance_collection
 features[variable][] = google_appliance_frontend
 features[variable][] = google_appliance_hostname
 features[variable][] = google_appliance_query_inspection

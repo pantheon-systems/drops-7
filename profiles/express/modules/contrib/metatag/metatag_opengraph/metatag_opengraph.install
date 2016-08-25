@@ -36,6 +36,18 @@ function metatag_opengraph_requirements($phase) {
 }
 
 /**
+ * Implements hook_update_dependencies().
+ */
+function metatag_opengraph_update_dependencies() {
+  // OpenGraph update 7103 requires the complete Metatag schema, so lets wait
+  // for Metatag update 7100 just to be sure.
+  $dependencies['metatag_opengraph'][7103] = array(
+    'metatag' => 7100,
+  );
+  return $dependencies;
+}
+
+/**
  * Implementations of hook_update_N().
  */
 
@@ -64,81 +76,21 @@ function metatag_opengraph_update_7102() {
 /**
  * Change og:video to og:video:url in all metatags.
  */
-function metatag_opengraph_update_7103() {
-  // Find all {metatag} records that contained an entry for the old meta tag.
-  $records = db_query("SELECT entity_type, entity_id, revision_id, language, data
-    FROM {metatag}
-    WHERE data LIKE '%og:video%'");
-  // This message will be returned if nothing needed to be updated.
-  $none_message = t('No Metatag entity records needed to have the "og:video" meta tag renamed.');
-
-  if ($records->rowCount() == 0) {
-    drupal_set_message($none_message);
-  }
-  else {
-    $keys = array('entity_type', 'entity_id', 'revision_id', 'language');
-
-    // Loop over the values and correct them.
-    $counter = 0;
-    foreach ($records as $record) {
-      $record->data = unserialize($record->data);
-      if (isset($record->data['og:video'])) {
-        $record->data['og:video:url'] = $record->data['og:video'];
-        unset($record->data['og:video']);
-        drupal_write_record('metatag', $record, $keys);
-
-        // Clear the cache for the entity this belongs to.
-        entity_get_controller($record->entity_type)->resetCache(array($record->entity_id));
-
-        $counter++;
-      }
-    }
-    if ($counter == 0) {
-      drupal_set_message($none_message);
-    }
-    else {
-      drupal_set_message(t('Converted the "og:video" meta tag for @count entity records to "og:video:url" meta tag. Now we are up to date with Facebook specs.', array('@count' => $counter)));
-    }
-  }
+function metatag_opengraph_update_7103(&$sandbox) {
+  module_load_include('install', 'metatag');
+  $old_tag = 'og:video';
+  $new_tag = 'og:video:url';
+  return metatag_update_replace_meta_tag($sandbox, $old_tag, $new_tag);
 }
 
 /**
  * Rename the 'og:video' meta tag to 'og:video:url' in the configs.
  */
 function metatag_opengraph_update_7104() {
-  // Find all {metatag_config} records that contained an entry for the old meta
-  // tag.
-  $records = db_query("SELECT cid, config
-    FROM {metatag_config}
-    WHERE config LIKE '%og:video%'");
-  // This message will be returned if nothing needed to be updated.
-  $none_message = t('No Metatag configuration records needed to have the "og:video" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.');
-
-  // Loop over the values and correct them.
-  if ($records->rowCount() == 0) {
-    drupal_set_message($none_message);
-  }
-  else {
-    $keys = array('cid');
-
-    // Loop over the values and correct them.
-    $counter = 0;
-    foreach ($records as $record) {
-      $record->config = unserialize($record->config);
-      if (isset($record->config['og:video'])) {
-        $record->config['og:video:url'] = $record->config['og:video'];
-        unset($record->config['og:video']);
-        drupal_write_record('metatag_config', $record, $keys);
-        $counter++;
-      }
-    }
-    if ($counter == 0) {
-      drupal_set_message($none_message);
-    }
-    else {
-      drupal_set_message(t('Converted the "og:video" meta tag for @count configurations to the new "og:video:url" meta tag. Now we are up-to-date..', array('@count' => $counter)));
-    }
-  }
+  module_load_include('install', 'metatag');
+  $old_tag = 'og:video';
+  $new_tag = 'og:video:url';
+  return metatag_update_replace_config($old_tag, $new_tag);
 }
 
 /**

@@ -65,7 +65,7 @@ ul.primary li a.edit:before {
 ul.primary li a.edit-blocks:before {
   content: "\f009";
 }
-ul.primary li a.edit-blocks:before {
+ul.primary li a.edit-layout:before {
   content: "\f009";
 }
 ul.primary li a.edit-webform:before {
@@ -76,4 +76,7 @@ ul.primary li a.webform-results:before {
 }
 ul.primary li a.devel:before {
   content: "\f002";
+}
+ul.primary li a.revisions:before {
+  content: "\f0c5";
 }

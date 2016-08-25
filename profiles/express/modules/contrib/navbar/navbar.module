@@ -513,23 +513,16 @@ function navbar_system_info_alter(&$info, $file, $type) {
  */
 function navbar_get_menu_tree() {
   $tree = array();
-  $admin_mlid = db_query('SELECT mlid FROM {menu_links} WHERE menu_name = :menu_name AND module = :module AND link_path = :path', array(':menu_name' => 'management', ':module' => 'system', ':path' => 'admin'))->fetchField();
-  if ($admin_mlid) {
+  $admin_link = db_query('SELECT * FROM {menu_links} WHERE menu_name = :menu_name AND module = :module AND link_path = :path', array(':menu_name' => 'management', ':module' => 'system', ':path' => 'admin'))->fetchAssoc();
+  if ($admin_link) {
     // Only return top 3 menu levels.
-    $tree = menu_tree_all_data('management', NULL, 5);
+    $tree = menu_build_tree('management', array(
+      'min_depth' => $admin_link['depth'] + 1,
+      'max_depth' => 5,
+    ));
   }
 
-  // Return the sub-menus of the management menu root.
-  foreach ($tree as $key => $menu) {
-    if ($menu['link']['mlid'] == $admin_mlid) {
-      return (!empty($menu['below'])) ? $menu['below'] : array();
-    }
-    else {
-      // Any extra menu link can break the navbar. Skip them.
-      continue;
-    }
-  }
-  return array();
+  return $tree;
 }
 
 /**
@@ -844,12 +837,16 @@ function navbar_libraries_info() {
         'source' => array(
           'file' => 'modernizr.js',
           // @todo Document an actual example version string.
-          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+          'pattern' => '#[Mm]odernizr\s+[Vv]?([0-9\.]+)#',
         ),
         'minified' => array(
           'file' => 'modernizr-min.js',
-          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+          'pattern' => '#[Mm]odernizr\s+[Vv]?([0-9\.]+)#',
         ),
+        'minified standard' => array(
+          'file' => 'modernizr.min.js',
+          'pattern' => '#[Mm]odernizr\s+[Vv]?([0-9\.]+)#',
+        )
       ),
     ),
     'versions' => array(
@@ -878,11 +875,24 @@ function navbar_libraries_info() {
             'variant callback' => '_navbar_libraries_variant_exists',
             'variant arguments' => array('modernizr-min.js')
           ),
+          'minified standard' => array(
+            'files' => array(
+              'js' => array(
+                'modernizr.min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_navbar_libraries_variant_exists',
+            'variant arguments' => array('modernizr.min.js')
+          ),
+
         ),
       ),
     ),
   );
   $libraries['modernizr'] += $common;
+  array_unshift($libraries['modernizr']['variant order'], 'minified standard');
 
   $libraries['underscore'] = array(
     'name' => 'Underscore',
@@ -1201,14 +1211,3 @@ function navbar_modernizr_info() {
 
   return $tests;
 }
-
-/**
- * Implements hook_form_FORM_ID_alter().
- *
- * Clear cache so shortcut menu displays properly when switched.
- * This should be more targeted, but only thing that has worked so far.
- */
-function navbar_form_shortcut_set_switch_alter(&$form, &$form_values, $form_id) {
-  $form['#submit'][] = 'drupal_flush_all_caches';
-}
-

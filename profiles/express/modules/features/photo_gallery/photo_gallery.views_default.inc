@@ -26,7 +26,19 @@ function photo_gallery_views_default_views() {
   $handler->display->display_options['css_class'] = 'clearfix';
   $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'perm';
-  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['cache']['type'] = 'views_content_cache';
+  $handler->display->display_options['cache']['results_min_lifespan'] = '-1';
+  $handler->display->display_options['cache']['results_max_lifespan'] = '3600';
+  $handler->display->display_options['cache']['output_min_lifespan'] = '-1';
+  $handler->display->display_options['cache']['output_max_lifespan'] = '3600';
+  $handler->display->display_options['cache']['keys'] = array(
+    'node' => array(
+      'photo_gallery' => 'photo_gallery',
+    ),
+    'node_only' => array(
+      'node_changed' => 0,
+    ),
+  );
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['query']['options']['query_comment'] = FALSE;
   $handler->display->display_options['exposed_form']['type'] = 'basic';

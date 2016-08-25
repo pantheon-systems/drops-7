@@ -1,0 +1,445 @@
+<?php
+
+/**
+ * @file
+ * This module periodically check links in beans.
+ */
+
+/**
+ * Implements hook_form_alter().
+ */
+function linkchecker_bean_form_linkchecker_admin_settings_form_alter(&$form, &$form_state) {
+  $bean_types = bean_get_types();
+  $bean_names = array();
+  foreach ($bean_types as $type => $bean_type) {
+    $bean_names[$type] = $bean_type->getLabel();
+  }
+  $form['settings']['linkchecker_scan_beans'] = array(
+    '#type' => 'checkboxes',
+    '#prefix' => "<br />",
+    '#title' => t('Scan beans for links'),
+    '#default_value' => variable_get('linkchecker_scan_beans', array()),
+    '#options' => array_map('check_plain', $bean_names),
+    '#description' => t('Enable link checking for the selected bean type(s).'),
+  );
+  $form['settings']['linkchecker_check_links_types']['#weight'] = 10;
+
+  $form['#submit'][] = 'linkchecker_bean_admin_settings_form_submit';
+
+  $form['clear']['linkchecker_analyze']['#submit'][] = 'linkchecker_bean_analyze_links_submit';
+  $form['clear']['linkchecker_clear_analyze']['#submit'][] = 'linkchecker_bean_clear_analyze_links_submit';
+}
+
+/**
+ * Submit callback.
+ *
+ * Analyze fields in all beans.
+ */
+function linkchecker_bean_analyze_links_submit($form, &$form_state) {
+  if (variable_get('linkchecker_scan_beans', 0)) {
+    batch_set(_linkchecker_bean_batch_import_beans());
+  }
+}
+
+/**
+ * Submit callback.
+ *
+ * Clear link data and analyze fields in all bean types.
+ */
+function linkchecker_bean_clear_analyze_links_submit($form, &$form_state) {
+  db_truncate('linkchecker_bean')->execute();
+
+  if (variable_get('linkchecker_scan_beans', 0)) {
+    batch_set(_linkchecker_bean_batch_import_beans());
+  }
+}
+
+
+/**
+ * Linkchecker admin_settings_form submit handler.
+ */
+function linkchecker_bean_admin_settings_form_submit($form, &$form_state) {
+  // If beans scanning has been selected.
+  if ($form_state['values']['linkchecker_scan_beans'] > $form['settings']['linkchecker_scan_beans']['#default_value']) {
+    batch_set(_linkchecker_bean_batch_import_beans());
+  }
+}
+
+
+/**
+ * Batch: Scan beans for links.
+ */
+function _linkchecker_bean_batch_import_beans() {
+  $bean_types = array_keys(array_filter(variable_get('linkchecker_scan_beans', array())));
+  $query = db_select('bean', 'b')
+    ->fields('b', array('bid'))
+    ->orderBy('b.bid')
+    ->condition('b.type', $bean_types);
+  $result = $query->execute()->fetchAll();
+
+  $operations = array();
+  foreach ($result as $row) {
+    $operations[] = array('_linkchecker_bean_batch_beans_import_op', array($row->bid));
+  }
+  $batch = array(
+    'finished' => '_linkchecker_bean_batch_beans_import_finished',
+    'operations' => $operations,
+    'title' => t('Scanning for links'),
+  );
+
+  return $batch;
+}
+
+/**
+ * Batch operation: Scan one by one bean for links.
+ */
+function _linkchecker_bean_batch_beans_import_op($bid, &$context) {
+  // Load the bean and scan for links.
+  $bean = bean_load($bid);
+  _linkchecker_bean_add_bean_links($bean);
+
+  // Store results for post-processing in the finished callback.
+  $context['results'][] = $bean->bid;
+  $context['message'] = t('Bean: @title', array('@title' => $bean->title));
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function linkchecker_bean_entity_insert($entity, $type) {
+  if ($type == 'bean') {
+    if (_linkchecker_bean_scan_bean_types($entity->type)) {
+      _linkchecker_bean_add_bean_links($entity);
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function linkchecker_bean_entity_update($entity, $type) {
+  if ($type == 'bean') {
+    if (_linkchecker_bean_scan_bean_types($entity->type)) {
+      _linkchecker_bean_add_bean_links($entity);
+    }
+  }
+}
+
+
+/**
+ * Implements hook_entity_delete().
+ */
+function linkchecker_bean_entity_delete($entity, $type) {
+  if ($type == 'bean') {
+    if (_linkchecker_bean_scan_bean_types($entity->type)) {
+      _linkchecker_bean_delete_bean_links($entity->bid);
+    }
+  }
+}
+
+/**
+ * Add bean links to database.
+ *
+ * @param object $bean
+ *   The fully populated bean object.
+ * @param bool $skip_missing_links_detection
+ *   To prevent endless batch loops the value need to be TRUE. With FALSE
+ *   the need for content re-scans is detected by the number of missing links.
+ */
+function _linkchecker_bean_add_bean_links($bean, $skip_missing_links_detection = FALSE) {
+
+  $filter = new stdClass();
+  $filter->settings['filter_url_length'] = 72;
+
+  // Create array of bean fields to scan.
+  $text_items = array();
+  if (!empty($bean->label)) {
+    $text_items[] = _filter_url($bean->label, $filter);
+  }
+  if (!empty($bean->title)) {
+    $text_items[] = _filter_url($bean->title, $filter);
+  }
+  $text_items = array_merge(
+    $text_items,
+    _linkchecker_parse_fields('bean', $bean->type, $bean)
+  );
+
+  // Get the absolute ban path for extraction of relative links.
+  $path = url('block/' . $bean->delta, array('absolute' => TRUE));
+
+  // Extract all links in bean.
+  $links = array_keys(_linkchecker_extract_links(implode(' ', $text_items), $path));
+
+  // Taxonomy have links.
+  if (!empty($links)) {
+    // Remove all links from the links array already in the database and only
+    // add missing links to database.
+    $missing_links = _linkchecker_bean_links_missing($bean->bid, $links);
+
+    // Only add unique links to database that do not exist.
+    $i = 0;
+    foreach ($missing_links as $url) {
+      $urlhash = drupal_hash_base64($url);
+      $link = db_query('SELECT lid FROM {linkchecker_link} WHERE urlhash = :urlhash', array(':urlhash' => $urlhash))->fetchObject();
+      if (!$link) {
+        $link = new stdClass();
+        $link->urlhash = $urlhash;
+        $link->url = $url;
+        $link->status = _linkchecker_link_check_status_filter($url);
+        drupal_write_record('linkchecker_link', $link);
+      }
+      db_insert('linkchecker_bean')
+        ->fields(array(
+          'bid' => $bean->bid,
+          'lid' => $link->lid,
+        ))
+        ->execute();
+
+      // Break processing if max links limit per run has been reached.
+      $i++;
+      if ($i >= LINKCHECKER_SCAN_MAX_LINKS_PER_RUN) {
+        break;
+      }
+    }
+
+    // The first chunk of links not yet found in the {linkchecker_link} table
+    // have now been imported by the above code. If the number of missing links
+    // still exceeds the scan limit defined in LINKCHECKER_SCAN_MAX_LINKS_PER_RUN
+    // the content need to be re-scanned until all links have been collected and
+    // saved in {linkchecker_link} table.
+    //
+    // Above code has already scanned a number of LINKCHECKER_SCAN_MAX_LINKS_PER_RUN
+    // links and need to be substracted from the number of missing links to
+    // calculate the correct number of re-scan rounds.
+    //
+    // To prevent endless loops the $skip_missing_links_detection need to be TRUE.
+    // This value will be set by the calling batch process that already knows
+    // that it is running a batch job and the number of required re-scan rounds.
+    $missing_links_count = count($missing_links) - LINKCHECKER_SCAN_MAX_LINKS_PER_RUN;
+    if (!$skip_missing_links_detection && $missing_links_count > 0) {
+      batch_set(_linkchecker_bean_batch_import_single_bean($bean->bid, $missing_links_count));
+
+      // If batches were set in the submit handlers, we process them now,
+      // possibly ending execution. We make sure we do not react to the batch
+      // that is already being processed (if a batch operation performs a
+      // drupal_execute).
+      if ($batch = &batch_get() && !isset($batch['current_set'])) {
+        batch_process('block/' . $bean->type);
+      }
+    }
+  }
+
+  // Remove dead link references for cleanup reasons as very last step.
+  _linkchecker_bean_cleanup_bean_references($bean->bid, $links);
+}
+
+/**
+ * Should the defined bean type scanned for links?
+ *
+ * @param string $bean_type
+ *   Verifies if the bean_type is enabled for link checks and should be scanned.
+ *
+ * @return bool
+ *   TRUE if bean type should be scanned, otherwise FALSE.
+ */
+function _linkchecker_bean_scan_bean_types($bean_type = NULL) {
+
+  $enabled = FALSE;
+  $bean_types = array_keys(array_filter(variable_get('linkchecker_scan_beans', array())));
+
+  // Scan specific bean types only.
+  if (in_array($bean_type, $bean_types)) {
+    $enabled = TRUE;
+  }
+
+  return $enabled;
+}
+
+/**
+ * Cleanup no longer used bean references to links in the linkchecker_bean table.
+ */
+function _linkchecker_bean_cleanup_bean_references($bid = 0, $links = array()) {
+  if (empty($links)) {
+    // Term do not have links. Delete all references if exists.
+    db_delete('linkchecker_bean')
+      ->condition('bid', $bid)
+      ->execute();
+  }
+  else {
+    // The bean still have more than one link, but other links may have been
+    // removed and links no longer in the content need to be deleted from the
+    // linkchecker_bean reference table.
+    $subquery = db_select('linkchecker_link')
+      ->fields('linkchecker_link', array('lid'))
+      ->condition('urlhash', array_map('drupal_hash_base64', $links), 'IN');
+
+    db_delete('linkchecker_bean')
+      ->condition('bid', $bid)
+      ->condition('lid', $subquery, 'NOT IN')
+      ->execute();
+  }
+}
+
+/**
+ * Returns an array of bean references missing in the linkchecker_bean table.
+ */
+function _linkchecker_bean_links_missing($bid, $links) {
+  $result = db_query('SELECT ll.url FROM {linkchecker_link} ll INNER JOIN {linkchecker_bean} lb ON lb.lid = ll.lid WHERE lb.bid = :bid AND ll.urlhash IN (:urlhashes)', array(':bid' => $bid, ':urlhashes' => array_map('drupal_hash_base64', $links)));
+  $links_in_database = array();
+  foreach ($result as $row) {
+    $links_in_database[] = $row->url;
+  }
+  return array_diff($links, $links_in_database);
+}
+
+/**
+ * Remove all bean references to links in the linkchecker_bean table.
+ */
+function _linkchecker_bean_delete_bean_links($bid) {
+  db_delete('linkchecker_bean')
+    ->condition('bid', $bid)
+    ->execute();
+}
+
+/**
+ * Recurring scans of a single bean via batch API.
+ *
+ * @param int $bid
+ *   The unique bean id to scan for links.
+ * @param int $missing_links_count
+ *   The number of links not yet added to linkchecker_links table. By this
+ *   number the re-scan rounds are calulated.
+ *
+ * @return array
+ *   The batch task definition.
+ */
+function _linkchecker_bean_batch_import_single_bean($bid, $missing_links_count) {
+  $operations = array();
+  for ($i = 0; $i <= $missing_links_count; $i = $i + (int) LINKCHECKER_SCAN_MAX_LINKS_PER_RUN) {
+    $operations[] = array('_linkchecker_bean_batch_beans_import_op', array($bid));
+  }
+  $batch = array(
+    'file' => drupal_get_path('module', 'linkchecker') . '/linkchecker.batch.inc',
+    'finished' => '_linkchecker_bean_batch_beans_import_finished',
+    'operations' => $operations,
+    'title' => t('Scanning for links'),
+    'progress_message' => t('Remaining @remaining of @total scans.'),
+  );
+
+  return $batch;
+}
+
+/**
+ * Output bean batch result messages.
+ *
+ * @param bool $success
+ *   If scan completed successfully or not.
+ * @param int $results
+ *   Number of beans scanned.
+ * @param array $operations
+ *   Array of functions called.
+ */
+function _linkchecker_bean_batch_beans_import_finished($success, $results, $operations) {
+  if ($success) {
+    $message = format_plural(count($results), 'One bean has been scanned.', '@count beans have been scanned.');
+  }
+  else {
+    $message = t('Scanning for links in beans have failed with an error.');
+  }
+  drupal_set_message($message);
+}
+
+/**
+ * Returns IDs of bans that contain a link which the current user is allowed to view.
+ *
+ * @param object $link
+ *   An object representing the link to check.
+ * @return array
+ *   An array of bean IDs that contain the provided link and that the
+ *   current user is allowed to view.
+ */
+function linkchecker_bean_link_beans_ids($link) {
+  // Exit if beans are disabled.
+  if (!variable_get('linkchecker_scan_beans', 0)) {
+    return array();
+  }
+
+  // Get a list of beans containing the link.
+  $query = db_select('bean', 'b');
+  $query->addMetaData('base_table', 'bean');
+  $query->innerJoin('linkchecker_bean', 'lb', 'lb.bid = b.bid');
+  $query->condition('lb.lid', $link->lid);
+  $query->fields('b', array('bid'));
+  $bids = $query->execute()->fetchCol();
+
+  // Return the array of bean IDs.
+  if ($bids) {
+    return $bids;
+  }
+  return array();
+}
+
+/**
+ * Implements hook_linkchecker_bean_linkchecker_auto_repair_301_links_alter().
+ */
+function linkchecker_bean_linkchecker_auto_repair_301_links_alter($link, $response) {
+// TAXONOMY: Autorepair all beans having this outdated link.
+  $result = db_query('SELECT bid FROM {linkchecker_bean} WHERE lid = :lid', array(':lid' => $link->lid));
+  foreach ($result as $row) {
+
+    $bean = bean_load($row->bid);
+
+    // Has the bean object loaded successfully?
+    if (is_object($bean)) {
+      $bean_original = clone $bean;
+
+      // Replace links in title.
+      _linkchecker_link_replace($bean->title, $link->url, $response->redirect_url);
+
+      // Replace links in fields.
+      $bean = _linkchecker_replace_fields('bean', $bean->type, $bean, $link->url, $response->redirect_url);
+
+      // Save changed bean and update the bean link list.
+      if ($bean_original != $bean) {
+        bean_save($bean);
+        watchdog('linkchecker', 'Changed permanently moved link in bean %bean from %src to %dst.', array('%bean' => $bean->bid, '%src' => $link->url, '%dst' => $response->redirect_url), WATCHDOG_INFO);
+      }
+      else {
+        watchdog('linkchecker', 'Link update in bean failed. Permanently moved link %src not found in bean %bean. Manual fix required.', array('%bead' => $bean->bid, '%src' => $link->url), WATCHDOG_WARNING);
+      }
+    }
+    else {
+      watchdog('linkchecker', 'Loading bean %bean for update failed. Manual fix required.', array('%bean' => $bean->bid), WATCHDOG_ERROR);
+    }
+  }
+}
+
+/**
+ * Implements hook_linkcheker_main_table().
+ */
+function linkchecker_bean_linkcheker_main_table() {
+  return array('linkchecker_bean');
+}
+
+/**
+ * Implements hook_linkchecker_report_page_links_alter().
+ */
+function linkchecker_bean_linkchecker_report_page_links_alter(&$links, $link) {
+  $bids = module_invoke('linkchecker_bean', 'linkchecker_link_ids', $link);
+  if ($bids) {
+    $beans = bean_load_multiple($bids);
+    // Show link to beans having this broken link.
+    if (variable_get('linkchecker_scan_beans', 0) && !empty($beans)) {
+      foreach ($beans as $bean) {
+        $links[] = l(t('Edit bean @bean', array('@bean' => $bean->bid)), 'block/' . $bean->delta . '/edit', array('query' => drupal_get_destination()));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_linkchecker_link_ids().
+ */
+function linkchecker_bean_linkchecker_link_ids($link) {
+  return linkchecker_bean_link_beans_ids($link);
+}

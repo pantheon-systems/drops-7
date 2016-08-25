@@ -4,9 +4,12 @@ package = SEO
 core = 7.x
 dependencies[] = metatag
 
-; Information added by Drupal.org packaging script on 2016-01-14
-version = "7.x-1.8"
+; Tests.
+files[] = tests/metatag_verification.test
+
+; Information added by Drupal.org packaging script on 2016-06-03
+version = "7.x-1.16"
 core = "7.x"
 project = "metatag"
-datestamp = "1452804845"
+datestamp = "1464975552"
 

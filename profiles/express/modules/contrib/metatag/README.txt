@@ -66,11 +66,11 @@ The primary features include:
 * Certain meta tags used by Google+ may be added by enabling the "Metatag:
   Google+" submodule.
 
-* Facebook's fb:app_id and fb:admins meta tags may be added by enabling the
-  "Metatag: Facebook" submodule. These are useful for sites which are using
-  Facebook widgets or are building custom integration with Facebook's APIs,
-  but they are not needed by most sites and have no bearing on the Open Graph
-  meta tags.
+* Facebook's fb:app_id, fb:admins and fb:pages meta tags may be added by
+  enabling the "Metatag: Facebook" submodule. These are useful for sites which
+  are using Facebook widgets or are building custom integration with Facebook's
+  APIs, but they are not needed by most sites and have no bearing on the
+  Open Graph meta tags.
 
 * The App Links meta tags may be added by enabling the Metatag: App Links
   submodule.
@@ -99,6 +99,8 @@ The primary features include:
 * Support for the Feeds module for importing data from external data sources or
   file uploads.
 
+* Support for the Search API module for indexing of keywords.
+
 * Integrates with Devel_Generate, part of the Devel module, to automatically
   generate meta tags for generated nodes, via the Metatag:Devel submodule.
 
@@ -120,6 +122,9 @@ The primary features include:
 
 * An import script is provided in the Metatag:Importer submodule for D6 sites
   that used Nodewords and need to migrate the data.
+
+* If the Media module (v2) is installed, the Media WYSIWYG submodule will be
+  used to automatically filter out Media's embed codes.
 
 
 Configuration
@@ -143,7 +148,7 @@ Configuration
       admin/config/search/metatags/settings
 
  4. In order to provide a specific configuration per entity bundle (content
-    type, vocabulary, etc), click "Add a Metatag default".
+    type, vocabulary, etc), click "Add default meta tags".
 
  5. Each supported entity object (nodes, terms, users) will have a set of meta
     tag fields available for customization on their respective edit page, these
@@ -209,7 +214,19 @@ For further details see the module's project page:
   https://www.drupal.org/project/smartling
 
 
-Fine Tuning & Suggestions
+Search API integration
+--------------------------------------------------------------------------------
+Entity meta tag values can be made searchable using the Search API module
+(https://www.drupal.org/project/search_api).
+
+ 1. Select "Meta tags" under "Data alterations" in the filters for the
+    index:
+      admin/config/search/search_api/index/INDEX NAME/workflow
+ 2. Meta tag fields will now appear under "Fields" and can be enabled there:
+      admin/config/search/search_api/index/INDEX NAME/fields
+
+
+Fine tuning & suggestions
 --------------------------------------------------------------------------------
 * There are many options available on the settings page to control how Metatag
   works:
@@ -261,7 +278,7 @@ The result will be a nested array of meta tag structures ready for either output
 via drupal_render(), or examining to identify the actual text values.
 
 
-Troubleshooting / Known Issues
+Troubleshooting / known issues
 --------------------------------------------------------------------------------
 * When using custom page template files, e.g., page--front.tpl.php, it is
   important to ensure that the following code is present in the template file:
@@ -298,7 +315,8 @@ Troubleshooting / Known Issues
 
 Related modules
 --------------------------------------------------------------------------------
-Some modules are available that extend Metatag with additional functionality:
+Some modules are available that extend Metatag with additional or complimentary
+functionality:
 
 * Transliteration
   https://drupal.org/project/transliteration
@@ -341,8 +359,16 @@ Some modules are available that extend Metatag with additional functionality:
   with meta tags that only allow for one item but which are assigned from fields
   which accept multiple items, e.g. og:audio and og:video.
 
+* Yoast SEO
+  https://www.drupal.org/project/yoast_seo
+  Adds integration with the Yoast service (https://yoast.com/).
 
-Credits / Contact
+* Parse.ly Publishing Analytics
+  https://www.drupal.org/project/parsely
+  Automatically generates meta tags for the Parse.ly service.
+
+
+Credits / contact
 --------------------------------------------------------------------------------
 Currently maintained by Damien McKenna [1] and Dave Reid [2]; all initial
 development was by Dave Reid.

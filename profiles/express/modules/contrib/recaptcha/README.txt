@@ -48,11 +48,6 @@ KNOWN ISSUES
   
   See https://www.drupal.org/node/2481341 for more information.
 
-- If reCAPTCHA is assigned to user login form and user login block is used in
-  narrow sidebars the widget may overflow the sidebar. Google is aware of this
-  problem, but they currently have the wide widget with fixed size only.
-  See https://github.com/google/recaptcha/issues/47
-
 THANK YOU
 ---------
 

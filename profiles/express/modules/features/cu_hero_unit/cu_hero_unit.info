@@ -1,7 +1,7 @@
 name = Hero Unit
 description = A lightweight, flexible component to showcase key content on your site. It works well on marketing and content-heavy sites.
 core = 7.x
-package = CU-Active
+package = CU-Core
 version = 7.x-1.0
 project = cu_hero_unit
 dependencies[] = bean_admin_ui

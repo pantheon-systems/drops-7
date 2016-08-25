@@ -56,6 +56,14 @@
         // Allow users to click on the image preview in order to set the focal_point
         // and set a cursor.
         $img.click(function(event) {
+          // Some non-webkit browsers do not properly set event.offsetX|Y.
+          // @see http://bugs.jquery.com/ticket/8523
+          if (typeof event.offsetX === "undefined" || typeof event.offsetY === "undefined") {
+            var targetOffset = $(event.target).offset();
+            event.offsetX = event.pageX - targetOffset.left;
+            event.offsetY = event.pageY - targetOffset.top;
+          }
+
           $indicator.css('left', parseInt(event.offsetX, 10));
           $indicator.css('top', parseInt(event.offsetY, 10));
           focalPointSetValue($indicator, $img, $field);
@@ -123,9 +131,10 @@
    *   The field jQuery object where the position can be found.
    */
   function focalPointSetIndicator($indicator, $img, $field) {
+    var dimensions = focalPointGetDimensions($img);
     var coordinates = $field.val() !== '' && $field.val() !== undefined ? $field.val().split(',') : [50,50];
-    $indicator.css('left', (parseInt(coordinates[0], 10) / 100) * $img.width());
-    $indicator.css('top', (parseInt(coordinates[1], 10) / 100) * $img.height());
+    $indicator.css('left', (parseInt(coordinates[0], 10) / 100) * dimensions.width);
+    $indicator.css('top', (parseInt(coordinates[1], 10) / 100) * dimensions.height);
     $field.val(coordinates[0] + ',' + coordinates[1]);
   }
 
@@ -141,11 +150,40 @@
    *
    * @returns int
    */
-  function focalPointRound(value, min, max){
+  function focalPointRound(value, min, max) {
     var roundedVal = Math.max(Math.round(value), min);
     roundedVal = Math.min(roundedVal, max);
 
     return roundedVal;
+  }
+
+  /**
+   * Returns the dimensions of the given image even if it is currently hidden.
+   *
+   * @param object $img
+   *   The image jQuery object to which the indicator is attached.
+   *
+   * @returns object
+   */
+  function focalPointGetDimensions($img) {
+    var dimensions = {
+      width: 0,
+      height: 0
+    };
+
+    if ($img.width() != 0 && $img.height() != 0) {
+      // Both dimensions > 0 so use the image dimensions are found.
+      dimensions.width = $img.width();
+      dimensions.height = $img.height();
+    } else {
+      // The image may be hidden, check image source dimensions manually.
+      var tempImage = new Image();
+      tempImage.src = $img.attr('src');
+      dimensions.width = tempImage.width;
+      dimensions.height = tempImage.height;
+    }
+
+    return dimensions;
   }
 
 })(jQuery);

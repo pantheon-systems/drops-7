@@ -4,11 +4,9 @@
 
 .person-phone { white-space: nowrap; }
 
-.person-thumbnail { border: 1px solid red; }
+table.people-list-table img.image-small_thumbnail { width: 50px; height: auto; max-width: none; }
 
-table.people-list-table img.image-small_thumbnail, .person-view-mode-teaser img.image-small_thumbnail { width: 50px; height: auto; max-width: none; }
-
-@media screen and (min-width: 740px) { table.people-list-table img.image-small_thumbnail, .person-view-mode-teaser img.image-small_thumbnail { width: 100px; } }
+@media screen and (min-width: 740px) { table.people-list-table img.image-small_thumbnail { width: 100px; } }
 table.people-list-table td { vertical-align: top; }
 
 ul.cu-person-directory { list-style: none; list-style-image: none; margin: 0; padding: 0; }
@@ -25,8 +23,8 @@ span.responsive-label { display: none; }
 
 /* NODE VIEW */
 .person-photo img.image-medium, .person-photo img.image-small { float: right; margin: 0 0 20px 20px; max-width: 320px; height: auto; }
-@media screen and (max-width: 600px) and (min-width: 420px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 180px; } }
-@media screen and (max-width: 419px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 120px; } }
+@media screen and (max-width: 960px) and (min-width: 420px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 180px; } }
+@media screen and (max-width: 419px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 120px; float: none; margin: 0 0 20px; } }
 
 /** Responsive tables. */
 @media screen and (max-width: 960px) { /* 450px */
@@ -60,6 +58,12 @@ table.people-list-table { width: 100%; }
 
 td.people-table-photo-none { display: none; }
 
+td.person-table-phone, td.person-table-email, td.person-table-office { font-size: 85%; }
+
+td.person-table-email a { overflow-wrap: break-word; word-wrap: break-word; }
+
+.people-list-directory .person-table-name { width: 50%; }
+
 .people-bio { padding-top: 10px; }
 
 .people-section p:last-child, .people-section .field p:last-child { margin-bottom: 0; }
@@ -84,10 +88,10 @@ ul.cu-person-directory .person-office-hours, ul.cu-person-directory .person-depa
 
 .person-view-mode-teaser h2.node-title { font-size: 120%; font-weight: 600; }
 
-.person-view-mode-teaser img.image-thumbnail, .person-view-mode-teaser img.image-small_thumbnail { float: left; margin: 0 20px 0 0; }
+.person-view-mode-teaser img.image-thumbnail, .person-view-mode-teaser img.image-small_thumbnail { float: right; margin: 0 0 20px 20px; width: 100px; height: auto; }
 
-.person-view-mode-teaser-content { overflow: hidden; }
-
+@media screen and (min-width: 640px) { .person-view-mode-teaser img.image-thumbnail, .person-view-mode-teaser img.image-small_thumbnail { float: left; margin: 0 20px 0 0; }
+  .person-view-mode-teaser-content:after { content: ""; display: table; clear: both; } }
 .view-people-list table { width: 100%; }
 
 td.office div p:last-child { margin-bottom: 0; }
@@ -122,6 +126,10 @@ ul.field-name-field-person-website li:before { content: '\f14c '; font-family: '
 
 .person-email a { background-image: none; padding-right: 0; }
 
+.person-contact-info-item { white-space: nowrap; }
+
+@media (max-width: 480px) { .person-view-mode-teaser-contact .person-contact-info-item { display: block; font-size: 85%; }
+  .person-view-mode-teaser-contact .person-contact-separator { display: none; } }
 .grid-person { width: 30.66%; float: left; margin-right: 4%; margin-bottom: 20px; }
 
 .people-grid-first { clear: both; }

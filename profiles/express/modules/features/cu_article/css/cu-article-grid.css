@@ -30,7 +30,7 @@
 .article-feature-remaining { float: left; width: 100%; margin-left: 0%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
 
 @media all and (min-width: 720px) and (max-width: 959px) { .article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-inline-3 .article-view-mode-sidebar img { width: 65px; } }
-@media (min-width: 960px) { .article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-inline-3 .article-view-mode-sidebar img { width: 80px; height: auto; } }
+@media (min-width: 960px) { .article-feature-inline-2 .article-view-mode-sidebar img.image-square, .article-feature-inline-3 .article-view-mode-sidebar img.image-square { width: 80px; height: auto; } }
 
 @media (min-width: 720px) { .article-feature-inline-2 .article-feature-top { float: left; width: 50%; margin-left: 0%; margin-right: -50%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
   .article-feature-inline-2 .article-feature-remaining { float: left; width: 50%; margin-left: 50%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: none; }
@@ -48,6 +48,6 @@
   .article-feature-stacked .article-view-mode-sidebar:nth-child(3n+3) { padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 33.33333%; padding-left: 0; padding-right: 26.66667px; margin-right: -26.66667px; }
   .article-feature-stacked .article-view-mode-sidebar:nth-child(3n+1) { clear: left; }
   .article-feature-stacked .article-view-mode-feature, .article-feature-stacked .article-view-mode-sidebar { border-bottom: none; } }
-@media all and (min-width: 960px) { .article-feature-stacked .article-view-mode-sidebar img { width: 75px; } }
+@media all and (min-width: 960px) { .article-feature-stacked .article-view-mode-sidebar img.image-square { width: 75px; } }
 
 .article-feature-top img { max-width: 100%; width: 100%; height: auto; display: block; margin-bottom: 10px; }

@@ -1,0 +1,14 @@
+name = Link checker
+description = "Periodically checks for broken links in node types, blocks and fields and reports the results."
+package = "Link checker"
+configure = admin/config/content/linkchecker
+core = 7.x
+files[] = linkchecker.drush.inc
+files[] = linkchecker.test
+
+; Information added by Drupal.org packaging script on 2016-02-10
+version = "7.x-1.2+6-dev"
+core = "7.x"
+project = "linkchecker"
+datestamp = "1455062942"
+

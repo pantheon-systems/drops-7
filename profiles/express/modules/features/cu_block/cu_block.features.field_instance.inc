@@ -44,7 +44,7 @@ function cu_block_field_default_field_instances() {
       'module' => 'image',
       'settings' => array(
         'insert' => 1,
-        'insert_absolute' => 0,
+        'insert_absolute' => 2,
         'insert_class' => '',
         'insert_default' => 'image_medium',
         'insert_styles' => array(

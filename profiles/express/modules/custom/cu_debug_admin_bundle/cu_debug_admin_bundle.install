@@ -10,7 +10,7 @@ function cu_debug_admin_bundle_enable() {
   // Get the environmental variable out of the drushrc file.
   $drush_env = variable_get('env');
   // Check for local via server or drush.
-  if ($_SERVER['WWWNG_ENV'] == 'local_dev' || $drush_env == 'local_dev') {
+  if ($_SERVER['WWWNG_ENV'] == 'local-dev' || $drush_env == 'local-dev') {
     drupal_set_message('Debugging locally. Do all the things!');
     module_disable(_cu_debug_admin_bundle_disable_modules());
     drupal_set_message('Disabling ' . join(', ', _cu_debug_admin_bundle_disable_modules()));
@@ -26,10 +26,9 @@ function cu_debug_admin_bundle_enable() {
 }
 
 
-/*
+/**
  * Implements hook_disable()
  */
-
 function cu_debug_admin_bundle_disable() {
   module_disable(_cu_debug_admin_bundle_enable_modules());
   module_enable(_cu_debug_admin_bundle_disable_modules());
@@ -43,18 +42,15 @@ function cu_debug_admin_bundle_disable() {
   
 }
 
-
-/*
+/**
  * Modules to be enabled/disabled
  */
-
 function _cu_debug_admin_bundle_enable_modules() {
   return array(
     'devel',
     'devel_generate',
     'search_krumo',
     'ds_ui',
-    'advanced_help',
     'security_review',
     'diff',
   );
@@ -63,7 +59,6 @@ function _cu_debug_admin_bundle_enable_modules() {
 function _cu_debug_admin_bundle_disable_modules() {
 
   return array(
-    'cu_cache',
     'varnish',
     'memcache',
     'cu_apihooks',

@@ -2,9 +2,6 @@
 core = 7.x
 api = 2
 
-; Core
-projects[drupal][version] = "7.36"
-
 ; Modules
 ; Please fill the following out. Type may be one of get, git, bzr or svn,
 ; and url is the url of the download.

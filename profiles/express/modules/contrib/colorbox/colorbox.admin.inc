@@ -250,12 +250,19 @@ function colorbox_admin_settings() {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
+  $form['colorbox_advanced_settings']['colorbox_unique_token'] = array(
+    '#type' => 'radios',
+    '#title' => t('Unique per-request gallery token'),
+    '#options' => array(1 => t('On'), 0 => t('Off')),
+    '#default_value' => variable_get('colorbox_unique_token', 1),
+    '#description' => t('If On (default), Colorbox will add a unique per-request token to the gallery id to avoid images being added manually to galleries. The token was added as a security fix but some see the old behavoiur as an feature and this settings makes it possible to remove the token.'),
+  );
   $form['colorbox_advanced_settings']['colorbox_mobile_detect'] = array(
     '#type' => 'radios',
     '#title' => t('Mobile detection'),
     '#options' => array(1 => t('On'), 0 => t('Off')),
     '#default_value' => variable_get('colorbox_mobile_detect', 1),
-    '#description' => t('If on (default) Colorbox will not be active for devices with a the max width set below.'),
+    '#description' => t('If On (default), Colorbox will not be active for devices with the max width set below.'),
   );
   $form['colorbox_advanced_settings']['colorbox_mobile_device_width'] = array(
     '#type' => 'textfield',

@@ -1,6 +1,6 @@
 name = Video Reveal
 core = 7.x
-package = CU-Active
+package = CU-Advanced Content
 version = 7.x-1.0
 project = cu_video_reveal
 dependencies[] = bean_admin_ui

@@ -392,7 +392,7 @@ function bean_form_submit($form, &$form_state) {
   $bean->save();
   $form_state['values']['bean'] = $bean;
 
-  $watchdog_args = array('@type' => $bean->typeName(), '%title' => $bean->label());
+  $watchdog_args = array('@type' => $bean->type, '%title' => $bean->label());
   $t_args = array('@type' => $bean->typeName(), '%title' => $bean->label());
 
   if (!$insert) {

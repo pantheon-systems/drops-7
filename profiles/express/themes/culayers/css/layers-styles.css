@@ -10,21 +10,24 @@ body { background-color: #333; }
 #secondary-navigation nav ul li a { padding: 0; }
 
 #secondary-navigation { background-color: #333; color: #ccc; font-weight: 600; }
-#secondary-navigation a { display: inline-block; color: #ccc; padding: 0; margin-left: 8px; }
+#secondary-navigation a { display: inline-block; color: #ccc; padding: 0; margin-left: 15px; }
 #secondary-navigation a:hover, #secondary-navigation a:focus, #secondary-navigation a.active, #secondary-navigation a.active-trail { color: #cfb87c; }
 
 #navigation { background-color: #272727; }
+#navigation nav { margin: 0 -10px; }
 #navigation a { color: #ccc; font-weight: 600; }
 #navigation a.active, #navigation a.active-trail, #navigation a:hover, #navigation a:focus { color: #cfb87c; }
 #navigation a#home-link { background-color: transparent; color: #ccc; }
 
-#slider-wrapper { background-color: #171717; padding: 20px; }
+.slider-wrapper { background-color: #171717; padding: 20px; color: #fff; }
+.slider-wrapper a { color: #cfb87c; }
+.slider-wrapper a:hover { color: #fff; }
 
 .top-content-wrapper { background-color: #f1f1f1; }
 
 #after-content2-wrapper { background-color: #f1f1f1; }
 
-#after-content-2 { background-color: #fff; }
+#after-content-2 { background-color: #fff; padding-top: 20px; }
 
 .top-content { background-color: #fff; }
 

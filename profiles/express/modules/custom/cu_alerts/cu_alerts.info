@@ -1,6 +1,6 @@
 name = CU Alerts
 description = CU Boulder Emergency Alerts
-package = CU-Boulder
+package = CU-Core
 core = 7.x
 version = 7.x-1.0
 configure = admin/config/system/cu_alerts

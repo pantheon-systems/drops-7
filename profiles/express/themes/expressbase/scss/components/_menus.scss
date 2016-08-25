@@ -31,7 +31,7 @@
       padding: 0;
 
       a {
-        padding: 0 8px;
+        padding: 0 10px;
       }
     }
   }
@@ -274,15 +274,33 @@
     top:3px;
     right:20px;
     text-transform: uppercase;
-    font-size:11px;
+    font-size:18px;
     font-family: Arial, Helvetica;
+    span.mobile-menu-text {
+      position: absolute !important;
+      clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+      clip: rect(1px, 1px, 1px, 1px);
+    }
     a {
-      padding:2px 5px;
       display: inline-block;
-      border-width: 1px;
-      border-style: solid;
       white-space: nowrap;
-      @include rounded(2px);
+    }
+  }
+  @media screen and (min-width: 480px) {
+    .mobile-menu-toggle {
+      font-size:11px;
+      span.mobile-menu-text {
+        position: static !important;
+        clip: auto;
+      }
+      a {
+        padding:2px 5px;
+        display: inline-block;
+        border-width: 1px;
+        border-style: solid;
+        white-space: nowrap;
+        @include rounded(2px);
+      }
     }
   }
   @media screen and (min-width: 960px) {
@@ -327,18 +345,23 @@
   }
   a {
     display: inline-block;
-    padding:0 8px;
+    padding:0 12px;
     line-height: 40px;
   }
 }
 /* Menu Icons - for block menus, not main, secondary, footer menus */
 .menu-icon-text {
-  overflow: hidden;
+  @include clearfloats;
   display: block;
+}
+.hide-text {
+  position: absolute !important;
+  clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
 }
 a.menu__link {
   display: block;
-  overflow: hidden;
+  @include clearfloats;
   i.fa {
     float: left;
     margin-right: 5px;

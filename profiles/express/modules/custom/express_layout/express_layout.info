@@ -2,6 +2,8 @@ name = Express Layout
 core = 7.x
 description = Provides a way for nodes to have layouts configured per node to show blocks in different regions.
 configure = admin/config/content/express-layout
+package = Express
+
 dependencies[] = context
 dependencies[] = ctools
 dependencies[] = entitycache

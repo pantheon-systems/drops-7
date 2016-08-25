@@ -1,0 +1,54 @@
+<?php
+/**
+ * @file
+ * Installation and schema hooks for videoentity.module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function cu_tracking_pixel_schema() {
+  $schema = array();
+  $schema['tracking_pixel'] = array(
+    'description' => 'The base table for the Tracking Pixel entity',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the Tracking Pixel entity',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Human readable name of the Tracking Pixel.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'path' => array(
+        'description' => 'Path to place the Tracking Pixel.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'position' => array(
+        'description' => 'Position of the Tracking Pixel.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Published status of the Tracking Pixel.',
+        'type' => 'int',
+        'length' => '11',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+function cu_tracking_pixel_install() {
+  include 'cu_tracking_pixel.field_bases.inc';
+  include 'cu_tracking_pixel.field_instances.inc';
+}

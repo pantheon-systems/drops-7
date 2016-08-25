@@ -45,7 +45,7 @@ body {
     a {
       color:#666;
       font-weight: 600;
-      padding:0 10px;
+      padding:0 12px;
       border-top:1px solid #e7e7e7;
     }
 
@@ -71,9 +71,16 @@ body {
 #post-wide-wrapper {
   background:#fff;
 }
-#slider-wrapper {
+.slider-wrapper {
   background-color: $bg_dark2;
   padding: 20px;
+  color:#fff;
+  a {
+    color:$cugold;
+  }
+  a:hover {
+    color:#fff;
+  }
 }
 .page-title-image-boxed {
   padding-top: 20px;

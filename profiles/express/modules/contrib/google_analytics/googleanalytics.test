@@ -362,34 +362,30 @@ class GoogleAnalyticsCustomDimensionsAndMetricsTest extends DrupalWebTestCase {
       1 => array(
         'index' => 1,
         'value' => '6',
-        'value_expected' => 6,
       ),
       2 => array(
         'index' => 2,
         'value' => '8000',
-        'value_expected' => 8000,
       ),
       3 => array(
         'index' => 3,
         'value' => '7.8654',
-        'value_expected' => 7.8654,
       ),
       4 => array(
         'index' => 4,
         'value' => '1123.4',
-        'value_expected' => 1123.4,
       ),
       5 => array(
         'index' => 5,
         'value' => '5,67',
-        'value_expected' => 5,
       ),
     );
+
     variable_set('googleanalytics_custom_metric', $googleanalytics_custom_metric);
     $this->drupalGet('');
 
     foreach ($googleanalytics_custom_metric as $metric) {
-      $this->assertRaw('ga("set", ' . drupal_json_encode('metric' . $metric['index']) . ', ' . drupal_json_encode($metric['value_expected']) . ');', '[testGoogleAnalyticsCustomDimensionsAndMetrics]: Metric #' . $metric['index'] . ' is shown.');
+      $this->assertRaw('ga("set", ' . drupal_json_encode('metric' . $metric['index']) . ', ' . drupal_json_encode((float) $metric['value']) . ');', '[testGoogleAnalyticsCustomDimensionsAndMetrics]: Metric #' . $metric['index'] . ' is shown.');
     }
 
     // Test whether tokens are replaced in custom metric values.

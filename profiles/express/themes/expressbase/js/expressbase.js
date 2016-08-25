@@ -19,4 +19,12 @@
       return false;
     });
   });
+  $(window).on('resize', function(){
+      var win = $(this);
+      if (win.width() >= 960) {
+        $("#mobile-navigation-wrapper").hide();
+        $("#toggle i.fa").addClass('fa-reorder');
+        $("#toggle i.fa").removeClass('fa-times');
+      }
+  });
 })(jQuery, Drupal, this, this.document);

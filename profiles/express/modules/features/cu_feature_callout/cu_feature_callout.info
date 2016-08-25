@@ -1,7 +1,7 @@
 name = Feature Callout
 description = A collection of text and images to callout certain features on a site
 core = 7.x
-package = CU-Active
+package = CU-Advanced Content
 version = 7.x-1.0
 dependencies[] = bean_admin_ui
 dependencies[] = ctools

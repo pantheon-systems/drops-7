@@ -27,6 +27,12 @@ function user_external_invite_entity_info() {
   return $info;
 }
 
+function user_external_invite_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
 /**
  * Implements hook_permission().
  */
@@ -116,9 +122,9 @@ function user_external_invite_settings_form() {
     '#states' => array(
       'visible' => array(
         ':input[name="user_external_invite_use_universal_from_email"]' => array('checked' => TRUE),
-        'required' => array(
-          ':input[name="user_external_invite_use_universal_from_email"]' => array('checked' => TRUE),
-        ),
+      ),
+      'required' => array(
+        ':input[name="user_external_invite_use_universal_from_email"]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -272,9 +278,9 @@ function _user_external_invite_pending_invites_table() {
  */
 function user_external_invite_form($form, &$form_state) {
 
-  drupal_set_title('Invite New User');
+  drupal_set_title(t('Invite New User'));
 
-  $rids = variable_get('user_external_invite_roles', NULL);
+  $rids = variable_get('user_external_invite_roles', array());
 
   foreach ($rids as $rid) {
     $role_options[$rid] = _user_external_invite_role_name_from_rid($rid);
@@ -284,7 +290,6 @@ function user_external_invite_form($form, &$form_state) {
     '#title' => t('Role'),
     '#type' => 'radios',
     '#options' => $role_options,
-    '#default_value' => $rids[0],
     '#required' => TRUE,
   );
   $form['email'] = array(
@@ -370,9 +375,9 @@ function _user_external_invite_add_invite($rid, $emails, $uid, $message = NULL) 
     _user_external_invite_send_invite($rid, $mail, $expire, $uid);
   }
   // After all emails are sent, send confirmation to submitter.
-  global $user;
   $site_name = _user_external_invite_site_name();
-  $from = _user_external_invite_from_email();
+  global $user;
+  $from = _user_external_invite_from_email($user);
   $params = array(
     'subject' => t('Access request for the !site_name website', array('!site_name' => $site_name)),
     'rid' => $rid,
@@ -404,19 +409,22 @@ function _user_external_invite_calculate_hash($rid, $email, $expire) {
 /**
  * Returns from address used to send mailing.
  *
- * @param int $uid
- *   User ID being invited.
+ * @param int $user
+ *   User object sending the email.
  */
-function _user_external_invite_from_email($uid = NULL) {
-  // Needs to be configurable.
+function _user_external_invite_from_email($user = NULL) {
+  // Get universal email set from user invite config page if it exists.
   if (variable_get('user_external_invite_use_universal_from_email', NULL)) {
     return variable_get('user_external_invite_universal_from_email', NULL);
   }
-  else {
-    $user = user_load($uid);
+
+  // If user object exists, return the email address.
+  if ($user) {
     return $user->mail;
   }
 
+  // If other checks fail, return site email address.
+  return variable_get('site_mail', NULL);
 }
 
 /**
@@ -443,7 +451,9 @@ function _user_external_invite_site_name() {
  * Sends invitation email with token login link.
  */
 function _user_external_invite_send_invite_mail($rid, $mail, $expire, $hash, $uid) {
-  $from = _user_external_invite_from_email();
+  global $user;
+
+  $from = _user_external_invite_from_email($user);
   $link = url('user-external/accept-invite', array(
     'query' => array(
       'key' => $hash,
@@ -474,7 +484,8 @@ function _user_external_invite_send_invite_mail($rid, $mail, $expire, $hash, $ui
  * Sends accepted invitation email with login link and extra help.
  */
 function _user_external_invite_send_invite_accepted_mail($rid, $mail) {
-  $from = _user_external_invite_from_email();
+  global $user;
+  $from = _user_external_invite_from_email($user);
   $link = url('user/login', array(
     'absolute' => TRUE,
   ));
@@ -504,7 +515,7 @@ function _user_external_invite_send_invite_accepted_mail($rid, $mail) {
  */
 function _user_external_invite_send_inviter_confirmation($uid, $mail, $rid) {
   $account = user_load($uid);
-  $from = _user_external_invite_from_email();
+  $from = _user_external_invite_from_email($account);
   $role_name = _user_external_invite_role_name_from_rid($rid);
   $site_name = _user_external_invite_site_name();
   $params = array(
@@ -516,8 +527,7 @@ function _user_external_invite_send_inviter_confirmation($uid, $mail, $rid) {
     'body' => token_replace(variable_get('user_external_invite_accepted_template'),
       array('ext-invite' => _user_external_invite_load_entity($mail))),
   );
-  drupal_mail('user_external_invite', 'user_external_invite_confirmation', $account->mail, language_default(),
-    $params, $from, TRUE);
+  drupal_mail('user_external_invite', 'user_external_invite_confirmation', $account->mail, language_default(), $params, $from, TRUE);
 }
 
 /**

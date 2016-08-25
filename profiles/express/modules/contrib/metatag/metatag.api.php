@@ -19,7 +19,7 @@
  * The $config->disabled boolean attribute indicates whether the Metatag
  * instance should be enabled (FALSE) or disabled (TRUE) by default.
  *
- * @return
+ * @return array
  *   An associative array containing the structures of Metatag instances, as
  *   generated from the Export tab, keyed by the Metatag config name.
  *
@@ -75,43 +75,52 @@ function hook_metatag_bundled_config_alter(&$config) {
 }
 
 /**
- * Triggered when a Metatag configuration is created.
- *
- * @param object $config
- *   The configuration object that was created.
- */
-function hook_metatag_config_insert($config) {
-}
-
-/**
- *
+ * Allow modules to act upon the record insertion.
  */
 function hook_metatag_config_instance_info() {
   return array();
 }
 
 /**
+ * Alter record insertion provided by modules with the previous hook.
  *
+ * @see hook_metatag_config_instance_info()
  */
 function hook_metatag_config_instance_info_alter(&$info) {
 }
 
 /**
+ * Never triggered?
  *
+ * @todo Confirm whether this still exists.
  */
 function hook_metatag_config_load() {
 }
 
 /**
+ * Never triggered?
  *
+ * @todo Confirm whether this still exists.
  */
 function hook_metatag_config_load_presave() {
 }
 
 /**
+ * Allow a Metatag configuration to be modified prior to being saved.
  *
+ * @param object $config
+ *   The configuration object that is about to be saved.
  */
 function hook_metatag_config_presave($config) {
+}
+
+/**
+ * Triggered when a Metatag configuration is created.
+ *
+ * @param object $config
+ *   The configuration object that was created.
+ */
+function hook_metatag_config_insert($config) {
 }
 
 /**
@@ -127,7 +136,7 @@ function hook_metatag_config_update($config) {
  * Triggered when a Metatag configuration is removed.
  *
  * @param object $config
- *   The configuration object that was removed.
+ *   The name of the configuration object that was removed.
  */
 function hook_metatag_config_delete($config) {
 }
@@ -209,14 +218,16 @@ function hook_metatag_config_delete($config) {
  *   Note: 'label', 'description', and any text strings passed in 'form', should
  *   be translated.
  *
- * @see metatag_metatag_info().
+ * @see metatag_metatag_info()
  */
 function hook_metatag_info() {
   return array();
 }
 
 /**
+ * Alter record insertion provided by modules with the previous hook.
  *
+ * @see hook_metatag_info()
  */
 function hook_metatag_info_alter(&$info) {
 }
@@ -242,13 +253,13 @@ function hook_metatag_metatags_view_alter(&$output, $instance, $options) {
 }
 
 /**
- *
+ * Allow other modules to customize the data to generate the cache ID.
  */
 function hook_metatag_page_cache_cid_parts_alter(&$cid_parts) {
 }
 
 /**
- *
+ * Allow other modules to alter the meta tags prior to saving.
  */
 function hook_metatag_presave(&$metatags, $entity_type, $entity_id, $revision_id, $langcode) {
 }
@@ -271,16 +282,16 @@ function hook_metatag_presave(&$metatags, $entity_type, $entity_id, $revision_id
  * @see metatag_field_attach_form()
  */
 function hook_metatag_token_types_alter(&$options) {
-  // Watchout: $options['token types'] might be empty
+  // Watchout: $options['token types'] might be empty.
   if (!isset($options['token types'])) {
     $options['token types'] = array();
   }
 
-  if ($options['context'] == 'config1'){
-    $options['token types'] += array('token_type1','token_type2');
+  if ($options['context'] == 'config1') {
+    $options['token types'] += array('token_type1', 'token_type2');
   }
-  elseif ($options['context'] == 'config2'){
-    $options['token types'] += array('token_type3','token_type4');
+  elseif ($options['context'] == 'config2') {
+    $options['token types'] += array('token_type3', 'token_type4');
   }
 }
 
@@ -294,11 +305,11 @@ function hook_metatag_token_types_alter(&$options) {
  *
  * See facetapi and facetapi_bonus modules for an example of implementation.
  *
- * @param $pattern
+ * @param string $pattern
  *   A string potentially containing replaceable tokens. The pattern could also
  *   be altered by reference, allowing modules to implement further logic, such
  *   as tokens lists or masks/filters.
- * @param $types
+ * @param array $types
  *   Corresponds to the 'token data' property of the $options object.
  *   (optional) An array of keyed objects. For simple replacement scenarios
  *   'node', 'user', and others are common keys, with an accompanying node or
@@ -369,16 +380,16 @@ function hook_metatag_views_post_render_get_entity($view) {
 }
 
 /**
- * Allow the context string being passed to i18n_string to be changed before
- * it is used.
+ * Allow the context string being passed to i18n_string to be changed before it
+ * is used.
  *
  * If the string is set to an empty value it will cause this meta tag to not
  * be translated.
  *
  * @param string $context
- *  The context string being passed into i18n_string. Will usually be in the
- *  format "[category]:[path-identifier]", e.g. "[node:123]", "[page:contact]",
- *  etc.
+ *   The context string being passed into i18n_string. Will usually be in the
+ *   format "[category]:[path-identifier]", e.g. "[node:123]", "[page:contact]",
+ *   etc.
  * @param string $tag_name
  *   The name of the meta tag being translated.
  */

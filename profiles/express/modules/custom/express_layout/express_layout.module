@@ -81,17 +81,28 @@ function express_layout_menu() {
   );
 
   $items['admin/config/content/express-layout/settings'] = array(
-    'title' => 'Express Layout Settings',
+    'title' => 'Layout Regions Configuration',
     'access arguments' => array('administer express layout'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -20,
   );
 
   $items['admin/config/content/express-layout/create'] = array(
-    'title' => 'Express Create Layouts',
+    'title' => 'Create Layouts',
     'description' => 'Make sure all nodes have layout entities attached to them',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('express_layout_attach_layouts_form'),
+    'access arguments' => array('administer express layout'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'express_layout.admin.inc',
+  );
+
+  $items['admin/config/content/express-layout/advanced'] = array(
+    'title' => 'Advanced Configuration',
+    'description' => 'Advanced configuration for Layout entities',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_layout_advanced_configuration_form'),
     'access arguments' => array('administer express layout'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
@@ -118,7 +129,7 @@ function express_layout_admin_paths() {
  */
 function express_layout_access($op, $node) {
  $type = variable_get('express_layout_type_' . $node->type, NULL);
-  if (user_access('edit express layouts') && $type) {
+  if (user_access('edit express layouts') && $type && !in_array($node->type, variable_get('express_layout_node_type_ignore', array()))) {
     return node_access($op, $node);
   }
   return FALSE;
@@ -130,7 +141,7 @@ function express_layout_access($op, $node) {
 function express_layout_permission() {
   return array(
     'administer express layout' => array(
-      'title' => 'Administer CU Block Selector',
+      'title' => 'Administer Express Layout',
       'description' => 'Configure content types/fields on which to use block selector',
     ),
     'edit express layouts' => array(
@@ -145,8 +156,11 @@ function express_layout_permission() {
  * Create layout entity each time a node is created.
  */
 function express_layout_node_insert($node) {
+  // Restrict content types that don't need layouts.
+  if (in_array($node->type, variable_get('express_layout_node_type_ignore', array()))) {
+    return;
+  }
   $nid = $node->nid;
-
   $values = array(
     'layout_id' => $nid,
     'title' => 'Layout: ' . $node->title,
@@ -161,6 +175,10 @@ function express_layout_node_insert($node) {
  * Update layout entity each time related node is updated.
  */
 function express_layout_node_update($node) {
+  // Restrict content types that don't need layouts.
+  if (in_array($node->type, variable_get('express_layout_node_type_ignore', array()))) {
+    return;
+  }
   $nid = $node->nid;
   if ($layout = entity_load_single('express_layout', $nid)) {
     $layout->title = 'Layout: ' . $node->title;
@@ -184,7 +202,7 @@ function express_layout_node_delete($node) {
   $nid = $node->nid;
   if ($layout = entity_load_single('express_layout', $nid)) {
     entity_delete('express_layout', $nid);
-    drupal_set_message('@layout_name Deleted', array('@layout_name' => $layout->title));
+    drupal_set_message($layout->title . ' Deleted');
   }
 }
 
@@ -230,10 +248,13 @@ function express_layout_context_plugins() {
  * Implements hook_node_view().
  */
 function express_layout_node_view($node, $view_mode) {
+  // Define empty array to be passed to execute function.
+  $op = array();
+
   // Fire our context plugin when viewing nodes.
   if ($view_mode == 'full') {
     if ($plugin = context_get_plugin('condition', 'layout')) {
-      $plugin->execute($node);
+      $plugin->execute($node, $op);
     }
 
   }
@@ -250,6 +271,9 @@ function express_layout_preprocess_html(&$vars) {
       $vars['classes_array'][] = 'layout-feature';
     } else {
       $vars['classes_array'][] = 'layout-default';
+    }
+    if ($layout && !empty($layout->field_feature_title_image)) {
+      $vars['classes_array'][] = 'has-feature-title-image';
     }
   }
 }
@@ -303,14 +327,24 @@ function express_layout_page_alter(&$page) {
     // Load node layout
     if ($layout = entity_load_single('express_layout', $node->nid)) {
       // Add cover image
-      if (!empty($layout->field_feature_title_image[LANGUAGE_NONE][0]['uri']) && !empty($settings['field_feature_title_image'])) {
-        // Get url of hero image style
-        $img = image_style_url('el_hero', $layout->field_feature_title_image [LANGUAGE_NONE][0]['uri']);
-        $block['el_hero_cover_image'] = array(
-          '#markup' => '<div class="feature-layout-title-image"><img src="' . $img . '" /></div>',
-        );
-        // Add cover image to page
-        $page['intro'][] = $block;
+      if (!empty($layout->field_feature_title_image[LANGUAGE_NONE][0]['uri']) && isset($settings['field_feature_title_image'])) {
+        // Add node title to variables
+        $vars['title'] = $node->title;
+        if (function_exists('expressbase_breadcrumb')) {
+          $vars['breadcrumb'] = expressbase_breadcrumb();
+        }
+
+        // Add image style urls to variables
+        $img_desktop = image_style_url('hero', $layout->field_feature_title_image [LANGUAGE_NONE][0]['uri']);
+        $vars['img_desktop'] = $img_desktop;
+
+        $img_tablet = image_style_url('large', $layout->field_feature_title_image [LANGUAGE_NONE][0]['uri']);
+        $vars['img_tablet'] = $img_tablet;
+
+        $img_mobile = image_style_url('medium', $layout->field_feature_title_image [LANGUAGE_NONE][0]['uri']);
+        $vars['img_mobile'] = $img_mobile;
+
+        $page['intro']['el_hero_cover_image']['#markup'] = theme('express_layout_title_image', $vars);
       }
       if (isset($settings) && $settings['field_feature_layout_toggle']) {
         // Check feature/default layout setting
@@ -610,12 +644,20 @@ function _express_layout_bean_to_block($bean, $region) {
  * node--{type}--featurelayout.tpl.php
  */
 function express_layout_preprocess_node(&$vars) {
+  // Prevents content region blocks from attempting to be rendered more than once.
+  if ('node/' . $vars['nid'] != current_path()) {
+    return;
+  }
+
   //$settings = variable_get('express_layout_settings_' . $node->type, array());
   //$type = variable_get('express_layout_type_' . $node->type, NULL);
   if ($layout = entity_load_single('express_layout', $vars['nid'])) {
     if (!empty($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']) && ($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value'] == 'feature_layout') && (!path_is_admin(current_path()))) {
       $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__featurelayout';
     }
+
+
+
   }
 
   // add inner sidebar regions to nodes
@@ -663,10 +705,10 @@ function express_layout_preprocess_node(&$vars) {
   }
 }
 
-/*
- * Implements hook_secure_permissions
+/**
+ * Implements hook_secure_permissions().
  *
- * Adding permissions for express layouts
+ * Adding permissions for express layouts.
  */
 function express_layout_secure_permissions($role) {
   $permissions = array(
@@ -900,4 +942,14 @@ function express_layout_inline_entity_form_entity_table($variables) {
     );
     return theme('table', array('header' => $header, 'rows' => $rows, 'sticky' => FALSE, 'attributes' => $table_attributes));
   }
+}
+
+function express_layout_theme() {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'express_layout') . '/templates';
+  $registry['express_layout_title_image'] = array(
+    'template' => 'express-layout-title-image',
+    'path' => $template_dir,
+  );
+  return $registry;
 }

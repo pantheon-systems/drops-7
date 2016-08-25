@@ -107,37 +107,21 @@ function cu_bean_override_view_views_default_views() {
   $handler->display->display_options['filters']['type']['id'] = 'type';
   $handler->display->display_options['filters']['type']['table'] = 'bean';
   $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'article_grid' => 'article_grid',
-    'articles' => 'articles',
-    'article_slider' => 'article_slider',
-    'block_section' => 'block_section',
-    'feature_callout' => 'feature_callout',
-    'cu_events_calendar_block' => 'cu_events_calendar_block',
-    'events_calendar_grid' => 'events_calendar_grid',
-    'facebook_activity' => 'facebook_activity',
-    'facebook_like_button' => 'facebook_like_button',
-    'hero_unit' => 'hero_unit',
-    'quicktab' => 'quicktab',
-    'slider' => 'slider',
-    'social_links' => 'social_links',
-    'block' => 'block',
-    'twitter_block' => 'twitter_block',
-  );
   $handler->display->display_options['filters']['type']['exposed'] = TRUE;
   $handler->display->display_options['filters']['type']['expose']['operator_id'] = 'type_op';
   $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
   $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
   $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
+  $handler->display->display_options['filters']['type']['expose']['remember'] = TRUE;
   $handler->display->display_options['filters']['type']['expose']['remember_roles'] = array(
     2 => '2',
     1 => 0,
-    3 => 0,
-    4 => 0,
-    5 => 0,
     6 => 0,
+    4 => 0,
+    7 => 0,
+    3 => 0,
+    5 => 0,
   );
-  $handler->display->display_options['filters']['type']['expose']['reduce'] = TRUE;
   /* Filter criterion: Block: Label */
   $handler->display->display_options['filters']['label']['id'] = 'label';
   $handler->display->display_options['filters']['label']['table'] = 'bean';
@@ -183,7 +167,7 @@ function cu_bean_override_view_views_default_views() {
   $handler->display->display_options['menu']['weight'] = '0';
   $handler->display->display_options['menu']['context'] = 0;
   $handler->display->display_options['menu']['context_only_inline'] = 0;
-  $export['clone_of_bean_overview_override'] = $view;
+  $export['bean_overview_override_view'] = $view;
 
   return $export;
 }

@@ -31,6 +31,10 @@ function _cu_home_page_node() {
   $created_nodes = _cu_home_page_recursive_tree_of_nodes($nodes, 'main-menu');
   variable_set('site_frontpage', 'node/' . $created_nodes[0]->nid);
 
+  // Set path alias to homepage.
+  $path = array('source' => "node/" . $created_nodes[0]->nid, 'alias' => 'home');
+  path_save($path);
+
   // SETTING TITLES ON MENUS FROM site_navigation_menus module to <none> - If
   // this module is rmeoved, this needs to go somewhere else late enough that
   // the blocks already exist in the block table.

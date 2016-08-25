@@ -29,15 +29,17 @@ ul#action-menu a:hover, ul#action-menu a:focus { color: #333; }
 ul#main-menu a { color: #656565; border-left: 1px solid #e0e0e0; }
 ul#main-menu a:hover, ul#main-menu a:focus, ul#main-menu a.active, ul#main-menu a.active-trail { color: #fff; background-color: #4d4d4d; background-image: -webkit-gradient(linear, left top, left bottom, from(#4d4d4d), to(#333333)); background-image: -webkit-linear-gradient(top, #4d4d4d, #333333); background-image: -moz-linear-gradient(top, #4d4d4d, #333333); background-image: -o-linear-gradient(top, #4d4d4d, #333333); background-image: -ms-linear-gradient(top, #4d4d4d, #333333); background-image: linear-gradient(top, #4d4d4d, #333333); filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#FF4D4D4D', EndColorStr='#FF333333'); border-bottom: 1px solid #333; margin-bottom: -1px; position: relative; border-left-color: #333; }
 
-#zone-menu ul#main-menu a#home-link { background: transparent; filter: none; color: #757575; border: none; }
+ul#main-menu a#home-link { background: transparent; filter: none; color: #757575; border: none; }
 
-#zone-menu ul#main-menu a#home-link:hover, #zone-menu ul#main-menu a#home-link.active { color: #333; background: transparent; }
+ul#main-menu a#home-link:hover, ul#main-menu a#home-link.active { color: #333; background: transparent; }
 
-#intro-wide-wrapper { margin-top: -1px; }
+#intro-wide-wrapper { margin-top: -1px; background-color: #111; }
 
 #slider-wrapper { background-color: #f5f5f5; background-image: url(../images/content-shadow.png); background-repeat: repeat-x; border-bottom: 1px solid #d7d7d7; padding: 20px; }
 
 #content-wrapper { background-color: #fff; background-image: url(../images/content-shadow.png); background-repeat: repeat-x; }
+
+#post-wide-wrapper { background-color: #fff; }
 
 #footer-section { background-color: #272727; border-top: 5px solid #c7c7c7; background-image: url(../images/content-shadow.png); background-repeat: repeat-x; color: #fff; }
 #footer-section a:link, #footer-section a:visited { color: #cfb87c; }

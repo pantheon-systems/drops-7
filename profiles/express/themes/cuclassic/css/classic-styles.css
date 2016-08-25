@@ -14,7 +14,7 @@ body { background-color: #000; }
 
 .top-content { background-image: url(../images/shadow.png); background-position: top center; background-repeat: no-repeat; }
 
-#intro-wide-wrapper, #slider-wrapper, #feature-layout-wrapper { width: 960px; margin: 0 auto; background: #fff; }
+#intro-wide-wrapper, #slider-wrapper, #feature-layout-wrapper { width: 1200px; margin: 0 auto; background: #fff; }
 
 #slider-wrapper { padding-top: 20px; }
 

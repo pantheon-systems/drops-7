@@ -1,7 +1,20 @@
 name = Search Engine Optimization
-description = This bundle allows you to optimize your search rankings by adding meta tags, Google Tag marketing, and remarketing code to your website.
+description = Optimize your website for better search engine results. Includes a broken link checker, ability to add meta tags per page and a site description, as well as generate a sitemap.
+
 core = 7.x
 package = CU-Search Engine Optimization
 project_demo_url = http://www.colorado.edu/webcentral/node/684
 dependencies[] = metatag
+dependencies[] = xmlsitemap
+dependencies[] = xmlsitemap_engines
+dependencies[] = xmlsitemap_menu
+dependencies[] = cu_sitemap
+dependencies[] = linkchecker
+dependencies[] = linkchecker_bean
+dependencies[] = cu_linkchecker
+dependencies[] = site_verify
+dependencies[] = express_dashboards
+dependencies[] = cu_dashboard_seo
 
+bundle_cache_clear = 1
+bundle_context_clear = 1

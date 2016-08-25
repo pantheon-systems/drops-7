@@ -1,9 +1,10 @@
 name = Content List
 core = 7.x
-package = CU-Active
+package = CU-Advanced Content
 dependencies[] = bean_admin_ui
 dependencies[] = ctools
 dependencies[] = entityreference
+dependencies[] = express_field_bases
 dependencies[] = features
 dependencies[] = list
 dependencies[] = strongarm
@@ -38,4 +39,3 @@ features[variable][] = node_options_content_list_page
 features[variable][] = node_preview_content_list_page
 features[variable][] = node_submitted_content_list_page
 features_exclude[dependencies][options] = options
-mtime = 1443797165

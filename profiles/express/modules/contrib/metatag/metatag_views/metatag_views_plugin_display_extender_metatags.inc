@@ -48,6 +48,11 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
       metatag_metatags_form($form, $instance, $metatags[LANGUAGE_NONE], $options);
 
       $form['metatags']['#type'] = 'container';
+
+      // Basic tags fieldset should not collapse to display in a larger popup.
+      // @see https://www.drupal.org/node/1294478
+      // @see https://www.drupal.org/node/2624020
+      $form['metatags'][LANGUAGE_NONE]['basic']['#collapsible'] = FALSE;
     }
   }
 
@@ -68,7 +73,7 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
       $this->display->set_option('metatags', $metatags);
 
       // Update the i18n strings.
-      if (!empty($metatags[LANGUAGE_NONE]) && $this->definition['enabled'] && module_exists('i18n_string')) {
+      if (!empty($metatags[LANGUAGE_NONE]) && $this->definition['enabled'] && module_exists('i18n_string') && !variable_get('metatag_i18n_disabled', FALSE)) {
         metatag_translations_update($metatags[LANGUAGE_NONE], 'metatag_views:' . $this->view->name . '_' . $this->display->plugin_name);
       }
     }

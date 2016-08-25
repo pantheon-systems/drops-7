@@ -527,7 +527,7 @@ function responsive_preview_validate_device_values($form, &$form_state) {
   }
   foreach ($form_state['values']['device']['dimensions'] as $type => $value) {
     if (!empty($value)) {
-      if (!preg_match("/^[0-9]+$/", trim($value))) {
+      if (!preg_match("/^[0-9\.]+$/", trim($value))) {
         form_set_error('device][dimensions][' . $type, t('The @type dimension must contain only numeric characters.', array('@type' => $type)));
       }
     }

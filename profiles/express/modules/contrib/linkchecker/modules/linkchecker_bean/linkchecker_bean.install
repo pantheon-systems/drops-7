@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Installation file for Link Checker Bean module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function linkchecker_bean_uninstall() {
+  variable_del('linkchecker_scan_beans');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function linkchecker_bean_schema() {
+  $schema['linkchecker_bean'] = array(
+    'description' => 'Stores all link references for beans.',
+    'fields' => array(
+      'bid'  => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique {bean}.bid.',
+      ),
+      'lid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique {linkchecker_link}.lid.',
+      ),
+    ),
+    'primary key' => array('bid', 'lid'),
+    'foreign keys' => array(
+      'bid' => array('bean' => 'bid'),
+      'lid' => array('linkchecker_link' => 'lid'),
+    ),
+    'indexes' => array('lid' => array('lid')),
+  );
+
+  return $schema;
+}
+
+/**
+ * If the core modules are disabled the integration need to be disabled.
+ */
+function linkchecker_bean_modules_disabled($modules) {
+  // Disable link checks for bean.
+  if (in_array('bean', $modules)) {
+    variable_set('linkchecker_scan_beans', 0);
+    drupal_set_message(t('Link checks for beans have been disabled.'));
+  }
+}

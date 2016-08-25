@@ -1,7 +1,7 @@
 name = Block Styles
 description = Styles of blocks, block menus, etc.
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = block_styles
 dependencies[] = blocktheme

@@ -112,7 +112,8 @@ function cu_alerts_remote_data() {
     $data = json_decode($content);
   }
   else {
-    $data = json_decode(array());
+    $string = '';
+    $data = json_decode($string);
   }
   return $data;
 }
@@ -147,7 +148,7 @@ function cu_alerts_remote_url() {
   /* Pull our environment, default to production */
   $environment = variable_get('cu_alerts_environment', 'production');
   if ($environment == 'test') {
-    $remote_url = $protocol . 'test.cu-boulder-alerts.gotpantheon.com/json_alerts?limit=1';
+    $remote_url = $protocol . 'test-cu-boulder-alerts.pantheonsite.io/json_alerts?limit=1';
   }
   else {
     $remote_url = $protocol . 'alerts.colorado.edu/json_alerts?limit=1';

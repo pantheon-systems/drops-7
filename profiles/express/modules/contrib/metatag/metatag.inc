@@ -28,6 +28,8 @@ interface DrupalMetaTagInterface {
 
   function tidyValue($value);
 
+  function convertUrlToAbsolute($url);
+
 }
 
 class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
@@ -80,7 +82,7 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
     $value = $this->tidyValue($this->data['value']);
 
     // Translate the final output string prior to output. Use the
-    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // 'output' i18n_string object type, and pass along the meta tag's
     // options as the context so it can be handled appropriately.
     $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
 
@@ -161,10 +163,18 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
    *   The meta tag value after it has been tidied up.
    */
   public function tidyValue($value) {
+    // Check for Media strings from the WYSIWYG submodule.
+    if (module_exists('media_wysiwyg') && strpos($value, '[[{') !== FALSE) {
+      $value = media_wysiwyg_filter($value);
+    }
+
     // Specifically replace encoded spaces, because some WYSIWYG editors are
     // silly. Do this before decoding the other HTML entities so that the output
     // doesn't end up with a bunch of a-circumflex characters.
     $value = str_replace('&nbsp;', ' ', $value);
+
+    // Decode HTML entities.
+    $value = decode_entities($value);
 
     // Remove any HTML code that might have been included.
     $value = strip_tags($value);
@@ -176,6 +186,33 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
     $value = trim($value);
 
     return $value;
+  }
+
+  /**
+   * Make sure a given URL is absolute.
+   *
+   * @param string $url
+   *   The URL to convert to an absolute URL.
+   *
+   * @return string
+   *   The argument converted to an absolute URL.
+   */
+  function convertUrlToAbsolute($url) {
+    // Convert paths relative to the hostname, that start with a slash, to
+    // ones that are relative to the Drupal root path.
+    if (strpos($url, base_path()) === 0) {
+      // Logic:
+      // * Get the length of the base_path(), 
+      // * Get a portion of the image's path starting from the position equal
+      //   to the base_path()'s length; this will result in a path relative
+      //   to the Drupal installation's base directory.
+      $len = strlen(base_path());
+      $url = substr($url, $len);
+    }
+
+    // Pass everything else through file_create_url(). The alternative is to
+    // use url() but it would insert '?q=' into the path.
+    return file_create_url($url);
   }
 
 }
@@ -197,8 +234,8 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
 
     $form['value'] += array(
       '#type' => 'textfield',
-      '#title' => t($this->info['label']),
-      '#description' => !empty($this->info['description']) ? t($this->info['description']) : '',
+      '#title' => $this->info['label'],
+      '#description' => !empty($this->info['description']) ? $this->info['description'] : '',
       '#default_value' => isset($this->data['value']) ? $this->data['value'] : '',
       '#element_validate' => array('token_element_validate'),
       '#token_types' => $options['token types'],
@@ -250,9 +287,7 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
       'token data' => array(),
       // Remove any remaining token after the string is parsed.
       'clear' => TRUE,
-      // This is safe to do because the strings will be processed by the normal
-      // theming system prior to output as an actual HTML tag.
-      'sanitize' => FALSE,
+      'sanitize' => variable_get('metatag_token_sanitize', FALSE),
       'raw' => FALSE,
     );
 
@@ -278,28 +313,33 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
       }
 
       foreach ($values as $key => &$image_value) {
+        // Remove any unwanted whitespace around the value.
+        $image_value = trim($image_value);
+
         // If this contains embedded image tags, extract the image URLs.
         if (strip_tags($image_value) != $image_value) {
           $matches = array();
-          preg_match('/src="([^"]*)"/', $val, $matches);
+          preg_match('/src="([^"]*)"/', $image_value, $matches);
           if (!empty($matches[1])) {
             $image_value = $matches[1];
           }
         }
 
-        // File paths that contain "public://" are relative to the public file
-        // directory, so convert them to a publicly accessible URL.
-        if (strpos($image_value, 'public://') === 0) {
-          $image_value = file_create_url($image_value);
-        }
+        // Convert the URL to an absolute URL.
+        $image_value = $this->convertUrlToAbsolute($image_value);
+
+        // Replace spaces the URL encoded entity to avoid validation problems.
+        $image_value = str_replace(' ', '%20', $image_value);
       }
+
+      // Combine the multiple values into a single string.
       $value = implode(',', $values);
     }
 
     $value = $this->tidyValue($value);
 
     // Translate the final output string prior to output. Use the
-    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // 'output' i18n_string object type, and pass along the meta tag's
     // options as the context so it can be handled appropriately.
     $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
 
@@ -412,7 +452,7 @@ class DrupalListMetaTag extends DrupalDefaultMetaTag {
     $value = $this->tidyValue($value);
 
     // Translate the final output string prior to output. Use the
-    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // 'output' i18n_string object type, and pass along the meta tag's
     // options as the context so it can be handled appropriately.
     $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
 
@@ -432,7 +472,7 @@ class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
   public function getForm(array $options = array()) {
     $form['value'] = array(
       '#type' => 'textfield',
-      '#title' => t('@title interval', array('@title' => $this->info['label'])),
+      '#title' => t('!title interval', array('!title' => $this->info['label'])),
       '#default_value' => isset($this->data['value']) ? $this->data['value'] : '',
       '#element_validate' => array('element_validate_integer_positive'),
       '#maxlength' => 4,
@@ -440,7 +480,7 @@ class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
     );
     $form['period'] = array(
       '#type' => 'select',
-      '#title' => t('@title interval type', array('@title' => $this->info['label'])),
+      '#title' => t('!title interval type', array('!title' => $this->info['label'])),
       '#default_value' => isset($this->data['period']) ? $this->data['period'] : '',
       '#options' => array(
         '' => t('- none -'),
@@ -468,7 +508,7 @@ class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
     }
 
     // Translate the final output string prior to output. Use the
-    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // 'output' i18n_string object type, and pass along the meta tag's
     // options as the context so it can be handled appropriately.
     $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
 

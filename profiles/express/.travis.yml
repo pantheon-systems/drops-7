@@ -1,0 +1,141 @@
+language: php
+# We want to avoid sudo. This allow us to use Travis docker infrastructure, which means builds start faster and have more CPU available.
+sudo: false
+
+php:
+  - '5.3'
+
+# We want builds of master and dev branches only.
+branches:
+  only:
+    - dev
+
+# We need LDAP as long as it is in express_core. Need CGI for runserver in PHP 5.3.
+addons:
+  apt:
+    packages:
+    - ldap-utils
+    - curl
+    - php5-ldap
+    - php5-cgi
+    - php5-mysql
+    - php5-curl
+    - php5-gd
+
+mysql:
+  database: drupal
+  username: root
+  encoding: utf8
+
+# Cache Composer & Drush directories.
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.drush/cache
+
+# Order of operations is: before_install, install, before_script, script,
+# after_success or after_failure, OPTIONAL before_deploy, OPTIONAL deploy,
+# OPTIONAL after_deploy, after_script.
+
+install:
+  # Install latest Drush 6.
+  - travis_retry composer self-update && composer --version
+  - travis_retry composer global require "drush/drush:6.*"
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # Drupal.org verify tool
+  #- drush dl -y drupalorg_drush-7.x-1.x-dev --destination=$HOME/.drush
+  #- drush cc drush
+
+  # Build Behat dependencies
+  - cd ./tests/behat
+  - travis_retry composer install --prefer-dist --no-interaction
+  - cd ../../../
+
+  # Build Codebase
+  - mkdir profiles
+  - mv express profiles/
+  - mkdir drupal
+  - mv profiles drupal/
+
+  # Build the current branch
+  - cd drupal
+  - drush make --yes profiles/express/drupal-org-core.make
+  #- drush make --yes profiles/express/drupal-org.make --no-core --contrib-destination=profiles/express
+  - cd ../
+
+  # Verify that all the .make files will work on Drupal.org.
+  #- drush verify-makefile drupal/profiles/express/drupal-org.make
+  #- find drupal/profiles/express/modules -name \*.make -print0 | xargs -0 -n1 drush verify-makefile
+
+  # Setup files
+  - mkdir -p drupal/sites/default/files/styles/preview/public/gallery/
+  - chmod -R 777 drupal/sites
+  - mkdir tmp
+  - chmod -R 777 tmp
+
+  # Setup display for Selenium
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 5
+
+  # Get Selenium
+  - wget http://selenium-release.storage.googleapis.com/2.42/selenium-server-standalone-2.42.1.jar
+  - java -jar selenium-server-standalone-2.42.1.jar > /dev/null 2>&1 &
+  - nc -zvv localhost 4444; out=$?; while [[ $out -ne 0 ]]; do echo "Retry hit port 4444..."; nc -zvv localhost 4444; out=$?; sleep 5; done
+
+  # Disable sendmail
+  - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  # Add memcache, APC, and LDAP
+  - echo "extension=apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "apc.shm_size=256M" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension=memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension=ldap.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Bump up max execution time.
+  - echo "max_execution_time=60" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Increase the MySQL connection timeout on the PHP end.
+  - echo "mysql.connect_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "default_socket_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Increase the MySQL server timetout and packet size.
+  - mysql -e "SET GLOBAL wait_timeout = 36000;"
+  - mysql -e "SET GLOBAL max_allowed_packet = 33554432;"
+
+before_script:
+
+  # Disable XDebug to speed up test runs.
+  - phpenv config-rm xdebug.ini
+
+  - mysql -e 'create database drupal;'
+
+  # Do the site install (either the current revision or old for the upgrade).
+  - cd drupal
+  - cp profiles/express/tests/travis-ci/settings.travis.php sites/default/settings.php
+  - drush si express --db-url=mysql://root:@127.0.0.1/drupal --account-name=admin --account-pass=admin --site-mail=admin@example.com --site-name="Express" express_profile_configure_form.express_core_version=cu_testing_core --yes
+
+  # Enable all the bundles
+  - drush en cu_advanced_content_bundle cu_advanced_design_bundle cu_advanced_layout_bundle cu_debug_admin_bundle cu_events_bundle cu_forms_bundle cu_news_bundle cu_people_bundle cu_photo_gallery_bundle cu_seo_bundle cu_social_media_bundle -y
+
+  # Start server.
+  - drush runserver 127.0.0.1:8080 &
+  - nc -zvv 127.0.0.1 8080; out=$?; while [[ $out -ne 0 ]]; do echo "Retry hit port 8080..."; nc -zvv localhost 8080; out=$?; sleep 5; done
+  - cd profiles/express/tests/behat
+
+  # Setting Behat environment
+  - BUILD_TOP=`dirname $TRAVIS_BUILD_DIR`
+  - BEHAT_PARAMS='{"extensions":{"Drupal\\DrupalExtension":{"drupal":{"drupal_root":"BUILD_TOP/drupal"}},"Behat\\MinkExtension":{"base_url":"http://127.0.0.1:8080/","files_path":"/home/travis/build/CuBoulder/drupal/profiles/express/tests/behat/assets/"}}}'
+  - BEHAT_PARAMS=`echo $BEHAT_PARAMS | sed -e s#BUILD_TOP#$BUILD_TOP#`
+  - export BEHAT_PARAMS
+
+script:
+  # Run Behat tests.
+  - ./bin/behat --config behat.yml --verbose --tags '~@exclude_all_bundles'
+  # Run tests that were timing out.
+  #- ./bin/behat --config behat.yml --verbose --tags @max_execution_time
+
+notifications:
+  slack:
+    rooms:
+      secure: q9Z3c6uNiCF+2l+BQsso1bQGbY0VmwXmw+StSlAGQxlccMh8HtDlrL4Rqk2ix0QMeGXffvLeATLThCq0ET9rmr9MIhTqRKfKgHUaQywiE3LZr+pgoPVGlqGbz1uSspWgWGkG3MWPtn1VC6pS4esm44YJ4mzucIKTswIe8DEWHTgi2Eju9P1w5HrtKBlM4+zxSwau5N5x+ol/LhafmvbODL5rBBH8lpErjVzSEf+5qQ/xu+I8tBdx7rqLmbbfPBXfn7Gx3THnaSG1WZZart6VXabbRdm029EWW6DxQQ6AyZTVwIHb59wrS3gL17SLsmvzXuYOlZMHBRTeAnt97czKILtoV/jscQE6z7AkPggaIFXcaWrvG+qSqZloym759i7YeYuwYdxy7QsDhNniHDXz3oP3jXJhN/TulYyuZYnPui5ihL3PHBoPy0t9PADeH8pxmhHrOB+t5WnQF02bAye6M4o0K+8HvUd24SgT4olUZbvNbuiwdZG0Ee4ZND4Azrd0W1LsyCPd8DJGsoaUe/KCtV8XdptgdIzpgfotDJMFnNK1QbSUUY5xigZoNEht7Gq7CruHFkM693FYDbJVCg9hlrtKafWaAvG8npvS5KPDxxHp7P6BgBOwtewzB3SpQuOSM/Y5qmO4U2lD6+nvzOihNUTVJYN7hO03fQFlI9M3E9o=

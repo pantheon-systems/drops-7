@@ -1,4 +1,4 @@
-<div id="page-wrapper">
+<div id="page-wrapper" class="page-wrapper">
   <div id="page" class="<?php print $classes; ?>">
     <?php if (!empty($page['alerts'])): ?>
     <div id="alerts-wide-wrapper" class="section-wrapper">
@@ -8,12 +8,12 @@
     </div>
     <?php endif; ?>
 
-    <div id="header-wrapper" class="section-wrapper">
+    <div id="header-wrapper" class="section-wrapper header-wrapper">
       <header class="header container-max clearfix" id="header" role="banner">
         <div id="branding" class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
           <?php print render($page['branding']); ?>
           <div class="mobile-menu-toggle">
-            <a id="toggle" href="#zone-menu" title="Menu">Menu <i class="fa fa-reorder fa-fw"></i></a>
+            <a id="toggle" href="#mobile-menu" title="Menu"><span class="mobile-menu-text">Menu </span> <i class="fa fa-reorder fa-fw"></i></a>
           </div>
         </div>
         <div id="search"class="col-lg-4 col-md-4">
@@ -68,7 +68,7 @@
       <?php endif; ?>
 
       <?php if (!empty($page['slider'])): ?>
-      <div id="slider-wrapper" class="section-wrapper <?php if (!empty($page['slider_sidebar'])) { print 'has-slider-sidebar'; } ?>">
+      <div id="slider-wrapper" class="section-wrapper slider-wrapper <?php if (!empty($page['slider_sidebar'])) { print 'has-slider-sidebar'; } ?>">
         <div id="slider" class="clearfix element-max-width-padding">
           <?php print render($page['slider']); ?>
         </div>
@@ -93,7 +93,7 @@
         <div class="clear"></div>
       <?php endif; ?>
 
-      <div id="content-wrapper" class="section-wrapper">
+      <div id="content-wrapper" class="section-wrapper content-wrapper">
         <div id="main" class="clearfix container-max">
           <div id="content" class="<?php print $main_content_classes; ?>" role="main">
             <a id="main-content"></a>
@@ -138,19 +138,19 @@
       </div>
 
       <?php if (!empty($page['feature_layout'])): ?>
-        <div id="feature-layout-wrapper" class="section-wrapper">
+        <div id="feature-layout-wrapper" class="section-wrapper feature-layout-wrapper">
           <?php print render($page['feature_layout']); ?>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($page['wide_2'])): ?>
-        <div id="post-wide-wrapper" class="section-wrapper">
+        <div id="post-wide-wrapper" class="section-wrapper post-wide-wrapper">
           <?php print render($page['wide_2']); ?>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($page['after_content'])): ?>
-        <div id="after-content-wrapper" class="section-wrapper">
+        <div id="after-content-wrapper" class="section-wrapper after-content-wrapper">
           <div id="after-content" class="container-max">
             <?php print render($page['after_content']); ?>
           </div>
@@ -158,7 +158,7 @@
       <?php endif; ?>
     </div></div>
     <?php if (!empty($page['lower'])): ?>
-      <div id="after-content2-wrapper" class="section-wrapper">
+      <div id="after-content2-wrapper" class="section-wrapper after-content2-wrapper">
         <div id="after-content-2" class="container-max">
           <?php print render($page['lower']); ?>
         </div>
@@ -168,7 +168,7 @@
 
     <div id="footer-section">
       <?php if (!empty($page['footer'])): ?>
-        <div id="footer-wrapper" class="section-wrapper">
+        <div id="footer-wrapper" class="section-wrapper footer-wrapper">
           <div id="footer" class="container-max">
             <div class="col-lg-12 col-md-12">
               <div class="row">
@@ -180,7 +180,7 @@
       <?php endif; ?>
 
       <?php if (isset($footer_menu) && !empty($footer_menu)): ?>
-        <div id="footer-menu-wrapper" class="section-wrapper <?php print $footer_menu_color; ?>">
+        <div id="footer-menu-wrapper" class="section-wrapper footer-menu-wrapper <?php print $footer_menu_color; ?>">
           <div id="footer-navigation" class="container-max">
             <div class="nav-inner col-lg-12 col-md-12 clearfix">
               <nav id="footer-menu">
@@ -190,7 +190,7 @@
           </div>
         </div>
       <?php endif; ?>
-      <div id="site-info-wrapper" class="section-wrapper">
+      <div id="site-info-wrapper" class="section-wrapper site-info-wrapper">
         <div id="site-info" class="container-max">
           <?php print render($page['site_info']); ?>
         </div>

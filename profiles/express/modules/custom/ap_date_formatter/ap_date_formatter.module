@@ -1,0 +1,139 @@
+<?php
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function ap_date_formatter_field_formatter_info() {
+  return array(
+    'ap_date_formatter' => array( //Machine name of the formatter
+      'label' => t('AP Date'),
+      'field types' => array('datetime'), //This will only be available to text fields
+      'settings'  => array( //Array of the settings we'll create
+        'ap_date' => 'month:day:year', //give a default value for when the form is first loaded
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function ap_date_formatter_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  //This gets the view_mode where our settings are stored
+  $display = $instance['display'][$view_mode];
+  //This gets the actual settings
+  $settings = $display['settings'];
+  //Initialize the element variable
+  $element = array();
+  //Add your select box
+  $element['ap_date'] = array(
+    '#type'           => 'select',                           // Use a select box widget
+    '#title'          => t('Format'),                   // Widget label
+    '#default_value'  => $settings['ap_date'],              // Get the value if it's already been set
+    '#options'        => array(
+      'month:day:year'  => ap_date_formatter_example('month:day:year'),
+      'month:day' => ap_date_formatter_example('month:day'),
+      'month:year'  => ap_date_formatter_example('month:year'),
+    ),
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function ap_date_formatter_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $summary = t('@ap_date', array(
+    '@ap_date'     => ap_date_formatter_example($settings['ap_date']),
+  )); // we use t() for translation and placeholders to guard against attacks
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ap_date_formatter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array(); // Initialize the var
+  $settings = $display['settings']; // get the settings
+  $format = $settings['ap_date_format']; // The format setting selected in the settings form
+  foreach ($items as $delta => $item) {
+    $date = $item['safe_value']; // Getting the actual value
+  }
+  if(isset($date)) {
+    $ap_date = ap_date_formatter_convert($date, $format);
+    $element[0]['#markup'] = $ap_date; // Assign it to the #markup of the element
+  }
+  return $element;
+}
+function ap_date_formatter_example($format) {
+  $timestamp = time();
+  $ap_date = ap_date_formatter_convert($timestamp, $format);
+
+  return $ap_date;
+}
+
+function ap_date_formatter_convert($timestamp, $format = 'month:day:year') {
+  $post_date_raw = new DateTime();
+  $post_date_raw->setTimestamp($timestamp);
+
+  switch ($format) {
+    case 'month:day:year':
+      $post_date_month = $post_date_raw->format('F');
+      $post_date_day_year = $post_date_raw->format('j, Y');
+      if($post_date_month == "September"){
+          $ap_date_sept = "Sept. " . $post_date_day_year;
+          $ap_date = $ap_date_sept;
+      } elseif (strlen($post_date_month) > 5){
+          $ap_date_short = substr($post_date_month, 0,3) . "." . " " . $post_date_day_year;
+          $ap_date = $ap_date_short;
+      } else {
+          $ap_date_long = $post_date_month . " " . $post_date_day_year;
+          $ap_date = $ap_date_long;
+      }
+      break;
+
+    case 'month:year':
+      $post_date_month = $post_date_raw->format('F');
+      $post_date_day = $post_date_raw->format('Y');
+      if($post_date_month == "September"){
+          $ap_date_sept = "Sept. " . $post_date_day;
+          $ap_date = $ap_date_sept;
+      } elseif (strlen($post_date_month) > 5){
+          $ap_date_short = substr($post_date_month, 0,3) . "." . " " . $post_date_day;
+          $ap_date = $ap_date_short;
+      } else {
+          $ap_date_long = $post_date_month . " " . $post_date_day;
+          $ap_date = $ap_date_long;
+      }
+      break;
+
+    case 'month:day':
+      $post_date_month = $post_date_raw->format('F');
+      $post_date_year = $post_date_raw->format('j');
+      if($post_date_month == "September"){
+          $ap_date_sept = "Sept. " . $post_date_year;
+          $ap_date = $ap_date_sept;
+      } elseif (strlen($post_date_month) > 5){
+          $ap_date_short = substr($post_date_month, 0,3) . "." . " " . $post_date_year;
+          $ap_date = $ap_date_short;
+      } else {
+          $ap_date_long = $post_date_month . " " . $post_date_year;
+          $ap_date = $ap_date_long;
+      }
+      break;
+
+  }
+
+  return $ap_date;
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function ap_date_formatter_views_api() {
+  return array(
+    'api' => 3,
+  );
+}

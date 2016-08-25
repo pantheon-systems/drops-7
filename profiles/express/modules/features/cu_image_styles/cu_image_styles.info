@@ -1,6 +1,6 @@
 name = CU Image Styles
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = cu_image_styles
 dependencies[] = ctools

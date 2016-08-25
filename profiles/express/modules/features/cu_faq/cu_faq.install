@@ -12,3 +12,9 @@ function cu_faq_install() {
     ->execute();
 }
 
+/**
+ * Enable views_content_cache.
+ */
+function cu_faq_update_7001() {
+  module_enable(array('views_content_cache'));
+}

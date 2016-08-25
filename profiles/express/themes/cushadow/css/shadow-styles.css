@@ -21,6 +21,10 @@ body { background: none; background-color: #1e1e1e; background-color: #f2f2f2; b
 
 .top-content { background-color: #1e1e1e; }
 
+.slider-wrapper { background-color: #1e1e1e; padding: 20px; color: #fff; }
+.slider-wrapper a { color: #cfb87c; }
+.slider-wrapper a:hover { color: #fff; }
+
 #slider { padding: 20px 0; }
 
 #content-wrapper, #after-content-wrapper { background-color: #fff; }

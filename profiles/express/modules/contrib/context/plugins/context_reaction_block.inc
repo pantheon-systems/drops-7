@@ -367,8 +367,7 @@ class context_reaction_block extends context_reaction {
     $context_blocks = &drupal_static('context_reaction_block_list');;
     $contexts = context_active_contexts();
     if (!isset($context_blocks)) {
-      $info = $this->get_blocks(NULL, NULL, $this->rebuild_needed());
-      $this->rebuild_needed(FALSE);
+      $info = $this->get_blocks();
       $context_blocks = array();
       foreach ($contexts as $context) {
         $options = $this->fetch_from_context($context);

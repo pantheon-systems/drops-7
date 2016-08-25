@@ -388,6 +388,24 @@ function file_entity_menu() {
     }
   }
 
+  // Devel generate integration.
+  if (module_exists('devel_generate')) {
+    $items['admin/config/development/generate/file'] = array(
+      'title' => 'Generate files',
+      'description' => 'Generate a given number of files. Optionally delete current files.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('file_entity_generate_file_form'),
+      'access arguments' => array('administer files'),
+      'file' => 'file_entity.devel_generate.inc',
+    );
+    $items['admin/content/file/generate'] = $items['admin/config/development/generate/file'];
+    $items['admin/content/file/generate']['type'] = MENU_LOCAL_ACTION;
+    $items['file/add/generate'] = $items['admin/config/development/generate/file'];
+    $items['file/add/generate']['title'] = 'Generate';
+    $items['file/add/generate']['type'] = MENU_LOCAL_TASK;
+    $items['file/add/generate']['weight'] = 50;
+  }
+
   return $items;
 }
 
@@ -950,6 +968,7 @@ function file_entity_entity_info_alter(&$entity_info) {
         'path' => 'admin/structure/file-types/manage/%file_type',
         'real path' => 'admin/structure/file-types/manage/' . $type->type,
         'bundle argument' => 4,
+        'access arguments' => array('administer file types'),
       ),
     );
   }
@@ -1203,7 +1222,7 @@ function file_entity_file_formatter_file_field_settings($form, &$form_state, $se
     // Invoke hook_field_formatter_settings_form(). We are reusing field
     // formatter functions, but we are not working with a Field API field, so
     // set $field accordingly. Unfortunately, the API is for $settings to be
-    // transfered via the $instance parameter, so we must mock it.
+    // transferred via the $instance parameter, so we must mock it.
     if (isset($field_formatter_info['module']) && ($function = ($field_formatter_info['module'] . '_field_formatter_settings_form')) && function_exists($function)) {
       $field = NULL;
       $mock_instance = array(
@@ -2571,4 +2590,13 @@ function file_entity_get_public_and_private_stream_wrapper_names($flag = STREAM_
     }
   }
   return $wrappers;
+}
+
+/**
+ * Implements hook_features_pipe_alter() for the file type component.
+ */
+function file_entity_features_pipe_file_type_alter(&$pipe, $data, $export) {
+  foreach ($data as $file_type) {
+    $pipe['variable'][] = "pathauto_file_{$file_type}_pattern";
+  }
 }

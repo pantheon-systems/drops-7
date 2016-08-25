@@ -57,17 +57,6 @@ function cu_feedback_permission() {
  * Implements hook_menu().
  */
 function cu_feedback_menu() {
-  // Why is this the same form callback as below?
-  // Historical reason?
-  /*
-  $items['admin/config/user-interface/feedback'] = array(
-    'title' => 'Feedback settings',
-    'description' => 'Configure Feedback settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('cu_feedback_admin_settings_form'),
-    'access arguments' => array('administer cu feedback module'),
-  );
-  */
 
   $items['admin/settings/forms'] = array(
     'title' => 'Forms',
@@ -95,6 +84,7 @@ function cu_feedback_menu() {
     'access arguments' => array('access content'),
     'delivery callback' => 'cu_feedback_ajax_callback',
   );
+
   return $items;
 }
 
@@ -105,21 +95,19 @@ function cu_feedback_admin_settings_form($form, &$form_state) {
   $form = array();
   $config = variable_get('cu_feedback_config');
   $path = $config['cu_feedback_path'];
-  $text = $config['cu_feedback_text'];
   $label = $config['cu_feedback_label'];
   $color = $config['cu_feedback_color'];
   $embed = $config['cu_feedback_embed'];
-  $options = _cu_feedback_options();
   $form['cu_feedback_settings']['cu_feedback_path'] = array(
     '#type' => 'select',
-    '#title' => 'Published WebForms',
+    '#title' => 'Available Webforms',
     '#default_value' => $path ? $path : 'none',
     '#options' => _cu_feedback_webforms(),
-    '#description' => 'Enter the node id of the node you would like the button to link to. Leave blank for no button',
+    '#description' => 'Choose the webform you would like to use.',
   );
   $form['cu_feedback_settings']['cu_feedback_label'] = array(
     '#type' => 'textfield',
-    '#title' => 'Form Button Label',
+    '#title' => 'Feedback Button Label',
     '#default_value' => $label ? $label : 'Contact Us',
     '#description' => 'Text for label/button.',
   );
@@ -131,10 +119,10 @@ function cu_feedback_admin_settings_form($form, &$form_state) {
   );
   $form['cu_feedback_settings']['cu_feedback_embed'] = array(
     '#type' => 'radios',
-    '#title' => 'Feedback Button Embed',
-    '#options' => array('redirect' => 'No', 'embed' => 'Yes'),
+    '#title' => 'Feedback Form Presentation',
+    '#options' => array('redirect' => 'Go to Webform (better for complex forms)', 'embed' => 'Pop-up Webform (better for simple forms)'),
     '#default_value' => $embed ? $embed : 'embed',
-    '#description' => 'Clicking the link will either embed the form on the page, or redirect you to the form.',
+    '#description' => 'Choose what happens with the Feedback Button is pressed.',
   );
   $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
   $form['#submit'][] = 'cu_feedback_settings_submit';
@@ -153,6 +141,7 @@ function cu_feedback_settings_submit($form_id, &$form_state) {
   variable_set('cu_feedback_config', $config);
   drupal_set_message('Settings have been updated');
 }
+
 /**
  * Load webform to be embeded
  * page callback for node/ajax/%
@@ -161,7 +150,8 @@ function cu_feedback_get_webform($nid) {
   $form_node = node_load($nid);
   return render(node_view($form_node, 'full'));
 }
-/*
+
+/**
  * print embeded webform
  * delivery callback for node/ajax/%
  */
@@ -184,19 +174,14 @@ function cu_feedback_ajax_callback($result) {
 function cu_feedback_preprocess_html(&$variables) {
   global $base_url;
   $config = variable_get('cu_feedback_config');
-  $options = _cu_feedback_options();
   $nid = isset($config['cu_feedback_path']) ? $config['cu_feedback_path'] : '';
-  $text = isset($config['cu_feedback_text']) ? $config['cu_feedback_text'] : 'feedback';
   $label = isset($config['cu_feedback_label']) ? $config['cu_feedback_label'] : 'Contact Us';
   $color = isset($config['cu_feedback_color']) ? $config['cu_feedback_color'] : 'blue';
   $embed = isset($config['cu_feedback_embed']) ? $config['cu_feedback_embed'] : 'embed';
   if (!path_is_admin(current_path())) {
     if ($form_node = node_load($nid)) {
-      $feedback_form = render(node_view($form_node, 'full'));
       drupal_add_js('misc/ajax.js');
       $path = 'node/' . $nid;
-      $button_path = $base_url . '/' . drupal_get_path('module', 'cu_feedback') . '/images/' . $text . '.png';
-
       $link_class[] = 'cu-feedback-link';
       $link_class[] = 'cu-feedback-link-' . $color;
       $link_class[] = $embed == 'embed' ? 'cu-feedback-link-embed' : '';
@@ -227,19 +212,6 @@ function cu_feedback_preprocess_html(&$variables) {
 function cu_feedback_page_alter(&$page) {
   drupal_add_css(drupal_get_path('module', 'cu_feedback') . '/css/cu_feedback.css');
   drupal_add_js(drupal_get_path('module', 'cu_feedback') . '/js/cu_feedback.js');
-}
-
-/**
- * Button text options.
- */
-function _cu_feedback_options() {
-  $options = array(
-    'feedback' => t('Feedback'),
-    'contact_us' => t('Contact Us'),
-    'request_info' => t('Request Info'),
-  );
-
-  return $options;
 }
 
 /**

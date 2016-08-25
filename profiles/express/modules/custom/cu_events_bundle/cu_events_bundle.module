@@ -89,23 +89,23 @@ function cu_events_bundle_express_help($variables) {
   $variables['block/add/cu-events-calendar-block'][] = array(
     'title' => 'Events calendar block help',
     'short_title' => 'Events calendar block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/484',
+    'url' => '/node/484',
   );
   $variables['block/edit/cu-events-calendar-block'][] = array(
     'title' => 'Events calendar block help',
     'short_title' => 'Events calendar block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/484',
+    'url' => '/node/484',
   );
 
   $variables['block/add/events-calendar-grid'][] = array(
     'title' => 'Events calendar grid block help',
     'short_title' => 'Events calendar grid block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/500',
+    'url' => '/node/500',
   );
   $variables['block/edit/events-calendar-grid'][] = array(
     'title' => 'Events calendar grid block help',
     'short_title' => 'Events calendar grid block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/500',
+    'url' => '/node/500',
   );
 
   return $variables;

@@ -1,6 +1,6 @@
 name = CU Sitewide
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 dependencies[] = context
 dependencies[] = cu_alerts

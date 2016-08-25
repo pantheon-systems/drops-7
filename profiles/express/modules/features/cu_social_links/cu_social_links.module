@@ -83,7 +83,7 @@ function cu_social_links_preprocess_entity(&$vars) {
 
       // Dig in to the fc_items and extract the type, url, and name.
       $link_type = $fc_item['field_social_link_type'][0]['#markup'];
-      $link_url = $fc_item['field_social_link_url'][0]['#element']['url'];
+      $link_url = $fc_item['field_social_link_url'][0]['#element'];
       $types = cu_social_links_types();
       $link_name = $types[$link_type];
 
@@ -106,13 +106,15 @@ function cu_social_links_preprocess_entity(&$vars) {
         $link_text .= '<span class="' . $text_classes . '">' . $link_name  .'</span>';
         $link_options = array(
           'html' => TRUE,
+          'query' => isset($link_url['query']) ? $link_url['query'] : '',
+          'fragment' => isset($link_url['fragment']) ? $link_url['fragment'] : '',
         );
         // If homepage url set, add markup to send structured data to Google.
         if (isset($vars['field_social_links_homepage_url'])) {
           $link_options['attributes']['itemprop'] = 'sameAs';
         }
         $link_options['attributes']['title'] = $link_name;
-        $items[] = l($link_text, $link_url, $link_options);
+        $items[] = l($link_text, $link_url['url'], $link_options);
       }
     }
 

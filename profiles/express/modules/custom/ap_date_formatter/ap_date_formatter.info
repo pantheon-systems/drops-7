@@ -1,0 +1,4 @@
+name = AP Date Formatter
+description = Provides a date formatter and function to display a date in AP format
+core = 7.x
+version = 7.x-1.0

@@ -7,7 +7,7 @@
   <?php endif; ?>
   <div class="article-view-mode-teaser-content node-view-mode-teaser-content">
     <<?php print $tag; ?><?php print $title_attributes; ?>><a href="<?php print $node_url; ?>"><?php print $title; ?></a></<?php print $tag; ?>>
-    <?php if (!empty($author_meta)): ?>
+    <?php if (!empty($author_meta['date'])): ?>
       <p class="date">
         <?php print $ap_date_cu_medium_date; ?>
       </p>
