@@ -128,6 +128,8 @@ fieldset fieldset fieldset { background-color: #f8f8f8; }
 
 html.js fieldset.collapsible .fieldset-legend { background-position: 5px 55%; }
 
+.fieldset-description { padding: 0 0 10px; }
+
 .form-wrapper.collapsible { margin: 10px 0; }
 
 .filter-wrapper { margin-top: 0; }
@@ -186,9 +188,9 @@ table th.active a { padding: 0 25px 0 0; /* LTR */ }
 
 table th.active img { position: absolute; top: 3px; right: 3px; /* LTR */ }
 
-table td.active { background: #e9e9dd; }
+table td.active { background: #d4eaf8; }
 
-table tr.odd td.active { background: #f3f4ee; }
+table tr.odd td.active { background: #f2f6f8; }
 
 table tr.selected td.active, table tr.selected td { background: #ffc; border-color: #eeb; }
 
@@ -252,9 +254,11 @@ tr td:last-child { border-right: 1px solid #bebfb9; /* LTR */ }
 
 .admin-panel .body { border: 1px solid #e7e7e7; padding: 10px; }
 
-.admin-panel .body .admin-list li { border: none; border-bottom: 1px solid #e7e7e7; padding: 10px; margin: 0 -10px; }
+.admin-panel .body .admin-list li { border: none; border-bottom: 1px solid #e7e7e7; padding: 10px; margin: 0; }
 
 .admin-panel .body .admin-list li:last-child { border-bottom: none; }
+
+.admin-sub-panel { background-color: #f7f7f7; border: 1px solid #e7e7e7; padding: 20px; margin: 0 0 20px; }
 
 div.vertical-tabs ul li.vertical-tab-button a:hover { color: #fff; background-color: #333; }
 div.vertical-tabs ul li.vertical-tab-button a:hover .summary { color: #fff; }
@@ -337,3 +341,28 @@ div.admin-panel { padding: 5px 0 15px; }
 
 /* LinkIt */
 a.linkit-field-button:before { content: "\f002"; padding-right: 5px; font-family: FontAwesome; }
+
+/* CTOOLS */
+td.ctools-export-ui-operations { position: relative; }
+td.ctools-export-ui-operations .ctools-dropbutton { top: 8px; right: 10px; }
+
+#edit-field-article-list-category-und, #edit-field-article-list-filter-und, #edit-field-article-feature-category-und, #edit-field-article-feature-filter-und, #edit-field-article-grid-category-und, #edit-field-article-grid-filter-und, #edit-field-article-slider-category-und, #edit-field-article-slider-filter-und, #edit-field-article-page-category-und, #edit-field-article-page-filter-und, #edit-field-article-term-und, #edit-field-people-list-department-und, #edit-field-people-list-person-type-und, #edit-field-people-filter-1-und, #edit-field-people-filter-2-und, #edit-field-people-filter-3-und { /* Checkboxes */ }
+#edit-field-article-list-category-und .form-item, #edit-field-article-list-filter-und .form-item, #edit-field-article-feature-category-und .form-item, #edit-field-article-feature-filter-und .form-item, #edit-field-article-grid-category-und .form-item, #edit-field-article-grid-filter-und .form-item, #edit-field-article-slider-category-und .form-item, #edit-field-article-slider-filter-und .form-item, #edit-field-article-page-category-und .form-item, #edit-field-article-page-filter-und .form-item, #edit-field-article-term-und .form-item, #edit-field-people-list-department-und .form-item, #edit-field-people-list-person-type-und .form-item, #edit-field-people-filter-1-und .form-item, #edit-field-people-filter-2-und .form-item, #edit-field-people-filter-3-und .form-item { margin-bottom: 5px; }
+@media screen and (min-width: 480px) { #edit-field-article-list-category-und.form-checkboxes, #edit-field-article-list-filter-und.form-checkboxes, #edit-field-article-feature-category-und.form-checkboxes, #edit-field-article-feature-filter-und.form-checkboxes, #edit-field-article-grid-category-und.form-checkboxes, #edit-field-article-grid-filter-und.form-checkboxes, #edit-field-article-slider-category-und.form-checkboxes, #edit-field-article-slider-filter-und.form-checkboxes, #edit-field-article-page-category-und.form-checkboxes, #edit-field-article-page-filter-und.form-checkboxes, #edit-field-article-term-und.form-checkboxes, #edit-field-people-list-department-und.form-checkboxes, #edit-field-people-list-person-type-und.form-checkboxes, #edit-field-people-filter-1-und.form-checkboxes, #edit-field-people-filter-2-und.form-checkboxes, #edit-field-people-filter-3-und.form-checkboxes { -webkit-column-count: 2; -moz-column-count: 2; column-count: 2; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 768px) { #edit-field-article-list-category-und.form-checkboxes, #edit-field-article-list-filter-und.form-checkboxes, #edit-field-article-feature-category-und.form-checkboxes, #edit-field-article-feature-filter-und.form-checkboxes, #edit-field-article-grid-category-und.form-checkboxes, #edit-field-article-grid-filter-und.form-checkboxes, #edit-field-article-slider-category-und.form-checkboxes, #edit-field-article-slider-filter-und.form-checkboxes, #edit-field-article-page-category-und.form-checkboxes, #edit-field-article-page-filter-und.form-checkboxes, #edit-field-article-term-und.form-checkboxes, #edit-field-people-list-department-und.form-checkboxes, #edit-field-people-list-person-type-und.form-checkboxes, #edit-field-people-filter-1-und.form-checkboxes, #edit-field-people-filter-2-und.form-checkboxes, #edit-field-people-filter-3-und.form-checkboxes { -webkit-column-count: 3; -moz-column-count: 3; column-count: 3; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 960px) { #edit-field-article-list-category-und.form-checkboxes, #edit-field-article-list-filter-und.form-checkboxes, #edit-field-article-feature-category-und.form-checkboxes, #edit-field-article-feature-filter-und.form-checkboxes, #edit-field-article-grid-category-und.form-checkboxes, #edit-field-article-grid-filter-und.form-checkboxes, #edit-field-article-slider-category-und.form-checkboxes, #edit-field-article-slider-filter-und.form-checkboxes, #edit-field-article-page-category-und.form-checkboxes, #edit-field-article-page-filter-und.form-checkboxes, #edit-field-article-term-und.form-checkboxes, #edit-field-people-list-department-und.form-checkboxes, #edit-field-people-list-person-type-und.form-checkboxes, #edit-field-people-filter-1-und.form-checkboxes, #edit-field-people-filter-2-und.form-checkboxes, #edit-field-people-filter-3-und.form-checkboxes { -webkit-column-count: 4; -moz-column-count: 4; column-count: 4; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 1200px) { #edit-field-article-list-category-und.form-checkboxes, #edit-field-article-list-filter-und.form-checkboxes, #edit-field-article-feature-category-und.form-checkboxes, #edit-field-article-feature-filter-und.form-checkboxes, #edit-field-article-grid-category-und.form-checkboxes, #edit-field-article-grid-filter-und.form-checkboxes, #edit-field-article-slider-category-und.form-checkboxes, #edit-field-article-slider-filter-und.form-checkboxes, #edit-field-article-page-category-und.form-checkboxes, #edit-field-article-page-filter-und.form-checkboxes, #edit-field-article-term-und.form-checkboxes, #edit-field-people-list-department-und.form-checkboxes, #edit-field-people-list-person-type-und.form-checkboxes, #edit-field-people-filter-1-und.form-checkboxes, #edit-field-people-filter-2-und.form-checkboxes, #edit-field-people-filter-3-und.form-checkboxes { -webkit-column-count: 5; -moz-column-count: 5; column-count: 5; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+
+/* Exposed Widgets */
+.views-exposed-form .views-exposed-widget .form-submit, #ctools-export-ui-list-form .form-submit { margin-top: 1.7em; }
+
+/* Bulleted lists */
+ul.bullet-list { list-style: disc; padding-left: 1.5em; }
+ul.bullet-list > li { list-style: disc; }
+ul.bullet-list ul { list-style: circle; padding-left: 1.5em; }
+ul.bullet-list ul > li { list-style: circle; }
+
+/* Bundles */
+.module-bundle { margin-bottom: 20px; border-top: 1px solid #e7e7e7; padding: 20px 0; }
+
+.bundle-enabled .module-bundle h3:before { font-family: 'FontAwesome'; content: '\f00c'; margin-right: 5px; color: #1d881a; }

@@ -1,0 +1,140 @@
+default:
+  formatters:
+    pretty: true
+  suites:
+    express:
+      paths: [ %paths.base%/features/Express ]
+      contexts:
+        - ExpressContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_advanced_content_bundle:
+      paths: [ %paths.base%/features/cu_advanced_content_bundle ]
+      contexts:
+        - ExpressContext
+        - AdvancedContentContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_advanced_design_bundle:
+      paths: [ %paths.base%/features/cu_advanced_design_bundle ]
+      contexts:
+        - ExpressContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_advanced_layout_bundle:
+      paths: [ %paths.base%/features/cu_advanced_layout_bundle ]
+      contexts:
+        - ExpressContext
+        - AdvancedLayoutContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_events_bundle:
+      paths: [ %paths.base%/features/cu_events_bundle ]
+      contexts:
+        - ExpressContext
+        - EventsContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_forms_bundle:
+      paths: [ %paths.base%/features/cu_forms_bundle ]
+      contexts:
+        - ExpressContext
+        - FormsContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_news_articles_bundle:
+      paths: [ %paths.base%/features/cu_news_articles_bundle ]
+      contexts:
+        - ExpressContext
+        - NewsArticlesContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_people_bundle:
+      paths: [ %paths.base%/features/cu_people_bundle ]
+      contexts:
+        - ExpressContext
+        - PeopleContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_photo_gallery_bundle:
+      paths: [ %paths.base%/features/cu_photo_gallery_bundle]
+      contexts:
+        - ExpressContext
+        - PhotoGalleryContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_seo_bundle:
+      paths: [%paths.base%/features/SEO]
+      contexts:
+        - ExpressContext
+        - SEOContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    cu_social_media_bundle:
+      paths: [ %paths.base%/features/cu_social_media_bundle ]
+      contexts:
+        - ExpressContext
+        - SocialMediaContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+  extensions:
+    Behat\MinkExtension:
+      goutte: ~
+      selenium2: ~
+      javascript_session: selenium2
+      browser_name: firefox
+    Drupal\DrupalExtension:
+      blackbox: ~
+      api_driver: 'drupal'
+      subcontexts:
+        paths:
+          - "./profiles/express/tests/behat"
+      text:
+        username_field: "CU Login Name"
+        password_field: "IdentiKey Password"
+        log_out: "Log out"
+        log_in: "Log in"
+      selectors:
+        message_selector: '.messages'
+        error_message_selector: '.messages.error'
+        success_message_selector: '.messages.status'
+      region_map:
+        Content: ".region.region-content"
+        Branding: "#branding"
+        Search: ".region-search-box"
+        Secondary Menu: "#secondary-menu"
+        Secondary Mobile Menu: "#secondary-menu-mobile"
+        Menu: "#navigation"
+        Sidebar First: ".region-sidebar-first"
+        Sidebar Second: ".region-sidebar-second"
+        Wide Intro: "#intro-wide-wrapper"
+        Slider: ""
+        Help: ""
+        Wide Post: "#post-wide-wrapper"
+        After Content: ""
+        After Content 2: ""
+        Footer: "#section-footer"
+        Site Information: "#site-info-wrapper"
+        Alerts: "#messages-wrapper"

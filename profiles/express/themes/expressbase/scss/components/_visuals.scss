@@ -10,14 +10,29 @@ hr {
 }
 
 /* Pagers Positioning */
-
+#pager-full {
+  display: none;
+  font-size: 90%;
+}
+#pager-mobile {
+  font-weight: 600;
+  font-size: 75%;
+}
+@media screen and (min-width:768px) {
+  #pager-mobile {
+    display: none;
+  }
+  #pager-full {
+    display: block;
+  }
+}
 .item-list .pager {
   overflow: visible;
   margin: 0;
   margin-bottom: 20px;
   padding: 0;
-  font-size: 90%;
-  overflow: hidden;
+
+  @include clearfloats;
 
   li {
     display: block;
@@ -60,70 +75,6 @@ hr {
 }
 
 
-table {
-  border: 1px solid #CCC;
-  //width: 100%;
-
-
-  thead th,
-  th {
-    background: #f7f7f7;
-    border-bottom: 1px solid #ccc;
-    color: #333;
-
-    a {
-      text-decoration: none;
-      display: block;
-
-      img {
-        margin: 0 0 0 5px;
-      }
-    }
-  }
-
-  td, th {
-    padding: 4px 8px;
-    vertical-align: middle;
-  }
-
-  th.active {
-    background: #DDD;
-    border-left: 1px solid #CCC;
-    border-right: 1px solid #CCC;
-  }
-
-  tr.even {
-
-    td {
-      background: #F1F5FA;
-    }
-    td.active {
-      background: #e5e9ed;
-    }
-
-  }
-
-  tr.odd {
-
-    td {
-      background: #fff;
-    }
-    tr.odd td.active {
-      background: #f2f2f2;
-    }
-  }
-
-  tr:hover td,
-  tr.even:hover td.active,
-  tr.odd:hover td.active {
-    //background: #FFFEEE;
-  }
-  td {
-    ul.links {
-      margin-bottom: 0;
-    }
-  }
-}
 
 
 #comments {
@@ -231,7 +182,7 @@ table {
 .anchors {
   @include rounded($radius: $radius_small);
   background-color: $light_gray;
-  overflow: hidden;
+  @include clearfloats;
 
   .anchors-label {
     font-weight: bold;
@@ -310,7 +261,7 @@ table {
 .zone-after-content-image-fixed,
 .zone-after-content-2-image-fixed {
   background-attachment: fixed;
-  overflow: hidden;
+  @include clearfloats;
 }
 
 .block-icons-gray i.blockicon {
@@ -517,4 +468,123 @@ a .icon-color-gray {
 }
 .feature-layout-title-image-overlay {
   @include gradient($color: rgba(0,0,0,0), $color2: rgba(0,0,0,.85));
+}
+
+/* Colorbox */
+
+#cboxTitle {
+  font-size: 11px;
+}
+
+/* Layout Title Image */
+
+.feature-layout-title-image {
+  background-color:#000;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  height:240px;
+  position: relative;
+  padding:0;
+  @include clearfloats;
+}
+
+.feature-layout-title-image-overlay {
+  color:#fff;
+  position: absolute;
+  bottom: 0;
+  left:0;
+  width:100%;
+  padding:60px 20px 20px;
+}
+.feature-layout-title-image-overlay h1 {
+  font-size: 140%;
+  font-weight: 200;
+}
+.headings-bold .feature-layout-title-image-overlay h1 {
+  font-weight: 700;
+}
+@media screen and (min-width:768px) {
+  .feature-layout-title-image {
+    height:360px;
+  }
+  .feature-layout-title-image-overlay {
+    padding: 100px 20px 30px;
+  }
+  .feature-layout-title-image-overlay h1 {
+    font-size: 200%;
+  }
+}
+@media screen and (min-width:960px) {
+  .feature-layout-title-image {
+    height:480px;
+    transition: height 1s ease-in-out;
+    -webkit-transition: height 1s ease-in-out;
+    -moz-transition: height 1s ease-in-out;
+  }
+  .feature-layout-title-image.layout-title-image-small {
+    height:320px;
+  }
+  .feature-layout-title-image-overlay {
+    padding: 200px 20px 30px;
+  }
+  .feature-layout-title-image-overlay h1 {
+    font-size: 240%;
+  }
+}
+@media screen and (min-width:1200px) {
+  .feature-layout-title-image {
+    height:600px;
+    transition: height 1s ease-in-out;
+    -webkit-transition: height 1s ease-in-out;
+    -moz-transition: height 1s ease-in-out;
+  }
+  .feature-layout-title-image.layout-title-image-small {
+    height:320px;
+  }
+}
+.has-feature-title-image h1#page-title {
+  display: none;
+}
+
+
+// article title image styles
+@media screen and (min-width:640px) {
+  .title-image-byline {
+    font-size: 125%;
+  }
+}
+.title-image-byline a:link,
+.title-image-byline a:visited {
+  color:#fff;
+}
+.byline-author-name {
+  font-weight: 700;
+}
+.title-image-breadcrumbs-wrapper {
+  padding:5px 0px;
+  //background: rgba(255,255,255,.9);
+  //color: #fff;
+  font-weight: 600;
+  a {
+    color: #fff;
+  }
+}
+.title-image-breadcrumbs-wrapper .breadcrumb {
+  padding: 0;
+  a {
+    color:#fff;
+  }
+}
+.has-feature-title-image .breadcrumb-wrapper {
+  display: none;
+}
+.feature-layout-title-image .author-meta {
+  margin: 0;
+}
+.feature-layout-title-image .author-meta a {
+  color:#e6cc8a;
+}
+.feature-layout-title-image .author-meta a:hover {
+  color:#fff;
 }

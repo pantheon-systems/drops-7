@@ -36,7 +36,7 @@ regions[content_sidebar_left] = 'Content Sidebar Left'
 regions[content_bottom] = 'Content Bottom'
 
 ; Default Settings
-settings[alpha_responsive] = '0'
+settings[alpha_responsive] = '1'
 settings[primary_sidebar] = 'primary-sidebar-second'
 settings[headings] = 'headings-bold'
 settings[page_title_image_background] = 'page-title-image-background-transparent'

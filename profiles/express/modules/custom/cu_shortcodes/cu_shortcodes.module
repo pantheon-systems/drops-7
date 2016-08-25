@@ -137,6 +137,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_clear_tips',
     'default settings' => array(),
   );
+  $shortcodes['close-margin'] = array(
+    'title' => t('Close Margin'),
+    'description' => t('Remove the bottom margin from the preceding element'),
+    'process callback' => 'cu_shortcodes_close_margin',
+    'tips callback' => 'cu_shortcodes_close_margin_tips',
+    'default settings' => array(),
+  );
   $shortcodes['column'] = array(
     'title' => t('Column'),
     'description' => t('Divide content into columns'),
@@ -211,6 +218,7 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_sidebar_tips',
     'default settings' => array(),
   );
+
   $shortcodes['tooltip'] = array(
     'title' => t('Tool Tip'),
     'description' => t('Display some short text on hover'),
@@ -234,7 +242,7 @@ function cu_shortcodes_shortcode_info() {
  */
 function cu_shortcodes_anchors($attrs, $content = NULL) {
   extract(shortcode_attrs(array(
-        'selector' => '#region-content .content h2',
+        'selector' => '.region-content h2',
         'title' => 'On this page:',
         'color' => 'darkgray',
       ), $attrs));
@@ -247,7 +255,7 @@ function cu_shortcodes_anchors($attrs, $content = NULL) {
  * Anchors tips.
  */
 function cu_shortcodes_anchors_tips($format, $long) {
-  $output = '[anchors selector=".content h2" title="On this page:" /]';
+  $output = '[anchors selector="#content h2" title="On this page:" /]';
   return $output;
 }
 
@@ -430,8 +438,12 @@ function cu_shortcodes_filter_info_alter(&$info) {
   $format = filter_format_load('wysiwyg');
   // Get the filters on the wysiwyg text format
   $filters = filter_list_format($format->format);
-  // Enable countdown shortcode
+  // Enable callout shortcode
   $filters['shortcode']->settings['callout'] = 1;
+  // Enable close margin shortcode if advanced design bundle is enabled.
+  if (module_exists('cu_advanced_design_bundle')) {
+    $filters['shortcode']->settings['close-margin'] = 1;
+  }
 }
 
 /**
@@ -448,6 +460,23 @@ function cu_shortcodes_clear($attrs, $content = NULL) {
  */
 function cu_shortcodes_clear_tips($format, $long) {
   $output = '[clear/]';
+  return $output;
+}
+
+/**
+ * Spacer shortcode.
+ */
+function cu_shortcodes_close_margin($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+  $output = '<div class="margin-close"></div>';
+  return $output;
+}
+
+/**
+ * Spacer tips.
+ */
+function cu_shortcodes_close_margin_tips($format, $long) {
+  $output = '<p>[close-margin /]</p>';
   return $output;
 }
 

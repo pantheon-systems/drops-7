@@ -25,6 +25,7 @@ function googleanalytics_uninstall() {
   variable_del('googleanalytics_roles');
   variable_del('googleanalytics_site_search');
   variable_del('googleanalytics_trackadsense');
+  variable_del('googleanalytics_trackcolorbox');
   variable_del('googleanalytics_trackdoubleclick');
   variable_del('googleanalytics_tracker_anonymizeip');
   variable_del('googleanalytics_trackfiles');
@@ -446,16 +447,16 @@ function googleanalytics_update_7200() {
   if (!empty($googleanalytics_codesnippet_before) && stristr($googleanalytics_codesnippet_before, '_gaq.push(')) {
     variable_set('googleanalytics_codesnippet_before_backup_7200', $googleanalytics_codesnippet_before);
     variable_del('googleanalytics_codesnippet_before');
-    drupal_set_message(Database::getConnection()->prefixTables("A backup of your previous Google Analytics code snippet has been saved in database table '{variable}' as 'googleanalytics_codesnippet_before_backup_7200'. You need to manually upgrade the custom 'before' code snippet."), 'warning');
-    $messages[] = t('Manual upgrade of custom "before" code snippet is required.');
+    drupal_set_message(Database::getConnection()->prefixTables("A backup of your previous Google Analytics code snippet (ga.js) has been saved in database table '{variable}' as 'googleanalytics_codesnippet_before_backup_7200'. You need to manually upgrade the custom 'before' code snippet to analytics.js API."), 'warning');
+    $messages[] = t('Manual upgrade of custom "before" code snippet from ja.js to analytics.js API is required.');
   }
 
   $googleanalytics_codesnippet_after = variable_get('googleanalytics_codesnippet_after', '');
   if (!empty($googleanalytics_codesnippet_after) && stristr($googleanalytics_codesnippet_after, '_gaq.push(')) {
     variable_set('googleanalytics_codesnippet_after_backup_7200', $googleanalytics_codesnippet_after);
     variable_del('googleanalytics_codesnippet_after');
-    drupal_set_message(Database::getConnection()->prefixTables("A backup of your previous Google Analytics code snippet has been saved in database table '{variable}' as 'googleanalytics_codesnippet_before_backup_7200'. You need to manually upgrade the custom 'before' code snippet."), 'warning');
-    $messages[] = t('Manual upgrade of custom "after" code snippet is required.');
+    drupal_set_message(Database::getConnection()->prefixTables("A backup of your previous Google Analytics code snippet (ga.js) has been saved in database table '{variable}' as 'googleanalytics_codesnippet_after_backup_7200'. You need to manually upgrade the custom 'after' code snippet to analytics.js API."), 'warning');
+    $messages[] = t('Manual upgrade of custom "after" code snippet from ja.js to analytics.js API is required.');
   }
 
   return empty($messages) ? t('No custom code snipped found. Nothing to do.') : implode(' ', $messages);

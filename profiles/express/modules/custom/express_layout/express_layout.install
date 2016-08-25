@@ -94,7 +94,7 @@ function _express_layout_default_settings() {
   $settings = array();
   $settings['express_layout_settings_article'] = array(
     'field_feature_layout_toggle' => 'field_feature_layout_toggle',
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -108,7 +108,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_article_list_page'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -122,7 +122,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_article_list_page'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -136,7 +136,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_faqs'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -164,7 +164,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_page'] = array(
     'field_feature_layout_toggle' => 'field_feature_layout_toggle',
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -178,7 +178,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_people_list_page'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -192,7 +192,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_person'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -206,7 +206,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_photo_gallery'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -220,7 +220,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_video'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -234,7 +234,7 @@ function _express_layout_default_settings() {
   );
   $settings['express_layout_settings_webform'] = array(
     'field_feature_layout_toggle' => 0,
-    'field_feature_title_image' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
     'field_footer' => 'field_footer',
     'field_header' => 'field_header',
     'field_intro' => 'field_intro',
@@ -279,5 +279,11 @@ function express_layout_update_7001() {
  * Update layout configs.
  */
 function express_layout_update_7002() {
+  _express_layout_default_settings();
+}
+/**
+ * Update layout configs.
+ */
+function express_layout_update_7003() {
   _express_layout_default_settings();
 }

@@ -2,5 +2,5 @@ name = CU Heavyweight
 description = No functionality module for update scripts
 core = 7.x
 version = 7.x-1.0
-package = CU-Boulder
+package = CU-Core
 

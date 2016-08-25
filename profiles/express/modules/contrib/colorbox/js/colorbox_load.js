@@ -5,6 +5,15 @@ Drupal.behaviors.initColorboxLoad = {
     if (!$.isFunction($.colorbox) || typeof settings.colorbox === 'undefined') {
       return;
     }
+
+    if (settings.colorbox.mobiledetect && window.matchMedia) {
+      // Disable Colorbox for small screens.
+      var mq = window.matchMedia("(max-device-width: " + settings.colorbox.mobiledevicewidth + ")");
+      if (mq.matches) {
+        return;
+      }
+    }
+
     $.urlParams = function (url) {
       var p = {},
           e,

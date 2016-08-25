@@ -14,12 +14,12 @@
     <?php
       $person_contact = array();
       if (!empty($content['field_person_email'])) {
-        $person_contact[] = '<i class="fa fa-envelope"></i> ' . render($content['field_person_email']);
+        $person_contact[] = '<span class="person-contact-info-item person-contact-info-email"><i class="fa fa-envelope"></i> ' . render($content['field_person_email']) . '</span>';
       }
       if (!empty($content['field_person_phone'])) {
-        $person_contact[] = '<i class="fa fa-phone"></i> ' . render($content['field_person_phone']);
+        $person_contact[] = '<span class="person-contact-info-item person-contact-info-phone"><i class="fa fa-phone"></i> ' . render($content['field_person_phone']) . '</span>';
       }
-      $contact = join(' &nbsp;&nbsp;&nbsp; ' , $person_contact);
+      $contact = join(' <span class="person-contact-separator">&nbsp;&nbsp;&nbsp;</span> ' , $person_contact);
     ?>
     <?php if (!empty($person_contact)): ?>
       <div class="person-view-mode-teaser-contact"><?php print $contact; ?></div>

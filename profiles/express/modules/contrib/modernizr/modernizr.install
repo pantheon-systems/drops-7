@@ -107,7 +107,7 @@ function modernizr_requirements($phase) {
           // by default.
           if (is_null($current_tests)) {
             $tests_value = t('You haven\'t created a custom build yet.');
-            $tests_description = t('Modernizr works best with a custom build. Visit the !modernizr-settings to create one.', array('!modernizr-settings' => l(t('Modernizr settings page'), 'admin/config/development/modernizr')));
+            $tests_description = t('Modernizr only works with a custom build. Visit the !modernizr-settings to create one.', array('!modernizr-settings' => l(t('Modernizr settings page'), 'admin/config/development/modernizr')));
             $tests_severity = variable_get('modernizr_quiet', MODERNIZR_QUIET_DEFAULT) ? REQUIREMENT_WARNING : REQUIREMENT_ERROR;
           }
           else {

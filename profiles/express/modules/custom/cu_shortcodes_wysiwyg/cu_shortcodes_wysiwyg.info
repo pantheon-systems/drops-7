@@ -2,7 +2,7 @@ name = CU Shortcodes WYSIWYG Buttons
 description = Shortcode integration with CK Editor
 core = 7.x
 version = 7.x-1.0
-package = CU-Boulder
+package = CU-Core
 
 dependencies[] = cu_shortcodes
 dependencies[] = cu_wysiwyg

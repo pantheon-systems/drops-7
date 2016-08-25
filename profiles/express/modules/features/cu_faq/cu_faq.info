@@ -1,6 +1,6 @@
 name = FAQs
 core = 7.x
-package = CU-Active
+package = CU-Core
 version = 7.x-1.0
 dependencies[] = ctools
 dependencies[] = eva
@@ -15,6 +15,7 @@ dependencies[] = strongarm
 dependencies[] = text
 dependencies[] = views
 dependencies[] = views_accordion
+dependencies[] = views_content_cache
 features[ctools][] = field_group:field_group:1
 features[ctools][] = strongarm:strongarm:1
 features[ctools][] = views:views_default:3.0

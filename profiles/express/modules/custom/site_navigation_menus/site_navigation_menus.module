@@ -148,6 +148,19 @@ function site_navigation_menus_page_alter(&$page) {
 }
 
 /**
+ * Implements hook_form_alter().
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function site_navigation_menus_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['delta']['#value']) && strrpos($form['delta']['#value'], 'site_navigation_menus') !== FALSE) {
+    unset($form['custom_block_theme']);
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Remove menu sources that don't make sense for main or secondary links.
@@ -157,6 +170,43 @@ function site_navigation_menus_page_alter(&$page) {
  * @param $form_id
  */
 function site_navigation_menus_form_menu_configure_alter(&$form, &$form_state, $form_id) {
+
+  // field to add a user set label for secondary menu
+  $form['secondary_menu_label'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Secondary Menu Label',
+    '#default_value' => variable_get('secondary_menu_label') ? variable_get('secondary_menu_label') : '',
+    '#description' => 'Display a label for the secondary menu',
+  );
+
+  // Source for mobile menu
+  $site_menus = menu_get_menus();
+  $site_menus['use-main-secondary-menu'] = 'Use Main & Secondary Menus';
+  $form['menu_mobile_links_source'] = array(
+    '#type' => 'select',
+    '#title' => 'Source for the mobile links',
+    '#default_value' => variable_get('menu_mobile_links_source') ? variable_get('menu_mobile_links_source') : 'use-main-secondary-menu',
+    '#options' => $site_menus,
+    '#tree' => FALSE,
+    '#description' => 'Select what should be displayed as the mobile menu.',
+  );
+  // Hide mobile menu source config if theme is not responsive
+  if (!theme_get_setting('alpha_responsive', variable_get('theme_default'))) {
+    $form['menu_mobile_links_source']['#access'] = FALSE;
+  }
+
+  // Source for footer menu
+  $site_menus = menu_get_menus();
+  $site_menus['no-footer-links'] = 'No footer links';
+  $form['menu_footer_links_source'] = array(
+    '#type' => 'select',
+    '#title' => 'Source for the footer links',
+    '#default_value' => variable_get('menu_footer_links_source') ? variable_get('menu_footer_links_source') : 'no-footer-links',
+    '#options' => $site_menus,
+    '#tree' => FALSE,
+    '#description' => 'Select what should be displayed as the footer menu.',
+  );
+
   unset($form['menu_main_links_source']['#options']['features']);
   unset($form['menu_main_links_source']['#options']['management']);
   unset($form['menu_main_links_source']['#options']['navigation']);
@@ -178,3 +228,68 @@ function site_navigation_menus_form_menu_configure_alter(&$form, &$form_state, $
   unset($form['menu_footer_links_source']['#options']['user-menu']);
 }
 
+/**
+ * Implements hook_menu_alter().
+ */
+function site_navigation_menus_menu_alter(&$items) {
+  // Restrict access to taxonomy term pages to authenticated users.
+  $items['taxonomy/term/%taxonomy_term']['access callback'] = 'site_navigation_menus_taxonomy_access';
+  $items['taxonomy/term/%taxonomy_term']['access arguments'] = array(2);
+  // Remove /node page from being accessed.
+  $items['node']['page callback'] = '_site_navigation_menus_node_page_callback';
+}
+
+/**
+ * Access callback for "taxonomy/term/%taxonomy_term".
+ */
+function site_navigation_menus_taxonomy_access($term) {
+  // Allowing these vocabularies because they are forwarded to article_list_page nodes by cu_article.module
+  $allowed_vocabularies = array(
+    'tags',
+    'category',
+  );
+  if (in_array($term->vocabulary_machine_name, $allowed_vocabularies)) {
+    return TRUE;
+  }
+  elseif (!user_is_logged_in()) {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function site_navigation_menus_preprocess_page(&$variables) {
+  $variables['mobile_menu'] = menu_navigation_links(variable_get('menu_mobile_links_source'));
+  $variables['footer_menu'] = menu_navigation_links(variable_get('menu_footer_links_source'));
+}
+
+/**
+ * Page callback for /node page.
+ */
+function _site_navigation_menus_node_page_callback() {
+  drupal_goto('<front>', $options = array(), $http_response_code = 301);
+}
+
+/**
+ * Implements hook_navbar_alter().
+ *
+ * @param $items
+ */
+function site_navigation_menus_navbar_alter(&$items) {
+  // Point User tab to user dashboard.
+  unset($items['user']['tray']);
+  $items['user']['tab']['#href'] = 'admin/dashboard/user';
+}

@@ -1,0 +1,8 @@
+<?php
+
+function cu_dashboard_seo_install() {
+  // Set cu_seo_checklist_google_analytics variable
+  if (variable_get('ga_account', NULL)) {
+    variable_set('cu_seo_checklist_google_analytics', 1);
+  }
+}

@@ -1,7 +1,7 @@
 name = CU WYSIWYG
 description = A WYSIWYG editor for your site's content.
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = cu_wysiwyg
 stylesheets[all][] = cu-wysiwyg.css

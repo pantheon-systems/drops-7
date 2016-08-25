@@ -55,7 +55,7 @@ function cu_advanced_design_bundle_express_help($variables) {
   $variables['admin/structure/context'][] = array(
     'title' => 'Context Tutorial',
     'short_title' => 'Context Tutorial',
-    'url' => 'http://www.colorado.edu/webcentral/node/434',
+    'url' => '/node/434',
   );
 }
 

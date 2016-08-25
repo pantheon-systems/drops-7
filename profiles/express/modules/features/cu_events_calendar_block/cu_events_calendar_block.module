@@ -103,9 +103,10 @@ function cu_events_calendar_block_category_callback($form, $form_state) {
  */
 function _cu_events_calendar_block_categories() {
   $categories = array();
-
   if (file_exists('/data/code/includes/categories.txt')) {
     $lines = file('/data/code/includes/categories.txt');
+  } elseif (file_exists('/home/travis/build/CuBoulder/drupal/profiles/express/tests/travis-ci/event-categories.txt')) {
+    $lines = file('/home/travis/build/CuBoulder/drupal/profiles/express/tests/travis-ci/event-categories.txt');
   }
   else {
     $lines = file('../../../code/dslm_base/includes/events_calendar/categories.txt');

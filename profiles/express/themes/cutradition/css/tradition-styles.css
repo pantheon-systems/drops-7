@@ -25,12 +25,16 @@ body { background-color: #272727; padding-bottom: 20px; }
 #main-menu-wrapper #navigation #main-menu a#home-link:after { background: transparent !important; }
 
 #action-menu { padding: 10px 0; }
+#action-menu a { color: #656565; }
+#action-menu a.active, #action-menu a.active-trail, #action-menu a:hover { color: #111; }
 
 #content-wrapper { background-color: #fff; padding: 20px 0; }
 
 #intro-wide-wrapper, #slider-wrapper { background-color: #232323; }
 
-#slider-wrapper { padding: 20px; }
+.slider-wrapper { padding: 20px; color: #fff; }
+.slider-wrapper a { color: #cfb87c; }
+.slider-wrapper a:hover { color: #fff; }
 
 #page-title-image-overlay { padding-bottom: 20px; }
 
@@ -44,7 +48,7 @@ body { background-color: #272727; padding-bottom: 20px; }
 .breadcrumb .current-crumb { display: inline-block; background-color: #cfb87c; padding: 3px 10px 3px 10px; background-image: none; }
 
 @media screen and (min-width: 720px) { .breadcrumb .current-crumb { padding: 3px 10px 3px 20px; background-image: url(../images/breadcrumb-arrow.png); background-position: left center; background-repeat: no-repeat; } }
-#after-content-wrapper { background-color: #fff; }
+#post-wide-wrapper, #after-content-wrapper { background-color: #fff; }
 
 #after-content2-wrapper { background-color: #f4f4f4; padding-top: 20px; }
 
@@ -90,3 +94,11 @@ body { background-color: #272727; padding-bottom: 20px; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile a { color: #fff; border-bottom: 1px solid #555; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile a.active, #mobile-navigation-wrapper ul#secondary-menu-mobile a.active-trail { color: #000; background-color: #cfb87c; font-weight: 600; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile, #mobile-navigation-wrapper ul#footer-menu-mobile { border-top: 3px solid #ddd; }
+
+.title-image-breadcrumbs-wrapper { color: #fff; }
+.title-image-breadcrumbs-wrapper a { background: transparent; }
+
+.title-image-breadcrumbs-wrapper .breadcrumb { color: #fff; }
+.title-image-breadcrumbs-wrapper .breadcrumb a { background: transparent; padding: 0; }
+
+.has-feature-title-image #page-title-wrapper { display: none; }

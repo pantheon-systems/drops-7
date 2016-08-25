@@ -382,17 +382,6 @@ function metatag_metatag_info() {
     ),
   );
 
-  $info['tags']['revisit-after'] = array(
-    'label' => t('Revisit After'),
-    'description' => t('Tell search engines when to index the page again. Very few search engines support this tag, it is more useful to use an <a href="@xmlsitemap">XML Sitemap</a> file.', array('@xmlsitemap' => 'https://www.drupal.org/project/xmlsitemap')),
-    'class' => 'DrupalDateIntervalMetaTag',
-    'group' => 'advanced',
-    'weight' => ++$weight,
-    'devel_generate' => array(
-      'type' => 'date',
-    ),
-  );
-
   $info['tags']['content-language'] = array(
     'label' => t('Content language'),
     'description' => t("A deprecated meta tag for defining this page's two-letter language code(s)."),
@@ -441,8 +430,53 @@ function metatag_metatag_info() {
     'description' => t('The number of seconds to wait before refreshing the page. May also force redirect to another page using the format "5; url=http://example.com/", which would be triggered after five seconds.'),
     'class' => 'DrupalTextMetaTag',
     'group' => 'advanced',
+    'weight' => ++$weight,
     'element' => array(
       '#theme' => 'metatag_http_equiv',
+    ),
+  );
+
+  $info['tags']['revisit-after'] = array(
+    'label' => t('Revisit After'),
+    'description' => t('Tell search engines when to index the page again. Very few search engines support this tag, it is more useful to use an <a href="@xmlsitemap">XML Sitemap</a> file.', array('@xmlsitemap' => 'https://www.drupal.org/project/xmlsitemap')),
+    'class' => 'DrupalDateIntervalMetaTag',
+    'group' => 'advanced',
+    'weight' => ++$weight,
+    'devel_generate' => array(
+      'type' => 'date',
+    ),
+  );
+
+  $info['tags']['pragma'] = array(
+    'label' => t('Pragma'),
+    'description' => t('Used to control whether a browser caches a specific page locally. Little used today. Should be used in conjunction with the Cache-Control meta tag.'),
+    'class' => 'DrupalTextMetaTag',
+    'group' => 'advanced',
+    'weight' => ++$weight,
+    'element' => array(
+      '#theme' => 'metatag_http_equiv',
+    ),
+  );
+
+  $info['tags']['cache-control'] = array(
+    'label' => t('Cache-Control'),
+    'description' => t('Used to control whether a browser caches a specific page locally. Little used today. Should be used in conjunction with the Pragma meta tag.'),
+    'class' => 'DrupalTextMetaTag',
+    'group' => 'advanced',
+    'weight' => ++$weight,
+    'element' => array(
+      '#theme' => 'metatag_http_equiv',
+    ),
+  );
+
+  $info['tags']['expires'] = array(
+    'label' => t('Expires'),
+    'description' => t("Control when the browser's internal cache of the current page should expire. The date must to be an <a href=\"@rfc\">RFC-1123</a>-compliant date string that is represented in Greenwich Mean Time (GMT), e.g. '@date'. Set to '0' to stop the page being cached entirely.", array('@rfc' => 'http://www.csgnetwork.com/timerfc1123calc.html', '@date' => gmdate("D, d M Y H:i:s \G\M\T"))),
+    'class' => 'DrupalTextMetaTag',
+    'weight' => ++$weight,
+    'group' => 'advanced',
+    'devel_generate' => array(
+      'type' => 'date',
     ),
   );
 

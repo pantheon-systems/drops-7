@@ -1,11 +1,15 @@
 /* Max width classes for elements */
-.layout-responsive .element-max-width { max-width: 1200px; margin-right: auto; margin-left: auto; overflow: hidden; clear: both; }
+.layout-responsive .element-max-width { max-width: 1200px; margin-right: auto; margin-left: auto; clear: both; }
+.layout-responsive .element-max-width:after { content: ""; display: table; clear: both; }
 
-.layout-responsive .element-max-width-gutter, .layout-responsive .element-max-width-padding { max-width: 1160px; margin-right: auto; margin-left: auto; overflow: hidden; clear: both; }
+.layout-responsive .element-max-width-gutter, .layout-responsive .element-max-width-padding { max-width: 1160px; margin-right: auto; margin-left: auto; clear: both; }
+.layout-responsive .element-max-width-gutter:after, .layout-responsive .element-max-width-padding:after { content: ""; display: table; clear: both; }
 
-.layout-fixed .element-max-width { max-width: 1200px; margin-right: auto; margin-left: auto; overflow: hidden; clear: both; }
+.layout-fixed .element-max-width { max-width: 1200px; margin-right: auto; margin-left: auto; clear: both; }
+.layout-fixed .element-max-width:after { content: ""; display: table; clear: both; }
 
-.layout-fixed .element-max-width-gutter, .layout-fixed .element-max-width-padding { max-width: 1160px; margin-right: auto; margin-left: auto; overflow: hidden; clear: both; }
+.layout-fixed .element-max-width-gutter, .layout-fixed .element-max-width-padding { max-width: 1160px; margin-right: auto; margin-left: auto; clear: both; }
+.layout-fixed .element-max-width-gutter:after, .layout-fixed .element-max-width-padding:after { content: ""; display: table; clear: both; }
 
 .container { padding-right: 20px; padding-left: 20px; margin-right: auto; margin-left: auto; }
 
@@ -14,9 +18,11 @@
 @media (min-width: 1200px) { .container { width: 1160px; } }
 .container-fluid { padding-right: 20px; padding-left: 20px; margin-right: auto; margin-left: auto; }
 
-.layout-responsive .container-max { margin-right: auto; margin-left: auto; max-width: 1200px; overflow: hidden; }
+.layout-responsive .container-max { margin-right: auto; margin-left: auto; max-width: 1200px; }
+.layout-responsive .container-max:after { content: ""; display: table; clear: both; }
 
-.layout-fixed .container-max { margin-right: auto; margin-left: auto; width: 1200px; overflow: hidden; }
+.layout-fixed .container-max { margin-right: auto; margin-left: auto; width: 1200px; }
+.layout-fixed .container-max:after { content: ""; display: table; clear: both; }
 
 .layout-fixed { min-width: 1200px; }
 

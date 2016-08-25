@@ -109,7 +109,7 @@ function metatag_i18n_object_info() {
 
   // The final meta tags being output on the page.
   if (variable_get('metatag_i18n_translate_output', FALSE)) {
-    $info['metatag_output'] = array(
+    $info['output'] = array(
       'title' => t('Metatag final tag output'),
 
       // Properties for string translation.
@@ -117,7 +117,7 @@ function metatag_i18n_object_info() {
         // The textgroup, type and (below) name will be concatenated into a
         // single string as the {locales_source} context.
         'textgroup' => 'metatag',
-        'type' => 'metatag_output',
+        'type' => 'output',
         // Translatable properties of these objects.
         'properties' => $output_properties,
       ),

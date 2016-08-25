@@ -92,6 +92,20 @@ class metatag_context_reaction extends context_reaction {
       '#default_value' => isset($data['metatag_admin']) ? $data['metatag_admin'] : '',
     );
 
+    // Add weight for current metatag_context.
+    $default_weight = 0;
+    if (!empty($context->reactions['metatag_context_reaction']['weight'])) {
+      $default_weight = (int) $context->reactions['metatag_context_reaction']['weight'];
+    }
+    $form['weight'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Weight'),
+      '#size' => 2,
+      '#default_value' => $default_weight,
+      '#description' => t('A higher weight will make this context be executed later, overriding other context meta tags.'),
+      '#weight' => -99,
+    );
+
     return $form;
   }
 
@@ -115,8 +129,9 @@ class metatag_context_reaction extends context_reaction {
             $metadata_array = $metadata_array[LANGUAGE_NONE];
           }
 
-          // Translate all of the meta tags using i18n.
-          metatag_translate_metatags($metadata_array, 'metatag_context:' . $context->name);
+          // Translate all of the meta tags using i18n, but don't update the
+          // strings.
+          metatag_translate_metatags($metadata_array, 'metatag_context:' . $context->name, NULL, FALSE);
 
           // Add the meta tags to the output.
           foreach ($metadata_array as $langcode => $tags) {
@@ -126,7 +141,10 @@ class metatag_context_reaction extends context_reaction {
           }
 
           // Add this context to the list of instances.
-          $instance_names[] = $context->name;
+          $weight = isset($context->reactions['metatag_context_reaction']['weight'])
+            ? $context->reactions['metatag_context_reaction']['weight']
+            : 0;
+          $instance_names[] = array('name' => $context->name, 'weight' => $weight);
         }
       }
 
@@ -135,9 +153,14 @@ class metatag_context_reaction extends context_reaction {
         // Load the global defaults.
         $metatags += metatag_config_load_with_defaults('');
 
+        // Sort by weight.
+        uasort($instance_names, 'drupal_sort_weight');
+
+        // Keep names only.
+        $instance_names = array_map('current', $instance_names);
+
         // Compile the identifier for this combination based on the context
         // names.
-        asort($instance_names);
         $instance = 'context:' . implode(',', $instance_names);
         $options['instance'] = $instance;
 

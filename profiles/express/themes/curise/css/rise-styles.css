@@ -9,17 +9,21 @@ body { background-color: #1e1e1e; }
 #secondary-menu-wrapper a:hover, #secondary-menu-wrapper a.active, #secondary-menu-wrapper a.active-trail { color: #cfb87c; }
 
 #main-menu-wrapper { background-color: #333; position: static; }
-#main-menu-wrapper a { color: #333; padding: 0 20px; font-weight: 600; }
+#main-menu-wrapper a { color: #333; font-weight: 600; }
 #main-menu-wrapper a:hover, #main-menu-wrapper a.active, #main-menu-wrapper a.active-trail { background-color: #cfb87c; color: #000; }
 #main-menu-wrapper a#home-link.active { background: transparent; color: #333; }
 #main-menu-wrapper nav { margin: 0 -10px; }
 
-#navigation .links a { line-height: 60px; padding: 0 10px; }
+#navigation .links a { line-height: 60px; }
 
 #navigation { height: 30px; overflow: visible; position: relative; }
 #navigation .nav-inner { position: absolute; width: 100%; background-color: #fff; z-index: 3; -webkit-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); -moz-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); }
 
-.top-content-wrapper { background-color: #f5f5f5; padding: 0 0 20px; }
+#navigation ul.action-menu a { margin: 18px 5px; }
+
+.top-content-wrapper { background-color: #f5f5f5; }
+
+#content-wrapper { padding-bottom: 20px; }
 
 #intro-wide-wrapper, #slider, #post-wide-wrapper { background-color: #fff; -webkit-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); -moz-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); }
 
@@ -104,3 +108,9 @@ body { background-color: #1e1e1e; }
 .blockgray h2.block-title, .blockdarkgray h2.block-title { background: #fff; color: #333; }
 
 .blockoutline h2.block-title { background: #333; color: #fff; }
+
+#feature-layout-wrapper { max-width: 1200px; margin: 0 auto 20px; -webkit-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); -moz-box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); box-shadow: 0 3px 1px rgba(0, 0, 0, 0.08); }
+
+.layout-feature #content-wrapper { padding-bottom: 0; }
+.layout-feature #main { margin-bottom: 0; padding: 20px 0 0; -webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; }
+.layout-feature .top-content { padding-bottom: 20px; }

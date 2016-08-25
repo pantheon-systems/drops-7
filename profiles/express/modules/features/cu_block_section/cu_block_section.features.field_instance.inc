@@ -10,7 +10,7 @@
 function cu_block_section_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-block_section-field_block_section_bg_image'
+  // Exported field_instance: 'bean-block_section-field_block_section_bg_image'.
   $field_instances['bean-block_section-field_block_section_bg_image'] = array(
     'bundle' => 'block_section',
     'deleted' => 0,
@@ -108,7 +108,7 @@ function cu_block_section_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-block_section-field_block_section_content_bg'
+  // 'bean-block_section-field_block_section_content_bg'.
   $field_instances['bean-block_section-field_block_section_content_bg'] = array(
     'bundle' => 'block_section',
     'default_value' => array(
@@ -147,7 +147,7 @@ function cu_block_section_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-block_section-field_block_section_mobile_pad'
+  // 'bean-block_section-field_block_section_mobile_pad'.
   $field_instances['bean-block_section-field_block_section_mobile_pad'] = array(
     'bundle' => 'block_section',
     'default_value' => array(
@@ -186,7 +186,7 @@ function cu_block_section_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block_section-field_block_section_padding'
+  // Exported field_instance: 'bean-block_section-field_block_section_padding'.
   $field_instances['bean-block_section-field_block_section_padding'] = array(
     'bundle' => 'block_section',
     'default_value' => array(
@@ -231,7 +231,7 @@ function cu_block_section_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-block_section-field_block_section_tablet_pad'
+  // 'bean-block_section-field_block_section_tablet_pad'.
   $field_instances['bean-block_section-field_block_section_tablet_pad'] = array(
     'bundle' => 'block_section',
     'default_value' => array(
@@ -270,7 +270,7 @@ function cu_block_section_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block_section-field_blocks_section_blocks'
+  // Exported field_instance: 'bean-block_section-field_blocks_section_blocks'.
   $field_instances['bean-block_section-field_blocks_section_blocks'] = array(
     'bundle' => 'block_section',
     'default_value' => NULL,
@@ -309,12 +309,12 @@ function cu_block_section_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block_section-field_hero_unit_bg_color'
+  // Exported field_instance: 'bean-block_section-field_hero_unit_bg_color'.
   $field_instances['bean-block_section-field_hero_unit_bg_color'] = array(
     'bundle' => 'block_section',
     'default_value' => array(
       0 => array(
-        'value' => 'white',
+        'value' => 'black',
       ),
     ),
     'default_value_function' => '',
@@ -347,7 +347,7 @@ function cu_block_section_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block_section-field_hero_unit_text_color'
+  // Exported field_instance: 'bean-block_section-field_hero_unit_text_color'.
   $field_instances['bean-block_section-field_hero_unit_text_color'] = array(
     'bundle' => 'block_section',
     'default_value' => array(

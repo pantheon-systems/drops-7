@@ -59,7 +59,7 @@ function cu_photo_gallery_express_help($variables) {
   $variables['/node/add/photo-gallery'][] = array(
     'title' => 'Photo Gallery Help',
     'short_title' => 'Photo Gallery Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/700',
+    'url' => '/node/700',
   );
   return $variables;
 }

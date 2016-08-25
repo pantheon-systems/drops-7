@@ -1,6 +1,6 @@
 name = Quicktab Beans
 core = 7.x
-package = Features
+package = CU-Advanced Content
 version = 7.x-1.0
 php = 5.2.4
 dependencies[] = bean_admin_ui

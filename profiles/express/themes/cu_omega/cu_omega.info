@@ -1,7 +1,6 @@
 name = 'cu_omega'
 description = ''
 core = '7.x'
-package = CU-Boulder
 version = 7.x-3.1
 engine = 'phptemplate'
 screenshot = 'screenshot.png'

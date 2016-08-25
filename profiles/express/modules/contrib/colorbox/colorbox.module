@@ -6,9 +6,9 @@
  */
 
 /**
- * The default path to the Colorbox directory.
+ * The minimum required version of the Colorbox plugin.
  */
-define('COLORBOX_MIN_PLUGIN_VERSION', '1.3.21.1');
+define('COLORBOX_MIN_PLUGIN_VERSION', '1.6.1');
 
 
 /**
@@ -56,8 +56,8 @@ function colorbox_theme() {
  */
 function colorbox_init() {
   // Do not load colorbox during the Drupal installation process, e.g. if part
-  // of installation profiles.
-  if (!drupal_installation_attempted()) {
+  // of installation profiles. Only add the JavaScript and CSS on specified paths.
+  if (!drupal_installation_attempted() && _colorbox_active()) {
     _colorbox_doheader();
   }
 }
@@ -132,7 +132,7 @@ function colorbox_menu() {
 /**
  * Check if Colorbox should be active for the current URL.
  *
- * @return
+ * @return bool
  *   TRUE if Colorbox should be active for the current page.
  */
 function _colorbox_active() {
@@ -165,9 +165,6 @@ function _colorbox_doheader() {
   static $already_added = FALSE;
   if ($already_added) {
     return; // Don't add the JavaScript and CSS multiple times.
-  }
-  if (!_colorbox_active()) {
-    return; // Don't add the JavaScript and CSS on specified paths.
   }
 
   // Insert options and translated strings as javascript settings.
@@ -371,7 +368,7 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
       '#type' => 'fieldset',
       '#title' => t('Replacement patterns'),
       '#theme' => 'token_tree',
-      '#token_types' => array($instance['entity_type'], 'file'),
+      '#token_types' => array_merge(array_keys($field['bundles']),array('file')),
       '#recursion_limit' => $recursion_limit,
       '#dialog' => TRUE,
       '#states' => array(
@@ -495,6 +492,8 @@ function colorbox_field_formatter_view($entity_type, $entity, $field, $instance,
 
 /**
  * Implements hook_insert_styles().
+ *
+ * @return array
  */
 function colorbox_insert_styles() {
   $insert_styles = array();
@@ -517,7 +516,7 @@ function colorbox_insert_content($item, $style, $widget) {
 /**
  * Machine names normally need to be unique but that does not apply to galleries.
  *
- * @return
+ * @return false
  *   Always FALSE
  */
 function colorbox_gallery_exists() {

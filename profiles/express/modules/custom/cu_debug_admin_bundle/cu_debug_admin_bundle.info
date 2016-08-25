@@ -7,7 +7,6 @@ dependencies[] = devel
 dependencies[] = devel_generate
 dependencies[] = search_krumo
 dependencies[] = ds_ui
-dependencies[] = advanced_help
 dependencies[] = security_review
 dependencies[] = diff
     

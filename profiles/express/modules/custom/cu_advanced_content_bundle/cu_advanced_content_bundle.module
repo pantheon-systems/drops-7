@@ -60,7 +60,7 @@ function cu_advanced_content_bundle_error_form($form, &$form_state) {
     '#required' => FALSE,
     '#default_value' => (variable_get('site_403') ? drupal_get_path_alias(variable_get('site_403', '')) : ''),
   );
-  $form['#validate'][] = 'express_settings_404_validate';
+  $form['#validate'][] = 'cu_advanced_content_bundle_404_validate';
 
   return system_settings_form($form);
 }
@@ -102,16 +102,29 @@ function cu_advanced_content_bundle_frontpage_form($form, &$form_state) {
  * Validation handler for express_settings form.
  */
 function cu_advanced_content_bundle_frontpage_validate($form, &$form_state) {
+  // using /node creates redirect loop
+
+  if ($form['site_frontpage']['#value'] == 'node') {
+    form_set_error('site_frontpage', 'Cannot set the homepage to that path.');
+  }
+
+  // Load file include to use redirect function.
+  module_load_include('module','cu_redirect', 'cu_redirect');
+
   // Taken from system_site_information_settings_validate.
-  // Check for empty front page path.
-  if (empty($form_state['values']['site_frontpage'])) {
-    // Set to default "node".
-    form_set_value($form['home']['site_frontpage'], 'node', $form_state);
+  // No need to check for empty front page path since it's a required field.
+  // Check to see if path is valid and exists.
+  $redirect_path = drupal_get_normal_path($form_state['values']['site_frontpage']);
+
+  if (!drupal_valid_path($redirect_path)) {
+    form_set_error('site_frontpage', 'Please enter a valid path.');
   }
-  else {
-    // Get the normal path of the front page.
-    form_set_value($form['home']['site_frontpage'], drupal_get_normal_path($form_state['values']['site_frontpage']), $form_state);
+  // Check to see if path has a redirect, and set error if a redirect exists.
+  if (!_cu_redirect_check_existing($redirect_path)) {
+    form_set_error('site_frontpage', 'Cannot set the homepage to a path that has an existing redirect.');
   }
+  // Get the normal path of the front page.
+  form_set_value($form['site_frontpage'], $redirect_path, $form_state);
 }
 
 /**
@@ -205,40 +218,61 @@ function cu_advanced_content_bundle_express_help($variables) {
   $variables['admin/structure/quicktabs/%'][] = array(
     'title' => 'Quicktabs help',
     'short_title' => 'Quicktabs help',
-    'url' => 'http://www.colorado.edu/webcentral/node/430',
+    'url' => '/node/948',
   );
   $variables['block/add/feature-callout'][] = array(
     'title' => 'Content grid block help',
     'short_title' => 'Content grid block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/428',
+    'url' => '/node/428',
   );
   $variables['block/edit/feature-callout'][] = array(
     'title' => 'Content grid block help',
     'short_title' => 'Content grid block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/428',
+    'url' => '/node/428',
   );
   $variables['block/add/video-reveal'][] = array(
     'title' => 'Video reveal block help',
     'short_title' => 'Video reveal block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/582',
+    'url' => '/node/582',
   );
   $variables['block/edit/video-reveal'][] = array(
     'title' => 'Video reveal block help',
     'short_title' => 'Video reveal block help',
-    'url' => 'http://www.colorado.edu/webcentral/node/582',
+    'url' => '/node/582',
   );
 
   $variables['admin/structure/quicktabs/add'][] = array(
     'title' => 'Quicktabs Help',
     'short_title' => 'Quicktabs Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/430',
+    'url' => '/node/948',
   );
 
   $variables['admin/structure/quicktabs'][] = array(
     'title' => 'Quicktabs Help',
     'short_title' => 'Quicktabs Help',
-    'url' => 'http://www.colorado.edu/webcentral/node/430',
+    'url' => '/node/948',
   );
 
+  $variables['block/edit/quicktabs'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => '/node/948',
+  );
+
+  $variables['block/add/content-list'][] = array(
+    'title' => 'Content List Block Help',
+    'short_title' => 'Content List Block Help',
+    'url' => '/node/1112',
+  );
+  $variables['block/edit/content-list'][] = array(
+    'title' => 'Content List Block Help',
+    'short_title' => 'Content List Block Help',
+    'url' => '/node/1112',
+  );
+  $variables['node/add/content-list-page'][] = array(
+    'title' => 'Content List Page Help',
+    'short_title' => 'Content List Page Help',
+    'url' => '/node/1110',
+  );
   return $variables;
 }

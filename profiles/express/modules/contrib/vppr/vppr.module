@@ -15,6 +15,19 @@ function vppr_menu_alter(&$items) {
   $items['admin/structure/taxonomy']['page callback'] = 'vppr_taxonomy_overview_vocabularies';
   $items['admin/structure/taxonomy']['file'] = 'vppr.admin.inc';
   $items['admin/structure/taxonomy']['file path'] = drupal_get_path('module', 'vppr');
+
+  /*
+  $items['admin/structure/taxonomy_manager/voc']['access callback'] = 'vppr_access_taxonomy';
+  $items['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name']['access callback'] = 'vppr_access_vocabulary_terms';
+  $items['admin/structure/taxonomy_manager/voc/%taxonomy_vocabulary_machine_name']['access arguments'] = array(4);
+  $items['admin/structure/taxonomy_manager/childform']['access callback'] = 'enable module bundles';
+  $items['admin/structure/taxonomy_manager/weight']['access callback'] = 'enable module bundles';
+  $items['admin/structure/taxonomy_manager/siblingsform']['access callback'] = 'enable module bundles';
+  $items['admin/structure/taxonomy_manager/export']['access callback'] = 'enable module bundles';
+  $items['admin/structure/taxonomy_manager/double-tree/%taxonomy_vocabulary_machine_name/%taxonomy_vocabulary_machine_name']['access callback'] = 'enable module bundles';
+  $items['taxonomy_manager/autocomplete']['access callback'] = 'enable module bundles';
+*/
+  
   unset($items['admin/structure/taxonomy']['page arguments']);
   // Terms list.
   $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name']['access callback'] = 'vppr_access_vocabulary_terms';
@@ -25,6 +38,8 @@ function vppr_menu_alter(&$items) {
   // Term edit.
   $items['taxonomy/term/%taxonomy_term/edit']['access callback'] = 'vppr_access_term_edit';
   $items['taxonomy/term/%taxonomy_term/edit']['access arguments'] = array(2);
+  // Taxonomy Manager Integration.
+
 }
 
 /**

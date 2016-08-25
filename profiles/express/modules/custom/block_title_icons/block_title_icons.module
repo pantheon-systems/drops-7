@@ -115,7 +115,9 @@ function block_title_icons_set($icons_value) {
 function block_title_icons_preprocess_block(&$variables) {
   if ($block_icon = block_title_icons_get_display($variables['block'])) {
     $elements = $variables['elements']['#block'];
-    $elements->subject = '<i class="blockicon fa ' . $block_icon  . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
+    if (!empty($elements->subject)) {
+      $elements->subject = '<i class="blockicon fa ' . $block_icon  . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
+    }
   }
 }
 

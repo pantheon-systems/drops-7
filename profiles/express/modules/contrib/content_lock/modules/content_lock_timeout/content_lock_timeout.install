@@ -1,12 +1,12 @@
-<?php /* -*- mode: php; indent-tabs-mode: nil; tab-width: 2; -*- */
+<?php
 
 /**
  * @file
- *   Installation/uninstallation functions for the content_lock_timeout module.
+ * Install file.
  */
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function content_lock_timeout_uninstall() {
   variable_del('content_lock_timeout_minutes');

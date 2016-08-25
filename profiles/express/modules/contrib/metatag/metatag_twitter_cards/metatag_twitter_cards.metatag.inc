@@ -201,6 +201,19 @@ function metatag_twitter_cards_metatag_info() {
       'type' => 'integer',
     ),
   ) + $defaults;
+  $info['tags']['twitter:image:alt'] = array(
+    'label' => 'Image alternative text',
+    'description' => 'The alternative text of the image being linked to. Limited to 420 characters.',
+    'weight' => ++$weight,
+    'dependencies' => array(
+      array(
+        'dependency' => 'twitter:image',
+        'attribute' => 'value',
+        'condition' => 'filled',
+        'value' => TRUE,
+      ),
+    ),
+  ) + $defaults;
 
   // 'gallery' cards.
   $gallery_defaults = array(

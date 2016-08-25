@@ -2,5 +2,6 @@ name = Express Add Content
 description = Alternate display for node/add and block/add
 core = 7.x
 version = 7.x-1.0
+package = Express
 
 stylesheets[all][] = css/express-add-content.css

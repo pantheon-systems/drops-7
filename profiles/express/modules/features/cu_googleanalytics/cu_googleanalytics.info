@@ -1,21 +1,20 @@
 name = CU Google Analytics
 description = Random bits of functionality associated with Google Analytics.
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = cu_bucket
+dependencies[] = ctools
 dependencies[] = features
-dependencies[] = strongarm
 dependencies[] = googleanalytics
-
+dependencies[] = strongarm
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
-features[variable][] = googleanalytics_account
 features[variable][] = googleanalytics_cache
-features[variable][] = googleanalytics_codesnippet_after
 features[variable][] = googleanalytics_codesnippet_before
 features[variable][] = googleanalytics_cross_domains
 features[variable][] = googleanalytics_custom
+features[variable][] = googleanalytics_custom_dimension
 features[variable][] = googleanalytics_custom_var
 features[variable][] = googleanalytics_domain_mode
 features[variable][] = googleanalytics_js_scope
@@ -32,4 +31,3 @@ features[variable][] = googleanalytics_trackoutbound
 features[variable][] = googleanalytics_trackoutboundaspageview
 features[variable][] = googleanalytics_visibility_pages
 features[variable][] = googleanalytics_visibility_roles
-

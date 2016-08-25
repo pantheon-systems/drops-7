@@ -16,7 +16,7 @@ function administerusersbyrole_install() {
   //   to take account of other module's settings.
   db_query("UPDATE {system} SET weight = 25 WHERE name = 'administerusersbyrole'");
 }
- 
+
 /**
  * Update permissions to match the new values used in version 2.
  */
@@ -63,7 +63,7 @@ function administerusersbyrole_update_7201() {
   if (!module_enable(array('chain_menu_access'))) {
     throw new DrupalUpdateException('To use latest version of "Administer Users by Role", please download the "Chain Menu Access API" module.');
   }
-  
+
   // Rebuild menus using chain_menu_access.
   menu_rebuild();
 }

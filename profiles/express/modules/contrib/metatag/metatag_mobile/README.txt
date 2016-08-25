@@ -14,6 +14,7 @@ iOS:
   <meta name="apple-itunes-app" content="[VALUE]" />
   <meta name="apple-mobile-web-app-capable" content="[VALUE]" />
   <meta name="apple-mobile-web-app-status-bar-style" content="[VALUE]" />
+  <meta name="apple-mobile-web-app-title" content="[VALUE]" />
   <meta name="format-detection" content="[VALUE]" />
   <link href="alternative" value="ios-app://[VALUE]" />
 

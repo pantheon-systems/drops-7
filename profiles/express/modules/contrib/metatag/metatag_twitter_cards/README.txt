@@ -12,6 +12,7 @@ tags are provided:
 * twitter:image
 * twitter:image:width
 * twitter:image:height
+* twitter:image:alt
 * twitter:player
 * twitter:player:width
 * twitter:player:height

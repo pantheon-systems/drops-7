@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function people_content_type_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -39,7 +39,7 @@ function people_content_type_field_group_info() {
       ),
     ),
   );
-  $export['group_contact|node|person|form'] = $field_group;
+  $field_groups['group_contact|node|person|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -66,7 +66,7 @@ function people_content_type_field_group_info() {
       ),
     ),
   );
-  $export['group_information|node|person|form'] = $field_group;
+  $field_groups['group_information|node|person|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -96,7 +96,7 @@ function people_content_type_field_group_info() {
       ),
     ),
   );
-  $export['group_other|node|person|form'] = $field_group;
+  $field_groups['group_other|node|person|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -128,7 +128,7 @@ function people_content_type_field_group_info() {
       'formatter' => 'collapsed',
     ),
   );
-  $export['group_people_filter_display|node|people_list_page|form'] = $field_group;
+  $field_groups['group_people_filter_display|node|people_list_page|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -156,7 +156,39 @@ function people_content_type_field_group_info() {
       'formatter' => 'collapsed',
     ),
   );
-  $export['group_people_list_display|node|people_list_page|form'] = $field_group;
+  $field_groups['group_people_list_display|node|people_list_page|form'] = $field_group;
+
+  $field_group = new stdClass();
+  $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
+  $field_group->api_version = 1;
+  $field_group->identifier = 'group_people_list_filter|bean|people_list_block|form';
+  $field_group->group_name = 'group_people_list_filter';
+  $field_group->entity_type = 'bean';
+  $field_group->bundle = 'people_list_block';
+  $field_group->mode = 'form';
+  $field_group->parent_name = '';
+  $field_group->data = array(
+    'label' => 'Filter',
+    'weight' => '5',
+    'children' => array(
+      0 => 'field_people_filter_1',
+      1 => 'field_people_filter_2',
+      2 => 'field_people_filter_3',
+      3 => 'field_people_list_department',
+      4 => 'field_people_list_person_type',
+    ),
+    'format_type' => 'fieldset',
+    'format_settings' => array(
+      'label' => 'Filter',
+      'instance_settings' => array(
+        'required_fields' => 1,
+        'classes' => 'group-people-list-filter field-group-fieldset',
+        'description' => 'Choose which people will appear by selecting from the options below. If no options are selected in a filter, all people within that filter group will be shown. ',
+      ),
+      'formatter' => 'collapsed',
+    ),
+  );
+  $field_groups['group_people_list_filter|bean|people_list_block|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -171,12 +203,12 @@ function people_content_type_field_group_info() {
     'label' => 'Filter/Group/Order',
     'weight' => '5',
     'children' => array(
-      0 => 'field_people_list_department',
-      1 => 'field_people_list_person_type',
-      2 => 'field_people_filter_1',
-      3 => 'field_people_filter_2',
-      4 => 'field_people_filter_3',
-      5 => 'field_people_group_by',
+      0 => 'field_people_filter_1',
+      1 => 'field_people_filter_2',
+      2 => 'field_people_filter_3',
+      3 => 'field_people_group_by',
+      4 => 'field_people_list_department',
+      5 => 'field_people_list_person_type',
       6 => 'field_people_order_by',
       7 => 'group_people_filter_display',
     ),
@@ -186,12 +218,12 @@ function people_content_type_field_group_info() {
       'instance_settings' => array(
         'required_fields' => 1,
         'classes' => 'group-people-list-filter field-group-fieldset',
-        'description' => 'Customize which people are listed on the page.',
+        'description' => 'Choose which people will appear by selecting from the options below. If no options are selected in a filter, all people within that filter group will be shown.',
       ),
       'formatter' => 'collapsed',
     ),
   );
-  $export['group_people_list_filter|node|people_list_page|form'] = $field_group;
+  $field_groups['group_people_list_filter|node|people_list_page|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -223,7 +255,18 @@ function people_content_type_field_group_info() {
       ),
     ),
   );
-  $export['group_personal|node|person|form'] = $field_group;
+  $field_groups['group_personal|node|person|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Contact');
+  t('Display/Format');
+  t('Filter');
+  t('Filter/Group/Order');
+  t('Information');
+  t('Other');
+  t('Personal');
+  t('Show/Hide Filters');
+
+  return $field_groups;
 }

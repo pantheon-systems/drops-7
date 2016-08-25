@@ -18,7 +18,9 @@ a:link, a:visited { color: #006db1; }
 
 a:hover { color: #e51c23; }
 
-#slider-wrapper { background-color: #272727; padding: 20px; }
+.slider-wrapper { background-color: #272727; padding: 20px; color: #fff; }
+.slider-wrapper a { color: #cfb87c; }
+.slider-wrapper a:hover { color: #fff; }
 
 #main-menu-wrapper { background: #fff; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
 #main-menu-wrapper #navigation ul#main-menu a:link, #main-menu-wrapper #navigation ul#main-menu a:visited { color: #333; line-height: 64px; font-weight: 600; border-right: 1px solid #d7d7d7; padding: 0 12px; }

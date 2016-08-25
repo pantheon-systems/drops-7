@@ -97,19 +97,20 @@ ul#main-menu {
   }
 }
 
-#zone-menu ul#main-menu a#home-link {
+ul#main-menu a#home-link {
   background: transparent;
   filter:none;
   color:#757575;
   border:none;
 }
-#zone-menu ul#main-menu a#home-link:hover,
-#zone-menu ul#main-menu a#home-link.active {
+ul#main-menu a#home-link:hover,
+ul#main-menu a#home-link.active {
   color:#333;
   background: transparent;
 }
 #intro-wide-wrapper {
   margin-top: -1px;
+  background-color: #111;
 }
 #slider-wrapper {
   background-color: #f5f5f5;
@@ -124,7 +125,9 @@ ul#main-menu {
   background-image: url(../images/content-shadow.png);
   background-repeat: repeat-x;
 }
-
+#post-wide-wrapper {
+  background-color: #fff;
+}
 #footer-section {
   background-color:$bg_dark1;
   border-top:5px solid #c7c7c7;

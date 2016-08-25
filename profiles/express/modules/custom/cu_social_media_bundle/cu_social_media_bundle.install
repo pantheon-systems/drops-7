@@ -15,6 +15,7 @@ function cu_social_media_bundle_disable() {
     'cu_twitter_feed',
     'cu_facebook_activity',
     'cu_facebook_like_button',
+    'cu_share',
     'cu_social_links',
   ));
 }
@@ -27,6 +28,14 @@ function cu_social_media_bundle_uninstall() {
     'cu_twitter_feed',
     'cu_facebook_activity',
     'cu_facebook_like_button',
+    'cu_share',
     'cu_social_links',
   ));
+}
+/**
+ * Enable cu_share module.
+ */
+function cu_social_media_bundle_update_7001() {
+  module_enable(array('cu_share'));
+  drupal_flush_all_caches();
 }

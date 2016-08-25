@@ -159,3 +159,18 @@
   -moz-box-sizing: content-box;
   box-sizing: content-box;
 }
+
+/**
+ * Remove navbar from print view.
+ */
+@media print {
+  body {
+    padding-top: 0;
+  }
+  body.navbar-tray-open.navbar-vertical.navbar-fixed {
+    margin-left: 0; /* LTR */
+  }
+  #navbar-administration {
+    display: none !important;
+  }
+}

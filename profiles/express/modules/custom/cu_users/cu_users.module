@@ -4,7 +4,6 @@
  * @file
  * CU Users Module Module containing users/roles and permissions for CU-FIT
  * CU-FIT clones.
- *
  */
 
 /**
@@ -25,11 +24,22 @@ function cu_users_get_users($type = 'all') {
     'leslie' => 'jon.leslie@Colorado.EDU',
     'linebarg' => 'joanna.bertrand@Colorado.EDU',
     'wetu1300' => 'wendy.turnbull@Colorado.EDU',
-    'drupalcs' => 'drupalcs@colorado.edu',
-    'mortone' => 'Emily.Kellagher@Colorado.EDU',
+    'mortone' => 'Emily.Kellagher@Colorado.EDU'
+  );
+  
+  $user_array['site_owner'] = array(
+    'osr-test-owner' => 'osr-test-owner@colorado.edu',
+  );
+  
+  $user_array['content_editor'] = array(
+    'osr-test-content' => 'osr-test-content@colorado.edu',
+  );
+  
+  $user_array['edit_my_content'] = array(
+    'osr-test-edit-own' => 'osr-test-edit-own@colorado.edu',
   );
 
-  $user_array['all'] = array_merge($user_array['developer'], $user_array['administrator']);
+  $user_array['all'] = array_merge($user_array['developer'], $user_array['administrator'], $user_array['site_owner'], $user_array['content_editor'], $user_array['edit_my_content']);
 
   return $user_array[$type];
 }
@@ -123,4 +133,34 @@ function cu_users_user_has_role($role_name, $user = NULL) {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ * Hide developers and administrators on the Users overview page from lesser roles.
+ */
+function cu_users_views_pre_render(&$view) {
+  if ($view->name == 'cu_people_administration_override_view') {
+    $account = $GLOBALS['user'];
+    if (in_array('developer', $account->roles) || in_array('administrator', $account->roles) || $account->uid == 1) {
+      return;
+    }
+    foreach ($view->result as $key => $user) {
+      $user_object = user_load($user->uid);
+      if (in_array('developer', $user_object->roles) || in_array('administrator', $user_object->roles)) {
+        unset($view->result[$key]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Don't allow users to delete an account and its content.
+ */
+function cu_users_form_user_cancel_confirm_form_alter(&$form, &$form_state) {
+  unset($form['user_cancel_method']['user_cancel_delete']);
+  unset($form['user_cancel_confirm']);
 }

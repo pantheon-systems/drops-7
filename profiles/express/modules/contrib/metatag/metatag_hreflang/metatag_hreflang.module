@@ -31,7 +31,7 @@ function metatag_hreflang_theme() {
  */
 function theme_metatag_link_hreflang($variables) {
   $element = &$variables['element'];
-  $element['#name'] = 'alternative';
+  $element['#name'] = 'alternate';
   $args = array(
     '#name' => 'rel',
     '#value' => 'href',

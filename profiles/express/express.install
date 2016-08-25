@@ -113,6 +113,19 @@ function express_install() {
   // Set google_appliance_error_gsa_no_results_format to wysiwyg
   variable_set('google_appliance_error_gsa_no_results_format', 'wysiwyg');
 
+  // Moved from cu_cache.
+  variable_set('honeypot_element_name', 'url');
+  variable_set('honeypot_form_user_pass', 0);
+  variable_set('honeypot_log', 0);
+  variable_set('honeypot_protect_all_forms', 1);
+  variable_set('honeypot_time_limit', 0);
+  $locale_custom_strings_en = array(
+    'Each menu has a corresponding block that is managed on the <a href="@blocks">Blocks administration page</a>.' => 'Each menu has a corresponding block which can be placed in a content region.',
+    'Set and configure the default theme for your website.  Alternative <a href="@themes">themes</a> are available.' => 'Set and configure the default theme for your website.',
+    'The menu module allows on-the-fly creation of menu links in the content authoring forms. To configure these settings for a particular content type, visit the <a href="@content-types">Content types</a> page, click the <em>edit</em> link for the content type, and go to the <em>Menu settings</em> section.' => 'The menu module allows on-the-fly creation of menu links.',
+  );
+  variable_set('locale_custom_strings_en', $locale_custom_strings_en);
+
   // Update the menu router information.
   menu_rebuild();
   // revert features to ensure they are all installed
@@ -122,4 +135,12 @@ function express_install() {
   node_access_needs_rebuild(FALSE);
   // ignore any other install messages
   drupal_get_messages();
+}
+
+/**
+ * Express 2.0.1 Updates
+ */
+function express_update_7001() {
+  // Registry rebuild due to contrib module updates.
+  registry_rebuild();
 }

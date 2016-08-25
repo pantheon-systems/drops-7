@@ -62,3 +62,12 @@
   padding-left: 4em;
   padding-right: 2.75em;
 }
+
+/**
+ * Remove navbar from print view.
+ */
+@media print {
+  body.navbar-tray-open.navbar-vertical.navbar-fixed {
+    margin-right: 0;
+  }
+}

@@ -106,9 +106,15 @@ function metatag_mobile_metatag_info() {
     'weight' => ++$weight,
   ) + $tag_info_defaults;
 
+  $info['tags']['apple-mobile-web-app-title'] = array(
+    'label' => t('Apple Mobile Web App Title'),
+    'description' => t('Overrides the long site title when using the Apple Add to Home Screen.'),
+    'weight' => ++$weight
+  ) + $tag_info_defaults;
+
   $info['tags']['format-detection'] = array(
     'label' => t('Format detection'),
-    'description' => t('If set to "telephone=no" the page will not be checked for phone numbers, which would be presented .'),
+    'description' => t('If set to "telephone=no" the page will not be checked for phone numbers, which would be presented.'),
     'weight' => ++$weight,
   ) + $tag_info_defaults;
 

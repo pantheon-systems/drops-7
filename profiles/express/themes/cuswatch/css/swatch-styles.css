@@ -24,9 +24,13 @@ body { background-color: #272727; padding-bottom: 20px; }
 
 ul#action-menu a { line-height: 20px; margin: 20px 0 20px 10px; }
 
+#navigation ul.action-menu a { margin: 18px 5px; }
+
 #intro-wide-wrapper, #slider-wrapper { background-color: #171717; }
 
-#slider-wrapper { padding: 20px; }
+.slider-wrapper { padding: 20px; color: #fff; }
+.slider-wrapper a { color: #cfb87c; }
+.slider-wrapper a:hover { color: #fff; }
 
 #page-title-wrapper { background-color: #1e1e1e; color: #fff; padding: 20px; }
 #page-title-wrapper a { color: #cfb87c; }
@@ -35,7 +39,7 @@ ul#action-menu a { line-height: 20px; margin: 20px 0 20px 10px; }
 
 .page-title-breadcrumbs { background-color: #fff; }
 
-#content-wrapper, #after-content-wrapper { background-color: #fff; }
+#content-wrapper, #post-wide-wrapper, #after-content-wrapper { background-color: #fff; }
 
 #after-content2-wrapper { background-color: #fafafa; border-top: 1px solid #f7f7f7; padding: 40px 0 20px; }
 
@@ -78,3 +82,5 @@ ul#action-menu a { line-height: 20px; margin: 20px 0 20px 10px; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile a { color: #fff; border-bottom: 1px solid #555; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile a.active, #mobile-navigation-wrapper ul#secondary-menu-mobile a.active-trail { color: #fff; background-color: #555; font-weight: 600; border-bottom: 1px solid #555; }
 #mobile-navigation-wrapper ul#secondary-menu-mobile, #mobile-navigation-wrapper ul#footer-menu-mobile { border-top: 3px solid #666; }
+
+.has-feature-title-image #page-title-wrapper { display: none; }

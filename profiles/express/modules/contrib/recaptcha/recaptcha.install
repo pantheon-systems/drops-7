@@ -6,30 +6,6 @@
  */
 
 /**
- * Implements hook_requirements().
- */
-function recaptcha_requirements($phase) {
-  $requirements = array();
-  $t = get_t();
-
-  if ($phase == 'runtime') {
-    // Drupal systems upgraded from Drupal 5 or Drupal 6 may have an invalid
-    // 'arg_separator.output' value set that breaks the URL generation
-    // inside the Google reCAPTCHA library.
-    if (ini_get('arg_separator.output') != '&') {
-      $requirements['recaptcha_arg_separator_output'] = array(
-        'title' => $t('reCAPTCHA: PHP settings'),
-        'description' => $t('Please check your site %settings file and remove the invalid PHP setting <code>@arg_separator.output</code>. This is a leftover from Drupal 5/6 in-place upgrades and causes malfunctions in the reCAPTCHA module. Please see <a href="@url">known issue with arg_separator.output</a> for more information.', array('%settings' => conf_path() . '/settings.php', '@arg_separator.output' => 'ini_set(\'arg_separator.output\', \'&amp;\');' , '@url' => 'https://www.drupal.org/node/2476237')),
-        'severity' => REQUIREMENT_ERROR,
-        'value' => $t('Incompatible'),
-      );
-    }
-  }
-
-  return $requirements;
-}
-
-/**
  * Implements hook_uninstall().
  */
 function recaptcha_uninstall() {
@@ -37,6 +13,7 @@ function recaptcha_uninstall() {
   variable_del('recaptcha_secret_key');
   variable_del('recaptcha_theme');
   variable_del('recaptcha_type');
+  variable_del('recaptcha_size');
   variable_del('recaptcha_tabindex');
   variable_del('recaptcha_noscript');
 }
@@ -111,4 +88,16 @@ function recaptcha_update_7201() {
   }
 
   return t('Empty tabindex has been upgraded to 0.');
+}
+
+/**
+ * Remove recaptcha_mailhide 7.x-1.x from system table.
+ */
+function recaptcha_update_7202() {
+  // #2487215: Drupal 7.50+ requires system table cleanup.
+  db_delete('system')
+    ->condition('name', 'recaptcha_mailhide')
+    ->execute();
+
+  return t('Removed recaptcha_mailhide module from database.');
 }

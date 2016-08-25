@@ -1,7 +1,7 @@
 name = CU Bean Override View
 description = This feature extends the filter functionality of admin/content/blocks
 core = 7.x
-package = CU-Active
+package = CU-Core
 version = 7.x-1.0
 dependencies[] = views
 features[ctools][] = views:views_default:3.0

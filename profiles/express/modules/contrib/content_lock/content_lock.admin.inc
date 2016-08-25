@@ -1,7 +1,9 @@
-<?php /* -*- mode: php; indent-tabs-mode: nil; tab-width: 2; -*- */
+<?php
 
-# Copyright (c) 2010 Impressive.media
-# Author: Eugen Mayer
+/**
+ * @file
+ * Content lock module admin page.
+ */
 
 /**
  * Providing an administration interface for content_lock.
@@ -11,15 +13,15 @@ function content_lock_admin_settings() {
 
   $form['#attached'] = array(
     'js' => array(
-      drupal_get_path('module','content_lock') . '/content_lock.admin.js',
+      drupal_get_path('module', 'content_lock') . '/content_lock.admin.js',
     ),
   );
 
   $form['content_lock_unload_js'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use javascript to detect leaving the node form'),
-      '#description' => t('If you disable this, nodes will remain locked if the user navigates away from the node without saving it or clicking the cancel button.'),
-      '#default_value' => variable_get('content_lock_unload_js', true),
+    '#type' => 'checkbox',
+    '#title' => t('Use javascript to detect leaving the node form'),
+    '#description' => t('If you disable this, nodes will remain locked if the user navigates away from the node without saving it or clicking the cancel button.'),
+    '#default_value' => variable_get('content_lock_unload_js', TRUE),
   );
   $form['content_lock_unload_js_fieldset'] = array(
     '#type' => 'fieldset',
@@ -32,24 +34,24 @@ function content_lock_admin_settings() {
     '#default_value' => variable_get('content_lock_unload_js_message_enable', TRUE),
   );
   $form['content_lock_unload_js_fieldset']['content_lock_unload_js_message'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Javascript popup message text'),
-      '#description' => t('This option allows you to modify the text the user sees when navigating away from an edited node.'),
-      '#default_value' => variable_get('content_lock_unload_js_message', 'If you proceed, ALL of your changes will be lost.'),
+    '#type' => 'textfield',
+    '#title' => t('Javascript popup message text'),
+    '#description' => t('This option allows you to modify the text the user sees when navigating away from an edited node.'),
+    '#default_value' => variable_get('content_lock_unload_js_message', 'If you proceed, ALL of your changes will be lost.'),
   );
 
   $form['content_lock_admin_verbose'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Show lock / unlock messages'),
-      '#description' => t('This option controls whether or not content_lock inform the user that he has locked/unlocked a node. This does not control the javascript dialogues.'),
-      '#default_value' => variable_get('content_lock_admin_verbose', true),
+    '#type' => 'checkbox',
+    '#title' => t('Show lock / unlock messages'),
+    '#description' => t('This option controls whether or not content_lock inform the user that he has locked/unlocked a node. This does not control the javascript dialogues.'),
+    '#default_value' => variable_get('content_lock_admin_verbose', TRUE),
   );
 
   $form['content_lock_admin_cancelbutton'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Add cancel button'),
-      '#description' => t('Adds a cancel button to the node / user / comment form. This way a user can properly cancel the transaction.'),
-      '#default_value' => variable_get('content_lock_admin_cancelbutton', true),
+    '#type' => 'checkbox',
+    '#title' => t('Add cancel button'),
+    '#description' => t('Adds a cancel button to the node / user / comment form. This way a user can properly cancel the transaction.'),
+    '#default_value' => variable_get('content_lock_admin_cancelbutton', TRUE),
   );
 
   $node_types = array();

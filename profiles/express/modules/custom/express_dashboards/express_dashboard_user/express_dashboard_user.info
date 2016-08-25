@@ -1,0 +1,7 @@
+name = Express User Dashboard
+description = Adds a user dashbaord
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+
+dependencies[] = express_dashboards

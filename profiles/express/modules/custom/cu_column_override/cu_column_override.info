@@ -2,6 +2,6 @@ name = Column Override
 description = Context reaction for overriding columns
 core = 7.x
 version = 7.x-1.0
-package = CU-Boulder
+package = CU-Advanced Layout
 
 dependencies[] = context

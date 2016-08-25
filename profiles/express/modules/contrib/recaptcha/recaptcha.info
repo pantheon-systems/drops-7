@@ -14,11 +14,11 @@ files[] = recaptcha-php/src/ReCaptcha/Response.php
 files[] = recaptcha-php/src/ReCaptcha/RequestMethod/Post.php
 files[] = recaptcha-php/src/ReCaptcha/RequestMethod/Socket.php
 files[] = recaptcha-php/src/ReCaptcha/RequestMethod/SocketPost.php
-files[] = src/ReCaptcha/RequestMethod/Drupal7.php
+files[] = src/ReCaptcha/RequestMethod/Drupal7Post.php
 
-; Information added by Drupal.org packaging script on 2015-05-28
-version = "7.x-2.0"
+; Information added by Drupal.org packaging script on 2016-07-23
+version = "7.x-2.2"
 core = "7.x"
 project = "recaptcha"
-datestamp = "1432847597"
+datestamp = "1469287440"
 

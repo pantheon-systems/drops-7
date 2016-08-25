@@ -1,6 +1,6 @@
 name = CU Quicktabs Styles
 description = Provides additional quicktab styles.
 core = 7.x
-package = CU-Boulder
+package = CU-Advanced Content
 version = 7.x-1.0
 dependencies[] = quicktabs

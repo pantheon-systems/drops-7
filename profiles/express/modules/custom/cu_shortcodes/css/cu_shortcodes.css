@@ -609,3 +609,10 @@ div.image-caption  p:first-child {
   padding: 40px 2000px 20px;
   background-color: #f2f2f2;
 }
+
+/* Close Margin */
+
+.margin-close {
+  margin-top: -20px;
+  display: block;
+}

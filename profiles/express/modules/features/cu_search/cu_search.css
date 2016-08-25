@@ -1,6 +1,6 @@
 /* Search text field - extra right padding for search submit button */
 .cu-search input.form-text{
-  width:180px;
+  width:240px;
   max-width: 100%;
   line-height: 100%;
   padding:8px 28px 8px 8px;

@@ -12,6 +12,9 @@ class MetatagTestHelper extends DrupalWebTestCase {
    */
   protected $adminUser;
 
+  /**
+   * {@inheritdoc}
+   */
   function setUp(array $modules = array()) {
     // Make sure these modules are enabled so that we can use their entity
     // types later.
@@ -331,8 +334,8 @@ class MetatagTestHelper extends DrupalWebTestCase {
   /**
    * Get the {locales_source} lid value for a specific source.
    *
-   * @param string $context
-   *   The context string to search for.
+   * @param string $string
+   *   The translation string to search for.
    * @param string $textgroup
    *   This string's textgroup; defaults to 'metatag'.
    *
@@ -353,6 +356,29 @@ class MetatagTestHelper extends DrupalWebTestCase {
         ':source' => $string,
       ))
       ->fetchField();
+  }
+
+  /**
+   * Get the {locales_source} lid values for a specific context.
+   *
+   * @param string $context
+   *   The context string to search for.
+   * @param string $textgroup
+   *   This string's textgroup; defaults to 'metatag'.
+   *
+   * @return integer
+   *   The {locales_source}.lid value for this string.
+   */
+  function getTranslationsByContext($context, $textgroup = 'metatag') {
+    return db_query("SELECT lid
+      FROM {locales_source}
+      WHERE textgroup = :textgroup
+      AND context = :context",
+      array(
+        ':textgroup' => $textgroup,
+        ':context' => $context,
+      ))
+      ->fetchCol();
   }
 
   /**
@@ -424,8 +450,19 @@ class MetatagTestHelper extends DrupalWebTestCase {
     }
 
     // Confirm that the destination strings exist.
-    $this->assertField('translations[fr]', 'Found the French translation string field.');
-    $this->assertField('translations[es]', 'Found the Spanish translation string field.');
+    $source_locale = language_default('language');
+    if (function_exists('i18n_string_source_language')) {
+      $source_locale = i18n_string_source_language();
+    }
+    if ($source_locale != 'en') {
+      $this->assertField('translations[en]', 'Found the English translation string field.');
+    }
+    if ($source_locale != 'fr') {
+      $this->assertField('translations[fr]', 'Found the French translation string field.');
+    }
+    if ($source_locale != 'es') {
+      $this->assertField('translations[es]', 'Found the Spanish translation string field.');
+    }
 
     // Translate the string.
     $edit = array(
@@ -600,6 +637,8 @@ class MetatagTestHelper extends DrupalWebTestCase {
     $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
     $count = count($xpath);
 
+    // If the string is expected, then confirm that there are strings to be
+    // found.
     if ($assert_true) {
       $this->assertTrue($count >= 1, 'Found Metatag strings to translate.');
       $this->assertNoText(t('No strings available.'));
@@ -610,12 +649,69 @@ class MetatagTestHelper extends DrupalWebTestCase {
         $this->assertText('metatag:' . $context);
       }
     }
+    // If the string is not supposed to be found, then confirm the context is
+    // not available.
     else {
-      $this->assertTrue($count == 1, "Did not find the requested meta tag available to translate, '{$string}', as expected.");
-      $this->assertText(t('No strings available.'));
       $this->assertNoText($context);
       $this->assertNoText('metatag:' . $context);
     }
+  }
+
+  /**
+   * Create an image of a specific size & type.
+   *
+   * @param string $image_size
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string $format
+   *   The image format to use, defaults to 'png'.
+   *
+   * @return string
+   *   The URL to a public file.
+   */
+  function generateImage($image_size = '200x200', $format = 'png') {
+    // Only proceed if the Devel Generate module is installed.
+    if (module_exists('devel_generate')) {
+      // Load the Devel Generate image generator logic.
+      module_load_include('inc', 'devel_generate', 'image.devel_generate');
+
+      $image_format = 'png';
+      $image_size = '200x200';
+      $temp_image = devel_generate_image($image_format, $image_size, $image_size);
+
+      return file_unmanaged_move($temp_image, 'public://');
+    }
+    else {
+      $this->error('The Devel Generate module is not enabled, it must be added to the $modules array in the setUp() method for this test class.');
+    }
+  }
+
+  /**
+   * Create an image file object of a specific size & type.
+   *
+   * @param string
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string
+   *   The image format to use, defaults to 'png'.
+   *
+   * @return object
+   *   The file object for the generated image.
+   */
+  function generateImageFile($image_size = '200x200', $format = 'png') {
+    // Generate a test image.
+    $image_uri = $this->generateImage();
+
+    // Create a file object for this image.
+    $file = new StdClass();
+    $file->fid = NULL;
+    $file->uid = 1;
+    $file->uri = $image_uri;
+    $file->filemime = file_get_mimetype($image_uri);
+    $file->filesize = filesize($image_uri);
+    $file->status = 1;
+    $file->timestamp = filemtime($image_uri);
+    $saved_file = file_save($file);
+
+    return $saved_file;
   }
 }
 

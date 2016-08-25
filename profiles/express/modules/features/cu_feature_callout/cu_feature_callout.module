@@ -36,7 +36,7 @@ function cu_feature_callout_preprocess_entity(&$vars) {
 
   // Only preprocess social_link beans.
   if ($entity_type == 'bean' && $bundle == 'feature_callout') {
-
+    $grid_header = !empty($vars['elements']['#entity']->title) ? 'h3' : 'h2';
     // Get the number of columns for formatting.
     $columns = $vars['content']['field_callout_columns']['#items'][0]['value'];
     $size = $vars['content']['field_callout_image_size']['#items'][0]['value'];
@@ -62,7 +62,7 @@ function cu_feature_callout_preprocess_entity(&$vars) {
       }
       // Get URL.
       if (!empty($fc_item['field_callout_title']['#items'][0]['url'])) {
-        $url = $fc_item['field_callout_title']['#items'][0]['url'];
+        $url = $fc_item['field_callout_title']['#items'][0];
       }
 
       // Get text content.
@@ -95,20 +95,28 @@ function cu_feature_callout_preprocess_entity(&$vars) {
 
       // Make links if $url is set.
       if (isset($url)) {
+        // Set empty query and fragment variables.
+        if (!isset($url['query'])) {
+          $url['query'] = '';
+        }
+        if (!isset($url['fragment'])) {
+          $url['fragment'] = '';
+        }
+
         if (isset($title)) {
-          $title = '<h3 class="feature-callout-title">' . l($title, $url, array('html' => TRUE)) . '</h3>';
+          $title = '<' . $grid_header . ' class="feature-callout-title">' . l($title, $url['url'], array('html' => TRUE, 'query' => $url['query'], 'fragment' => $url['fragment'])) . '</' . $grid_header . '>';
         } else {
           $title = '';
         }
         if (isset($image)) {
-          $image = l($image, $url, array('html' => TRUE));
+          $image = l($image, $url['url'], array('html' => TRUE, 'query' => $url['query'], 'fragment' => $url['fragment']));
         } else {
           $image = '';
         }
       }
       else {
         if (isset($title)) {
-          $title = '<h3 class="feature-callout-title">' . $title . '</h3>';
+          $title = '<' . $grid_header . ' class="feature-callout-title">' . $title . '</' . $grid_header . '>';
         } else {
           $title = '';
         }

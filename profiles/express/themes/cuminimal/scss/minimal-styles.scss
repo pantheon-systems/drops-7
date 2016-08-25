@@ -91,6 +91,7 @@ ul#action-menu a {
   padding: 20px;
 }
 #content-wrapper,
+#post-wide-wrapper,
 #after-content-wrapper,
 #after-content2-wrapper,
 #footer-wrapper {
@@ -285,6 +286,11 @@ $border: #e0e0e0;
   }
   ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
     padding-left: $indent * 6;
+  }
+}
+#navigation ul.action-menu {
+  a {
+    margin: 18px 5px;
   }
 }
 

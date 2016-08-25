@@ -11,3 +11,10 @@ core = "7.x"
 project = "profile_module_manager"
 datestamp = "1447966745"
 
+
+; Information added by Drupal.org packaging script on 2016-02-11
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "profile_module_manager"
+datestamp = "1455213242"
+

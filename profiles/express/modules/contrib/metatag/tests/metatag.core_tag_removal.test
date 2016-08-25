@@ -1,0 +1,71 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module to ensure removal of core tags works correctly.
+ */
+
+class MetatagCoreTagRemovalTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tag handling',
+      'description' => 'Test Metatag integration with the locale module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * Test that the core meta tags work correctly.
+   */
+  function testCoreTagRemoval() {
+    // The default generator string that both Metatag and Drupal core use.
+    $generator_default = 'Drupal 7 (http://drupal.org)';
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm that the Generator tag is the default.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $generator_default);
+
+    // Update the global config to remove the 'generator' value.
+    $config = metatag_config_load('global');
+    unset($config->config['generator']);
+    metatag_config_save($config);
+    // Dump out the current config, to aid with debugging.
+    $this->verbose('<pre>' . print_r($config, TRUE) . '</pre>');
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm that the Generator tag no longer exists.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 0, 'No generator meta tag found.');
+
+    // Tell Metatag to leave core's meta tags in place.
+    variable_set('metatag_leave_core_tags', TRUE);
+
+    // Clear the Metatag caches.
+    metatag_flush_caches();
+
+    // Clear the page caches.
+    drupal_flush_all_caches();
+
+    // Load the front page again.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm that the Generator tag is the default again, i.e. core is
+    // responsible for adding it. Also, core uses the meta tag name "Generator"
+    // instead of 'generator' like Metatag uses.
+    $xpath = $this->xpath("//meta[@name='Generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $generator_default);
+  }
+
+}

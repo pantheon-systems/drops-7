@@ -47,15 +47,15 @@ class ResponsivePreviewDeviceCRUD extends DrupalWebTestCase {
 
     // Some default devices exist.
     $this->assertLinkByHref('admin/config/content/responsive-preview/large/delete');
-    $this->assertLinkByHref('admin/config/content/responsive-preview/ipad/delete');
+    $this->assertLinkByHref('admin/config/content/responsive-preview/iphone6/delete');
 
     // Some devices are shown by default.
     $this->drupalGet('');
-    $this->checkDevices(array('iphone5', 'ipad', 'nexus4', 'nexus7'));
+    $this->checkDevices(array('iphone6', 'iphone6p', 'nexus5', 'nexus6', 'nexus9'));
 
     // Delete one of the predefined devices.
-    $this->drupalPost('admin/config/content/responsive-preview/iphone5/delete', array(), t('Delete'));
-    $this->assertRaw(t('Device %name has been deleted.', array('%name' => 'iPhone 5')));
+    $this->drupalPost('admin/config/content/responsive-preview/iphone6/delete', array(), t('Delete'));
+    $this->assertRaw(t('Device %name has been deleted.', array('%name' => 'iPhone 6')));
 
     // Make generic tablet appear in the list.
     $this->drupalPost('admin/config/content/responsive-preview', array('devices[medium][status]' => 1), t('Save'));
@@ -74,7 +74,7 @@ class ResponsivePreviewDeviceCRUD extends DrupalWebTestCase {
 
     // Check updated device list. New devices are shown in the list by default.
     $this->drupalGet('');
-    $this->checkDevices(array('tarsier', 'ipad', 'medium', 'nexus4', 'nexus7'));
+    $this->checkDevices(array('tarsier', 'iphone6', 'iphone6p', 'nexus5', 'nexus6', 'nexus9'));
 
     // Update an existing device.
     $edit = array(
@@ -84,8 +84,8 @@ class ResponsivePreviewDeviceCRUD extends DrupalWebTestCase {
     );
 
     // Delete one of the predefined devices.
-    $this->drupalPost('admin/config/content/responsive-preview/iphone4/edit', $edit, t('Save'));
-    $this->assertRaw(t('Device %name has been updated.', array('%name' => 'iPhone 4')));
+    $this->drupalPost('admin/config/content/responsive-preview/iphone6/edit', $edit, t('Save'));
+    $this->assertRaw(t('Device %name has been updated.', array('%name' => 'iPhone 6')));
   }
 
   /**

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the CU RSS Views feature.
+ */
+
+include_once 'cu_rss_views.features.inc';

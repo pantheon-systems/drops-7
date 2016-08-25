@@ -100,6 +100,14 @@ body {
 }
 #action-menu {
   padding:10px 0;
+  a {
+    color: #656565;
+  }
+  a.active,
+  a.active-trail,
+  a:hover {
+    color:#111;
+  }
 }
 
 // Intro, Slider, Main backgrounds
@@ -111,8 +119,15 @@ body {
 #slider-wrapper {
   background-color: #232323;
 }
-#slider-wrapper {
+.slider-wrapper {
   padding: 20px;
+  color: #fff;
+  a {
+    color: $cugold;
+  }
+  a:hover {
+    color: #fff;
+  }
 }
 // Page Title
 #page-title-image-overlay {
@@ -158,6 +173,7 @@ body {
 }
 
 // Bottom Regions
+#post-wide-wrapper,
 #after-content-wrapper {
   background-color: #fff;
 }
@@ -328,5 +344,25 @@ $border: #e7e7e7;
   ul#secondary-menu-mobile,
   ul#footer-menu-mobile {
     border-top:3px solid #ddd;
+  }
+}
+
+.title-image-breadcrumbs-wrapper {
+  color: #fff;
+  a {
+    background: transparent;
+  }
+}
+.title-image-breadcrumbs-wrapper .breadcrumb {
+  a {
+    background: transparent;
+    padding: 0;
+  }
+  color:#fff;
+}
+
+.has-feature-title-image {
+  #page-title-wrapper {
+    display: none;
   }
 }

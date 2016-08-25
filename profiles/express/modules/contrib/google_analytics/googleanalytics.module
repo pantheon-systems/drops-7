@@ -125,6 +125,9 @@ function googleanalytics_page_alter(&$page) {
       $link_settings['trackDownload'] = $track_download;
       $link_settings['trackDownloadExtensions'] = $trackfiles_extensions;
     }
+    if (module_exists('colorbox') && ($track_colorbox = variable_get('googleanalytics_trackcolorbox', 1))) {
+      $link_settings['trackColorbox'] = $track_colorbox;
+    }
     if ($track_domain_mode = variable_get('googleanalytics_domain_mode', 0)) {
       $link_settings['trackDomainMode'] = $track_domain_mode;
     }
@@ -294,10 +297,7 @@ function googleanalytics_page_alter(&$page) {
 
     // Track logged in users across all devices.
     if (variable_get('googleanalytics_trackuserid', 0) && user_is_logged_in()) {
-      // The USER_ID value should be a unique, persistent, and non-personally
-      // identifiable string identifier that represents a user or signed-in
-      // account across devices.
-      $create_only_fields['userId'] = drupal_hmac_base64($user->uid, drupal_get_private_key() . drupal_get_hash_salt());
+      $create_only_fields['userId'] = google_analytics_user_id_hash($user->uid);
     }
 
     // Create a tracker.
@@ -352,11 +352,28 @@ function googleanalytics_page_alter(&$page) {
       // Custom tracking. Prepend before all other JavaScript.
       // @TODO: https://support.google.com/adsense/answer/98142
       // sounds like it could be appended to $script.
-      drupal_add_js($googleanalytics_adsense_script, array('type' => 'inline', 'group' => JS_LIBRARY-1));
+      drupal_add_js($googleanalytics_adsense_script, array('type' => 'inline', 'group' => JS_LIBRARY-1, 'requires_jquery' => FALSE));
     }
 
-    drupal_add_js($script, array('scope' => 'header', 'type' => 'inline'));
+    drupal_add_js($script, array('scope' => 'header', 'type' => 'inline', 'requires_jquery' => FALSE));
   }
+}
+
+/**
+ * Generate user id hash to implement USER_ID.
+ *
+ * The USER_ID value should be a unique, persistent, and non-personally
+ * identifiable string identifier that represents a user or signed-in
+ * account across devices.
+ *
+ * @param int $uid
+ *   User id.
+ *
+ * @return string
+ *   User id hash.
+ */
+function google_analytics_user_id_hash($uid) {
+  return drupal_hmac_base64($uid, drupal_get_private_key() . drupal_get_hash_salt());
 }
 
 /**
@@ -456,7 +473,7 @@ function googleanalytics_preprocess_search_results(&$variables) {
     // found. But the pager item mumber can tell the number of search results.
     global $pager_total_items;
 
-    drupal_add_js('window.googleanalytics_search_results = ' . intval($pager_total_items[0]) . ';', array('type' => 'inline', 'group' => JS_LIBRARY-1));
+    drupal_add_js('window.googleanalytics_search_results = ' . intval($pager_total_items[0]) . ';', array('type' => 'inline', 'group' => JS_LIBRARY-1, 'requires_jquery' => FALSE));
   }
 }
 

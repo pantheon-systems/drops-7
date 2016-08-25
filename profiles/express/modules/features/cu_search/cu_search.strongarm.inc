@@ -20,13 +20,6 @@ function cu_search_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'google_appliance_collection';
-  $strongarm->value = 'default_collection';
-  $export['google_appliance_collection'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
   $strongarm->name = 'google_appliance_frontend';
   $strongarm->value = 'default_frontend';
   $export['google_appliance_frontend'] = $strongarm;

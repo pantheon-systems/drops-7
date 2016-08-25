@@ -4,12 +4,20 @@ $fixedMax: 1200px;
 $gutter: 40px;
 $padding: 20px;
 
+@mixin clearfloats {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
 /* Max width classes for elements */
 .layout-responsive .element-max-width {
   max-width: $responsiveMax;
   margin-right: auto;
   margin-left: auto;
-  overflow: hidden;
+  @include clearfloats;
   clear:both;
 }
 .layout-responsive .element-max-width-gutter,
@@ -17,7 +25,7 @@ $padding: 20px;
   max-width: ($responsiveMax - $gutter);
   margin-right: auto;
   margin-left: auto;
-  overflow: hidden;
+  @include clearfloats;
   clear:both;
 }
 
@@ -25,7 +33,7 @@ $padding: 20px;
   max-width: $fixedMax;
   margin-right: auto;
   margin-left: auto;
-  overflow: hidden;
+  @include clearfloats;
   clear:both;
 }
 .layout-fixed .element-max-width-gutter,
@@ -33,7 +41,7 @@ $padding: 20px;
   max-width: ($fixedMax - $gutter);
   margin-right: auto;
   margin-left: auto;
-  overflow: hidden;
+  @include clearfloats;
   clear:both;
 }
 
@@ -68,13 +76,13 @@ $padding: 20px;
   margin-right: auto;
   margin-left: auto;
   max-width:1200px;
-  overflow: hidden;
+  @include clearfloats;
 }
 .layout-fixed .container-max {
   margin-right: auto;
   margin-left: auto;
   width:1200px;
-  overflow: hidden;
+  @include clearfloats;
 }
 .layout-fixed {
   min-width: 1200px;

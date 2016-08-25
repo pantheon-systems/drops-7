@@ -1,9 +1,8 @@
 <?php
+
 /**
  * Implements hook_image_default_styles().
  */
-
-
 function cu_image_styles_image_default_styles() {
   $styles = array();
 
@@ -225,5 +224,192 @@ function cu_image_styles_image_default_styles() {
     ),
   );
 
+  $styles['email_feature_thumbnail'] = array(
+    'name' => 'email_feature_thumbnail',
+    'label' => 'email_feature_thumbnail',
+    'effects' => array(
+      10 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 580,
+          'height' => 270,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  $styles['email_feature_thumbnail_large'] = array(
+    'name' => 'email_feature_thumbnail_large',
+    'label' => 'email_feature_thumbnail_large',
+    'effects' => array(
+      10 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 1200,
+          'height' => 600,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  $styles['email_teaser_thumbnail'] = array(
+    'name' => 'email_teaser_thumbnail',
+    'label' => 'email_teaser_thumbnail',
+    'effects' => array(
+      10 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 160,
+          'height' => 160,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  $styles['email_ad'] = array(
+    'name' => 'email_ad',
+    'label' => 'email_ad',
+    'effects' => array(
+      10 => array(
+        'name' => 'image_scale_and_crop',
+        'data' => array(
+          'width' => 580,
+          'height' => 290,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+  $styles['email_ad_large'] = array(
+    'name' => 'email_ad_large',
+    'label' => 'email_ad_large',
+    'effects' => array(
+      10 => array(
+        'name' => 'image_scale_and_crop',
+        'data' => array(
+          'width' => 600,
+          'height' => 300,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  // Exported image style: email_large.
+  $styles['email_large'] = array(
+    'label' => 'email_large',
+    'effects' => array(
+      1 => array(
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 1200,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      ),
+    ),
+  );
+
+  // Exported image style: email_medium.
+  $styles['email_medium'] = array(
+    'label' => 'email_medium',
+    'effects' => array(
+      2 => array(
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 580,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      ),
+    ),
+  );
+
   return $styles;
+}
+
+/**
+ * Implements hook)image_styles_alter().
+ *
+ * @param $styles
+ */
+function cu_image_styles_image_styles_alter(&$styles) {
+  if (isset ($styles['large']['storage'])) {
+    if ($styles['large']['storage'] == IMAGE_STORAGE_DEFAULT) {
+      $styles['large']['label'] = 'Large';
+      // Check that we only affect a default style.
+      $styles['large']['effects'][0] = array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 1200,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      );
+    }
+  }
+  if (isset ($styles['medium']['storage'])) {
+    if ($styles['medium']['storage'] == IMAGE_STORAGE_DEFAULT) {
+      // Check that we only affect a default style.
+      $styles['medium']['label'] = 'Medium';
+      $styles['medium']['effects'][0] = array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 600,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      );
+    }
+  }
+  if (isset ($styles['thumbnail']['storage'])) {
+    if ($styles['thumbnail']['storage'] == IMAGE_STORAGE_DEFAULT) {
+      $styles['thumbnail']['label'] = 'Thumbnail';
+    }
+  }
 }

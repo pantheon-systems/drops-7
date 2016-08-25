@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Tests for the site_verify module.
+ */
+
+class SiteVerifyFunctionalTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Site verification functional tests',
+      'description' => 'Test site verification functionality.',
+      'group' => 'Site verification',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('site_verify'));
+
+    $user = $this->drupalCreateUser(array('administer site configuration'));
+    $this->drupalLogin($user);
+  }
+
+  function testMetaTag() {
+    $this->drupalGet('admin/config/search/verifications');
+    $this->assertText('No verifications available.');
+    $this->clickLink('Add verification');
+
+    // Add a dummy Google meta tag.
+    $edit = array('engine' => 'google');
+    $this->drupalPost('admin/config/search/verifications/add', $edit, t('Next'));
+    $meta_tag = '<meta name="google-site-verification" content="' . $this->randomName() . '">';
+    $edit = array('meta' => $meta_tag);
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText('Verification saved.');
+    $this->assertText('Google');
+
+    // Check if it displays on the front page.
+    $this->drupalGet('');
+    $this->assertRaw($meta_tag, 'Verification code displayed on front page.');
+
+    // Now try to delete it.
+    $this->drupalGet('admin/config/search/verifications');
+    $this->clickLink('Delete');
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertText('Verification for Google has been deleted.');
+    $this->assertText('No verifications available.');
+  }
+}

@@ -11,7 +11,7 @@ class express_layout_layout_context_condition extends context_condition_node {
   function condition_values() {
     return _express_layout_form_options();
   }
-  function execute($node) {
+  function execute($node, $op) {
     $layout = entity_load_single('express_layout', $node->nid);
     foreach ($this->get_contexts($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']) as $context) {
       $this->condition_met($context, $layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']);

@@ -1,32 +1,8 @@
 <?php
-
 /**
- * Hook for providing page/screen level help links.
+ * @file
+ * Adds inline help to Web Express.
  */
- function hook_express_help($variables) {
-
-  return $variables = array();
-}
-
- /**
-  * Hook for providing field level help links.
-  */
-function hook_express_help_fields($variables) {
-  $variables['article_node_form']['fields'] = array(
-    'field_article_external_url' => array(
-      'title' => 'External URL Help',
-      'short_title' => 'External URL',
-      'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
-    ),
-    'metatags' => array(
-      'title' => 'Metatags Help',
-      'short_title' => 'Metatags',
-      'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
-    ),
-  );
-  return $variables;
-}
-
 
 /**
  * Implements hook_menu().
@@ -51,7 +27,7 @@ function express_help_menu() {
   );
   $items['admin/config/system/express-help'] = array(
     'title' => 'Express Help',
-    'description' =>  'Configure Express Help',
+    'description' => 'Configure Express Help',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('express_help_admin_settings'),
     'file' => 'express_help.admin.inc',
@@ -65,8 +41,8 @@ function express_help_menu() {
  */
 function express_help_menu_alter(&$items) {
   // Send user to express help page instead of default help page
-  //$items['admin/help']['page callback'] = 'drupal_goto';
-  //$items['admin/help']['page arguments'] = array( 'admin/express/help');
+  // $items['admin/help']['page callback'] = 'drupal_goto';
+  // $items['admin/help']['page arguments'] = array( 'admin/express/help');
   unset($items['admin/help']);
 }
 
@@ -81,7 +57,7 @@ function express_help_navbar() {
     '#type' => 'navbar_item',
     'tab' => array(
       '#type' => 'link',
-      '#title' =>  t('Help'),
+      '#title' => t('Help'),
       '#href' => 'http://colorado.edu/webcentral',
       '#options' => array(
         'html' => TRUE,
@@ -106,20 +82,22 @@ function express_help_navbar() {
  */
 function _express_help_list() {
   $output = array();
-  // Get page/screen help
+  // Get page/screen help.
   if ($cache = cache_get('express_help_links')) {
     $express_help = $cache->data;
-  } else {
+  }
+  else {
     $express_help = module_invoke_all('express_help', $variables = NULL);
-    // Save this for 30 days - it should only be cleared on a code update
+    // Save this for 30 days - it should only be cleared on a code update.
     cache_set('express_help_links', $express_help, 'cache', time() + 60 * 60 * 24 * 30);
   }
-  // Get form/field help
+  // Get form/field help.
   if ($cache = cache_get('express_help_field_links')) {
     $help_fields = $cache->data;
-  } else {
+  }
+  else {
     $help_fields = module_invoke_all('express_help_fields', $variables = NULL);
-    // Save this for 30 days - it should only be cleared on a code update
+    // Save this for 30 days - it should only be cleared on a code update.
     cache_set('express_help_field_links', $help_fields, 'cache', time() + 60 * 60 * 24 * 30);
   }
 
@@ -128,23 +106,25 @@ function _express_help_list() {
   // Leave the title element empty to omit the ul title.
     'title' => '',
     'type' => 'ul',
-    'attributes' => array('class' => array(
-      'help-list',
-    )),
+    'attributes' => array(
+      'class' => array(
+        'help-list',
+      ),
+    ),
   );
   foreach ($express_help as $help) {
     foreach ($help as $key => $value) {
-      $help_list['items'][$value['short_title']] = l($value['short_title'], $value['url'], array('attributes' => array('target'=>'_blank')));
+      $help_list['items'][$value['short_title']] = l($value['short_title'], $value['url'], array('attributes' => array('target' => '_blank')));
     }
   }
   foreach ($help_fields as $form_id => $form) {
     foreach ($form['fields'] as $field_name => $field) {
-      $help_list['items'][$field['short_title']] = l($field['short_title'], $field['url'], array('attributes' => array('target'=>'_blank')));
+      $help_list['items'][$field['short_title']] = l($field['short_title'], $field['url'], array('attributes' => array('target' => '_blank')));
     }
   }
   ksort($help_list['items']);
-  $output['list']['#markup'] =  theme('item_list', $help_list);
-  $output['more']['#markup'] = l('Find more Web Express help at www.colorado.edu/webcentral', 'http://www.colorado.edu/webcentral', array('attributes' => array('target'=>'_blank', 'class' => array('help-more-link'))));
+  $output['list']['#markup'] = theme('item_list', $help_list);
+  $output['more']['#markup'] = l(t('Find more Web Express help at www.colorado.edu/webcentral'), 'http://www.colorado.edu/webcentral', array('attributes' => array('target' => '_blank', 'class' => array('help-more-link'))));
   $output['more']['#prefix'] = '<p>';
   $output['more']['#suffix'] = '</p>';
   return $output;
@@ -157,7 +137,7 @@ function _express_help_list_admin() {
   $modules_page_help = module_implements('express_help');
   $modules_field_help = module_implements('express_help_fields');
   $files = system_rebuild_module_data();
-  // Do page/screen level help first
+  // Do page/screen level help first.
   $items = array();
   foreach ($modules_page_help as $module) {
     $items[] = check_plain($files[$module]->info['name']);
@@ -166,7 +146,7 @@ function _express_help_list_admin() {
   $output['page_help']['#markup'] = theme('item_list', array('items' => $items));
   $output['page_help']['#prefix'] = t('<strong>These modules provide page/screen level help:</strong>');
 
-  // Now do field/fieldset level help
+  // Now do field/fieldset level help.
   $items = array();
   foreach ($modules_field_help as $module) {
     $items[] = check_plain($files[$module]->info['name']);
@@ -180,40 +160,75 @@ function _express_help_list_admin() {
  * Implements hook_preprocess_page().
  */
 function express_help_preprocess_page(&$vars) {
-  // Get help paths from cache
+  $custom['admin/settings/feeds/rss/manage/%/edit'] = 'cu_rss_express_help_callback';
+  // variable_set('express_help_custom_paths', $custom);
+
+  // Get help paths from cache.
   if ($cache = cache_get('express_help_links')) {
     $express_help = $cache->data;
-  } else {
+  }
+  else {
     $express_help = module_invoke_all('express_help', $variables = NULL);
-    // Save this for 30 days - it should only be cleared on a code update
+    // Save this for 30 days - it should only be cleared on a code update.
     cache_set('express_help_links', $express_help, 'cache', time() + 60 * 60 * 24 * 30);
   }
-  // Get current path, if on a node/%/edit page, build a node/add/% path
+  // Get current path and change it to reflect help links.
   $current_path = current_path();
   if ((arg(0) == 'node') && (arg(2) == 'edit')) {
-    $current_path = 'node/add/' . $vars['node']->type;
-  } elseif (arg(0) == 'node' && arg(2) == 'webform-results') {
+    $node_type = str_replace('_', '-', $vars['node']->type);
+    $current_path = 'node/add/' . $node_type;
+  }
+  elseif (arg(0) == 'node' && arg(2) == 'webform-results') {
     $current_path = 'node/%/webform-results';
-  } elseif (arg(0) == 'admin' && arg(1) == 'structure' && arg(2) == 'quicktabs') {
+  }
+  elseif (arg(0) == 'admin' && arg(1) == 'structure' && arg(2) == 'quicktabs') {
     $current_path = 'admin/structure/quicktabs/%';
-  } elseif (arg(0) == 'node' && is_numeric(arg(1))) {
+  }
+  elseif (arg(0) == 'node' && is_numeric(arg(1))) {
     $current_path = explode('/', $current_path);
     $current_path[1] = '%';
     $current_path = implode('/', $current_path);
   }
-  // If there is a $key for the current path, add the help link variable
+  elseif (arg(0) == 'block' && arg(2) == 'edit') {
+    $bean_type = str_replace('_', '-', $vars['page']['content']['system_main']['bean']['#value']->type);
+    $current_path = 'block/edit/' . $bean_type;
+  }
+  // Call custom functions for checking help paths.
+  else {
+    if ($cache = cache_get('express_help_custom_paths')) {
+      $express_help_custom_paths = $cache->data;
+    }
+    else {
+      $express_help_custom_paths = module_invoke_all('express_help_custom_paths', $variables = NULL);
+      // Save this for 30 days - it should only be cleared on a code update.
+      cache_set('express_help_custom_paths', $express_help_custom_paths, 'cache', time() + 60 * 60 * 24 * 30);
+    }
+    foreach ($express_help_custom_paths as $custom_path_key => $custom_path_callback) {
+      if (function_exists($custom_path_callback)) {
+        $current_path = $custom_path_callback($custom_path_key, $current_path);
+      }
+    }
+  }
+  // If there is a $key for the current path, add the help link variable.
   if (!empty($express_help[$current_path])) {
     $vars['express_help'] = '';
     foreach ($express_help[$current_path] as $key => $value) {
       $title = $express_help[$current_path][$key]['title'];
       $url = $express_help[$current_path][$key]['url'];
-      // alter the url if configured
-      if (variable_get('express_help_find', 0) && variable_get('express_help_find', 0)) {
-        $url =  str_replace(variable_get('express_help_find'), variable_get('express_help_replace'), $url);
+
+      // Add base url if url is a fragment/relative.
+      $parsed_url = parse_url($url);
+      if (!in_array('host', $parsed_url) && $base_help_url = variable_get('express_help_base_url', 0)) {
+        // Add beginning slash if not one there.
+        if (substr($parsed_url['path'], 0, 1) != '/') {
+          $parsed_url['path'] = '/' . $parsed_url['path'];
+        }
+        $url = $base_help_url . $parsed_url['path'];
       }
+
       if (isset($title) && isset($url)) {
         $help_link = l($title, $url, array('attributes' => array('target' => '_blank')));
-          $vars['express_help'] .= $help_link . '<br/>';
+        $vars['express_help'] .= $help_link . '<br/>';
       }
     }
   }
@@ -223,26 +238,28 @@ function express_help_preprocess_page(&$vars) {
  * Implements hook_form_alter().
  */
 function express_help_form_alter(&$form, &$form_state, $form_id) {
-  // Get help paths from cache
+  // Get help paths from cache.
   if ($cache = cache_get('express_help_field_links')) {
     $help_fields = $cache->data;
-  } else {
+  }
+  else {
     $combined_keys = array();
-    // Get all help field hooks
+    // Get all help field hooks.
     $help_fields = module_invoke_all('express_help_fields', $variables = NULL);
     foreach ($help_fields as $key => $help_field) {
-      // Check for combined form keys
+      // Check for combined form keys.
       if (strpos($key, ',') !== FALSE) {
         $fields = $help_field['fields'];
-        // Save combined keys so we can remove them later
+        // Save combined keys so we can remove them later.
         $combined_keys[] = $key;
         $form_keys = array();
         $form_keys = explode(',', $key);
         foreach ($form_keys as $form_key) {
-          // If form already has some field help, merge them
+          // If form already has some field help, merge them.
           if (!empty($help_fields[$form_key])) {
             $help_fields[$form_key]['fields'] = array_merge($help_fields[$form_key]['fields'], $fields);
-          } else {
+          }
+          else {
             $help_fields[$form_key]['fields'] = $fields;
           }
         }
@@ -252,38 +269,59 @@ function express_help_form_alter(&$form, &$form_state, $form_id) {
     foreach ($combined_keys as $combined_key) {
       unset($help_fields[$combined_key]);
     }
-    // Save this for 30 days - it should only be cleared on a code update
+    // Save this for 30 days - it should only be cleared on a code update.
     cache_set('express_help_field_links', $help_fields, 'cache', time() + 60 * 60 * 24 * 30);
   }
 
-  // If the form_id is a key in our field help array, proceed with alter
+  // If the form_id is a key in our field help array, proceed with alter.
   if (array_key_exists($form_id, $help_fields)) {
-    foreach ($form as $key =>  $field) {
+    foreach ($form as $key => $field) {
       if (!empty($help_fields[$form_id]['fields'][$key])) {
-        $help_link = l('<span class="element-invisible1">' . $help_fields[$form_id]['fields'][$key]['title'] . '</span>', $help_fields[$form_id]['fields'][$key]['url'], array('attributes' => array('target'=>'_blank', 'class' => 'field-help-link'), 'html' => TRUE));
-        // If description is set at this level (i.e. a fieldset), add help
+
+        // Add base url if url is a fragment/relative.
+        $url = $help_fields[$form_id]['fields'][$key]['url'];
+        $parsed_url = parse_url($url);
+        if (!in_array('host', $parsed_url) && $base_help_url = variable_get('express_help_base_url', 0)) {
+          // Add beginning slash if not one there.
+          if (substr($parsed_url['path'], 0, 1) != '/') {
+            $parsed_url['path'] = '/' . $parsed_url['path'];
+          }
+          $url = $base_help_url . $parsed_url['path'];
+        }
+
+        $help_link = l('<span class="element-invisible1">' . $help_fields[$form_id]['fields'][$key]['title'] . '</span>', $url, array(
+          'attributes' => array(
+            'target' => '_blank',
+            'class' => 'field-help-link'),
+          'html' => TRUE)
+        );
+        // If description is set at this level (i.e. a fieldset), add help.
         if ($form[$key]['#type'] == 'fieldset') {
           if (isset($form[$key]['#description'])) {
-          $form[$key]['#description'] = $form[$key]['#description'] . ' ' . $help_link;
-          } else {
+            $form[$key]['#description'] = $form[$key]['#description'] . ' ' . $help_link;
+          }
+          else {
             $form[$key]['#description'] = $help_link;
           }
         }
-        // otherwise add help here
+        // Otherwise add help here.
         else {
           if (isset($form[$key][LANGUAGE_NONE][0]['#description'])) {
             $form[$key][LANGUAGE_NONE][0]['#description'] = $form[$key][LANGUAGE_NONE][0]['#description'] . ' ' . $help_link;
-          } else {
+          }
+          else {
             $form[$key][LANGUAGE_NONE][0]['#description'] = $help_link;
           }
           if (isset($form[$key][LANGUAGE_NONE]['#description'])) {
             $form[$key][LANGUAGE_NONE]['#description'] = $form[$key][LANGUAGE_NONE]['#description'] . ' ' . $help_link;
-          } else {
+          }
+          else {
             $form[$key][LANGUAGE_NONE]['#description'] = $help_link;
           }
           if (isset($form[$key]['#description'])) {
             $form[$key]['#description'] = $form[$key]['#description'] . ' ' . $help_link;
-          } else {
+          }
+          else {
             $form[$key]['#description'] = $help_link;
           }
         }
@@ -291,7 +329,3 @@ function express_help_form_alter(&$form, &$form_state, $form_id) {
     }
   }
 }
-
-//function express_help_field_widget_form_alter(&$element, &$form_state, $context)	{
-//
-//}

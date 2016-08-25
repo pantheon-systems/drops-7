@@ -335,6 +335,16 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
   }
 
   /**
+   * Overrides EntityInlineEntityFormController::createClone().
+   */
+  public function createClone($entity) {
+    $cloned_entity = parent::createClone($entity);
+    $cloned_entity->sku = NULL;
+
+    return $cloned_entity;
+  }
+
+  /**
    * Overrides EntityInlineEntityFormController::save().
    *
    * Autogenerates the product title if specified, and then saves the product.

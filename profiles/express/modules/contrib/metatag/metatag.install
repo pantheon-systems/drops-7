@@ -54,6 +54,9 @@ function metatag_requirements($phase) {
     }
   }
   elseif ($phase == 'runtime') {
+    // Complete data dump of all installed modules, used later.
+    $module_data = system_rebuild_module_data();
+
     // Work out the release of D7 that is currently running.
     list($major, $minor) = explode('.', VERSION);
     // Strip off any suffixes on the version string, e.g. "17-dev".
@@ -69,15 +72,6 @@ function metatag_requirements($phase) {
         'title' => 'Metatag',
         'value' => $t('Upgrade Drupal core to v7.28 or newer'),
         'description' => $t("This older version of Drupal core is missing functionality necessary for the module's multilingual support and contains a broken [node:summary] token, it must be upgraded to version 7.28 or newer."),
-      );
-    }
-    // Everything's OK.
-    else {
-      $requirements['metatag'] = array(
-        'severity' => REQUIREMENT_OK,
-        'title' => 'Metatag',
-        'value' => $t('Drupal core is compatible'),
-        'description' => $t('Older versions of Drupal core contained bugs that made them incompatible with Metatag, but this version will work correctly.'),
       );
     }
 
@@ -104,16 +98,16 @@ function metatag_requirements($phase) {
     }
 
     // Check that Entity_Translation is current.
-    if (module_exists('entity_translation')) {
-      $rev = db_query("SELECT schema_version FROM {system} WHERE name = :module", array(':module' => 'entity_translation'))->fetchColumn();
-      if ($rev < 7004) {
-        $requirements['metatag_et_old'] = array(
-          'severity' => REQUIREMENT_ERROR,
-          'title' => 'Metatag',
-          'value' => $t('<a href="@url">Entity_Translation</a> is out of date and requires updating', array('@url' => 'https://www.drupal.org/project/entity_translation')),
-          'description' => $t('The Entity_Translation module is out of date and needs to be updated in order to be compatible with Metatag.'),
-        );
-      }
+    if (module_exists('entity_translation')
+      && !empty($module_data['entity_translation'])
+      && !empty($module_data['entity_translation']->schema_version)
+      && $module_data['entity_translation']->schema_version < 7004) {
+      $requirements['metatag_et_version'] = array(
+        'severity' => REQUIREMENT_ERROR,
+        'title' => 'Metatag',
+        'value' => $t('<a href="@url">Entity_Translation</a> is out of date and requires updating', array('@url' => 'https://www.drupal.org/project/entity_translation')),
+        'description' => $t('The Entity_Translation module is out of date and needs to be updated in order to be compatible with Metatag.'),
+      );
     }
 
     // It's recommended to install the Transliteration module to clean up file
@@ -148,16 +142,44 @@ function metatag_requirements($phase) {
       );
     }
 
-    // Alternative Hreflang should be installed if there's more than one
-    // language available on the site.
-    $languages = language_list('enabled');
-    if (!empty($languages[1]) && count($languages[1]) > 1 && !module_exists('hreflang')) {
-      $requirements['metatag_hreflang'] = array(
-        'severity' => REQUIREMENT_INFO,
-        'title' => 'Metatag',
-        'value' => $t('The Alternative Hreflang module is recommended.'),
-        'description' => $t('Sites using more than one language or locale enabled should install the <a href="@url">Aternative Hreflang</a> module. This will cause content/node pages to add extra meta tags for linking to the content in each of the available locales. This is a recommendation from Google by way of blog posts their staff wrote on the topic.', array('@url' => 'https://www.drupal.org/project/hreflang')),
-      );
+    // Token v7.x-1.6 is *highly* recommended.
+    $token_module = $module_data['token'];
+    // If the version string is not present then it means the module is running
+    // from git, which means it can't be compared against. Alternatively, look
+    // for the test file, which was the last commit of the 1.6 release.
+    if (!empty($token_module->info['version'])
+      || empty($token_module->info['files'])) {
+      // If there's no test file then this is older than v1.6.
+      if (empty($token_module->info['files'])) {
+        $minor = 5;
+      }
+      // Otherwise check the version string.
+      else {
+        // Versions are in the format 7.x-1.y, so split the string up to find
+        // the 'y' portion.
+        $version = explode('-', $token_module->info['version']);
+        if (isset($version[1])) {
+          list($major, $minor) = explode('.', $version[1]);
+          // Strip off any suffixes on the version string, e.g. "17-dev".
+          if (strpos('-', $minor)) {
+            list($minor, $suffix) = explode('-', $minor);
+          }
+        }
+        // If the version string couldn't be extracted correctly, assume that
+        // an incorrect version is installed.
+        else {
+          $minor = 0;
+        }
+      }
+      // If v1.6 is not installed, give a warning.
+      if ($minor < 6) {
+        $requirements['metatag_token_version'] = array(
+          'severity' => REQUIREMENT_WARNING,
+          'title' => 'Metatag',
+          'value' => $t('Token module is out of date.'),
+          'description' => $t('It is highly recommended to install <a href="https://www.drupal.org/project/token">Token module</a> v7.x-1.6 or newer, otherwise there may be problems using certain meta tags.'),
+        );
+      }
     }
   }
 
@@ -253,13 +275,21 @@ function metatag_schema() {
       ),
     ),
     'indexes' => array(
-      'type_revision' => array('entity_type','revision_id'),
+      'type_revision' => array(
+        'entity_type',
+        'revision_id',
+      ),
     ),
-    'primary key' => array('entity_type', 'entity_id', 'revision_id', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'revision_id',
+      'language',
+    ),
   );
 
   $schema['cache_metatag'] = drupal_get_schema_unprocessed('system', 'cache');
-  $schema['cache_metatag']['description'] = t('Cache table for the generated meta tag output.');
+  $schema['cache_metatag']['description'] = 'Cache table for the generated meta tag output.';
 
   return $schema;
 }
@@ -391,6 +421,21 @@ function metatag_uninstall() {
   // Optionally enable the automatic watchdog logging of i18n strings.
   variable_del('metatag_i18n_enable_watchdog');
 
+  // Optionally disable the i18n integration.
+  variable_del('metatag_i18n_disabled');
+
+  // Optionally output core's meta tags.
+  variable_del('metatag_leave_core_tags');
+
+  // Optionally enable individual permissions for each meta tag.
+  variable_del('metatag_extended_permissions');
+
+  // Optionally load meta tags on admin pages.
+  variable_del('metatag_load_all_pages');
+
+  // Sanitize token replacement output.
+  variable_del('metatag_token_sanitize');
+
   // Remove all possible 'enable' variables.
   foreach (entity_get_info() as $entity_type => $entity_info) {
     variable_del('metatag_enable_' . $entity_type);
@@ -410,13 +455,119 @@ function metatag_enable() {
 }
 
 /**
- * Implements hook_disable().
+ * Replace one meta tag with another in the entity records.
+ *
+ * @param array $sandbox
+ *   A Batch API sandbox, passed by reference.
+ * @param string $old_tag
+ *   The meta tag that is to be replaced.
+ * @param string $new_tag
+ *   The meta tag that replaces the old one.
  */
-// function metatag_disable() {
-// }
+function metatag_update_replace_meta_tag(&$sandbox, $old_tag, $new_tag) {
+  if (!isset($sandbox['progress'])) {
+    // Count of all {metatag} records that contained an entry for the old meta
+    // tag.
+    $records_count = db_select('metatag', 'm')
+      ->condition('m.data', '%' . db_like('"" . $old_tag . ""') . '%', 'LIKE')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    if (empty($records_count)) {
+      return t('No Metatag entity records needed to have the "' . $old_tag . '" meta tag renamed.');
+    }
+
+    $sandbox['max'] = $records_count;
+    $sandbox['progress'] = 0;
+  }
+
+  // Count of rows that will be processed per iteration.
+  $limit = 100;
+
+  // Fetches a part of records.
+  $records = db_select('metatag', 'm')
+    ->fields('m', array())
+    ->condition('m.data', '%' . db_like('"' . $old_tag . '"') . '%', 'LIKE')
+    ->range(0, $limit)
+    ->execute();
+
+  $count = 0;
+  $keys = array('entity_type', 'entity_id', 'revision_id', 'language');
+
+  // Loop over the values and correct them.
+  foreach ($records as $record) {
+    $record->data = unserialize($record->data);
+
+    if (isset($record->data[$old_tag])) {
+      $record->data[$new_tag] = $record->data[$old_tag];
+      unset($record->data[$old_tag]);
+      drupal_write_record('metatag', $record, $keys);
+
+      // Clear the cache for the entity this belongs to.
+      entity_get_controller($record->entity_type)->resetCache(array($record->entity_id));
+    }
+
+    $count++;
+  }
+
+  if (!empty($count)) {
+    $sandbox['progress'] += $count;
+    $sandbox['#finished'] = min(0.99, $sandbox['progress'] / $sandbox['max']);
+  }
+  else {
+    $sandbox['#finished'] = 1;
+    return t('Converted the "' . $old_tag . '" meta tag for @count entity records to "' . $new_tag . '" meta tag.', array('@count' => $sandbox['progress']));
+  }
+}
 
 /**
- * Disable the deprecated metatag_ui module which has been merged into metatag.
+ * Replace one meta tag with another in the configs.
+ *
+ * @param string $old_tag
+ *   The meta tag that is to be replaced.
+ * @param string $new_tag
+ *   The meta tag that replaces the old one.
+ */
+function metatag_update_replace_config($old_tag, $new_tag) {
+  // Find all {metatag_config} records that contained an entry for the old meta
+  // tag.
+  $records = db_select('metatag_config', 'm')
+    ->fields('m', array('cid', 'config'))
+    ->condition('m.config', '%' . db_like('"' . $old_tag . '"') . '%', 'LIKE')
+    ->execute();
+  // This message will be returned if nothing needed to be updated.
+  $none_message = t('No Metatag configuration records needed to have the "og:video" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.');
+
+  // Loop over the values and correct them.
+  if ($records->rowCount() == 0) {
+    drupal_set_message($none_message);
+  }
+  else {
+    $keys = array('cid');
+
+    // Loop over the values and correct them.
+    $counter = 0;
+    foreach ($records as $record) {
+      $record->config = unserialize($record->config);
+      if (isset($record->config[$old_tag])) {
+        $record->config[$new_tag] = $record->config[$old_tag];
+        unset($record->config['og:video']);
+        drupal_write_record('metatag_config', $record, $keys);
+        $counter++;
+      }
+    }
+    if ($counter == 0) {
+      drupal_set_message($none_message);
+    }
+    else {
+      drupal_set_message(t('Converted the "' . $old_tag . '" meta tag for @count configurations to the new "' . $new_tag . '" meta tag.', array('@count' => $counter)));
+    }
+  }
+}
+
+/**
+ * Disable the deprecated metatag_ui module, which has been merged into metatag.
  */
 function metatag_update_7000() {
   if (module_exists('metatag_ui')) {
@@ -1491,38 +1642,10 @@ function metatag_update_7025() {
 /**
  * Rename the 'copyright' meta tag to 'rights', part 1.
  */
-function metatag_update_7026() {
-  // Find all {metatag} records that contained an entry for the old meta tag.
-  $records = db_query("SELECT entity_type, entity_id, revision_id, language, data
-    FROM {metatag}
-    WHERE data LIKE '%copyright%'");
-  // This message will be returned if nothing needed to be updated.
-  $none_message = t('No Metatag entity records needed to have the "copyright" meta tag fixed.');
-
-  if ($records->rowCount() == 0) {
-    drupal_set_message($none_message);
-  }
-  else {
-    $keys = array('entity_type', 'entity_id', 'revision_id', 'language');
-
-    // Loop over the values and correct them.
-    $counter = 0;
-    foreach ($records as $record) {
-      $record->data = unserialize($record->data);
-      if (isset($record->data['copyright'])) {
-        $record->data['rights'] = $record->data['copyright'];
-        unset($record->data['copyright']);
-        drupal_write_record('metatag', $record, $keys);
-        $counter++;
-      }
-    }
-    if ($counter == 0) {
-      drupal_set_message($none_message);
-    }
-    else {
-      drupal_set_message(t('Converted the "copyright" meta tag for @count entity records to the correct "rights" meta tag.', array('@count' => $counter)));
-    }
-  }
+function metatag_update_7026(&$sandbox) {
+  $old_tag = 'copyright';
+  $new_tag = 'rights';
+  return metatag_update_replace_meta_tag($sandbox, $old_tag, $new_tag);
 }
 
 /**
@@ -1543,8 +1666,13 @@ function metatag_update_7028() {
  * Add an index to the {metatag} table to speed up some queries.
  */
 function metatag_update_7029() {
-  db_add_index('metatag', 'type_revision', array('entity_type', 'revision_id'));
-  drupal_set_message(t('Added an index to the main Metatag table that will hopefully improve performance a little.'));
+  if (!db_index_exists('metatag', 'type_revision')) {
+    db_add_index('metatag', 'type_revision', array('entity_type', 'revision_id'));
+    return t('Added an index to the main Metatag table that will hopefully improve performance a little.');
+  }
+  else {
+    return t('Did not add the index, it already existed.');
+  }
 }
 
 /**
@@ -1558,39 +1686,9 @@ function metatag_update_7030() {
  * Rename the 'copyright' meta tag to 'rights', part 2.
  */
 function metatag_update_7031() {
-  // Find all {metatag_config} records that contained an entry for the old meta
-  // tag.
-  $records = db_query("SELECT cid, config
-    FROM {metatag_config}
-    WHERE config LIKE '%copyright%'");
-  // This message will be returned if nothing needed to be updated.
-  $none_message = t('No Metatag configuration records needed to have the "copyright" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.');
-
-  // Loop over the values and correct them.
-  if ($records->rowCount() == 0) {
-    drupal_set_message($none_message);
-  }
-  else {
-    $keys = array('cid');
-
-    // Loop over the values and correct them.
-    $counter = 0;
-    foreach ($records as $record) {
-      $record->config = unserialize($record->config);
-      if (isset($record->config['copyright'])) {
-        $record->config['rights'] = $record->config['copyright'];
-        unset($record->config['copyright']);
-        drupal_write_record('metatag_config', $record, $keys);
-        $counter++;
-      }
-    }
-    if ($counter == 0) {
-      drupal_set_message($none_message);
-    }
-    else {
-      drupal_set_message(t('Converted the "copyright" meta tag for @count configurations to the correct "rights" meta tag.', array('@count' => $counter)));
-    }
-  }
+  $old_tag = 'copyright';
+  $new_tag = 'rights';
+  return metatag_update_replace_config($old_tag, $new_tag);
 }
 
 /**
@@ -1745,8 +1843,13 @@ function metatag_update_7040(&$sandbox) {
     // The count of records visited so far.
     $sandbox['progress'] = 0;
 
-    // Update Node values.
-    $nodes = db_query("SELECT * FROM {metatag} m WHERE m.data LIKE '%robots%'");
+    // Get a list of {metatag} records that have a robots meta tag definition
+    // that is not in the correct format.
+    $nodes = db_select('metatag', 'm')
+      ->fields('m')
+      ->condition('m.data', '%:6:"robots";%', 'LIKE')
+      ->condition('m.data', '%:6:"robots";a:1:{s:5:"value";%', 'NOT LIKE')
+      ->execute();
     $sandbox['records'] = array();
     foreach ($nodes as $record) {
       $sandbox['records'][] = $record;
@@ -1869,44 +1972,260 @@ function metatag_update_7100() {
  * Update i18n strings for all meta tags to use the new format.
  */
 function metatag_update_7101() {
-  if (module_exists('i18n')) {
-    // Loop through each entity type. Not going to bother filtering this list,
-    // it'll only be a difference of a few entities anyway and the queries
-    // should be fairly quick.
-    foreach (entity_get_info() as $entity_type => $entity_info) {
-      // Entities must have bundles.
-      if (empty($entity_info['bundles'])) {
-        $entity_info['bundles'] = array(
-          $entity_type => $entity_type,
-        );
-      }
-      foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
-        // Update {locales_source}, replace 'metatag:ENTITYTYPE:BUNDLE:tag' with
-        // 'metatag:metatag_config:ENTITYTYPE:BUNDLE:tag'.
-        db_query("UPDATE {locales_source}
-          SET location = REPLACE(location, 'metatag:{$entity_name}:{$bundle_name}:', 'metatag:metatag_config:{$entity_name}:{$bundle_name}:'),
-            context = REPLACE(context, '{$entity_name}:{$bundle_name}:', '{$entity_name}:{$bundle_name}:')
-          WHERE textgroup = 'metatag'
-            AND location LIKE 'metatag:{$entity_name}:{$bundle_name}:%'");
+  if (!module_exists('locale') || !db_table_exists('locales_source')) {
+    return t('No translations to fix as the locale system is not enabled.');
+  }
 
-        // Update {locales_source}, replace 'metatag:ENTITYTYPE:tag' with
-        // 'metatag:metatag_config:ENTITYTYPE:tag'.
-        db_query("UPDATE {locales_source}
-          SET location = REPLACE(location, 'metatag:{$entity_name}:', 'metatag:metatag_config:{$entity_name}:'),
-            context = REPLACE(context, '{$entity_name}:', '{$entity_name}:')
-          WHERE textgroup = 'metatag'
-            AND location LIKE 'metatag:{$entity_name}:%'");
-      }
+  // Loop through each entity type. Not going to bother filtering this list,
+  // it'll only be a difference of a few entities anyway and the queries
+  // should be fairly quick.
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    // Entities must have bundles.
+    if (empty($entity_info['bundles'])) {
+      $entity_info['bundles'] = array(
+        $entity_type => $entity_type,
+      );
     }
-    // Update {locales_source}, replace 'metatag:metatag:' with
-    // 'metatag:metatag_output:'.
-    db_query("UPDATE {locales_source}
-      SET location = REPLACE(location, 'metatag:metatag:', 'metatag:metatag_output:'),
-        context = REPLACE(context, 'metatag:', 'metatag_output:')
+    foreach ($entity_info['bundles'] as $bundle_type => $bundle_info) {
+      // Update {locales_source}, replace 'metatag:ENTITYTYPE:BUNDLE:tag' with
+      // 'metatag:metatag_config:ENTITYTYPE:BUNDLE:tag'.
+      db_query("UPDATE {locales_source}
+        SET location = REPLACE(location, 'metatag:{$entity_type}:{$bundle_type}:', 'metatag:metatag_config:{$entity_type}:{$bundle_type}:'),
+          context = REPLACE(context, '{$entity_type}:{$bundle_type}:', 'metatag_config:{$entity_type}:{$bundle_type}:')
+        WHERE textgroup = 'metatag'
+          AND location LIKE 'metatag:{$entity_type}:{$bundle_type}:%'");
+
+      // Update {locales_source}, replace 'metatag:ENTITYTYPE:tag' with
+      // 'metatag:metatag_config:ENTITYTYPE:tag'.
+      db_query("UPDATE {locales_source}
+        SET location = REPLACE(location, 'metatag:{$entity_type}:', 'metatag:metatag_config:{$entity_type}:'),
+          context = REPLACE(context, '{$entity_type}:', 'metatag_config:{$entity_type}:')
+        WHERE textgroup = 'metatag'
+          AND location LIKE 'metatag:{$entity_type}:%'");
+    }
+  }
+  // Update {locales_source}, replace 'metatag:metatag:' with
+  // 'metatag:output:'.
+  db_query("UPDATE {locales_source}
+    SET location = REPLACE(location, 'metatag:metatag:', 'metatag:output:'),
+      context = REPLACE(context, 'metatag:', 'output:')
+    WHERE textgroup = 'metatag'
+      AND location LIKE 'metatag:metatag:%'");
+}
+
+/**
+ * Re-run update 7101.
+ */
+function metatag_update_7102() {
+  metatag_update_7101();
+}
+
+/**
+ * Clear all metatag caches so the new entity caching structure takes over.
+ */
+function metatag_update_7103() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+}
+
+/**
+ * Remove the entity revision ID from the translation strings.
+ */
+function metatag_update_7104(&$sandbox) {
+  // Verify that locales are being used in the first place.
+  if (!module_exists('locale') || !db_table_exists('locales_source')) {
+    return t('Metatag: No translations to fix as the locale system is not enabled.');
+  }
+
+  // No need to do anything if output translation is disabled.
+  if (!variable_get('metatag_i18n_translate_output', FALSE)) {
+    return t('Metatag: Output translation is disabled, so no need to update anything.');
+  }
+
+  // Process records by groups of 10 (arbitrary value).
+  // When a group is processed, the batch update engine determines whether it
+  // should continue processing in the same request or provide progress
+  // feedback to the user and wait for the next request.
+  $limit = 10;
+  // When ran through Drush it's Ok to process a larger number of objects at a
+  // time.
+  if (drupal_is_cli()) {
+    $limit = 100;
+  }
+
+  // Use the sandbox at your convenience to store the information needed
+  // to track progression between successive calls to the function.
+  if (!isset($sandbox['progress'])) {
+    // The count of records visited so far.
+    $sandbox['progress'] = 0;
+
+    // Total records that must be visited.
+    $sandbox['max'] = db_query("SELECT COUNT(lid)
+      FROM {locales_source}
       WHERE textgroup = 'metatag'
-        AND location LIKE 'metatag:metatag:%'");
+      AND context LIKE 'output:%:%:%:%'")->fetchField();
+
+    // If there's no data, don't bother with the extra work.
+    if (empty($sandbox['max'])) {
+      watchdog('metatag', 'Update 7104: No nodes need the translation entity string fixed.', array(), WATCHDOG_INFO);
+      if (drupal_is_cli()) {
+        drupal_set_message(t('Update 7104: No nodes need the translation entity string fixed.'));
+      }
+      return t('No nodes need the Metatag language values fixed.');
+    }
+
+    // A place to store messages during the run.
+    $sandbox['messages'] = array();
+
+    // An initial record of the number of records to be updated.
+    watchdog('metatag', 'Update 7104: !count records to update.', array('!count' => $sandbox['max']), WATCHDOG_INFO);
+    if (drupal_is_cli()) {
+      drupal_set_message(t('Update 7104: !count records to update.', array('!count' => $sandbox['max'])));
+    }
+  }
+
+  // Get a batch of records that need to be fixed.
+  $records = db_query_range("SELECT lid, location, context
+    FROM {locales_source}
+    WHERE textgroup = 'metatag'
+    AND context LIKE 'output:%:%:%:%'", 0, $limit);
+
+  // Update each of the records.
+  foreach ($records as $record) {
+    $old_location = '/metatag:output:([^:]*):([^:]*):([^:]*):([^:]*)/';
+    $new_location = 'metatag:output:$1:$2:$4';
+    $location = preg_replace($old_location, $new_location, $record->location);
+    $old_context = '/output:([^:]*):([^:]*):([^:]*):([^:]*)/';
+    $new_context = 'output:$1:$2:$4';
+    $context = preg_replace($old_context, $new_context, $record->context);
+    drupal_set_message($location);
+    drupal_set_message($context);
+    db_update('locales_source')
+      ->fields(array(
+        'location' => $location,
+        'context' => $context,
+      ))
+      ->condition('lid', $record->lid)
+      ->execute();
+
+    // Update our progress information.
+    $sandbox['progress']++;
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again. If you set a float, this will indicate the progress of
+  // the batch so the progress bar will update.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    // Clear all caches so the fixed data will be reloaded.
+    cache_clear_all('*', 'cache_metatag', TRUE);
+
+    // hook_update_N() may optionally return a string which will be displayed
+    // to the user.
+    return t('Fixed the Metatag language values for @count nodes.', array('@count' => $sandbox['progress']));
+  }
+}
+
+/**
+ * Fix the output translation strings.
+ */
+function metatag_update_7105() {
+  if (!module_exists('locale') || !db_table_exists('locales_source')) {
+    return t('No translations to fix as the locale system is not enabled.');
+  }
+
+  db_query("UPDATE {locales_source}
+    SET location = REPLACE(location, 'metatag:metatag:', 'metatag:output:'),
+      context = REPLACE(context, 'metatag:', 'output:')
+    WHERE textgroup = 'metatag'
+    AND location LIKE 'metatag:metatag:%'");
+
+  return t('Fixed the Metatag output strings.');
+}
+
+
+/**
+ * The output translation strings were renamed to something shorter, so rerun
+ * update 7105.
+ */
+function metatag_update_7106() {
+  return metatag_update_7105();
+}
+
+/**
+ * Fix the global config translation strings.
+ */
+function metatag_update_7107() {
+  if (!module_exists('locale') || !db_table_exists('locales_source')) {
+    return t('No translations to fix as the locale system is not enabled.');
+  }
+
+  db_query("UPDATE {locales_source}
+    SET location = REPLACE(location, 'metatag:global:', 'metatag:metatag_config:global:'),
+      context = REPLACE(context, 'global:', 'metatag_config:global:')
+    WHERE textgroup = 'metatag'
+    AND location LIKE 'metatag:global:%'");
+
+  return t('Fixed the Metatag global config string translations.');
+}
+
+/**
+ * Delete output translations if it's disabled.
+ */
+function metatag_update_7108() {
+  if (!module_exists('locale') || !db_table_exists('locales_source')) {
+    return t('No translations to fix as the locale system is not enabled.');
+  }
+
+  // If the output-translation option is enabled then don't delete anything.
+  if (variable_get('metatag_i18n_translate_output', FALSE)) {
+    return t("Metatag: Not deleting output translations because that option is enabled.");
+  }
+
+  $lids = db_select('locales_source', 'ls')
+    ->fields('ls', array('lid'))
+    ->condition('ls.textgroup', 'metatag')
+    ->condition('ls.context', 'output:%', 'LIKE')
+    ->execute()
+    ->fetchCol();
+
+  if (!empty($lids)) {
+    // Delete records in the tables in reverse order, so that if the query fails
+    // and has to be reran it'll still find records. But it should be ok.
+    if (db_table_exists('i18n_string')) {
+      db_delete('i18n_string')
+        ->condition('lid', $lids)
+        ->execute();
+    }
+    db_delete('locales_target')
+      ->condition('lid', $lids)
+      ->execute();
+    db_delete('locales_source')
+      ->condition('lid', $lids)
+      ->execute();
+    return t('Metatag: Removed @count output translation records that were not needed.', array('@count' => count($lids)));
   }
   else {
-    return t('The Internationalization (i18n) module is not enabled, so there is no need to generate the missing translation strings.');
+    return t('Metatag; No output translation records needed to be removed.');
   }
+}
+
+/**
+ * Rename the 'icon_any' meta tag to 'mask-icon' in the entity records.
+ */
+function metatag_update_7109(&$sandbox) {
+  module_load_include('install', 'metatag');
+  $old_tag = 'icon_any';
+  $new_tag = 'mask-icon';
+  return metatag_update_replace_meta_tag($sandbox, $old_tag, $new_tag);
+}
+
+/**
+ * Rename the 'icon_any' meta tag to 'mask-icon' in the configs.
+ */
+function metatag_update_7110() {
+  module_load_include('install', 'metatag');
+  $old_tag = 'icon_any';
+  $new_tag = 'mask-icon';
+  return metatag_update_replace_config($old_tag, $new_tag);
 }

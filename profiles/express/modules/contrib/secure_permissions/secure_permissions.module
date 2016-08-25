@@ -242,6 +242,8 @@ function secure_permissions_build_permissions() {
   foreach ($roles as $rid => $role) {
     $perms = array();
     $new_permissions = module_invoke_all('secure_permissions', $role);
+    // Change dynamically created permission values.
+    $new_permissions = secure_permissions_dynamic_permissions($new_permissions);
     foreach ($permissions as $perm) {
       $perms[$perm] = FALSE;
       if (in_array($perm, $new_permissions)) {
@@ -252,6 +254,61 @@ function secure_permissions_build_permissions() {
     user_role_change_permissions($rid, $perms);
   }
   return $permissions_rebuilt;
+}
+
+/**
+ * Check permissions for dynamic values and replace with consistent values.
+ *
+ * Right now this function can replace permissions for:
+ *   - Role IDs
+ *   - Taxonomy Vocabularies
+ *
+ * Logic has to be added for each check since database schemas differ.
+ *
+ * @param array $perms
+ *   An array of permissions to check for dynamic values.
+ */
+function secure_permissions_dynamic_permissions(array $perms = array()) {
+
+  // Get role IDs.
+  $role_ids = db_select('role', 'r')
+    ->fields('r', array('rid', 'name'))
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Get vocabulary IDs.
+  $vocabulary_ids = db_select('taxonomy_vocabulary', 't')
+    ->fields('t', array('vid', 'machine_name'))
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Check for role permissions and replace role names with role IDs.
+  foreach ($perms as $key => $perm) {
+    // Replace placeholders for Role IDs.
+    $role_split = preg_split('/((edit|cancel) users with role )/', $perm, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    // If there is more than one part, then assume permission is role based.
+    if (count($role_split) >= 2) {
+      // If there second part of the string is a role ID, don't proceed.
+      if (!is_numeric($role_split[2])) {
+        $role_id = array_search($role_split[2], $role_ids);
+        $perm_name = $role_split[0] . $role_id;
+        $perms[$key] = $perm_name;
+      }
+    }
+
+    // Replace placeholders for Vocabulary IDs.
+    $vocab_split = preg_split('/((edit|delete) terms in )/', $perm, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    // If there is more than one part, then assume permission is vocabulary based.
+    if (count($vocab_split) >= 2) {
+      // If there second part of the string is a vocabulary ID, don't proceed.
+      if (!is_numeric($vocab_split[2])) {
+        $vocab_id = array_search($vocab_split[2], $vocabulary_ids);
+        $perm_name = $vocab_split[0] . $vocab_id;
+        $perms[$key] = $perm_name;
+      }
+    }
+  }
+  return $perms;
 }
 
 /**

@@ -119,6 +119,12 @@ function cu_article_strongarm() {
       'sidebar_category' => array(
         'custom_settings' => TRUE,
       ),
+      'email_feature' => array(
+        'custom_settings' => TRUE,
+      ),
+      'email_teaser' => array(
+        'custom_settings' => TRUE,
+      ),
     ),
     'extra_fields' => array(
       'form' => array(
@@ -126,10 +132,10 @@ function cu_article_strongarm() {
           'weight' => '0',
         ),
         'path' => array(
-          'weight' => '5',
+          'weight' => '2',
         ),
         'redirect' => array(
-          'weight' => '6',
+          'weight' => '3',
         ),
         'metatags' => array(
           'weight' => '7',

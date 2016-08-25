@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Implements hook_user_login().
+ *
+ * Send user to dashboard after logging in.
+ */
+function express_dashboard_user_user_login(&$edit, $account)
+{
+  // Your logic will set $redirection to the desired location
+  $redirection = 'admin/dashboard/user';
+
+  // Unless there is already a redirection going, or the user is trying to reset his password, we redirect to $redirection.
+  if (empty($_GET['destination'])
+    && !is_null($redirection)
+    && (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset'))
+  {
+    $edit['redirect'] = $redirection;
+  }
+}
+
+/**
+ * Implements hook_express_dashboard().
+ *
+ * Adding user Dashboard.
+ */
+function express_dashboard_user_express_dashboard($variables) {
+  $variables['user'] = array(
+    'title' => 'User',
+    'callback' => 'express_dashboard_user_content',
+    'weight' => -99,
+    'access arguments' => array('use user dashboard'),
+  );
+  return $variables;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function express_dashboard_user_permission() {
+  return array(
+    'use user dashboard' => array(
+      'title' => 'Use the User Dashboard',
+      'description' => 'Access the user dashboard',
+    ),
+  );
+}
+
+/**
+ * Callback function for user dashboard.
+ */
+function express_dashboard_user_content() {
+  global $user;
+  $vars['user'] = (array) $user;
+  $excluded_roles = array(
+    'authenticated user',
+  );
+  foreach ($vars['user']['roles'] as $rid => $role) {
+    if (in_array($role, $excluded_roles)) {
+      unset($vars['user']['roles'][$rid]);
+    }
+  }
+  $output['user_profile']['widgets']['user']['title'] = $user->name;
+  $output['user_profile']['widgets']['user']['content']['#markup'] = theme('express_dashboard_user_profile', (array) $vars);
+
+  return $output;
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Adds theme functions and tempalte files for dashboards
+ */
+function express_dashboard_user_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'express_dashboard_user') . '/templates';
+  $registry['express_dashboard_user_profile'] = array(
+    'template' => 'express-dashboard-user-profile',
+    'path' => $template_dir,
+  );
+  return $registry;
+}
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function express_dashboard_user_secure_permissions($role) {
+
+  $permissions = array(
+    'authenticated user' => array(
+      'use user dashboard',
+    ),
+    'administrator' => array(
+      'use user dashboard',
+    ),
+    'content_editor' => array(
+      'use user dashboard',
+    ),
+    'developer' => array(
+      'use user dashboard',
+    ),
+    'edit_my_content' => array(
+      'use user dashboard',
+    ),
+    'site_owner' => array(
+      'use user dashboard',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

@@ -16,7 +16,7 @@
   box-shadow: 0 0.8em 2.5em -0.8em rgba(0, 0, 0, 0.75);
 }
 /* [dir] is needed to override Bartik's .item-list li padding */
-[dir] #navbar-administration .navbar-tab-responsive-preview .responsive-preview-options li {
+[dir] #navbar-administration .navbar-tab-responsive-preview .item-list li {
   margin: 0;
   padding: 0;
 }

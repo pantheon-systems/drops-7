@@ -50,7 +50,7 @@ function _cu_block_section_rerender($item) {
         'delta' => $bean->delta,
         'subject' => $bean->title,
       );
-      
+
       if (module_exists('contextual')) {
         $block['#contextual_links']['bean'] = array(
           'block',
@@ -60,7 +60,7 @@ function _cu_block_section_rerender($item) {
           'admin/structure/block/manage',
           array($block['#block']->module, $block['#block']->delta),
         );
-  
+
         // If it's a quicktab block, add an additional contextual link
         // and remove bean edit.
         if ($bean->type == 'quicktab') {
@@ -70,10 +70,17 @@ function _cu_block_section_rerender($item) {
           );
           unset($block['#contextual_links']['bean']);
         }
-      } 
+      }
     }
-    $output[$bean->bid] = $block; 
-  return $output;  
+    $output[$bean->bid] = $block;
+  return $output;
+}
+
+function cu_block_section_breakpoints() {
+  $queries = array();
+  $queries['tablet'] = 'screen and (min-width:768px) and (max-width:1000px)';
+  $queries['desktop'] = 'screen and (min-width:1000px)';
+  return $queries;
 }
 
 /*
@@ -92,39 +99,38 @@ function cu_block_section_preprocess_entity(&$vars) {
       $output .= render($bean);
     }
     $vars['content']['blocks'] = $output;
-    
+
     // Add paddings for responsive output
     $padding['desktop'] = $vars['field_block_section_padding'][0]['safe_value'];
     $padding['tablet'] = $vars['field_block_section_tablet_pad'][0]['safe_value'];
     $padding['mobile'] = $vars['field_block_section_mobile_pad'][0]['safe_value'];
-    
-    
+
+
     // Render responsive sized images
     if (!empty($vars['content']['field_block_section_bg_image'])) {
       $image = render($vars['content']['field_block_section_bg_image']);
       $vars['image'] = trim(preg_replace('/\s+/', ' ', $image));
-    
+
       // Render image for large displays
       $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'hero';
       $image_large = render($vars['content']['field_block_section_bg_image']);
       $vars['image_large'] = trim(preg_replace('/\s+/', ' ', $image_large));
-      
+
       // Render image for medium displays
       $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'large';
       $image_medium = render($vars['content']['field_block_section_bg_image']);
       $vars['image_medium'] = trim(preg_replace('/\s+/', ' ', $image_medium));
-      
+
       // Render image for small displays
       $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'medium';
       $image_small = render($vars['content']['field_block_section_bg_image']);
       $vars['image_small'] = trim(preg_replace('/\s+/', ' ', $image_small));
     }
-    
-    
+
+
     if (theme_get_setting('alpha_responsive', variable_get('theme_default'))) {
-      $queries['tablet'] = theme_get_setting('alpha_layouts_alpha_default_narrow_media', variable_get('theme_default'));
-      $queries['desktop'] = theme_get_setting('alpha_layouts_alpha_default_normal_media', variable_get('theme_default'));
-      
+      $queries = cu_block_section_breakpoints();
+
       drupal_add_css(
         '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['mobile'] . '; }',
         array(
@@ -155,9 +161,9 @@ function cu_block_section_preprocess_entity(&$vars) {
           'weight' => '9999',
         )
       );
-      
-      
-      
+
+
+
     } else {
       drupal_add_css(
         '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['desktop'] . '; }',

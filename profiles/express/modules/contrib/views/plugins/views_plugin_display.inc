@@ -53,7 +53,7 @@ class views_plugin_display extends views_plugin {
           $this->extender[$extender] = $plugin;
         }
         else {
-          vpr('Invalid display extender @extender', array('@handler' => $extender));
+          vpr('Invalid display extender @extender', array('@extender' => $extender));
         }
       }
     }
@@ -2575,6 +2575,23 @@ class views_plugin_display extends views_plugin {
           $url_options['query'] = $this->view->exposed_raw_input;
         }
         $theme = views_theme_functions('views_more', $this->view, $this->display);
+
+        $parsed_url = drupal_parse_url($path);
+        // Preserve the query string from url.
+        if (!empty($parsed_url['query'])) {
+          if (!empty($url_options['query'])) {
+            $url_options['query'] = array_merge($parsed_url['query'], $url_options['query']);
+          }
+          else {
+            $url_options['query'] = $parsed_url['query'];
+          }
+          $path = $parsed_url['path'];
+        }
+        // Add fragment if applicable.
+        if (!empty($parsed_url['fragment'])) {
+          $url_options['fragment'] = $parsed_url['fragment'];
+        }
+
         $path = check_url(url($path, $url_options));
 
         return theme($theme, array('more_url' => $path, 'link_text' => check_plain($this->use_more_text()), 'view' => $this->view));

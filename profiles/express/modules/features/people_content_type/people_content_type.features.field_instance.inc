@@ -44,7 +44,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 41,
+      'weight' => 11,
     ),
   );
 
@@ -75,7 +75,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 36,
+      'weight' => 8,
     ),
   );
 
@@ -106,7 +106,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 38,
+      'weight' => 9,
     ),
   );
 
@@ -137,7 +137,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 40,
+      'weight' => 10,
     ),
   );
 
@@ -169,7 +169,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 32,
+      'weight' => 6,
     ),
   );
 
@@ -201,7 +201,7 @@ function people_content_type_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 34,
+      'weight' => 7,
     ),
   );
 
@@ -277,7 +277,7 @@ function people_content_type_field_default_field_instances() {
     'default_value_function' => '',
     'default_value_php' => '',
     'deleted' => 0,
-    'description' => 'This setting has no effect and the filter will not be shown if you have chosen to customize by Department filter, above.',
+    'description' => 'If you have chosen to customize by Department filter above, this setting has no effect and the filter will not be shown.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -332,7 +332,7 @@ function people_content_type_field_default_field_instances() {
     'default_value_function' => '',
     'default_value_php' => '',
     'deleted' => 0,
-    'description' => 'This setting has no effect and the filter will not be shown if there are no terms to filter by.',
+    'description' => 'If there are no terms to filter by, this setting has no effect and the filter will not be shown.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -387,7 +387,7 @@ function people_content_type_field_default_field_instances() {
     'default_value_function' => '',
     'default_value_php' => '',
     'deleted' => 0,
-    'description' => 'This setting has no effect and the filter will not be shown if there are no terms to filter by.',
+    'description' => 'If there are no terms to filter by, this setting has no effect and the filter will not be shown.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -442,7 +442,7 @@ function people_content_type_field_default_field_instances() {
     'default_value_function' => '',
     'default_value_php' => '',
     'deleted' => 0,
-    'description' => 'This setting has no effect and the filter will not be shown if there are no terms to filter by.',
+    'description' => 'If there are no terms to filter by, This setting has no effect and the filter will not be shown.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -910,7 +910,7 @@ function people_content_type_field_default_field_instances() {
     'default_value_function' => '',
     'default_value_php' => '',
     'deleted' => 0,
-    'description' => 'This setting has no effect and the filter will not be shown if you have chosen to customize by Job Type Filter, above.',
+    'description' => 'If you have chosen to customize by Job Type Filter above,t his setting has no effect and the filter will not be shown.',
     'display' => array(
       'default' => array(
         'label' => 'above',
@@ -973,7 +973,7 @@ function people_content_type_field_default_field_instances() {
         'module' => 'smart_trim',
         'settings' => array(
           'more_link' => 1,
-          'more_text' => 'Read more',
+          'more_text' => 'Read more »',
           'summary_handler' => 'full',
           'trim_length' => 100,
           'trim_link' => 0,
@@ -2168,6 +2168,10 @@ function people_content_type_field_default_field_instances() {
   t('Filter 3');
   t('First Name');
   t('Group By');
+  t('If there are no terms to filter by, This setting has no effect and the filter will not be shown.');
+  t('If there are no terms to filter by, this setting has no effect and the filter will not be shown.');
+  t('If you have chosen to customize by Department filter above, this setting has no effect and the filter will not be shown.');
+  t('If you have chosen to customize by Job Type Filter above,t his setting has no effect and the filter will not be shown.');
   t('Job Type');
   t('Last Name');
   t('Links');
@@ -2180,9 +2184,6 @@ function people_content_type_field_default_field_instances() {
   t('Show Filter 2');
   t('Show Filter 3');
   t('Show Job Type Filter');
-  t('This setting has no effect and the filter will not be shown if there are no terms to filter by.');
-  t('This setting has no effect and the filter will not be shown if you have chosen to customize by Department filter, above.');
-  t('This setting has no effect and the filter will not be shown if you have chosen to customize by Job Type Filter, above.');
   t('Thumbnail');
   t('Title');
   t('Used to group people into categories such as administration, faculty, staff, etc.');

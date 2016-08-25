@@ -17,7 +17,7 @@ function cu_content_list_preprocess_node(&$vars) {
       $nodes = node_load_multiple($nids = $nids, $conditions = array(), $reset = FALSE);
 
 
-      $sort = $vars['field_content_list_sort'];
+      $sort = $vars['field_content_list_sort'][LANGUAGE_NONE][0]['value'];
       switch ($sort) {
         case 'date':
           usort($nodes, function($a, $b) {
@@ -147,25 +147,65 @@ function cu_content_list_secure_permissions($role) {
       'delete any content_list bean',
       'edit any content_list bean',
       'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
     ),
     'content_editor' => array(
       'create any content_list bean',
       'delete any content_list bean',
       'edit any content_list bean',
       'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
     ),
     'developer' => array(
       'create any content_list bean',
       'delete any content_list bean',
       'edit any content_list bean',
       'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
     ),
     'site_owner' => array(
       'create any content_list bean',
       'delete any content_list bean',
       'edit any content_list bean',
       'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
     ),
   );
-  return $permissions[$role];
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_node_list_groups().
+ */
+ function cu_content_list_express_node_list_groups($bundles) {
+   $bundles['advanced_content']['title'] = 'Advanced Content';
+   $bundles['advanced_content']['types'][] = 'Content List Page';
+   return $bundles;
+ }
+
+ /**
+  * Implements hook_express_bean_list_groups().
+  */
+ function cu_content_list_express_bean_list_groups($bundles) {
+  $bundles['advanced_content']['types'][] = 'Content List';
+  return $bundles;
 }

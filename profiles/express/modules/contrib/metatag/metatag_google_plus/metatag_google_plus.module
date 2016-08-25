@@ -61,6 +61,6 @@ function metatag_google_plus_preprocess_html(&$variables) {
   }
 
   if (isset($variables['itemtype']) && !function_exists('zen_preprocess_html')) {
-    $variables['schemaorg'] .= "itemscope itemtype=\"http://schema.org/{$variables['itemtype']}\"";
+    $variables['schemaorg'] .= " itemscope itemtype=\"http://schema.org/{$variables['itemtype']}\"";
   }
 }

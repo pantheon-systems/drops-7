@@ -1,0 +1,9 @@
+name = CU SEO Dashboard
+description = Adds a SEO dashbaord
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+
+dependencies[] = express_dashboards
+
+stylesheets[all][] = css/cu-dashboard-seo.css

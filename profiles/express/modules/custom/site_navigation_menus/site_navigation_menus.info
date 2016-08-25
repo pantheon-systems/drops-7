@@ -1,7 +1,7 @@
 name = Site Navigation Menus
 description = Subnavigation and Full expandable menu blocks
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 dependencies[] = features
 dependencies[] = menu

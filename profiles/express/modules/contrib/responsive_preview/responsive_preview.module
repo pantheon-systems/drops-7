@@ -121,22 +121,23 @@ function responsive_preview_get_devices_list() {
     );
   }
 
-  // Add a configuration link.
-  $configlink = array(
-    '#theme' => 'link',
-    '#text' => t('Configure devices'),
-    '#path' => 'admin/config/content/responsive-preview',
-    '#options' => array(
-      'attributes' => array(
-        'class' => array('responsive-preview-configure'),
-      ),
-      'html' => FALSE,
-    )
-  );
-  $links['configure_link'] = array(
-    'data' => drupal_render($configlink),
-  );
-
+  // Add a link if user has permissions to configuration.
+  if (user_access('administer site configuration')) {
+    $configlink = array(
+      '#theme' => 'link',
+      '#text' => t('Configure devices'),
+      '#path' => 'admin/config/content/responsive-preview',
+      '#options' => array(
+        'attributes' => array(
+          'class' => array('responsive-preview-configure'),
+        ),
+        'html' => FALSE,
+      )
+    );
+    $links['configure_link'] = array(
+      'data' => drupal_render($configlink),
+    );
+  }
   return $links;
 }
 
@@ -214,7 +215,7 @@ function responsive_preview_navbar() {
         '#theme' => 'item_list',
         '#items' => responsive_preview_get_devices_list(),
         '#attributes' => array(
-          'class' => array('responsive-preview-options'),
+          'class' => array('responsive-preview-options', 'item-list'),
         ),
       ),
     ),
@@ -351,7 +352,7 @@ function responsive_preview_libraries_info() {
         ),
         'minified' => array(
           'file' => 'underscore-min.js',
-          'pattern' => '#Underscore.js\s([\d\.]+)#',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
         ),
       ),
     ),
@@ -405,7 +406,7 @@ function responsive_preview_libraries_info() {
         ),
         'minified' => array(
           'file' => 'backbone-min.js',
-          'pattern' => '#Backbone.js\s([\d\.]+)#',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
         ),
       ),
     ),

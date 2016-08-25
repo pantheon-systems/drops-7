@@ -1,0 +1,16 @@
+name = XML sitemap taxonomy
+description = Add taxonomy term links to the sitemap.
+package = XML sitemap
+core = 7.x
+dependencies[] = xmlsitemap
+dependencies[] = taxonomy
+files[] = xmlsitemap_taxonomy.module
+files[] = xmlsitemap_taxonomy.install
+files[] = xmlsitemap_taxonomy.test
+
+; Information added by Drupal.org packaging script on 2016-05-25
+version = "7.x-2.3"
+core = "7.x"
+project = "xmlsitemap"
+datestamp = "1464191061"
+

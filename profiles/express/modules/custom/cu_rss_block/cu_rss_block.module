@@ -1,0 +1,174 @@
+<?php
+/**
+ * @file
+ * Code for the RSS Block feature.
+ */
+
+include_once 'cu_rss_block.features.inc';
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_rss_block_page_alter(&$page) {
+  // Add the css file to the page.
+  drupal_add_css(drupal_get_path('module', 'cu_rss_block') . '/css/cu-rss-block.css');
+}
+
+/**
+ * Implements hook_form_alter().
+ * Add validation to make sure url returns XML.
+ */
+function cu_rss_block_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['bean']['#value']->type == 'rss') {
+    $form['#validate'][] = '_cu_rss_block_form_validate';
+  }
+}
+/**
+ * Validation function for cu_rss_block_form_bean_form_alter().
+ * Check to see if url entered returns valid XML.
+ */
+function _cu_rss_block_form_validate($form, &$form_state) {
+  $url = $form_state['values']['field_rss_bean_feed_url'][LANGUAGE_NONE][0]['url'];
+  $response = drupal_http_request($url);
+  if ($response->code == '200') {
+    $is_xml = simplexml_load_string($response->data);
+    if($is_xml===FALSE) {
+      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+    }
+  } else {
+    form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+  }
+}
+
+function _cu_rss_block_cdata_filter($matches) {
+    $converted = htmlspecialchars($matches[1]);
+    $trimmed = trim($converted);
+    return $trimmed;
+}
+
+/**
+ * Implements hook_preprocess_entity().
+ */
+function cu_rss_block_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  // Only preprocess rss beans.
+  if ($entity_type == 'bean' && $bundle == 'rss') {
+    $url = $vars['bean']->field_rss_bean_feed_url[LANGUAGE_NONE][0]['url'];
+    $items = $vars['bean']->field_rss_bean_items[LANGUAGE_NONE][0]['value'];
+
+    // Check to see if the feed is in the cache.
+    // If not, request feed and cache it.
+    if ($cache = cache_get('rss_feed-' . $url)) {
+      $data = $cache->data;
+    } else {
+      $response = drupal_http_request($url);
+      if ($response->code == '200') {
+
+        // remove <![CDATA[]]>
+        $xml = preg_replace_callback('/<!\[CDATA\[(.*)\]\]>/', '_cu_rss_block_cdata_filter', $response->data);
+
+        // Create new XMLElement
+        $data = new SimpleXMLElement($xml);
+
+        // Convert into a nice array for us to work with.
+        $data = json_encode($data);
+        $data = json_decode($data, true);
+        // Save to cache for 30 minutes
+        cache_set('rss_feed-' . $url, $data, 'cache', time() + 60 * 30);
+      }
+    }
+    // If the feed only contains a single item
+    if (isset($data['channel']['item']['title'])) {
+      $feed[] = !empty($data['channel']['item']['link']) ? l($data['channel']['item']['title'], $data['channel']['item']['link']) : '';
+    }
+    else {
+      // Display the number of items specified.
+      for ($i=0; $i < $items; $i++) {
+        $feed[] = !empty($data['channel']['item'][$i]['link']) ? l($data['channel']['item'][$i]['title'], $data['channel']['item'][$i]['link']) : '';
+      }
+    }
+
+    // Add link to bottom of feed
+    $link = $data['channel']['link'];
+    $description = !empty($data['channel']['description']) ? $data['channel']['description'] : NULL;
+    $feed_title = !empty($data['channel']['title']) ? $data['channel']['title'] : NULL;
+    if (!empty($feed)) {
+      // Generate an item_list of our items and add to $content.
+      $vars['content']['feed'] = array(
+        '#theme' => 'item_list',
+        '#items' => $feed,
+        '#weight' => '0',
+        '#attributes' => array(
+          'class' => array('rss-block-items'),
+        ),
+      );
+      if ($feed_title || $description) {
+        $options = array(
+          'attributes' => array(
+            'class' => 'rss-site-link',
+          ),
+          'html' => TRUE,
+        );
+        $link_text = isset($description) ? $description : $feed_title;
+        $vars['content']['link'] = array(
+          '#markup' => l('<i class="fa fa-rss-square"></i> ' . $link_text, $link, $options),
+          '#weight' => '1',
+        );
+      }
+    }
+
+  }
+}
+
+/*
+ * Implements hook_secure_permissions
+ *
+ * Adding permissions for rss bean
+ */
+function cu_rss_block_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any rss bean',
+    ),
+    'authenticated user' => array(
+      'view any rss bean',
+    ),
+    'administrator' => array(
+      'create any rss bean',
+      'delete any rss bean',
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+    'content_editor' => array(
+      'create any rss bean',
+      'delete any rss bean',
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+    'developer' => array(
+      'create any rss bean',
+      'delete any rss bean',
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+    'site_owner' => array(
+      'create any rss bean',
+      'delete any rss bean',
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+function cu_rss_block_express_bean_list_groups($bundles) {
+  $bundles['feeds']['title'] = 'Feeds';
+  $bundles['feeds']['types'][] = 'RSS';
+
+
+  return $bundles;
+}

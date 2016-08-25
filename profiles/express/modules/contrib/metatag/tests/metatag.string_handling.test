@@ -70,9 +70,18 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
   }
 
   /**
-   * Tests that a metatag with single quote is not double escaped.
+   * Tests that specific strings are not double escaped.
    */
   function _testAString($string) {
+    $this->_testConfig($string);
+    $this->_testNode($string);
+    $this->_testEncodedField($string);
+  }
+
+  /**
+   * Tests that a specific config string is not double encoded.
+   */
+  function _testConfig($string) {
     // The original strings.
     $title_original = 'Title: ' . $string;
     $desc_original = 'Description: ' . $string;
@@ -83,36 +92,41 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
     $title_encodeded = htmlentities($title_encoded, ENT_QUOTES);
     $desc_encodeded = htmlentities($desc_encoded, ENT_QUOTES);
 
+    // Test the front page.
+    $instance = 'global:frontpage';
+
     // Save the main node configuration form to assign the description tag.
     $edit = array(
       // Just use [node:title] to avoid problems with the default suffix.
-      'metatags[und][title][value]' => '[node:title]',
+      'metatags[und][title][value]' => $title_original,
       // Save the original string.
       'metatags[und][description][value]' => $desc_original,
     );
-    $this->drupalPost('admin/config/search/metatags/config/node', $edit, 'Save');
+    $this->drupalPost('admin/config/search/metatags/config/' . $instance, $edit, 'Save');
     $this->assertResponse(200);
 
     // Load the configuration object.
     $result = db_select('metatag_config', 'mc')
       ->fields('mc', array('config'))
-      ->condition('mc.instance', 'node')
+      ->condition('mc.instance', $instance)
       ->execute()
       ->fetchAssoc();
 
     // Unserialize the configuration.
     $config = unserialize($result['config']);
 
+    // Make sure the title tag is stored correctly.
+    $this->assertEqual($title_original, $config['title']['value'], 'The title tag was stored in its original format.');
+    $this->assertNotEqual($title_encoded, $config['title']['value'], 'The title tag was not stored in an encoded format.');
+    $this->assertNotEqual($title_encodeded, $config['title']['value'], 'The title tag was not stored in a double-encoded format.');
+
     // Make sure the description tag is stored correctly.
     $this->assertEqual($desc_original, $config['description']['value'], 'The description tag was stored in its original format.');
     $this->assertNotEqual($desc_encoded, $config['description']['value'], 'The description tag was not stored in an encoded format.');
     $this->assertNotEqual($desc_encodeded, $config['description']['value'], 'The description tag was not stored in a double-encoded format.');
 
-    // Create a node and check how the meta tag is displayed.
-    $node = $this->drupalCreateNode(array(
-      'title' => $title_original,
-    ));
-    $this->drupalGet('node/' . $node->nid);
+    // Load the front page.
+    $this->drupalGet('<front>');
     $this->assertResponse(200);
 
     // assertTitle() uses xpath, which parses the HTML, so all of the HTML
@@ -124,7 +138,63 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
     // The page title should be HTML encoded; have to do this check manually
     // because assertRaw() checks the raw HTML, not the parsed strings like
     // xpath does.
-    $this->assertRaw($title_encoded, 'Confirmed the node title tag is encoded.');
+    $this->assertRaw('<title>' . $title_original . '</title>', 'Confirmed the node title tag is available in its original format.');
+    $this->assertNoRaw('<title>' . $title_encoded . '</title>', 'Confirmed the node title tag is not double-encoded.');
+    $this->assertNoRaw('<title>' . $title_encodeded . '</title>', 'Confirmed the node title tag is not double-double-encoded?');
+
+    // Again, with xpath the HTML entities will be parsed automagically.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual($xpath[0]['content'], $desc_original);
+    $this->assertNotEqual($xpath[0]['content'], $desc_encoded);
+    $this->assertNotEqual($xpath[0]['content'], $desc_encodeded);
+  }
+
+  /**
+   * Tests that a specific node string is not double escaped.
+   */
+  function _testNode($string) {
+    // The original strings.
+    $title_original = 'Title: ' . $string;
+    $desc_original = 'Description: ' . $string;
+
+    // The strings after they're encoded, but quotes will not be encoded.
+    $title_encoded = htmlentities($title_original, ENT_QUOTES);
+    $desc_encoded = htmlentities($desc_original, ENT_QUOTES);
+
+    // The strings double-encoded, to make sure the tags aren't broken.
+    $title_encodeded = htmlentities($title_encoded, ENT_QUOTES);
+    $desc_encodeded = htmlentities($desc_encoded, ENT_QUOTES);
+
+    // Create a node and check how the meta tag is displayed.
+    $node = $this->drupalCreateNode(array(
+      'title' => $title_original,
+      'body' => array(
+        LANGUAGE_NONE => array(
+          array(
+            'value' => $desc_original,
+            'format' => filter_default_format(),
+          ),
+        ),
+      ),
+    ));
+
+    // Page titles have a suffix added automatically.
+    $suffix = ' | ' . variable_get('site_name', 'Drupal');
+
+    // Load the node page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // assertTitle() uses xpath, which parses the HTML, so all of the HTML
+    // entities will be converted automagically.
+    $this->assertTitle($title_original . $suffix, 'Confirmed the node title tag is available in its original format.');
+    $this->assertNoTitle($title_encoded . $suffix, 'Confirmed the node title tag is not double-encoded.');
+    $this->assertNoTitle($title_encodeded . $suffix, 'Confirmed the node title tag is not double-double-encoded?');
+
+    // The page title should be HTML encoded; have to do this check manually
+    // because assertRaw() checks the raw HTML, not the parsed strings like
+    // xpath does.
+    $this->assertRaw('<title>' . $title_original . $suffix . '</title>', 'Confirmed the node title tag is encoded.');
 
     // Test a few other versions of the title, to ensure it isn't broken
     // on another tag.
@@ -148,12 +218,58 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
     $this->assertNotEqual($xpath[0]['content'], $desc_encodeded);
 
     // Normal meta tags should be encoded properly.
-    $this->assertRaw($desc_encoded, 'Confirmed the node "description" meta tag string was encoded properly.');
+    $this->assertRaw('"' . $desc_encoded . '"', 'Confirmed the node "description" meta tag string was encoded properly.');
     // Normal meta tags with HTML entities should be displayed in their original
     // format.
-    $this->assertNoRaw($desc_original, 'Confirmed the node "description" meta tag string does not show in its original form.');
+    $this->assertNoRaw('"' . $desc_original . '"', 'Confirmed the node "description" meta tag string does not show in its original form.');
     // Normal meta tags should not be double-encoded.
-    $this->assertNoRaw($desc_encodeded, 'Confirmed the node "description" meta tag string was not double-encoded.');
+    $this->assertNoRaw('"' . $desc_encodeded . '"', 'Confirmed the node "description" meta tag string was not double-encoded.');
+  }
+
+  /**
+   * Tests that fields with encoded HTML entities will not be double-encoded.
+   */
+  function _testEncodedField($string) {
+    // The original strings.
+    $title_original = 'Title: ' . $string;
+    $desc_original = 'Description: ' . $string;
+
+    // The strings after they're encoded, but quotes will not be encoded.
+    $desc_encoded = htmlentities($desc_original, ENT_QUOTES);
+
+    // The strings double-encoded, to make sure the tags aren't broken.
+    $desc_encodeded = htmlentities($desc_encoded, ENT_QUOTES);
+
+    // Create a node and check how the meta tag is displayed.
+    $node = $this->drupalCreateNode(array(
+      'title' => $title_original,
+      'body' => array(
+        LANGUAGE_NONE => array(
+          array(
+            'value' => $desc_encoded,
+            'format' => filter_default_format(),
+          ),
+        ),
+      ),
+    ));
+
+    // Load the node page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // With xpath the HTML entities will be parsed automagically.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual($xpath[0]['content'], $desc_original);
+    $this->assertNotEqual($xpath[0]['content'], $desc_encoded);
+    $this->assertNotEqual($xpath[0]['content'], $desc_encodeded);
+
+    // Normal meta tags should be encoded properly.
+    $this->assertRaw('"' . $desc_encoded . '"', 'Confirmed the node "description" meta tag string was encoded properly.');
+    // Normal meta tags with HTML entities should be displayed in their original
+    // format.
+    $this->assertNoRaw('"' . $desc_original . '"', 'Confirmed the node "description" meta tag string does not show in its original form.');
+    // Normal meta tags should not be double-encoded.
+    $this->assertNoRaw('"' . $desc_encodeded . '"', 'Confirmed the node "description" meta tag string was not double-encoded.');
   }
 
 }

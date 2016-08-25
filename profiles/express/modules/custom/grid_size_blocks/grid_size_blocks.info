@@ -1,6 +1,6 @@
 name = Grid Size Blocks
 description = Provides a configuration option to set a block width
 core = 7.x
-package = CU-Boulder
+package = CU-Core
 version = 7.x-1.0
 project = "grid_size_blocks"

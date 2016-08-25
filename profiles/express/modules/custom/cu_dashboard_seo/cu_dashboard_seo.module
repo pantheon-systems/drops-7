@@ -1,0 +1,563 @@
+<?php
+
+/**
+ * Implements hook_express_dashboard().
+ *
+ * Adding user Dashboard.
+ */
+function cu_dashboard_seo_express_dashboard($variables) {
+  $variables['seo'] = array(
+    'title' => 'SEO',
+    'callback' => 'cu_dashboard_seo_content',
+    'access arguments' => array('use seo dashboard'),
+  );
+  return $variables;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_dashboard_seo_permission() {
+  return array(
+    'use seo dashboard' => array(
+      'title' => 'Use the SEO Dashboard',
+      'description' => 'Access the SEO dashboard',
+    ),
+  );
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the SEO dashboard tab.
+ *
+ * @param array $variables
+ *   Array with information about help hooks
+ * @return array $variables
+ */
+function cu_dashboard_seo_express_help($variables) {
+  $variables['admin/dashboard/seo'][] = array(
+    'title' => 'Search Engine Optimization Help',
+    'short_title' => 'SEO Help',
+    'url' => '/node/1190',
+  );
+  return $variables;
+}
+
+/**
+ * Callback function for user dashboard.
+ */
+function cu_dashboard_seo_content() {
+  $output = array();
+
+
+  $output['left']['widgets']['checklist']['title'] = t('Search Engine Optimization Checklist');
+  $output['left']['widgets']['checklist']['content']['#markup'] = cu_dashboard_seo_checklist_output();
+
+  $output['right']['widgets']['content_updated']['title'] = 'Content Updated';
+  $output['right']['widgets']['content_updated']['content']['#markup'] = cu_dashboard_seo_last_updated();
+  $output['right']['widgets']['content_updated']['weight'] = 0;
+
+  return $output;
+}
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_dashboard_seo_secure_permissions($role) {
+
+  $permissions = array(
+    'administrator' => array(
+      'use seo dashboard',
+    ),
+    'content_editor' => array(
+      'use seo dashboard',
+    ),
+    'developer' => array(
+      'use seo dashboard',
+    ),
+    'edit_my_content' => array(
+      'use seo dashboard',
+    ),
+    'site_owner' => array(
+      'use seo dashboard',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Make site aware that we have templates.
+ */
+function cu_dashboard_seo_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_dashboard_seo');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'dashboard', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * SEO Checklist Items.
+ */
+function cu_dashboard_seo_checklist() {
+  $checklist = array();
+
+  $checklist['google_analytics'] = array(
+    'title' => 'Google Analytics',
+    'weight' => '0',
+    'description' => array(
+      '0' => 'You do not have a custom google analytics account assigned to your website.',
+      '1' => 'You have a custom google analytics account assigned to your website.',
+    ),
+    'path' => 'admin/settings/site-configuration/google-analytics',
+    'callback' => 'cu_seo_checklist_google_analytics',
+    'edit' => 'Edit Google Analytics settings',
+  );
+
+  $checklist['site_verification'] = array(
+    'title' => 'Site Verification',
+    'weight' => '1',
+    'description' => array(
+      '0' => 'Site Verification is the process of proving that you own the website. Google uses site verification to give you access to their <a href="https://www.google.com/webmasters">Search Console webmaster tools</a>.',
+      '1' => 'You have added a site verification.',
+    ),
+    'path' => 'admin/settings/seo/verifications',
+    'callback' => 'cu_seo_checklist_site_verification',
+    'edit' => 'Edit site verifications',
+  );
+  if (variable_get('cu_linkchecker_status', 0)) {
+    // Link checker stats
+    $link_checker_list = array();
+    $link_checker_total = cu_seo_checklist_checked_links_total();
+    $link_checker_remaining = cu_seo_checklist_checked_links_remaining();
+    $link_checker_success = cu_seo_checklist_checked_links_successful();
+    $link_checker_broken = cu_seo_checklist_checked_links_broken();
+    if ($link_checker_total) {
+      if ($link_checker_total > 1) {
+        $link_checker_list[] = 'The link checker has found ' . $link_checker_total . ' active links.';
+      }
+      else {
+        $link_checker_list[] = 'There is 1 active link in your site.';
+      }
+    }
+    else {
+      $link_checker_list[] = 'There are no active links in your site.';
+    }
+    if ($link_checker_remaining) {
+      if ($link_checker_remaining > 1) {
+        $link_checker_list[] = 'There are ' . $link_checker_remaining . ' links remaining to be checked.';
+      }
+      else {
+        $link_checker_list[] = 'There is 1 link remaining to be checked.';
+      }
+    }
+    if ($link_checker_success) {
+      if ($link_checker_success > 1) {
+        $link_checker_list[] = 'There are ' . $link_checker_success . ' links that were successful or redirected successfully.';
+      }
+      else {
+        $link_checker_list[] = 'There is 1 link that was successful or redirected successfully.';
+      }
+    }
+    if ($link_checker_broken) {
+      if ($link_checker_broken > 1) {
+        $link_checker_list[] = 'There are ' . $link_checker_broken . ' broken links.';
+      }
+      else {
+        $link_checker_list[] = 'There is 1 broken link.';
+      }
+    }
+
+    // Theme as a list.
+    $list =  theme('item_list', array(
+      'items' => $link_checker_list,
+      'type' => 'ul',
+      'attributes' => array(
+        'class' => array(
+          'bullet-list',
+        ),
+      ),
+    ));
+
+    // Link to link checker report
+    $link_checker_link = l('Check the list to review and fix broken links. ', 'admin/reports/linkchecker', array('attributes' => array(
+      'class' => array(
+        'btn',
+        'btn-sm',
+        'btn-info'
+      )
+    )) );
+
+    $checklist['link_checker'] = array(
+      'title' => 'Link Checker',
+      'weight' => '2',
+      'description' => array(
+        '0' => 'The link checker has found some broken links. ' . $list . $link_checker_link,
+        '1' => 'No broken links have been found. ' . $list,
+      ),
+      'path' => 'admin/reports/linkchecker',
+      'callback' => 'cu_seo_checklist_link_checker',
+    );
+  }
+  else {
+    $link_checker_link = l('Analyze your content for links. ', 'admin/settings/seo/linkchecker-analyze', array('attributes' => array(
+      'class' => array(
+        'btn',
+        'btn-sm',
+        'btn-info'
+      )
+    )));
+    $checklist['link_checker'] = array(
+      'title' => 'Link Checker',
+      'weight' => '2',
+      'description' => array(
+        '0' => $link_checker_link,
+        '1' => $link_checker_link,
+      ),
+      'path' => 'admin/settings/seo/linkchecker-analyze',
+      'callback' => 'cu_seo_checklist_link_checker_status',
+    );
+  }
+  $checklist['site_map'] = array(
+    'title' => 'Sitemap',
+    'weight' => '3',
+    'description' => array(
+      '0' => 'Configure and add your sitemap file to be used with Google Search Console.',
+      '1' => 'Configure and add your sitemap file to be used with Google Search Console.',
+    ),
+    'path' => 'admin/settings/seo/xmlsitemap',
+    'callback' => 'cu_seo_checklist_site_map',
+    'edit' => 'Edit sitemap settings',
+  );
+  $checklist['site_description'] = array(
+    'title' => 'Site Description',
+    'weight' => '4',
+    'description' => array(
+      '0' => 'Add a site description to provide search engines a summary on the purpose of your website. ',
+      '1' => 'You have added a site description.',
+    ),
+    'path' => 'admin/settings/site-configuration/site-description',
+    'callback' => 'cu_seo_checklist_site_description',
+    'edit' => 'Edit site description',
+  );
+  $theme_settings_link = 'admin/theme/config/' . variable_get('theme_default');
+  $checklist['mobile_friendly'] = array(
+    'title' => 'Responsive/Mobile Friendly',
+    'weight' => '5',
+    'description' => array(
+      '0' => 'you do not have responsive/mobile friendly turned on. <a href="http://www.colorado.edu/webcentral/tutorial/v2/responsive-design">Learn more about making your site responsive</a>.',
+      '1' => 'Your site has responsive/mobile friendly turned on.',
+    ),
+    'path' => array(
+      'link' => $theme_settings_link,
+      'fragment' => 'edit-expressbase-theme-settings',
+      'query' => array(
+        'responsive' => 1,
+      ),
+    ),
+    'callback' => 'cu_seo_checklist_responsive',
+    'edit' => 'Theme settings'
+  );
+
+  return $checklist;
+}
+
+/**
+ * Google Analytics checklist callback.
+ */
+function cu_seo_checklist_google_analytics() {
+  $status = variable_get('ga_account', NULL) ? 1 : 0;
+  return $status;
+}
+
+/**
+ * Site Verification checklist callback.
+ */
+function cu_seo_checklist_site_verification() {
+  $query = db_select('site_verify', 'sv');
+  $query->fields('sv', array('svid', 'engine'));
+  $svs = $query->execute()->fetchCol();
+  if (count($svs) > 0) {
+    $status = 1;
+  }
+  else {
+    $status = 0;
+  }
+  return $status;
+}
+
+/**
+ * Link Checker checklist callback.
+ */
+function cu_seo_checklist_link_checker() {
+  $broken_links = cu_seo_checklist_checked_links_broken();
+  if ($broken_links > 0) {
+    $status = 0;
+  }
+  else {
+    $status = 1;
+  }
+  return $status;
+}
+
+function cu_seo_checklist_link_checker_status() {
+  $status = variable_get('cu_linkchecker_status', 0);
+  return $status;
+}
+
+function cu_seo_checklist_checked_links_total() {
+  $default_tables = array(
+    'linkchecker_node',
+    'linkchecker_comment',
+    'linkchecker_block_custom',
+  );
+  // Main hook for related submodules.
+  $tables = module_invoke_all('linkcheker_main_table');
+  $tables  = array_merge($tables, $default_tables);
+
+  foreach ($tables as $table_name) {
+    $subquery = db_select($table_name)
+      ->distinct()
+      ->fields($table_name, array('lid'));
+    if (!isset($union)) {
+      $union = $subquery;
+    }
+    else {
+      $union = $union->union($subquery);
+    }
+  }
+
+  // UNION all linkchecker type tables.
+  $subquery1 = db_select($union, 'q1')->fields('q1', array('lid'));
+
+  // Build query.
+  $query = db_select('linkchecker_link', 'll')->extend('PagerDefault')->extend('TableSort');
+  $query->innerJoin($subquery1, 'q2', 'q2.lid = ll.lid');
+  $query->fields('ll');
+  $query->condition('ll.last_checked', 0, '<>');
+  $query->condition('ll.status', 1);
+
+  $total_links = $query->countQuery()->execute()->fetchAssoc();
+
+  return $total_links['expression'];
+}
+
+function cu_seo_checklist_checked_links_successful() {
+  $success_response_codes = preg_split('/(\r\n?|\n)/', variable_get('linkchecker_ignore_response_codes', "200\n206\n302\n304\n401\n403"));
+
+  $default_tables = array(
+    'linkchecker_node',
+    'linkchecker_comment',
+    'linkchecker_block_custom',
+  );
+  // Main hook for related submodules.
+  $tables = module_invoke_all('linkcheker_main_table');
+  $tables  = array_merge($tables, $default_tables);
+
+  foreach ($tables as $table_name) {
+    $subquery = db_select($table_name)
+      ->distinct()
+      ->fields($table_name, array('lid'));
+    if (!isset($union)) {
+      $union = $subquery;
+    }
+    else {
+      $union = $union->union($subquery);
+    }
+  }
+
+  // UNION all linkchecker type tables.
+  $subquery1 = db_select($union, 'q1')->fields('q1', array('lid'));
+
+  // Build pager query.
+  $query = db_select('linkchecker_link', 'll')->extend('PagerDefault')->extend('TableSort');
+  $query->innerJoin($subquery1, 'q2', 'q2.lid = ll.lid');
+  $query->fields('ll');
+  $query->condition('ll.last_checked', 0, '<>');
+  $query->condition('ll.status', 1);
+  $query->condition('ll.code', $success_response_codes, 'IN');
+
+  $total_links = $query->countQuery()->execute()->fetchAssoc();
+
+  return $total_links['expression'];
+}
+
+function cu_seo_checklist_checked_links_broken() {
+  $success_response_codes = preg_split('/(\r\n?|\n)/', variable_get('linkchecker_ignore_response_codes', "200\n206\n302\n304\n401\n403"));
+
+  $default_tables = array(
+    'linkchecker_node',
+    'linkchecker_comment',
+    'linkchecker_block_custom',
+  );
+  // Main hook for related submodules.
+  $tables = module_invoke_all('linkcheker_main_table');
+  $tables  = array_merge($tables, $default_tables);
+
+  foreach ($tables as $table_name) {
+    $subquery = db_select($table_name)
+      ->distinct()
+      ->fields($table_name, array('lid'));
+    if (!isset($union)) {
+      $union = $subquery;
+    }
+    else {
+      $union = $union->union($subquery);
+    }
+  }
+
+  // UNION all linkchecker type tables.
+  $subquery1 = db_select($union, 'q1')->fields('q1', array('lid'));
+
+  // Build pager query.
+  $query = db_select('linkchecker_link', 'll')->extend('PagerDefault')->extend('TableSort');
+  $query->innerJoin($subquery1, 'q2', 'q2.lid = ll.lid');
+  $query->fields('ll');
+  $query->condition('ll.last_checked', 0, '<>');
+  $query->condition('ll.status', 1);
+  $query->condition('ll.code', $success_response_codes, 'NOT IN');
+
+  $total_links = $query->countQuery()->execute()->fetchAssoc();
+
+  return $total_links['expression'];
+}
+
+function cu_seo_checklist_checked_links_remaining() {
+  $query = db_select('linkchecker_link', 'lcl');
+  $query->fields('lcl', array('lid','status','last_checked'));
+  $query->condition('lcl.last_checked', 0, '=');
+  $query->condition('lcl.status', '1', '=');
+  $total_links = $query->countQuery()->execute()->fetchAssoc();
+
+  return $total_links['expression'];
+}
+
+/**
+ * Site Map checklist callback.
+ *
+ * Always TRUE.
+ */
+function cu_seo_checklist_site_map() {
+  $status = 1;
+  return $status;
+}
+/**
+ * Site Description checklist callback.
+ */
+function cu_seo_checklist_site_description() {
+  $status = variable_get('site_description', NULL) ? 1 : 0;
+  return $status;
+}
+
+/**
+ * Mobile Friendly checklist callback.
+ */
+function cu_seo_checklist_responsive() {
+  $theme = variable_get('theme_default', '');
+  $status = theme_get_setting('alpha_responsive', $theme) ? 1 : 0;
+  return $status;
+}
+
+/**
+ * Output checklist items.
+ */
+function cu_dashboard_seo_checklist_output() {
+  $checklist_items = cu_dashboard_seo_checklist();
+
+  // Check for missing section weights and then sort
+  foreach ($checklist_items as $key => $item) {
+    $checklist_items[$key]['weight'] = isset($checklist_items[$key]['weight']) ? $checklist_items[$key]['weight'] : 0;
+  }
+  uasort($checklist_items, 'drupal_sort_weight');
+
+  $checklist_output = array();
+
+  foreach ($checklist_items as $key => $item) {
+    $callback = $item['callback'];
+    $item['indicator'] = $callback();
+    if (isset($item['path'])) {
+      $title = $item['title'];
+      if (is_array($item['path'])) {
+        $item['title'] = l($title, $item['path']['link'], array('query' => $item['path']['query'], 'fragment' => $item['path']['fragment']));
+      }
+      else {
+        $item['title'] = l($title, $item['path']);
+      }
+    }
+    $checklist_output[$key]['#markup'] = theme('seo_checklist_item', $item);
+  }
+  return render($checklist_output);
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Adds theme functions and tempalte files for dashboards
+ */
+function cu_dashboard_seo_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'cu_dashboard_seo') . '/templates';
+
+  $registry['seo_checklist_item'] = array(
+    'template' => 'seo-checklist-item',
+    'path' => $template_dir,
+  );
+
+  return $registry;
+}
+
+/**
+ * Return when the last time a site's content was updated.
+ */
+function cu_dashboard_seo_last_updated() {
+  $timestamps = array();
+  // Query node table to get last updated date
+  $node_query = db_select('node', 'n');
+  $node_query->fields('n', array('changed'));
+  $node_query->range(0,1);
+  $node_query->orderBy('changed', 'DESC');
+  $node_result = $node_query->execute()->fetchCol();
+  if (current($node_result)) {
+    $timestamps[] = current($node_result);
+  }
+  // Query bean table to get last updated date
+  $bean_query = db_select('bean', 'b');
+  $bean_query->fields('b', array('changed'));
+  $bean_query->range(0,1);
+  $bean_query->orderBy('changed', 'DESC');
+  $bean_result = $bean_query->execute()->fetchCol();
+  if (current($bean_result)) {
+    $timestamps[] = current($bean_result);
+  }
+  // Compare dates and get the most recent
+  rsort($timestamps);
+  $now = getdate();
+  $interval = $now[0] - $timestamps[0];
+  $interval = floor($interval/3600/24);
+  $icon = ($interval > 60) ? '<i class="fa fa-times"></i>' : '<i class="fa fa-check"></i>';
+  $date = date('F j, Y', $timestamps[0]);
+  $output = "$icon Your site's content was last updated on $date";
+  return $output;
+}

@@ -10,7 +10,7 @@
 function cu_content_list_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-content_list-field_content_list_display'
+  // Exported field_instance: 'bean-content_list-field_content_list_display'.
   $field_instances['bean-content_list-field_content_list_display'] = array(
     'bundle' => 'content_list',
     'default_value' => array(
@@ -44,11 +44,11 @@ function cu_content_list_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 35,
+      'weight' => 4,
     ),
   );
 
-  // Exported field_instance: 'bean-content_list-field_content_list_reference'
+  // Exported field_instance: 'bean-content_list-field_content_list_reference'.
   $field_instances['bean-content_list-field_content_list_reference'] = array(
     'bundle' => 'content_list',
     'default_value' => NULL,
@@ -83,11 +83,11 @@ function cu_content_list_field_default_field_instances() {
         'size' => 60,
       ),
       'type' => 'entityreference_autocomplete',
-      'weight' => 32,
+      'weight' => 2,
     ),
   );
 
-  // Exported field_instance: 'bean-content_list-field_content_list_sort'
+  // Exported field_instance: 'bean-content_list-field_content_list_sort'.
   $field_instances['bean-content_list-field_content_list_sort'] = array(
     'bundle' => 'content_list',
     'default_value' => array(
@@ -121,11 +121,11 @@ function cu_content_list_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 34,
+      'weight' => 3,
     ),
   );
 
-  // Exported field_instance: 'node-content_list_page-body'
+  // Exported field_instance: 'node-content_list_page-body'.
   $field_instances['node-content_list_page-body'] = array(
     'bundle' => 'content_list_page',
     'default_value' => NULL,
@@ -165,11 +165,12 @@ function cu_content_list_field_default_field_instances() {
         'summary_rows' => 5,
       ),
       'type' => 'text_textarea_with_summary',
-      'weight' => 3,
+      'weight' => 1,
     ),
   );
 
-  // Exported field_instance: 'node-content_list_page-field_content_list_reference'
+  // Exported field_instance:
+  // 'node-content_list_page-field_content_list_reference'.
   $field_instances['node-content_list_page-field_content_list_reference'] = array(
     'bundle' => 'content_list_page',
     'default_value' => NULL,
@@ -207,11 +208,11 @@ function cu_content_list_field_default_field_instances() {
         'size' => 60,
       ),
       'type' => 'entityreference_autocomplete',
-      'weight' => 4,
+      'weight' => 2,
     ),
   );
 
-  // Exported field_instance: 'node-content_list_page-field_content_list_sort'
+  // Exported field_instance: 'node-content_list_page-field_content_list_sort'.
   $field_instances['node-content_list_page-field_content_list_sort'] = array(
     'bundle' => 'content_list_page',
     'default_value' => array(
@@ -250,7 +251,7 @@ function cu_content_list_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 6,
+      'weight' => 4,
     ),
   );
 

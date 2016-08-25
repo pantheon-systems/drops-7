@@ -22,7 +22,7 @@ function wysiwyg_filter_filter_wysiwyg_settings(&$form, &$form_state, $filter, $
   global $base_url;
   drupal_add_css(drupal_get_path('module', 'wysiwyg_filter') . '/wysiwyg_filter.admin.css', array('preprocess' => FALSE));
   // Load common functions.
-  module_load_include('inc', 'wysiwyg_filter');
+  form_load_include($form_state, 'inc', 'wysiwyg_filter');
 
   $settings = $filter->settings;
   $settings += $defaults;
@@ -232,6 +232,10 @@ function _wysiwyg_filter_clear_messages() {
  */
 function wysiwyg_filter_filter_wysiwyg_settings_validate($form, &$form_state) {
   $values =& $form_state['values']['filters']['wysiwyg']['settings'];
+  // Don't validate disabled filters.
+  if (empty($form_state['values']['filters']['wysiwyg']['status'])) {
+    return;
+  }
 
   // *** validate valid_elements ***
   // Check elements against hardcoded backlist.

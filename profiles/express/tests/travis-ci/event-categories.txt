@@ -1,0 +1,461 @@
+118-0|Academic Advising
+118-340|---First-Year
+118-341|---Pre-Health
+118-342|---Pre-Law
+9-0|Academic Calendar
+9-286|---COF (Colorado Opportunity Fund)
+9-29|---Commencement
+9-30|---Drop/ Add Dates
+9-281|---Fall
+9-31|---Fall Break
+9-32|---Finals
+9-278|---Financial Aid Dates
+9-33|---First Day of Classes
+9-284|---Grading
+9-287|---In-State Tuition
+9-34|---Last Day of Classes
+9-35|---Official CU-Boulder Holidays
+9-36|---Registration
+9-282|---Spring
+9-37|---Spring Break
+9-288|---Student Deadlines
+9-283|---Summer
+9-279|---Tuition Deadlines
+9-285|---Withdrawal
+12-0|Admissions
+12-51|---All Day Visit Programs
+12-49|---CU-Boulder on the Road
+12-48|---Daily Campus Tours
+89-0|Air Force ROTC
+13-0|Alumni Association
+13-347|---Basketball at Home
+13-348|---Basketball On the Road
+13-349|---Buffalo Legacy
+13-350|---Career Services
+13-199|---Events Near You
+13-352|---Financial
+13-353|---Football at Home
+13-354|---Football On the Road
+13-355|---Forever Buffs Spotlight
+13-356|---Herd
+13-357|---Heritage Center
+13-304|---Homecoming
+13-358|---Homecoming
+13-351|---Koenig
+13-359|---Music
+13-360|---Reunions
+13-361|---Senior Auditors
+13-362|---Young Alumni
+125-0|Alumni Chapters
+125-400|---• International: Beijing, China
+125-401|---• International: Hong Kong
+125-402|---• International: London
+125-403|---• International: Saudi Arabia
+125-404|---• International: Shanghai
+125-405|---• International: Tokyo
+125-406|---•• Air Force ROTC Detachment 105 Alumni
+125-408|---•• Black Alumni
+125-407|---•• Boettcher Scholars Alumni
+125-412|---•• Directors Club
+125-409|---•• Gay, Lesbian, Bisexual and Transgender Alumni
+125-410|---•• Latino Alumni
+125-411|---•• Veterans Alumni Club
+125-363|---AZ: Phoenix
+125-364|---AZ: Tucson
+125-365|---CA: Los Angeles
+125-366|---CA: Orange County
+125-367|---CA: Sacramento
+125-368|---CA: San Diego
+125-369|---CA: San Francisco
+125-370|---CO: Aspen
+125-371|---CO: Boulder
+125-372|---CO: Colorado Springs
+125-373|---CO: CU Young Alumni
+125-374|---CO: Denver Metro
+125-375|---CO: Durango
+125-376|---CO: Gunnison
+125-377|---CO: Morgan County
+125-378|---DC: Washington
+125-379|---GA: Atlanta
+125-380|---IL: Chicago
+125-381|---KS: Kansas City
+125-383|---MA: Boston
+125-382|---MD: Baltimore
+125-384|---MN: Minnesota
+125-386|---NC: Charlotte
+125-387|---NC: Triangle Area
+125-385|---NY: New York
+125-388|---OH: Cincinnati
+125-389|---OH: Cleveland
+125-390|---OR: Portland
+125-391|---TN: Memphis
+125-392|---TN: Nashville
+125-393|---TX: Dallas/Ft. Worth
+125-394|---TX: Houston
+125-395|---VA: Virginia Beach
+125-396|---WA: Seattle
+125-397|---WA: Spokane/Coeur d'Alene
+125-398|---WI: Madison
+125-399|---WI: Milwaukee
+90-0|Anseth Group
+15-0|Arts &amp; Culture
+15-54|---Auditions
+15-55|---Lectures/Seminars
+15-159|---Literary Arts
+15-56|---Performing Arts
+15-57|---Student Productions
+15-58|---Visiting Artist Program
+15-59|---Visual Arts
+16-0|Arts and Sciences
+16-149|---English
+16-256|---Integrative Physiology
+16-60|---Physics
+16-150|---Theatre and Dance
+17-0|Athletics
+17-61|---Basketball (Men)
+17-62|---Basketball (Women)
+17-63|---Cross Country
+17-64|---Football
+17-65|---Golf (Men)
+17-66|---Golf (Women)
+17-314|---Lacrosse
+17-67|---Skiing
+17-68|---Soccer
+17-69|---Summer Camps
+17-70|---Tennis
+17-71|---Track &amp; Field
+17-72|---Volleyball
+18-0|Bursars Office
+18-204|---CU Money Sense
+18-73|---Tuition deadlines
+117-0|Campus Controller
+117-339|---Fiscal Year-end
+117-338|---Monthly Finance Deadlines
+117-331|---Training
+19-0|Career Services
+19-74|---Career Fair
+19-171|---Employers
+19-75|---Internships
+107-0|Center for Neuroscience
+107-270|---Interdepartmental Neuroscience Seminar Series
+70-0|Centers &amp; Institutes
+70-201|---3CG
+70-157|---ATLAS Institute
+70-155|---Center for Asian Studies
+70-225|---Center for Energy &amp; Environmental Security
+70-172|---Center for Humanities and the Arts
+70-154|---Center of the American West
+70-174|---Colorado European Union Center of Excellence
+70-229|---Institute for Arctic and Alpine Research (INSTAAR)
+70-173|---Institute for Ethical and Civic Engagement
+70-208|---Institute of Behavioral Science
+70-280|---Institute of Cognitive Science
+70-186|---Laboratory for Atmospheric and Space Physics
+70-181|---Renewable and Sustainable Energy Institute
+75-0|Climate, Energy &amp; Sustainability
+112-0|CMCI: Media, Communication and Information
+48-0|College &amp; School Events
+20-0|College of Music
+20-190|---American Music Research Center
+20-76|---Artist Series
+20-196|---Brass/Percussion
+20-78|---CU in Broomfield
+20-79|---CU Opera
+20-77|---CU Presents
+20-80|---Entrepreneurship Center for Music
+20-81|---Faculty Performances
+20-82|---Faculty Series
+20-83|---Guest Recitals
+20-84|---Highlife Ensemble
+20-194|---Jazz
+20-189|---Keyboard
+20-258|---Live Video
+20-163|---Master Class
+20-191|---Music Education
+20-176|---Musicians Wellness
+20-85|---Musicology Colloquia
+20-86|---Pendulum Series
+20-222|---Signature Series
+20-87|---Special Events
+20-192|---Strings
+20-88|---Student Ensembles
+20-89|---Student Recitals
+20-90|---Tak&#225;cs Quartet
+20-193|---Voice
+20-195|---Woodwinds
+21-0|Collegiate Club Sports
+87-0|Computer Science
+87-230|---Colloquium
+87-259|---Events
+73-0|Continuing Education
+92-0|Counseling &amp; Psychological Services
+23-0|CU Art Museum
+121-0|CU Engage
+24-0|CU Museum of Natural History
+25-0|Cultural Series
+25-91|---Arts &amp; Culture Week
+25-92|---Black History Month
+25-170|---CMA Heritage Series
+25-93|---Colorado Shakespeare Festival
+25-94|---Conference on World Affairs
+25-156|---Diversity Summit
+25-187|---Earth Day
+25-175|---Holiday Programs
+25-95|---Holocaust Awareness Week
+25-158|---Islam Awareness Week
+25-97|---Miramontes Music and Arts Festival
+25-228|---Rake's Progress
+25-223|---Week of Jewish Culture
+44-0|CUSG (University of Colorado Student Government)
+44-346|---Be Boulder. Week
+44-136|---CU GOLD
+44-137|---Cultural Events Board
+44-138|---Distinguished Speakers Board
+44-139|---Environmental Center
+44-197|---GLBT Resource Center
+44-140|---Off-Campus Student Services
+44-141|---Program Council
+44-142|---Recreation Center
+44-143|---SORCE
+44-144|---Student Programs Office
+44-145|---University Memorial Center
+44-146|---Volunteer Resource Center
+44-147|---Wardenburg Health Center
+44-148|---Women's Resource Center
+124-0|Diversity and Inclusion
+114-0|Emergency Management
+27-0|Engineering and Applied Science
+27-180|---Alumni
+27-182|---BOLD Center
+27-265|---Chemical and Biological
+27-266|---Chemical and Biological: AIChE Events
+27-268|---Chemical and Biological: Seminars
+27-205|---Civil, Environmental, and Architectural
+27-183|---Deadlines
+27-206|---Deadlines: Civil, Environmental, and Architectural
+27-261|---Engineering International Program
+27-260|---Engineering Leadership Program
+27-179|---Prospective Students
+14-0|Environmental Design
+14-267|---Children, Youth &amp; Environment Center
+111-0|Environmental Studies Program
+111-310|---ENVS Colloquia
+111-311|---ENVS Graduate Student Brown Bags
+111-296|---Investigate Careers in the Environment
+28-0|Exhibits &amp; Gallery Shows
+28-98|---Permanent Exhibits
+28-99|---Temporary / Visiting Exhibits
+86-0|Facilites Management
+29-0|Faculty
+29-291|---Classroom Scheduling
+29-292|---Degree Audit
+29-100|---Faculty Assembly
+29-101|---Faculty Books
+29-102|---Faculty Development
+29-103|---Faculty Research Papers
+29-289|---Grade Processing
+29-290|---Graduation Processing
+29-293|---ISIS Training
+30-0|Featured Events
+31-0|Film
+31-104|---International Film Series
+31-105|---Sneak Peeks
+31-106|---Student Films
+32-0|Fiske Planetarium
+32-185|---Faculty Talks
+32-107|---Laser Shows
+32-108|---Lectures/Seminars
+32-109|---Live Star Talks
+32-110|---Star Shows
+33-0|Graduate School
+33-164|---Academic Deadlines
+33-165|---Award Deadlines
+33-178|---Graduate Student Appreciation Week
+33-167|---PostDocs
+33-166|---Professional Development
+94-0|Graduate Teacher Program
+94-263|---Conferences
+94-264|---Special Events
+94-262|---Workshops
+96-0|Health and Wellness
+84-0|History
+39-0|Housing and Dining Services
+39-312|---Residence Hall Association (RHA)
+71-0|Human Resources
+71-413|---Faculty and Staff Assistance Program
+71-224|---Open Forums
+71-161|---Organizational and Employee Development
+110-0|Institute of Cognitive Science
+91-0|Interdisciplinary Telecom Program
+91-257|---Deadlines
+34-0|International Education
+34-111|---Study Abroad
+83-0|Jewish Studies
+35-0|Journalism and Mass Communication
+36-0|Law School
+10-0|Lectures &amp; Seminars
+10-38|---Lectures
+10-39|---Seminars
+10-40|---Symposia
+37-0|Leeds School of Business
+37-210|---Alumni
+37-218|---Burridge Center
+37-320|---Business Minor
+37-209|---Business Research Division
+37-213|---Career Development
+37-216|---Deming Center
+37-214|---Diversity Affairs
+37-215|---Executive Education
+37-319|---Honors Academic Experience Pilot
+37-221|---Leeds Dean
+37-318|---Leeds Scholars Program
+37-212|---MBA
+37-317|---MBA - Co-curriculars
+37-316|---MBA - Evening MBA
+37-219|---PhD
+37-321|---Pre-Business
+37-217|---Real Estate Center
+37-220|---Trep Caf&#233;
+37-211|---Undergraduate
+49-0|Libraries
+78-0|Macky Auditorium
+74-0|ODECE
+74-168|---Center for Multicultural Affairs
+74-169|---Disability Services
+74-184|---Pre-Collegiate Development
+81-0|Office of Information Technology
+38-0|Orientation
+38-112|---College of Arts &amp; Sciences
+38-113|---College of Engineering
+38-114|---Leeds School of Business
+79-0|Outreach and Engagement
+77-0|Parent Relations
+72-0|Payroll &amp; Benefit Services
+72-251|---Retirement planning
+120-0|Physics
+95-0|Psychology and Neuroscience
+95-273|---Behavioral Neuroscience Journal Club
+95-295|---Clinical Brownbag
+95-271|---Cognitive Lunch
+95-277|---Colloquia
+95-276|---Emotion Group Meetings
+95-275|---Executive Committee Meetings
+95-274|---Faculty Meetings
+95-272|---Social Brownbag
+113-0|Recreation Services
+113-315|---Bear Creek Commons
+113-307|---Club Sports
+113-305|---Facilities
+113-306|---Fitness &amp; Wellness
+113-308|---Intramural Sports
+113-309|---Outdoor Programs
+88-0|Religious Campus Organizations
+88-245|---Baha'i
+88-239|---Baptist
+88-236|---Buddhist
+88-232|---Catholic
+88-234|---Chabad
+88-231|---Christian
+88-249|---Epiphany Anglican Fellowship
+88-248|---Episcopal
+88-235|---Hillel
+88-243|---Interdenominational
+88-233|---Jewish
+88-238|---Lutheran
+88-242|---Nondenominational
+88-237|---Orthodox
+88-244|---Presbyterian
+88-250|---Rinzai Zen
+88-240|---Seventh Day Adventist
+88-247|---Unitarian/Universalist
+88-241|---United Methodist
+88-246|---Urantia
+115-0|Religious Studies
+97-0|Research Admin
+101-0|Research Admin: Animal Care
+103-0|Research Admin: Conflicts of Interest &amp; Commitment
+104-0|Research Admin: Controlled Substances
+102-0|Research Admin: Export Controls
+98-0|Research Admin: Funding &amp; Awards
+106-0|Research Admin: HR Processes
+100-0|Research Admin: Human Research &amp; IRB
+100-269|---IRB eRA Training
+99-0|Research Admin: OCG (Sponsored Research)
+105-0|Research Admin: Responsible Research
+82-0|Scheduling - ALTEC
+109-0|Scholarships
+69-0|School of Education
+69-302|---Alumni
+69-301|---Colloquia
+69-299|---Deadlines
+69-298|---Events
+69-300|---SOE Meetings
+69-303|---Student groups
+40-0|Science Series
+40-115|---CU Wizards
+40-116|---Gamow Lecture Series
+119-0|Social Justice
+46-0|Sports &amp; Recreation
+41-0|Staff
+41-117|---Appreciation Events
+41-294|---ISIS Training
+41-118|---Staff Council
+41-160|---Staff Development
+123-0|Strategic Relations
+123-345|---Trainings
+85-0|Student Academic Success Center
+85-252|---Academic Excellence Student Support Services
+85-227|---McNair Program
+85-253|---McNeill Academic Program
+85-254|---Tutoring &amp; Academic Skills
+42-0|Student Affairs
+42-255|---Buff Essentials
+42-200|---Live Free Weekend
+42-188|---Student Involvement Week
+108-0|Student Employment
+108-324|---General Dates
+108-325|---Payroll Liaison Dates
+108-326|---Student Dates
+108-327|---Supervisor Dates
+11-0|Student Events
+11-41|---Concerts
+11-42|---Culture Nights
+11-43|---Dances
+11-44|---Elections
+11-45|---Fairs
+11-46|---Films/Movies
+11-47|---Homecoming
+43-0|Student Organizations and Clubs
+43-119|---Architecture
+43-120|---Business
+43-121|---Engineering
+43-122|---Environmental
+43-123|---Ethnic
+43-124|---Foreign
+43-125|---Graduate
+43-126|---Greek Organizations
+43-127|---Honor Society
+43-128|---Journalism
+43-129|---Law
+43-130|---Military/ROTC
+43-131|---Music
+43-132|---Political
+43-133|---Religious
+43-134|---Service
+43-135|---Special Interest
+122-0|UGGS: United Government of Graduate Students
+122-344|---Meetings
+122-343|---Social
+45-0|University Events
+45-313|---Campus Coffee
+45-153|---Chancellor addresses
+45-207|---Chancellor's Community Visits
+45-152|---Convocation
+45-177|---CU Cares
+45-151|---Family Weekend
+45-226|---Special Event
+45-162|---Spring Fest
+116-0|Web Express
+116-323|---Open Labs
+116-322|---Trainings
+76-0|Week of Welcome Events

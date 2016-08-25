@@ -67,6 +67,13 @@ function metatag_features_revert($module) {
       $object->instance = $config;
       $object->config = $feature_conf[$config]['config'];
       metatag_config_save($object);
+
+      if (!empty($feature_conf[$config]['disabled'])) {
+        ctools_export_crud_disable('metatag_config', $config);
+      }
+      else {
+        ctools_export_crud_enable('metatag_config', $config);
+      }
     }
   }
 }

@@ -1,12 +1,15 @@
 <?php
 /**
- * @file cu_inventory_stats.module
+ * @file
  * Provides data about the site and it's content to the CU Inventory.
  */
 
+/**
+ * Implements hook_cron().
+ */
 function cu_inventory_stats_cron() {
   $cron_last = variable_get('cron_last', NULL);
-  // Run once a day
+  // Run once a day.
   if (date('ymd', $cron_last) != date('ymd', time())) {
     if (variable_get('cu_inventory_stats_site_cron', TRUE)) {
       module_load_include('inc', 'cu_inventory_stats');
@@ -16,10 +19,11 @@ function cu_inventory_stats_cron() {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter(&$form, &$form_state, $form_id)
+ * Implements hook_form_FORM_ID_alter() for cu_inventory_admin_settings_form().
  */
 function cu_inventory_stats_form_cu_inventory_admin_settings_alter(&$form, &$form_state, $form_id) {
-  // Check and see if the Inventory is up. If it is not, let cu_inventory give the bad news.
+  // Check and see if the Inventory is up. If it is not, let cu_inventory give
+  // the bad news.
   if (!cu_inventory_is_up()) {
     return;
   }
@@ -38,7 +42,7 @@ function cu_inventory_stats_form_cu_inventory_admin_settings_alter(&$form, &$for
   );
 
   module_load_include('inc', 'cu_inventory_stats');
-  $cu_inventory_stats_statistics =  cu_inventory_stats_process_site_stats(false);
+  $cu_inventory_stats_statistics = cu_inventory_stats_process_site_stats(FALSE);
 
   $form['statistics']['data_fieldset']['cu_inventory_stats_statistics'] = array(
     '#type' => 'markup',
@@ -60,14 +64,20 @@ function cu_inventory_stats_form_cu_inventory_admin_settings_alter(&$form, &$for
   );
 }
 
+/**
+ * Submit function for Updating statistics.
+ */
 function cu_inventory_stats_update_statistics_submit(&$form, &$form_state) {
   module_load_include('inc', 'cu_inventory_stats');
   cu_inventory_stats_process_site_stats();
   drupal_set_message(t('Updated Statistics sent.'));
 }
 
+/**
+ * Submit function for Emptying statistics.
+ */
 function cu_inventory_stats_empty_statistics_submit(&$form, &$form_state) {
   module_load_include('inc', 'cu_inventory_stats');
   cu_inventory_stats_empty_site_stats();
-  drupal_set_message(t('Reqeust to empty Statistics sent.'));
+  drupal_set_message(t('Request to empty Statistics sent.'));
 }
