@@ -1,5 +1,5 @@
 name = Pantheon Core
-description = Provides CU-specific functionality, like adding variables, to Express Core allowing Express to work within Pantheon hosting.
+description = Provides CU-specific functionality, e.g. adding variables, to Express Core allowing Express to work within Pantheon hosting.
 core = 7.x
 version = 7.x-2.5
 package = CU-Core
