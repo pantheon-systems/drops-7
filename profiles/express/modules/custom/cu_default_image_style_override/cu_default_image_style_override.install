@@ -1,9 +1,0 @@
-<?php
-
-/** 
- * Flush large, medium image caches.
- */
-function cu_default_image_style_override_update_7001() {
-  image_style_flush('large');
-  image_style_flush('medium');
-}

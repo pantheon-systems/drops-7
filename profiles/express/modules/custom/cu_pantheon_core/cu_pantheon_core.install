@@ -3,14 +3,14 @@
 /**
  * Implemenets hook_enable().
  */
-function cu_testing_core_enable() {
+function cu_pantheon_core_enable() {
 
 }
 
 /**
  * Implements hook_install().
  */
-function cu_testing_core_install() {
+function cu_pantheon_core_install() {
 
   theme_enable(array(
     'cuhighlight',
@@ -28,37 +28,22 @@ function cu_testing_core_install() {
 
   // these modules need to be enabled late in the install process and/or to be ignored by profile_module_manager's report.
   $module_array = array(
-    'user_external_invite', // Added to not enable in Pantheon Core.
     'cu_users',
-    'cu_inventory',
-    'cu_inventory_stats' // Not adding caching modules here for changes involving Travis CI testing.
   );
 
   module_enable($module_array);
 
   profile_module_manager_add_to_ignore($module_array);
 
-  //set default variables for user_external_invite
-  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'message')) {
-    $spec = array(
-      'type' => 'text',
-      'description' => "Custom message included with invite",
-      'not null' => FALSE,
-    );
-    db_add_field('user_external_invite', 'message', $spec);
-  }
-
-  // Add id and drop mail as primary key.
-  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'id')) {
-    db_drop_primary_key('user_external_invite');
-    $spec = array(
-      'type' => 'serial',
-      'description' => 'Primary key of the Project entity',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-    );
-    db_add_field('user_external_invite', 'id', $spec, array('primary key' => array('id')));
-  }
+  // Add blocks shortcut to shortcuts set.
+  $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
+  $shortcut_set->links[] =
+  array(
+    'link_path' => 'admin/content/blocks',
+    'link_title' => st('Blocks'),
+    'weight' => -18,
+  );
+  shortcut_set_save($shortcut_set);
 
   // change for #FIT-583 for https://www.drupal.org/node/2172293
   // Must be set before cu_forms_bundle is enabled
@@ -70,74 +55,24 @@ function cu_testing_core_install() {
 
   variable_set('express_help_base_url', 'http://www.colorado.edu/webcentral');
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, cu_redirect');
 
   // Set message for when enabling of bundles is turned off.
   variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');
 
-  // Set default variables for user_external_invite.
-  $site_owner_role = user_role_load_by_name('site_owner');
-  $content_editor_role = user_role_load_by_name('content_editor');
-  $edit_my_content_role = user_role_load_by_name('edit_my_content');
+    variable_set('securepages_enable', '1');
+  variable_set('securepages_pages', 'node/add*
+node/*/edit
+node/*/delete
+user
+user/*
+admin
+admin/*');
 
-  variable_set('user_external_invite_roles', array(
-    $site_owner_role->rid,
-    $content_editor_role->rid,
-    $edit_my_content_role->rid
-  ));
-  variable_set('user_external_invite_days_valid_for', 5);
+  $authenticated_user_role = user_role_load_by_name('authenticated user');
+  variable_set('securepages_roles', array($authenticated_user_role->rid => $authenticated_user_role->rid));
+  variable_set('securepages_secure', '1');
+  variable_set('securepages_switch', TRUE);
 
-  variable_set('user_external_invite_invite_template', '[user_external_invite:invite_custom]
-
-You have been invited to join the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
-
-To accept this invitation:
-1) Go to [user_external_invite:invite_link]
-2) Login with your IdentiKey name and password.
-
-Upon completion, you will receive an email confirming your access.
-
---
-The Web Express Team
-http://www.colorado.edu/webcentral
-websupport@colorado.edu');
-
-  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following:
-
-[user_external_invite:invited_emails]
-
-An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent.
-
-If you did not submit this request or need to modify it, please contact us at websupport@colorado.edu.
-
---
-The Web Express Team
-http://www.colorado.edu/webcentral
-websupport@colorado.edu');
-
-  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.
-
-Web Central:
-You can use the Web Central website as your main resource for step-by-step tutorials, information on training sessions, and requesting help. http://www.colorado.edu/webcentral
-
---
-The Web Express Team
-http://www.colorado.edu/webcentral
-websupport@colorado.edu');
-
-  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
-
-To access and edit this site:
-1) Go to [site:login-url]
-2) Login with your IdentiKey name and password.
-
-Web Central:
-You can use the Web Central website as your main resource for step-by-step tutorials, information on training sessions, and requesting help. http://www.colorado.edu/webcentral
-
---
-The Web Express Team
-http://www.colorado.edu/webcentral
-websupport@colorado.edu');
 
   // Set the syslog_identity variable to the SID.
   $cu_sid = variable_get('cu_sid', '');
@@ -181,11 +116,11 @@ Note that the CAPTCHA module disables .+page caching.+ of pages that include a C
 /**
  * Variable sets for Express transition.
  */
-function cu_testing_core_update_7001() {
+function cu_pantheon_core_update_7001() {
 
   variable_set('express_help_base_url', 'https://www.colorado.edu/webcentral');
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_pantheon_core, cu_help, cu_inventory, cu_inventory_stats, express_final');
 
   // Set SEO bundle to be hidden in bundle list form.
   variable_set('profile_module_manager_bundle_ignore', array('cu_seo_bundle' => 'cu_seo_bundle'));
@@ -208,7 +143,7 @@ Note that the CAPTCHA module disables .+page caching.+ of pages that include a C
  * Removing cu_default_image_style_override and grid_images.
  * Cleanup sites migrated for Express transition.
  */
-function cu_testing_core_update_7002() {
+function cu_pantheon_core_update_7002() {
 
   // Disable grid_images, cu_default_image_style_override modules.
   module_disable(array(
@@ -252,16 +187,16 @@ function cu_testing_core_update_7002() {
     ->condition('delta', 'help')
     ->execute();
 
-  cu_core_revert_features();
+  cu_pantheon_core_revert_features();
 
   // Run on every update
-  _express_inventory_update('7002');
+  cu_pantheon_core_inventory_update('7002');
 }
 
 /**
  * Updates for Express 2.0.1.
  */
-function cu_testing_core_update_7003() {
+function cu_pantheon_core_update_7003() {
 
   // Uninstall unused modules.
   drupal_uninstall_modules(array(
@@ -275,10 +210,10 @@ function cu_testing_core_update_7003() {
     'cu_transition_fit',
   ));
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_pantheon_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache');
 
   // Run on every update
-  _express_inventory_update('7003');
+  cu_pantheon_core_inventory_update('7003');
 }
 
 /**
@@ -287,7 +222,7 @@ function cu_testing_core_update_7003() {
  * Remove duplicates in shortcut menu
  * Express 2.1.0
  */
-function cu_testing_core_update_7004() {
+function cu_pantheon_core_update_7004() {
   module_enable(array('cu_redirect'));
   module_disable(array('more_menus', 'cu_shortcuts'));
   drupal_uninstall_modules(array(
@@ -295,7 +230,7 @@ function cu_testing_core_update_7004() {
     'cu_shortcuts',
   ));
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, entityreference, express_layout, cu_ldap, ldap_authentication, ldap_servers');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_pantheon_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, entityreference, express_layout, cu_ldap, ldap_authentication, ldap_servers');
 
   // Remove duplicates in shortcut menu
   $shortcuts = array();
@@ -313,14 +248,14 @@ function cu_testing_core_update_7004() {
   }
 
   // Run on every update
-  _express_inventory_update('7004');
+  cu_pantheon_core_inventory_update('7004');
 }
 
 /**
  * Express Update 7005.
  * Removing cu_livechat module, enabling responsive_preview, reverting features
  */
-function cu_testing_core_update_7005() {
+function cu_pantheon_core_update_7005() {
   // Disable cu_livechat module.
   module_disable(array(
     'cu_livechat',
@@ -345,16 +280,139 @@ function cu_testing_core_update_7005() {
     )
   ->execute();
 
-  cu_core_revert_features();
+  cu_pantheon_core_revert_features();
 
   // Run on every update
-  _express_inventory_update('7005');
+  cu_pantheon_core_inventory_update('7005');
+}
+
+/**
+ * Express Update 7006.
+ * Enabling dashboards, reverting features.
+ */
+function cu_pantheon_core_update_7006() {
+
+  variable_set('express_core_version', 'cu_pantheon_core');
+
+  module_enable(array('express_dashboards', 'express_dashboard_user', 'context_sitewide_public'));
+
+  cu_pantheon_core_revert_features();
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7006');
+}
+
+/**
+ * Express Update 7007.
+ * Converting Profile Module Manager variable to an array.
+ */
+function cu_pantheon_core_update_7007() {
+  $ignore_modules = variable_get('profile_module_manager_ignore', array());
+
+  module_disable(array(
+    'cu_cache',
+    'cu_bucket',
+  ));
+
+  drupal_uninstall_modules(array(
+    'cu_cache',
+    'cu_bucket',
+  ));
+
+  // Check to see whether variable is array.
+  // If it is an array, don't do anything.
+  if (!is_array($ignore_modules)) {
+    $ignore_modules = explode(',', $ignore_modules);
+    variable_set('profile_module_manager_ignore', $ignore_modules);
+  }
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7007');
+}
+
+/**
+ * Express Update 7008.
+ * Showing SEO dashboard, reverting features.
+ */
+function cu_pantheon_core_update_7008() {
+  // Set SEO bundle to be hidden in bundle list form.
+  variable_del('profile_module_manager_bundle_ignore');
+
+  cu_pantheon_core_revert_features();
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7008');
+}
+
+/**
+ * Express Update 7009.
+ * Reverting GA codes for sites.
+ */
+function cu_pantheon_core_update_7009() {
+  if ($ga_codes = variable_get('ga_account', '')) {
+    // Explode string and trim whitespace.
+    $ga_codes = array_map('trim', explode(',', $ga_codes));
+    $js_code = '';
+    foreach ($ga_codes as $key => $code) {
+      $js_code .= format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker@key'});  ga('customTracker@key.send', 'pageview');", array('@ga_account' => $code, '@key' => $key));
+    }
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  }
+  else {
+    variable_set('googleanalytics_codesnippet_after', '');
+  }
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7009');
+}
+
+/**
+ * Express Update 7010.
+ * Turn off linkchecker modules for sites without SEO bundle enabled"
+ */
+function cu_pantheon_core_update_7010() {
+
+  // Check if SEO bundle is enabled.
+  $result = db_query("SELECT * FROM {system} s WHERE s.name = 'cu_seo_bundle' AND s.status = 1")->fetchAll();
+
+  // If it isn't enabled, disable SEO-related modules.
+  $modules = array(
+    'metatag',
+    'xmlsitemap',
+    'xmlsitemap_engines',
+    'xmlsitemap_menu',
+    'cu_sitemap',
+    'linkchecker',
+    'linkchecker_bean',
+    'cu_linkchecker',
+    'site_verify',
+    'cu_dashboard_seo',
+  );
+
+  if (empty($result)) {
+    module_disable($modules);
+  }
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7010');
+}
+
+/**
+ * Express Update 7011.
+ * Revert features.
+ */
+function cu_pantheon_core_update_7011() {
+
+  cu_pantheon_core_revert_features();
+
+  // Run on every update
+  cu_pantheon_core_inventory_update('7011');
 }
 
 /**
  * Revert features by passing features in an array.
  */
-function cu_testing_core_revert_features($features = NULL) {
+function cu_pantheon_core_revert_features($features = NULL) {
   // If an array of specific features isn't passed, populate with all overridden features.
   if ($features == NULL) {
     module_load_include('inc', 'features', 'features.export');
@@ -375,7 +433,7 @@ function cu_testing_core_revert_features($features = NULL) {
       $f = features_get_features($key);
       $components = array_keys($f->info['features']);
       features_revert(array($f->name => $components));
-      watchdog('cu_core', 'Attempting to revert %feature', array('%feature' => $feature->name), WATCHDOG_NOTICE);
+      watchdog('cu_pantheon_core', 'Attempting to revert %feature', array('%feature' => $feature->name), WATCHDOG_NOTICE);
     }
   }
 }
@@ -383,8 +441,8 @@ function cu_testing_core_revert_features($features = NULL) {
 /**
  * Updates inventory with profile version.
  */
-function _express_inventory_update($version) {
-  // Do at the end of every update.
-  module_load_include('inc', 'cu_inventory');
-  cu_inventory_process_profile_version($version);
+function cu_pantheon_core_inventory_update($version) {
+  if (module_exists('cu_inventory')) {
+    cu_inventory_process_core_version($version);
+  }
 }

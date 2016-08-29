@@ -30,7 +30,8 @@
 ######################
 .DS_Store*
 ehthumbs.db
-Icon
+Icon
+
 Thumbs.db
 ._*
 
@@ -41,3 +42,6 @@ Thumbs.db
 # SASS #
 ##########
 .sass-cache
+
+# IntelliJ files #
+.idea
