@@ -1,7 +1,0 @@
-name = CU Cache
-description = Caching configurations for CU-Boulder.
-package = CU-Active
-core = 7.x
-version = 7.x-1.0
-dependencies[] = memcache
-dependencies[] = varnish

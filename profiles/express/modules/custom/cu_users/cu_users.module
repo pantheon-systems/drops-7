@@ -164,3 +164,43 @@ function cu_users_form_user_cancel_confirm_form_alter(&$form, &$form_state) {
   unset($form['user_cancel_method']['user_cancel_delete']);
   unset($form['user_cancel_confirm']);
 }
+
+/**
+ * Implements hook_user_update().
+ *
+ * @param $edit
+ * @param $account
+ * @param $category
+ */
+function cu_users_user_update(&$edit, $account, $category) {
+
+  $user_vars = array(
+    '%uid' => $account->uid,
+    '%name' => $account->name,
+    '%mail' => $account->mail,
+    '%created' => $account->created,
+    '%roles' => implode(',', $account->roles),
+  );
+
+  watchdog('cu_user_logs', 'User account saved. UID: %uid name: %name mail: %mail created: %created roles: %roles', $user_vars);
+}
+
+/**
+ * Implements hook_user_update().
+ *
+ * @param $edit
+ * @param $account
+ * @param $category
+ */
+function cu_users_user_insert(&$edit, $account, $category) {
+
+  $user_vars = array(
+    '%uid' => $account->uid,
+    '%name' => $account->name,
+    '%mail' => $account->mail,
+    '%created' => $account->created,
+    '%roles' => implode(',', $account->roles),
+  );
+
+  watchdog('cu_user_logs', 'User account created. UID: %uid name: %name mail: %mail created: %created roles: %roles', $user_vars);
+}

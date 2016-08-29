@@ -46,3 +46,6 @@ Thumbs.db
 # SASS #
 ##########
 .sass-cache
+
+# IntelliJ files #
+.idea

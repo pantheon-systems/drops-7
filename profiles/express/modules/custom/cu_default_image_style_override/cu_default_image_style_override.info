@@ -1,6 +1,0 @@
-name = CU Default Image Style Override
-description = Image Style Overrides
-package = CU-Boulder
-core = 7.x
-version = 7.x-1.0
-files[] = tests/cu_default_image_style_override.test

@@ -47,6 +47,7 @@ function express_profile_configure_form() {
   $options = array(
     'cu_core' => st('Production'),
     'cu_testing_core' => st('Testing'),
+    'cu_pantheon_core' => st('Pantheon'),
   );
 
   $form['express_core_version'] = array(
@@ -87,6 +88,11 @@ function express_final() {
   global $databases;
   $plus = $databases['default']['default']['database'];
   variable_set('site_mail', 'cudrupal+' . $plus . '@gmail.com');
+
+  // Set admin user email to something not admin@example.com.
+  $admin_user = user_load(1);
+  $admin_user->mail = 'websupport@colorado.edu';
+  user_save($admin_user);
 
   // Place the system-main block in the content region.
   $update = db_update('block')

@@ -27,12 +27,6 @@ function user_external_invite_entity_info() {
   return $info;
 }
 
-function user_external_invite_views_api() {
-  return array(
-    'api' => 3,
-  );
-}
-
 /**
  * Implements hook_permission().
  */
