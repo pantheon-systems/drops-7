@@ -11,6 +11,7 @@
     // Undefined variables.
     var dataset, views, datasetOptions, fileSize, fileType, router;
     var dataExplorerSettings, state, $explorer, dataExplorer, maxSizePreview;
+    var datastoreStatus;
 
     // Create drupal behavior
     Drupal.behaviors.Recline = {
@@ -20,6 +21,7 @@
         fileSize = Drupal.settings.recline.fileSize;
         fileType = Drupal.settings.recline.fileType;
         maxSizePreview = Drupal.settings.recline.maxSizePreview;
+        datastoreStatus = Drupal.settings.recline.datastoreStatus;
 
         dataExplorerSettings = {
           grid: Drupal.settings.recline.grid,
@@ -135,7 +137,6 @@
     // Returns the dataset configuration.
     function getDatasetOptions () {
       var datasetOptions = {};
-      var datastoreStatus = Drupal.settings.recline.datastoreStatus;
       var delimiter = Drupal.settings.recline.delimiter;
       var file = Drupal.settings.recline.file;
       var uuid = Drupal.settings.recline.uuid;
@@ -334,7 +335,7 @@
 
     // Init the multiview.
     function init () {
-      if(fileSize < maxSizePreview) {
+      if(fileSize < maxSizePreview || datastoreStatus) {
         dataset = new recline.Model.Dataset(getDatasetOptions());
         dataset.fetch().fail(showRequestError);
         views = createExplorer(dataset, state, dataExplorerSettings);

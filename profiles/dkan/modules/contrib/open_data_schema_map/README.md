@@ -1,3 +1,7 @@
+**DEPRECATED BRANCH**
+
+Please note that the master branch of this module, which was the default branch for the first two years of its life, has been abandonded in favor of the 7.x-1.x brach, as we move into a noral release cycle for it. No further commits will be made or merged to this branch. Please update any makefiles that point to it; future releases of DKAN will point to specific versions.
+
 [![Circle CI](https://circleci.com/gh/NuCivic/open_data_schema_map.svg?style=svg)](https://circleci.com/gh/NuCivic/open_data_schema_map)
 
 Open Data Schema Map

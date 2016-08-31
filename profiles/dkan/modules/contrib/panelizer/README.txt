@@ -32,7 +32,7 @@ Features
 Requirements
 --------------------------------------------------------------------------------
 CTools v7.x-1.9 or newer.
-Panels v7.x-3.5 or newer.
+Panels v7.x-3.6 or newer.
 
 
 Configuration & Usage

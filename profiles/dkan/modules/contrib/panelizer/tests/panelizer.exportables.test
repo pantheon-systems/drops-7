@@ -41,56 +41,56 @@ class PanelizerExportablesTest extends PanelizerTestHelper {
   /**
    * Verify that the exported configuration can be edited.
    */
-  // function testExportablesAreConfigurable() {
-  //   $perms = array(
-  //     // Standard node permissions.
-  //     'administer content types',
-  //     'access administration pages',
-  //
-  //     // Panelizer.
-  //     'administer panelizer',
-  //
-  //     // Permission to manage the 'content', i.e. the display.
-  //     'administer panelizer node page content',
-  //   );
-  //   $web_user = $this->drupalCreateUser($perms);
-  //   $this->drupalLogin($web_user);
-  //
-  //   // Load the Panelizer admin page for the 'page' content type.
-  //   $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager');
-  //   $this->assertResponse(200);
-  //
-  //   // The two defaults that were exported.
-  //   $defaults = array(
-  //     'node:page:with_storage' => 'Test (with Storage API)',
-  //     'node:page:without_storage' => 'Test (without Storage API)',
-  //   );
-  //
-  //   // Confirm the two exported displays are listed.
-  //   foreach ($defaults as $default => $label) {
-  //     $this->assertText($default);
-  //   }
-  //
-  //   // Try loading the exported displays' configuration pages.
-  //   foreach ($defaults as $default => $label) {
-  //     // $default = urlencode($default);
-  //     $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/settings');
-  //     $this->assertResponse(200);
-  //     $this->assertFieldByName('title', $label);
-  //     $this->assertFieldByName('css_class', str_replace(':', '-', $default));
-  //     $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/context');
-  //     $this->assertResponse(200);
-  //     $this->assertText(t('Built in context'));
-  //     $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/access');
-  //     $this->assertResponse(200);
-  //     $this->assertText(t('No criteria selected, this test will pass.'));
-  //     $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/layout');
-  //     $this->assertResponse(200);
-  //     $this->assertFieldByName('categories');
-  //     $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/content');
-  //     $this->assertResponse(200);
-  //   }
-  // }
+  function testExportablesAreConfigurable() {
+    $perms = array(
+      // Standard node permissions.
+      'administer content types',
+      'access administration pages',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Load the Panelizer admin page for the 'page' content type.
+    $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager');
+    $this->assertResponse(200);
+
+    // The two defaults that were exported.
+    $defaults = array(
+      'node:page:with_storage' => 'Test (with Storage API)',
+      'node:page:without_storage' => 'Test (without Storage API)',
+    );
+
+    // Confirm the two exported displays are listed.
+    foreach ($defaults as $default => $label) {
+      $this->assertText($default);
+    }
+
+    // Try loading the exported displays' configuration pages.
+    foreach ($defaults as $default => $label) {
+      // $default = urlencode($default);
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/settings');
+      $this->assertResponse(200);
+      $this->assertFieldByName('title', $label);
+      $this->assertFieldByName('css_class', str_replace(':', '-', $default));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/context');
+      $this->assertResponse(200);
+      $this->assertText(t('Built in context'));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/access');
+      $this->assertResponse(200);
+      $this->assertText(t('No criteria selected, this test will pass.'));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/layout');
+      $this->assertResponse(200);
+      $this->assertFieldByName('categories');
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/content');
+      $this->assertResponse(200);
+    }
+  }
 
   /**
    * Verify that the exported configuration can be edited when applied to an
@@ -124,15 +124,17 @@ class PanelizerExportablesTest extends PanelizerTestHelper {
     $this->assertResponse(200);
 
     // Confirm there's a link to the 'content' page, and load it.
-    $path = url('node/' . $node->nid . '/panelizer/page_manager/content');
-    $this->assertLinkByHref($path);
+    $path = 'node/' . $node->nid . '/panelizer/page_manager/content';
+    $this->assertLinkByHref(url($path));
     $this->drupalGet($path);
     $this->assertResponse(200);
 
     // Confirm the 'Add content' link is on the page.
     $this->assertLink(t('Add content'));
-    $ajax_path = url('panels/ajax/editor/select-content/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid . '/center');
-    $this->assertLinkByHref($ajax_path);
+    $ajax_path = 'panels/ajax/editor/select-content/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid . '/center';
+    // Need to pass the path through url() to get the correct syntax for the
+    // actual link.
+    $this->assertLinkByHref(url($ajax_path));
 
     // Load the AJAX path to see what it contains.
     $json = $this->drupalGetAJAX($ajax_path);
@@ -151,10 +153,10 @@ class PanelizerExportablesTest extends PanelizerTestHelper {
     // This is what should happen.
     $this->assertEqual($json[1]['command'], 'modal_display');
     $this->assertTrue(isset($json[1]['title']));
-    $this->assertTrue(isset($json[1]['output']));
     if (isset($json[1]['title'])) {
       $this->assertEqual($json[1]['title'], t('Add content to Center'));
     }
+    $this->assertTrue(isset($json[1]['output']));
 
     // This is what should not happen.
     $this->assertNotEqual($json[1]['command'], 'alert');

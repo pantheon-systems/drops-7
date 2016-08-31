@@ -24,7 +24,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
    * Test all read api methods with access control.
    */
   public function testDkanDatasetAPIRead() {
-    // Get all data.json succesful responses.
+    // Get all data.json successful responses.
     $responses = $this->runQueries('data_json_1_1');
     // Get all data.json sucessful responses.
     foreach ($responses as $r) {
@@ -35,24 +35,24 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
       }
     }
 
-    // Get all site_read succesful responses.
+    // Get all site_read successful responses.
     $responses = $this->runQueries('ckan_site_read');
-    // Test specifics to site_read for every succesful response.
+    // Test specifics to site_read for every successful response.
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return');
     }
 
-    // Get all revision_list succesful responses.
+    // Get all revision_list successful responses.
     $responses = $this->runQueries('ckan_revision_list');
-    // Test specifics to revision_list for every succesful response.
+    // Test specifics to revision_list for every successful response.
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the IDs');
     }
 
-    // Get all package_list succesful responses.
+    // Get all package_list successful responses.
     $responses = $this->runQueries('ckan_package_list');
 
-    // Test specifics to package_list for every succesful response.
+    // Test specifics to package_list for every successful response.
     $uuids = array();
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the names');
@@ -61,7 +61,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
     }
 
     foreach ($uuids as $uuid) {
-      // Get all package_revision_list succesful responses.
+      // Get all package_revision_list successful responses.
       $responses = $this->runQueries('ckan_package_revision_list', $uuid);
 
       foreach ($responses as $r) {
@@ -72,7 +72,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
         }
       }
 
-      // Get all package_show succesful responses.
+      // Get all package_show successful responses.
       $responses = $this->runQueries('ckan_package_show', $uuid);
       foreach ($responses as $r) {
         $this->runCommonTest($r, 'Return the metadata of a dataset');
@@ -81,7 +81,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
       }
     }
 
-    // Get all current_package_list_with_resources succesful responses.
+    // Get all current_package_list_with_resources successful responses.
     $responses = $this->runQueries('ckan_current_package_list_with_resources');
 
     foreach ($responses as $r) {
@@ -91,7 +91,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
       $this->runPackageTests($result);
     }
 
-    // Get all group_list succesful responses.
+    // Get all group_list successful responses.
     $responses = $this->runQueries('ckan_group_list');
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the names of the site\'s groups');
@@ -101,7 +101,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
     }
 
     foreach ($uuids as $uuid) {
-      // Get all group_package_show succesful responses.
+      // Get all group_package_show successful responses.
       $responses = $this->runQueries('ckan_group_package_show', $uuid);
       foreach ($responses as $r) {
         $this->runCommonTest($r, 'Return the datasets (packages) of a group');
@@ -189,7 +189,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
         }
       }
     }
-    $succesful = array();
+    $successful = array();
 
     foreach ($uris as $uri) {
       $options = $uri['options'];
@@ -201,11 +201,11 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
       $url = url($uri['uri'], $options);
       $result = drupal_http_request($url);
       $this->assertTrue($result->code == 200 ? TRUE : FALSE);
-      $succesful[] = $result;
+      $successful[] = $result;
     }
 
-    // Return succesful querys for further assertions.
-    return $succesful;
+    // Return successful querys for further assertions.
+    return $successful;
   }
 
   /**

@@ -1,3 +1,19 @@
+Panelizer 7.x-3.4, 2016-08-19
+-----------------------------
+#2785821 by DamienMcKenna: Resolve issues with tests running on drupalci.
+#2785793 by attiks: Fix errors in panelizer_update_7115().
+#2785883 by DamienMcKenna, pbuyle, attiks, FeyP, smaz: Fixes for
+  panelizer_update_7303() to avoid infinite loops.
+#2193221 by michel.g: 'Undefined index' errors because the 'help' variable is
+  not always present.
+#2785945 by dsnopek, DamienMcKenna, mpotter, czigor: Fixed access-denied problem
+  caused by needing to add the new Panels Storage API attributes to exported
+  defaults.
+#2786471 by mpotter, dsnopek: Fixed multilingual issue with the Search API
+  integration.
+By DamienMcKenna: Require Panels 7.x-3.6.
+
+
 Panelizer 7.x-3.3, 2016-08-17
 -----------------------------
 #2762351 by DamienMcKenna: Skip update 7300 if there are no records to process.

@@ -44,7 +44,12 @@ class PanelizerSearchApiAlterCallback extends SearchApiAbstractAlterCallback {
         global $language_content;
         $original_language_content = $language_content;
         $languages = language_list();
-        $language_content = $languages[$item->search_api_language];
+        if (isset($languages[$item->search_api_language])) {
+          $language_content = $languages[$item->search_api_language];
+        }
+        else {
+          $language_content = language_default();
+        }
       }
 
       try {

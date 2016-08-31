@@ -13,10 +13,10 @@ includes[leaflet_draw_widget_make] = https://raw.githubusercontent.com/NuCivic/l
 ; Recline specific
 projects[recline][download][type] = git
 projects[recline][download][url] = https://github.com/NuCivic/recline.git
-projects[recline][download][tag] = 7.x-1.12.8
+projects[recline][download][tag] = 7.x-1.12.9
 projects[recline][subdir] = contrib
 
-includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.8/recline.make
+includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12.9/recline.make
 
 ; Contrib Modules
 projects[autocomplete_deluxe][subdir] = contrib
@@ -139,13 +139,13 @@ projects[og_extras][type] = module
 projects[open_data_schema_map][type] = module
 projects[open_data_schema_map][download][type] = git
 projects[open_data_schema_map][download][url] = https://github.com/NuCivic/open_data_schema_map.git
-projects[open_data_schema_map][download][revision] = 84104691bd2981522c14490e5ee379b257f4f2f2
+projects[open_data_schema_map][download][revision] = 9c5581b9344f9f39808da32ea59e59aa19f0e555
 projects[open_data_schema_map][subdir] = contrib
 
 projects[open_data_schema_map_dkan][type] = module
 projects[open_data_schema_map_dkan][download][type] = git
 projects[open_data_schema_map_dkan][download][url] = https://github.com/NuCivic/open_data_schema_map_dkan.git
-projects[open_data_schema_map_dkan][download][revision] = 0d56426897f7736076fb10b275a035a7dbb7ab2b
+projects[open_data_schema_map_dkan][download][revision] = 439ac4b4bfde2d45f559fc31de1a9ceba118d503
 projects[open_data_schema_map_dkan][subdir] = contrib
 
 projects[pathauto][version] = 1.2
@@ -220,6 +220,6 @@ libraries[arc][download][url] = "https://github.com/semsol/arc2.git"
 libraries[arc][download][revision] = "44c396ab54178086c09499a1704e31a977b836d2"
 libraries[arc][subdir] = "ARC2"
 
-libraries[excanvas][download][type] = "file"
-libraries[excanvas][download][url] = "https://explorercanvas.googlecode.com/files/excanvas_r3.zip"
-libraries[excanvas][download][sha1] = "f1b9f7a44428eb0c7b27fe8ac0242d34ec94a385"
+libraries[excanvas][download][type] = git
+libraries[excanvas][download][url] = "https://github.com/arv/ExplorerCanvas.git"
+libraries[excanvas][download][sha1] = "aa989ea9d9bac748638f7c66b0fc88e619715da6"
