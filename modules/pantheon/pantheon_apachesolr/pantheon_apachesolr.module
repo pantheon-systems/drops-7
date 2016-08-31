@@ -170,7 +170,7 @@ function pantheon_apachesolr_platform_detected() {
  */
 function pantheon_apachesolr_certs_dir() {
   if (pantheon_apachesolr_platform_detected()) {
-    return $_SERVER['HOME'] . '/certs';
+    return $_ENV['HOME'] . '/certs';
   }
   return './';
 }
