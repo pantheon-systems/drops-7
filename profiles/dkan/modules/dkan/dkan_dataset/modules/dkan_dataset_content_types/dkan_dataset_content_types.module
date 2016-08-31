@@ -19,8 +19,15 @@ function dkan_dataset_content_types_form_alter(&$form, &$form_state, $form_id) {
       dkan_dataset_content_types_license_allowed_values()
     );
     $form['field_license'][LANGUAGE_NONE]['#options'] = $allowed_values;
-
+    $form['field_data_dictionary'][LANGUAGE_NONE]['#after_build'][] = 'data_dictionary_after_build';
   }
+}
+/**
+ * After build for data dictionary field. Removes format selector and guidelines.
+ */
+function data_dictionary_after_build(&$form) {
+  unset($form[0]['format']);
+  return $form;
 }
 /**
  * Implements hook_field_formatter_info().

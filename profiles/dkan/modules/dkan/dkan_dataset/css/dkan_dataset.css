@@ -672,3 +672,10 @@ body .node-dataset #data-and-resources ul.resource-list li .orig {
 }
 .field-name-field-additional-info table p,
 .field-name-field-additional-info table p:last-child { margin: 0; }
+.field-name-field-data-dictionary .form-control.form-textarea {
+  border-radius: 4px 4px 0 0;
+  padding: 5px 12px;
+}
+.field-name-field-data-dictionary .text-format-wrapper .description {
+  margin-bottom: 10px;
+}

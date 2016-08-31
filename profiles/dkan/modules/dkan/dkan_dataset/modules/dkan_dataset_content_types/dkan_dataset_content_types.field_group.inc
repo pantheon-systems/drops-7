@@ -240,11 +240,11 @@ function dkan_dataset_content_types_field_group_info() {
 
   // Translatables
   // Included for use with string extractors like potx.
+  t('API or Website URL');
   t('Dataset Info');
   t('Dataset Information');
-  t('Remote file');
-  t('API or Website URL');
   t('Primary');
+  t('Remote file');
   t('Resource');
   t('Upload');
 

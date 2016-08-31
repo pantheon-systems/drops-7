@@ -19,13 +19,19 @@
 }
 
 .references {
-  margin-top: 30px;
-  color: #333333;
+  margin: 30px 0;
+  color: #666;
   padding-left: 20px;
   vertical-align: middle;
+  font-size: .9em;
 }
 .references > span {
-  padding-right: 6px;
+  padding-right: 10px;
+}
+.references .icon-dkan:before {
+  color: #666;
+  padding-right: 0;
+  vertical-align: middle;
 }
 
 .views-dkan-workflow-tree-actions {

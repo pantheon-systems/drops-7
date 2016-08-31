@@ -750,7 +750,6 @@ function panelizer_update_7115(&$sandbox) {
       // corrupting data during hook_panels_display_save.
       $display->did = db_insert('panels_display')
         ->fields(array(
-          'did' => NULL,
           'layout' => $display->layout,
           'layout_settings' => serialize($display->layout_settings),
           'panel_settings' => serialize($display->panel_settings),
@@ -803,7 +802,6 @@ function panelizer_update_7115(&$sandbox) {
           // hook_panels_pane_insert.
           $new_pane->pid = db_insert('panels_pane')
             ->fields(array(
-              'pid' => NULL,
               'did' => $new_pane->did,
               'panel' => $new_pane->panel,
               'type' => $new_pane->type,
@@ -1248,28 +1246,36 @@ function panelizer_update_7302(&$sandbox) {
     }
   }
 
-  // Set a limit of how many rows to process per batch. 1000 rows is probably
-  // good.
-  $limit = 1000;
+  // Set a limit of how many rows to process per batch.
+  $limit = 100;
 
   // Run the query
   $result = db_query_range("SELECT pd.did, p.name
     FROM {panels_display} pd
       JOIN {panelizer_defaults} p ON p.did = pd.did
-    WHERE pd.storage_type = '' AND pd.did > :current_did", 0, $limit, array(':current_did' => $sandbox['current_did']));
+    WHERE pd.storage_type = '' AND pd.did > :current_did
+    ORDER BY pd.did ASC", 0, $limit, array(
+      ':current_did' => $sandbox['current_did'],
+    ));
 
-  foreach ($result as $row) {
-    db_update('panels_display')
-      ->fields(array(
-        'storage_type' => 'panelizer_default',
-        'storage_id' => $row->name,
-      ))
-      ->condition('did', $row->did)
-      ->execute();
+  // No results means that it's finished.
+  if (empty($result)) {
+    $sandbox['progress'] = $sandbox['max'];
+  }
+  else {
+    foreach ($result as $row) {
+      db_update('panels_display')
+        ->fields(array(
+          'storage_type' => 'panelizer_default',
+          'storage_id' => $row->name,
+        ))
+        ->condition('did', $row->did)
+        ->execute();
 
-    // Update our progress information.
-    $sandbox['progress']++;
-    $sandbox['current_did'] = $row->did;
+      // Update our progress information.
+      $sandbox['progress']++;
+      $sandbox['current_did'] = $row->did;
+    }
   }
 
   // Set the "finished" status, to tell batch engine whether this function
@@ -1282,7 +1288,8 @@ function panelizer_update_7302(&$sandbox) {
 }
 
 /**
- * Set the storage type and ID on existing {panelizer_entity} records.
+ * Set the storage type and ID on existing {panelizer_entity} records. This may
+ * take some time to complete.
  */
 function panelizer_update_7303(&$sandbox) {
   if (!isset($sandbox['progress'])) {
@@ -1299,26 +1306,35 @@ function panelizer_update_7303(&$sandbox) {
   }
 
   // Set a limit of how many rows to process per batch.
-  $limit = 1000;
+  $limit = 100;
 
   // Look for records to be updated.
   $result = db_query_range("SELECT pd.did, p.entity_type, p.entity_id, p.view_mode
     FROM {panels_display} pd
       JOIN {panelizer_entity} p ON p.did = pd.did
-    WHERE pd.storage_type = '' AND pd.did > :current_did", 0, $limit, array(':current_did' => $sandbox['current_did']));
+    WHERE pd.storage_type = '' AND pd.did > :current_did
+    ORDER BY pd.did ASC", 0, $limit, array(
+      ':current_did' => $sandbox['current_did'],
+    ));
 
-  foreach ($result as $row) {
-    db_update('panels_display')
-      ->fields(array(
-        'storage_type' => 'panelizer_entity',
-        'storage_id' => implode(':', array($row->entity_type, $row->entity_id, $row->view_mode)),
-      ))
-      ->condition('did', $row->did)
-      ->execute();
+  // No results means that it's finished.
+  if (empty($result)) {
+    $sandbox['progress'] = $sandbox['max'];
+  }
+  else {
+    foreach ($result as $row) {
+      db_update('panels_display')
+        ->fields(array(
+          'storage_type' => 'panelizer_entity',
+          'storage_id' => implode(':', array($row->entity_type, $row->entity_id, $row->view_mode)),
+        ))
+        ->condition('did', $row->did)
+        ->execute();
 
-    // Update our progress information.
-    $sandbox['progress']++;
-    $sandbox['current_did'] = $row->did;
+      // Update our progress information.
+      $sandbox['progress']++;
+      $sandbox['current_did'] = $row->did;
+    }
   }
 
   // Set the "finished" status, to tell batch engine whether this function

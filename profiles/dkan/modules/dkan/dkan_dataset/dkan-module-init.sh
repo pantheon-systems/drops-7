@@ -3,7 +3,7 @@
 DKAN_MODULE="dkan_dataset"
 
 # DKAN branch to use
-DKAN_BRANCH="7.x-1.x"
+DKAN_BRANCH="release-1-12"
 
 COMPOSER_PATH=".composer/vendor/bin"
 
