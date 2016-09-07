@@ -141,7 +141,8 @@
       var file = Drupal.settings.recline.file;
       var uuid = Drupal.settings.recline.uuid;
 
-      file = (location.origin !== (new URL(file)).origin) ? '/node/' + Drupal.settings.recline.uuid + '/data' : file;
+     // Get correct file location, make sure not local
+     file = (getOrigin(window.location) !== getOrigin(file)) ? '/node/' + Drupal.settings.recline.uuid + '/data' : file;
 
       // Select the backend to use
       switch(getBackend(datastoreStatus, fileType)) {
@@ -169,6 +170,27 @@
           break;
       }
       return datasetOptions;
+    }
+
+     // Correct for fact that IE does not provide .origin
+    function getOrigin(u) {
+      var url = parseURL(u);
+        return url.protocol + '//' + url.hostname + (url.port ? (':' + url.port) : '');
+    }
+
+    // Parse a simple URL string to get its properties
+    function parseURL(url) {
+      var parser = document.createElement('a');
+      parser.href = url;
+      return {
+        protocol: parser.protocol,
+        hostname: parser.hostname,
+        port: parser.port,
+        pathname: parser.pathname,
+        search: parser.search,
+        hash: parser.hash,
+        host: parser.host
+      }
     }
 
     // Retrieve a backend given a file type and and a datastore status.

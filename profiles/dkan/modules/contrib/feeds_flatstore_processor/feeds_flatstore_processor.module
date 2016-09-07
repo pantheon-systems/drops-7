@@ -295,7 +295,7 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
   $colcount = count($headers);
 
   // List of possible types, from least to most specific.
-  $types = array('bigtext' => 0, 'datetime' => 0, 'float' => 0, 'int' => 0, 'bigint' => 0);
+  $types = array('bigtext' => 0, 'datetime' => 0, 'float' => 0, 'bigint' => 0, 'int' => 0);
   $type_counter = array();
   foreach ($headers as $key => $value) {
     $type_counter[$key]  = $types;
