@@ -1,0 +1,11 @@
+name = Stage File Proxy
+description = Proxies files from production server so you don't have to transfer them manually
+core = 7.x
+configure = admin/config/system/stage_file_proxy
+
+; Information added by Drupal.org packaging script on 2015-04-09
+version = "7.x-1.7"
+core = "7.x"
+project = "stage_file_proxy"
+datestamp = "1428604383"
+

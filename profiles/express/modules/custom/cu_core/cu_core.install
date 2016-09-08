@@ -28,7 +28,6 @@ function cu_core_install() {
 
   // these modules need to be enabled late in the install process and/or to be ignored by profile_module_manager's report.
   $module_array = array(
-    'user_external_invite', // Added to not enable in Pantheon Core.
     'cu_users',
     'cu_inventory',
     'cu_inventory_stats',
@@ -500,26 +499,6 @@ function cu_core_update_7011() {
 }
 
 /**
- * Express Update 7012.
- * Change user 1 email address.
- * Add noreqnewpass module.
- */
-function cu_core_update_7012() {
-
-  $modules = array(
-    'noreqnewpass',
-  );
-  module_enable($modules);
-
-  // Set admin user email to something not admin@example.com.
-  $admin_user = user_load(1);
-  $admin_user->mail = 'websupport@colorado.edu';
-  user_save($admin_user);
-
-  cu_core_express_update('7012');
-}
-
-/**
  * Revert features by passing features in an array.
  */
 function cu_core_revert_features($features = NULL) {
@@ -549,19 +528,6 @@ function cu_core_revert_features($features = NULL) {
 }
 
 /**
- * Run every time a db update.
- *
- * This calls the inventory update function and admin password change.
- */
-function cu_core_express_update($version) {
-
-  cu_core_inventory_update($version);
-
-  // Change admin user/pass.
-  cu_core_scramble_admin();
-}
-
-/**
  * Updates inventory with profile version.
  */
 function cu_core_inventory_update($version) {
@@ -569,27 +535,3 @@ function cu_core_inventory_update($version) {
     cu_inventory_process_core_version($version);
   }
 }
-
-/**
- * Obscures uid 1 password and username for added security.
- */
-function cu_core_scramble_admin() {
-
-  // Generate hashed password.
-  $unhashed_pass = user_password(50);
-  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
-  $hashed_pass = user_hash_password(trim($unhashed_pass));
-
-  // Abort if the hashing failed and returned FALSE.
-  if (!$hashed_pass) {
-    return FALSE;
-  }
-  else {
-    // Save admin user with new user/password.
-    $user = user_load(1);
-    $user->name = 'admin-' . user_password(50);
-    $user->pass = $hashed_pass;
-    user_save($user);
-  }
-}
-

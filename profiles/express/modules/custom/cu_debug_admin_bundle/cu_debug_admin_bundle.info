@@ -4,10 +4,8 @@ core = 7.x
 package = CU-Development
 
 dependencies[] = devel
-dependencies[] = devel_generate
 dependencies[] = search_krumo
 dependencies[] = ds_ui
-dependencies[] = security_review
 dependencies[] = diff
-    
+
 stylesheets[all][] = cu-debug-admin-bundle.css
