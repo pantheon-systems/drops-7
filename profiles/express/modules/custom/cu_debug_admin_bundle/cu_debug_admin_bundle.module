@@ -12,13 +12,14 @@
  * @return
  *   An array defining all the permissions for the site.
  */
-  
+
 function cu_debug_admin_bundle_secure_permissions($role) {
   $permissions = array(
     'developer' => array(
       'access devel information',
       'access security review list',
       'run security checks',
+      'administer stage_file_proxy settings',
     ),
   );
   if (isset($permissions[$role])) {

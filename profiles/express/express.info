@@ -60,8 +60,7 @@ dependencies[] = field_group
 dependencies[] = link
 dependencies[] = linkit
 dependencies[] = features
-; Moved user_external_invite to cu_core module since other cores might not want it enabled.
-;dependencies[] = user_external_invite
+dependencies[] = user_external_invite
 dependencies[] = libraries
 dependencies[] = views
 dependencies[] = view_unpublished

@@ -28,7 +28,6 @@ function cu_testing_core_install() {
 
   // these modules need to be enabled late in the install process and/or to be ignored by profile_module_manager's report.
   $module_array = array(
-    'user_external_invite', // Added to not enable in Pantheon Core.
     'cu_users',
     'cu_inventory',
     'cu_inventory_stats' // Not adding caching modules here for changes involving Travis CI testing.
