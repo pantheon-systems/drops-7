@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Install file for Express and Express-based profiles.
+ */
+
+
+
+/**
+ * Implements hook_requirements().
+ */
+function express_version_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+
+    // space in array pushes this to the top
+    $requirements['express_version'] = array(
+      'title' => $t('Express Version'),
+      'value' => express_version_get_version(),
+      'severity' => REQUIREMENT_INFO,
+      'weight' => -9
+    );
+
+  }
+
+  return $requirements;
+}

@@ -1,0 +1,13 @@
+name = No Request New Pass
+description = "Disable link to request a new password"
+core = 7.x
+package = People
+configure = admin/people/noreqnewpass
+files[] = tests/noreqnewpass.test
+
+; Information added by drupal.org packaging script on 2011-03-18
+version = "7.x-1.2"
+core = "7.x"
+project = "noreqnewpass"
+datestamp = "1300471270"
+

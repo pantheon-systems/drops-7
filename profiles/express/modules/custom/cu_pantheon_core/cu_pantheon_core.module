@@ -1,0 +1,148 @@
+<?php
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function cu_pantheon_core_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['cu_pantheon_core'])) {
+    $group = $implementations['cu_pantheon_core'];
+    unset($implementations['cu_pantheon_core']);
+    $implementations['cu_pantheon_core'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ *
+ * Disable syslog form fields.
+ *
+ * @param  $form
+ * @param  $form_state
+ */
+function cu_pantheon_core_form_system_logging_settings_alter(&$form, &$form_state) {
+  $form['syslog_identity']['#disabled'] = TRUE;
+  $form['syslog_facility']['#disabled'] = TRUE;
+  $form['syslog_format']['#disabled'] = TRUE;
+
+  $form['reset_syslog_identity'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rebuild syslog identity'),
+    '#submit' => array('cu_pantheon_core_rebuild_syslog_identity_submit'),
+  );
+}
+
+function cu_pantheon_core_rebuild_syslog_identity_submit(&$form, &$form_state) {
+  $cu_sid = variable_get('cu_sid', '');
+  if ($cu_sid) {
+    // Current value
+    $syslog_identity = 'drupal-' . $cu_sid;
+  }
+  else {
+    $syslog_identity = 'drupal-no_sid';
+  }
+  variable_set('syslog_identity', $syslog_identity);
+  drupal_set_message(t('Syslog identity has been set to "@syslogid"', array('@syslogid' => $syslog_identity)));
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_pantheon_core_form_alter(&$form, $form_state, $form_id) {
+  // Remove "Promote to front page."
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    unset($form['options']['promote']);
+  }
+}
+
+/**
+ * Implements hook_modules_enabled().
+ * Add shortcut link for context AFTER context_ui is enabled.
+ */
+function cu_pantheon_core_modules_installed($modules) {
+  if (in_array('context_ui', $modules)) {
+    menu_rebuild();
+    // Add context shortcut to shortcuts set.
+    $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
+    $shortcut_set->links[] =
+    array(
+      'link_path' => 'admin/structure/context',
+      'link_title' => t('Context'),
+      'weight' => -14,
+    );
+    shortcut_set_save($shortcut_set);
+  }
+}
+
+/**
+ * Implements hook_express_node_list_groups().
+ * Provided by express_add_content.api.php.
+ */
+function cu_pantheon_core_express_node_list_groups($bundles) {
+  $bundles['express_core']['title'] = 'Express Core';
+  $bundles['express_core']['weight'] = -99;
+  $bundles['express_core']['types'][] = 'Basic page';
+  $bundles['express_core']['types'][] = 'File';
+  $bundles['express_core']['types'][] = 'Frequently Asked Questions';
+
+  $bundles['news']['title'] = 'News and Articles';
+  $bundles['news']['types'][] = 'Article';
+  $bundles['news']['types'][] = 'Article List Page';
+
+  $bundles['people']['title'] = 'People';
+  $bundles['people']['types'][] = 'Person';
+  $bundles['people']['types'][] = 'People List Page';
+
+  $bundles['photo']['title'] = 'Photo Gallery';
+  $bundles['photo']['types'][] = 'Photo Gallery';
+
+  $bundles['forms']['title'] = 'Forms';
+  $bundles['forms']['types'][] = 'Webform';
+  return $bundles;
+}
+
+/**
+ * Implements hook_express_bean_list_groups().
+ * Provided by express_add_content.api.php.
+ */
+function cu_pantheon_core_express_bean_list_groups($bundles) {
+  $bundles['express_core']['title'] = 'Express Core';
+  $bundles['express_core']['weight'] = -99;
+  $bundles['express_core']['types'][] = 'Hero Unit';
+  $bundles['express_core']['types'][] = 'Slider';
+  $bundles['express_core']['types'][] = 'Text Block';
+
+  $bundles['news']['title'] = 'News and Articles';
+  $bundles['news']['types'][] = 'Article List';
+  $bundles['news']['types'][] = 'Article Feature';
+  $bundles['news']['types'][] = 'Article Grid';
+  $bundles['news']['types'][] = 'Article Slider';
+
+  $bundles['people']['title'] = 'People';
+  $bundles['people']['types'][] = 'People List Block';
+
+  $bundles['events']['title'] = 'Events';
+  $bundles['events']['types'][] = 'Events Calendar Block';
+  $bundles['events']['types'][] = 'Events Calendar Grid';
+
+  $bundles['social']['title'] = 'Social Media';
+  $bundles['social']['types'][] = 'Social Links';
+  $bundles['social']['types'][] = 'Facebook Activity';
+  $bundles['social']['types'][] = 'Facebook Like Button';
+  $bundles['social']['types'][] = 'Twitter Block';
+
+  $bundles['advanced_content']['title'] = 'Advanced Content';
+  $bundles['advanced_content']['types'][] = 'Content Grid';
+  $bundles['advanced_content']['types'][] = 'Quicktab';
+  $bundles['advanced_content']['types'][] = 'Video Reveal';
+
+  $bundles['advanced_layout']['title'] = 'Advanced Layout';
+  $bundles['advanced_layout']['types'][] = 'Block Row';
+  $bundles['advanced_layout']['types'][] = 'Block Section';
+
+
+  return $bundles;
+}

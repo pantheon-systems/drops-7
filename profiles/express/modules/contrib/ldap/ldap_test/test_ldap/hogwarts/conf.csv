@@ -1,0 +1,3 @@
+id,mailhostname,userbasedn,groupbasedn
+hogwarts,hogwarts.edu,"ou=people,dc=hogwarts,dc=edu","ou=groups,dc=hogwarts,dc=edu"
+

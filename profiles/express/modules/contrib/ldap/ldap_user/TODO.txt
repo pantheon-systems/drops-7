@@ -1,0 +1,60 @@
+
+LDAP User To dos
+
+-- need to move data in admin/config/people/ldap/user on hook update.
+-- need ldap_user_update() hook to change ldap_authentication to ldap_user in authmaps table.
+-- add in password provisioning options to ldap user
+-- implement binary field conversion
+-- add options on user edit form (user/1301/edit) to ldap associate
+-- make sure use case of deleting user leading to deletion of ldap user is implemented
+
+Mapping and mapping UI Tasks:
+- add validation
+
+- allow for feeds tamper plugins be configured and act on mappings
+- add some js to disable disallowed directions for selected user attributes
+
+
+Permanent Unique Identifier Tasks:
+
+- write code to check and resolve conflict with puid
+-- ldap_user_puid_to_user($puid)
+-- ldap_user_user_to_puid($user)
+
+- events to be addressed:
+-- any ldap_user insert or update
+-- any user logon
+
+- should be in grid of when to update attributes as an attribut (PUID).
+
+- PUID unit tests
+-- add puid in configuration
+-- test that puid is present when user is created
+-- change puid in fake ldap server
+-- update user and make sure new puid is set
+-- change username in fake ldap server, but keep puid same
+-- when user authenticates, make sure old account is converted to new username with old uid.
+
+
+move data into ldap_user module structure
+- X add ldapUser object as property in ldap authentication object/class
+- X in update code, move loginConflictResolve and acctCreation values from authentication conf to provision conf
+- X move provisioning options in admin/config/people/ldap/authentication "Drupal User Account Creation" section to ldap_user module conf.
+- X move "Allow account conflicts" option from server conf to ldap user conf
+- X create new fields in user and add to .install file
+- X add authmap data to user->ldap_authmap_* fields
+- X add mapping form for user field and ldap entry mapping
+- X add some CSS to make sections clearer and generally improve usability
+- write hook_user_* and entity_* functions to populate ldap data fields
+- test by creating users manually
+- write script to move user->data to correct fields in $user-> entity
+- add update to execute previous script
+
+- X bring ldap_provision code into module
+- bring ldap_profile code into module
+- X allow rules for each field [sych on intitail provision, synch on logon, synch on periodic update, push to ldap entry]
+- X implement drupal user -> ldap entry synching
+
+tests
+- make sure install creates fields
+- make sure uninstall removes fields
