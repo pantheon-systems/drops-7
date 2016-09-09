@@ -1,0 +1,9 @@
+#ignore IntelliJ files
+*.idea
+
+#ignore stupid mac files
+*.DS_STORE
+
+
+#ignore theming files
+*.sass-cache

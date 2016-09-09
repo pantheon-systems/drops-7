@@ -1,0 +1,214 @@
+/* Variables */
+$blue: #007BC8;
+
+/* Mixins */
+@mixin element-invisible {
+  border: 0;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute !important;
+  width: 1px;
+}
+
+.class-view-mode-list,
+.class-view-mode-short {
+  border-bottom: 1px solid #e7e7e7;
+  border-top:1px solid #e7e7e7;
+  margin-bottom: -1px;
+  padding:10px;
+  font-size: 85%;
+  h2.class-title,
+  h3.class-title {
+    font-size: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  h3.section-label {
+    font-size: 100%;
+    font-weight: 400;
+    margin: 0;
+    padding: 0;
+    display: inline;
+    color:#333;
+  }
+  .class-section {
+    color:#333;
+  }
+  h4.class-label {
+    font-size: 80%;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    display: inline;
+    text-transform: uppercase;
+    color:#757575;
+  }
+}
+.class-view-column-headers {
+  background: #ddd;
+  font-size: 75%;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding:5px 10px;
+  display: none;
+}
+@media screen and (min-width:768px) {
+  .class-view-mode-list h4.class-label {
+    @include element-invisible;
+  }
+  .class-view-mode-short {
+    h4.class-label {
+      display:block;
+      //@include element-invisible;
+    }
+    .row:nth-child(odd) {
+      margin-bottom: 15px;
+    }
+  }
+  .class-view-column-headers {
+    display: block;
+  }
+}
+.view-cu-classes {
+  .view-content {
+    margin-bottom: 20px;
+  }
+  .views-row:nth-child(even) .class-view-mode-list {
+    background-color: #f7f7f7;
+  }
+}
+.course-description {
+  .field-label {
+    display: none;
+  }
+  margin-bottom: 20px;
+}
+.course-class-list {
+  padding-bottom: 20px;
+}
+.course-classes-highlighted {
+  margin-bottom: 20px;
+}
+#other-classes {
+  display: none;
+  .class-view-mode-short:nth-child(even) {
+    background-color: #f7f7f7;
+  }
+}
+
+/* CLASS VIEW MODE SHORT */
+.class-view-mode-short {
+  .field-label {
+    display: none;
+  }
+}
+
+// RESULTS
+.results-counter {
+  font-weight: 600;
+  padding:15px;
+  background-color: #e7e7e7;
+  text-align: center;
+  font-size: 120%;
+}
+
+$radius: 0px;
+.view-cu-classes {
+  label {
+    font-size: 65%;
+    text-transform: uppercase;
+  }
+  input[type="text"] {
+    font-size: 13px;
+  }
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    -ms-appearance: none;
+    appearance: none;
+    border: 1px solid #aaa;
+    padding: 8px 30px 8px 8px;
+    background-color:#e7e7e7;
+    background-image: url(../images/select-arrows.png);
+    background-position: right center;
+    background-repeat: no-repeat;
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+    border-radius: $radius;
+    border:none;
+    color: #333;
+    font-weight: 600;
+    font-size:12px;
+    max-width: 100px;
+    width:100%;
+  }
+  select:hover {
+    background-color: #d7d7d7;
+  }
+  select::-ms-expand {
+    display: none;
+  }
+
+  input.form-submit,
+  input.form-reset {
+    background-color: #007BC8;
+    color:#fff;
+    font-weight: 600;
+    font-size:12px;
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+    border-radius: $radius;
+    background-image: none;
+    -webkit-appearance: none;
+    border: none;
+    padding:8px;
+  }
+  input.form-reset,
+  input#edit-reset {
+    background-color: #444;
+  }
+  input[type=submit]:focus {
+    outline: #000 solid 2px;
+  }
+  .views-exposed-form .views-exposed-widget .form-submit {
+    margin-top: 15px;
+  }
+  @media screen and (min-width:600px) {
+
+    select {
+      max-width: 120px;
+    }
+
+  }
+  .views-widget-filter-combine {
+    float: none;
+    margin: 0;
+    padding: 0;
+    width:100%;
+    input.form-text {
+      width: 100%;
+    }
+    label {
+      display: block;
+    }
+    label.icon-closed:before {
+      content: "\f196";
+      padding-right:5px;
+      font-family: FontAwesome;
+    }
+    label.icon-open:before {
+      content: "\f147";
+      padding-right:5px;
+      font-family: FontAwesome;
+    }
+  }
+  .views-exposed-widget input:not(:first-child) {
+    margin-left:15px;
+  }
+}
+
+/* Course entity */
+h2.course-credits {
+  font-size: 100%;
+}

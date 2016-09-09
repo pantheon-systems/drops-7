@@ -1,0 +1,18 @@
+.demo-mode-nav {
+  background-color: #f7f7f7;
+  color:#333;
+  padding:5px 10px;
+  overflow: hidden;
+}
+.demo-mode-title {
+  float: left;
+  font-weight: bold;
+}
+.demo-mode-links {
+  float: right;
+  font-size: 75%;
+  margin-right: -10px;
+}
+.demo-mode-links a {
+  padding:0 10px;
+}

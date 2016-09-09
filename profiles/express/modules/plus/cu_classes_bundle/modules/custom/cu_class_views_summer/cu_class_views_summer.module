@@ -1,0 +1,384 @@
+<?php
+/**
+ * @file
+ * Code for the CU Class Views feature.
+ */
+
+include_once 'cu_class_views_summer.features.inc';
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function cu_class_views_summer_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_class_views_summer');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'cu_class', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('cu_class');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+function cu_class_views_summer_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  if (($entity_type == 'cu_class') && ($bundle == 'class')) {
+    if ($vars['view_mode'] == 'short') {
+      $vars['theme_hook_suggestions'][] = 'cu_class__short_summer';
+    }
+    if ($vars['view_mode'] == 'list') {
+      $vars['theme_hook_suggestions'][] = 'cu_class__list_summer';
+    }
+  }
+}
+
+function cu_class_views_summer_menu() {
+  $items = array();
+  $items['class-views/lookup/%'] = array(
+    'title' => 'Course Subjects by College/School',
+    'page callback' => 'cu_class_views_summer_subject_callback',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+function cu_class_views_summer_block_info() {
+  $blocks = array();
+  $blocks['course_search_form'] = array(
+    'info' => t('Course Search Form'),
+  );
+  return $blocks;
+}
+function cu_class_views_summer_block_view($delta = '') {
+  switch ($delta) {
+    case 'course_search_form':
+
+      $view = views_get_view('cu_classes');
+      $view->set_display('page');
+      $view->init_handlers();
+      $exposed_form = $view->display_handler->get_plugin('exposed_form');
+      $form =  $exposed_form->render_exposed_form(true);
+
+      $block['content']['#markup'] = $form;
+      $block['content']['#prefix'] = '<div class="view-cu-classes">';
+      $block['content']['#suffix'] = '</div>';
+      break;
+  }
+  return $block;
+}
+
+function cu_class_views_summer_form_views_exposed_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#id'] == 'views-exposed-form-cu-classes-summer-page') {
+    // Add College/School filter
+    $groups = cu_class_views_summer_colleges_schools();
+    $options = array();
+    $options['all'] = '-None-';
+    foreach ($groups as $key => $group) {
+      $options[$key] = $group['title'];
+    }
+    $form['college_school_filter']['#type'] = 'select';
+    $form['college_school_filter']['#options'] = $options;
+    $form['college_school_filter']['#multiple'] = FALSE;
+    $form['college_school_filter']['#required'] = FALSE;
+    $filter = isset($_GET['college_school']) ? $_GET['college_school'] : NULL;
+    if ($filter) {
+      $form['college_school_filter']['#default_value'] = $filter;
+    }
+    $combine = $form['#info']['filter-combine'];
+    $info = array(
+      'value' => 'college_school_filter',
+      'label' => 'College/School',
+      'operator' => 'college_school_op',
+    );
+    $form['#info'] = array('filter_college_school' => $info) + $form['#info'];
+
+    // Remove line below and uncomment following two lines to display keyword search
+    unset($form['#info']['filter-combine']);
+    //$combine = $form['#info']['filter-combine'];
+    //$form['#info'] = array('filter-combine' => $combine) + $form['#info'];
+    $form['#submit'][] = 'cu_class_views_summer_colleges_schools_filter';
+
+    // Subject
+    $form['field_class_subject_value']['#type'] = 'select';
+
+    $form['field_class_subject_value']['#options'] = cu_class_subject_values();
+    unset($form['field_class_subject_value']['#size']);
+    $form['field_class_subject_value']['#multiple'] = FALSE;
+    $form['field_class_subject_value']['#empty_value'] = '';
+    $form['field_class_subject_value']['#prefix'] = '<span id="class-search-subject-list">';
+    $form['field_class_subject_value']['#suffix'] = '</span>';
+
+    // Format
+    $form['field_class_instruction_mode_value']['#type'] = 'select';
+    $form['field_class_instruction_mode_value']['#options'] = cu_class_format_values();
+    unset($form['field_class_instruction_mode_value']['#size']);
+    $form['field_class_instruction_mode_value']['#multiple'] = FALSE;
+    $form['field_class_instruction_mode_value']['#empty_value'] = '';
+
+    // Session
+    $form['field_class_session_code_value']['#type'] = 'select';
+    $form['field_class_session_code_value']['#options'] = cu_class_session_values();
+    unset($form['field_class_session_code_value']['#size']);
+    $form['field_class_session_code_value']['#multiple'] = FALSE;
+    $form['field_class_session_code_value']['#empty_value'] = '';
+
+    $form['submit']['#attributes']['class'][] = 'button button-blue';
+    $form['reset']['#attributes']['class'][] = 'button button-gray';
+
+    // Moving submit and reset buttons so they share a container
+    $form['actions']['submit'] = $form['submit'];
+    $form['actions']['reset_form'] = array(
+      '#type' => 'button',
+      '#button_type' => 'reset',
+      '#value' => 'Reset',
+      '#validate' => array('cu_class_views_summer_form_reset'),
+      '#attributes' => array('class' => array('button', 'button-gray')),
+    );
+    $form['actions']['#prefix'] = '<div class="class-search-actions">';
+    $form['actions']['#suffix'] =  '</div>';
+    unset($form['submit']);
+    unset($form['reset']);
+
+    // bypass views_exposed_form_validate
+    // added to strip altered -None-
+    //unset($form['#validate']);
+    $form['#validate'][] = 'cu_class_views_summer_form_views_exposed_validation';
+
+    // Adding hidden value so we can tell if form has been submitted or not
+    $form['submitted'] = array(
+      '#type' => 'hidden',
+      '#value' => TRUE,
+    );
+  }
+
+
+
+  if ($form['#id'] == 'views-exposed-form-cu-classes-admin-page') {
+
+    $form['field_class_subject_value']['#size'] = 7;
+    $form['field_class_catalog_nbr_value']['#size'] = 10;
+
+    //$form['field_class_subject_value']['#type'] = 'select';
+    //$form['field_class_subject_value']['#options'] = cu_class_import_get_subjects();
+
+    $status_options = array(
+      '' => 'All',
+      '1' => 'Published',
+      '0' => 'Manually Unpublished',
+      '-1' => 'Unpublished by API',
+      '-2' => 'Bulk Unpublished',
+      '-3' => 'Needs Review',
+    );
+    $form['status']['#size'] = 5;
+    $form['status']['#type'] = 'select';
+    $form['status']['#options'] = $status_options;
+  }
+
+}
+
+function cu_class_views_summer_form_views_exposed_validation($form, &$form_state) {
+  if (empty($form_state['values']['college_school_filter'])) {
+    //$form_state['values']['college_school_filter'] = 'all';
+  }
+}
+
+function cu_class_views_summer_views_pre_render(&$view) {
+  if ($view->name == 'cu_classes') {
+
+    // Do not show result count on default view
+    if (!$_GET['submitted']) {
+      unset($view->query->pager->display->handler->handlers['header']['result']);
+    }
+
+    $view_headers = '<div class="class-view-column-headers">
+      <div class="row clearfix">
+        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+          Class
+        </div>
+        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+          Session
+        </div>
+        <div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
+          Credits
+        </div>
+        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+          Format
+        </div>
+      </div>
+    </div>';
+    $view->attachment_before = $view_headers;
+  }
+}
+
+function cu_class_views_summer_colleges_schools() {
+  $groups = array();
+  $groups['arts_and_sciences']['title'] = 'Arts and Sciences';
+  $groups['arts_and_sciences']['subjects'] = array(
+    'PHIL' => 'PHIL',
+    'HIST' => 'HIST',
+    'IAFS' => 'IAFS',
+    'HUMN' => 'HUMN',
+    'ENGL' => 'ENGL',
+    'ECON' => 'ECON',
+    'JPNS' => 'JPNS',
+    'ANTH' => 'ANTH',
+    'CLAS' => 'CLAS',
+    'DNCE' => 'DNCE',
+    'THTR' => 'THTR',
+    'ATOC' => 'ATOC',
+    'PSYC' => 'PSYC',
+    'FREN' => 'FREN',
+    'RUSS' => 'RUSS',
+    'EBIO' => 'EBIO',
+    'PHYS' => 'PHYS',
+    'SPAN' => 'SPAN',
+    'APPM' => 'APPM',
+    'ARTF' => 'ARTF',
+    'ARTH' => 'ARTH',
+    'ARTS' => 'ARTS',
+    'ASIA' => 'ASIA',
+    'ASTR' => 'ASTR',
+    'CHEM' => 'CHEM',
+    'COML' => 'COML',
+    'ENVS' => 'ENVS',
+    'ETHN' => 'ETHN',
+    'FILM' => 'FILM',
+    'FREN' => 'FREN',
+    'GEOG' => 'GEOG',
+    'GEOL' => 'GEOL',
+    'GRMN' => 'GRMN',
+    'HIST' => 'HIST',
+    'HONR' => 'HONR',
+    'IPHY' => 'IPHY',
+    'ITAL' => 'ITAL',
+    'JWST' => 'JWST',
+    'KREN' => 'KREN',
+    'LATN' => 'LATN',
+    'LING' => 'LING',
+    'MATH' => 'MATH',
+    'MCDB' => 'MCDB',
+    'MUSM' => 'MUSM',
+    'NRSC' => 'NRSC',
+    'PHIL' => 'PHIL',
+    'PHYS' => 'PHYS',
+    'PSCI' => 'PSCI',
+    'PSYC' => 'PSYC',
+    'RLST' => 'RLST',
+    'SCAN' => 'SCAN',
+    'SLHS' => 'SLHS',
+    'SOCY' => 'SOCY',
+    'SPAN' => 'SPAN',
+    'WMST' => 'WMST',
+    'WRTG' => 'WRTG',
+    'HIND' => 'HIND',
+  );
+  $groups['business']['title'] = 'Business';
+  $groups['business']['subjects'] = array(
+    'ACCT' => 'ACCT',
+    'BADM' => 'BADM',
+    'BCOR' => 'BCOR',
+    'BPOL' => 'BPOL',
+    'CESR' => 'CESR',
+    'ESBM' => 'ESBM',
+    'FNCE' => 'FNCE',
+    'INBU' => 'INBU',
+    'MGMT' => 'MGMT',
+    'MKTG' => 'MKTG',
+    'REAL' => 'REAL',
+  );
+  $groups['education']['title'] = 'Education';
+  $groups['education']['subjects'] = array(
+    'EDUC' => 'EDUC',
+    'LEAD' => 'LEAD',
+  );
+  $groups['engineering']['title'] = 'Engineering and Applied Sciences';
+  $groups['engineering']['subjects'] = array(
+    'AREN' => 'AREN',
+    'ASEN' => 'ASEN',
+    'ATLS' => 'ATLS',
+    'BMEN' => 'BMEN',
+    'CHEN' => 'CHEN',
+    'COEN' => 'COEN',
+    'CSCI' => 'CSCI',
+    'CVEN' => 'CVEN',
+    'ECEN' => 'ECEN',
+    'EHON' => 'EHON',
+    'EMEN' => 'EMEN',
+    'GEEN' => 'GEEN',
+    'HUEN' => 'HUEN',
+    'MCEN' => 'MCEN',
+    'MCEN' => 'MCEN',
+    'TLEN' => 'TLEN',
+  );
+  $groups['law']['title'] = 'Law';
+  $groups['law']['subjects'] = array(
+    'LAWS' => 'LAWS',
+  );
+  $groups['media']['title'] = 'Media, Communication & Information';
+  $groups['media']['subjects'] = array(
+    'APRD' => 'APRD',
+    'CMDP' => 'CMDP',
+    'COMM' => 'COMM',
+    'JRNL' => 'JRNL',
+    'MDST' => 'MDST',
+  );
+  $groups['music']['title'] = 'Music';
+  $groups['music']['subjects'] = array(
+    'MUEL' => 'MUEL',
+    'MUSC' => 'MUSC',
+    'TMUS' => 'TMUS',
+  );
+  $groups['envd']['title'] = 'Environmental Design';
+  $groups['envd']['subjects'] = array(
+    'ENVD' => 'ENVD',
+  );
+  ksort($groups);
+  return $groups;
+}
+
+function cu_class_views_summer_colleges_schools_filter($form, $form_state) {
+  if (!empty($form_state['values']['college_school_filter'])) {
+    $url_parts = $_GET;
+    unset($url_parts['q']);
+    $url_parts['college_school'] = $form_state['values']['college_school_filter'];
+    $filter = $form_state['values']['college_school_filter'];
+    $groups = cu_class_views_summer_colleges_schools();
+    $subjects = array();
+    if (isset($groups[$filter]['subjects'])) {
+      foreach ($groups[$filter]['subjects'] as $subject) {
+        $subjects[] = $subject;
+      }
+    }
+    $url = 'courses/search/' . join(',', $subjects);
+    if (empty($_GET['college_school'])) {
+      drupal_goto($url, array('query' => $url_parts));
+    }
+  }
+}
+
+function cu_class_views_summer_form_reset($form, $form_state) {
+  if ($form_state['values']['op'] == 'Reset') {
+    drupal_goto('courses/search');
+  }
+}
+
+function cu_class_views_summer_subject_callback($group) {
+  // Get all available subjects
+  $all_subjects = cu_class_subject_values();
+  // Get all subjects grouped by college/school
+  $grouped_subjects = cu_class_views_summer_colleges_schools();
+  // Get all subject for the college/school we want
+  $single_group_subjects = $grouped_subjects[$group]['subjects'];
+  // Remove any items that are not part of the college/school
+  foreach ($all_subjects as $key => $subject) {
+    if (empty($single_group_subjects[$key])) {
+      unset($all_subjects[$key]);
+    }
+  }
+  return $all_subjects;
+}

@@ -1,0 +1,235 @@
+<?php
+
+/**
+ * @file
+ * Install functions for class import module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function cu_class_import_schema() {
+  $schema = array();
+
+  $schema['cu_courses_organizations'] = array(
+    'description' => 'The base table for Organizations contained in LoV service.',
+    'fields' => array(
+      'code' => array(
+        'description' => 'Primary key for Organizations',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => 'Name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'readable_value' => array(
+        'description' => 'Human-readable name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'parent_org' => array(
+        'description' => 'Name of the Organization one level above the code field',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => FALSE,
+      ),
+      'level' => array(
+        'description' => 'Level of depth of code field\'s parent organization',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'status' => array(
+        'description' => 'Whether the organizational code is published or not',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'updated' => array(
+        'description' => 'Last time updated',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('code'),
+  );
+
+  $schema['cu_courses_subjects'] = array(
+    'description' => 'The base table for Subjects contained in LoV service.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key for Subjects',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'code' => array(
+        'description' => 'Code key for Subjects',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => 'Name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'readable_value' => array(
+        'description' => 'Human-readable name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'parent_org' => array(
+        'description' => 'Name of the Organization one level above the code field',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Whether the organizational code is published or not',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'updated' => array(
+        'description' => 'Last time updated',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+function _cu_class_import_initial_db_tables() {
+  $tables = array();
+
+  $tables['cu_courses_organizations'] = array(
+    'description' => 'The base table for Organizations contained in LoV service.',
+    'fields' => array(
+      'code' => array(
+        'description' => 'Primary key for Organizations',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => 'Name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'readable_value' => array(
+        'description' => 'Human-readable name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'parent_org' => array(
+        'description' => 'Name of the Organization one level above the code field',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => FALSE,
+      ),
+      'level' => array(
+        'description' => 'Level of depth of code field\'s parent organization',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'status' => array(
+        'description' => 'Whether the organizational code is published or not',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+    ),
+    'primary key' => array('code'),
+  );
+
+  $tables['cu_courses_subjects'] = array(
+    'description' => 'The base table for Subjects contained in LoV service.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key for Subjects',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'code' => array(
+        'description' => 'Code key for Subjects',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => 'Name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'readable_value' => array(
+        'description' => 'Human-readable name of Organization',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'parent_org' => array(
+        'description' => 'Name of the Organization one level above the code field',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Whether the organizational code is published or not',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $tables;
+}
+
+/**
+ * Update added db tables.
+ */
+function cu_class_import_update_7001() {
+
+  $tables = _cu_class_import_initial_db_tables();
+  foreach ($tables as $key => $table) {
+    if (!db_table_exists($key)) {
+      db_create_table($key, $table);
+    }
+  }
+}
+
+/**
+ * Added updated field to tables.
+ */
+function cu_class_import_update_7002() {
+  $spec = array(
+    'description' => 'Last time updated',
+    'type' => 'int',
+    'not null' => FALSE,
+  );
+
+  if (!db_field_exists('cu_courses_subjects', 'updated')) {
+    db_add_field( 'cu_courses_subjects', 'updated', $spec);
+  }
+
+  if (!db_field_exists('cu_courses_organizations', 'updated')) {
+    db_add_field( 'cu_courses_organizations', 'updated', $spec);
+  }
+}

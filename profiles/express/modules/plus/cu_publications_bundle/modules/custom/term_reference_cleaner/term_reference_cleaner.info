@@ -1,0 +1,3 @@
+name = Term Reference Cleaner
+description = Removes term references from terms that have been deleted.
+core = 7.x

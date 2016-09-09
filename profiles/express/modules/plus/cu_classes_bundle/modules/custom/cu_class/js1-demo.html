@@ -1,0 +1,617 @@
+<!-- ***********************************************************************************************************************************
+ 
+ This page is a simple test of the CU On Demand Class Search service using Ajax. Feel free to replicate this or adapt it to your
+ individual needs.
+ 
+ To Run this file locally, you must open it in Chrome with these launch parameters:
+ 
+ "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --allow-file-access-from-files --allow-file-access --allow-cross-origin-auth-prompt --disable-web-security
+ 
+ Spinner from http://fgnass.github.io/spin.js/
+ 
+************************************************************************************************************************************* -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Class Search</title>
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<link rel="stylesheet"
+	href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+<script src="http://fgnass.github.io/spin.js/spin.min.js"></script>
+<style>
+textarea {
+	width: 80%;
+	height: 50%;
+	overflow-x: scroll;
+	overflow-y: scroll;
+	display: block;
+	border: 1px solid black;
+	padding: 5px;
+	margin: 5px;
+}
+</style>
+<script>
+	$(function() {
+		$("#tabs").tabs();
+	});
+
+	function formatXml(xml) {
+
+		var formatted = '';
+		var reg = /(>)(<)(\/*)/g;
+		xml = xml.replace(reg, '$1\r\n$2$3');
+		var pad = 0;
+
+		jQuery.each(xml.split('\r\n'), function(index, node) {
+			var indent = 0;
+			if (node.match(/.+<\/\w[^>]*>$/)) {
+				indent = 0;
+			} else if (node.match(/^<\/\w/)) {
+				if (pad != 0) {
+					pad -= 1;
+				}
+			} else if (node.match(/^<\w[^>]*[^\/]>.*$/)) {
+				indent = 1;
+			} else {
+				indent = 0;
+			}
+			var padding = '';
+			for (var i = 0; i < pad; i++) {
+				padding += '  ';
+			}
+			formatted += padding + node + '\r\n';
+			pad += indent;
+		});
+
+		return formatted;
+	}
+</script>
+</head>
+<body>
+	
+
+	<div id="tabs">
+		<ul>
+			<li id="connectionTab"><a href="#tabs-1">Connection</a></li>
+			<li id="requestTab"><a href="#tabs-2">Request</a></li>
+			<li id="requestXmlTab"><a href="#tabs-3">Request XML</a></li>
+			<li id="responseTab"><a href="#tabs-4">Response</a></li>
+		</ul>
+		<div id="tabs-1">
+			<table cellpadding="2" cellspacing="2" width="50%">
+				<tr>
+					<td style="width: 120px;">Environment</td>
+					<td><select size="1" name="environment" id="serviceEnvironment"
+						style="width: 550px; background-color: Yellow">
+							<option>https://osbdev.dev.cu.edu</option>
+							<option selected="true">https://osbtst.dev.cu.edu</option>
+							<option>https://osbstg.qa.cu.edu</option>
+							<option>https://esbprd.prd.cu.edu</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td style="width: 120px;">Endpoint</td>
+					<td><select size="1" name="endpoint" id="serviceEndpoint"
+						style="width: 550px; background-color: Yellow">
+							<option>Bld_Cs_Any_ClassSearch</option>
+							<option>Den_Cs_Any_ClassSearch</option>
+							<option>Spg_Cs_Any_ClassSearch</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td style="width: 120px;">Version</td>
+					<td><select size="1" name="version" id="serviceVersion"
+						style="width: 550px; background-color: Yellow">
+							<option></option>
+							<option>1a2</option>
+							<option>1a3</option>
+							<option selected="true">2a1</option>
+							<option>3</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td style="width: 120px;">Operation</td>
+					<td><select size="1" name="operation" id="serviceOperation"
+						style="width: 550px; background-color: Yellow">
+							<option selected="true">SSR_GET_CLASSES_R.v1/get/classes</option>
+							<option>SSR_GET_COURSE_OFFERING_R.v1/get/course_offerings</option>
+							<option>SSR_GET_CLASS_SECTION_R.v1/get/classSection</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td style="width: 120px;">Type</td>
+					<td><select size="1" name="type" id="serviceType"
+						style="width: 550px; background-color: Yellow">
+							<option>mobile</option>
+							<option>cu_master</option>
+							<option>cu_limited</option>
+							<option selected="true">cu_detail</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td style="width: 120px;">Language</td>
+					<td><select size="1" name="language" id="serviceLanguage"
+						style="width: 550px; background-color: Yellow">
+							<option selected="true">en</option>
+					</select></td>
+				</tr>
+				<tr>
+					<td>User ID</td>
+					<td><input name="uid" id="uid"
+						style="width: 550px; background-color: Yellow"
+						value="CU_WS_CLASSSRCH_UCB_CUOL"></td>
+				</tr>
+				<tr>
+					<td>Password</td>
+					<td><input name="pwd" id="pwd" type="password"
+						style="width: 550px; background-color: Yellow"
+						value="YEF9BYQSfFr8UXNmDvM5"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="tabs-2">
+			It is recommended that you fill in as many fields as you can or try
+			to query for a specific class number. Otherwise, the response may
+			take awhile (up to 4 minutes).
+			<table>
+				<tr>
+					<td>Institution</td>
+					<td><input name="" id="INSTITUTION"
+						style="width: 150px; background-color: Yellow" value="CUSPG"></td>
+					<td>Term</td>
+					<td><input name="" id="STRM"
+						style="width: 150px; background-color: Yellow" value="2157"></td>
+				</tr>
+				<tr>
+					<td>Class Number</td>
+					<td><input name="" id="CLASS_NBR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Course ID</td>
+					<td><input name="" id="CRSE_ID"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Course Offer Number</td>
+					<td><input name="" id="CRSE_OFFER_NBR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Session Code</td>
+					<td><input name="" id="SESSION_CODE"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Class Section</td>
+					<td><input name="" id="CLASS_SECTION"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Subject</td>
+					<td><input name="" id="SUBJECT"
+						style="width: 150px; background-color: Yellow" value="ENGL"></td>
+				</tr>
+				<tr>
+					<td>Catalog Number</td>
+					<td><input name="" id="CATALOG_NBR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>SSR Exact Match 1</td>
+					<td><input name="" id="SSR_EXACT_MATCH1"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>SSR Open Only</td>
+					<td><input name="" id="SSR_OPEN_ONLY"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>OEE Index</td>
+					<td><input name="" id="OEE_IND"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Description</td>
+					<td><input name="" id="DESCR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Career</td>
+					<td><input name="" id="ACAD_CAREER"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>SSR Component</td>
+					<td><input name="" id="SSR_COMPONENT"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Instruction Mode</td>
+					<td><input name="" id="INSTRUCTION_MODE"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Campus</td>
+					<td><input name="" id="CAMPUS"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Location</td>
+					<td><input name="" id="LOCATION"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Meeting Start Time</td>
+					<td><input name="" id="MEETING_TIME_START"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>SSR Meeting Start Time</td>
+					<td><input name="" id="SSR_MTGTIME_START2"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Meeting End Time</td>
+					<td><input name="" id="MEETING_TIME_END"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Monday</td>
+					<td><input name="" id="MON"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Tuesday</td>
+					<td><input name="" id="TUES"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Wednesday</td>
+					<td><input name="" id="WED"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Thursday</td>
+					<td><input name="" id="THURS"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Friday</td>
+					<td><input name="" id="FRI"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Saturday</td>
+					<td><input name="" id="SAT"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Sunday</td>
+					<td><input name="" id="SUN"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Include Class Days</td>
+					<td><input name="" id="INCLUDE_CLASS_DAYS"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Last Name (Instructor?)</td>
+					<td><input name="" id="LAST_NAME"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>SSR Exact Match 2</td>
+					<td><input name="" id="SSR_EXACT_MATCH2"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Min. Units</td>
+					<td><input name="" id="UNITS_MINIMUM"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Max. Units</td>
+					<td><input name="" id="UNITS_MAXIMUM"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>SSC Entity Instructor ID</td>
+					<td><input name="" id="SCC_ENTITY_INST_ID"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>Obey Warning Limit</td>
+					<td><input name="" id="OBEY_WARNING_LIMIT"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>SSR Start Time OPR</td>
+					<td><input name="" id="SSR_START_TIME_OPR"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>SSR End Time OPR</td>
+					<td><input name="" id="SSR_END_TIME_OPR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>SSR Units Min OPR</td>
+					<td><input name="" id="SSR_UNITS_MIN_OPR"
+						style="width: 150px; background-color: White" value=""></td>
+				</tr>
+				<tr>
+					<td>SSR Units Max OPR</td>
+					<td><input name="" id="SSR_UNITS_MAX_OPR"
+						style="width: 150px; background-color: White" value=""></td>
+					<td>Start Date</td>
+					<td><input name="" id="START_DT"
+						style="width: 150px; background-color: White" value="">
+						(YYYY-MM-DD)</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td></td>
+					<td>End Date</td>
+					<td><input name="" id="END_DT"
+						style="width: 150px; background-color: White" value="">
+						(YYYY-MM-DD)</td>
+				</tr>
+			</table>
+			<p>
+				<input name="submit" id="submit" type="submit"
+					value="Submit Request">
+		</div>
+		<div id="tabs-3">
+			<textarea class="formatted_request" readonly="true"></textarea>
+		</div>
+		<div id="tabs-4">
+			<textarea class="formatted_response" readonly="true"></textarea>
+			<p>
+				<input name="clear" id="clear" type="submit" value="Clear Response">
+		</div>
+	</div>
+
+	<script>
+		$("#clear").click(function(event) {
+			$('.formatted_response').text("");
+		});
+		// Attach a submit handler to the form
+		$("#submit")
+				.click(
+						function(event) {
+
+							// Stop form from submitting normally
+							event.preventDefault();
+
+							var opts = {
+								lines : 13 // The number of lines to draw
+								,
+								length : 28 // The length of each line
+								,
+								width : 14 // The line thickness
+								,
+								radius : 42 // The radius of the inner circle
+								,
+								scale : 1 // Scales overall size of the spinner
+								,
+								corners : 1 // Corner roundness (0..1)
+								,
+								color : '#000' // #rgb or #rrggbb or array of colors
+								,
+								opacity : 0.25 // Opacity of the lines
+								,
+								rotate : 0 // The rotation offset
+								,
+								direction : 1 // 1: clockwise, -1: counterclockwise
+								,
+								speed : 1 // Rounds per second
+								,
+								trail : 60 // Afterglow percentage
+								,
+								fps : 20 // Frames per second when using setTimeout() as a fallback for CSS
+								,
+								zIndex : 2e9 // The z-index (defaults to 2000000000)
+								,
+								className : 'spinner' // The CSS class to assign to the spinner
+								,
+								top : '50%' // Top position relative to parent
+								,
+								left : '50%' // Left position relative to parent
+								,
+								shadow : false // Whether to render a shadow
+								,
+								hwaccel : false // Whether to use hardware acceleration
+								,
+								position : 'absolute' // Element positioning
+							}
+
+							var target = document.getElementById('tabs')
+							var spinner = new Spinner(opts);
+
+							var self = this;
+							self.serviceURI = $("#serviceEnvironment").val() + "/" +
+												$("#serviceEndpoint").val() + "/" +
+												$("#serviceVersion").val() + "/" +
+												$("#serviceOperation").val() + "?type=" +
+												$("#serviceType").val() + "&languageCd=" +
+												$("#serviceLanguage").val();
+							console.log("URL: " + self.serviceURI);
+							self.username = $("#uid").val();
+							self.password = $("#pwd").val();
+							var frm = $('#request_form');
+							var hash = btoa(self.username + ":" + self.password);
+							var requestXml = "<INSTITUTION>"
+									+ $("#INSTITUTION").val()
+									+ "</INSTITUTION>"
+									+ "<STRM>"
+									+ $("#STRM").val()
+									+ "</STRM>"
+									+ "<CLASS_NBR>"
+									+ $("#CLASS_NBR").val()
+									+ "</CLASS_NBR>"
+									+ "<CRSE_ID>"
+									+ $("#CRSE_ID").val()
+									+ "</CRSE_ID>"
+									+ "<CRSE_OFFER_NBR>"
+									+ $("#CRSE_OFFER_NBR").val()
+									+ "</CRSE_OFFER_NBR>"
+									+ "<SESSION_CODE>"
+									+ $("#SESSION_CODE").val()
+									+ "</SESSION_CODE>"
+									+ "<CLASS_SECTION>"
+									+ $("#CLASS_SECTION").val()
+									+ "</CLASS_SECTION>"
+									+ "<SUBJECT>"
+									+ $("#SUBJECT").val()
+									+ "</SUBJECT>"
+									+ "<CATALOG_NBR>"
+									+ $("#CATALOG_NBR").val()
+									+ "</CATALOG_NBR>"
+									+ "<SSR_EXACT_MATCH1>"
+									+ $("#SSR_EXACT_MATCH1").val()
+									+ "</SSR_EXACT_MATCH1>"
+									+ "<SSR_OPEN_ONLY>"
+									+ $("#SSR_OPEN_ONLY").val()
+									+ "</SSR_OPEN_ONLY>"
+									+ "<OEE_IND>"
+									+ $("#OEE_IND").val()
+									+ "</OEE_IND>"
+									+ "<DESCR>"
+									+ $("#DESCR").val()
+									+ "</DESCR>"
+									+ "<ACAD_CAREER>"
+									+ $("#ACAD_CAREER").val()
+									+ "</ACAD_CAREER>"
+									+ "<SSR_COMPONENT>"
+									+ $("#SSR_COMPONENT").val()
+									+ "</SSR_COMPONENT>"
+									+ "<INSTRUCTION_MODE>"
+									+ $("#INSTRUCTION_MODE").val()
+									+ "</INSTRUCTION_MODE>"
+									+ "<CAMPUS>"
+									+ $("#CAMPUS").val()
+									+ "</CAMPUS>"
+									+ "<LOCATION>"
+									+ $("#LOCATION").val()
+									+ "</LOCATION>"
+									+ "<MEETING_TIME_START>"
+									+ $("#MEETING_TIME_START").val()
+									+ "</MEETING_TIME_START>"
+									+ "<SSR_MTGTIME_START2>"
+									+ $("#SSR_MTGTIME_START2").val()
+									+ "</SSR_MTGTIME_START2>"
+									+ "<MEETING_TIME_END>"
+									+ $("#MEETING_TIME_END").val()
+									+ "</MEETING_TIME_END>"
+									+ "<MON>"
+									+ $("#MON").val()
+									+ "</MON>"
+									+ "<TUES>"
+									+ $("#TUES").val()
+									+ "</TUES>"
+									+ "<WED>"
+									+ $("#WED").val()
+									+ "</WED>"
+									+ "<THURS>"
+									+ $("#THURS").val()
+									+ "</THURS>"
+									+ "<FRI>"
+									+ $("#FRI").val()
+									+ "</FRI>"
+									+ "<SAT>"
+									+ $("#SAT").val()
+									+ "</SAT>"
+									+ "<SUN>"
+									+ $("#SUN").val()
+									+ "</SUN>"
+									+ "<INCLUDE_CLASS_DAYS>"
+									+ $("#INCLUDE_CLASS_DAYS").val()
+									+ "</INCLUDE_CLASS_DAYS>"
+									+ "<LAST_NAME>"
+									+ $("#LAST_NAME").val()
+									+ "</LAST_NAME>"
+									+ "<SSR_EXACT_MATCH2>"
+									+ $("#SSR_EXACT_MATCH2").val()
+									+ "</SSR_EXACT_MATCH2>"
+									+ "<UNITS_MINIMUM>"
+									+ $("#UNITS_MINIMUM").val()
+									+ "</UNITS_MINIMUM>"
+									+ "<UNITS_MAXIMUM>"
+									+ $("#UNITS_MAXIMUM").val()
+									+ "</UNITS_MAXIMUM>"
+									+ "<SCC_ENTITY_INST_ID>"
+									+ $("#SCC_ENTITY_INST_ID").val()
+									+ "</SCC_ENTITY_INST_ID>"
+									+ "<OBEY_WARNING_LIMIT>"
+									+ $("#OBEY_WARNING_LIMIT").val()
+									+ "</OBEY_WARNING_LIMIT>"
+									+ "<SSR_START_TIME_OPR>"
+									+ $("#SSR_START_TIME_OPR").val()
+									+ "</SSR_START_TIME_OPR>"
+									+ "<SSR_END_TIME_OPR>"
+									+ $("#SSR_END_TIME_OPR").val()
+									+ "</SSR_END_TIME_OPR>"
+									+ "<SSR_UNITS_MIN_OPR>"
+									+ $("#SSR_UNITS_MIN_OPR").val()
+									+ "</SSR_UNITS_MIN_OPR>"
+									+ "<SSR_UNITS_MAX_OPR>"
+									+ $("#SSR_UNITS_MAX_OPR").val()
+									+ "</SSR_UNITS_MAX_OPR>"
+									+ "<START_DT>"
+									+ $("#START_DT").val()
+									+ "</START_DT>"
+									+ "<END_DT>"
+									+ $("#END_DT").val()
+									+ "</END_DT>";
+
+							if(self.serviceURI.indexOf("SSR_GET_COURSE_OFFERING")!=-1){
+								 requestXml = "<SSR_GET_COURSE_OFFERING_REQ><COURSE_OFFERING_REQUEST>"
+									+ requestXml 
+									+ "</COURSE_OFFERING_REQUEST></SSR_GET_COURSE_OFFERING_REQ>";
+							} else if (self.serviceURI.indexOf("SSR_GET_CLASS_SECTION")!=-1){
+								 requestXml = "<SSR_GET_CLASS_SECTION_REQ><CLASS_SECTION_REQUEST>"
+									+ requestXml 
+									+ "</CLASS_SECTION_REQUEST></SSR_GET_CLASS_SECTION_REQ>";
+							} else {
+								 requestXml = "<CLASS_SEARCH_REQUEST>"
+									+ requestXml 
+									+ "</CLASS_SEARCH_REQUEST>";
+							}
+							
+							xml_neat = formatXml(requestXml);
+							$('.formatted_request').text(xml_neat);
+
+							self.ajax = function(uri, method, request_data) {
+								var request = {
+									url : uri,
+									type : method,
+									contentType : "application/xml",
+									accepts : "application/xml",
+									cache : false,
+									data : requestXml,
+									dataType : "text",
+									xhrFields : {
+										'withCredentials' : true
+									},
+									headers : {
+										'Access-Control-Allow-Origin' : "*",
+										'Access-Control-Allow-Methods' : "GET, POST, PUT, DELETE, OPTIONS",
+										'Access-Control-Allow-Headers' : "Authorization",
+										'Authorization' : "Basic " + hash
+									},
+									beforeSend : function(xhr) {
+										console.log("Authorization: Basic "
+												+ hash);
+										xhr.setRequestHeader("Authorization",
+												"Basic " + hash);
+										spinner.spin(target)
+									},
+									error : function(jqXHR) {
+										console.log("ajax error "
+												+ jqXHR.statusText);
+										$('.formatted_response').text(
+												"An error occurred: "
+														+ jqXHR.status + " : "
+														+ jqXHR.statusText);
+										spinner.stop();
+									}
+								};
+								return $.ajax(request);
+							}
+
+							self.ajax(self.serviceURI, 'POST', frm.serialize())
+									.done(
+											function(data) {
+												xml_neat = formatXml(data);
+												$('.formatted_response').text(
+														xml_neat);
+												$("#tabs").tabs(
+														"option",
+														"active",
+														$("responseTab")
+																.index());
+												spinner.stop();
+											});
+						});
+	</script>
+</body>
+</html>
