@@ -13,6 +13,7 @@ dependencies[] = express_add_content
 dependencies[] = express_help
 dependencies[] = express_theme_picker
 dependencies[] = express_settings
+dependencies[] = express_version
 dependencies[] = cu_colorbox
 ;dependencies[] = express_permissions
 
@@ -60,7 +61,8 @@ dependencies[] = field_group
 dependencies[] = link
 dependencies[] = linkit
 dependencies[] = features
-dependencies[] = user_external_invite
+; Moved user_external_invite to cu_core module since other cores might not want it enabled.
+;dependencies[] = user_external_invite
 dependencies[] = libraries
 dependencies[] = views
 dependencies[] = view_unpublished

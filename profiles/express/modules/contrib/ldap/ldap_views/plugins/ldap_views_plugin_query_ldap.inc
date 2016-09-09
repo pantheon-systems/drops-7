@@ -227,7 +227,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
     foreach ($this->build_ldap_basedn($ldap_data->baseDn) as $basedn) {
 
       $result = $ldap_server->search($basedn, $this->build_ldap_filter($ldap_data->filter), array_values($attributes), 0, $ldap_data->sizelimit, $ldap_data->timelimit, $ldap_data->deref, $ldap_data->scope);
-/***
+/**
     // ldap_sort can't be used because there's no DESC option
     if (!empty($this->orderby)) {
       // Array reverse, because the most specific are first - PHP works the opposite way of SQL.
@@ -235,13 +235,15 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
         @ldap_sort($ldap_server->connection, $result, $field['field']);
       }
     }
- */   if ($result !== FALSE) { // not an error
+ */
+    if ($result !== FALSE) { // not an error
         $entries = array_merge($entries, $result);
         $num_entries += array_shift($result);
       }
     }
-
-    $limit       = $view->query->limit;
+    if (property_exists($view->query, 'limit')) {
+      $limit     = $view->query->limit;
+    }
     $offset      = $view->query->offset;
     $result      = array();
     $sort_fields = array();
@@ -250,11 +252,12 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
         $sort_fields[drupal_strtolower($orderby['field'])]['direction'] = $orderby['direction'];
         $sort_fields[drupal_strtolower($orderby['field'])]['data']      = array();
       }
+
     }
 
     foreach ($entries as $key => &$entry) {
       if (isset($entry['jpegphoto'])) {
-        $entry['jpegphoto'][0] = "<img src='data:image/jpeg;base64,".base64_encode($entry['jpegphoto'][0])."' alt='photo' />";
+        $entry['jpegphoto'][0] = "<img src='data:image/jpeg;base64," . base64_encode($entry['jpegphoto'][0]) . "' alt='photo' />";
       }
       foreach ($view->field as $field) {
         if (! isset($field_alias[$field->field_alias])) {
@@ -301,6 +304,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
         }
       }
       $params[] = &$entries;
+
       // Some LDAP setups output a 'count' variable first in the array, which changes the array size;
       // temporarily remove it, sort the arrays, and then put it back.
       if (array_key_exists('count', $entries)) {
@@ -345,13 +349,13 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
   }
 
   function options_form(&$form, &$form_state) {
-/*
+/**
     $ldap_data = entity_load('ldap_data', FALSE);
     $options   = array();
     foreach ($ldap_data as $data) {
         $options[$data->qid] = $data->name;
     }
-*/
+ */
     $queries = array();
     $queries['all'] = LdapQueryAdmin::getLdapQueryObjects();
 
@@ -369,6 +373,17 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
       '#default_value' => $this->options['qid'],
       '#description' => t("The LDAP server to query."),
     );
+  }
+
+
+  /**
+   * Let modules modify the query just prior to finalizing it.
+   */
+  function alter(&$view) {
+    foreach (module_implements('views_query_alter') as $module) {
+      $function = $module . '_views_query_alter';
+      $function($view, $this);
+    }
   }
 
 /* Only when adding dynamic fields in ldap_views_views_data_alter()

@@ -1,6 +1,4 @@
 <?php
-// $Id: ldap_authentication.theme.inc,v 1.1.2.1 2011/02/08 06:01:00 johnbarclay Exp $
-
 
 /**
  * @file
@@ -46,7 +44,7 @@ function theme_ldap_authentication_user_login_block_links($variables) {
  */
 function theme_ldap_authentication_user_pass_message($variables) {
   extract($variables);
-  if ($auth_conf->authenticationMode == LDAP_AUTHENTICATION_EXCLUSIVE) {
+  if ($auth_conf->authenticationMode == LDAP_AUTHENTICATION_EXCLUSIVE && $auth_conf->passwordOption != LDAP_AUTHENTICATION_PASSWORD_FIELD_ALLOW) {
     $msg = t('This page is only useful for the site administrator.  All other users
       need to reset their passwords');
     if ($auth_conf->ldapUserHelpLinkUrl) {

@@ -6,3 +6,4 @@ package = CU-Core
 
 dependencies[] = cu_inventory
 dependencies[] = cu_users
+dependencies[] = express_version

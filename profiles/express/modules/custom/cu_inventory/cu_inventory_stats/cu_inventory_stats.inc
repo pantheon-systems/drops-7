@@ -105,6 +105,9 @@ function cu_inventory_stats_process_site_stats($process = TRUE) {
   }
   $site_data['statistics']['num_beans'] = $number_beans;
 
+  // Profile + Core code version.
+  $site_data['statistics']['express_code_version'] = express_version_get_version();
+
   // Core schema version.
   $version = _get_installed_schema_version(variable_get('express_core_version', 'cu_core'));
   $site_data['statistics']['express_core_schema_version'] = (int) $version;

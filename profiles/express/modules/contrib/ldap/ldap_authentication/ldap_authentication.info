@@ -1,12 +1,12 @@
 name = LDAP Authentication
-description = "Implements LDAP authentication"
-package = "Lightweight Directory Access Protocol"
+description = Implements LDAP authentication
+package = Lightweight Directory Access Protocol
 dependencies[] = ldap_servers
+dependencies[] = ldap_user
 core = 7.x
 configure = admin/config/people/ldap/authentication
 files[] = LdapAuthenticationConf.class.php
 files[] = LdapAuthenticationConfAdmin.class.php
-
 files[] = ldap_authentication.module
 files[] = ldap_authentication.install
 files[] = ldap_authentication.inc
@@ -14,9 +14,9 @@ files[] = ldap_authentication.theme.inc
 files[] = ldap_authentication.admin.inc
 files[] = tests/ldap_authentication.test
 
-; Information added by drupal.org packaging script on 2012-08-20
-version = "7.x-1.0-beta12"
+; Information added by Drupal.org packaging script on 2016-08-07
+version = "7.x-2.0-beta11"
 core = "7.x"
 project = "ldap"
-datestamp = "1345503423"
+datestamp = "1470608343"
 

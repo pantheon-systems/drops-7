@@ -5,7 +5,9 @@
   <div class="article-view-mode-sidebar-content node-view-mode-sidebar-content">
     <a href="<?php print $node_url; ?>"><?php print $title; ?></a>
     <div class="article-teaser-meta">
-      <?php print $category_teaser_category_links; ?>
+      <?php if (isset($category_teaser_category_links)): ?>
+        <?php print $category_teaser_category_links; ?>
+      <?php endif; ?>
     </div>
   </div>
 </div>

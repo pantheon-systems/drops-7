@@ -21,41 +21,26 @@ class FeedsLdapEntryParser extends FeedsParser {
       $ldap_entry = $ldap_entries[$i];
       $parsed_item = array('dn' => (string)$ldap_entry['dn']);
       foreach ($mappings as $j => $map) {
+        $source_lcase = drupal_strtolower($map['source']);
         $source = $map['source'];
         if (isset($ldap_entry['attr'])) {
-          // exception need because of unconvential format of ldap data returned from $ldap_server->user_lookup
+          // exception need because of unconvential format of ldap data returned from $ldap_server->userUserNameToExistingLdapEntry
           $ldap_attributes = $ldap_entry['attr'];
         }
         else {
           $ldap_attributes = $ldap_entry;
         }
-        if ($source != 'dn' && isset($ldap_attributes[$source][0])) {
-          if ($ldap_attributes[$source]['count'] == 1 && is_scalar($ldap_attributes[$source][0])) {
-            $parsed_item[$source] = (string)$ldap_attributes[$source][0];
+        if ($source_lcase != 'dn' && isset($ldap_attributes[$source_lcase][0])) {
+          if ($ldap_attributes[$source_lcase]['count'] == 1 && is_scalar($ldap_attributes[$source_lcase][0])) {
+            $parsed_item[$source] = (string)$ldap_attributes[$source_lcase][0];
           }
-/** removed until design decisions on multivalued attributes are made
-          elseif ($ldap_entry['count'] > 1) {
-            switch ($this->config['multivalued']) {
-              case LDAP_FEEDS_QUERY_FETCHER_MULTI_COMMA:
-                unset($ldap_entry[$source]['count']);
-                $parsed_item[$source] = join(',', $ldap_entry[$source]);
-                break;
-              case LDAP_FEEDS_QUERY_FETCHER_MULTI_SHOW_FIRST:
-                $parsed_item[$source] = $ldap_entry[$source][0];
-                break;
-
-              case LDAP_FEEDS_QUERY_FETCHER_MULTI_IGNORE:
-                break;
-
-              case LDAP_FEEDS_QUERY_FETCHER_MULTI_ARRAY:
-                for ($k = 0; $k < $ldap_entry[$source]['count'] - 1; $k++) {
-                 if (is_scalar($ldap_entry[$source][$k])) {
-                    $parsed_item[$source . '[' . $k . ']'] = (string)$ldap_entry[$source][$k];
-                  }
-                }
-            }
+          else {
+            unset($ldap_attributes[$source_lcase]['count']);
+            $parsed_item[$source] = $ldap_attributes[$source_lcase];
           }
- */
+        }
+        else {
+          $parsed_item[$source] = '';
         }
       }
       $parsed_items[] = $parsed_item;
@@ -112,25 +97,6 @@ class FeedsLdapEntryParser extends FeedsParser {
    */
   public function configForm(&$form_state) {
     $form = array();
-
-    /** removed until design decisions on multivalued attributes are made
-    $form['multivalued'] = array(
-      '#type' => 'radios',
-      '#title' => t('How should ldap attribute with mulitple values be parsed?'),
-      '#options' => array(
-          LDAP_FEEDS_QUERY_FETCHER_MULTI_COMMA => 'Flatten and separate with commas. The source name will be the attribute name such as "memberof"',
-          LDAP_FEEDS_QUERY_FETCHER_MULTI_SHOW_FIRST => 'Only use first value.  The source name  will be the attribute name such as "memberof"',
-          LDAP_FEEDS_QUERY_FETCHER_MULTI_IGNORE => 'Ignore these.  The data is problematic anyway.  Data will be discarded by parser.',
-          LDAP_FEEDS_QUERY_FETCHER_MULTI_ARRAY => 'Give each value its own key, such as memberof[0] and memberof[1]. The source name will be memberof[0], memberof[1], etc.',
-        ),
-      '#default_value' => $this->config['multivalued'],
-      '#description' => 'For example, in the Active Directory the memberof attribute will have many items, each representing a group.
-        Generally this data is hard to map to anything other than a flattenned version such as a comma separated list.
-      '#default_value' => LDAP_FEEDS_QUERY_FETCHER_DEFAULT,
-    );
-
-  */
-
     return $form;
   }
 

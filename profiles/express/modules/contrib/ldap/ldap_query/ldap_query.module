@@ -1,7 +1,4 @@
 <?php
-// $Id: ldap_query.module,v 1.5.2.1 2011/02/08 06:01:00 johnbarclay Exp $
-
-
 
 define('LDAP_QUERY_MENU_BASE_PATH', 'admin/config/people/ldap');
 define('LDAP_QUERY_INDEX_BASE_PATH', 'admin/config/people/ldap/query');
@@ -55,7 +52,7 @@ function ldap_query_menu() {
   $items['admin/config/people/ldap/query/delete/%'] = array(
     'title' => 'Delete LDAP Query',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ldap_query_admin_delete', $menu_offset + 2),
+    'page arguments' => array('ldap_query_admin_delete', $menu_offset + 1, $menu_offset + 2),
     'access arguments' => array('administer site configuration'),
     'file' => 'ldap_query.admin.inc',
   );
@@ -116,7 +113,7 @@ function ldap_query_cache_clear() {
  *         - single server conf object (if flatten == TRUE)
  */
 function ldap_query_get_queries($qid = NULL, $type, $flatten = FALSE, $reset = FALSE) {
-  ldap_server_module_load_include('inc', 'ldap_query', 'ldap_query');
+  ldap_servers_module_load_include('inc', 'ldap_query', 'ldap_query');
   if (variable_get('ldap_simpletest', FALSE)) {
     return _ldap_query_get_simpletest_queries($qid, $type, $flatten, $reset);
   }
@@ -126,6 +123,25 @@ function ldap_query_get_queries($qid = NULL, $type, $flatten = FALSE, $reset = F
 }
 
 function ldap_query_fields() {
-  ldap_server_module_load_include('php', 'ldap_query', 'LdapQuery.class');
+  ldap_servers_module_load_include('php', 'ldap_query', 'LdapQuery.class');
   return LdapQuery::fields();
+}
+
+
+function ldap_query_help($path, $arg) {
+
+  $help = '<h3>' . t('LDAP Query Module') . '</h3><p>' .
+  t('This module does nothing in and of itself.  It should only be
+    enabled and configured if another module requires it.') . '</p>';
+
+  switch ($path) {
+    case 'admin/config/people/ldap/query':
+      $output = '<p>' . $help . '</p>';
+      return $output;
+
+    case 'admin/help#ldap_query':
+      $output = '<p>' . $help . '</p>';
+      return $output;
+  }
+
 }

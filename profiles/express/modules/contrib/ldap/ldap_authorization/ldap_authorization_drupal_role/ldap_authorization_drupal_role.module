@@ -1,8 +1,4 @@
 <?php
-// $Id: ldap_authorization_drupal_role.module,v 1.2 2010/12/13 02:28:51 johnbarclay Exp $
-
-
-
 
 /** @file
  *
@@ -14,6 +10,7 @@
  * Implements hook_ldap_authorization_consumer().
  */
 function ldap_authorization_drupal_role_ldap_authorization_consumer() {
+
   $types['drupal_role'] =  array(
     'consumer_name' => t('drupal role'),
     'consumer_name_plural' => t('drupal roles'),
@@ -24,11 +21,15 @@ function ldap_authorization_drupal_role_ldap_authorization_consumer() {
     'consumer_class_file' => 'LdapAuthorizationConsumerRole.class.php',
     'consumer_module' => 'ldap_authorization_drupal_role',
     'consumer_mapping_directions' => '<p>Mappings should be of form:<br/>
-<code>[raw authorization id]|[group name]</code>
+<code>[ldap group representation]|[role name]</code>
 <br/>such as:<br/>
-<code>Campus Accounts|authenticated user<br/>
-ou=Underlings,dc=myorg,dc=mytld|underlings<br/>
-ou=IT,dc=myorg,dc=mytld,dc=edu|administrator
+<code>cn=students,ou=groups,dc=hogwarts,dc=edu|students<br/>
+cn=faculty,ou=groups,dc=hogwarts,dc=edu|administrator
+</code><br/>
+or if "Convert full dn" is selected below, they should look like:
+<br/>
+<code>students|students<br/>
+faculty|administrator
 </code><br/>',
   );
 
@@ -36,10 +37,23 @@ ou=IT,dc=myorg,dc=mytld,dc=edu|administrator
 }
 
 /**
- * implements hook_form_alter()
+ * Implements hook_ldap_user_attrs_list_alter().
+ *
  */
-function ldap_authorization_drupal_role_form_ldap_authorization_admin_form_alter(&$form, $form_state) {
-  if ($form['status']['consumer_type']['#value'] == 'drupal_role') {
 
-  }
+function ldap_authorization_drupal_role_ldap_user_attrs_list_alter(&$available_user_attrs, &$params) {
+
+  $available_user_attrs['[property.role]'] = array(
+    'name' => 'Property: Drupal Roles',
+    'source' => 'depends on configuration',
+    'configurable_to_drupal' => 0,
+    'configurable_to_ldap' => 0,
+    'notes' => t('configure at:') . 'admin/config/people/ldap/authorization',
+    'direction' => LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER,
+    'enabled' => TRUE,
+    'config_module' => 'ldap_authorization_drupal_role',
+    'prov_events' => array(LDAP_USER_EVENT_SYNCH_TO_DRUPAL_USER, LDAP_USER_EVENT_CREATE_DRUPAL_USER),
+    'prov_module' => 'ldap_authorization_drupal_role',
+  );
+
 }

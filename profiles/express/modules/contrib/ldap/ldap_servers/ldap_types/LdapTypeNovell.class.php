@@ -7,7 +7,7 @@
  */
 
 
-ldap_server_module_load_include('php', 'ldap_servers', 'ldap_types/LdapTypeAbstract.class');
+ldap_servers_module_load_include('php', 'ldap_servers', 'ldap_types/LdapTypeAbstract.class');
 
 class LdapTypeNovell extends LdapTypeAbstract {
 
@@ -25,10 +25,7 @@ class LdapTypeNovell extends LdapTypeAbstract {
 
   public $groupDerivationModelDefault = LDAP_SERVERS_DERIVE_GROUP_FROM_ENTRY;
 
-  public $groupDeriveFromEntryAttrDefault = 'members';
-  public $groupDeriveFromEntryUserIdDefault = 'dn';
-
-
-
+  public $groupUserMembershipsAttrExistsEntryAttrDefault = 'members';
+  public $groupUserMembershipsAttrExistsEntryUserIdDefault = 'dn';
 
 }

@@ -87,10 +87,14 @@ function profile_module_manager_permission() {
 function profile_module_manager_system_info_alter(&$info, $file, $type) {
 
   if (!variable_get('profile_module_manager_disable_ui_lock', 0)) {
-    module_load_include('inc', 'content', 'includes/install');
+    require_once DRUPAL_ROOT . '/includes/install.inc';
     $profile = install_profile_info(drupal_get_profile());
 
     if($type == 'module' && in_array($file->name, $profile['dependencies'])) {
+      $info['required'] = TRUE;
+    }
+
+    if ($type == 'module' && $file->name == variable_get('express_core_version', '')) {
       $info['required'] = TRUE;
     }
   }
@@ -180,7 +184,7 @@ function profile_module_manager_get_core_modules($status = 'all') {
  */
 function profile_module_manager_build_ideal() {
   $new_ideal = array();
-  module_load_include('inc', 'content', 'includes/install');
+  require_once DRUPAL_ROOT . '/includes/install.inc';
   $profile_name = drupal_get_profile();
   $profile = install_profile_info($profile_name);
 

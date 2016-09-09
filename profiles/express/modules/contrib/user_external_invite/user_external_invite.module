@@ -33,9 +33,9 @@ function user_external_invite_entity_info() {
 function user_external_invite_permission() {
   return array(
     'invite new user' => array(
-      'title' => 'Invite new user',
+      'title' => t('Invite new user'),
       'restrict access' => TRUE,
-      'description' => 'Allow access to send invitation email',
+      'description' => t('Allow access to send invitation email'),
     ),
   );
 }
@@ -51,21 +51,16 @@ function user_external_invite_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('user_external_invite_settings_form'),
     'access arguments' => array('administer users'),
+    'file' => 'user_external_invite.admin.inc',
     'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/people/invite'] = array(
     'title' => 'Invite user',
     'page callback' => 'user_external_invite_page',
     'page arguments' => array('user_external_invite_form'),
-    'access callback' => 'user_external_invite_form_access',
+    'access arguments' => array('invite new user'),
+    'file' => 'user_external_invite.admin.inc',
     'type' => MENU_LOCAL_ACTION,
-  );
-  $items['admin/people/invite/cancel/%'] = array(
-    'title' => 'Cancel user invite',
-    'page callback' => 'user_external_invite_cancel_invite',
-    'access callback' => 'user_external_invite_form_access',
-    'page arguments' => array(4),
-    'type' => MENU_NORMAL_ITEM,
   );
   $items['user-external/accept-invite'] = array(
     'title' => 'Accept an invite',
@@ -77,134 +72,15 @@ function user_external_invite_menu() {
 }
 
 /**
- * Configuration form for the module.
- */
-function user_external_invite_settings_form() {
-  $form = array();
-  $form['#validate'][] = 'user_external_invite_settings_form_validate';
-  // Roles that users can have.
-  $form['user_external_invite_roles'] = array(
-    '#type' => 'select',
-    '#title' => t('Roles users can be invited to join'),
-    '#description' => t('Users with permission to send invites will be able to invite users to join a site with any of these roles.  GRANT WITH CAUTION!'),
-    '#options' => user_roles(),
-    '#default_value' => variable_get('user_external_invite_roles', NULL),
-    '#multiple' => TRUE,
-  );
-
-  // Days invite valid for.
-  $form['user_external_invite_days_valid_for'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Number of days invites are valid for'),
-    '#default_value' => variable_get('user_external_invite_days_valid_for', 5),
-    '#maxlength' => 3,
-  );
-
-  // From email address.
-  $form['user_external_invite_use_universal_from_email'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Send all invites from a single email address'),
-    '#description' => t('If this is not configured, invites will be sent using the email address of the user sending the invite.'),
-    '#default_value' => variable_get('user_external_invite_use_universal_from_email', FALSE),
-  );
-
-  $form['user_external_invite_universal_from_email'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Email address invites are sent from'),
-    '#default_value' => variable_get('user_external_invite_universal_from_email', NULL),
-    '#maxlength' => 256,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="user_external_invite_use_universal_from_email"]' => array('checked' => TRUE),
-      ),
-      'required' => array(
-        ':input[name="user_external_invite_use_universal_from_email"]' => array('checked' => TRUE),
-      ),
-    ),
-  );
-
-  // Message templates.
-  $form['user_external_invite_invite_template'] = array(
-    '#title' => t('Invitation Email Template'),
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#default_value' => variable_get('user_external_invite_invite_template'),
-    '#description' => t('Message sent to user being invited.'),
-  );
-
-  $form['user_external_invite_confirmation_template'] = array(
-    '#title' => t('Invitation Confirmation'),
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#default_value' => variable_get('user_external_invite_confirmation_template'),
-    '#description' => t('Confirmation message sent to user who initiated the invivation confirming the invitation was sent.'),
-  );
-
-  $form['user_external_invite_accepted_template'] = array(
-    '#title' => t('Invitation Accepted Email Template'),
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#default_value' => variable_get('user_external_invite_accepted_template'),
-    '#description' => t('Message sent to user who initiated the invivation when the user accepts an invite.'),
-  );
-
-  $form['user_external_invite_accepted_confirmation_template'] = array(
-    '#title' => t('Invitation Accepted Confirmation Email Template'),
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#default_value' => variable_get('user_external_invite_accepted_confirmation_template'),
-    '#description' => t('Message sent to user being invited confirming the process was completed.'),
-  );
-
-  // @TODO: add warning email about expiring invititations.
-  $form['token_help']['content'] = array(
-    '#type' => 'markup',
-    '#token_types' => 'all',
-    '#theme' => 'token_tree',
-  );
-
-  return system_settings_form($form);
-}
-
-/**
- * Form validation handler for user external invite settings form.
- */
-function user_external_invite_settings_form_validate($form, &$form_state) {
-  // Only validate the email if it is being used.
-  if ($form_state['values']['user_external_invite_use_universal_from_email']) {
-    if (valid_email_address($form_state['values']['user_external_invite_universal_from_email'])) {
-      return;
-    }
-    form_set_error('user_external_invite_universal_from_email', t('Invalid email.'));
-  }
-}
-
-/**
  * Page callback for admin/people/invite/cancel/%.
  *
  * Cancels a invite.
  */
 function user_external_invite_cancel_invite($mail) {
   // @todo verify $mail is valid and invite currently exists.
-  _user_external_invite_remove_invite($mail);
+  _user_external_invite_change_invite_status($mail, 'canceled');
   drupal_set_message(t('Invite for !mail successfully canceled.', array('!mail' => $mail)));
   drupal_goto('admin/people/invite');
-}
-
-/**
- * Access callback for admin/people/invite.
- *
- * For some reason, simply using a callback of 'user_access()' was not working.
- */
-function user_external_invite_form_access() {
-  if (user_access('invite new user')) {
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**
@@ -212,138 +88,150 @@ function user_external_invite_form_access() {
  */
 function user_external_invite_page() {
   $build['form'] = drupal_get_form('user_external_invite_form');
-  $build['invites'] = _user_external_invite_pending_invites_table();
+  $build['invites'] = drupal_get_form('user_external_invite_pending_invites_form');
   return $build;
-}
-
-/**
- * Get and return pending invites.
- */
-function _user_external_invite_pending_invites(string $mail = NULL) {
-  $query = db_select('user_external_invite', 'i')
-    ->fields('i');
-  if ($mail) {
-    $query->condition('mail', $mail);
-  }
-  $record = $query->execute()->fetchAll();
-  return $record;
 }
 
 /**
  * Build table showing pending invites.
  */
-function _user_external_invite_pending_invites_table() {
-  $build = array();
-  $pending = _user_external_invite_pending_invites();
-  if (!empty($pending)) {
-    $build['title']['#markup'] = '<h2>Pending Invites</h2>';
-    $build['table']['#theme'] = 'table';
-    $build['table']['#header'] = array(
-      t('Email'),
-      t('Role'),
-      t('Expires'),
-      t('Inviter'),
-      t('Actions'),
-    );
+function user_external_invite_pending_invites_form($form, &$form_state) {
+  $form = array();
 
-    $rids = variable_get('user_external_invite_roles', NULL);
-
-    foreach ($rids as $rid) {
-      $roles[$rid] = _user_external_invite_role_name_from_rid($rid);
-    }
-
-    foreach ($pending as $r) {
-      $inviter = user_load($r->uid);
-      $rows[] = array(
-        $r->mail,
-        $roles[$r->rid],
-        format_date($r->expire, 'short'),
-        $inviter->mail,
-        l(t('Cancel invite'), 'admin/people/invite/cancel/' . $r->mail),
-      );
-    }
-    $build['table']['#rows'] = $rows;
-  }
-  return $build;
-}
-
-/**
- * Form to invite a new user as a site owner or content editor.
- */
-function user_external_invite_form($form, &$form_state) {
-
-  drupal_set_title(t('Invite New User'));
-
-  $rids = variable_get('user_external_invite_roles', array());
-
-  foreach ($rids as $rid) {
-    $role_options[$rid] = _user_external_invite_role_name_from_rid($rid);
-  }
-
-  $form['rid'] = array(
-    '#title' => t('Role'),
-    '#type' => 'radios',
-    '#options' => $role_options,
-    '#required' => TRUE,
-  );
-  $form['email'] = array(
-    '#title' => t('Email addresses'),
-    '#type' => 'textarea',
-    '#description' => t('Comma separated list of email addresses that are sent the invitation email.'),
-    '#required' => TRUE,
+  // Add container for operations functionality.
+  $form['operations'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Operations',
   );
 
-  $form['custom_message'] = array(
-    '#title' => t('Custom message'),
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#description' => t('If added, the custom message will be included before the standard template.  Can be left blank.'),
+  // Add select list for choosing operations.
+  $select_options = array(
+    'user_external_invite_cancel_invites' => 'Cancel Invites',
   );
 
-  $form['submit'] = array(
+  $form['operations']['select'] = array(
+    '#type' => 'select',
+    //'#title' => t('Operations'),
+    '#options' => $select_options,
+    '#default_value' => $select_options[0],
+  );
+
+  // Add submit button for operations.
+  $form['operations']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
+
+  $headers = array(
+    'id' => t('ID'),
+    'mail' => t('Email'),
+    'role' => t('Role'),
+    'expire' => t('Expires'),
+    'inviter' => t('Inviter'),
+    'status' => t('Status'),
+  );
+
+  $rids = variable_get('user_external_invite_roles', NULL);
+  foreach ($rids as $rid) {
+    $roles[$rid] = _user_external_invite_role_name_from_rid($rid);
+  }
+
+  $pending = _user_external_invite_pending_invites(NULL, $headers);
+  while ($r = $pending->fetchObject()){
+    $inviter = user_load($r->uid);
+    $rows[] = array(
+      'id' => $r->id,
+      'mail' => $r->mail,
+      'role' => $roles[$r->rid],
+      'expire' => format_date($r->expire, 'short'),
+      'inviter' => $inviter->mail,
+      'status' => $r->status,
+    );
+  }
+
+  $form['table'] = array(
+    '#type' => 'tableselect',
+    '#header' => $headers,
+    '#options' => $rows,
+    '#suffix' => empty($rows) ? 'No pending invites.' : '',
+    '#weight' => 10,
+  );
+
+  $form['pager'] = array(
+    '#theme' => 'pager',
+    '#weight' => 11,
+  );
+
   return $form;
 }
 
 /**
- * Validation handler for invite_form.
+ * Submit callback for user_external_invite_pending_invites_form().
  *
- * Ensures email addresses are in valid format.
+ * @param $form
+ * @param $form_state
  */
-function user_external_invite_form_validate(&$form, &$form_state) {
-  $email_value = $form_state['values']['email'];
-  // Split on , or line break.
-  $emails = preg_split("/[\r\n,\s]+/", $email_value, -1, PREG_SPLIT_NO_EMPTY);
-  $error = FALSE;
-  foreach ($emails as $mail) {
-    if (!valid_email_address($mail)) {
-      $error = TRUE;
-      form_set_error('email', t('Incorrect email address (%mail). No invites were sent.', array('%mail' => $mail)));
-    }
-    else {
-      $load = _user_external_invite_load_invite($mail);
-      if (isset($load['mail'])) {
-        form_set_error('email', t('Email address (%mail) has already been invited. No invites were sent.', array('%mail' => $mail)));
-      }
+function user_external_invite_pending_invites_form_submit(&$form, &$form_state) {
+
+  $table_options = $form['table']['#options'];
+  $selected_options = $form_state['input']['table'];
+  $operation = $form_state['values']['select'];
+  $ids = array();
+
+  // Loop through selected rows and match with invite IDs.
+  foreach ($selected_options as $key => $option) {
+    if ($option != NULL) {
+      $ids[] = $table_options[$key]['id'];
     }
   }
-  if (!$error) {
-    $form_state['values']['parsed_mails'] = $emails;
-  }
+
+  // Pass IDs to submit callback function.
+  call_user_func($operation, $ids);
 }
 
 /**
- * Submit handler for invite_form.
+ * Callback to cancel/remove pending invites.
  *
- * Add entry to database and send email.
+ * @param array $ids
  */
-function user_external_invite_form_submit(&$form, &$form_state) {
-  global $user;
-  _user_external_invite_add_invite($form_state['values']['rid'], $form_state['values']['parsed_mails'], $user->uid, $form_state['values']['custom_message']);
-  drupal_set_message(t('Successfully invited new user!'));
+function user_external_invite_cancel_invites($ids = array()) {
+  // If no IDs passed then return with error message.
+  if (empty($ids)) {
+    drupal_set_message('No invites selected for operation. Please select desired invites and try again.', 'error');
+    return;
+  }
+
+  // Delete pending invites from database and set message.
+  db_delete('user_external_invite')
+    ->condition('id', $ids, 'IN')
+    ->execute();
+  drupal_set_message(t('Deleted :ids user :invites.', array(':ids' => count($ids), ':invites' => count($ids) > 1 ? 'invites' : 'invite')));
+}
+
+/**
+ * Implements hook_user_external_invite_excluded_roles().
+ *
+ * It doesn't make sense to invite someone as an anonymous user, so we take out
+ * that role here.
+ */
+function user_external_invite_user_external_invite_excluded_roles($roles) {
+  $anonymous_role = user_role_load_by_name('anonymous user');
+  $roles[] = $anonymous_role->rid;
+  return $roles;
+}
+
+/**
+ * Get and return pending invites.
+ */
+function _user_external_invite_pending_invites(string $mail = NULL, $headers) {
+  $query = db_select('user_external_invite', 'i')
+    ->fields('i');
+  $query = $query->extend('PagerDefault')->limit(10)->extend('TableSort');
+  if ($mail) {
+    $query->condition('mail', $mail);
+  }
+  $record = $query->execute();
+  return $record;
 }
 
 /**
@@ -355,12 +243,15 @@ function _user_external_invite_add_invite($rid, $emails, $uid, $message = NULL) 
   $days = variable_get('user_external_invite_days_valid_for', 5);
   // Expire in X days.
   $expire = $now + ($days * 24 * 60 * 60);
+  // All invites start out as pending.
+  $status = 'Pending';
   foreach ($emails as $mail) {
     db_insert('user_external_invite')
       ->fields(array(
         'mail' => $mail,
         'rid' => $rid,
         'expire' => $expire,
+        'status' => $status,
         'uid' => $uid,
         'message' => $message,
       ))
@@ -369,9 +260,9 @@ function _user_external_invite_add_invite($rid, $emails, $uid, $message = NULL) 
     _user_external_invite_send_invite($rid, $mail, $expire, $uid);
   }
   // After all emails are sent, send confirmation to submitter.
-  $site_name = _user_external_invite_site_name();
   global $user;
-  $from = _user_external_invite_from_email($user);
+  $site_name = _user_external_invite_site_name();
+  $from = _user_external_invite_from_email();
   $params = array(
     'subject' => t('Access request for the !site_name website', array('!site_name' => $site_name)),
     'rid' => $rid,
@@ -403,22 +294,24 @@ function _user_external_invite_calculate_hash($rid, $email, $expire) {
 /**
  * Returns from address used to send mailing.
  *
- * @param int $user
- *   User object sending the email.
+ * @param int $uid
+ *   User ID being invited.
  */
-function _user_external_invite_from_email($user = NULL) {
-  // Get universal email set from user invite config page if it exists.
+function _user_external_invite_from_email($uid = NULL) {
+  // Needs to be configurable.
   if (variable_get('user_external_invite_use_universal_from_email', NULL)) {
     return variable_get('user_external_invite_universal_from_email', NULL);
   }
-
-  // If user object exists, return the email address.
-  if ($user) {
+  else {
+    // Get logged in user if none passed.
+    if ($uid === NULL) {
+      global $user;
+    }
+    else {
+      $user = user_load($uid);
+    }
     return $user->mail;
   }
-
-  // If other checks fail, return site email address.
-  return variable_get('site_mail', NULL);
 }
 
 /**
@@ -428,7 +321,7 @@ function _user_external_invite_role_name_from_rid($rid) {
   $user_role = user_role_load($rid);
 
   // Format role name to be  more readable.
-  $role_name = $user_role->name;
+  $role_name = check_plain($user_role->name);
   $role_name = ucwords(str_replace('_', ' ', $role_name));
 
   return $role_name;
@@ -445,9 +338,7 @@ function _user_external_invite_site_name() {
  * Sends invitation email with token login link.
  */
 function _user_external_invite_send_invite_mail($rid, $mail, $expire, $hash, $uid) {
-  global $user;
-
-  $from = _user_external_invite_from_email($user);
+  $from = _user_external_invite_from_email();
   $link = url('user-external/accept-invite', array(
     'query' => array(
       'key' => $hash,
@@ -478,8 +369,7 @@ function _user_external_invite_send_invite_mail($rid, $mail, $expire, $hash, $ui
  * Sends accepted invitation email with login link and extra help.
  */
 function _user_external_invite_send_invite_accepted_mail($rid, $mail) {
-  global $user;
-  $from = _user_external_invite_from_email($user);
+  $from = _user_external_invite_from_email();
   $link = url('user/login', array(
     'absolute' => TRUE,
   ));
@@ -509,7 +399,7 @@ function _user_external_invite_send_invite_accepted_mail($rid, $mail) {
  */
 function _user_external_invite_send_inviter_confirmation($uid, $mail, $rid) {
   $account = user_load($uid);
-  $from = _user_external_invite_from_email($account);
+  $from = _user_external_invite_from_email();
   $role_name = _user_external_invite_role_name_from_rid($rid);
   $site_name = _user_external_invite_site_name();
   $params = array(
@@ -521,7 +411,8 @@ function _user_external_invite_send_inviter_confirmation($uid, $mail, $rid) {
     'body' => token_replace(variable_get('user_external_invite_accepted_template'),
       array('ext-invite' => _user_external_invite_load_entity($mail))),
   );
-  drupal_mail('user_external_invite', 'user_external_invite_confirmation', $account->mail, language_default(), $params, $from, TRUE);
+  drupal_mail('user_external_invite', 'user_external_invite_confirmation', $account->mail, language_default(),
+    $params, $from, TRUE);
 }
 
 /**
@@ -615,8 +506,8 @@ function user_external_invite_grant_invite($key, $mail, $account) {
     // Send email to inviter.
     _user_external_invite_send_inviter_confirmation($invite['uid'], $invite['mail'], $invite['rid']);
 
-    // Once granted, remove entry from database.
-    _user_external_invite_remove_invite($mail);
+    // Once granted, change status of invite in database.
+    _user_external_invite_change_invite_status($mail, 'granted');
   }
   else {
     drupal_set_message(
@@ -672,14 +563,22 @@ function _user_external_invite_load_invite($mail) {
 }
 
 /**
- * Remove invite row from {user_external_invite}.
+ * Change status of invite in {user_external_invite} table.
  *
- * Called after invite has been used, or on cron after expiration.
+ * Called to change the status of invite from pending to accepted or expired.
  */
-function _user_external_invite_remove_invite($mail) {
-  db_delete('user_external_invite')
-    ->condition('mail', $mail)
-    ->execute();
+function _user_external_invite_change_invite_status($mail, $status) {
+  if ($status === 'canceled') {
+    db_delete('user_external_invite')
+      ->condition('mail', $mail)
+      ->execute();
+  }
+  else {
+    db_update('user_external_invite')
+      ->fields(array('status' => $status))
+      ->condition('mail', $mail)
+      ->execute();
+  }
 }
 
 /**
@@ -709,12 +608,21 @@ function _user_external_invite_dehash($key, $mail) {
 
 /**
  * Implements hook_cron().
+ *
+ * Set invites to expired status if too much time has passed.
  */
 function user_external_invite_cron() {
-  // Delete expired invites.
-  $query = db_delete('user_external_invite')
-    ->condition('expire', REQUEST_TIME, '<');
-  $query->execute();
+  // Set status of expired invites.
+  db_update('user_external_invite')
+    ->fields(array('status' => 'Expired'))
+    ->condition('expire', REQUEST_TIME, '<')
+    ->execute();
+
+  // Delete old invites after 30 days.
+  $expire_time = variable_get('user_external_invite_delete_old_invites', 60*60*24*30);
+  db_delete('user_external_invite')
+    ->condition('expire', REQUEST_TIME - $expire_time, '<')
+    ->execute();
 }
 
 /**

@@ -11,18 +11,12 @@ Note:  This does not automatically upgrade for Drupal 6 LDAP Integration Modules
 
 2) Upload the LDAP files to the modules directory.
 
-
-2b) If you are using an Active Directory server, you may benefit from AD LDAP: http://adldap.sourceforge.net/
-Download it and install in /sites/all/libraries.  The folder hierarchy should look like:
-/sites/all/libraries/adLDAP/src
-
-
 3) Go to admin/build/modules and enable the needed modules from the
    Lightweight Directory Access Protocal group.
 
 4) Enable and configure ldap servers and configure at least one server.
 
-5) Enable and configure ldap authentication and/or ldap authorization
+5) Enable the other LDAP modules you need.
 
 6) LDAP Help is just for debugging and administrator help.  Use it if you have problems.
 Disable it in production; it adds no functionality or end user help.

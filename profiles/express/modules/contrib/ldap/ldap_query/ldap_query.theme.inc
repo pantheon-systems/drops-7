@@ -1,6 +1,4 @@
 <?php
-// $Id: ldap_query.theme.inc,v 1.4.2.1 2011/02/08 20:05:41 johnbarclay Exp $
-
 
 /**
  * @file
@@ -75,7 +73,7 @@ function theme_ldap_query($variables) {
 
   extract($variables);  // $ldap_query, $actions, $type (see above)
 
-  ldap_server_module_load_include('php', 'ldap_query', 'LdapQuery.class');
+  ldap_servers_module_load_include('php', 'ldap_query', 'LdapQuery.class');
   $properties = array();
   foreach (LdapQuery::fields() as $field_id => $field) {
     $value = $ldap_query->{$field['property_name']};

@@ -1,9 +1,15 @@
 <?php
 
+/**
+ * @file
+ * test script for testing ldap functionality outside of Drupal
+ *
+ */
+
 die('Move this script outside of Drupal and uncomment the die statement in config.inc to run.'); // remove this line after moving out the scripts outside of drupal root.
 
 function ldap_help_config() {
-  
+
   // these variables are just for convenience, they can be hard coded directly into the $config array
   $provision_root = 'ou=test,ou=drupal,dc=ad,dc=mycollege,dc=edu';
   $query_root = 'dc=ad,dc=mycollege,dc=edu';
@@ -25,7 +31,7 @@ function ldap_help_config() {
         'test_queries' => array(
           'user' => array(
             'filter'  => 'cn=jbarclay',
-            'show_attr' => array('dn','cn','displayname','sn','givenname','mail','samaccountname','email'),
+            'show_attr' => array('dn', 'cn', 'displayname', 'sn', 'givenname', 'mail', 'samaccountname', 'email'),
           ),
         ),
         'test_provisions' => array(),
@@ -41,7 +47,7 @@ function ldap_help_config() {
         'test_queries' => array(
           'group' => array(
             'filter'  => 'cn=ed-it-nag',
-            'show_attr' => array('dn','cn','samaccountname'),
+            'show_attr' => array('dn', 'cn', 'samaccountname'),
           ),
         ),
         'test_provisions' => array(),
@@ -59,7 +65,7 @@ function ldap_help_config() {
           'simple_user' => array(
             'delete_if_exists' => TRUE,
             'find_filter' => "distinguishedName=cn=ed-drupal-user-17,$provision_root",
-            'dn' =>  "cn=ed-drupal-user-17,$provision_root",
+            'dn' =>  "cn=ed-drupal-user-17, $provision_root",
             'attr' => array(
               "displayName" => "Drupal User",
               "cn" => 'ed-drupal-user-17',
@@ -93,9 +99,7 @@ function ldap_help_config() {
       ),
     ),
   );
-  
-  return $config;
-  
-}
 
-?>
+  return $config;
+
+}

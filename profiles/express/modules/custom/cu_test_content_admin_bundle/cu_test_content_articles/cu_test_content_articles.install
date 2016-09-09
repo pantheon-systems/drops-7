@@ -133,6 +133,8 @@ function _cu_test_content_articles_create_nodes($nodes) {
   $categories = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
 
   $weight = 0;
+  $time = time();
+  $date_range = 60 * 60 * 24 * 15; // 15 days
   foreach ($nodes as $elem) {
     $count = $weight+1;
     $node_title = $elem['title'];
@@ -168,12 +170,12 @@ function _cu_test_content_articles_create_nodes($nodes) {
     $node->field_image[LANGUAGE_NONE][0]['alt'] = 'Photo Alt Text';
     $node->field_article_thumbnail[LANGUAGE_NONE][0] = (array) $file;
     $node->field_article_thumbnail[LANGUAGE_NONE][0]['alt'] = 'Photo Alt Text';
-
-
-
     $node->type = 'article';
-
     $node->uid = 1;
+
+    // Set created date
+    $created = $time - ($date_range * $weight);
+    $node->created = $created;
     node_save($node);
     $temp_articles[$node->nid] = $node->title;
     drupal_set_message("Article $node->title - $node->nid created.");

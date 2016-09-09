@@ -27,10 +27,3 @@ $user->data = array(
       ),
     ),
   );
-
-
-
-----------------------
-To Dos (Too small for issue queue)
-----------------------
-- add support for gid-rid normalized format such as 3-2 in ldap mapping interface

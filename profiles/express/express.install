@@ -5,6 +5,7 @@
  * Perform actions to set up the site for this profile.
  */
 function express_install() {
+
   // Enable some express blocks.
   //$default_theme = 'express_modern';
   //$admin_theme = 'express_admin_theme';

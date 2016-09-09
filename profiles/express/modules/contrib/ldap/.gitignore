@@ -1,2 +1,8 @@
+openLdap
 *.patch
-*.komodoproject
+*.zip
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea*
+
