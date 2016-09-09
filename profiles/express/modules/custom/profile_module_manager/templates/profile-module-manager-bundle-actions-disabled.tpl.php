@@ -9,10 +9,10 @@
 
 <?php
   $links = array();
-  if ($enable_url) {
+  if (isset($enable_url)) {
     $links[] =  l(t('Enable'), $enable_url, array('attributes' => array('class' => array('bundle-enable-link')), 'html' => TRUE));
   }
-  if ($demo_url) {
+  if (isset($demo_url)) {
     $links[] = l(t('More Information'), $demo_url, array('attributes' => array('class' => array('bundle-demo-link'), 'target' => '_blank'), 'html' => TRUE));
   }
   print join(' | ', $links);
