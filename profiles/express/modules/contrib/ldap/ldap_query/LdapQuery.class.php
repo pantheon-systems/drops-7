@@ -1,5 +1,4 @@
 <?php
-// $Id: LdapServer.class.php,v 1.5.2.1 2011/02/08 06:01:00 johnbarclay Exp $
 
 /**
  * @file
@@ -106,14 +105,14 @@ class LdapQuery {
 //  function search($base_dn = NULL, $filter, $attributes = array(), $attrsonly = 0, $sizelimit = 0, $timelimit = 0, $deref = LDAP_DEREF_NEVER) {
 
   function query() {
-    ldap_server_module_load_include('php', 'ldap_servers', 'LdapServer.class');
+    ldap_servers_module_load_include('php', 'ldap_servers', 'LdapServer.class');
     $ldap_server = new LdapServer($this->sid);
     $ldap_server->connect();
     $ldap_server->bind();
     $results = array();
 
     $count = 0;
-    // for debugging paginations, set: $ldap_server->searchPageStart = NULL, 0, 1, ... ; $ldap_server->searchPageEnd = NULL, 0, 1, ...;
+
     foreach ($this->baseDn as $base_dn) {
       $result = $ldap_server->search($base_dn, $this->filter, $this->attributes, 0, $this->sizelimit, $this->timelimit, $this->deref, $this->scope);
       if ($result !== FALSE && $result['count'] > 0) {
@@ -202,7 +201,7 @@ class LdapQuery {
     foreach ($items as $i => $item) {
       $items[$i] = trim($item);
       if ($strip_quotes) {
-        $items[$i] = trim($items[$i],'"');
+        $items[$i] = trim($items[$i], '"');
       }
     }
     return $items;
@@ -303,7 +302,7 @@ class LdapQuery {
           'field_group' => 'query',
           '#type' => 'textarea',
           '#title' => t('Base DNs to search in query.'),
-          '#description' => t('Each Base DN will be queried and results merged. e.g. <code>ou=campus accounts,dc=ad,dc=uiuc,dc=edu</code>') . t('Enter one per line in case if you need more than one.'),
+          '#description' => t('Each Base DN will be queried and results merged. e.g. <code>ou=groups,dc=hogwarts,dc=edu</code>') . t('Enter one per line in case if you need more than one.'),
           '#cols' => 50,
           '#rows' => 6,
           '#required' => TRUE,

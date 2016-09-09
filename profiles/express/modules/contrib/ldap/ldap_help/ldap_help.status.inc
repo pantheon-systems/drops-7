@@ -1,5 +1,5 @@
 <?php
-// $Id: ldap_help.status.inc,v 1.1.2.1 2011/02/08 06:14:20 johnbarclay Exp $
+
 /**
  * @file
  * status file for ldaphelp module
@@ -60,7 +60,6 @@ function ldap_help_get_server($phpinfo, &$info) {
   $info['ldap'] = $phpinfo['ldap'];
 
   $text = "";
-
   foreach ($phpinfo['ldap'] as $key => $value) {
     if (is_scalar($value)) {
       $text .= "<br/>$key: " . $value;
@@ -261,8 +260,8 @@ function ldap_help_get_ldap_servers() {
     return FALSE;
   }
 
-  ldap_server_module_load_include('inc', 'ldap_servers', 'ldap_servers.settings');
-  ldap_server_module_load_include('inc', 'ldap_servers', 'ldap_servers.admin');
+  ldap_servers_module_load_include('inc', 'ldap_servers', 'ldap_servers.settings');
+  ldap_servers_module_load_include('inc', 'ldap_servers', 'ldap_servers.admin');
 
   $conf_form = ldap_servers_settings();
 
@@ -318,7 +317,7 @@ function ldap_help_get_ldap_servers() {
 
 function ldap_help_get_ldap_authentication() {
 
-  ldap_server_module_load_include('php', 'ldap_authentication', 'LdapAuthenticationConfAdmin.class');
+  ldap_servers_module_load_include('php', 'ldap_authentication', 'LdapAuthenticationConfAdmin.class');
   $auth_conf = new LdapAuthenticationConfAdmin();
   $conf_form = $auth_conf->drupalForm();
 
@@ -342,11 +341,27 @@ function ldap_help_get_ldap_authentication() {
   return $status;
 }
 
+function ldap_help_get_ldap_user() {
+  ldap_servers_module_load_include('php', 'ldap_user', 'LdapUserConfAdmin.class');
+  $conf = new LdapUserConfAdmin();
+  $form = $conf->drupalForm();
+
+  $items['drupal_accounts']['loginConflictResolve'] = 'radios';
+  $items['drupal_accounts']['acctCreation'] = 'radios';
+
+  $status = ldap_help_parse_form($form, $items);
+
+  return $status;
+}
+
+
+
+
 function ldap_help_get_ldap_authorization() {
   $status = array();
-  ldap_server_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
-  ldap_server_module_load_include('inc', 'ldap_servers', 'ldap_servers.settings');
-  ldap_server_module_load_include('inc', 'ldap_servers', 'ldap_servers.admin');
+  ldap_servers_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
+  ldap_servers_module_load_include('inc', 'ldap_servers', 'ldap_servers.settings');
+  ldap_servers_module_load_include('inc', 'ldap_servers', 'ldap_servers.admin');
 
   $servers = ldap_servers_get_servers(NULL, 'enabled');
   $consumers = ldap_authorization_get_consumers();
@@ -365,24 +380,8 @@ function ldap_help_get_ldap_authorization() {
   $items['status']['status'] = 'string';
   $items['status']['only_ldap_authenticated'] = 'string';
 
-
-  $items['derive_from_dn']['derive_from_dn'] = 'string';
-  $items['derive_from_dn']['derive_from_dn_attr'] = 'string';
-
-  $items['derive_from_attr']['derive_from_attr'] = 'string';
-  $items['derive_from_attr ']['derive_from_attr_attr'] = 'string';
-  $items['derive_from_attr']['derive_from_attr_use_first_attr'] = 'checkbox';
-
-  $items['derive_from_entry']['derive_from_entry'] = 'string';
-  $items['derive_from_entry']['derive_from_entry_entries'] = 'string';
-  $items['derive_from_entry']['derive_from_entry_attr'] = 'string';
-  $items['derive_from_entry']['derive_from_entry_user_ldap_attr'] = 'string';
-  $items['derive_from_entry']['derive_from_entry_nested'] = 'checkbox';
-  $items['derive_from_entry']['derive_from_entry_use_first_attr'] = 'checkbox';
-
   // $items['filter_and_mappings']['mappings'] = 'string';
   $items['use_filter']['mappings'] = 'string';
-
 
   $items['misc_settings']['allow_synch_both_directions'] = 'string';
   $items['misc_settings']['synchronization_modes'] = 'string';
@@ -411,6 +410,7 @@ function ldap_help_get_ldap_authorization() {
 
 function ldap_help_parse_form($form, $items) {
 
+  $status = array();
   foreach ($form as $fieldset_name => $field) {
     foreach ($field as $field_name => $field_data) {
       if (isset($items[$fieldset_name][$field_name])) {

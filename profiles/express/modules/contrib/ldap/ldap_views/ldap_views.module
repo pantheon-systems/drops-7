@@ -12,7 +12,7 @@ function ldap_views_views_api() {
 
 function ldap_views_get_qid(&$view) {
     $current_display = $view->display[$view->current_display];
-    return isset($current_display->display_options['query']['options']['qid']) ? 
-      $current_display->display_options['query']['options']['qid'] : 
+    return isset($current_display->display_options['query']['options']['qid']) ?
+      $current_display->display_options['query']['options']['qid'] :
       $current_display->handler->default_display->display->display_options['query']['options']['qid'];
 }

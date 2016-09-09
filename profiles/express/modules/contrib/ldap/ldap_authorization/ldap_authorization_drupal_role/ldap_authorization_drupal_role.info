@@ -1,4 +1,3 @@
-;$Id: ldap_authorization_drupal_role.info,v 1.4 2010/12/29 04:51:11 johnbarclay Exp $
 
 name = LDAP Authorization - Drupal Roles
 description = "Implements LDAP authorization for Drupal roles"
@@ -10,9 +9,9 @@ files[] = LdapAuthorizationConsumerRole.class.php
 files[] = ldap_authorization_drupal_role.module
 files[] = ldap_authorization_drupal_role.inc
 
-; Information added by drupal.org packaging script on 2012-08-20
-version = "7.x-1.0-beta12"
+; Information added by Drupal.org packaging script on 2016-08-07
+version = "7.x-2.0-beta11"
 core = "7.x"
 project = "ldap"
-datestamp = "1345503423"
+datestamp = "1470608343"
 

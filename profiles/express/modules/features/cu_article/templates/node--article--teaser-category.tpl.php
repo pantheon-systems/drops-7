@@ -8,7 +8,9 @@
   <div class="article-view-mode-teaser-content node-view-mode-teaser-content">
     <<?php print $tag; ?><?php print $title_attributes; ?>><a href="<?php print $node_url; ?>"><?php print $title; ?></a></<?php print $tag; ?>>
     <div class="article-teaser-meta">
-      <?php print $category_teaser_category_links; ?>
+      <?php if (isset($category_teaser_category_links)): ?>
+        <?php print $category_teaser_category_links; ?>
+      <?php endif; ?>
     </div>
     <div class="article-summary"><?php print render($content['body']); ?></div>
   </div>

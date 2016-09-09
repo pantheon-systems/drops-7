@@ -1,5 +1,4 @@
 <?php
-// $Id: ldap_authorization.theme.inc,v 1.4.2.1 2011/02/08 06:01:00 johnbarclay Exp $
 
 /**
  * @file
@@ -70,7 +69,7 @@ function theme_ldap_authorization_test_results($variables) {
       foreach ($user_results as $consumer_type => $authorizations) {
         if (is_array($authorizations) && count($authorizations) > 0) {
           $authorizations = $consumer->convertToFriendlyAuthorizationIds($authorizations);
-          $authorizations_text =  theme('item_list', array('items' => $authorizations, 'title' => NULL, 'type' => 'ul', 'attributes' => array()));
+          $authorizations_text =  theme('item_list', array('items' => array_values($authorizations), 'title' => NULL, 'type' => 'ul', 'attributes' => array()));
         }
         else {
           $authorizations_text = "";

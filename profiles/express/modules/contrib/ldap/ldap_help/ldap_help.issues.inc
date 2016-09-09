@@ -1,5 +1,4 @@
 <?php
-// $Id: ldap_help.module,v 1.1.2.1 2011/02/08 06:14:20 johnbarclay Exp $
 
 /**
  * @file
@@ -11,7 +10,7 @@ function ldap_help_issues() {
 
   $text = '<h3>' . t('LDAP Help Module') . '</h3><p>' .
   t('How to report bugs in LDAP Project.') . '</p>';
-  ldap_server_module_load_include('inc', 'ldap_help', 'ldap_help.status');
+  ldap_servers_module_load_include('inc', 'ldap_help', 'ldap_help.status');
   $ldap_config = ldap_help_status('html');
 
   $path = drupal_get_path("module", "ldap_servers");

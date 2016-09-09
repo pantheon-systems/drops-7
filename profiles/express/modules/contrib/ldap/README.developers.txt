@@ -1,4 +1,8 @@
 
+General LDAP Project Notes
+
+LDAP Servers is base module or api module.  General LDAP functions belong in
+LDAP Servers.
 
 --------------------------------------------------------
 Case Sensitivity and Character Escaping in LDAP Modules
@@ -24,3 +28,26 @@ ldap_pear_escape_dn_value()
 ldap_pear_unescape_dn_value()
 ldap_pear_unescape_filter_value()
 ldap_pear_unescape_filter_value()
+
+
+--------------------------------------------------------
+common variables used in ldap_* and their structures
+--------------------------------------------------------
+
+!Structure of $ldap_user and $ldap_entry are different!
+
+-----------
+$ldap_user
+-----------
+@see LdapServer::userUserNameToExistingLdapEntry() return
+
+-----------
+$ldap_entry and $ldap_*_entry.
+-----------
+@see LdapServer::ldap_search() return array
+
+
+--------------
+$user_attr_key
+key of form <attr_type>.<attr_name>[:<instance>] such as field.lname, property.mail, field.aliases:2
+--------------

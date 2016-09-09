@@ -1,5 +1,4 @@
 <?php
-// $Id: ldap_servers.encryption.inc,v 1.3.2.1 2011/02/08 06:01:00 johnbarclay Exp $
 
 /**
  * @file
@@ -52,10 +51,12 @@ function _ldap_servers_encrypt_types($type = 'all') {
     ); */
 
     $encrypts = array(
-      LDAP_SERVERS_ENC_TYPE_CLEARTEXT => 'No Encyption',
-      LDAP_SERVERS_ENC_TYPE_BLOWFISH => 'Blowfish'
-
+      LDAP_SERVERS_ENC_TYPE_CLEARTEXT => 'No Encyption'
     );
+    if (function_exists('mcrypt_module_open')) {
+      $encrypts[LDAP_SERVERS_ENC_TYPE_BLOWFISH] = 'Blowfish';
+    }
+
   }
 
  // $hashes[LDAP_SERVERS_ENC_TYPE_MD5] = 'MD5';
@@ -82,7 +83,17 @@ function _ldap_servers_encrypt_types($type = 'all') {
  * @return string
  *   Encrypted text, formatted for use as an LDAP password.
  *
+ * @link http://php.net/manual/en/function.mcrypt-generic-init.php
  */
+function _ldap_servers_encrypt_has_mcrypt_and_warn() {
+  if (!function_exists('mcrypt_module_open')) {
+    watchdog('ldap_servers', 'Encryption is set to blowfish, but mcrypt module in not installed', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
 
 function _ldap_servers_encrypt($clear_txt, $enc_type = NULL) {
 
@@ -94,20 +105,29 @@ function _ldap_servers_encrypt($clear_txt, $enc_type = NULL) {
     return $clear_txt;
   }
 
-  if (! ($key = variable_get('ldap_servers_encrypt_key', NULL))) {
-    $key = ldap_servers_random_salt(10);
-    variable_set('ldap_servers_encrypt_key', $key);
-  }
+  $key = variable_get('ldap_servers_encrypt_key', drupal_get_hash_salt());
 
   switch ($enc_type) {
 
     case LDAP_SERVERS_ENC_TYPE_BLOWFISH: // Blowfish
+        // Open mcrypt module.
+      if (_ldap_servers_encrypt_has_mcrypt_and_warn()) {
         $td = mcrypt_module_open('blowfish', '', LDAP_SERVERS_CYPHER_MODE, '');
+        // Determine maximum mycrypt key length.
+        $key_length = mcrypt_enc_get_key_size($td);
+        // Shorten key to allowed length.
+        $key = substr($key, 0, $key_length);
+        // Create the initialization vector.
         $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+        // Encrypt the text.
         mcrypt_generic_init($td, $key, $iv);
         $crypttext = mcrypt_generic($td, $clear_txt);
         mcrypt_generic_deinit($td);
+        // Build the encrypted string.
         $cipher_txt = $iv . $crypttext;
+        // Close the module.
+        mcrypt_module_close($td);
+      }
       break;
 
     default: // Cleartext
@@ -131,7 +151,7 @@ function _ldap_servers_encrypt($clear_txt, $enc_type = NULL) {
 
 function _ldap_servers_decrypt($cipher_txt, $enc_type = NULL) {
 
-  $key = variable_get('ldap_servers_encrypt_key', NULL);
+  $key = variable_get('ldap_servers_encrypt_key', drupal_get_hash_salt());
   if (!$enc_type) {
     $enc_type = variable_get('ldap_servers_encryption' , LDAP_SERVERS_ENC_TYPE_CLEARTEXT);
   }
@@ -143,16 +163,28 @@ function _ldap_servers_decrypt($cipher_txt, $enc_type = NULL) {
   switch ($enc_type) {
 
     case LDAP_SERVERS_ENC_TYPE_BLOWFISH: // Blowfish
-      $clear_txt = "";
-      $td        = mcrypt_module_open('blowfish', '', LDAP_SERVERS_CYPHER_MODE, '');
-      $ivsize    = mcrypt_enc_get_iv_size($td);
-      $iv        = substr($cipher_txt, 0, $ivsize);
-      $cipher_txt = substr($cipher_txt, $ivsize);
-      if ($iv) {
-        mcrypt_generic_init($td, $key, $iv);
-        $clear_txt = mdecrypt_generic($td, $cipher_txt);
+      if (_ldap_servers_encrypt_has_mcrypt_and_warn()) {
+        $clear_txt = "";
+        // Open mcrypt module.
+        $td = mcrypt_module_open('blowfish', '', LDAP_SERVERS_CYPHER_MODE, '');
+        // Determine maximum mycrypt key length.
+        $key_length = mcrypt_enc_get_key_size($td);
+        // Shorten key to allowed length.
+        $key = substr($key, 0, $key_length);
+        // Determine the algorithm IV.
+        $ivsize = mcrypt_enc_get_iv_size($td);
+        // Split apart IV and text.
+        $iv = substr($cipher_txt, 0, $ivsize);
+        $cipher_txt = substr($cipher_txt, $ivsize);
+        // If the IV exists, decrypt the text.
+        if ($iv) {
+          mcrypt_generic_init($td, $key, $iv);
+          $clear_txt = mdecrypt_generic($td, $cipher_txt);
+          mcrypt_generic_deinit($td);
+        }
+        // Close the module.
+        mcrypt_module_close($td);
       }
-
       break;
 
     default: // Cleartext

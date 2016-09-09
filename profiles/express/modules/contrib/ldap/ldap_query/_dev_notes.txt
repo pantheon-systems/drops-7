@@ -34,7 +34,7 @@ Methods:
 execute()  execute query
 save()     save to db
 delete()
-getLdapQueryObjects() statis method to get group of query objects
+getLdapQueryObjects() static method to get group of query objects
 getActions() for Admin Interface index
 drupalForm() for admin Interface form
 drupalFormValidate() for admin interface form

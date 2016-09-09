@@ -34,6 +34,12 @@ function user_external_invite_schema() {
         'type' => 'int',
         'not null' => TRUE,
       ),
+      'status' => array(
+        'description' => 'Status of the Invitation',
+        'type' => 'varchar',
+        'length' => 254,
+        'not null' => TRUE,
+      ),
       'uid' => array(
         'description' => 'User ID of who sent the invite',
         'type' => 'int',
@@ -46,8 +52,27 @@ function user_external_invite_schema() {
       ),
     ),
     'primary key' => array('id'),
+    'indexes' => array(
+      'invite_expired' => array('expire'),
+    ),
   );
   return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function user_external_invite_install() {
+  // Add default roles for invite page.
+  $user_roles = user_roles();
+  if (($key = array_search('anonymous user', $user_roles)) !== FALSE) {
+    unset($user_roles[$key]);
+  }
+  $user_roles = array_keys($user_roles);
+  variable_set('user_external_invite_roles', array_combine($user_roles, $user_roles));
+
+  // Add content for initial templates.
+  _user_external_invite_initial_templates();
 }
 
 /**
@@ -63,5 +88,57 @@ function user_external_invite_uninstall() {
   variable_del('user_external_invite_accepted_confirmation_template');
   variable_del('user_external_invite_accepted_template');
   variable_del('user_external_invite_universal_from_email');
+}
 
+/**
+ * Populate email templates with generic content.
+ */
+function _user_external_invite_initial_templates() {
+  variable_set('user_external_invite_invite_template', '[user_external_invite:invite_custom]
+
+You have been invited to join the [site:name] website as a user with [user_external_invite:invite_role] access privileges.
+
+To accept this invitation:
+1) Go to [user_external_invite:invite_link]
+2) Login with your username and password.
+
+Upon completion, you will receive an email confirming your access.');
+
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following:
+
+[user_external_invite:invited_emails]
+
+An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent.
+
+If you did not submit this request or need to modify it, please contact your administrator at [site:mail].');
+
+  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.');
+
+  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] website as a user with [user_external_invite:invite_role] access privileges.
+
+To access and edit this site:
+1) Go to [site:login-url]
+2) Login with your username and password.');
+}
+
+/**
+ * Add status row to table.
+ */
+function user_external_invite_update_7001() {
+  $spec = array(
+    'description' => 'Status of the Invitation',
+    'type' => 'varchar',
+    'length' => 254,
+    'not null' => TRUE,
+  );
+  db_add_field('user_external_invite', 'status', $spec);
+}
+
+/**
+ * Add index to expire field.
+ */
+function user_external_invite_update_7002() {
+  if (db_field_exists('user_external_invite','expire')) {
+    db_add_index('user_external_invite', 'invite_expired', array('expire'));
+  }
 }

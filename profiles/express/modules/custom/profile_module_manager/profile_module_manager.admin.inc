@@ -79,7 +79,7 @@ function profile_module_manager_admin_settings_submit($form, &$form_state) {
   unset($form_state['values']['profile_module_manager_ignore']);
 
   // Save rest of form values.
-  system_settings_form_submit($form, &$form_state);
+  system_settings_form_submit($form, $form_state);
 }
 
 /**
@@ -130,16 +130,12 @@ function profile_module_manager_bundle_list() {
   // Step through bundles
   $first_admin_bundle = TRUE;
   foreach ($bundles as $key => $bundle) {
-    $vars = array();
     $info_file = str_replace(".module", ".info", $bundle->filename);
     if (file_exists($info_file)) {
       $info = drupal_parse_info_file($info_file);
       $enabled = module_exists($bundle->name) ? 1 : 0;
       // Set bundle group
       $group = strpos($bundle->name, '_admin_bundle') ? 'group_admin_bundle' : 'group_bundle';
-
-      // Bundle status
-      $vars['enabled'] = $enabled;
 
       // Add classes for bundle wrapper
       $classes_array = array();

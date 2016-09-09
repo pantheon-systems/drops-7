@@ -1,19 +1,11 @@
 <?php
-// $Id: ldap_help.module,v 1.1.2.1 2011/02/08 06:14:20 johnbarclay Exp $
+
 /**
  * @file
  * The ldaphelp module is a module to help admins debug ldap_integration modules.
  *
  */
 
-
-
-/**
- * Implements hook_init().
- */
-function ldap_help_init() {
-  drupal_add_css(drupal_get_path('module', 'ldap_help') . '/ldap_help.css', 'module');
-}
 
 /**
  * Implements hook_menu().
@@ -64,18 +56,43 @@ function ldap_help_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 7,
   );
-  
+
+
+  $items['admin/config/people/ldap/help/examples'] = array(
+    'title' => 'Sample LDAPs',
+    'description' => 'Sample LDAPs from Documentation',
+    'page callback' => 'ldap_help_examples',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_help.examples.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+  );
+
+
   return $items;
 }
 
 function ldap_help_form_ldap_servers_settings_alter(&$form, &$form_state) {
-  $form['watchdog_detail'] = array('#type' => 'fieldset', '#title' => t('Log detailed LDAP Actions'));
+  $form['watchdog_detail'] = array('#type' => 'fieldset', '#title' => t('Development'));
   $form['watchdog_detail']['watchdog_detail'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enabled Detailed LDAP Watchdog logging.  This is generally for
        debugging and reporting issues with the ldap modules and should not be left
        on.'),
     '#default_value' => variable_get('ldap_help_watchdog_detail', 0),
+  );
+ $date = variable_get('ldap_help_user_data_clear_set_date', time());
+ $form['watchdog_detail']['user_data_clear'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Discard and ignore user authorization data stored by ldap module in user records data before %date.
+      This is useful for implementers of development versions of the module
+      that may have corrupt user data from the past.', array('%date' => date('Y-m-d H:i:s', $date))),
+    '#default_value' => variable_get('ldap_help_user_data_clear', 0),
+  );  //array('%date' => date('Y-m-d H:i:s', $date))
+ $form['watchdog_detail']['user_data_clear_date'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Reset the clear date to the current date %date', array('%date' => date('Y-m-d H:i:s'))),
+    '#default_value' => variable_get('ldap_help_user_data_clear_set_date', 0),
   );
   $form['#submit'][] = 'ldap_help_watchdog_detail_submit';
 }
@@ -87,5 +104,32 @@ function ldap_help_watchdog_detail_submit($form, &$form_state) {
     if ($watchdog_detail != variable_get('ldap_help_watchdog_detail', 0)) {
       variable_set('ldap_help_watchdog_detail', $watchdog_detail);
     }
+    if ($form_state['values']['user_data_clear'] != variable_get('ldap_help_user_data_clear', 0)) {
+      variable_set('ldap_help_user_data_clear', $form_state['values']['user_data_clear']);
+    }
+    if ($form_state['values']['user_data_clear_date'] != 0) {
+      variable_set('ldap_help_user_data_clear_set_date', time());
+    }
   }
+}
+
+function ldap_help_help($path, $arg) {
+
+  $help = '<h3>' . t('LDAP Help Module') . '</h3><p>' .
+  t('This module assists Drupal admins in configuring, debugging, sharing, and submitting
+  support and bug request related to LDAP modules.') . '<strong><em> ' .
+  t('LDAP Help Module should be disabled unless you are debugging or configuring
+    LDAP problems.') . ' </em></strong>' .
+  t('It adds no functionality to the LDAP modules.') . '</p>';
+
+  switch ($path) {
+    case 'admin/config/people/ldap/help':
+      $output = '<p>' . $help . '</p>';
+      return $output;
+
+    case 'admin/help#ldap_help':
+      $output = '<p>' . $help . '</p>';
+      return $output;
+  }
+
 }

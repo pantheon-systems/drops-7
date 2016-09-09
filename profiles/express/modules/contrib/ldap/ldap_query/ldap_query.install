@@ -1,5 +1,4 @@
 <?php
-// $Id: ldap_query.install,v 1.5.2.1 2011/02/08 06:01:00 johnbarclay Exp $
 
 /**
  * @file
@@ -53,8 +52,8 @@ function ldap_query_schema() {
       ),
     ),
   );
-  module_load_include('inc', 'ldap_servers','ldap_servers.functions');
-  ldap_server_module_load_include('php', 'ldap_query', 'LdapQuery.class');
+  module_load_include('module', 'ldap_servers');
+  ldap_servers_module_load_include('php', 'ldap_query', 'LdapQuery.class');
   $fields = LdapQuery::fields();
   foreach ($fields as $field_id => $field) {
     if (isset($field['schema'])) {
@@ -69,13 +68,13 @@ function ldap_query_schema() {
  * Add scope field to ldap_query table.
  */
 function ldap_query_update_7100() {
-  module_load_include('inc', 'ldap_servers','ldap_servers.functions');
-  ldap_server_module_load_include('module', 'ldap_servers', 'ldap_servers'); // get LDAP_SCOPE_SUBTREE constant
+  module_load_include('inc', 'ldap_servers', 'ldap_servers.functions');
+  ldap_servers_module_load_include('module', 'ldap_servers', 'ldap_servers'); // get LDAP_SCOPE_SUBTREE constant
   // make sure 'create_consumers' field is there for old 7.x-1.x-dev versions
   if (!db_field_exists('ldap_query', 'scope')) {
     db_add_field('ldap_query', 'scope', array(
       'type' => 'int',
-      'size' => 'tiny',
+      'size' => 'small',
       'not null' => FALSE,
       'default' => LDAP_SCOPE_SUBTREE,
     ));
@@ -99,3 +98,17 @@ function ldap_query_update_7101() {
   return t('ldap_query table field "filter" changed to type "text"');
 }
 
+
+/**
+ * make ldap_query.scope field small int instead of tiny int for ctools bug
+ */
+function ldap_query_update_7102() {
+
+  db_change_field('ldap_query', 'scope', 'scope', array(
+    'type' => 'int',
+    'size' => 'small',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+
+}

@@ -1,5 +1,4 @@
 <?php
-// $Id: ldap_authorization.admin.inc,v 1.1.4.2 2011/02/08 06:01:00 johnbarclay Exp $
 
 /**
  * @file
@@ -47,7 +46,7 @@ function ldap_authorizations_admin_index() {
  */
 
 function ldap_authorization_admin_form($form, &$form_state, $consumer_type, $op = NULL) {
-  ldap_server_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
+  ldap_servers_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
   $consumer = ldap_authorization_get_consumer_object($consumer_type);
 
   if ($op == 'add' && is_object($consumer->consumerConf) && $consumer->consumerConf->inDatabase) {
@@ -88,7 +87,7 @@ function ldap_authorization_admin_form_validate($form, &$form_state) {
 
   list($consumer, $op, $op_past, $new)  = _ldap_authorization_admin_parse_form($form, $form_state);
   $values = $form_state['values'];
-  ldap_server_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
+  ldap_servers_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
   $consumer_conf_admin = new LdapAuthorizationConsumerConfAdmin($consumer, $new);
 
   $errors = $consumer_conf_admin->drupalFormValidate($op, $values);
@@ -107,7 +106,7 @@ function ldap_authorization_admin_form_validate($form, &$form_state) {
 function ldap_authorization_admin_form_submit($form, &$form_state) {
   list($consumer, $op, $op_past_tense, $new)  = _ldap_authorization_admin_parse_form($form, $form_state);
   $values = $form_state['values'];
-  ldap_server_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
+  ldap_servers_module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
   $consumer_conf = new LdapAuthorizationConsumerConfAdmin($consumer, $new);
   $consumer_conf->drupalFormSubmit($op, $values);  // add form data to object and save or create
 

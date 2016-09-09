@@ -28,6 +28,7 @@ function cu_testing_core_install() {
 
   // these modules need to be enabled late in the install process and/or to be ignored by profile_module_manager's report.
   $module_array = array(
+    'user_external_invite', // Added to not enable in Pantheon Core.
     'cu_users',
     'cu_inventory',
     'cu_inventory_stats' // Not adding caching modules here for changes involving Travis CI testing.
@@ -69,7 +70,7 @@ function cu_testing_core_install() {
 
   variable_set('express_help_base_url', 'http://www.colorado.edu/webcentral');
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, cu_redirect');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, cu_custom_logo, varnish, memcache, cu_redirect');
 
   // Set message for when enabling of bundles is turned off.
   variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');

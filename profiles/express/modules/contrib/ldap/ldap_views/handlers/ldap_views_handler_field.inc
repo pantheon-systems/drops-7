@@ -12,7 +12,7 @@ class ldap_views_handler_field extends views_handler_field {
     return array_key_exists($this->field_alias, $values) ? check_plain($values[$this->field_alias]) : '';
   }
 
-  function element_type() {
+  function element_type($none_supported = FALSE, $default_empty = FALSE, $inline = FALSE) {
     if (isset($this->definition['element type'])) {
       return $this->definition['element type'];
     }
@@ -65,4 +65,3 @@ class ldap_views_handler_field extends views_handler_field {
     );
   }
 }
-

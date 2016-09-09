@@ -1,5 +1,5 @@
 <?php
-// $Id: ldap_help.watchdog.inc,v 1.1.2.1 2011/02/08 06:14:20 johnbarclay Exp $
+
 /**
  * @file
  * The ldap_help watchdog is just a filtered watchdog summary.
@@ -7,7 +7,6 @@
  */
 function ldap_help_watchdog() {
 
-  drupal_add_css(drupal_get_path('module', 'ldap_help') . '/ldap_help.css', 'module', 'all', FALSE);
   $path =  drupal_get_path("module", "ldap_help");
   $_content = "";
   if (module_exists('dblog')) {

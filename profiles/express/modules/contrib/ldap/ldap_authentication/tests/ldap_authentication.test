@@ -1,14 +1,14 @@
 <?php
-// $Id$
 
 /**
  * @file
  * ldap_authentication simpletests
  *
  */
-require_once(drupal_get_path('module', 'ldap_servers') . '/tests/LdapTestFunctions.class.php');
+module_load_include('php', 'ldap_test', 'LdapTestCase.class');
+module_load_include('module', 'ldap_authentication');
 
-class LdapAuthenticationTestCase extends DrupalWebTestCase {
+class LdapAuthenticationTestCase extends LdapTestCase {
   public static function getInfo() {
     return array(
       'name' => 'LDAP Authentication Tests',
@@ -17,17 +17,22 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     );
   }
 
-  public $module_name = 'ldap_authentication';
-  public $testFunctions;
-  public $testData;
-  public $sid;
-
-  function setUp($addl_modules = array()) {
-    parent::setUp(array('ldap_authentication', 'ldap_authorization', 'ldap_authorization_drupal_role')); // don't need any real servers, configured, just ldap_servers code base
-    variable_set('ldap_simpletest', 1);
-    variable_set('ldap_help_watchdog_detail', 0);
+  function __construct($test_id = NULL) {
+    parent::__construct($test_id);
   }
 
+  public $module_name = 'ldap_authentication';
+  protected $ldap_test_data;
+
+  function setUp() {
+    parent::setUp(array(
+      'ldap_authentication',
+      'ldap_authorization',
+      'ldap_authorization_drupal_role',
+      'ldap_test',
+      )); // don't need any real servers, configured, just ldap_servers code base
+    variable_set('ldap_simpletest', 2);
+  }
 
   function tearDown() {
     parent::tearDown();
@@ -35,70 +40,17 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     variable_del('ldap_simpletest');
   }
 
-
-  /**
-   * prepTestData create an ldap_authorization configuration and stores fake ldap server configuration.
-   *
-   * @param string $testid the name of the test.  used to determine which configuration file to include
-   * @return object consumer configuration object (class = LdapAuthorizationConsumerConfAdmin)
-   *
-   */
-  function prepTestData($sid, $testid) {
-    $this->testFunctions = new LdapTestFunctions();
-
-    include(drupal_get_path('module', 'ldap_authentication') . '/tests/LdapServerTestData.' . $sid . '.inc');
-    $this->testFunctions->prepTestServers($test_data['servers']);
-    $this->testData = $test_data;
-    $authentication_conf = (is_array($testid)) ? $testid : $test_data['ldap_authentication'][$testid];
-    $this->testFunctions->configureAuthentication($authentication_conf);
-
-
-
-     // set up authorization conf.  needed for some tests.
-    $consumer_conf = $test_data['ldap_authorization_conf']['consumer_conf'];
-    $consumer_obj = ldap_authorization_get_consumer_object($consumer_conf['consumerType']);
-    $consumer_conf_admin = new LdapAuthorizationConsumerConfAdmin($consumer_obj, TRUE);
-    foreach ($consumer_conf as $property_name => $property_value) {
-      $consumer_conf_admin->{$property_name} = $property_value;
-    }
-    $consumer_conf_admin->save();
-
-
-  }
-
-  public function AttemptLogon($dn, $goodpwd = TRUE) {
-
-    $this->drupalLogout();
-    $user = $this->testData['servers'][$this->sid]['users'][$dn]['attr'];
-    $parts = ldap_explode_dn($dn, 0);
-    $cn_parts = explode('=', $parts[0]);
-    $edit = array(
-      'name' => ldap_pear_unescape_dn_value($cn_parts[1]),
-      'pass' => $user['password'][0],
-    );
-    $user = user_load_by_name($edit['name']);
-    if ($user) {
-      user_delete($user->uid);
-    }
-    $this->drupalPost('user', $edit, t('Log in'));
-  }
-
   /**
    * difficult to test install and uninstall since setUp does module enabling and installing.
    */
   function testInstall() {
-    $sid = 'ldapauthen1';
-    include(drupal_get_path('module', 'ldap_authentication') . '/tests/LdapServerTestData.' . $sid . '.inc');
     $testid = $this->module_name . ': setup success';
-    // just to give warning if setup doesn't succeed.  may want to take these out at some point.
-
     $setup_success = (
         module_exists('ldap_authentication') &&
         module_exists('ldap_servers')
       );
 
     $this->assertTrue($setup_success, ' ldap_authentication setup successful', $testid);
-
   }
 
 
@@ -108,10 +60,17 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
 
 
   function testMixedModeUserLogon() {
+    $sid = 'activedirectory1';
+    $testid = 'MixedModeUserLogon3';
+    $sids = array($sid);
+    $this->prepTestData(
+      LDAP_TEST_LDAP_NAME,
+      $sids,
+      'provisionToDrupal',
+      'MixedModeUserLogon3',
+      'drupal_role_authentication_test'
+    );
 
-    $sid = 'ldapauthen1';
-    $testid = 'MixedModeUserLogon';
-    $this->prepTestData($sid, $testid);
     $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
     $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
 
@@ -160,7 +119,7 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
       'pass' => $raw_pass,
     );
     $this->drupalPost('user', $edit, t('Log in'));
-    $this->assertText(t('Member for'), 'Drupal user successfully authenticated', $testid);
+    $this->assertText(t('Member for'), 'Drupal user (not ldap associated) successfully authenticated', $testid);
     $this->drupalGet('user/logout');
 
     /** LDAP_authen.MM.ULT.drupal.badpwd - result: Drupal logon error message. **/
@@ -169,12 +128,12 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
       'pass' => 'mydabpassword',
     );
     $this->drupalPost('user', $edit, t('Log in'));
-    $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user with bad password failed to authenticate.', $testid);
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user  (not ldap associated) with bad password failed to authenticate.', $testid);
     $this->drupalGet('user/logout');
 
     /** LDAP_authen.MM.ULT.ldap.newaccount.badpwd - result: Drupal logon error message. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'mydabpassword',
     );
     $this->drupalPost('user', $edit, t('Log in'));
@@ -184,18 +143,17 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
 
     /** LDAP_authen.MM.ULT.ldap.newaccount.goodpwd - result: Successful logon, with user record created and authmapped to ldap **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'goodpwd',
     );
     $this->drupalPost('user', $edit, t('Log in'));
     $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.');
-    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Ldap user properly authmapped.', $testid);
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('hpotter'), 'Ldap user properly authmapped.', $testid);
     $this->drupalGet('user/logout');
-
 
     /** LDAP_authen.MM.ULT.existingacct.badpwd - result: Drupal logon error message. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'mydabpassword',
     );
     $this->drupalPost('user', $edit, t('Log in'));
@@ -204,13 +162,14 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
 
     /** LDAP_authen.MM.ULT.existingacct.goodpwd - result: Successful logon. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'goodpwd',
     );
     $this->drupalPost('user', $edit, t('Log in'));
     $this->assertText(t('Member for'), 'Existing Ldap user with good password authenticated.');
-    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Existing Ldap user still properly authmapped.', $testid);
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('hpotter'), 'Existing Ldap user still properly authmapped.', $testid);
     $this->drupalGet('user/logout');
+
   }
 
 
@@ -219,9 +178,17 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
  */
   function testExclusiveModeUserLogon() {
 
-    $sid = 'ldapauthen1';
-    $testid = 'ExclusiveModeUserLogon';
-    $this->prepTestData($sid, $testid);
+    $sid = 'activedirectory1';
+    $testid = 'ExclusiveModeUserLogon3';
+    $sids = array($sid);
+    $this->prepTestData(
+      LDAP_TEST_LDAP_NAME,
+      $sids,
+      'ad_authentication',
+      'ExclusiveModeUserLogon3',
+      'drupal_role_authentication_test'
+      );
+
     $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
     $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
 
@@ -282,9 +249,10 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user with bad password failed to authenticate.', $testid );
     $this->drupalGet('user/logout');
 
+
     /** LDAP_authen.EM.ULT.ldap.newaccount.badpwd - result: Drupal logon error message. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'mydabpassword',
     );
     $this->drupalPost('user', $edit, t('Log in'));
@@ -292,20 +260,21 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $this->drupalGet('user/logout');
 
 
+
     /** LDAP_authen.EM.ULT.ldap.newaccount.goodpwd - result: Successful logon, with user record created and authmapped to ldap **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'goodpwd',
     );
     $this->drupalPost('user', $edit, t('Log in'));
     $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.');
-    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Ldap user properly authmapped.', $testid );
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('hpotter'), 'Ldap user properly authmapped.', $testid );
     $this->drupalGet('user/logout');
 
 
     /** LDAP_authen.EM.ULT.existingacct.badpwd - result: Drupal logon error message. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'mydabpassword',
     );
     $this->drupalPost('user', $edit, t('Log in'));
@@ -314,24 +283,139 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
 
     /** LDAP_authen.MM.ULT.existingacct.goodpwd - result: Successful logon. **/
     $edit = array(
-      'name' => 'jkool',
+      'name' => 'hpotter',
       'pass' => 'goodpwd',
     );
     $this->drupalPost('user', $edit, t('Log in'));
     $this->assertText(t('Member for'), 'Existing Ldap user with good password authenticated.');
-    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Existing Ldap user still properly authmapped.', $testid );
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('hpotter'), 'Existing Ldap user still properly authmapped.', $testid );
     $this->drupalGet('user/logout');
+
   }
 
+  /**
+   * set mock server variables for sso tests
+   *
+   * @param object $drupal_user in drupal stdClass format
+   * @param array $ldap_user array
+   * @param enum ldap implementation type
+   *
+   */
+  private function setSsoServerEnvironment(
+    $server_var_key = 'REMOTE_USER',
+    $sso_name = 'hpotter',
+    $ldapImplementation = 'mod_auth_sspi',
+    $seamlessLogin = TRUE
+  ) {
+
+    // clear past environment
+    ldap_servers_delete_globals('_SERVER', 'REMOTE_USER', TRUE);
+    ldap_servers_delete_globals('_SERVER', 'REDIRECT_REMOTE_USER', TRUE);
+
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+
+    $authenticationConf->ssoEnabled = TRUE;
+    $authenticationConf->ssoRemoteUserStripDomainName = FALSE;
+    $authenticationConf->ssoExcludedPaths = array();
+    $authenticationConf->ssoExcludedHosts = array();
+    $authenticationConf->seamlessLogin = $seamlessLogin;
+    $authenticationConf->ldapImplementation = $ldapImplementation;
+
+    if ($sso_name !== FALSE) {
+      if (strpos($sso_name, '@'))  {
+        $sso_name_parts = explode('@', $sso_name);
+        $sso_name = $sso_name_parts[0];
+        $authenticationConf->ssoRemoteUserStripDomainName = TRUE;
+      }
+      ldap_servers_set_globals('_SERVER', $server_var_key, $sso_name);
+    }
+    $authenticationConf->save();
+    return ldap_authentication_get_valid_conf(TRUE);
+
+  }
+/**
+ *  LDAP Authentication Exclusive Mode User Logon Test (ids = LDAP_authen.EM.ULT.*)
+ */
+  function testSSOUserLogon() {
+
+    module_enable(array('ldap_sso', 'ldap_help'));
+
+    $sid = 'activedirectory1';
+    $testid = 'SSOUserLogon3';
+    $sids = array($sid);
+    $this->prepTestData(
+      LDAP_TEST_LDAP_NAME,
+      $sids,
+      'ad_authentication',
+      'SSOUserLogon'
+      );
+
+    $this->setSsoServerEnvironment('REMOTE_USER', 'hpotter', 'mod_auth_sspi', TRUE);
+    $this->drupalGet('user/logout');
+    $this->drupalGet('user');
+
+    // just test that the setup works
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $this->assertTrue(ldap_servers_get_globals('_SERVER', 'REMOTE_USER', TRUE) == 'hpotter',
+       '$_SERVER[REMOTE_USER] and $_SERVER[REDIRECT_REMOTE_USER] set properly for test with remote server ' . ldap_servers_get_globals('_SERVER', 'REMOTE_ADDR'), $testid);
+
+    $setup_success = ($authenticationConf->ssoEnabled == TRUE &&
+      $authenticationConf->ssoRemoteUserStripDomainName == FALSE &&
+      $authenticationConf->seamlessLogin == TRUE &&
+      $authenticationConf->ldapImplementation == 'mod_auth_sspi');
+
+    $this->assertTrue($setup_success, 'setup ldap sso test worked ', $testid);
+    if (!$setup_success) {
+      debug('authenticationConf'); debug($authenticationConf);
+    }
+
+    $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
+    $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
+    $hpotter_drupal = user_load_by_name('hpotter');
+    $ldap_user_conf = ldap_user_conf('admin', TRUE);
+    $hpotter_ldap = $ldap_user_conf->getProvisionRelatedLdapEntry($hpotter_drupal);
+    debug('hpotter ldap entry'); debug($hpotter_drupal);
+
+    $tests = array(
+      'dontstripnames' => array('sso_name' => 'hpotter'),
+      'stripnames' => array('sso_name' => 'hpotter@hogwarts'),
+
+    );
+
+    foreach ($tests as $testid => $conf) {
+      foreach (array('REMOTE_USER') as $server_var_key) {
+        foreach (array('user') as $test_path) { // ,'user/login/sso'
+          foreach (array('mod_auth_sspi', 'mod_auth_kerb') as $ldapImplementation) {  // , 'mod_auth_kerb'
+            foreach (array(TRUE, FALSE) as $seamlessLogin ) {  // , FALSE
+              $sso_name = $conf['sso_name'];
+              $this->ldapTestId = "testSSO._SERVER-key=$server_var_key sso_name=$sso_name path=$test_path ldapImplementation=$ldapImplementation seamlessLogin=$seamlessLogin";
+              $ldapAuthenticationConf = $this->setSsoServerEnvironment($server_var_key, $sso_name, $ldapImplementation, $seamlessLogin);
+              $this->drupalGet($test_path);
+              $this->assertText(t('Member for'), 'Successful logon.', $this->ldapTestId);
+              $this->drupalGet('user/logout');
+            }
+          }
+        }
+      }
+    }
+  }
 
 
   function testAuthenticationWhitelistTests() {
     require_once(drupal_get_path('module', 'ldap_authentication') . '/LdapAuthenticationConfAdmin.class.php');
 
-    $sid = 'ldapauthen1';
-    $this->sid = $sid;
-    $testid = 'WL1';
-    $this->prepTestData($sid, $testid);
+    $sid = 'activedirectory1';
+    $testid = 'WL3';
+    $sids = array($sid);
+    $this->prepTestData(
+      'hogwarts',
+      array($sid),
+      'provisionToDrupal',
+      'WL3',
+      'drupal_role_authentication_test'
+      );
+
+    //debug($this->testFunctions);
     $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
     $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
 
@@ -363,31 +447,32 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $this->assertText(t('Member for'), 'User 1 successfully authenticated in LDAP_authen.WL.user1', $testid);
     $this->drupalGet('user/logout');
 
+
     module_enable(array('ldap_authorization'));
     module_enable(array('ldap_authorization_drupal_role'));
 
 
     /**
-    * prep LDAP_authen.WL.allow
-    */
+     * prep LDAP_authen.WL.allow
+     */
     $authenticationConf = new LdapAuthenticationConfAdmin();
-    $authenticationConf->allowOnlyIfTextInDn = array('ou=guest accounts');
+    $authenticationConf->allowOnlyIfTextInDn = array('pot');
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
 
    /**
     * LDAP_authen.WL.allow.match -- desirect_result: authenticate success
     */
 
-    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->AttemptLogonNewUser('hpotter');
     $this->assertText(t('Member for'), 'User able to authenticate because in white list (allowOnlyIfTextInDn).', $testid);
 
    /**
     *  LDAP_authen.WL.allow.miss -- desirect_result: authenticate fail
     */
 
-    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate because not in white list (allowOnlyIfTextInDn).', $testid);
+    $this->AttemptLogonNewUser('ssnape');
+    $this->assertText(t('User disallowed'), 'User unable to authenticate because not in white list (allowOnlyIfTextInDn).', $testid);
 
 
     /**
@@ -397,27 +482,27 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->allowOnlyIfTextInDn = array();
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
     /**
     * prep LDAP_authen.WL.exclude
     */
     $authenticationConf = new LdapAuthenticationConfAdmin();
-    $authenticationConf->excludeIfTextInDn = array('cn=unkool');
+    $authenticationConf->excludeIfTextInDn = array('cn=ssnape');
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
 
    /**
     * LDAP_authen.WL.exclude.match -- desirect_result: authenticate fail
     */
 
-    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate in exclude list (excludeIfTextInDn).', $testid);
+    $this->AttemptLogonNewUser('ssnape');
+    $this->assertText(t('User disallowed'), 'User unable to authenticate in exclude list (excludeIfTextInDn).', $testid);
 
    /**
     *  LDAP_authen.WL.exclude.miss-- desirect_result: authenticate success
     */
 
-    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->AttemptLogonNewUser('hpotter');
     $this->assertText(t('Member for'), 'Able to authenticate because not in exclude list (allowOnlyIfTextInDn).', $testid);
 
     /**
@@ -427,15 +512,15 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->excludeIfTextInDn = array();
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
 
     /**
     * prep LDAP_authen.WL.php
     */
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->allowTestPhp = "\n
-      //exclude users with guests.myuniversity.edu email address \n
-      if (strpos(\$_ldap_user_entry['attr']['mail'][0], '@guests.myuniversity.edu') === FALSE) {\n
+      //exclude users with dumb in email address \n
+      if (strpos(\$_ldap_user_entry['attr']['mail'][0], 'dumb') === FALSE) {\n
         print 1;\n
       }\n
       else {
@@ -444,28 +529,36 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
       ";
 
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
    /**
     * LDAP_authen.WL.php.php disabled -- desired result: authenticate fail with warning the authentication disabled
     */
     module_disable(array('php'));
-    $this->attemptLogon('cn=verykool,ou=special guests,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG, 'With php disabled and php code in whitelist, refuse authentication. (allowTestPhp).', $testid);
+    $this->AttemptLogonNewUser('adumbledore');
+    $this->assertText(
+      LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG,
+      'With php disabled and php code in whitelist, refuse authentication. (allowTestPhp).',
+      $testid
+    );
     module_enable(array('php'));
 
 
    /**
     * LDAP_authen.WL.php.true -- desired result: authenticate success
     */
-    $this->attemptLogon('cn=verykool,ou=special guests,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->AttemptLogonNewUser('hpotter');
     $this->assertText(t('Member for'), 'Able to authenticate because php returned true (allowTestPhp).', $testid);
 
    /**
     *  LDAP_authen.WL.php.false-- desired result: authenticate fail
     */
 
-    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(t('User disallowed'), 'User unable to authenticate  because php returned false (allowTestPhp).', $testid);
+    $this->AttemptLogonNewUser('adumbledore');
+    $this->assertText(
+      t('User disallowed'),
+      'User unable to authenticate because php returned false (allowTestPhp).',
+      $testid
+    );
 
 
   /**
@@ -474,7 +567,21 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->allowTestPhp = '';
     $authenticationConf->save();
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
+
+  /**
+   * need to test username changes with PUID
+   *   - given a user exists
+   *   - change samaccountname in ldap server
+   *   - have user logon
+   *   - make sure old user and new user have same puid
+   *
+   */
+
+
   /***  multiple options used in whitelist **/
+
+
 
    /**
     * LDAP_authen.WL.allow[match].exclude[match] -- desired result: authenticate fail
@@ -508,7 +615,7 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->excludeIfNoAuthorizations = 1;
     $authenticationConf->save();
-
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
     /**
      * LDAP_authen.WL1.excludeIfNoAuthorizations.failsafe
      * test for excludeIfNoAuthorizations set to true and ldap_authorization disabled
@@ -516,28 +623,217 @@ class LdapAuthenticationTestCase extends DrupalWebTestCase {
      */
 
 
-    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG, t('Authentication prohibited when excludeIfNoAuthorizations = true and LDAP Authorization disabled. LDAP_authen.WL1.excludeIfNoAuthorizations.failsafe'), $testid);
+    $this->AttemptLogonNewUser('hpotter');
+    $this->assertText(
+      LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG,
+      t('Authentication prohibited when excludeIfNoAuthorizations =
+        true and LDAP Authorization disabled.
+        LDAP_authen.WL1.excludeIfNoAuthorizations.failsafe'),
+      $testid
+    );
 
+    module_enable(array('ldap_authorization'), TRUE);
     module_enable(array('ldap_authorization_drupal_role'), TRUE);
-    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(t('Member for'), 'User able to authenticate because of excludeIfNoAuthorizations setting.', $testid);
+    $consumer = ldap_authorization_get_consumers('drupal_role', TRUE, TRUE); // clear static cache
+
+    $this->AttemptLogonNewUser('hpotter');
+    $this->assertText(
+      t('Member for'),
+      'User able to authenticate because of excludeIfNoAuthorizations setting.',
+      $testid
+    );
 
     /**
      * LDAP_authen.WL1.excludeIfNoAuthorizations.hasNoAuthorizations
-     * test for excludeIfNoAuthorizations set to true and No consumer granted authorizations
+     * test for excludeIfNoAuthorizations set to true and No consumer
+     * granted authorizations
      */
 
-    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
-    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate because of excludeIfNoAuthorizations setting.', $testid);
+    $this->AttemptLogonNewUser('ssnape');
+    $this->assertText(
+      t('User disallowed'),
+      'User unable to authenticate because of excludeIfNoAuthorizations setting.',
+      $testid
+    );
 
     $authenticationConf = new LdapAuthenticationConfAdmin();
     $authenticationConf->excludeIfNoAuthorizations = 0;
     $authenticationConf->save();
+    $authenticationConf = ldap_authentication_get_valid_conf(TRUE);
     module_disable(array('ldap_authorization_drupal_role', 'ldap_authorization'));
 
 
-}
+  }
 
+  /**
+   * make sure user admin interface works.
+   */
+  function testUI() {
+
+    // just to give warning if setup doesn't succeed.  may want to take these out at some point.
+    $setup_success = (
+        module_exists('ldap_user') &&
+        module_exists('ldap_servers') &&
+        module_exists('ldap_authentication') &&
+        (variable_get('ldap_simpletest', 2) > 0)
+      );
+    $this->assertTrue($setup_success, ' ldap_authentication UI setup successful',  $this->testId('user interface tests'));
+
+    $sid = 'activedirectory1';
+    $sids = array('activedirectory1');
+    $this->prepTestData(LDAP_TEST_LDAP_NAME, $sids, 'provisionToDrupal', 'default');
+
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'administer site configuration',
+      ));
+
+    $this->drupalLogin($this->privileged_user);
+
+    $ldap_authentication_conf_pre = ldap_authentication_get_valid_conf();
+
+    $this->drupalGet('admin/config/people/ldap/authentication');
+
+    $form_tests = array(
+      'authenticationMode' => array(
+        'property' => 'authenticationMode',
+        'values' => array(
+          LDAP_AUTHENTICATION_MIXED,
+          LDAP_AUTHENTICATION_EXCLUSIVE
+        ),
+        'required' => TRUE,
+      ),
+      'authenticationServers[' . $sid . ']' => array(
+        'property' => 'enabledAuthenticationServers',
+        'values' => array(
+          TRUE,
+          TRUE,
+        ),
+        'desired_result' => array(
+          array($sid),
+          array($sid),
+        )
+      ),
+      'loginUIUsernameTxt' =>
+        array(
+          'property' => 'loginUIUsernameTxt',
+          'values' => array(
+            '',
+            'Hogwarts UserID',
+          ),
+        ),
+      'loginUIPasswordTxt' =>
+        array(
+          'property' => 'loginUIPasswordTxt',
+          'values' => array(
+            '',
+            'Hogwarts UserID Password',
+          ),
+        ),
+      'ldapUserHelpLinkUrl' =>
+        array(
+          'property' => 'ldapUserHelpLinkUrl',
+          'values' => array(
+            '',
+            'http://passwords.hogwarts.edu',
+          ),
+        ),
+      'ldapUserHelpLinkText' =>
+        array(
+          'property' => 'ldapUserHelpLinkText',
+          'values' => array(
+            'Hogwarts Password Management Page',
+            'Hogwarts Password Management Page'
+          ),
+        ),
+      'allowOnlyIfTextInDn' => array(
+        'property' => 'allowOnlyIfTextInDn',
+        'values' => array(
+          'witch\nwarlord\nwisecracker',
+          "witch\nwarlord\nwisecracker"
+        ),
+        'desired_result' => array(
+          array('witch', 'warlord', 'wisecracker'),
+          array('witch', 'warlord', 'wisecracker'),
+        )
+      ),
+      'excludeIfTextInDn' => array(
+        'property' => 'excludeIfTextInDn',
+        'values' => array(
+          "muggle\nmuddle\nmummy",
+          "muggle\nmuddle\nmummy"
+        ),
+        'desired_result' => array(
+          array('muggle', 'muddle', 'mummy'),
+          array('muggle', 'muddle', 'mummy'),
+        )
+      ),
+      'excludeIfNoAuthorizations' => array(
+        'property' => 'excludeIfNoAuthorizations',
+        'values' => array(
+          array(TRUE),
+          array(TRUE),
+        ),
+      ),
+      'emailOption' => array(
+        'property' => 'emailOption',
+        'values' => array(
+          LDAP_AUTHENTICATION_EMAIL_FIELD_REMOVE,
+          LDAP_AUTHENTICATION_EMAIL_FIELD_DISABLE,
+        ),
+        'required' => TRUE,
+      ),
+      'emailUpdate' => array(
+        'property' => 'emailUpdate',
+        'values' => array(
+          LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_ENABLE,
+          LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_DISABLE,
+        ),
+        'required' => TRUE,
+      ),
+      'allowTestPhp' => array(
+        'property' => 'allowTestPhp',
+        'values' => array(
+          'pretend php',
+          'pretend php',
+        ),
+      ),
+    );
+
+    module_enable(array('php'));
+    foreach (array(0, 1) as $i) {
+      $edit = array();
+      foreach ($form_tests as $field_name => $conf) {
+        $value = $conf['values'][$i];
+        $property = isset($conf['property']) ? $conf['property'] : $field_name;
+        $edit[$field_name] = $value;
+      //  debug("$field_name $value"); debug($conf);debug($edit);
+      }
+     // debug($edit);
+      $this->drupalPost('admin/config/people/ldap/authentication', $edit, t('Save'));
+      $ldap_authentication_conf_post = ldap_authentication_get_valid_conf(TRUE);
+
+      foreach ($form_tests as $field_name => $conf) {
+        $property = isset($conf['property']) ? $conf['property'] : $field_name;
+        $desired = isset($conf['desired_result']) ? isset($conf['desired_result'][$i]) : $conf['values'][$i];
+
+        if (is_array($desired)) {
+          $success = count($desired) == count($ldap_authentication_conf_post->{$property});
+        }
+        else {
+          $success = ($ldap_authentication_conf_post->{$property} == $desired);
+        }
+        $this->assertTrue(
+          $success,
+          $property . ' ' . t('field set correctly'),
+          $this->testId('ldap authentication user interface tests')
+        );
+        if (!$success) {
+          debug("fail $i $property");
+          debug("desired:"); debug($desired);
+          debug("actual:");  debug($ldap_authentication_conf_post->{$property});
+        }
+      }
+    }
+  }
 
 }

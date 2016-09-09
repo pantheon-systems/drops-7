@@ -110,4 +110,5 @@ message will be displayed if the module is not enabled; an "access is denied"
 message will be displayed if the module is enabled and the browser is already
 logged in; and if the ldap_sso module is fully configured and there is no
 existing session, the browser will display the message "You have been
-successfully authenticated" after redirecting to the sites' home page.
+successfully authenticated" after redirecting to the sites' home page if you
+have checked "Notify user of successful authentication".
