@@ -1,0 +1,12 @@
+name = CU Class Views
+core = 7.x
+package = CU-Classes
+dependencies[] = cu_class_import
+dependencies[] = entity
+dependencies[] = views
+scripts[] = js/cu-class-views.js
+stylesheets[all][] = css/cu-class-views.css
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = cu_classes
+features_exclude[dependencies][ctools] = ctools

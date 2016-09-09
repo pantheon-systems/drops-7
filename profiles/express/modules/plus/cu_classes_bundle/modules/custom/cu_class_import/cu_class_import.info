@@ -1,0 +1,6 @@
+name = Class Import
+description = Imports classes based on query
+core = 7.x
+package = CU-Classes
+
+dependencies[] = cu_class

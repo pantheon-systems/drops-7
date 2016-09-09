@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function term_reference_cleaner_menu() {
+  $items = array();
+  $items['admin/term-reference-cleaner'] = array(
+    'title' => ' Term Reference Cleaner',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('term_reference_cleaner_form'),
+    'access arguments' => array('administer term reference cleaner'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function term_reference_cleaner_permission() {
+  $permissions =  array(
+    'administer term reference cleaner' => array(
+      'title' => 'Use Term Reference Cleaner',
+      'description' => 'Remove deleted terms from reference fields',
+    ),
+  );
+  return $permissions;
+}
+
+/**
+ * Implements hook_form().
+ * Admin form for using term_reference_cleaner.
+ */
+function term_reference_cleaner_form($form, &$form_state) {
+  $form = array();
+  $form['description'] = array(
+    '#markup' => '<p>Clicking the button below will remove any references to deleted terms.</p>'
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Remove deleted term references'),
+  );
+  $form['#submit'][] = 'term_reference_cleaner_submit';
+  return $form;
+}
+
+/**
+ * Submit function for term_reference_cleaner_form().
+ */
+function term_reference_cleaner_submit() {
+  // Query for term reference fields
+  $query = db_select('field_config', 'fc');
+  $query->fields('fc', array('field_name','type'));
+  $query->condition('fc.type', 'taxonomy_term_reference', '=');
+  $fields = $query->execute()->fetchCol();
+  $operations = array();
+  $count = 0;
+  // Load term reference fields into a batch
+  foreach ($fields as $field) {
+    $count++;
+    $operations[] = array(
+      'term_reference_cleaner_from_field',
+      array(
+        $field,
+        t('(Operation @operation)',
+        array('@operation' => $count)),
+      ),
+    );
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'term_reference_cleaner_finished',
+    'title' => t('Removing references to deleted terms.'),
+  );
+  batch_set($batch);
+  return $batch;
+}
+/**
+ * Batch processing function for term_reference_cleaner_submit().
+ */
+function term_reference_cleaner_from_field($field) {
+  // Make varaibles for table and column names in queries
+  $field_table = 'field_data_' . $field;
+  $revision_table = 'field_revision_' . $field;
+  $term_column = $field . '_tid';
+  // Query table to get all referenced terms
+  $tids = array();
+  $query = db_select($field_table, 'f');
+  $query->fields('f', array($term_column));
+  $query->groupBy($term_column);
+  $tids = $query->execute()->fetchCol();
+  // Get existing term ids
+  $saved_terms = term_reference_cleaner_get_term_ids();
+  foreach($tids as $tid) {
+    // If the term is not in array of existing terms, delete the reference
+    if (!in_array($tid, $saved_terms)) {
+      // Delete references
+      $field_references_deleted = db_delete($field_table)->condition($term_column, $tid)->execute();
+      $revision_references_deleted = db_delete($revision_table)->condition($term_column, $tid)->execute();
+    }
+  }
+}
+
+function term_reference_cleaner_finished($success, $results, $operations) {
+  drupal_set_message('References to deleted terms have been removed.');
+}
+
+function term_reference_cleaner_get_term_ids() {
+  $query = db_select('taxonomy_term_data', 'ttd');
+  $query->fields('ttd', array('tid'));
+  $tids = $query->execute()->fetchCol();
+  return $tids;
+}

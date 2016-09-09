@@ -1,0 +1,85 @@
+<?php
+
+/**
+ * Define site roles in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @return
+ *   An array defining all the roles for the site.
+ */
+function cu_classes_bundle_secure_permissions_roles() {
+  return array(
+    'class_editor',
+    'class_owner',
+  );
+}
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_classes_bundle_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'import classes',
+      'override class fields',
+      'view unpublished classes',
+    ),
+    'content_editor' => array(
+      'import classes',
+      'override class fields',
+      'view unpublished classes',
+    ),
+    'developer' => array(
+      'administer class content',
+      'import classes',
+      'override class fields',
+      'view unpublished classes',
+    ),
+    'site_owner' => array(
+      'import classes',
+      'override class fields',
+      'view unpublished classes',
+    ),
+    'class_owner' => array(
+      'administer class content',
+      'import classes',
+      'administer class import settings',
+      'override class fields',
+      'view unpublished classes',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_classes_bundle_express_help($variables) {
+  //$variables['admin/structure/quicktabs/%'][] = array(
+  //  'title' => 'Quicktabs Help',
+  //  'short_title' => 'Quicktabs',
+  //  'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/quicktabs',
+  //);
+
+  return $variables;
+}

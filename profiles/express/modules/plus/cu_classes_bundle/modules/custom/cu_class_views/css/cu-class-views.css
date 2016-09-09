@@ -1,0 +1,51 @@
+/* Variables */
+/* Mixins */
+.class-view-mode-list, .class-view-mode-short { border-bottom: 1px solid #e7e7e7; border-top: 1px solid #e7e7e7; margin-bottom: -1px; padding: 10px; font-size: 85%; }
+.class-view-mode-list h2.class-title, .class-view-mode-list h3.class-title, .class-view-mode-short h2.class-title, .class-view-mode-short h3.class-title { font-size: 100%; margin: 0; padding: 0; }
+.class-view-mode-list h3.section-label, .class-view-mode-short h3.section-label { font-size: 100%; font-weight: 400; margin: 0; padding: 0; display: inline; color: #333; }
+.class-view-mode-list .class-section, .class-view-mode-short .class-section { color: #333; }
+.class-view-mode-list h4.class-label, .class-view-mode-short h4.class-label { font-size: 80%; font-weight: 700; margin: 0; padding: 0; display: inline; text-transform: uppercase; color: #757575; }
+
+.class-view-column-headers { background: #ddd; font-size: 75%; text-transform: uppercase; font-weight: 600; padding: 5px 10px; display: none; }
+
+@media screen and (min-width: 768px) { .class-view-mode-list h4.class-label { border: 0; height: 1px; overflow: hidden; padding: 0; position: absolute !important; width: 1px; }
+  .class-view-mode-short h4.class-label { display: block; }
+  .class-view-mode-short .row:nth-child(odd) { margin-bottom: 15px; }
+  .class-view-column-headers { display: block; } }
+.view-cu-classes .view-content { margin-bottom: 20px; }
+.view-cu-classes .views-row:nth-child(even) .class-view-mode-list { background-color: #f7f7f7; }
+
+.course-description { margin-bottom: 20px; }
+.course-description .field-label { display: none; }
+
+.course-class-list { padding-bottom: 20px; }
+
+.course-classes-highlighted { margin-bottom: 20px; }
+
+#other-classes { display: none; }
+#other-classes .class-view-mode-short:nth-child(even) { background-color: #f7f7f7; }
+
+/* CLASS VIEW MODE SHORT */
+.class-view-mode-short .field-label { display: none; }
+
+.results-counter { font-weight: 600; padding: 15px; background-color: #e7e7e7; text-align: center; font-size: 120%; }
+
+.view-cu-classes label { font-size: 65%; text-transform: uppercase; }
+.view-cu-classes input[type="text"] { font-size: 13px; }
+.view-cu-classes select { -webkit-appearance: none; -moz-appearance: none; -ms-appearance: none; appearance: none; border: 1px solid #aaa; padding: 8px 30px 8px 8px; background-color: #e7e7e7; background-image: url(../images/select-arrows.png); background-position: right center; background-repeat: no-repeat; -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; border: none; color: #333; font-weight: 600; font-size: 12px; max-width: 100px; width: 100%; }
+.view-cu-classes select:hover { background-color: #d7d7d7; }
+.view-cu-classes select::-ms-expand { display: none; }
+.view-cu-classes input.form-submit, .view-cu-classes input.form-reset { background-color: #007BC8; color: #fff; font-weight: 600; font-size: 12px; -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; background-image: none; -webkit-appearance: none; border: none; padding: 8px; }
+.view-cu-classes input.form-reset, .view-cu-classes input#edit-reset { background-color: #444; }
+.view-cu-classes input[type=submit]:focus { outline: #000 solid 2px; }
+.view-cu-classes .views-exposed-form .views-exposed-widget .form-submit { margin-top: 15px; }
+@media screen and (min-width: 600px) { .view-cu-classes select { max-width: 120px; } }
+.view-cu-classes .views-widget-filter-combine { float: none; margin: 0; padding: 0; width: 100%; }
+.view-cu-classes .views-widget-filter-combine input.form-text { width: 100%; }
+.view-cu-classes .views-widget-filter-combine label { display: block; }
+.view-cu-classes .views-widget-filter-combine label.icon-closed:before { content: "\f196"; padding-right: 5px; font-family: FontAwesome; }
+.view-cu-classes .views-widget-filter-combine label.icon-open:before { content: "\f147"; padding-right: 5px; font-family: FontAwesome; }
+.view-cu-classes .views-exposed-widget input:not(:first-child) { margin-left: 15px; }
+
+/* Course entity */
+h2.course-credits { font-size: 100%; }

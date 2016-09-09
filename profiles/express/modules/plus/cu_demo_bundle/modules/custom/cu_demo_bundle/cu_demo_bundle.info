@@ -1,0 +1,5 @@
+name = Demo Site
+description = Disables most forms, makes all users site owners, manages back to site in header
+core = 7.x
+
+stylesheets[all][] = css/cu-demo-bundle.css
