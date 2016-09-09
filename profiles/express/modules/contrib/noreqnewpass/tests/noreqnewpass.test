@@ -1,0 +1,29 @@
+<?php
+
+class NoreqnewpassMenuTestCase extends DrupalWebTestCase {
+  
+  public static function getInfo() {
+    return array(
+      'name' => t('Check menu changes'),
+      'description' => t('Check if all changes at menu are working well.'),
+      'group' => t('No Request New Password'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('noreqnewpass');
+  }
+  
+  function testLinkRequestPassFrontPageCheck() {
+    $link = l(t('Request new password'), 'user/password');
+    $this->drupalGet('');
+    $this->assertNoRaw($link, t('Make sure a link dont appears to "Request new password" on front page.'));
+  }
+  
+  function testLinkRequestPassUserPageCheck() {
+    $link = l(t('Request new password'), 'user/password');
+    $this->drupalGet('user');
+    $this->assertNoRaw($link, t('Make sure a link dont appears to "Request new password" on the user register page.'));
+  }
+  
+}

@@ -1,0 +1,42 @@
+membershipid,gid,group_cn,member_guid,group_guid
+1,1,gryffindor,101,201
+2,1,gryffindor,102,201
+3,1,gryffindor,103,201
+4,1,gryffindor,104,201
+5,1,gryffindor,105,201
+6,1,gryffindor,111,201
+7,1,gryffindor,113,201
+
+8,2,slytherin,106,202
+9,2,slytherin,107,202
+10,2,slytherin,108,202
+11,2,slytherin,109,202
+12,2,slytherin,106,202
+
+13,3,hufflepuff,112,203
+
+14,4,students,101,204
+15,4,students,102,204
+16,4,students,103,204
+17,4,students,104,204
+18,4,students,105,204
+19,4,students,106,204
+20,4,students,108,204
+
+21,5,honors students,101,205
+22,5,honors students,102,205
+
+23,6,probation students,106,206
+24,6,probation students,108,206
+
+25,7,faculty,109,207
+26,7,faculty,110,207
+27,7,faculty,111,207
+28,7,faculty,112,207
+
+29,8,staff,113,208
+
+30,9,users,204,209
+31,9,users,207,209
+32,9,users,208,209
+

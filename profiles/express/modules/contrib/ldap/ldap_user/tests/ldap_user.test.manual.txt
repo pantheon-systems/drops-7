@@ -1,0 +1,189 @@
+
+/**********************************************
+ * this is a summary of how to test ldap_user manually.
+ * it attempts to cover all facets of the automated simpletests
+ **********************************************/
+
+---------------------------------------
+--- setup 
+Remove remnants of existing ldap_user install: 
+- Disable and uninstall ldap_user module.
+- Clear any variables that may not have been uninstalled:
+   DELETE FROM variable where name like 'ldap_user%'
+- Delete the user(2) you use for testing.
+- Clear watchdog logs.
+
+# drush 5 commands for 1.
+drush -y pm-disable ldap_authorization_drupal_role  
+drush -y pm-uninstall ldap_authorization_drupal_role
+drush -y pm-disable ldap_authorization_og 
+drush -y pm-uninstall ldap_authorization_og
+drush -y pm-disable ldap_authorization
+drush -y pm-uninstall ldap_authorization
+drush -y pm-disable ldap_sso
+drush -y pm-uninstall ldap_sso
+drush -y pm-disable ldap_authentication
+drush -y pm-uninstall ldap_authentication
+drush -y pm-disable ldap_user
+drush -y pm-uninstall ldap_user
+drush -y sql-query "DELETE FROM variable where name like 'ldap_user%'"
+drush -y watchdog-delete all
+
+
+2. Enable LDAP User module and create Drupal user test fields
+- Enable ldap_user module and check watchdog logs
+- Prepare user settings/entity for testing
+  -- add field_lname, field_fname, field_dept, and field_display_name text fields to Drupal user
+  
+# drush 5 commands for 2.
+drush -y pm-enable ldap_user
+drush watchdog-show
+drush field-create user field_user_dept,text,text_textfield --entity_type=user
+drush field-create user field_user_lname,text,text_textfield --entity_type=user
+drush field-create user field_user_fname,text,text_textfield --entity_type=user
+drush field-create user field_user_display_name,text,text_textfield --entity_type=user  
+---------------------------------------
+
+================================================================
+Tests for LDAP Entry ==> Drupal User Provisioning (simpletest: ldap_user/tests/ldap_user.test LdapUserIntegrationTests::testProvisionToDrupal)
+================================================================
+6.A. Setup: Configure LDAP User for Provisioning Drupal Account from LDAP Entry (admin/config/people/ldap/user)
+    -- analogous simpletest configuration is in ldap_test/ldap_user.conf.inc in $conf['provisionToDrupalWithMappings']
+    A. LDAP Servers Providing Provisioning Data: Select enabled server
+    B. Drupal Account Provisioning Events: [x] Create or Synch to Drupal user anytime a Drupal user account is created or updated.
+    C. Existing Drupal User Account Conflict: [x] Associate Drupal account with LDAP Entry
+    D. Application of Drupal Account settings to LDAP Authenticated Users: [x] Account Creating Settings ... do not affect...
+    E. Basic Provisioning to LDAP Settings: for server, select "none"
+    F. Rest Webservice: leave disabled
+    G. Server mappings section. Provisioning from LDAP to Drupal mappings. (Source LDAP Tokens will vary from ldap to ldap)
+       i. [givenname] -- to drupal user -> Field: First Name [x] on drupal user creation [x] on synch...
+       ii. [sn:0] -- to drupal user -> Field: Last Name [x] on drupal user creation [x] on synch...
+       iii. [givenname] [sn] -- to drupal user -> Field: Display Name [x] on drupal user creation [ ] on synch...
+       iv. Physics -- to drupal user -> Field: Department [x] on drupal user creation [ ] on synch...
+   
+6.B. Event: Drupal user create provision/synching.
+    A. Create new user via admin/people/create [drush user-create jdoe --mail=test@test.com --password="sdfw3452352se"]
+    B. field_lname, field_fname, field_dept, and field_display_name should be visible and populated
+    C. goto admin/config/people/ldap/user/test enter the username and hit the test button.  this will show the user object and entity
+       [drush user-information jdoe --full]
+       if the devel module is enabled. In "user object (before provisioning or synching)"
+       i.     user object->ldap_user_puid_sid should be the id of the server
+       ii.    user object->ldap_user_puid should be the value of the puid attribute
+       iii.   user object->ldap_user_puid_property  should be the name of the puid attribute
+       iv.    user object->ldap_user_current_dn should be the dn of the ldap entry
+       v.     user object->mail and init should be correct, matching email
+       vii.   user authmap should be empty.  this record is only generated when account created via ldap authentication
+       [drush -y sql-query "SELECT * FROM authmap WHERE authname = 'jdoe'"]
+    D. Now edit the the First Name, Last Name,  Display Name, and Department for that user /user/[uid]/edit. and Save.
+    E. Results after save should be Dept and Display Name were changed; First name and Last Name reverted to LDAP provided first and last name.
+ 
+6.C. Event: user logon/authenticate.  Test create drupal account.
+    enable ldap authentication, mixed mode
+    A.1. Change "Drupal Account Provisioning Events" to only "...on successful authentication" (admin/config/people/ldap/user)
+    A.2. Authenticate with a user not in drupal (be sure user is deleted before test)
+    B. view the user from the user list (admin/people/people) and make sure
+         field_lname, field_fname, field_dept, and field_display_name should be visible and populated
+         or use [drush user-information jdoe --full]
+    C. goto admin/config/people/ldap/user/test/<username> and hit the test button.  this will show the user object and entity
+       if the devel module is enabled
+       i.     user object->ldap_user_puid_sid should be the id of the server
+       ii.    user object->ldap_user_puid should be the value of the puid attribute
+       iii.   user object->ldap_user_puid_property  should be the name of the puid attribute
+       iv.    user object->ldap_user_current_dn should be the dn of the ldap entry
+       v.     user object->mail and init should be correct, matching email
+       vii.   user authmap should have an entry where module=ldap_authentication and authname=username
+       [drush -y sql-query "SELECT * FROM authmap WHERE authname = 'jdoe'"]
+    D. Now edit the the First Name, Last Name,  Display Name, and Department for that user /user/[uid]/edit. and Save.
+    E. Results after save should be Dept and Display Name were changed; First name and Last Name reverted to LDAP provided first and last name.
+    F. Change First Name, Last Name,  Display Name, and Department in database manually.
+    E. Log user in again.
+    F. Results after save should be Dept and Display Name were changed; First name and Last Name reverted to LDAP provided first and last name.
+       
+ ==============================================
+ Tests for provisioning from Drupal User => LDAP Entry
+ ==============================================
+       
+7. General tests for ldap entry provisioning
+    A. Setup (as admin) in ldap user settings (admin/config/people/ldap/user)
+      - select "None" in "LDAP Servers Providing Provisioning Data"
+      - enable an ldap server in BASIC PROVISIONING TO LDAP SETTINGS
+      - check all "LDAP Entry Provisioning Events"
+      - disable REST webservice
+      - in mappings table (alter to fit your LDAP)
+        -- Source Drupal User Attribute or token                        |  Target LDAP Token   | on creation | on update     
+        -- "cn=[property.name],ou=people,dc=ldap,dc=mycompany,dc=com"            [dn]                 [x]          [x] 
+        -- 'Property: Username                                                   [cn]                 [x]          [x] 
+        -- mydrupalsite.com[property.uid]                                        [guid]               [x]          [x]
+        -- [field.field_fname] [field.field_lname]                            [displayname]           [x]          [x]
+        -- [field.field_lname]                                                    [sn]                [x]          [ ]
+        -- [field.field_fname]                                                 [givenname]            [x]          [ ]
+           
+    B.  Create and approve new user, populating first and last name.
+        -- confirm that ldap entry exists with proper attributes from mapping
+        -- confirm that drupal user has no ldap authmap (unless was there before)
+        -- confirm there is no ldap_user_puid_sid, ldap_user_puid, ldap_user_puid_property, ldap_user_current_dn; these are for prov in other direction
+        -- confirm that user->ldap_user_prov_entries has a value of the form: <sid>|<dn> to indicate ldap account was provisioned based on this drupal user.
+        
+    C.  Change lastname, first name, and display name and save user
+        -- confirm that appropriate attributes were changed in ldap entry
+        
+    D.  Delete user in drupal.
+        -- confirm that ldap entry for user is removed.
+        
+7.1 "provisionToLdapEmailVerification":
+Test ldap entry provisioning workflow: User requests account -> email verification of account -> user gets one time logon via email and sets password
+  A. Setup (as admin):
+    -- at admin/config/people/accounts: select "Visitors" and check "Require e-mail verification"
+    -- configure to ldap provisioning admin/config/people/ldap/user
+      -- [x] Create LDAP entry when a Drupal Account has a status of approved... in "LDAP Entry Provisioning Options"
+      -- [x] Update LDAP entry when Drupal Account that has a corresponding LDAP entry is updated...in "LDAP Entry Provisioning Options"
+         drush vset --yes user_email_verification 1
+         drush vset --yes user_register 1
+      -- map required fields and make sure password is one of the fields
+  B. Test
+     -- as anonymous user: create user at user/register.
+     -- as admin confirm that account was created, no ldap entry was created, and user has status of 1 (active)
+     -- as user, go to link in email.
+     -- as admin confirm that ldap entry is still not created
+     -- as user, click on first time logon button
+     -- desired result: ldap entry should be created, but ldap entry password will be none or random.
+     -- as user, set password and whatever initial user profile or fields you want
+     -- desired result: check that ldap entry has correct password and altered fields are correctly synched to ldap
+               
+  
+
+7.2 Test ldap entry provisioning workflow: Admin creates account that has a status of 1, but user requests new password to get started.
+ 
+8. Test admin/people/create form and LDAP Options.
+  8.1 Test validation of existing ldap user admin/people/create form
+    A. Setup.  Enable and configure Drupal to LDAP provisioning of users.
+        On MANUAL DRUPAL ACCOUNT CREATION AND UPDATES, select "Show option on user create form".
+    B. Attempt to create user at admin/people/create with a username that conflicts with existing ldap entry.
+       Check "create corresponding ldap entry" on form.
+    C. Success: On form submit, error should indicate ldap user exists.
+    
+  8.2 Test manual selection of ldap associate in admin/people/create form
+    A. Setup.  On admin/config/people/ldap/user, set Existing Drupal User Account Conflict to "Don't associate"
+       On MANUAL DRUPAL ACCOUNT CREATION AND UPDATES, select "Show option on user create form".
+    B. at admin/people/create select "Make this an ldap associated account".
+    C. Success: in ldap user,
+       fields: ldap_user_puid_sid, ldap_user_current_dn, ldap_user_puid, ldap_user_puid_property should be populated if in use
+       other synch and provision fields should not be synched
+       in the database in the authmaps table, a record should exist with module=ldap_user and authname=<username tested>
+    
+  8.3 Test manual selection of ldap associate AND "Create corresponding LDAP Entry" in admin/people/create form
+    A. Setup.  On admin/config/people/ldap/user, set Existing Drupal User Account Conflict to "Don't associate"
+       On MANUAL DRUPAL ACCOUNT CREATION AND UPDATES, select "Show option on user create form".
+       Configure provisioning to ldap on admin/config/people/ldap/user
+    B. Manually create user that is not in ldap already.
+       Select: "Make this an ldap associated account"
+       Check: "create corresponding ldap entry"
+       submit
+    C. Success:
+         ldap entry exists,
+         drupal user exists,
+         fields: ldap_user_puid_sid, ldap_user_current_dn, ldap_user_puid, ldap_user_puid_property should be populated if in use
+         in the database in the authmaps table, a record should exist with module=ldap_user and authname=<username tested>
+  8.4 Test manual selection of "Create corresponding LDAP Entry" and Do not make this an LDAP Associated account in admin/people/create form
+     -- is this even allowable?  What's the use case for this?
+    
