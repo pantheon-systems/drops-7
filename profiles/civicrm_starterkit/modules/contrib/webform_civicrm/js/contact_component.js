@@ -36,7 +36,7 @@ var wfCiviContact = (function ($, D) {
     attach: function (context) {
       $('#edit-extra-default', context).once('wf-civi').change(function() {
         var val = $(this).val().replace(/_/g, '-');
-        $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default').each(function() {
+        $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
           if ($(this).hasClass('form-item-extra-default-'+val)) {
             $(this).removeAttr('style');
           }
@@ -63,10 +63,14 @@ var wfCiviContact = (function ($, D) {
         }
       }).change();
 
+      $('select[name*=hide_fields]', context).once('wf-civi').change(function() {
+        $(this).parent().nextAll('.form-item').toggle(!!$(this).val());
+      }).change();
+
       // Warning if enforce permissions is disabled
       $('#webform-component-edit-form', context).once('wf-civi').submit(function() {
-        if (!$('input[name="extra[filters][check_permissions]"]').is(':checked')) {
-          return confirm(Drupal.t('Warning: You are disabling CiviCRM permission checks for this contact. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
+        if (!$('input[name="extra[filters][check_permissions]"]').is(':checked') && $('input[name="extra[allow_url_autofill]"]').is(':checked')) {
+          return confirm(Drupal.t('Warning: "Enforce Permissions" is disabled but "Use contact id from URL" is enabled. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
         }
       });
     }

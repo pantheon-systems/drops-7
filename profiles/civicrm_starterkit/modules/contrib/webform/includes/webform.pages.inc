@@ -14,6 +14,11 @@ function webform_configure_form($form, &$form_state, $node) {
 
   $form['#attached']['library'][] = array('webform', 'admin');
 
+  // Refresh the entity cache to get the lastest submission number.
+  $nid = $node->nid;
+  entity_get_controller('node')->resetCache(array($nid));
+  $node = node_load($nid);
+
   $form['#node'] = $node;
 
   $form['#submit'] = array(
@@ -167,8 +172,13 @@ function webform_configure_form($form, &$form_state, $node) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#description' => t('These permissions affect which roles can submit this webform. It does not prevent access to the webform page. If needing to prevent access to the webform page entirely, use a content access module such as <a href="http://drupal.org/project/taxonomy_access">Taxonomy Access</a> or <a href="http://drupal.org/project/node_privacy_byrole">Node Privacy by Role</a>.'),
-    '#access' => variable_get('webform_submission_access_control', 1),
+    '#access' => webform_variable_get('webform_submission_access_control'),
     '#weight' => 10,
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="confidential"]' => array('checked' => TRUE),
+      ),
+    ),
   );
   $user_roles = user_roles();
   foreach ($user_roles as $rid => $rname) {
@@ -294,7 +304,7 @@ function webform_configure_form($form, &$form_state, $node) {
     '#title' => t('Preview message'),
     '#default_value' => $node->webform['preview_message'],
     '#format' => $node->webform['preview_message_format'],
-    '#description' => t('A message to be displayed on the preview page. If left blank, the message "!default" will be used. Supports Webform token replacements.', array('!default' => $preview_default_message))  . ' ' . theme('webform_token_help', array('groups' => array('node', 'submission'))),
+    '#description' => t('A message to be displayed on the preview page. If left blank, the message "!default" will be used. Supports Webform token replacements.', array('!default' => $preview_default_message)) . ' ' . theme('webform_token_help', array('groups' => array('node', 'submission'))),
   );
   $form['preview']['settings']['preview_components'] = array(
     '#type' => 'select',
@@ -341,6 +351,12 @@ function webform_configure_form($form, &$form_state, $node) {
     '#default_value' => $node->webform['submit_notice'],
     '#description' => t('Show the previous submissions notification that appears when users have previously submitted this form.'),
   );
+  $form['advanced']['confidential'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Confidential submissions'),
+    '#default_value' => $node->webform['confidential'],
+    '#description' => t('Confidential submissions have no recorded IP address and must be submitted while logged out.'),
+  );
   $form['advanced']['submit_text'] = array(
     '#type' => 'textfield',
     '#title' => t('Submit button label'),
@@ -375,17 +391,6 @@ function webform_configure_form($form, &$form_state, $node) {
  * Validate handler for webform_configure_form().
  */
 function webform_configure_form_validate($form, &$form_state) {
-  // Ensure the entered e-mail addresses are valid.
-  if (!empty($form_state['values']['email'])) {
-    $emails = explode(',', $form_state['values']['email']);
-    foreach ($emails as $email) {
-      if (!valid_email_address(trim($email))) {
-        form_error($form['submission']['redirect_url'], t('The entered email address %address is not a valid address.', array('%address' => $email)));
-        break;
-      }
-    }
-  }
-
   // Ensure the entered redirect URL is valid.
   if ($form_state['values']['redirect'] == 'url') {
     $redirect_url = trim($form_state['values']['redirect_url']);
@@ -414,14 +419,15 @@ function webform_configure_form_validate($form, &$form_state) {
     }
   }
 
-  // Serial number must be a positive integer greater than any existing serial number.
-  $query = db_select('webform_submissions', 'ws')
-    ->condition('nid', $form['#node']->nid);
-  $query->addExpression('MAX(serial)', 'serial');
-  $max_serial = (int) $query->execute()->fetchField();
-  $next_min = $max_serial + 1;
-  if ((int) $form['advanced']['next_serial']['#value'] < $next_min) {
-    form_error($form['advanced']['next_serial'], t('The next submission number must be at least %min (greater than any existing serial number).', array('%min' => $next_min)));
+  // Prohibit the combination of confidential + per-user limit + ip-only
+  // submission tracking for anonymous users as it would not be enforceable.
+  if (webform_variable_get('webform_tracking_mode') == 'ip_address' &&
+      $form_state['values']['confidential'] &&
+      $form_state['values']['enforce_limit'] == 'yes') {
+    // Note that FAPI doesn't actually support error highlighting on radio or
+    // checkbox form elements.
+    form_error($form['advanced']['confidential'],
+               t('Choose a "Per user submission limit" or "Confidential submissions", but not both. Or ask the adminstrator to track anonymous users by cookie, rather than IP address only.'));
   }
 }
 
@@ -502,11 +508,23 @@ function webform_configure_form_submit($form, &$form_state) {
   // Set submit notice.
   $node->webform['submit_notice'] = $form_state['values']['submit_notice'];
 
+  // Set confidential.
+  $node->webform['confidential'] = $form_state['values']['confidential'];
+
   // Set submit button text.
   $node->webform['submit_text'] = $form_state['values']['submit_text'];
 
-  // Set next serial number.
-  $node->webform['next_serial'] = (int) $form_state['values']['next_serial'];
+  // Set next serial number. It must be a positive integer greater than any
+  // existing serial number, which could have increased while this form was
+  // being edited.
+  $next_min = _webform_submission_serial_next_value_used($node->nid);
+  $next_serial = (int)$form_state['values']['next_serial'];
+  if ($next_serial < $next_min) {
+    drupal_set_message(t('The next submission number was increased to @min to make it higher than existing submissions.',
+                         array('@min' => $next_min)));
+    $next_serial = $next_min;
+  }
+  $node->webform['next_serial'] = $next_serial;
 }
 
 /**
@@ -518,6 +536,29 @@ function webform_configure_form_submit($form, &$form_state) {
 function webform_configure_form_submit_save($form, &$form_state) {
   node_save($form['#node']);
   drupal_set_message(t('The form settings have been updated.'));
+
+  $node = &$form['#node'];
+  if (!$node->webform['block'] && function_exists('block_load') && 
+      ($block = block_load('webform', 'client-block-' . $node->nid)) &&
+      !empty($block->bid)) {
+    // An existing block for this not-currently-available block was already configured.
+    // See https://www.drupal.org/node/2365825
+    // The core block module contains a bug which causes it to not remove blocks
+    // which are no longer available in code. Therefore, to prevent the block from
+    // being processed, it must be removed manually here.
+    // Remove the block for all themes.
+    db_delete('block')
+      ->condition('module', 'webform')
+      ->condition('delta', $block->delta)
+      ->execute();
+    // Remove any roles associated with the block
+    db_delete('block_role')
+      ->condition('module', 'webform')
+      ->condition('delta', $block->delta)
+      ->execute();
+    drupal_set_message(t('The block %info was deleted.', array('%info' => t('Webform: !title', array('!title' => $node->title)))));
+    cache_clear_all();
+  }
 }
 
 /**

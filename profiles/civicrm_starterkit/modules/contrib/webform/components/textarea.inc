@@ -23,6 +23,7 @@ function _webform_defaults_textarea() {
       'resizable' => 1,
       'disabled' => 0,
       'description' => '',
+      'description_above' => FALSE,
       'placeholder' => '',
       'attributes' => array(),
       'private' => FALSE,
@@ -95,7 +96,7 @@ function _webform_edit_textarea($component) {
     '#type' => 'checkbox',
     '#title' => t('Disabled'),
     '#return_value' => 1,
-    '#description' => t('Make this field non-editable. Useful for setting an unchangeable default value.'),
+    '#description' => t('Make this field non-editable. Useful for displaying default value. Changeable via JavaScript or developer tools.'),
     '#weight' => 11,
     '#default_value' => $component['extra']['disabled'],
     '#parents' => array('extra', 'disabled'),
@@ -106,7 +107,7 @@ function _webform_edit_textarea($component) {
 /**
  * Implements _webform_render_component().
  */
-function _webform_render_textarea($component, $value = NULL, $filter = TRUE) {
+function _webform_render_textarea($component, $value = NULL, $filter = TRUE, $submission = NULL) {
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
 
   $element = array(
@@ -124,6 +125,10 @@ function _webform_render_textarea($component, $value = NULL, $filter = TRUE) {
     '#theme_wrappers' => array('webform_element'),
     '#translatable' => array('title', 'description'),
   );
+
+  if ($component['required']) {
+    $element['#attributes']['required'] = 'required';
+  }
 
   if ($component['extra']['placeholder']) {
     $element['#attributes']['placeholder'] = $component['extra']['placeholder'];
@@ -148,7 +153,7 @@ function _webform_render_textarea($component, $value = NULL, $filter = TRUE) {
 /**
  * Implements _webform_display_component().
  */
-function _webform_display_textarea($component, $value, $format = 'html') {
+function _webform_display_textarea($component, $value, $format = 'html', $submission = array()) {
   return array(
     '#title' => $component['name'],
     '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
@@ -176,14 +181,18 @@ function theme_webform_display_textarea($variables) {
 /**
  * Implements _webform_analysis_component().
  */
-function _webform_analysis_textarea($component, $sids = array()) {
+function _webform_analysis_textarea($component, $sids = array(), $single = FALSE, $join = NULL) {
   $query = db_select('webform_submitted_data', 'wsd', array('fetch' => PDO::FETCH_ASSOC))
     ->fields('wsd', array('no', 'data'))
-    ->condition('nid', $component['nid'])
-    ->condition('cid', $component['cid']);
+    ->condition('wsd.nid', $component['nid'])
+    ->condition('wsd.cid', $component['cid']);
 
   if (count($sids)) {
-    $query->condition('sid', $sids, 'IN');
+    $query->condition('wsd.sid', $sids, 'IN');
+  }
+
+  if ($join) {
+    $query->innerJoin($join, 'ws2_', 'wsd.sid = ws2_.sid');
   }
 
   $nonblanks = 0;
@@ -215,6 +224,14 @@ function _webform_analysis_textarea($component, $sids = array()) {
  */
 function _webform_table_textarea($component, $value) {
   return empty($value[0]) ? '' : check_plain($value[0]);
+}
+
+/**
+ * Implements _webform_action_set_component().
+ */
+function _webform_action_set_textarea($component, &$element, &$form_state, $value) {
+  $element['#value'] = $value;
+  form_set_value($element, $value, $form_state);
 }
 
 /**

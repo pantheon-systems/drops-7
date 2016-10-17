@@ -27,8 +27,16 @@ class webform_handler_field_webform_status extends views_handler_field_boolean {
         return $value ? t('Yes') : t('No');
       case 'true-false':
         return $value ? t('True') : t('False');
+      case 'unicode-yes-no':
+        return $value ? t('✔') : t('✖');
+      case 'enabled-disabled':
+        return $value ? t('Enabled') : t('Disabled');
+      case 'boolean':
+        return $value ? 1 : 0;
       case 'on-off':
         return $value ? t('On') : t('Off');
+      case 'custom':
+        return $value ? $this->options['type_custom_true'] : $this->options['type_custom_false'];
       case 'open-closed':
       default:
         return $value ? t('Open') : t('Closed');

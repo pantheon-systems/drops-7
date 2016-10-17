@@ -20,8 +20,3 @@
 #wf-crm-billing-items td + td {
   text-align: right;
 }
-
-.webform-client-form .paypal_button_info-section,
-.webform-client-form ._qf_Main_upload_express-section {
-  display: none;
-}

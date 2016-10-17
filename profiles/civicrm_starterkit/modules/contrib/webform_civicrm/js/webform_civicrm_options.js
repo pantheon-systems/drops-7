@@ -1,3 +1,8 @@
+// Shim for old versions of jQuery
+if (typeof jQuery.fn.prop !== 'function') {
+  jQuery.fn.prop = jQuery.fn.attr;
+}
+
 /**
  * Javascript Module for managing webform_civicrm options for select elements.
  */
@@ -19,14 +24,14 @@
       ele.replaceWith('<input type="'+newType+'" class="'+classes+'" id="'+id+'" name="'+name+'" value="'+val+'">');
     });
     if (defaultValue) {
-      $('input:[name*="[civicrm_defaults]"][value="'+defaultValue+'"]').attr('checked', 'checked');
+      $('input:[name*="[civicrm_defaults]"][value="'+defaultValue+'"]').prop('checked', true);
     }
     $('input:checkbox.select-all-civi-defaults').change(function() {
       if ($(this).is(':checked')) {
-        $('input.civicrm-default').not(':disabled').attr('checked', 'checked');
+        $('input.civicrm-default').not(':disabled').prop('checked', true);
       }
       else {
-        $('input.civicrm-default, input.select-all-civi-defaults').removeAttr('checked');
+        $('input.civicrm-default, input.select-all-civi-defaults').prop('checked', false);
       }
     });
     $('input:radio[name*="[civicrm_defaults]"]').change(function() {
@@ -40,10 +45,10 @@
     attach: function (context) {
       $('input.civicrm-enabled', context).once('wf-civi').change(function() {
         if ($(this).is(':checked') ) {
-          $(this).parents('tr').find('input.civicrm-label, input.civicrm-default').removeAttr('disabled');
+          $(this).parents('tr').find('input.civicrm-label, input.civicrm-default').prop('disabled', false);
         }
         else {
-          $(this).parents('tr').find('input.civicrm-label, input.civicrm-default').attr('disabled', 'disabled').removeAttr('checked');
+          $(this).parents('tr').find('input.civicrm-label, input.civicrm-default').prop('disabled', true).prop('checked', false);
         }
         if ($(this).parents('tr').find('input.civicrm-label').val() == '') {
           var val = $(this).parents('tr').find('span.civicrm-option-name').text();
@@ -53,10 +58,10 @@
 
       $('input.select-all-civi-options').once('wf-civi').change(function() {
         if ($(this).is(':checked') ) {
-          $('input.civicrm-enabled, input.select-all-civi-options').attr('checked', 'checked');
+          $('input.civicrm-enabled, input.select-all-civi-options').prop('checked', true);
         }
         else {
-          $('input.civicrm-enabled, input.select-all-civi-options, input.select-all-civi-defaults').removeAttr('checked');
+          $('input.civicrm-enabled, input.select-all-civi-options, input.select-all-civi-defaults').prop('checked', false);
         }
         $('input.civicrm-enabled').change();
       });
@@ -88,7 +93,7 @@
               $('.live-options-hide').hide();
               $('.live-options-show').show();
               $('.tabledrag-hide:visible').addClass('visible').hide();
-              $('input.civicrm-enabled, input.select-all-civi-options').attr('checked', 'checked');
+              $('input.civicrm-enabled, input.select-all-civi-options').prop('checked', true);
               $('input.civicrm-enabled').change();
               break;
           }

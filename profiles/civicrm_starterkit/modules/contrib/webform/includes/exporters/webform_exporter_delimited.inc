@@ -1,11 +1,16 @@
 <?php
+
 /**
+ * @file
  * Webform exporter for creating CSV/TSV delimited files.
  */
+
 class webform_exporter_delimited extends webform_exporter {
+  public $line_ending;
   public $delimiter;
 
   function __construct($options) {
+    $this->line_ending = webform_variable_get('webform_csv_line_ending');
     $this->delimiter = isset($options['delimiter']) ? $options['delimiter'] : ',';
     // Convert tabs.
     if ($this->delimiter == '\t') {
@@ -23,7 +28,7 @@ class webform_exporter_delimited extends webform_exporter {
       // Remove <script> tags, which mysteriously cause Excel not to import.
       $data[$key] = preg_replace('!<(/?script.*?)>!', '[$1]', $data[$key]);
     }
-    $row = implode($this->delimiter, $data) . "\n";
+    $row = implode($this->delimiter, $data) . $this->line_ending;
 
     @fwrite($file_handle, $row);
   }

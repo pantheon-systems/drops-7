@@ -1,9 +1,10 @@
 // Webform payment processing using CiviCRM's jQuery
 cj(function($) {
   'use strict';
-  var setting = Drupal.settings.webform_civicrm;
-  var $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]');
-  var $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+  var
+    setting = Drupal.settings.webform_civicrm,
+    $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]'),
+    $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
   function getPaymentProcessor() {
     if (!$processorFields.length) {
@@ -15,12 +16,21 @@ cj(function($) {
   function loadBillingBlock() {
     var type = getPaymentProcessor();
     if (type && type != '0') {
-      $('#billing-payment-block').load(setting.contributionCallback + '&type=' + type, function() {
-        $('#billing-payment-block').trigger('crmFormLoad');
+      $('#billing-payment-block').load(setting.contributionCallback + '&' + setting.processor_id_key + '=' + type, function() {
+        $('#billing-payment-block').trigger('crmLoad').trigger('crmFormLoad');
         if (setting.billingSubmission) {
           $.each(setting.billingSubmission, function(key, val) {
             $('[name="' + key + '"]').val(val);
           });
+        }
+        // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder
+        var $expressButton = $('input[name$=_upload_express]', '#billing-payment-block');
+        if ($expressButton.length) {
+          $expressButton.removeClass('crm-form-submit').click(function(e) {
+            e.preventDefault();
+            $('input[name=credit_card_number]', '#billing-payment-block').val('express');
+            $(this).closest('form').find('input.webform-submit.button-primary').click();
+          })
         }
       });
     }
@@ -61,8 +71,13 @@ cj(function($) {
       '</tr>');
     }
     else {
-      $('td+td', $lineItem).html(CRM.formatMoney(amount));
-      $lineItem.data('amount', amount);
+      var taxPara = 1;
+      var tax = $lineItem.data('tax');
+      if (tax && tax !== '0') {
+        taxPara = 1 + (tax / 100);
+      }
+      $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
+      $lineItem.data('amount', amount * taxPara);
     }
     tally();
   }

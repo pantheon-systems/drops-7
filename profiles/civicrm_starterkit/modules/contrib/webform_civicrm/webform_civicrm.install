@@ -107,7 +107,7 @@ function webform_civicrm_schema() {
     'primary key' => array('nid'),
   );
   $schema['webform_civicrm_submissions'] = array(
-    'description' => 'Link between form submissions and CiviCRM contacts.',
+    'description' => 'Link between form submissions and CiviCRM data.',
     'fields' => array(
       'sid' => array(
         'type' => 'int',
@@ -123,19 +123,10 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'CiviCRM contact ids from this submission',
       ),
-      'activity_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'FK to {civicrm_activity} id',
-      ),
-      'contribution_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'FK to {civicrm_contribution} id',
+      'civicrm_data' => array(
+        'type' => 'text',
+        'serialize' => TRUE,
+        'description' => 'Array of entity ids for this submission',
       ),
     ),
     'primary key' => array('sid'),
@@ -296,9 +287,7 @@ function webform_civicrm_update_6200() {
       );
     }
     db_update('webform_civicrm_forms')
-    ->fields(array(
-      'data' => serialize($data),
-    ))
+    ->fields(array('data' => serialize($data)))
     ->condition('nid', $row->nid)
     ->execute();
   }
@@ -717,7 +706,6 @@ function webform_civicrm_update_7302() {
   return st('All "Existing Contact" fields have been modified to enable the "Enforce Permissions" setting. In most cases you do not need to further modify this setting. You may wish to review your webforms if you are an advanced user and have configured custom contact permissions.');
 }
 
-
 /**
  * Add column for contribution_id to webform_civicrm_submissions table.
  */
@@ -730,4 +718,100 @@ function webform_civicrm_update_7400() {
     'description' => 'FK to {civicrm_contribution} id',
   );
   db_add_field('webform_civicrm_submissions', 'contribution_id', $field);
+}
+
+/**
+ * Move civicrm entity ids into a serialized array for each submission.
+ */
+function webform_civicrm_update_7401(&$batch) {
+  // Initialize batch api and create new field
+  if (!isset($batch['progress'])) {
+    $field = array(
+      'type' => 'text',
+      'serialize' => TRUE,
+      'description' => 'Array of entity ids for this submission',
+    );
+    db_add_field('webform_civicrm_submissions', 'civicrm_data', $field);
+    $batch['progress'] = $batch['current_sid'] = 0;
+    $batch['max'] = db_query('SELECT COUNT(sid) FROM {webform_civicrm_submissions}')->fetchField();
+  }
+
+  // Process the next group of submissions.
+  $result = db_query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 500");
+  foreach ($result as $row) {
+    $data = array();
+    if ($row->activity_id) {
+      $data['activity'] = array(1 => array('id' => $row->activity_id));
+    }
+    if ($row->contribution_id) {
+      $data['contribution'] = array(1 => array('id' => $row->contribution_id));
+    }
+    db_update('webform_civicrm_submissions')
+      ->condition('sid', $row->sid)
+      ->fields(array('civicrm_data' => serialize($data)))
+      ->execute();
+
+    $batch['current_sid'] = $row->sid;
+    $batch['progress']++;
+  }
+
+  // Update batch progress bar
+  $batch['#finished'] = ($batch['progress'] >= $batch['max']) ? TRUE : ($batch['progress'] / $batch['max']);
+
+  // Drop old fields when done
+  if ($batch['#finished'] === TRUE) {
+    db_drop_field('webform_civicrm_submissions', 'activity_id');
+    db_drop_field('webform_civicrm_submissions', 'contribution_id');
+  }
+}
+
+/**
+ * Upgrade schema to handle multiple activities and cases
+ */
+function webform_civicrm_update_7402() {
+  civicrm_initialize();
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
+  $forms = db_query("SELECT * FROM {webform_civicrm_forms}");
+  foreach ($forms as $form) {
+    $data = $orig = unserialize($form->data);
+    if (isset($data['activity'][1]['activity'][1])) {
+      $data['activity']['number_of_activity'] = 1;
+      // Fix misnamed fields
+      foreach (array('campaign_id', 'survey_id') as $field) {
+        if (!empty($data['activity'][1]['activity'][1]['activity_' . $field])) {
+          $data['activity'][1]['activity'][1][$field] = $data['activity'][1]['activity'][1]['activity_' . $field];
+          unset($data['activity'][1]['activity'][1]['activity_' . $field]);
+        }
+      }
+      // Set "file on case" settings if activity and case are both set
+      // Previous behavior was to always file on case
+      if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
+        $data['activity'][1]['case_type_id'] = $data['case'][1]['case'][1]['case_type_id'];
+        $data['activity'][1]['case_status_id'] = (array) wf_crm_aval($data['case'][1]['case'][1], 'status_id');
+        $data['activity'][1]['case_contact_id'] = wf_crm_aval($data['case'][1]['case'][1], 'client_id', 1);
+      }
+      // Create hidden field for activity subject to replace the removed "default subject" setting
+      $fid = 'civicrm_1_activity_1_activity_subject';
+      if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = '$fid' AND nid = {$form->nid}")->fetchField())) {
+        $component = array(
+          'form_key' => $fid,
+          'nid' => $form->nid,
+          'value' => $data['activity'][1]['activity'][1]['subject'],
+          'type' => 'hidden',
+        ) + wf_crm_get_field('activity_subject');
+        webform_component_defaults($component);
+        webform_component_insert($component);
+      }
+    }
+    if (isset($data['case'][1]['case'][1])) {
+      $data['case']['number_of_case'] = 1;
+    }
+    if ($data !== $orig) {
+      db_update('webform_civicrm_forms')
+        ->fields(array('data' => serialize($data)))
+        ->condition('nid', $form->nid)
+        ->execute();
+    }
+  }
 }

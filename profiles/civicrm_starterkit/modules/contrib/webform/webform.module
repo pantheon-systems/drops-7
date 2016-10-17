@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * This module provides a simple way to create forms and questionnaires.
  *
  * The initial development of this module was sponsered by ÅF Industri AB, Open
@@ -130,8 +131,8 @@ function webform_menu() {
     'title' => 'Webform',
     'page callback' => 'webform_components_page',
     'page arguments' => array(1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'weight' => 1,
     'type' => MENU_LOCAL_TASK,
@@ -141,8 +142,8 @@ function webform_menu() {
     'title' => 'Form components',
     'page callback' => 'webform_components_page',
     'page arguments' => array(1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'weight' => 0,
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -151,8 +152,8 @@ function webform_menu() {
     'title' => 'Conditionals',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_conditionals_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.conditionals.inc',
     'weight' => 1,
     'type' => MENU_LOCAL_TASK,
@@ -161,8 +162,8 @@ function webform_menu() {
     'title' => 'Form settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_configure_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.pages.inc',
     'weight' => 5,
     'type' => MENU_LOCAL_TASK,
@@ -173,8 +174,8 @@ function webform_menu() {
     'title' => 'E-mails',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_emails_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
     'weight' => 4,
     'type' => MENU_LOCAL_TASK,
@@ -182,25 +183,25 @@ function webform_menu() {
   $items['node/%webform_menu/webform/emails/%webform_menu_email'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_edit_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
   $items['node/%webform_menu/webform/emails/%webform_menu_email/clone'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_edit_form', 1, 4, TRUE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
   $items['node/%webform_menu/webform/emails/%webform_menu_email/delete'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_delete_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
-    'type' => MENU_CALLBACK,
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
   );
 
   // Node component forms.
@@ -208,8 +209,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_edit_form', 1, 4, FALSE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -217,8 +218,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_edit_form', 1, 4, TRUE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -226,8 +227,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_delete_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -236,8 +237,8 @@ function webform_menu() {
   $items['webform/ajax/options/%webform_menu'] = array(
     'load arguments' => array(3),
     'page callback' => 'webform_select_options_ajax',
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 3),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(3),
     'file' => 'components/select.inc',
     'type' => MENU_CALLBACK,
   );
@@ -444,6 +445,30 @@ function webform_menu_load($nid) {
 }
 
 /**
+ * Menu LOADERNAME_to_arg callback. Determines the arguments used to generate a
+ * menu link.
+ *
+ * This is implemented only to give the webform_localization modules an
+ * opportunity to link to the orignial webform from the localized one. See
+ * issue 2097277.
+ *
+ * @param string $arg
+ *   The argument supplied by the caller.
+ * @param array $map
+ *   Array of path fragments (e.g. e.g. array('node','123','edit') for
+ *   'node/123/edit').
+ * @param integer $index
+ *   Which element of $map corresponds to $arg.
+ * @return string
+ *   The $arg, modified as desired.
+ */
+function webform_menu_to_arg($arg, $map, $index) {
+  return function_exists('webform_localization_webform_menu_to_arg')
+          ? webform_localization_webform_menu_to_arg($arg, $map, $index)
+          : $arg;
+}
+
+/**
  * Menu loader callback. Load a webform submission if the given sid is a valid.
  */
 function webform_menu_submission_load($sid, $nid) {
@@ -489,9 +514,25 @@ function webform_menu_email_load($eid, $nid) {
         $email['email'] = $_GET['email'];
       }
     }
+    if (isset($_GET['status'])) {
+      $email['status'] = $_GET['status'];
+    }
   }
 
   return $email;
+}
+
+/**
+ * Return the access token for a submission.
+ *
+ * @param object $submission
+ *   The submission object.
+ *
+ * @return string
+ *   The access token for the submission.
+ */
+function webform_get_submission_access_token($submission) {
+  return md5($submission->submitted . $submission->sid . drupal_get_private_key());
 }
 
 /**
@@ -533,12 +574,13 @@ function webform_confirmation_page_access($node) {
     // match the hash in the query string.
     elseif ((int) $user->uid === 0 && (int) $submission->uid === 0) {
       $hash_query = !empty($_GET['token']) ? $_GET['token'] : NULL;
-      $hash = md5($submission->submitted . $submission->sid . drupal_get_private_key());
+      $hash = webform_get_submission_access_token($submission);
       if ($hash_query === $hash) {
         return TRUE;
       }
     }
-  } else {
+  }
+  else {
     // No submission exists (such as auto-deleted by another module, such as
     // webform_clear), just ensure that the user has access to view the node page.
     if (node_access('view', $node)) {
@@ -572,7 +614,15 @@ function webform_submission_access($node, $submission, $op = 'view', $account = 
   $access_own_submission = isset($submission) && user_access('access own webform submissions', $account) && (($account->uid && $account->uid == $submission->uid) || isset($_SESSION['webform_submission'][$submission->sid]));
   $access_node_submissions = user_access('access own webform results', $account) && $account->uid == $node->uid;
 
-  $general_access = $access_all || $access_own_submission || $access_node_submissions;
+  $token_access = $submission && isset($_GET['token']) && $_GET['token'] == webform_get_submission_access_token($submission);
+
+  // If access is granted via a token, then allow subsequent submission access
+  // for anonymous users.
+  if (!$user->uid && $token_access) {
+    $_SESSION['webform_submission'][$submission->sid] = $node->nid;
+  }
+
+  $general_access = $access_all || $access_own_submission || $access_node_submissions || $token_access;
 
   // Disable the page cache for anonymous users in this access callback,
   // otherwise the "Access denied" page gets cached.
@@ -606,6 +656,10 @@ function webform_results_access($node, $account = NULL) {
   return node_access('view', $node, $account) && ($module_access || user_access('access all webform results', $account) || (user_access('access own webform results', $account) && $account->uid == $node->uid));
 }
 
+/**
+ * Menu access callback. Ensure a user has both results access and permission
+ * to clear submissions.
+ */
 function webform_results_clear_access($node, $account = NULL) {
   global $user;
   $account = isset($account) ? $account : $user;
@@ -613,6 +667,33 @@ function webform_results_clear_access($node, $account = NULL) {
   $module_access = count(array_filter(module_invoke_all('webform_results_clear_access', $node, $account))) > 0;
 
   return webform_results_access($node, $account) && ($module_access || user_access('delete all webform submissions', $account));
+}
+
+/**
+ * Menu access callback. Ensure a sure has access to update a webform node.
+ *
+ * Unlike webform_results_access and webform_results_clear_access, access is
+ * completely overridden by the any implmentation of hook_webform_update_access.
+ *
+ * If hook_webform_update_access is implemented by one or more other modules,
+ * the results must be unanimously TRUE for access to be granted; otherwise it
+ * is denied if even one implementation returns FALSE, regardless of node_access
+ * and the 'edit webform components' permission. This allows implementors
+ * complete flexibility.
+ *
+ * hook_webform_update_access should return TRUE if access should absolutely
+ * be granted, FALSE if it should absolutely be denied, or NULL if node_access
+ * and 'edit webform components' permission should determine access.
+ *
+ * @see hook_webform_update_access().
+ */
+function webform_node_update_access($node, $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $module_access = module_invoke_all('webform_update_access', $node, $account);
+  return empty($module_access)
+            ? node_access('update', $node, $account) && user_access('edit webform components')
+            : count(array_filter($module_access)) == count($module_access);
 }
 
 /**
@@ -659,6 +740,10 @@ function webform_permission() {
     ),
     'delete own webform submissions' => array(
       'title' => t('Delete own webform submissions'),
+    ),
+    'edit webform components' => array(
+      'title' => t('Content authors: access and edit webform components and settings'),
+      'description' => t('Grants additional access to the webform components and settings to users who can edit the content. Generally an authenticated user permission.'),
     ),
   );
 }
@@ -797,7 +882,7 @@ function webform_theme() {
       'file' => 'includes/webform.report.inc',
     ),
     'webform_results_table' => array(
-      'variables' => array('node' => NULL, 'components' => NULL, 'submissions' => NULL, 'node' => NULL, 'total_count' => NULL, 'pager_count' => NULL),
+      'variables' => array('node' => NULL, 'components' => NULL, 'submissions' => NULL, 'total_count' => NULL, 'pager_count' => NULL),
       'file' => 'includes/webform.report.inc',
     ),
     'webform_results_download_range' => array(
@@ -938,6 +1023,8 @@ function webform_webform_component_info() {
       'features' => array(
         'email_address' => TRUE,
         'spam_analysis' => TRUE,
+        'placeholder' => TRUE,
+        'conditional_action_set' => TRUE,
       ),
     ),
     'fieldset' => array(
@@ -958,10 +1045,12 @@ function webform_webform_component_info() {
       'label' => t('Grid'),
       'description' => t('Allows creation of grid questions, denoted by radio buttons.'),
       'features' => array(
-        'conditional' => FALSE,
         'default_value' => FALSE,
         'title_inline' => FALSE,
+        'title_internal' => TRUE,
         'css_classes' => FALSE,
+        'conditional' => FALSE,
+        'group' => TRUE,
       ),
       'file' => 'components/grid.inc',
     ),
@@ -978,6 +1067,7 @@ function webform_webform_component_info() {
         'private' => FALSE,
         'wrapper_classes' => FALSE,
         'css_classes' => FALSE,
+        'conditional_action_set' => TRUE,
       ),
     ),
     'markup' => array(
@@ -995,6 +1085,7 @@ function webform_webform_component_info() {
         'private' => FALSE,
         'wrapper_classes' => FALSE,
         'css_classes' => FALSE,
+        'conditional_action_set' => TRUE,
       ),
       'file' => 'components/markup.inc',
     ),
@@ -1002,6 +1093,7 @@ function webform_webform_component_info() {
       'label' => t('Number'),
       'description' => t('A numeric input field (either as textfield or select list).'),
       'features' => array(
+        'conditional_action_set' => TRUE,
       ),
       'file' => 'components/number.inc',
       'conditional_type' => 'numeric',
@@ -1031,6 +1123,7 @@ function webform_webform_component_info() {
         'default_value' => FALSE,
         'email_address' => TRUE,
         'email_name' => TRUE,
+        'conditional_action_set' => TRUE,
       ),
       'conditional_type' => 'select',
     ),
@@ -1040,6 +1133,8 @@ function webform_webform_component_info() {
       'file' => 'components/textarea.inc',
       'features' => array(
         'spam_analysis' => TRUE,
+        'placeholder' => TRUE,
+        'conditional_action_set' => TRUE,
       ),
     ),
     'textfield' => array(
@@ -1049,6 +1144,8 @@ function webform_webform_component_info() {
       'features' => array(
         'email_name' => TRUE,
         'spam_analysis' => TRUE,
+        'placeholder' => TRUE,
+        'conditional_action_set' => TRUE,
       ),
     ),
     'time' => array(
@@ -1154,6 +1251,7 @@ function webform_webform_submission_presave($node, &$submission) {
   $has_file_components = FALSE;
   $new_fids = array();
   $old_fids = array();
+  $renameable = array();
 
   foreach ($node->webform['components'] as $cid => $component) {
     if ($component['type'] == 'file') {
@@ -1162,6 +1260,9 @@ function webform_webform_submission_presave($node, &$submission) {
         foreach ($submission->data[$cid] as $key => $value) {
           if (empty($value)) {
             unset($submission->data[$cid][$key]);
+          }
+          if (strlen($component['extra']['rename'])) {
+            $renameable[$cid][] = $value;
           }
         }
         $new_fids = array_merge($new_fids, $submission->data[$cid]);
@@ -1184,13 +1285,20 @@ function webform_webform_submission_presave($node, &$submission) {
       }
     }
 
+    // Only rename files if this is the first time the submission is being saved as finished.
+    if ($submission->is_draft || (isset($old_submission) && !$old_submission->is_draft)) {
+      $renameable = array();
+    }
+
     // Save the list of added or removed files so we can add usage in
     // hook_webform_submission_insert() or _update().
     $submission->file_usage = array(
       // Diff the old against new to determine what files were deleted.
       'deleted_fids' => array_diff($old_fids, $new_fids),
       // Diff the new files against old to determine new uploads.
-      'added_fids' => array_diff($new_fids, $old_fids)
+      'added_fids' => array_diff($new_fids, $old_fids),
+      // A list of files which need renaming with tokens.
+      'renameable' => $renameable,
     );
   }
 }
@@ -1202,6 +1310,7 @@ function webform_webform_submission_insert($node, $submission) {
   if (isset($submission->file_usage)) {
     webform_component_include('file');
     webform_file_usage_adjust($submission);
+    webform_file_rename($node, $submission);
   }
 }
 
@@ -1212,6 +1321,7 @@ function webform_webform_submission_update($node, $submission) {
   if (isset($submission->file_usage)) {
     webform_component_include('file');
     webform_file_usage_adjust($submission);
+    webform_file_rename($node, $submission);
   }
 }
 
@@ -1294,10 +1404,13 @@ function webform_file_download($uri) {
  *   An array of node type names.
  */
 function webform_node_types() {
-  $types = array();
-  foreach (node_type_get_names() as $type => $name) {
-    if (variable_get('webform_node_' . $type, FALSE)) {
-      $types[] = $type;
+  $types = &drupal_static(__FUNCTION__, NULL);
+  if (!isset($types)) {
+    $types = array();
+    foreach (node_type_get_names() as $type => $name) {
+      if (variable_get('webform_node_' . $type, FALSE)) {
+        $types[] = $type;
+      }
     }
   }
   return $types;
@@ -1426,11 +1539,18 @@ function webform_node_update($node) {
         webform_component_insert($node->webform['components'][$cid]);
       }
       elseif (in_array($cid, $deleted_cids)) {
-        webform_component_delete($node, $original->webform['components'][$cid]);
+        // Delete components only after all updates have been processed.
       }
       elseif ($node->webform['components'][$cid] != $original->webform['components'][$cid]) {
         webform_component_update($node->webform['components'][$cid]);
       }
+    }
+
+    // Delete components now that any parent changes have been saved. When
+    // components are moved and deleted in one operation in FormBuilder, this
+    // ensures that only the current children are deleted.
+    foreach ($deleted_cids as $cid) {
+      webform_component_delete($node, $original->webform['components'][$cid]);
     }
   }
 
@@ -1440,15 +1560,19 @@ function webform_node_update($node) {
 
     // Conditionals don't have unique site-wide IDs or configuration, so our
     // update here is a bit more aggressive than for components and e-mails.
+    // Delete any conditionals no longer in the webform or that have changed.
     foreach ($original->webform['conditionals'] as $rgid => $conditional) {
-      if (!isset($node->webform['conditionals'][$rgid]) || $original->webform['conditionals'][$rgid] != $node->webform['conditionals'][$rgid]) {
+      if (!isset($node->webform['conditionals'][$rgid]) || $conditional != $node->webform['conditionals'][$rgid]) {
         webform_conditional_delete($node, $conditional);
       }
     }
+    // Insert any conditionals not in the original or that have changed.
     foreach ($node->webform['conditionals'] as $rgid => $conditional) {
       $conditional['nid'] = $node->nid;
       $conditional['rgid'] = $rgid;
-      webform_conditional_insert($conditional);
+      if (!isset($original->webform['conditionals'][$rgid]) || $original->webform['conditionals'][$rgid] != $conditional) {
+       webform_conditional_insert($conditional);
+      }
     }
   }
 
@@ -1464,6 +1588,7 @@ function webform_node_update($node) {
     $inserted_eids = array_diff($current_eids, $original_eids);
 
     foreach ($all_eids as $eid) {
+      $node->webform['emails'][$eid]['nid'] = $node->nid;
       if (in_array($eid, $inserted_eids)) {
         webform_email_insert($node->webform['emails'][$eid]);
       }
@@ -1471,7 +1596,6 @@ function webform_node_update($node) {
         webform_email_delete($node, $original->webform['emails'][$eid]);
       }
       elseif ($node->webform['emails'][$eid] != $original->webform['emails'][$eid]) {
-        $node->webform['emails'][$eid]['nid'] = $node->nid;
         webform_email_update($node->webform['emails'][$eid]);
       }
     }
@@ -1510,6 +1634,7 @@ function webform_node_delete($node) {
   db_delete('webform_component')->condition('nid', $node->nid)->execute();
   db_delete('webform_conditional')->condition('nid', $node->nid)->execute();
   db_delete('webform_conditional_rules')->condition('nid', $node->nid)->execute();
+  db_delete('webform_conditional_actions')->condition('nid', $node->nid)->execute();
   db_delete('webform_emails')->condition('nid', $node->nid)->execute();
   db_delete('webform_roles')->condition('nid', $node->nid)->execute();
   db_delete('webform_submissions')->condition('nid', $node->nid)->execute();
@@ -1529,6 +1654,7 @@ function webform_node_defaults() {
     'block' => '0',
     'allow_draft' => '0',
     'auto_save' => '0',
+    'confidential' => '0',
     'submit_notice' => '1',
     'submit_text' => '',
     'next_serial' => 1,
@@ -1628,8 +1754,8 @@ function webform_node_load($nodes, $types) {
     foreach ($nodes[$nid]->webform['emails'] as $eid => $email) {
       $nodes[$nid]->webform['emails'][$eid]['excluded_components'] = array_filter(explode(',', $email['excluded_components']));
       $nodes[$nid]->webform['emails'][$eid]['extra'] = unserialize($email['extra']);
-      if (variable_get('webform_format_override', 0)) {
-        $nodes[$nid]->webform['emails'][$eid]['html'] = variable_get('webform_default_format', 0);
+      if (webform_variable_get('webform_format_override')) {
+        $nodes[$nid]->webform['emails'][$eid]['html'] = webform_variable_get('webform_default_format');
       }
     }
 
@@ -1674,8 +1800,18 @@ function webform_node_load($nodes, $types) {
       foreach ($rules as $rule) {
         $nodes[$nid]->webform['conditionals'][$rule->rgid]['rules'][$rule->rid] = (array) $rule;
       }
+      $actions = db_select('webform_conditional_actions')
+        ->fields('webform_conditional_actions')
+        ->condition('nid', $nid)
+        ->orderBy('rgid')
+        ->orderBy('aid')
+        ->execute();
+      foreach ($actions as $action) {
+        $nodes[$nid]->webform['conditionals'][$action->rgid]['actions'][$action->aid] = (array) $action;
+      }
     }
   }
+
 }
 
 /**
@@ -1763,22 +1899,23 @@ function webform_node_view($node, $view_mode) {
     return;
   }
 
-  // Do not include the form in the search index if indexing is disabled.
-  if (module_exists('search') && $view_mode == 'search_index' && !variable_get('webform_search_index', 1)) {
+  // If the webform is not set to display in this view mode, return early.
+  // View mode of 'form' is exempted to allow blocks and views to force display.
+  $extra_fields = field_extra_fields_get_display('node', $node->type, $view_mode);
+  if ($view_mode != 'form' && empty($extra_fields['webform']['visible'])) {
     return;
   }
 
   $submission = FALSE;
   $submission_count = 0;
   $page = node_is_page($node);
-  $enabled = TRUE;
   $logging_in = FALSE;
   $total_limit_exceeded = FALSE;
   $user_limit_exceeded = FALSE;
   $closed = FALSE;
-  $allowed_roles = array();
 
-  // If a teaser, tell the form to load subsequent pages on the node page.
+  // If a teaser, tell the form to load subsequent pages on the node page. A
+  // special exception is made for this view mode only.
   if ($view_mode == 'teaser' && !isset($node->webform['action'])) {
     $query = array_diff_key($_GET, array('q' => ''));
     $node->webform['action'] = url('node/' . $node->nid, array('query' => $query));
@@ -1794,21 +1931,10 @@ function webform_node_view($node, $view_mode) {
   if ($node->webform['status'] == 0) {
     $closed = TRUE;
     $enabled = FALSE;
+    $allowed_roles = array();
   }
   else {
-    // Check if the user's role can submit this webform.
-    if (variable_get('webform_submission_access_control', 1)) {
-      foreach ($node->webform['roles'] as $rid) {
-        $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
-      }
-      if (array_search(TRUE, $allowed_roles) === FALSE && $user->uid != 1) {
-        $enabled = FALSE;
-      }
-    }
-    else {
-      // If not using Webform submission access control, allow for all roles.
-      $allowed_roles = array_keys(user_roles());
-    }
+    $allowed_roles = _webform_allowed_roles($node, $enabled); // $enabled set by reference.
   }
 
   // Get a count of previous submissions by this user. Note that the
@@ -1820,13 +1946,15 @@ function webform_node_view($node, $view_mode) {
   }
 
   // Check if this page is cached or not.
-  $cached = $user->uid == 0 && (variable_get('cache', 0) || drupal_page_is_cacheable() === FALSE);
+  $cached = drupal_page_is_cacheable();
 
-  // Check if the user can add another submission.
+  // Check if the user can add another submission based on the individual submission limit.
   if ($node->webform['submit_limit'] != -1) { // -1: Submissions are never throttled.
     module_load_include('inc', 'webform', 'includes/webform.submissions');
 
-    // Disable the form if the limit is exceeded and page cache is not active.
+    // Disable the form if the limit is exceeded and page cache is not active. This prevent
+    // One anonymous user from generated a disabled webform page for the cache, which would
+    // be shown to other anonymous users who have not exceeded the limit.
     if (($user_limit_exceeded = webform_submission_user_limit_check($node)) && !$cached) {
       $enabled = FALSE;
     }
@@ -1837,21 +1965,23 @@ function webform_node_view($node, $view_mode) {
   if ($node->webform['total_submit_limit'] != -1) { // -1: Submissions are never throttled.
     module_load_include('inc', 'webform', 'includes/webform.submissions');
 
-    // Disable the form if the limit is exceeded and page cache is not active.
-    if (($total_limit_exceeded = webform_submission_total_limit_check($node)) && !$cached) {
+    // Disable the form if the limit is exceeded. The cache is irrelevant for the total
+    // submission limit; when it is exceeded for one user, it is exceeded for any other
+    // user.
+    if (($total_limit_exceeded = webform_submission_total_limit_check($node))) {
       $enabled = FALSE;
     }
   }
 
   // Check if this user has a draft for this webform.
-  $is_draft = FALSE;
+  $resume_draft = FALSE;
   if (($node->webform['allow_draft'] || $node->webform['auto_save']) && $user->uid != 0) {
     // Draft found - display form with draft data for further editing.
     if ($draft_sid = _webform_fetch_draft_sid($node->nid, $user->uid)) {
       module_load_include('inc', 'webform', 'includes/webform.submissions');
       $submission = webform_get_submission($node->nid, $draft_sid);
       $enabled = TRUE;
-      $is_draft = TRUE;
+      $resume_draft = TRUE;
     }
   }
 
@@ -1864,7 +1994,7 @@ function webform_node_view($node, $view_mode) {
   }
   // If this is the first time, generate the form array.
   else {
-    $form = drupal_get_form('webform_client_form_' . $node->nid, $node, $submission, $is_draft);
+    $form = drupal_get_form('webform_client_form_' . $node->nid, $node, $submission, $resume_draft);
     $cached_forms[$node->nid] = $form;
   }
 
@@ -1885,8 +2015,43 @@ function webform_node_view($node, $view_mode) {
     '#page' => $page,
     '#form' => $form,
     '#enabled' => $enabled,
+    '#visible' => $extra_fields['webform']['visible'],
     '#weight' => 10,
   );
+}
+
+/**
+ * Helper. Generates an array of allowed roles.
+ *
+ * @param object $node
+ *   The loaded node object containing a webform.
+ * @param boolean $user_is_allowed
+ *   Reference to boolean to be set to whether the current user is allowed.
+ * @return array
+ *   Associative array of allowed roles indexed by the role id with a boolean
+ *   value indicating if the current user has this role.
+ */
+function _webform_allowed_roles($node, &$user_is_allowed) {
+  global $user;
+  if ($node->webform['confidential']) {
+    // Confidential webform may only be submitted anonymously, including uid 1.
+    $user_is_allowed = user_is_anonymous();
+    $allowed_roles = array(DRUPAL_ANONYMOUS_RID => $user_is_allowed);
+  }
+  elseif (webform_variable_get('webform_submission_access_control')) {
+    // Check if the user's role can submit this webform.
+    $allowed_roles = array();
+    foreach ($node->webform['roles'] as $rid) {
+      $allowed_roles[$rid] = isset($user->roles[$rid]);
+    }
+    $user_is_allowed = $user->uid == 1 || array_search(TRUE, $allowed_roles);
+  }
+  else {
+    // If not using Webform submission access control, allow all roles.
+    $user_is_allowed = TRUE;
+    $allowed_roles = array_fill_keys(array_keys(user_roles()), TRUE);
+  }
+  return $allowed_roles;
 }
 
 /**
@@ -1944,6 +2109,10 @@ function theme_webform_view_messages($variables) {
   if ($closed) {
     $message = t('Submissions for this form are closed.');
   }
+  elseif ($node->webform['confidential'] && user_is_logged_in()) {
+    $message = t('This form is confidential. You must <a href="!url">Log out</a> to submit it.',
+                 array('!url' => url('/user/logout', array('query' => array('destination' => request_uri())))));
+  }
   // If open and not allowed to submit the form, give an explanation.
   elseif (array_search(TRUE, $allowed_roles) === FALSE && $user->uid != 1) {
     if (empty($allowed_roles)) {
@@ -1979,7 +2148,6 @@ function theme_webform_view_messages($variables) {
     else {
       $message = t('You may not submit another entry at this time.');
     }
-    $type = 'error';
   }
   elseif ($total_limit_exceeded && !$cached) {
     if ($node->webform['total_submit_interval'] == -1 && $node->webform['total_submit_limit'] > 1) {
@@ -1988,7 +2156,6 @@ function theme_webform_view_messages($variables) {
     else {
       $message = t('You may not submit another entry at this time.');
     }
-    $type = 'error';
   }
 
   // If the user has submitted before, give them a link to their submissions.
@@ -2043,11 +2210,12 @@ function webform_block_view($delta = '') {
   global $user;
 
   // Load the block-specific configuration settings.
-  $webform_blocks = variable_get('webform_blocks', array());
+  $webform_blocks = webform_variable_get('webform_blocks');
   $settings = isset($webform_blocks[$delta]) ? $webform_blocks[$delta] : array();
   $settings += array(
     'display' => 'form',
     'pages_block' => 1,
+    'confirmation_block' => 0,
   );
 
   // Get the node ID from delta.
@@ -2071,9 +2239,7 @@ function webform_block_view($delta = '') {
 
   // This is a webform node block.
   $node->webform_block = TRUE;
-
-  // Use the node title for the block title.
-  $subject = $node->title;
+  $node->webform['confirmation_block'] = $settings['confirmation_block'];
 
   // If not displaying pages in the block, set the #action property on the form.
   if ($settings['pages_block']) {
@@ -2085,12 +2251,55 @@ function webform_block_view($delta = '') {
   }
 
   // Generate the content of the block based on display settings.
+  $content = array();
   if ($settings['display'] == 'form') {
-    webform_node_view($node, 'full');
-    $content = isset($node->content['webform']) ? $node->content['webform'] : array();
+    webform_node_view($node, 'form');
+    if (isset($node->content['webform'])) {
+      $content = $node->content['webform'];
+      if (!$node->content['webform']['#visible']) {
+        // If the webform form is only shown in a block and not as within the
+        // node, remove the content from the node.
+        unset($node->content['webform']);
+      }
+    }
   }
   else {
     $content = node_view($node, $settings['display']);
+  }
+
+  // Check for an in-block confirmation message.
+  if (isset($_SESSION['webform_confirmation'][$nid])) {
+    if ($_SESSION['webform_confirmation'][$nid]['confirmation_page']) {
+      // Replace form with confirmation page.
+      $content = array(
+        '#theme' => array('webform_confirmation_' . $node->nid, 'webform_confirmation'),
+        '#node' => $node,
+        '#sid' => $_SESSION['webform_confirmation'][$nid]['sid'],
+      );
+    } 
+    elseif (strlen(trim(strip_tags($node->webform['confirmation'])))) {
+      // Display confirmation link drupal status messages, but in the block.
+      $message = webform_replace_tokens($node->webform['confirmation'],
+                                        $node,
+                                        webform_get_submission($nid, $_SESSION['webform_confirmation'][$nid]['confirmation_page']),
+                                        NULL,
+                                        $node->webform['confirmation_format']);
+      $content = array(
+        'confirmation_message' => array(
+          '#markup' => "<div class=\"messages status webform-confirmation\">\n" .
+                       '<h2 class="element-invisible">' . t('Status message') . "</h2>\n" .
+                       $message .
+                       "</div>\n",
+          '#weight' => -1,
+        ),
+        'webform_view' => $content,
+      );
+
+    }
+    unset($_SESSION['webform_confirmation'][$nid]);
+    if (empty($_SESSION['webform_confirmation'])) {
+      unset($_SESSION['webform_confirmation']);
+    }
   }
 
   // Add contextual links for the webform node if they aren't already there.
@@ -2098,11 +2307,11 @@ function webform_block_view($delta = '') {
     $content['#contextual_links']['node'] = array('node', array($node->nid));
   }
 
-  // Create the block.
+  // Create the block, using the node title for the block title.
   // Note that we render the content immediately here rather than passing back
   // a renderable so that if the block is empty it is hidden.
   $block = array(
-    'subject' => $subject,
+    'subject' => check_plain($node->title),
     'content' => drupal_render($content),
   );
   return $block;
@@ -2116,11 +2325,12 @@ function webform_block_configure($delta = '') {
   $node = node_load($nid);
 
   // Load the block-specific configuration settings.
-  $webform_blocks = variable_get('webform_blocks', array());
+  $webform_blocks = webform_variable_get('webform_blocks');
   $settings = isset($webform_blocks[$delta]) ? $webform_blocks[$delta] : array();
   $settings += array(
     'display' => 'form',
     'pages_block' => 1,
+    'confirmation_block' => 0,
   );
 
   // Build a list of view modes for this node.
@@ -2152,6 +2362,16 @@ function webform_block_configure($delta = '') {
     '#description' => t('If your webform has multiple pages, you may change the behavior of the "Next" button. This will also affect where validation messages show up after an error.'),
   );
 
+  $form['confirmation_block'] = array(
+    '#type' => 'radios',
+    '#title' => t('Confirmation message'),
+    '#options' => array(
+      0 => t('Display as configured in the webform'),
+      1 => t('Display the confirmation page in the block on the same page (no redirect)'),
+    ),
+    '#default_value' => $settings['confirmation_block'],
+    '#description' => t('This setting overrides the webform\'s configuration and redirection location settings when the webform is submitted via this block.'),
+  );
   return $form;
 }
 
@@ -2160,11 +2380,12 @@ function webform_block_configure($delta = '') {
  */
 function webform_block_save($delta = '', $edit = array()) {
   // Load the previously defined block-specific configuration settings.
-  $settings = variable_get('webform_blocks', array());
+  $settings = webform_variable_get('webform_blocks');
   // Build the settings array.
   $new_settings[$delta] = array(
     'display' => $edit['display'],
     'pages_block' => $edit['pages_block'],
+    'confirmation_block' => $edit['confirmation_block'],
   );
   // We store settings for multiple blocks in just one variable
   // so we merge the existing settings with the new ones before save.
@@ -2185,14 +2406,15 @@ function webform_block_save($delta = '', $edit = array()) {
  * @param $submission
  *   An object containing information about the form submission if we're
  *   displaying a result.
- * @param $is_draft
- *   Optional. Set to TRUE if displaying a draft.
+ * @param $resume_draft
+ *   Optional. Set to TRUE when resuming a draft and skipping past previously-
+ *   validated pages is desired.
  * @param $filter
  *   Whether or not to filter the contents of descriptions and values when
  *   building the form. Values need to be unfiltered to be editable by
  *   Form Builder.
  */
-function webform_client_form($form, &$form_state, $node, $submission = FALSE, $is_draft = FALSE, $filter = TRUE) {
+function webform_client_form($form, &$form_state, $node, $submission = FALSE, $resume_draft = FALSE, $filter = TRUE) {
   global $user;
 
   // Attach necessary JavaScript and CSS.
@@ -2203,16 +2425,27 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
   form_load_include($form_state, 'inc', 'webform', 'includes/webform.components');
   form_load_include($form_state, 'inc', 'webform', 'includes/webform.submissions');
 
+  // For ajax requests, $form_state['values']['details'] is missing. Restore
+  // from storage, if available, for multi-page forms.
+  if (empty($form_state['values']['details']) && !empty($form_state['storage']['details'])) {
+    $form_state['values']['details'] = $form_state['storage']['details'];
+  }
+
   // If in a multi-step form, a submission ID may be specified in form state.
   // Load this submission. This allows anonymous users to use auto-save.
   if (empty($submission) && !empty($form_state['values']['details']['sid'])) {
     $submission = webform_get_submission($node->nid, $form_state['values']['details']['sid']);
   }
 
+  $finished = isset($submission->is_draft) ? (!$submission->is_draft) : 0;
+  $submit_button_text = $finished
+                          ? t('Save')
+                          : (empty($node->webform['submit_text']) ? t('Submit') : t($node->webform['submit_text']));
+
   // Bind arguments to $form to make them available in theming and form_alter.
   $form['#node'] = $node;
   $form['#submission'] = $submission;
-  $form['#is_draft'] = $submission ? $submission->is_draft : $is_draft;
+  $form['#is_draft'] = $submission && $submission->is_draft;
   $form['#filter'] = $filter;
 
   // Add a theme function for this form.
@@ -2221,9 +2454,6 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
   // Add a CSS class for all client forms.
   $form['#attributes']['class'][] = 'webform-client-form';
   $form['#attributes']['class'][] = 'webform-client-form-' . $node->nid;
-
-  // Set the encoding type (necessary for file uploads).
-  $form['#attributes']['enctype'] = 'multipart/form-data';
 
   // Sometimes when displaying a webform as a teaser or block, a custom action
   // property is set to direct the user to the node page.
@@ -2257,23 +2487,21 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
         $form_state['webform']['page_count']++;
       }
       $form_state['webform']['preview'] = $node->webform['preview'];
+
+      // If this is the first time this draft has been restore and presented to
+      // the user, let them know that they are looking at a draft, rather than
+      // a new form. This applies to the node view page, but not to a submission
+      // edit page (where they presummably know what submission they are
+      // editing).
+      if ($resume_draft && empty($form_state['input'])) {
+        drupal_set_message(t('A partially-completed form was found. Please complete the remaining portions.'));
+      }
     }
     else {
       $form_state['webform']['component_tree'] = $form_state['storage']['component_tree'];
       $form_state['webform']['page_count'] = $form_state['storage']['page_count'];
       $form_state['webform']['page_num'] = $form_state['storage']['page_num'];
       $form_state['webform']['preview'] = $form_state['storage']['preview'];
-    }
-
-    // Shorten up our variable names.
-    $component_tree = $form_state['webform']['component_tree'];
-    $page_count = $form_state['webform']['page_count'];
-    $page_num = $form_state['webform']['page_num'];
-    $preview = $form_state['webform']['preview'];
-
-    if ($page_count > 1) {
-      $next_page_labels = array();
-      $prev_page_labels = array();
     }
 
     // Set the input values based on whether we're editing an existing
@@ -2296,6 +2524,49 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
       }
     }
 
+    // Generate conditional topological order & report any errors.
+    $sorter = webform_get_conditional_sorter($node);
+    $sorter->reportErrors();
+
+    // Excecute the condtionals on the current input values
+    $input_values = $sorter->executeConditionals($input_values);
+
+    // Allow values from other pages to be sent to browser for conditionals.
+    $form['#conditional_values'] = $input_values;
+
+    // Allow components access to most up-to-date values.
+    $form_state['#conditional_values'] = $input_values;
+
+    // For resuming a previous draft, find the next page after the last
+    // validated page.
+    if (!isset($form_state['storage']['page_num']) && $submission && $submission->is_draft && $submission->highest_valid_page) {
+      // Find the
+      //    1) previous/next non-empty page, or
+      //    2) the preview page, or
+      //    3) the preview page, forcing its display if the form would unexpectedly submit, or
+      //    4) page 1 even if empty, if no other previous page would be shown
+      $form_state['webform']['page_num'] = $submission->highest_valid_page;
+      do {
+        $form_state['webform']['page_num']++;
+      } while (!webform_get_conditional_sorter($node)->pageVisibility($form_state['webform']['page_num']));
+      if (!$form_state['webform']['preview'] && $form_state['webform']['page_num'] == $form_state['webform']['page_count'] + (int)!$form_state['webform']['preview']) {
+        // Force a preview to avert an unintended submission via Next.
+        $form_state['webform']['preview'] = TRUE;
+        $form_state['webform']['page_count']++;
+      }
+      // The form hasn't been submitted (ever) and the preview code will
+      // expect $form_state['values']['submitted'] to be set from a previous
+      // submission, so provide these values here.
+      $form_state['values']['submitted'] = $input_values;
+      $form_state['storage']['submitted'] = $input_values;
+    }
+
+    // Shorten up our variable names.
+    $component_tree = $form_state['webform']['component_tree'];
+    $page_count = $form_state['webform']['page_count'];
+    $page_num = $form_state['webform']['page_num'];
+    $preview = $form_state['webform']['preview'];
+
     if ($page_count > 1) {
       $page_labels = webform_page_labels($node, $form_state);
       $form['progressbar'] = array(
@@ -2308,6 +2579,11 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
       );
     }
 
+    // Check whether a previous submission was truncated. The length of the client form is not
+    // estimated before submission because a) the determination may not be accurate for some
+    // webform components and b) the error will be apparent upon submission.
+    webform_input_vars_check($form, $form_state, 'submitted');
+
     // Recursively add components to the form. The unfiltered version of the
     // form (typically used in Form Builder), includes all components.
     foreach ($component_tree['children'] as $cid => $component) {
@@ -2315,7 +2591,7 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
         $next_page_labels[$component['page_num'] - 1] = !empty($component['extra']['next_page_label']) ? t($component['extra']['next_page_label']) : t('Next Page >');
         $prev_page_labels[$component['page_num']] = !empty($component['extra']['prev_page_label']) ? t($component['extra']['prev_page_label']) : t('< Previous Page');
       }
-      if ($filter == FALSE || _webform_client_form_rule_check($node, $component, $page_num, $input_values)) {
+      if (!$filter || $sorter->componentVisibility($cid, $page_num)) {
         $component_value = isset($input_values[$cid]) ? $input_values[$cid] : NULL;
         _webform_client_form_add_component($node, $component, $component_value, $form['submitted'], $form, $input_values, 'form', $page_num, $filter);
       }
@@ -2327,17 +2603,14 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
 
     // Add the preview if needed.
     if ($preview && $page_num === $page_count) {
-      $preview_submission = webform_submission_create($node, $user, $form_state, TRUE);
+      $preview_submission = webform_submission_create($node, $user, $form_state, TRUE, $submission);
       $preview_message = $node->webform['preview_message'];
-      $submit_button_text = empty($node->webform['submit_text']) ? t('Submit') : t($node->webform['submit_text']);
       if (strlen(trim(strip_tags($preview_message))) === 0) {
         $preview_message = t('Please review your submission. Your submission is not complete until you press the "!button" button!', array('!button' => $submit_button_text));
       }
-      $preview_message = webform_replace_tokens($preview_message, $node, $preview_submission);
-      $preview_message = check_markup($preview_message, $node->webform['preview_message_format']);
       $form['preview_message'] = array(
         '#type' => 'markup',
-        '#markup' => $preview_message,
+        '#markup' => webform_replace_tokens($preview_message, $node, $preview_submission, NULL, $node->webform['preview_message_format']),
       );
 
       $form['preview'] = webform_submission_render($node, $preview_submission, NULL, 'html', $node->webform['preview_excluded_components']);
@@ -2367,7 +2640,7 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
     );
     $form['details']['finished'] = array(
       '#type' => 'hidden',
-      '#value' => isset($submission->is_draft) ? (!$submission->is_draft) : 0,
+      '#value' => $finished,
     );
 
     // Add process functions to remove the IDs forced upon buttons and wrappers.
@@ -2413,9 +2686,7 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
     if ($page_num == $page_count) {
       $form['actions']['submit'] = array(
         '#type' => 'submit',
-        '#value' => ($form['details']['finished']['#value'])
-                        ? t('Save')
-                        : (empty($node->webform['submit_text']) ? t('Submit') : t($node->webform['submit_text'])),
+        '#value' => $submit_button_text,
         '#weight' => 10,
         '#attributes' => array(
           'class' => array('webform-submit', 'button-primary'),
@@ -2461,173 +2732,6 @@ function webform_client_form_process($form, $form_state) {
   return $form;
 }
 
-/**
- * Check if a component should be displayed on the current page.
- *
- * @param $node
- *   The full node object.
- * @param $component
- *   The target component that is being checked if it should be shown.
- * @param $page_num
- *   The page number of the component that is being checked. If the number "0"
- *   is passed in, the component visibility is checked regardless of its page
- *   number.
- * @param $input_values
- *   An array of all the values in the form used for comparison. Values from
- *   $form_state['values']['submitted'] or $submission->data may be used.
- * @param $format
- *   The format the component will be displayed in. May be one of the following:
- *   - form: Show in an editable form.
- *   - html: Show in HTML results.
- *   - text: Show in plain text.
- *
- * @return
- *   A Webform constant of one of the following:
- *   - WEBFORM_CONDITIONAL_EXCLUDE (0): The component should be hidden.
- *   - WEBFORM_CONDITIONAL_INCLUDE (1): The component should be shown.
- *   - WEBFORM_CONDITIONAL_SAME_PAGE (2): The component should be hidden, but
- *       needs to be rendered on the page because at least one source component
- *       is on the same page. The field will be hidden with JavaScript. This
- *       constant is only used if the $format parameter is "form".
- */
-function _webform_client_form_rule_check($node, $component, $page_num, $input_values, $format = 'form') {
-  // Hold a static map of target CID to conditionals for lookup efficiency.
-  static $target_maps = array();
-  static $is_shown = array();
-  static $cyclic_component = array();
-
-  if (!isset($target_maps[$node->nid])) {
-    $target_map = array();
-    foreach ($node->webform['conditionals'] as $conditional) {
-      if ($conditional['target_type'] == 'component') {
-        $target_map[$conditional['target']][] = $conditional;
-      }
-    }
-    $target_maps[$node->nid] = $target_map;
-  }
-  else {
-    $target_map = $target_maps[$node->nid];
-  }
-
-  // Short cut the rest of this function if the answer has already been calculated
-  if (isset($is_shown[$node->nid][$page_num][$component['cid']])) {
-    return $is_shown[$node->nid][$page_num][$component['cid']];
-  }
-
-  // Short cut the rest of this function if no conditionals are defined.
-  if (empty($target_map)) {
-    return WEBFORM_CONDITIONAL_INCLUDE;
-  }
-
-  // Check the rules for this entire page. Note individual page breaks are
-  // checked down below in the individual component rule checks.
-  $show_page = TRUE;
-  if ($component['page_num'] > 1 && $component['type'] != 'pagebreak') {
-    foreach ($node->webform['components'] as $cid => $page_component) {
-      if ($page_component['type'] == 'pagebreak' && $page_component['page_num'] == $page_num) {
-        $show_page = _webform_client_form_rule_check($node, $page_component, $page_num, $input_values, $format);
-        break;
-      }
-    }
-  }
-
-  // Check any parents' visibility rules.
-  $show_parent = $show_page;
-  if ($show_parent && $component['pid'] && isset($node->webform['components'][$component['pid']])) {
-    $parent_component = $node->webform['components'][$component['pid']];
-    $show_parent = _webform_client_form_rule_check($node, $parent_component, $page_num, $input_values, $format);
-  }
-
-  // Check the individual component rules.
-  $show_component = $show_parent;
-  if ($show_component && ($page_num == 0 || $component['page_num'] == $page_num) && isset($target_map[$component['cid']])) {
-    module_load_include('inc', 'webform', 'includes/webform.conditionals');
-    $operators = webform_conditional_operators();
-    $conditionals = $target_map[$component['cid']];
-    foreach ($conditionals as $conditional) {
-      $conditional_result = TRUE;
-
-      // Execute each comparison callback.
-      $conditional_results = array();
-      foreach ($conditional['rules'] as $rule) {
-        // TODO: Support other source types besides components?
-        if ($rule['source_type'] !== 'component') {
-          continue;
-        }
-        $source_component = $node->webform['components'][$rule['source']];
-        $source_cid = $source_component['cid'];
-
-        // If destined for form output, and a source component is on the same
-        // page as the current page, we are unable to tell if the target
-        // component is needed, so we return the same page constant, which
-        // evaluates to TRUE (a value of 2), if the component would otherwise
-        // be hidden.
-        if ($format === 'form' && $source_component['page_num'] == $page_num) {
-          if (in_array($component['cid'], $cyclic_component)) {
-            // Cyclic dependency detected. Assume intrapage_dependent.
-            return WEBFORM_CONDITIONAL_INCLUDE;
-          }
-          array_push($cyclic_component, $component['cid']);
-          if (_webform_client_form_rule_check($node, $source_component, $page_num, $input_values, $format)) {
-            $intrapage_dependent = TRUE;
-          }
-          array_pop($cyclic_component);
-        }
-
-        $source_values = array();
-        if (isset($input_values[$source_cid])) {
-          $component_value = $input_values[$source_cid];
-          // For select_or_other components, use only the select values because $source_values must not be a nested array.
-          // During preview, the array is already flattened.
-          if ($source_component['type'] === 'select' &&
-              !empty($source_component['extra']['other_option']) &&
-              isset($component_value['select'])) {
-            $component_value = $component_value['select'];
-          }
-          $source_values = is_array($component_value) ? $component_value : array($component_value);
-        }
-
-        // Determine the operator and callback.
-        $conditional_type = webform_component_property($source_component['type'], 'conditional_type');
-        $operator_info = $operators[$conditional_type];
-
-        // Perform the comparison callback and build the results for this group.
-        $comparison_callback = $operator_info[$rule['operator']]['comparison callback'];
-        $conditional_results[] = $comparison_callback($source_values, $rule['value']);
-      }
-
-      // Calculate the and/or result.
-      $filtered_results = array_filter($conditional_results);
-      if ($conditional['andor'] === 'or') {
-        $conditional_result = count($filtered_results) > 0;
-      }
-      else {
-        $conditional_result = count($filtered_results) === count($conditional_results);
-      }
-
-      // Flip the result of the action is to hide.
-      if ($conditional['action'] == 'hide') {
-        $show_component = !$conditional_result;
-      }
-      else {
-        $show_component = $conditional_result;
-      }
-      if (!$show_component && isset($intrapage_dependent)) {
-        $show_component = WEBFORM_CONDITIONAL_SAME_PAGE;
-      }
-    }
-  }
-
-  // Convert the result to our defined constants.
-  if (is_bool($show_component)) {
-    $show_component = $show_component ? WEBFORM_CONDITIONAL_INCLUDE : WEBFORM_CONDITIONAL_EXCLUDE;
-  }
-
-  // Remember whether this item is shown on this page
-  $is_shown[$node->nid][$page_num][$component['cid']] = $show_component;
-
-  return $show_component;
-}
 
 /**
  * Add a component to a renderable array. Called recursively for fieldsets.
@@ -2635,6 +2739,8 @@ function _webform_client_form_rule_check($node, $component, $page_num, $input_va
  * This function assists in the building of the client form, as well as the
  * display of results, and the text of e-mails.
  *
+ * @param $node
+ *   The current webform node.
  * @param $component
  *   The component to be added to the form.
  * @param $component_value
@@ -2653,6 +2759,8 @@ function _webform_client_form_rule_check($node, $component, $page_num, $input_va
  *   - form: Show as an editable form.
  *   - html: Show as HTML results.
  *   - text: Show as plain text.
+ * @param $page_num
+ *   The page number. Defaults to 0.
  * @param $filter
  *   Whether the form element properties should be filtered. Only set to FALSE
  *   if needing the raw properties for editing.
@@ -2668,9 +2776,10 @@ function _webform_client_form_add_component($node, $component, $component_value,
   if ($format != 'form') {
     // This component is display only.
     $data = empty($input_values[$cid]) ? NULL : $input_values[$cid];
-    if ($display_element = webform_component_invoke($component['type'], 'display', $component, $data, $format)) {
+    if ($display_element = webform_component_invoke($component['type'], 'display', $component, $data, $format, $form['#submission'])) {
       // Set access based on the private property.
-      $display_element['#access'] = $component_access;
+      $display_element += array('#access' => TRUE);
+      $display_element['#access'] = $display_element['#access'] && $component_access;
 
       // Ensure the component is added as a property.
       $display_element['#webform_component'] = $component;
@@ -2700,9 +2809,10 @@ function _webform_client_form_add_component($node, $component, $component_value,
   // version of the form (such as for Form Builder).
   elseif ($component['page_num'] == $page_num || $filter == FALSE) {
     // Add this user-defined field to the form (with all the values that are always available).
-    if ($element = webform_component_invoke($component['type'], 'render', $component, $component_value, $filter)) {
+    if ($element = webform_component_invoke($component['type'], 'render', $component, $component_value, $filter, $form['#submission'])) {
       // Set access based on the private property.
-      $element['#access'] = $component_access;
+      $element += array('#access' => TRUE);
+      $element['#access'] = $element['#access'] && $component_access;
 
       // Ensure the component is added as a property.
       $element['#webform_component'] = $component;
@@ -2711,6 +2821,12 @@ function _webform_client_form_add_component($node, $component, $component_value,
       // property. Add it for Form Builder compatibility.
       if (webform_component_feature($component['type'], 'private')) {
         $element['#webform_private'] = $component['extra']['private'];
+      }
+
+      // The 'placeholder' option is in some components, but it's not a real
+      // property. Add it for Form Builder compatibility.
+      if (webform_component_feature($component['type'], 'placeholder')) {
+        $element['#webform_placeholder'] = $component['extra']['placeholder'];
       }
 
       // Add custom CSS classes to the field and wrapper.
@@ -2735,9 +2851,12 @@ function _webform_client_form_add_component($node, $component, $component_value,
   }
 
   if (isset($component['children']) && is_array($component['children'])) {
+    $sorter = webform_get_conditional_sorter($node);
     foreach ($component['children'] as $scid => $subcomponent) {
       $subcomponent_value = isset($input_values[$scid]) ? $input_values[$scid] : NULL;
-      if (_webform_client_form_rule_check($node, $subcomponent, $page_num, $input_values, $format)) {
+      // Include if always shown, or for forms, also if currently hidden but might be shown due to conditionals.
+      $visibility = $sorter->componentVisibility($scid, $subcomponent['page_num']);
+      if ($visibility == WebformConditionals::componentShown || ($format == 'form' && $visibility) || !$filter) {
         _webform_client_form_add_component($node, $subcomponent, $subcomponent_value, $parent_fieldset[$component['form_key']], $form, $input_values, $format, $page_num, $filter);
       }
     }
@@ -2761,17 +2880,7 @@ function webform_client_form_prevalidate($form, &$form_state) {
   // Check if the user is allowed to submit based on role. This check is
   // repeated here to ensure the user is still logged in at the time of
   // submission, otherwise a stale form in another window may be allowed.
-  $allowed_role = TRUE;
-  $allowed_roles = array();
-  if (variable_get('webform_submission_access_control', 1) && !$finished) {
-    $allowed_roles = array();
-    foreach ($node->webform['roles'] as $rid) {
-      $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
-    }
-    if (array_search(TRUE, $allowed_roles) === FALSE && $user->uid != 1) {
-      $allowed_role = FALSE;
-    }
-  }
+  $allowed_roles = _webform_allowed_roles($node, $allowed_role); // $allowed_role set by reference.
 
   // Check that the submissions have not exceeded the total submission limit.
   $total_limit_exceeded = FALSE;
@@ -2811,6 +2920,10 @@ function webform_client_form_validate($form, &$form_state) {
     // Prevalidation failed. The form cannot be submitted. Do not attemp futher validation.
     return;
   }
+  if ($form_state['webform']['preview'] && $form_state['webform']['page_count'] === $form_state['webform']['page_num']) {
+    // Form has already passed validation and is on the preview page.
+    return;
+  }
 
   module_load_include('inc', 'webform', 'includes/webform.submissions');
   $node = $form['#node'];
@@ -2823,10 +2936,13 @@ function webform_client_form_validate($form, &$form_state) {
     foreach ($new_values as $cid => $values) {
       $input_values[$cid] = $values;
     }
+    // Ensure that all conditionally-hidden values are removed.
+    $input_values = webform_get_conditional_sorter($node)->executeConditionals($input_values, $form_state['webform']['page_num']);
   }
   else {
     $input_values = NULL;
   }
+
 
   // Run all #element_validate and #required checks. These are skipped initially
   // by setting #validated = TRUE on all components when they are added.
@@ -2840,14 +2956,51 @@ function webform_client_form_validate($form, &$form_state) {
  * a different property to ensure that validation has occurred.
  */
 function _webform_client_form_validate(&$elements, &$form_state, $form_id = NULL, $input_values = NULL) {
-  // Webform-specific enhancement, only validate the field if it was used in
-  // this submission. This both skips validation on the field and sets the value
-  // of the field to NULL, preventing any dangerous input.
   if (isset($input_values) && isset($elements['#webform_component'])) {
-    $needs_validation = _webform_client_form_rule_check($form_state['complete form']['#node'], $elements['#webform_component'], 0, $input_values);
-    if (!$needs_validation) {
+    $sorter = webform_get_conditional_sorter($form_state['complete form']['#node']);
+    $cid = $elements['#webform_component']['cid'];
+    $page_num = $form_state['values']['details']['page_num'];
+    // Webform-specific enhancements:
+    // 1) Only validate the field if it was used in this submission.
+    //    This both skips validation on the field and sets the value of the
+    //    field to NULL, preventing any dangerous input. Short-circuit
+    //    validation for a hidden component (hidden by rules dependent upon
+    //    component on previous pages), or a component this is dependent upon
+    //    values on the current page, but is hidden based upon their current
+    //    values.
+    // 2) Only valididate if the field has not been set by conditionals.
+    //    The user will be unable to fix the validation without surmising the
+    //    logic and changing the trigger for the conditional. Also, it isn't
+    //    possible to set $element['#value'] without component-specific
+    //    knowledge of how the data is stored because $input_values is already
+    //    webform-normalized to contain values in arrays.
+    if ($sorter->componentVisibility($cid, $page_num) != WebformConditionals::componentShown) {
       form_set_value($elements, NULL, $form_state);
       return;
+    }
+    if ($sorter->componentSet($cid, $page_num)) {
+      $component = $elements['#webform_component'];
+      $value = $input_values[$cid];
+      $value = is_array($value) ? $value[0] : $value;
+      // webform_component_invoke cannot be called with reference arguments. Call directly.
+      // webform_component_invoke($component['type'], 'action_set', $component, $elements, $form_state, $value);
+      $function = '_webform_action_set_' . $component['type'];
+      $function($component, $elements, $form_state, $value);
+    }
+
+    // Check for changes in required status made by conditionals.
+    $required = $sorter->componentRequired($cid, $page_num);
+    if (isset($required)) {
+      $elements['#required'] = $required;
+
+      // Some components, e.g. grids, have nested sub-elements. Extend required
+      // to any sub-components.
+      foreach (element_children($elements) as $key) {
+        if (isset($elements[$key]) && $elements[$key] && !isset($elements[$key]['#webform_component'])) {
+          // Child is *not* a component.
+          $elements[$key]['#required'] = $required;
+        }
+      }
     }
   }
 
@@ -2858,7 +3011,7 @@ function _webform_client_form_validate(&$elements, &$form_state, $form_id = NULL
     }
   }
   // Validate the current input.
-  if (isset($elements['#webform_validated']) && $elements['#webform_validated'] == FALSE) {
+  if (isset($elements['#webform_validated']) && !$elements['#webform_validated']) {
     if (isset($elements['#needs_validation'])) {
       // Make sure a value is passed when the field is required.
       // A simple call to empty() will not cut it here as some fields, like
@@ -2905,7 +3058,7 @@ function _webform_client_form_validate(&$elements, &$form_state, $form_id = NULL
     // #value data.
     elseif (isset($elements['#element_validate'])) {
       foreach ($elements['#element_validate'] as $function) {
-        if (function_exists($function))  {
+        if (is_callable($function))  {
           $function($elements, $form_state, $form_state['complete form']);
         }
       }
@@ -3020,23 +3173,23 @@ function webform_client_form_pages($form, &$form_state) {
   // Assume the form is completed unless the page logic says otherwise.
   $form_state['webform_completed'] = TRUE;
 
+  // Merge any stored submission data for multistep forms.
+  $original_values = is_array($form_state['values']['submitted']) ? $form_state['values']['submitted'] : array();
+  if (isset($form_state['storage']['submitted'])) {
+    // Array + operator keeps all elements of left operand and discards any duplicate elements in right operand.
+    $original_values += $form_state['storage']['submitted'];
+  }
+
+  // Execute conditionals on submission values.
+  $form_state['values']['submitted'] = webform_get_conditional_sorter($node)->executeConditionals($original_values);
+
   // Check for a multi-page form that is not yet complete.
   $submit_op = !empty($form['actions']['submit']['#value']) ? $form['actions']['submit']['#value'] : t('Submit');
   $draft_op = !empty($form['actions']['draft']['#value']) ? $form['actions']['draft']['#value'] : t('Save Draft');
   if (!in_array($form_state['values']['op'], array($submit_op, $draft_op, '__AUTOSAVE__'))) {
-    // Store values from the current page in the form state storage.
-    if (is_array($form_state['values']['submitted'])) {
-      foreach ($form_state['values']['submitted'] as $key => $val) {
-        $form_state['storage']['submitted'][$key] = $val;
-      }
-    }
 
-    // Update form state values with those from storage.
-    if (isset($form_state['storage']['submitted'])) {
-      foreach ($form_state['storage']['submitted'] as $key => $val) {
-        $form_state['values']['submitted'][$key] = $val;
-      }
-    }
+    // Store values from the current page in the form state storage.
+    $form_state['storage']['submitted'] = $form_state['values']['submitted'];
 
     // Set the page number.
     if (!isset($form_state['storage']['page_num'])) {
@@ -3046,7 +3199,7 @@ function webform_client_form_pages($form, &$form_state) {
       $forward = 1;
     }
     elseif (end($form_state['clicked_button']['#parents']) == 'previous') {
-      $forward = 0;
+      $forward = -1;
     }
     $current_page = $form_state['storage']['page_num'];
 
@@ -3057,87 +3210,26 @@ function webform_client_form_pages($form, &$form_state) {
       //    3) the preview page, forcing its display if the form would unexpectedly submit, or
       //    4) page 1 even if empty, if no other previous page would be shown
       $preview_page_num = $form_state['storage']['page_count'] + (int)!$form_state['webform']['preview'];
-      $page_zero = array(
-        array(
-          'type' => 'faux',
-          'page_num' => 0,
-        ),
-        array(
-          'type' => 'pagebreak',
-          'page_num' => 1,
-        ),
-      );
-      $page_preview = array(
-        array(
-          'type' => 'pagebreak',
-          'page_num' => $preview_page_num,
-        ),
-         array(
-          'type' => 'faux',
-          'page_num' => $preview_page_num,
-        ),
-      );
-      $components = array_merge($page_zero, $node->webform['components'], $page_preview);
-      if (!$forward) {
-        $components = array_reverse($components);
+      $page_num = $current_page;
+      do {
+        $page_num += $forward;
+      } while (!webform_get_conditional_sorter($node)->pageVisibility($page_num));
+      if (!$form_state['webform']['preview'] && $page_num == $preview_page_num) {
+        // Force a preview to avert an unintended submission via Next.
+        $form_state['webform']['preview'] = TRUE;
+        $form_state['storage']['preview'] = TRUE;
+        $form_state['storage']['page_count']++;
       }
-      foreach ($components as $component) {
-        if ($component['type'] == 'pagebreak') {
-          if ($forward
-               ? ($component['page_num'] > $form_state['storage']['page_num'])
-               : ($component['page_num'] <= $form_state['storage']['page_num'])){
-            $previous_pagebreak = $component;
-          }
-        }
-        elseif (isset($previous_pagebreak)) {
-          // If a component is shown on this page, advance to this page.
-          $page_num = $previous_pagebreak['page_num'] + $forward - 1;
-          if ($component['page_num'] == $page_num &&
-              ($component['type'] == 'faux' || _webform_client_form_rule_check($node, $component, $page_num, $form_state['values']['submitted']) == WEBFORM_CONDITIONAL_INCLUDE)) {
-            if ($component['type'] == 'faux') {
-              if ($forward) {
-                if (!$form_state['webform']['preview']) {
-                  // Force a preview to avert an unintended submission via Next.
-                  $form_state['webform']['preview'] = TRUE;
-                  $form_state['storage']['preview'] = TRUE;
-                  $form_state['storage']['page_count']++;
-                }
-              }
-              else {
-                $page_num = max (1, $page_num);
-              }
-            }
-            $form_state['storage']['page_num'] = $page_num;
-            break; // LOOP EXIT
-          }
-        }
-      }
-
+      $form_state['storage']['page_num'] = $page_num;
     }
 
     // The form is done if the page number is greater than the page count.
     $form_state['webform_completed'] = $form_state['storage']['page_num'] > $form_state['storage']['page_count'];
   }
 
-  // Merge any stored submission data for multistep forms.
-  if (isset($form_state['storage']['submitted'])) {
-    $original_values = is_array($form_state['values']['submitted']) ? $form_state['values']['submitted'] : array();
-    unset($form_state['values']['submitted']);
-
-    foreach ($form_state['storage']['submitted'] as $key => $val) {
-      $form_state['values']['submitted'][$key] = $val;
-    }
-    foreach ($original_values as $key => $val) {
-      $form_state['values']['submitted'][$key] = $val;
-    }
-
-    // Remove the variable so it doesn't show up in the additional processing.
-    unset($original_values);
-  }
-
   // Inform the submit handlers that a draft will be saved.
   $form_state['save_draft'] = in_array($form_state['values']['op'], array($draft_op, '__AUTOSAVE__')) ||
-                              ($node->webform['auto_save'] && !$form_state['webform_completed'] && user_is_logged_in());
+                              ($node->webform['auto_save'] && !$form_state['values']['details']['finished'] && !$form_state['webform_completed'] && user_is_logged_in());
 
   // Determine what we need to do on the next page.
   if (!empty($form_state['save_draft']) || !$form_state['webform_completed']) {
@@ -3174,11 +3266,19 @@ function webform_client_form_submit($form, &$form_state) {
   // exist, but webform_get_submission() will not find the draft. So, make a new
   // submission.
   if ($sid && $submission = webform_get_submission($node->webform['nid'], $sid)) {
+    // Store original data on object for use in update hook.
+    $submission->original = clone $submission;
+
     // Merge with new submission data. The + operator maintains numeric keys.
     // This maintains existing data with just-submitted data when a user resumes
     // a submission previously saved as a draft.
-    $new_data = webform_submission_data($node, $form_state['values']['submitted']);
-    $submission->data = $new_data + $submission->data;
+    // Remove any existing data on this and previous pages. If components are hidden, they may
+    // be in the $submission->data but absent entirely from $new_data;
+    $page_map = webform_get_conditional_sorter($node)->getPageMap();
+    for ($page_nr = 1; $page_nr <= $form_state['webform']['page_num']; $page_nr++) {
+      $submission->data = array_diff_key($submission->data, $page_map[$page_nr]);
+    }
+    $submission->data = webform_submission_data($node, $form_state['values']['submitted']) + $submission->data;
   }
   else {
     // Create a new submission object.
@@ -3186,7 +3286,16 @@ function webform_client_form_submit($form, &$form_state) {
     // Since this is a new submission, a new sid is needed.
     $sid = NULL;
   }
+
+  // Save draft state, and for drafts, save the current page (if clicking next)
+  // or the previous page (if not) as the last valid page.
   $submission->is_draft = $is_draft;
+  $submission->highest_valid_page = 0;
+  if ($is_draft) {
+     $submission->highest_valid_page = end($form_state['clicked_button']['#parents']) == 'next' && $form_state['values']['op'] != '__AUTOSAVE__'
+                                          ? $form_state['webform']['page_num']
+                                          : $form_state['webform']['page_num'] - 1;
+  }
 
   // If there is no data to be saved (such as on a multipage form with no fields
   // on the first page), process no further. Submissions with no data cannot
@@ -3201,9 +3310,14 @@ function webform_client_form_submit($form, &$form_state) {
     $form_state['values']['details']['sid'] = $sid = webform_submission_insert($node, $submission);
     $form_state['values']['details']['is_new'] = TRUE;
 
+    // Save the new details in storage. When ajax calls for file upload/remove,
+    // $form_state['values']['details'] is missing. This allows the proper
+    // submission to be retrieved in webform_client_form. See #2562703.
+    $form_state['storage']['details'] = $form_state['values']['details'];
+
     // Set a cookie including the server's submission time. The cookie expires
     // in the length of the interval plus a day to compensate for timezones.
-    $tracking_mode = variable_get('webform_tracking_mode', 'cookie');
+    $tracking_mode = webform_variable_get('webform_tracking_mode');
     if ($tracking_mode === 'cookie' || $tracking_mode === 'strict') {
       $cookie_name = 'webform-' . $node->nid;
       $time = REQUEST_TIME;
@@ -3214,7 +3328,7 @@ function webform_client_form_submit($form, &$form_state) {
     // Save session information about this submission for anonymous users,
     // allowing them to access or edit their submissions.
     if (!$user->uid && user_access('access own webform submissions')) {
-      $_SESSION['webform_submission'][$form_state['values']['details']['sid']] = $node->nid;
+      $_SESSION['webform_submission'][$sid] = $node->nid;
     }
   }
   else {
@@ -3231,47 +3345,62 @@ function webform_client_form_submit($form, &$form_state) {
   }
 
   // Strip out empty tags added by WYSIWYG editors if needed.
-  $confirmation = strlen(trim(strip_tags($node->webform['confirmation']))) ? $node->webform['confirmation'] : '';
-  $confirmation = webform_replace_tokens($confirmation, $node, $submission, NULL, TRUE);
+  $message = strlen(trim(strip_tags($node->webform['confirmation']))) > 0;
 
   // Check confirmation and redirect_url fields.
-  $message = NULL;
   $redirect = NULL;
-  $external_url = FALSE;
   $redirect_url = trim($node->webform['redirect_url']);
   if (isset($form['actions']['draft']['#value']) && $form_state['values']['op'] == $form['actions']['draft']['#value']) {
     $message = t('Submission saved. You may return to this form later and it will restore the current values.');
   }
   elseif ($is_draft) {
-    // No redirect needed
+    // No redirect needed. No confirmation message needed.
+    $message = FALSE;
   }
   elseif (!empty($form_state['values']['details']['finished'])) {
     $message = t('Submission updated.');
     $redirect = "node/{$node->nid}/submission/$sid";
   }
+  elseif (!empty($node->webform['confirmation_block'])) {
+    $message = FALSE;
+    // Webform was submitted in a block and the confirmation message is to be
+    // displayed in the block.
+    $_SESSION['webform_confirmation'][$node->nid] = array(
+      'sid' => $sid,
+      'confirmation_page' => $redirect_url == '<confirmation>',
+    );
+    drupal_page_is_cacheable(FALSE);
+  }
   elseif ($redirect_url == '<none>') {
-    // No redirect needed
+    // No redirect needed. Show a confirmatin message if there is one.
   }
   elseif ($redirect_url == '<confirmation>') {
+    // No confirmation message needed because it will be shown on the
+    // confirmation page.
+    $message = FALSE;
     $query = array('sid' => $sid);
     if ((int) $user->uid === 0) {
-      $query['token'] = md5($submission->submitted . $submission->sid . drupal_get_private_key());
+      $query['token'] = webform_get_submission_access_token($submission);
     }
     $redirect = array('node/' . $node->nid . '/done', array('query' => $query));
   }
   else {
-    // Clean up the redirect URL, filter it for tokens and detect external domains.
+    // Clean up the redirect URL, filter it for tokens and detect external
+    // domains. If the redirect is to an external URL, then don't show the
+    // confirmation message.
     $redirect = webform_replace_url_tokens($redirect_url, $node, $submission);
-    $external_url = $redirect[1]['#webform_external'];
+    if ($redirect[1]['#webform_external']) {
+      $message = FALSE;
+    }
   }
 
   // Show a message if manually set.
-  if (isset($message)) {
-    drupal_set_message(webform_replace_tokens($message, $node, NULL, NULL, TRUE));
+  if (is_string($message)) {
+    drupal_set_message($message);
   }
   // If redirecting and we have a confirmation message, show it as a message.
-  elseif (!$is_draft && !$external_url && (!empty($redirect_url) && $redirect_url != '<confirmation>') && !empty($confirmation)) {
-    drupal_set_message(check_markup(webform_replace_tokens($confirmation, $node), $node->webform['confirmation_format'], '', TRUE));
+  elseif ($message) {
+    drupal_set_message(webform_replace_tokens($node->webform['confirmation'], $node, $submission, NULL, $node->webform['confirmation_format']));
   }
 
   $form_state['redirect'] = $redirect;
@@ -3317,6 +3446,10 @@ function _webform_client_form_submit_flatten($node, $fieldset, $parent = 0) {
           $values[$cid] = $value;
         }
       }
+      else {
+        // This $form_key must belong to the parent. For example, a grid.
+        $values[$parent][$form_key] = $value;
+      }
     }
   }
 
@@ -3328,7 +3461,7 @@ function _webform_client_form_submit_flatten($node, $fieldset, $parent = 0) {
  */
 function _webform_confirmation($node) {
   drupal_set_title($node->title);
-  webform_set_breadcrumb($node);
+  webform_set_breadcrumb($node, TRUE);
   $sid = isset($_GET['sid']) ? $_GET['sid'] : NULL;
   return theme(array('webform_confirmation_' . $node->nid, 'webform_confirmation'), array('node' => $node, 'sid' => $sid));
 }
@@ -3344,10 +3477,12 @@ function template_preprocess_webform_form(&$vars) {
     $vars['nid'] = $vars['form']['submission']['#value']->nid;
   }
 
-  if (!empty($vars['form']['#node']->webform['conditionals'])) {
+  if (!empty($vars['form']['#node']->webform['conditionals']) && empty($vars['form']['preview'])) {
     module_load_include('inc', 'webform', 'includes/webform.conditionals');
-    $submission_data = isset($vars['form']['#parameters'][1]['storage']['submitted']) ? $vars['form']['#parameters'][1]['storage']['submitted'] : array();
-    $settings = webform_conditional_prepare_javascript($vars['form']['#node'], $submission_data);
+    $submission_data = isset($vars['form']['#conditional_values']) ? $vars['form']['#conditional_values'] : array();
+    $settings = webform_conditional_prepare_javascript($vars['form']['#node'],
+                                                       $submission_data,
+                                                       $vars['form']['details']['page_num']['#value']);
     drupal_add_js(array('webform' => array('conditionals' => array('webform-client-form-' . $vars['nid'] => $settings))), 'setting');
   }
 
@@ -3357,23 +3492,28 @@ function template_preprocess_webform_form(&$vars) {
  * Prepare for theming of the webform submission confirmation.
  */
 function template_preprocess_webform_confirmation(&$vars) {
-  $confirmation = check_markup($vars['node']->webform['confirmation'], $vars['node']->webform['confirmation_format'], '', TRUE);
+  $node = $vars['node'];
+  // Strip out empty tags added by WYSIWYG editors if needed.
+  $confirmation = $node->webform['confirmation'];
+  $confirmation = strlen(trim(strip_tags($confirmation))) ? $confirmation : '';
 
   // Replace tokens.
   module_load_include('inc', 'webform', 'includes/webform.submissions');
-  $submission = webform_get_submission($vars['node']->nid, $vars['sid']);
-  $confirmation = webform_replace_tokens($confirmation, $vars['node'], $submission, NULL, TRUE);
+  $submission = webform_get_submission($node->nid, $vars['sid']);
+  $vars['confirmation_message'] = webform_replace_tokens($confirmation, $node, $submission, NULL, $node->webform['confirmation_format']);
 
-  // Strip out empty tags added by WYSIWYG editors if needed.
-  $vars['confirmation_message'] = strlen(trim(strip_tags($confirmation))) ? $confirmation : '';
+  // URL back to form (or same page for in-block confirmations).
+  $vars['url'] = empty($node->webform_block)
+                    ? url('node/' . $node->nid)
+                    : url(current_path(), array('query' => drupal_get_query_parameters()));
 
   // Progress bar.
   $vars['progressbar'] = '';
-  $page_labels = webform_page_labels($vars['node']);
+  $page_labels = webform_page_labels($node);
   $page_count = count($page_labels);
-  if ($vars['node']->webform['progressbar_include_confirmation'] && $page_count > 2) {
+  if ($node->webform['progressbar_include_confirmation'] && $page_count > 2) {
     $vars['progressbar'] = theme('webform_progressbar', array(
-      'node' => $vars['node'],
+      'node' => $node,
       'page_num' => $page_count,
       'page_count' => $page_count,
       'page_labels' => $page_labels,
@@ -3403,7 +3543,7 @@ function template_preprocess_webform_mail_message(&$vars) {
   global $user;
 
   $vars['user'] = $user;
-  $vars['ip_address'] = ip_address();
+  $vars['ip_address'] = webform_ip_address($vars['node']);
 }
 
 /**
@@ -3425,11 +3565,11 @@ function webform_element_title_display($element) {
  * Drupal forcibly adds IDs to all form elements, including those that do not
  * need them for any reason, such as the actions wrapper or submit buttons. We
  * use this process function wherever we wish to remove an ID from an element.
- * Because #states require IDs, they are only removed if the states array is
- * empty.
+ * Because #states and #ajax require IDs, they are only removed if the states
+ * and ajax arrays are empty.
  */
 function webform_pre_render_remove_id($element) {
-  if (empty($element['#states'])) {
+  if (empty($element['#states']) && empty($element['#ajax'])) {
     $element['#id'] = NULL;
     // Removing array parents is required to prevent theme_container from adding
     // an empty ID attribute.
@@ -3447,9 +3587,10 @@ function template_preprocess_webform_element(&$variables) {
   // Ensure defaults.
   $element += array(
     '#title_display' => 'before',
-    '#wrapper_attributes' => array(
-      'class' => array(),
-    ),
+    '#wrapper_attributes' => array(),
+  );
+  $element['#wrapper_attributes'] += array(
+    'class' => array(),
   );
 
   // All elements using this for display only are given the "display" type.
@@ -3479,7 +3620,6 @@ function template_preprocess_webform_element(&$variables) {
   // If #title_display is none, set it to invisible instead - none only used if
   // we have no title at all to use.
   if ($element['#title_display'] == 'none') {
-    $variables['element']['#title_display'] = 'invisible';
     $element['#title_display'] = 'invisible';
     if (empty($element['#attributes']['title']) && !empty($element['#title'])) {
       $element['#attributes']['title'] = $element['#title'];
@@ -3488,6 +3628,11 @@ function template_preprocess_webform_element(&$variables) {
 
   // If #title is not set, we don't display any label or required marker.
   if (!isset($element['#title'])) {
+    $element['#title_display'] = 'none';
+  }
+
+  // If an internal title is being used, generate no external title.
+  if ($element['#title_display'] == 'internal') {
     $element['#title_display'] = 'none';
   }
 }
@@ -3502,37 +3647,37 @@ function theme_webform_element($variables) {
   $prefix = isset($element['#field_prefix']) ? '<span class="field-prefix">' . webform_filter_xss($element['#field_prefix']) . '</span> ' : '';
   $suffix = isset($element['#field_suffix']) ? ' <span class="field-suffix">' . webform_filter_xss($element['#field_suffix']) . '</span>' : '';
 
-  // managed_file uses a different id, make sure the label points to the correct id.
-  if (isset($element['#type']) && $element['#type'] === 'managed_file') {
-    if (!empty($variables['element']['#id'])) {
-      $variables['element']['#id'] .= '-upload';
-    }
-  }
+  // Generate description for above or below the field.
+  $above = !empty($element['#webform_component']['extra']['description_above']);
+  $description = array(
+    FALSE => '',
+    TRUE => !empty($element['#description']) ? ' <div class="description">' . $element['#description'] . "</div>\n" : '',
+  );
 
   switch ($element['#title_display']) {
     case 'inline':
+      $output .= $description[$above];
+      $description[$above] = '';
+      // FALL THRU.
     case 'before':
     case 'invisible':
       $output .= ' ' . theme('form_element_label', $variables);
-      $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix . "\n";
       break;
 
     case 'after':
-      $output .= ' ' . $prefix . $element['#children'] . $suffix;
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix;
       $output .= ' ' . theme('form_element_label', $variables) . "\n";
       break;
 
     case 'none':
     case 'attribute':
       // Output no label and no required marker, only the children.
-      $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix . "\n";
       break;
   }
 
-  if (!empty($element['#description'])) {
-    $output .= ' <div class="description">' . $element['#description'] . "</div>\n";
-  }
-
+  $output .= $description[!$above];
   $output .= "</div>\n";
 
   return $output;
@@ -3734,6 +3879,19 @@ function _webform_fetch_draft_sid($nid, $uid) {
 }
 
 /**
+ * Returns a new or cached WebformConditionals object for the specified node.
+ *
+ * @param object $node
+ *   The loaded webform node.
+ * @returns object
+ *   Object of type WebformConditionals, possibly with the conditionals already
+ *   analyzed for dependencies.
+ */
+function webform_get_conditional_sorter($node) {
+  return WebformConditionals::factory($node);
+}
+
+/**
  * This function is deprecated! Use webform_replace_tokens() instead.
  *
  * @deprecated
@@ -3757,15 +3915,17 @@ function _webform_filter_values($string, $node = NULL, $submission = NULL, $emai
  *   If replacing tokens within the context of an e-mail, the Webform e-mail
  *   settings array.
  * @param $sanitize
- *   Boolean value indicating if the results will be displayed as HTML output.
- *   This will be passed to token_replace(). If FALSE, the contents returned
- *   will be unsanitized. This will also result in all Webform submission tokens
- *   being returned as plain-text, without HTML markup, in preparation for
- *   e-mailing or other text-only purposes (default values, etc.)
+ *   Boolean or format name value indicating if the results will be displayed as
+ *   HTML output. If FALSE, the contents returned will be unsanitized. This will
+ *   also result in all Webform submission tokens being returned as plain-text,
+ *   without HTML markup, in preparation for e-mailing or other text-only
+ *   purposes (default values, etc.). If TRUE, the tokens only are sanitized by
+ *   token_replace. Otherwise $sanitize is the machine name of an import filter
+ *   to be used with check_markup().
  */
 function webform_replace_tokens($string, $node = NULL, $submission = NULL, $email = NULL, $sanitize = FALSE) {
   // Don't do any filtering if the string is empty.
-  if (strlen(trim($string)) == 0) {
+  if (!strlen(trim($string)) || !webform_variable_get('webform_token_access')) {
     return $string;
   }
 
@@ -3779,7 +3939,53 @@ function webform_replace_tokens($string, $node = NULL, $submission = NULL, $emai
   if ($email) {
     $token_data['webform-email'] = $email;
   }
-  return token_replace($string, $token_data, array('clear' => true, 'sanitize' => $sanitize));
+  $clear = is_bool($sanitize);
+  $string = token_replace($string, $token_data, array('clear' => $clear, 'sanitize' => $sanitize === TRUE));
+  if (!$clear) {
+    $string = webform_replace_tokens_clear(check_markup($string, $sanitize));
+  }
+  return $string;
+}
+
+/**
+ * Removes tokens from string.
+ *
+ * Call this function in cases where you need to remove unreplaced tokens but
+ * can't call webform_replace_tokens() with the option $clear = TRUE.
+ *
+ * In some cases the function token_replace() in webform_replace_tokens() needs
+ * to be called with the option 'clear' => FALSE, to not remove input filters.
+ * For security reasons webform_replace_tokens() is called before
+ * check_markup(), where input filters get replaced. Tokens won't be replaced if
+ * there is no value provided. These tokens i.e. [current-page:query:*] needs to
+ * be removed to not show up in the output.
+ *
+ * Note: This function was previously named webform_clear_tokens, which
+ * conflicted with the webform_clear module, being called as hook_tokens.
+ *
+ * @param string $text
+ *   The text to have its tokens removed.
+ * @see token_replace()
+ */
+function webform_replace_tokens_clear($text) {
+  if (empty($text) || !webform_variable_get('webform_token_access')) {
+    return $text;
+  }
+
+  $text_tokens = token_scan($text);
+  if (empty($text_tokens)) {
+    return $text;
+  }
+
+  $replacements = array();
+  foreach ($text_tokens as $type => $tokens) {
+    $replacements += array_fill_keys($tokens, '');
+  }
+
+  $tokens = array_keys($replacements);
+  $values = array_values($replacements);
+
+  return str_replace($tokens, $values, $text);
 }
 
 /**
@@ -3924,7 +4130,7 @@ function webform_get_cid(&$node, $form_key, $pid) {
 /**
  * Find the label of a given page based on page breaks.
  *
- * @param $webform
+ * @param $node
  *   The webform node.
  * @param $form_state
  *   The form's state, if available
@@ -3955,8 +4161,20 @@ function webform_page_labels($node, $form_state = array()) {
  */
 function webform_variable_get($variable) {
   switch ($variable) {
+    case 'webform_blocks':
+      $result = variable_get('webform_blocks', array());
+      break;
+    case 'webform_tracking_mode':
+      $result = variable_get('webform_tracking_mode', 'cookie');
+      break;
     case 'webform_allowed_tags':
       $result = variable_get('webform_allowed_tags', array('a', 'em', 'strong', 'code', 'img'));
+      break;
+    case 'webform_email_address_format':
+      $result = variable_get('webform_email_address_format', 'long');
+      break;
+    case 'webform_email_address_individual':
+      $result = variable_get('webform_email_address_individual', 0);
       break;
     case 'webform_default_from_name':
       $result = variable_get('webform_default_from_name', variable_get('site_name', ''));
@@ -3967,11 +4185,29 @@ function webform_variable_get($variable) {
     case 'webform_default_subject':
       $result = variable_get('webform_default_subject', t('Form submission from: [node:title]'));
       break;
+    case 'webform_email_replyto':
+      $result = variable_get('webform_email_replyto', TRUE);
+      break;
+    case 'webform_email_html_capable':
+      $result = variable_get('webform_email_html_capable', FALSE);
+      break;
+    case 'webform_default_format':
+      $result = variable_get('webform_default_format', 0);
+      break;
+    case 'webform_format_override':
+      $result = variable_get('webform_format_override', 0);
+      break;
+    case 'webform_email_select_max':
+      $result = variable_get('webform_email_select_max', 50);
+      break;
     case 'webform_node_types':
       $result = webform_node_types();
       break;
     case 'webform_node_types_primary':
       $result = variable_get('webform_node_types_primary', array('webform'));
+      break;
+    case 'webform_date_type':
+      $result = variable_get('webform_date_type', 'medium');
       break;
     case 'webform_export_format':
       module_load_include('inc', 'webform', 'includes/webform.export');
@@ -3982,6 +4218,15 @@ function webform_variable_get($variable) {
     case 'webform_csv_delimiter':
       $result = variable_get('webform_csv_delimiter', '\t');
       break;
+    case 'webform_csv_line_ending':
+      $result = variable_get('webform_csv_line_ending', "\n");
+      break;
+    case 'webform_export_wordwrap':
+      $result = variable_get('webform_export_wordwrap', 0);
+      break;
+    case 'webform_excel_legacy_exporter':
+      $result = variable_get('webform_excel_legacy_exporter', 0);
+      break;
     case 'webform_progressbar_style':
       $result = variable_get('webform_progressbar_style', array('progressbar_bar', 'progressbar_pagebreak_labels', 'progressbar_include_confirmation'));
       break;
@@ -3990,6 +4235,21 @@ function webform_variable_get($variable) {
       break;
     case 'webform_progressbar_label_confirmation':
       $result = variable_get('webform_progressbar_label_confirmation', t('Complete'));
+      break;
+    case 'webform_table':
+      $result = variable_get('webform_table', FALSE);
+      break;
+    case 'webform_submission_access_control':
+      $result = variable_get('webform_submission_access_control', 1);
+      break;
+    case 'webform_token_access':
+      $result = variable_get('webform_token_access', 1);
+      break;
+    case 'webform_update_batch_size':
+      $result = variable_get('webform_update_batch_size', 100);
+      break;
+    case 'webform_disabled_components':
+      $result = variable_get('webform_disabled_components', array());
       break;
   }
   return $result;
@@ -4003,66 +4263,83 @@ function webform_variable_get($variable) {
  * Token module is not available, a message should be displayed.
  */
 function theme_webform_token_help($variables) {
-  $groups = $variables['groups'];
-
-  // If token supports dialogs, display simply as a link.
-  module_load_include('inc', 'token', 'token.pages');
-  if (module_exists('token') && function_exists('token_page_output_tree')) {
-    return theme('token_tree', array('token_types' => $groups, 'dialog' => TRUE));
+  if (!webform_variable_get('webform_token_access')) {
+    return '';
   }
+  $groups = $variables['groups'];
+  module_load_include('inc', 'token', 'token.pages');
 
-  // If dialogs are not supported, show as a fieldset.
-  $fieldset = array(
+  // Assume dialogs are not supported, show as a fieldset.
+  $help = array(
     '#title' => t('Token values'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attributes' => array('class' => array('collapsible', 'collapsed')),
+    'help' => array(
+      '#markup' => '<p>' . t('This field supports dynamic token values. Common values might be [current-user:mail] or [node:title].') . '</p>',
+    ),
+    'token_tree' => array(
+      '#theme' => 'token_tree',
+      '#token_types' => $groups,
+    ),
   );
 
-  $help = '<p>' . t('This field supports dynamic token values. Common values might be [current-user:mail] or [node:title].') . '</p>';
   if (!module_exists('token')) {
-    $help .= '<p>' . t('A full listing of tokens may be listed here by installing the <a href="http://drupal.org/project/token">Token module</a>.') . '</p>';
+    // No token module at all. Display a simple suggestion to enable it.
+    $help['help']['#markup'] .= '<p>' . t('A full listing of tokens may be listed here by installing the <a href="http://drupal.org/project/token">Token module</a>.') . '</p>';
+    unset($help['token_tree']);
   }
-  $fieldset['help'] = array(
-    '#markup' => $help,
-  );
+  elseif (function_exists('token_page_output_tree')) {
+    // Token supports dialogs: display simply as a link.
+    $help = $help['token_tree'];
+    $help['#dialog'] = TRUE;
+  }
 
-  $fieldset['token_tree'] = array(
-    '#theme' => 'token_tree',
-    '#token_types' => $groups,
-  );
-
-  return render($fieldset);
+  return render($help);
 }
 
+/**
+ * Convert a name into an identifier that is safe for machine names, classes,
+ * and other ASCII uses.
+ */
 function _webform_safe_name($name) {
   $new = trim($name);
-
-  // If transliteration is available, use it to convert names to ASCII.
-  if (function_exists('transliteration_get')) {
-    $new = transliteration_get($new, '');
-    $new = str_replace(array(' ', '-', '/'), array('_', '_', '_'), $new);
-  }
-  else {
-    $new = str_replace(
-      array(' ', '-', '/', '€', 'ƒ', 'Š', 'Ž', 'š', 'ž', 'Ÿ', '¢', '¥', 'µ', 'À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'à', 'á', 'â', 'ã', 'ä', 'å', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', 'Œ',  'œ',  'Æ',  'Ð',  'Þ',  'ß',  'æ',  'ð',  'þ'),
-      array('_', '_', '_', 'E', 'f', 'S', 'Z', 's', 'z', 'Y', 'c', 'Y', 'u', 'A', 'A', 'A', 'A', 'A', 'A', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th'),
-      $new);
-  }
-
+  $new = _webform_transliterate($new);
+  $new = str_replace(array(' ', '-', '/'), array('_', '_', '_'), $new);
   $new = drupal_strtolower($new);
   $new = preg_replace('/[^a-z0-9_]/', '', $new);
   return $new;
 }
 
 /**
+ * Transliterate common non-English characters to 7-bit ASCII.
+ */
+function _webform_transliterate($name) {
+  // If transliteration is available, use it to convert names to ASCII.
+  return function_exists('transliteration_get')
+            ? transliteration_get($name, '')
+            : str_replace(array('€', 'ƒ', 'Š', 'Ž', 'š', 'ž', 'Ÿ', '¢', '¥', 'µ', 'À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'à', 'á', 'â', 'ã', 'ä', 'å', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', 'Œ',  'œ',  'Æ',  'Ð',  'Þ',  'ß',  'æ',  'ð',  'þ'),
+                          array('E', 'f', 'S', 'Z', 's', 'z', 'Y', 'c', 'Y', 'u', 'A', 'A', 'A', 'A', 'A', 'A', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'OE', 'oe', 'AE', 'DH', 'TH', 'ss', 'ae', 'dh', 'th'),
+                          $name);
+}
+
+/**
  * Given an email address and a name, format an e-mail address.
+ *
+ * The address can be the cid of a component with multiple values. When $single
+ * is true, a single address is return (the first of any multiples). When not
+ * true, an array of addresses is returned.
+ *
+ * Note that multiple names could be used with multiple addresses, but this
+ * capability is not currently possible with the webform UI. Separate names
+ * are only used with the From address, which is always single.
  *
  * @param $address
  *   The e-mail address.
  * @param $name
- *   The name to be used in the formatted address.
+ *   The name to be used in the formatted address. If the address contains a
+ *   name in 'Some Name <somename@example.com>' format, $name is ignored.
  * @param $node
  *   The webform node if replacements will be done.
  * @param $submission
@@ -4074,12 +4351,16 @@ function _webform_safe_name($name) {
  *   multiple addresses. This is useful to ensure a single e-mail will be
  *   returned for the "From" address.
  * @param $format
- *   The e-mail format, defaults to the site-wide setting. May be either "short"
- *   or "long".
+ *   The e-mail format, defaults to the site-wide setting. May be "short",
+ *   "long", or NULL for the system default.
+ * @param $mapping
+ *   A mapping array to be applied to the address values.
+ * @return string|array
+ *   The formatted e-mail address -- or addresses (if not $single)
  */
-function webform_format_email_address($address, $name, $node = NULL, $submission = NULL, $encode = TRUE, $single = TRUE, $format = NULL) {
+function webform_format_email_address($address, $name, $node = NULL, $submission = NULL, $encode = TRUE, $single = TRUE, $format = NULL, $mapping = NULL) {
   if (!isset($format)) {
-    $format = variable_get('webform_email_address_format', 'long');
+    $format = webform_variable_get('webform_email_address_format');
   }
 
   if ($name == 'default') {
@@ -4093,12 +4374,18 @@ function webform_format_email_address($address, $name, $node = NULL, $submission
       // Convert the FROM name to be the label of select lists.
       if (webform_component_implements($component['type'], 'options')) {
         $options = webform_component_invoke($component['type'], 'options', $component);
-        $name = isset($options[$name[0]]) ? $options[$name[0]] : $name;
+        foreach ($name as &$one_name) {
+          $one_name = isset($options[$one_name]) ? $options[$one_name] : $one_name;
+        }
+        unset($one_name); // Drop PHP reference.
       }
     }
     else {
       $name = t('Value of !component', array('!component' => $node->webform['components'][$name]['name']));
     }
+  }
+  elseif (!isset($name)) {
+    $name = '';
   }
 
   if ($address == 'default') {
@@ -4109,6 +4396,9 @@ function webform_format_email_address($address, $name, $node = NULL, $submission
       $values = $submission->data[$address];
       $address = array();
       foreach ($values as $value) {
+        if (isset($mapping) && isset($mapping[$value])) {
+          $value = $mapping[$value];
+        }
         $address = array_merge($address, explode(',', $value));
       }
     }
@@ -4117,33 +4407,141 @@ function webform_format_email_address($address, $name, $node = NULL, $submission
     }
   }
 
-  // Convert arrays into a single value for From values.
-  if ($single) {
-    $address = is_array($address) ? reset($address) : $address;
-    $name = is_array($name) ? reset($name) : $name;
+  // Convert single values to an array to simplify processing.
+  $address = is_array($address) ? $address : explode(',', $address);
+  $name = is_array($name) ? $name : array($name);
+  $name_shortage = count($address) - count($name);
+  if ($name_shortage > 0) {
+    $name += array_fill(count($name), $name_shortage, $name[0]);
   }
 
-  // Address may be an array if a component value was used on checkboxes.
-  if (is_array($address)) {
-    foreach ($address as $key => $individual_address) {
-      $address[$key] = webform_replace_tokens($individual_address, $node, $submission);
+  foreach ($address as $key => $individual_address) {
+    $individual_address = webform_replace_tokens($individual_address, $node, $submission);
+    $email_parts = webform_parse_email_address($individual_address);
+    if ($format == 'long' && !empty($name[$key]) && !strlen($email_parts['name'])) {
+      $individual_name = $name[$key];
+      $individual_name = webform_replace_tokens($individual_name, $node, $submission);
+      if ($encode) {
+        $individual_name = mime_header_encode($individual_name);
+      }
+      $individual_name = trim($individual_name);
+      $individual_address = '"' . $individual_name . '" <' . $individual_address . '>';
     }
-  }
-  else {
-    $address = webform_replace_tokens($address, $node, $submission);
+    $address[$key] = $individual_address;
   }
 
-  if ($format == 'long' && !empty($name)) {
-    $name = webform_replace_tokens($name, $node, $submission);
-    if ($encode) {
-      $name = mime_header_encode($name);
+  return $single ? reset($address) : $address;
+
+}
+
+/**
+ * Validates an email form element.
+ *
+ * @param string $emails
+ *   An email or list of comma-seperated email addresses. Passed by reference.
+ *   Empty emails will be eliminated, and mutiple addresses will be seperated
+ *   with a comma and space.
+ * @param string $form_name
+ *   The name of the form element to receive an error, in form_set_error format.
+ * @param boolean $allow_empty
+ *   TRUE if optional. FALSE if required.
+ * @param boolean $allow_multiple
+ *   TRUE if a list of emails is allowed. FALSE if only one.
+ * @param boolean $allow_tokens
+ *   TRUE if any token should be assumed to contain a valid e-mail address.
+ * @param string $format
+ *   'short', 'long', or NULL (for default) format. Long format has a name and
+ *   the address in angle brackets.
+ * @return integer|boolean
+ *   The number of valid addresses found, or FALSE for an invalid email found.
+ */
+function webform_email_validate(&$emails, $form_name, $allow_empty, $allow_multiple, $allow_tokens, $format = NULL) {
+  $nr_valid = webform_valid_email_address($emails, $allow_tokens, $format);
+  if ($nr_valid === FALSE) {
+    form_set_error($form_name, t('The entered e-mail address "@email" does not appear valid.', array('@email' => $emails)));
+  }
+  elseif ($nr_valid === 0 && !$allow_empty) {
+    form_set_error($form_name, t('When adding a new custom e-mail, the e-mail field is required.'));
+  }
+  elseif ($nr_valid > 1 && !$allow_multiple) {
+    form_set_error($form_name, t('Only one e-mail address is allowed.'));
+  }
+  return $nr_valid;
+}
+
+/**
+ * Validates email address(es) with optional name(s).
+ *
+ * @param string $emails
+ *   An email address, a list of comma-separated email addresses. If all the
+ *   addresses are valid, the list of trimmed, non-empty emails is returned by
+ *   reference.
+ * @param boolean $allow_tokens
+ *   TRUE if any token should be assumed to contain a valid e-mail address.
+ * @param string $format
+ *   'short', 'long', or NULL (for default) format. Long format has a name and
+ *   the address in angle brackets.
+ * @return boolean|integer
+ *   Returns FALSE if an invalid e-mail address was found, 0 if no email
+ *   address(es) were found, or the number of valid e-mail addresses found.
+ */
+function webform_valid_email_address(&$emails, $allow_tokens = FALSE, $format = NULL) {
+  $email_array = array_filter(array_map('trim', explode(',', $emails)));
+  $count = 0;
+  foreach ($email_array as $email) {
+    if ($allow_tokens && webform_variable_get('webform_token_access')) {
+      foreach (token_scan($email) as $tokens) {
+        foreach ($tokens as $token) {
+          $email = str_replace($token, 'admin@example.com', $email);
+        }
+      }
     }
-    $name = trim($name);
-    return '"' . $name . '" <' . $address . '>';
+    $matches = webform_parse_email_address($email, $format);
+    if (!valid_email_address($matches['address'])) {
+      return FALSE;
+    }
+    $count++;
   }
-  else {
-    return $address;
+  $emails = implode(', ', $email_array);
+  return $count;
+}
+
+/**
+ * Parses an e-mail address into name and address.
+ *
+ * @param string $email
+ *   The email address to be parsed, with an optional name.
+ * @param string $format
+ *   'short', 'long', or NULL (for default) format. Long format has a name and
+ *   the address in angle brackets.
+ * @return array
+ *   Associative array indexed by 'name' and 'address'.
+ */
+function webform_parse_email_address($email, $format = NULL) {
+  if (!$format) {
+    $format = webform_variable_get('webform_email_address_format');
   }
+  if ($format == 'long') {
+    // Match e-mails of the form 'My Name <email@domain.com>' as follows:
+    // ^          = beginning of string
+    // "?         = optional quote
+    // ([^<]*?)   = match optional characters that aren't a < (non-greedy)
+    // "?         = optional quote
+    // SPACE*     = optional spaces
+    // (?:<(.*)>) = < matching stuff > (without the angle brakets)
+    // $          = end of string
+    preg_match('/^"?([^<]*?)"? *(?:<(.*)>)?$/', $email, $matches);
+    if (isset($matches[2]) && strlen($matches[2])) {
+      return array(
+        'name' => $matches[1],
+        'address' => $matches[2],
+      );
+    }
+  }
+  return array(
+    'name' => '',
+    'address' => $email,
+  );
 }
 
 /**
@@ -4251,11 +4649,11 @@ function _webform_components_tree_sort($tree) {
  * Get a list of all available component definitions.
  */
 function webform_components($include_disabled = FALSE, $reset = FALSE) {
-  static $components, $disabled;
+  static $components, $enabled;
 
   if (!isset($components) || $reset) {
     $components = array();
-    $disabled = array_flip(variable_get('webform_disabled_components', array()));
+    $disabled = array_flip(webform_variable_get('webform_disabled_components'));
     foreach (module_implements('webform_component_info') as $module) {
       $module_components = module_invoke($module, 'webform_component_info');
       foreach ($module_components as $type => $info) {
@@ -4265,10 +4663,13 @@ function webform_components($include_disabled = FALSE, $reset = FALSE) {
       $components += $module_components;
     }
     drupal_alter('webform_component_info', $components);
-    ksort($components);
+    uasort($components, function($a, $b) {
+      return strnatcasecmp($a['label'], $b['label']);
+    });
+    $enabled = array_diff_key($components, $disabled);
   }
 
-  return $include_disabled ? $components : array_diff_key($components, $disabled);
+  return $include_disabled ? $components : $enabled;
 }
 
 /**
@@ -4372,30 +4773,65 @@ function webform_disable_page_cache() {
 
 /**
  * Set the necessary breadcrumb for the page we are on.
+ *
+ * @param object $node
+ *   The loaded webform node.
+ * @param boolean|object $submission
+ *   The submission if the current page is viewing or dealing with a submission,
+ *   or TRUE to just include the webform node in the breadcrumbs (used for
+ *   the submission completion confirmation page), or NULL for no extra
+ *   processing
  */
 function webform_set_breadcrumb($node, $submission = NULL) {
-  $breadcrumb = drupal_get_breadcrumb();
+  $node_path = "node/{$node->nid}";
 
-  if (isset($node)) {
-    $webform_breadcrumb = array();
-    $webform_breadcrumb[] = empty($breadcrumb) ? l(t('Home'), '<front>') : array_shift($breadcrumb);
-    $webform_breadcrumb[] = $node_link = l($node->title, 'node/' . $node->nid);
-    if (isset($submission)) {
-      $last_link = array_shift($breadcrumb);
-      if (webform_results_access($node)) {
-        $webform_breadcrumb[] = l(t('Webform results'), 'node/' . $node->nid . '/webform-results');
+  // Set the href of the current menu item to be the node's path. This has two
+  // effects. The active trail will be to the node's prefered menu tree
+  // location, expanding the menu as appropriate. And the breadcrumbs will be
+  // set as if the current page were under the node's preferred location.
+  // Note that menu_tree_set_path() could be used to set the path for the menu,
+  // but it will not affect the breadcrumbs when the webform is not in the
+  // default menu.
+  menu_set_item(NULL, array('href' => $node_path) + menu_get_item());
+
+  if ($submission) {
+    $breadcrumb = menu_get_active_breadcrumb();
+
+    // Append the node title (or its menu name), in case it isn't in the path already.
+    $active_trail = menu_get_active_trail();
+    $last_active = end($active_trail);
+    $breadcrumb[] = $last_active['href'] === $node_path && !empty($last_active['in_active_trail'])
+                      ? l($last_active['title'], $node_path, $last_active['localized_options'])
+                      : l($node->title, $node_path);
+
+    // Setting the current menu href will cause the submission title and current
+    // tab (if not the default tab) to be added to the active path when the
+    // webform is in the default location in the menu (node/NID). The title
+    // is desirable, but the tab name (e.g. Edit or Delete) isn't.
+    if (preg_match('/href=".*"/', end($breadcrumb), $matches)) {
+      foreach ($breadcrumb as $index => $link) {
+        if (stripos($link, $matches[0]) !== FALSE) {
+          $breadcrumb = array_slice($breadcrumb, 0, $index + 1);
+          break;
+        }
       }
-      elseif (user_access('access own webform results')) {
-        $webform_breadcrumb[] = l(t('Submissions'), 'node/' . $node->nid . '/submissions');
-      }
-      if (isset($last_link) && $last_link != $node_link) {
-        $webform_breadcrumb[] = $last_link;
-      }
-    }
-    $breadcrumb = $webform_breadcrumb;
   }
 
-  drupal_set_breadcrumb($breadcrumb);
+    // If the user is dealing with a submission, then the breadcrumb should
+    // be fudged to allow them to return to a likely list of webforms.
+    // Note that this isn't necessarily where they came from, but it's the
+    // best guess available.
+    if (is_object($submission)) {
+      if (webform_results_access($node)) {
+        $breadcrumb[] = l(t('Webform results'), $node_path . '/webform-results');
+      }
+      elseif (user_access('access own webform results')) {
+        $breadcrumb[] = l(t('Submissions'), $node_path . '/submissions');
+      }
+    }
+
+    drupal_set_breadcrumb($breadcrumb);
+  }
 }
 
 /**
@@ -4486,30 +4922,73 @@ function webform_date_string($array, $type = NULL) {
 /**
  * Get a date format according to the site settings.
  *
- * @param $size
- *   A choice of 'short', 'medium', or 'long' date formats.
+ * @param $type
+ *   A choice of 'short', 'medium', 'long' , or other user-defined date formats.
+ *   Use NULL for the webform-specific date format choosen in the webform
+ *   settings.
+ * @param array $exclude
+ *   An array containing 'day', 'month', and/or 'year' if they should be
+ *   removed from the format.
+ * @return string
+ *   A date/time format string.
  */
-function webform_date_format($size = 'medium') {
+function webform_date_format($type = NULL, $exclude = array()) {
+  static $formats = array();
+  $id = $type . ':' . implode('', $exclude);
+  if (!isset($formats[$id])) {
+    $type_name = $type ? $type : webform_variable_get('webform_date_type');
+
     // Format date according to site's given format.
-    $format = variable_get('date_format_' . $size, 'D, m/d/Y - H:i');
-    $time = 'aABgGhHisueIOPTZ';
-    $day_of_week = 'Dlw';
-    $special = ',-: ';
-    $date_format = trim($format, $time . $day_of_week . $special);
+    $format = variable_get('date_format_' . $type_name, 'D, m/d/Y');
+
+    // Date/Time formatting characters
+    // WHAT           REQUIRED (at least 1) OPTIONAL (allowed but insufficient)
+    // ---------------------------------------------------------------------------
+    // Day-of-week                          DlNw
+    // Day            dj                    Stz
+    // Month          FmMn
+    // Year           oYy                   L
+    //
+    //                NOT ALLOWED
+    // --------------------------------------------------------------------------
+    // Time           aABgGhHisueIOPTZ
+    // Special        /.,-: <space>
+
+    // Strip Time and Special characters from the beginning and end of format.
+    $date_format = trim($format, 'aABgGhHisueIOPTZ/.,-: ');
 
     // Ensure that a day, month, and year value are present. Use a default
-    // format if all the values are not found.
-    if (!preg_match('/[dj]/', $date_format) || !preg_match('/[FmMn]/', $date_format) || !preg_match('/[oYy]/', $date_format)) {
+    // format if all the values are not found. This regular expression uses
+    // (?= ), the positive lookahead assertion. It asserts that there are some
+    // optional characters (.*) followed by one of the day, month, or year
+    // characters. Because it is an assertion, it doesn't consume the
+    // characters, so the day, month, and year can be in any order.
+    if (!preg_match('/(?=.*[dj])(?=.*[FmMn])(?=.*[oYy])/', $date_format)) {
       $date_format = 'm/d/Y';
     }
 
-    return $date_format;
+    // Remove any excluded portions.
+    $strip = array(
+      'day' => 'DlNwdjStz',
+      'month' => 'FmMn',
+      'year' => 'oYyL',
+    );
+    foreach ($exclude as $field) {
+      // Strip the format and any trailing /.,-: or space.
+      $date_format = preg_replace('#[' . $strip[$field] . ']+[/\.,\-: ]*#', '', $date_format);
+      $date_format = trim($date_format, '/.,-: ');
+    }
+
+    $formats[$id] = $date_format;
+  }
+
+  return $formats[$id];
 }
 
 /**
  * Return a date in the desired format taking into consideration user timezones.
  */
-function webform_strtodate($format, $string, $timezone_name = NULL) {
+function webform_strtodate($format, $string, $timezone_name = NULL, $reference_timestamp = NULL) {
   global $user;
 
   // Adjust the time based on the user or site timezone.
@@ -4526,7 +5005,23 @@ function webform_strtodate($format, $string, $timezone_name = NULL) {
     // only supported for DateTime in PHP 5.3 and higher.
     try {
       @$timezone = new DateTimeZone($timezone_name);
-      @$datetime = new DateTime($string, $timezone);
+      if (isset($reference_timestamp)) {
+        // A reference for relative dates has been provided.
+        // 1) Convert the reference timestamp (in UTC) to a DateTime.
+        // 2) Set to time zone to the user or system timezone, recreating
+        //    the reference time in the appropriate time zone.
+        // 3) Set the time to midnight because when a non-referenced relative
+        //    date is created without a time, it is created at midnight (0:00).
+        // 4) Adjust to the specified relative (or absolute) time.
+
+        @$datetime = new DateTime('@' . $reference_timestamp);
+        @$datetime->setTimezone($timezone)
+                  ->setTime(0, 0, 0)
+                  ->modify($string);
+      }
+      else {
+        @$datetime = new DateTime($string, $timezone);
+      }
       return @$datetime->format($format);
     }
     catch (Exception $e) {
@@ -4534,7 +5029,7 @@ function webform_strtodate($format, $string, $timezone_name = NULL) {
     }
   }
   else {
-    return date($format, strtotime($string));
+    return date($format, isset($reference_timestamp) ? strtotime($string, $reference_timestamp) : strtotime($string));
   }
 }
 
@@ -4566,51 +5061,10 @@ function webform_tt($name, $string, $langcode = NULL, $update = FALSE) {
 }
 
 /**
- * Check if there are any HTML mail systems available for Webform to use.
- *
- * @return bool
- *   TRUE if Webform can send HTML emails, FALSE if not.
+ * Returns an IP Address or anonymized IP Address for confidential webforms.
  */
-function webform_email_html_capable() {
-  $capable = &drupal_static(__FUNCTION__);
-  if (isset($capable)) {
-    return $capable;
-  }
-  // Build a list of HTML-capable mail systems.
-  $systems = array();
-  if (module_exists('mandrill')) {
-    $systems[] = 'MandrillMailSystem';
-  }
-  if (module_exists('mimemail')) {
-    $systems[] = 'MimeMailSystem';
-    $systems[] = 'MimeMailSystem__SmtpMailSystem';
-  }
-  if (module_exists('htmlmail')) {
-    $systems[] = 'HTMLMailSystem';
-    $systems[] = 'HTMLMailSystem__SmtpMailSystem';
-  }
-  // Allow other modules to alter the list.
-  drupal_alter('webform_html_capable_mail_systems', $systems);
-
-  if (!count($systems)) {
-    $capable = FALSE;
-    return FALSE;
-  }
-  $mail_systems = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
-  // If an HTML mail system exists then we will use it for Webform emails, even
-  // if it's not already specified.
-  if (!isset($mail_systems['webform']) || !in_array($mail_systems['webform'], $systems)) {
-    // Use the system default system, if that's HTML capable.
-    if (in_array($mail_systems['default-system'], $systems)) {
-      $GLOBALS['conf']['mail_system']['webform'] = $mail_systems['default-system'];
-    }
-    // Otherwise, use the first available HTML-capable system.
-    else {
-      $GLOBALS['conf']['mail_system']['webform'] = reset($systems);
-    }
-  }
-  $capable = TRUE;
-  return TRUE;
+function webform_ip_address($node) {
+  return $node->webform['confidential'] ? t('(unknown)') : ip_address();
 }
 
 /**
@@ -4618,9 +5072,21 @@ function webform_email_html_capable() {
  */
 function webform_views_api() {
   return array(
-    'api' => 2.0,
+    'api' => 3.0,
     'path' => drupal_get_path('module', 'webform') . '/views',
   );
+}
+
+/**
+ * Implements hook_views_default_views().
+ */
+function webform_views_default_views() {
+  $path = './' . drupal_get_path('module', 'webform') . '/views/default_views/*.inc';
+  $views = array();
+  foreach (glob($path) as $views_filename) {
+    require_once($views_filename);
+  }
+  return $views;
 }
 
 /**
@@ -4736,17 +5202,16 @@ function webform_date_views_extra_tables() {
 }
 
 /**
- * Returns the next serial number for a given node and optionally increment the serial number.
+ * Returns the next serial number for a given node and increments the serial
+ * number.
  *
  * @param int $nid
  *   The nid of the node.
- * @paran bool $increment
- *   Whether to increment the serial number.
  *
- * @return int|null
- *   The next value of the serial number or NULL if no form at this nid.
+ * @return int
+ *   The next value of the serial number.
  */
-function _webform_submission_serial_next_value($nid, $do_increment = TRUE) {
+function _webform_submission_serial_next_value($nid) {
   // Use a transaction with SELECT ... FOR UPDATE to lock the row between
   // the SELECT and the UPDATE, ensuring that multiple Webform submissions
   // at the same time do not have duplicate numbers. FOR UPDATE must be inside
@@ -4758,21 +5223,200 @@ function _webform_submission_serial_next_value($nid, $do_increment = TRUE) {
   // Get the next_serial value.
   $next_serial = db_select('webform', 'w')
     // Only add FOR UPDATE when incrementing.
-    ->forUpdate($do_increment)
+    ->forUpdate()
     ->fields('w', array('next_serial'))
     ->condition('nid', $nid)
     ->execute()
     ->fetchField();
 
-  // Otherwise, no number was found, no form at this nid, return the NULL.
-  if ($next_serial && $do_increment) {
-    // Increment the next_value.
-    $increment_amount = 1;
-    db_update('webform')
-      ->fields(array('next_serial' => $next_serial + $increment_amount))
-      ->condition('nid', $nid)
-      ->execute();
-  }
+  // $next_serial must be greater than any existing serial number.
+  $next_serial = max($next_serial, _webform_submission_serial_next_value_used($nid));
+
+  // Increment the next_value.
+  db_update('webform')
+    ->fields(array('next_serial' => $next_serial + 1))
+    ->condition('nid', $nid)
+    ->execute();
 
   return $next_serial;
+}
+
+/**
+ * Returns the next submission serial number to be used, based on the
+ * submissions in the database.
+ *
+ * @param int $nid
+ *   The Node ID of the Webform.
+ *
+ * $return int
+ *   The largest serial number used by a submission plus 1 for the specified
+ *   node or 1 when there are no submissions.
+ */
+function _webform_submission_serial_next_value_used($nid) {
+  $max_serial = db_select('webform_submissions');
+  $max_serial->addExpression('MAX(serial)');
+  $max_serial = $max_serial
+    ->condition('nid', $nid)
+    ->execute()
+    ->fetchField();
+  // $max_serial will be a numeric string or NULL.
+  return $max_serial + 1;
+}
+
+/**
+ * Alter the node before saving a clone.
+ *
+ * @param $node
+ *   Reference to the fully loaded node object being saved (the clone) that
+ *   can be altered as needed.
+ * @param array $context
+ *   An array of context describing the clone operation. The keys are:
+ *   - 'method' : Can be either 'prepopulate' or 'save-edit'.
+ *   - 'original_node' : The original fully loaded node object being cloned.
+ *
+ * @see clone_node_save()
+ * @see drupal_alter()
+ */
+function webform_clone_node_alter(&$node, $context) {
+  if (isset($node->webform)) {
+    $defaults = webform_node_defaults();
+    $node->webform['next_serial'] = $defaults['next_serial'];
+  }
+}
+
+/**
+ * Check if the last form submission exceeded the servers max_input_vars
+ * limit and optionally preflight the current form to be returned in this
+ * request.
+ *
+ * @param array $form
+ *   Reference to the form, which will be changed if $parent_key is set.
+ * @param array $form_state
+ *   Form's state or NULL for no form state check.
+ * @param string $detect_key
+ *   A key that will always be present in the posted data when an actual form
+ *   submission has been made.
+ * @param string $parent_key
+ *   Omit to not preflight the form, or the array key for the parent of where
+ *   the preflight warning should be inserted into the form.
+ */
+function webform_input_vars_check(&$form, $form_state, $detect_key, $parent_key = NULL) {
+  if (isset($parent_key)) {
+    $form['#pre_render'] = array('webform_pre_render_input_vars');
+    $form['#input_var_waring_parent'] = $parent_key;
+  }
+  if (!empty($form_state['input']) && key_exists($detect_key, $form_state['input']) && !key_exists('form_id', $form_state['input'])) {
+    // A form was submitted with POST, but the form_id was missing. The most likely cause of this
+    // is that the POST was truncated because PHP exceeded its max_input_vars limit.
+    $subs = array(
+      '@count' => webform_count_terminals($_POST),
+      '@limit' => (int)ini_get('max_input_vars'),
+    );
+    drupal_set_message(user_access('administer site configuration')
+                          ? t('This form could not be submitted because $_POST was truncated to @count input vars.  PHP max_input_vars is @limit and needs to be increased.', $subs)
+                          : t('This form could not be submitted because it exceeds the server configuration. Contact the administrator.'),
+                      'error');
+    watchdog('webform',
+             'POST truncated to @count input vars. PHP max_input_vars is @limit. Increase max_input_vars.',
+             $subs,
+             WATCHDOG_ERROR);
+  }
+}
+
+/**
+ * Checks the number of input form elements on this page to ensure that the
+ * PHP max_input_vars limit is not exceeded.
+ *
+ * Install this function as a #pre_render function.
+ */
+function webform_pre_render_input_vars($element) {
+  // Determine the limit on input vars for this server configuration.
+  $limit = ini_get('max_input_vars');
+  if ($limit) {
+    // Estimate the number of input vars needed to see if the PHP limit has been exceeded.
+    $count = 1 + webform_count_input_vars($element); // Additional input_vars: op
+    if ($count > $limit * 0.95) {
+      $subs = array(
+        '@count' => $count,
+        '@limit' => $limit,
+      );
+      $warning = array(
+        '#markup' => '<div class="messages warning">' .
+                     (user_access('administer site configuration')
+                        ? t('This form contains @count input elements. PHP max_input_vars is @limit and should be increased.', $subs)
+                        : t('This form may be too long to work properly. Contact the administrator.'))
+                     . '</div>',
+        '#weight' => -1,
+      );
+      if ($element['#input_var_waring_parent']) {
+        $element[$element['#input_var_waring_parent']]['input_vars_warning'] = $warning;
+      }
+      else {
+        $element['input_vars_warning'] = $warning;
+      }
+      watchdog('webform',
+               'Page contains @count input elements but PHP max_input_vars is only @limit. Increase max_input_vars.',
+               $subs,
+               WATCHDOG_ERROR);
+    }
+  }
+  return $element;
+}
+
+/**
+ * Counts the number of input form elements.
+ *
+ * Note that this is somewhat imprecise. The number of input vars returned in
+ * $_POST can vary with the form element. For example, a multiple-select
+ * listbox returns one input var for each selection actually made.
+ *
+ * The primary use for this count is for the conditionals page, where only
+ * select, textfield, hidden, and token elements are used. If a more accurate
+ * count for webform_client_form is needed, a mechanism to predict the number
+ * of input elements for each component type and each component instance would
+ * be needed.
+ *
+ * @param array $element
+ *   The form whose elements should be counted.
+ * @return integer
+ *   The number of elements in the form that will result in $_POST entries.
+ */
+function webform_count_input_vars($element) {
+  static $input_types = array(
+    'checkbox' => 1,
+    'date' => 1,
+    'file' => 1,
+    'managed_file' => 1,
+    'password' => 1,
+    'password_confirm' => 1,
+    'radios' => 1,
+    'select' => 1,
+    'textfield' => 1,
+    'textarea' => 1,
+    'token' => 1,
+    'weight' => 1,
+    'hidden' => 1,
+    'value' => 1,
+    'webform_email' => 1,
+    'webform_number' => 1,
+  );
+  $children = array_intersect_key($element, array_flip(element_children($element)));
+  return $children
+          ? array_reduce($children, function($carry, $item) {return $carry + webform_count_input_vars($item);}, 0)
+          : (isset($element['#type']) && isset($input_types[$element['#type']]) ? $input_types[$element['#type']] : 0);
+}
+
+/**
+ * Counts terminals in an array. Useful for counting how many input_vars were
+ * returned in $_POST.
+ *
+ * @param $a
+ *   Array or array element to be counted
+ * @return integer
+ *   Number of non-array elements within $a.
+ */
+function webform_count_terminals($a) {
+  return is_array($a)
+            ? array_reduce($a, function($carry, $item) {return $carry + webform_count_terminals($item);}, 0)
+            : 1;
 }

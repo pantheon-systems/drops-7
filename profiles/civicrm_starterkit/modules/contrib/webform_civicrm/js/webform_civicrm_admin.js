@@ -1,3 +1,8 @@
+// Shim for old versions of jQuery
+if (typeof jQuery.fn.prop !== 'function') {
+  jQuery.fn.prop = jQuery.fn.attr;
+}
+
 /**
  * Javascript Module for managing the webform_civicrm admin form.
  */
@@ -12,33 +17,31 @@ var wfCiviAdmin = (function ($, D) {
     var context = $(id);
     switch (op) {
       case 'all':
-        $('input:enabled:checkbox', context).attr('checked', 'checked');
+        $('input:enabled:checkbox', context).prop('checked', true);
         $('select:enabled[multiple] option, select:enabled option[value="create_civicrm_webform_element"]', context).each(function() {
-          $(this).attr('selected', 'selected');
+          $(this).prop('selected', true);
         });
         break;
       case 'none':
-        $('input:enabled:checkbox', context).attr('checked', '');
+        $('input:enabled:checkbox', context).prop('checked', false);
         $('select:enabled:not([multiple])', context).each(function() {
           if ($(this).val() === 'create_civicrm_webform_element') {
             $('option', this).each(function() {
-              $(this).attr('selected', $(this).attr('defaultSelected'));
+              $(this).prop('selected', $(this).prop('defaultSelected'));
             });
           }
           if ($(this).val() === 'create_civicrm_webform_element') {
-            $('option:first-child+option', this).attr('selected', 'selected');
+            $('option:first-child+option', this).prop('selected', true);
           }
         });
-        $('select:enabled[multiple] option', context).each(function() {
-          $(this).attr('selected', '');
-        });
+        $('select:enabled[multiple] option', context).prop('selected', false);
         break;
       case 'reset':
         $('input:enabled:checkbox', context).each(function() {
-          $(this).attr('checked', $(this).attr('defaultChecked'));
+          $(this).prop('checked', $(this).prop('defaultChecked'));
         });
         $('select:enabled option', context).each(function() {
-          $(this).attr('selected', $(this).attr('defaultSelected'));
+          $(this).prop('selected', $(this).prop('defaultSelected'));
         });
         break;
     }
@@ -47,15 +50,14 @@ var wfCiviAdmin = (function ($, D) {
 
   pub.participantConditional = function (fs) {
     var info = {
-      roleid:$(fs + ' .participant_role_id').val(),
+      roleid:$('.participant_role_id', fs).val(),
       eventid:'0',
       eventtype:$('#edit-reg-options-event-type').val()
     };
-    var events = [];
-    var i = 0;
-    $(fs + ' .participant_event_id :selected').each(function(a, selected) {
+    var i, events = [];
+    $('.participant_event_id :selected', fs).each(function(a, selected) {
       if ($(selected).val() !== 'create_civicrm_webform_element') {
-        events[i++] = $(selected).val();
+        events.push($(selected).val());
       }
     });
     for (i in events) {
@@ -71,7 +73,7 @@ var wfCiviAdmin = (function ($, D) {
       }
     }
 
-    $(fs + ' fieldset.extends-condition').each(function() {
+    $('fieldset.extends-condition', fs).each(function() {
       var hide = true;
       var classes = $(this).attr('class').split(' ');
       for (var cl in classes) {
@@ -79,21 +81,14 @@ var wfCiviAdmin = (function ($, D) {
         var type = c[0];
         if (type === 'roleid' || type === 'eventtype' || type === 'eventid') {
           for (var cid in c) {
-            if (c[cid] === info[type]) {
+            if (c[cid] === info[type] || ($.isArray(info[type]) && $.inArray(c[cid], info[type]) !== -1)) {
               hide = false;
             }
           }
           break;
         }
       }
-      if (hide) {
-        $(this).find(':checkbox').attr('disabled', 'disabled');
-        $(this).hide(300);
-      }
-      else {
-        $(this).find(':checkbox').removeAttr('disabled');
-        $(this).show(300);
-      }
+      $(this)[hide? 'hide' : 'show'](300).find(':checkbox').prop('disabled', hide);
     });
   };
 
@@ -146,12 +141,12 @@ var wfCiviAdmin = (function ($, D) {
       var val = $(this).val();
       $('option', this).not('[value=0],[value=create_civicrm_webform_element]').remove();
       if (options.length > 0) {
-        $(this).append(options).val(val).removeAttr('disabled').removeAttr('style');
+        $(this).append(options).val(val).prop('disabled', false).removeAttr('style');
         $(this).parent().removeAttr('title');
         $('option[value=0]', this).text(Drupal.t('- None -'));
       }
       else {
-        $(this).val(0).attr('disabled', 'disabled').css('color', 'gray');
+        $(this).val(0).prop('disabled', true).css('color', 'gray');
         $(this).parent().attr('title', Drupal.t('To create an employer relationship, first add an organization-type contact to the webform.'));
         $('option[value=0]', this).text(Drupal.t('- first add an org -'));
       }
@@ -210,7 +205,7 @@ var wfCiviAdmin = (function ($, D) {
   }
 
   // Toggle the "multiple" attribute of a select
-  function changeSelect() {
+  function changeSelect(e) {
     var $el = $(this).siblings('select');
     var triggerChange;
     var val = $el.val();
@@ -232,13 +227,11 @@ var wfCiviAdmin = (function ($, D) {
       $el.attr('multiple', 'multiple');
       $('option[value=""]', $el).remove();
     }
-    // For the sake of Drupal.setSummary
-    $el.click();
     // For ajax fields
     if (triggerChange) {
       $el.change();
     }
-    return false;
+    e.preventDefault();
   }
 
   // HTML multiselect elements are awful. This is a simple/lightweight way to make them better.
@@ -278,7 +271,7 @@ var wfCiviAdmin = (function ($, D) {
         return label;
       });
       $('fieldset#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
-        if ($('[name="toggle_message"]', context).attr('checked')) {
+        if ($('[name="toggle_message"]', context).is(':checked')) {
           return CheckLength($('#edit-message', context).val());
         }
         else {
@@ -292,12 +285,21 @@ var wfCiviAdmin = (function ($, D) {
       $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
       });
-      $('fieldset#edit-act', context).once('wf-civi').drupalSetSummary(function (context) {
-        var label = $('select[name="activity_type_id"] option:selected', context).text();
-        if ($('select[name="case_type_id"] option:selected', context).val() > 0) {
-          label = $('select[name="case_type_id"] option:selected', context).text() + ' ' + label;
-        }
-        return label;
+      $('fieldset#edit-activitytab', context).once('wf-civi').drupalSetSummary(function (context) {
+        var label = [];
+        $('fieldset.activity-wrapper', context).each(function() {
+          var caseType = $('select[name$=case_type_id]', this).val();
+          var prefix = caseType && caseType != '0' ? $('select[name$=case_type_id] option:selected', this).text() + ': ' : '';
+          label.push(prefix + $('select[name$=activity_type_id] option:selected', this).text());
+        });
+        return label.join('<br />') || Drupal.t('- None -');
+      });
+      $('fieldset#edit-casetab', context).once('wf-civi').drupalSetSummary(function (context) {
+        var label = [];
+        $('select[name$=case_type_id]', context).each(function() {
+          label.push($(this).find('option:selected').text());
+        });
+        return label.join('<br />') || Drupal.t('- None -');
       });
       $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
         var memberships = [];
@@ -305,7 +307,14 @@ var wfCiviAdmin = (function ($, D) {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
           memberships.push(label + ': ' + $(this).find('option:selected').text());
         });
-        return memberships.join('<br>') || Drupal.t('- None -');
+        return memberships.join('<br />') || Drupal.t('- None -');
+      });
+      $('#edit-granttab', context).once('wf-civi').drupalSetSummary(function (context) {
+        var label = [];
+        $('select[name$=grant_type_id]', context).each(function() {
+          label.push($(this).find('option:selected').text());
+        });
+        return label.join('<br />') || Drupal.t('- None -');
       });
       $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
@@ -319,25 +328,38 @@ var wfCiviAdmin = (function ($, D) {
         showHideParticipantOptions('fast');
       });
 
+      // Update activity block when changing # of cases to refresh the "file on case" selector
+      if ($(context).is('#civicrm-ajax-caseTab-case')) {
+        if ($('select[name=activity_number_of_activity]').val() !== '0') {
+          $('select[name=activity_number_of_activity]').change();
+        }
+      }
+
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
           $('#wf-crm-configure-form .vertical-tabs-panes').removeClass('hidden');
-          $('[name="number_of_contacts"]').removeAttr('disabled');
+          $('[name="number_of_contacts"]').prop('disabled', false);
         }
         else {
           $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
           $('#wf-crm-configure-form .vertical-tabs-panes').addClass('hidden');
-          $('[name="number_of_contacts"]').attr('disabled','disabled');
+          $('[name="number_of_contacts"]').prop('disabled', true);
         }
       }).change();
 
+      // Show/hide 'Not you?' message settings
+      if ($('#edit-toggle-message').not(':checked')) {
+        $('#edit-st-message .form-item-message').hide();
+      };
       $('#edit-toggle-message', context).once('wf-civi').change(function() {
-        if($(this).is(':checked')) {
-          $('#edit-message').removeAttr('disabled');
+        if ($(this).is(':checked')) {
+          $('#edit-message').prop('disabled', false);
+          $('#edit-st-message .form-item-message').show('fast');
         }
         else {
-          $('#edit-message').attr('disabled','disabled');
+          $('#edit-message').prop('disabled', true);
+          $('#edit-st-message .form-item-message').hide('fast');
         }
       }).change();
 
@@ -364,12 +386,12 @@ var wfCiviAdmin = (function ($, D) {
             }
           });
           if (show) {
-            $(this).removeAttr('disabled');
+            $(this).prop('disabled', false);
             $(this).parent().removeAttr('style');
           }
           else {
             $(this).parent().css('display', 'none');
-            $(this).attr('disabled', 'disabled');
+            $(this).prop('disabled', true);
           }
         });
       }).change();
@@ -380,11 +402,11 @@ var wfCiviAdmin = (function ($, D) {
         switch (ele.val()) {
           case 'create_civicrm_webform_element':
           case '0':
-            $('input:checkbox', fs).removeAttr('disabled');
+            $('input:checkbox', fs).prop('disabled', false);
             $('div.form-type-checkbox', fs).show();
             break;
           default:
-            $('input:checkbox', fs).attr('disabled', 'disabled');
+            $('input:checkbox', fs).prop('disabled', true);
             $('div.form-type-checkbox', fs).hide();
         }
       }).change();
@@ -412,15 +434,6 @@ var wfCiviAdmin = (function ($, D) {
       $('select[name$="_contact_type"]').once('contact-type').change(function() {
         $('#wf-crm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
         employerOptions();
-      });
-
-      // Change activity subject to match survey/petition
-      $('select[name$="_activity_survey_id"]', context).once('wf-civi').change(function() {
-        var val = $(this).val();
-        if (val != '0' && val != 'create_civicrm_webform_element') {
-          var label = $(this).find('option[value=' + val + ']').text();
-          $('#wf-crm-configure-form input[name=activity_subject]').val(label);
-        }
       });
 
       // Contact label change events
@@ -461,11 +474,11 @@ var wfCiviAdmin = (function ($, D) {
         if ($(this).val() == '0') {
           $dateWrappers.show();
           if (type !== 'init') {
-            $('input', $dateWrappers).attr('checked', 'checked');
+            $('input', $dateWrappers).prop('checked', true);
           }
         }
         else {
-          $dateWrappers.hide().find('input').removeAttr('checked');
+          $dateWrappers.hide().find('input').prop('checked', false);
         }
       }).trigger('change', 'init');
 
@@ -475,7 +488,12 @@ var wfCiviAdmin = (function ($, D) {
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
           var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
-            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + '</div>');
+            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
+            $('.wf-crm-billing-email-alert button').click(function() {
+              $('input[name=civicrm_1_contact_1_email_email]').prop('checked', true).change();
+              $('select[name=contact_1_number_of_email]').val('1').change();
+              return false;
+            });
             if ($('.wf-crm-billing-email-alert').is(':hidden')) {
               billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
             }
@@ -516,7 +534,8 @@ var wfCiviAdmin = (function ($, D) {
 
   /**
    * This block uses CiviCRM's jQuery not Drupal's version
-   * Todo: Move more code here! Drupal's version of jQuery is ancient.
+   * TODO: Move more code here! Drupal's version of jQuery is ancient.
+   * TODO: change 'cj' to 'CRM.$' when we drop support for Civi v4.4
    */
   cj(function($) {
     // Inline help

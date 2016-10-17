@@ -6,6 +6,9 @@
  */
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
+// FIXME: Temporary workaround for https://www.drupal.org/node/2389537
+variable_set('webform_table', TRUE);
+
 class wf_crm_admin_component {
   private $form;
   private $form_state;
@@ -59,7 +62,9 @@ class wf_crm_admin_component {
         ++$this->form['position']['weight']['#default_value'];
         array_unshift($this->form['#submit'], 'wf_crm_contact_clone');
         if (empty($this->form_state['input'])) {
-          drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for !contact. All fields from within this fieldset will be cloned (be careful, that may include non-contact fields).', array('!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
+          $types = wf_crm_get_contact_types();
+          $type = $types[0][$this->data['contact'][$i]['contact'][1]['contact_type']];
+          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for !contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, '!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
         }
       }
     }
@@ -146,12 +151,8 @@ class wf_crm_admin_component {
     }
     // Allow widget to be altered, unless it's a contact or file
     elseif ($this->field && !in_array($this->field['type'], array('civicrm_contact', 'file')) && empty($_GET['type'])) {
-      $widgets = array();
-      foreach (webform_components() as $k => $v) {
-        if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {
-          $widgets[$k] = $v['label'];
-        }
-      }
+      $unusable_widgets = array('civicrm_contact', 'pagebreak', 'markup', 'layout_box', 'fieldset');
+      $widgets = array_diff_key(webform_component_options(), array_flip($unusable_widgets));
       if ($this->form['type']['#value'] == 'textfield' && $table === 'address') {
         if ($name === 'state_province_id' || $name === 'county_id') {
           $widgets['textfield'] = t('Textfield / AJAX Select');
@@ -255,18 +256,18 @@ class wf_crm_admin_component {
       );
       $this->form['civicrm_options_fieldset']['intro'] = array(
         '#markup' => '<p><div class="live-options-hide">' .
-        t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
-        '</div><div class="live-options-show">' .
-        t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
-        '</div><div>' .
-        t('Check the "default" box for an option to be selected by default when a user views the form.') .
-        '</div></p>',
+          t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
+          '</div><div class="live-options-show">' .
+          t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
+          '</div><div>' .
+          t('Check the "default" box for an option to be selected by default when a user views the form.') .
+          '</div></p>',
       );
       // Special instructions for contact reference fields
       if (wf_crm_aval($this->field, 'data_type') == 'ContactReference') {
         $this->form['civicrm_options_fieldset']['intro'] = array(
           '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
-          '<p>' . t("Note: In most cases it is not desirable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+            '<p>' . t("Note: In most cases it is not desirable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
         );
       }
       $options_selected = wf_crm_str2array($this->component['extra']['items']);
@@ -345,6 +346,7 @@ class wf_crm_admin_component {
    * options_element alterations for when a currency field (e.g. contribution amount, event fee) is rendered as a select
    */
   private function moneyOptions() {
+    form_load_include($this->form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
     $this->form['#validate'][] = 'wf_crm_money_validate';
     if ($this->component['type'] === 'grid') {
       $this->form['options']['#title'] = t('Amounts (columns)');
@@ -353,13 +355,15 @@ class wf_crm_admin_component {
       $this->form['questions']['#description'] = t('Items down the side of the grid. Usually the keys represent item price, which will be multiplied with the amount column.') .
         '<br />' . t('Use non-numeric keys to use the price from the amount column as-is with no multiplication.');
     }
-    else {
+    elseif ($this->component['type'] === 'select') {
       $this->form['items']['options']['option_settings']['options_source']['#access'] = FALSE;
       $this->form['items']['#description'] = t('Enter item labels and prices. If you allow the user to select multiple items their amounts will be added together.');
     }
     foreach (array('items', 'options', 'questions') as $field) {
-      $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
-      $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+      if (!empty($this->form[$field]['options']['#key_type_toggle'])) {
+        $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
+        $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+      }
     }
     // CSS trick to add currency symbol to options element keys
     $symbol = wf_crm_aval(CRM_Core_Config::singleton(), 'defaultCurrencySymbol', '$');
@@ -445,8 +449,9 @@ class wf_crm_admin_component {
       // Empty message when no components have been added
       if (!empty($row[0]['colspan'])) {
         if (empty($node->webform['components']) && wf_crm_admin_access($node)) {
+          $form['components']['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_tab.js';
           $row[0]['data'] = t(
-            'Add a webform component below, or click the <a href="!url">CiviCRM tab</a> to add CRM fields.',
+            'Add a webform component below, or click the <a class="webform-civicrm-tab-link" href="!url">CiviCRM tab</a> to add CRM fields.',
             (array('!url' => url("node/{$node->nid}/civicrm")))
           );
         }
@@ -461,7 +466,7 @@ class wf_crm_admin_component {
       elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
         $cid = $row['data-cid'];
         $component = $node->webform['components'][$cid];
-        $type = &$row['data'][1]['data'];
+        $type = &$row['data'][2]['data'];
         if ($component['type'] == 'civicrm_contact') {
           $types = array(
             'autocomplete' => t('Contact - Autocomplete'),
@@ -485,11 +490,11 @@ class wf_crm_admin_component {
           list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
           $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
           // Don't allow CiviCRM fields to be cloned
-          $row['data'][6]['data'] = '';
+          $row['data'][7]['data'] = '';
           if ($component['type'] == 'fieldset') {
             $title = t('Contact !num', array('!num' => $c));
             $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
-            $row['data'][6]['data'] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
+            $row['data'][7]['data'] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
               'attributes' => array('title' => t('Add a new contact to the form with the same fields and settings')
               )));
             $class .= ' fieldset';
@@ -515,16 +520,16 @@ class wf_crm_admin_component {
           // Show defaults with labels instead of keys
           if ($component['type'] == 'civicrm_contact') {
             if ($component['extra']['default'] == 'contact_id') {
-              $row['data'][2]['data'] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
+              $row['data'][3]['data'] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
             }
             elseif ($component['extra']['default'] == 'user') {
-              $row['data'][2]['data'] = t('Current User');
+              $row['data'][3]['data'] = t('Current User');
             }
             elseif ($component['extra']['default'] == 'auto') {
-              $row['data'][2]['data'] = t('Auto - From Filters');
+              $row['data'][3]['data'] = t('Auto - From Filters');
             }
             elseif ($component['extra']['default'] == 'relationship' && $component['extra']['default_relationship']) {
-              $row['data'][2]['data'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
+              $row['data'][3]['data'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
             }
           }
           elseif (isset($component['value']) && strlen($component['value']) && ($field['type'] == 'select' || !empty($field['expose_list']))) {
@@ -540,13 +545,13 @@ class wf_crm_admin_component {
                 $val .= ($val ? ', ' : '') . $items[trim($v)];
               }
             }
-            $row['data'][2]['data'] = $val;
+            $row['data'][3]['data'] = $val;
           }
           // Contribution page - link to civicrm config form instead of component edit form
           if ($name == 'contribution_page_id') {
             $type = t('CiviCRM Billing Fields');
             $class .= ' contribution';
-            $row['data'][5]['data'] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
+            $row['data'][6]['data'] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
               'query' => array(
                 'reset' => 1,
                 'action' => 'update',
@@ -558,7 +563,7 @@ class wf_crm_admin_component {
             ));
           }
           $type = '<span class="' . $class . '"> </span>' . $type;
-          $row['data'][1]['title'] = $title;
+          $row['data'][2]['title'] = $title;
         }
       }
     }
@@ -574,6 +579,7 @@ class wf_crm_admin_component {
     $field_ids = array(
       'membership_membership_type_id',
       'membership_num_terms',
+      'membership_fee_amount',
       'participant_fee_amount',
       'participant_event_id',
     );
