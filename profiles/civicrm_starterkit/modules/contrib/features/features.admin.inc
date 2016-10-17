@@ -88,6 +88,12 @@ function features_settings_form($form, $form_state) {
     '#default_value' => variable_get('features_rebuild_on_flush', TRUE),
     '#description' => t('If you have a large site with many features, you may experience lag on full cache clear. If disabled, features will rebuild only when viewing the features list or saving the modules list.'),
   );
+  $form['general']['features_rebuild_modules_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Rebuild features on accessing modules list page'),
+    '#default_value' => variable_get('features_rebuild_modules_page', FALSE),
+    '#description' => t('If you have a large site with many features, you may experience lag on accessing the modules administration page. If disabled, features will not rebuild when viewing the modules list.'),
+  );
 
   return system_settings_form($form);
 }
@@ -109,7 +115,7 @@ function features_export_form($form, $form_state, $feature = NULL) {
 
   $feature_name = !empty($feature->name) ? $feature->name : '';
   $form = array(
-    '#attributes' => array('class' => array('features-export-form')),
+    '#attributes' => array('class' => array('features-export-form', 'clearfix')),
     '#feature' => isset($feature) ? $feature : NULL,
   );
   $form['info'] = array(
@@ -203,7 +209,7 @@ function features_export_form($form, $form_state, $feature = NULL) {
     $form['advanced']['generate'] = array(
       '#type' => 'submit',
       '#value' => t('Generate feature'),
-      '#submit' => array('features_export_build_form_submit'),
+      '#submit' => array('features_export_build_form_submit', 'features_form_rebuild'),
     );
   }
   // build the Component Listing panel on the right
@@ -239,7 +245,7 @@ function features_export_form($form, $form_state, $feature = NULL) {
     '#type' => 'submit',
     '#value' => t('Download feature'),
     '#weight' => 10,
-    '#submit' => array('features_export_build_form_submit'),
+    '#submit' => array('features_export_build_form_submit', 'features_form_rebuild'),
   );
 
   $form['#attached']['library'][] = array('system', 'ui.dialog');
@@ -597,6 +603,7 @@ function _features_export_build($feature, &$form_state) {
       $component_export['selected'][$section] = array();
     }
     $options = features_invoke($component, 'features_export_options');
+    drupal_alter('features_export_options', $options, $component);
     if (!empty($options)) {
       $exported_components = !empty($exported_features_info[$component]) ? $exported_features_info[$component] : array();
       $new_components = !empty($new_features_info[$component]) ? $new_features_info[$component] : array();
@@ -755,7 +762,7 @@ function features_export_form_rebuild($form, &$form_state) {
 
 function features_export_components_json($feature_name) {
   module_load_include('inc', 'features', 'features.export');
-  $export = array();
+  $export = array('features' => array());
   if (!empty($_POST['items'])) {
     $excluded = (!empty($_POST['excluded'])) ? $_POST['excluded'] : array();
     $stub = array();
@@ -843,7 +850,7 @@ function _features_export_generate($export, $form_state, $feature = NULL) {
   }
   // If either update status-related keys are provided, add a project key
   // corresponding to the module name.
-  if (!empty($form_state['values']['version']) || !empty($form_state['values']['project_status_url'])) {
+  if (!empty($form_state['values']['version']) && !empty($form_state['values']['project_status_url'])) {
     $export['project'] = $form_state['values']['module_name'];
   }
   if (!empty($form_state['values']['version'])) {
@@ -900,6 +907,35 @@ function features_export_build_form_submit($form, &$form_state) {
 
     $tar = array();
     $filenames = array();
+    // Copy any files if _files key is there.
+    if (!empty($files['_files'])) {
+      foreach ($files['_files'] as $file_name => $file_info) {
+        if ($generate) {
+          // See if files are in a sub directory.
+          if (strpos($file_name, '/')) {
+            $file_directory = $directory . '/' . substr($file_name, 0, strrpos($file_name, '/'));
+            if (!is_dir($file_directory)) {
+              mkdir($file_directory);
+            }
+          }
+          if (!empty($file_info['file_path'])) {
+            file_unmanaged_copy($file_info['file_path'], "{$directory}/{$file_name}", FILE_EXISTS_REPLACE);
+          }
+          elseif ($file_info['file_content']) {
+            file_put_contents("{$directory}/{$file_name}", $file_info['file_content']);
+          }
+        }
+        else {
+          if (!empty($file_info['file_path'])) {
+            print features_tar_create("{$module_name}/{$file_name}", file_get_contents($file_info['file_path']));
+          }
+          elseif ($file_info['file_content']) {
+            features_tar_create("{$directory}/{$file_name}", $file_info['file_content']);
+          }
+        }
+      }
+      unset($files['_files']);
+    }
     foreach ($files as $extension => $file_contents) {
       if (!in_array($extension, array('module', 'info'))) {
         $extension .= '.inc';
@@ -973,28 +1009,14 @@ function features_filter_hidden($module) {
  * Form constructor for the features configuration form.
  */
 function features_admin_form($form, $form_state) {
+  $features = _features_get_features_list();
+  $modules = array_filter(features_get_modules(), 'features_filter_hidden');
+  $conflicts = features_get_conflicts();
+
   // Load export functions to use in comparison.
   module_load_include('inc', 'features', 'features.export');
 
-  // Clear & rebuild key caches
-  features_get_info(NULL, NULL, TRUE);
-  features_rebuild();
-
-  $modules = array_filter(features_get_modules(), 'features_filter_hidden');
-  $features = array_filter(features_get_features(), 'features_filter_hidden');
-  $conflicts = features_get_conflicts();
-
-  foreach ($modules as $key => $module) {
-    if ($module->status && !empty($module->info['dependencies'])) {
-      foreach ($module->info['dependencies'] as $dependent) {
-        if (isset($features[$dependent])) {
-          $features[$dependent]->dependents[$key] = $module->info['name'];
-        }
-      }
-    }
-  }
-
-  if ( empty($features) ) {
+  if (empty($features) ) {
     $form['no_features'] = array(
       '#markup' => t('No Features were found. Please use the !create_link link to create
       a new Feature module, or upload an existing Feature to your modules directory.',
@@ -1073,6 +1095,7 @@ function features_admin_form($form, $form_state) {
     }
 
     $href = "admin/structure/features/{$name}";
+    $href_overridden = module_exists('diff') ? $href . '/diff' : $href;
     $module_name = (user_access('administer features')) ? l($module->info['name'], $href) : $module->info['name'];
     $form[$package]['status'][$name] = array(
       '#type' => 'checkbox',
@@ -1102,7 +1125,7 @@ function features_admin_form($form, $form_state) {
         $state .= l(t('Check'), "admin/structure/features/{$name}/status", array('attributes' => array('class' => array('admin-check'))));
         $state .= theme('features_storage_link', array('storage' => FEATURES_REBUILDING, 'path' => $href));
         $state .= theme('features_storage_link', array('storage' => FEATURES_NEEDS_REVIEW, 'path' =>  $href));
-        $state .= theme('features_storage_link', array('storage' => FEATURES_OVERRIDDEN, 'path' =>  $href));
+        $state .= theme('features_storage_link', array('storage' => FEATURES_OVERRIDDEN, 'path' =>  $href_overridden));
         $state .= theme('features_storage_link', array('storage' => FEATURES_DEFAULT, 'path' =>  $href));
       }
       elseif (!empty($conflicts[$name])) {
@@ -1126,7 +1149,7 @@ function features_admin_form($form, $form_state) {
   // As of 7.0 beta 2 it matters where the "vertical_tabs" element lives on the
   // the array. We add it late, but at the beginning of the array because that
   // keeps us away from trouble.
-  $form = array('packages' => array('#type' => 'vertical_tabs')) + $form;
+  $form = array_merge(array('packages' => array('#type' => 'vertical_tabs')), $form);
 
   $form['buttons'] = array(
     '#theme' => 'features_form_buttons',
@@ -1311,7 +1334,7 @@ function features_form_submit(&$form, &$form_state) {
   // page callback rather than as part of the submit handler as some modules
   // have includes/other directives of importance in hooks that have already
   // been called in this page load.
-  $form_state['redirect'] = 'admin/structure/features/cleanup/clear';
+  $form_state['redirect'] = array('admin/structure/features/cleanup', array('query' => array('token' => drupal_get_token())));
 
   $features = $form['#features'];
   if (!empty($features)) {
@@ -1328,21 +1351,26 @@ function features_form_submit(&$form, &$form_state) {
 }
 
 /**
- * Form for clearing cache after enabling a feature.
+ * Submit handler for the 'manage features' form rebuild button.
  */
-function features_cleanup_form($form, $form_state, $cache_clear = FALSE) {
-  // Clear caches if we're getting a post-submit redirect that requests it.
-  if ($cache_clear) {
-    drupal_flush_all_caches();
+function features_form_rebuild() {
+  cache_clear_all('features:features_list', 'cache');
+}
 
+/**
+ * Callback for clearing cache after enabling a feature.
+ */
+function features_cleanup() {
+  if (!empty($_GET['token']) && drupal_valid_token($_GET['token'])) {
+    drupal_flush_all_caches();
     // The following functions need to be run because drupal_flush_all_caches()
     // runs rebuilds in the wrong order. The node type cache is rebuilt *after*
     // the menu is rebuilt, meaning that the menu tree is stale in certain
     // circumstances after drupal_flush_all_caches(). We rebuild again.
     menu_rebuild();
-  }
-
     drupal_goto('admin/structure/features');
+  }
+  return MENU_NOT_FOUND;
 }
 
 /**
@@ -1586,4 +1614,43 @@ function _features_get_used($module_name = NULL) {
   // restore previous value of global
   $features_ignore_conflicts = $old_value;
   return $conflicts;
+}
+
+/**
+ * Retrieves the array of features as expected on the Manage Features form.
+ * Uses caching for performance reasons if caching is enabled.
+ *
+ * @internal - This function might return cached result with outdated data,
+ * use with caution.
+ */
+function _features_get_features_list() {
+  $features = array();
+
+  $cache = cache_get('features:features_list');
+  if ($cache) {
+    $features = $cache->data;  
+  }
+  
+  if (empty($features)) {
+    // Clear & rebuild key caches
+    features_get_info(NULL, NULL, TRUE);
+    features_rebuild();
+
+    $modules = array_filter(features_get_modules(), 'features_filter_hidden');
+    $features = array_filter(features_get_features(), 'features_filter_hidden');
+
+    foreach ($modules as $key => $module) {
+      if ($module->status && !empty($module->info['dependencies'])) {
+        foreach ($module->info['dependencies'] as $dependent) {
+          if (isset($features[$dependent])) {
+            $features[$dependent]->dependents[$key] = $module->info['name'];
+          }
+        }
+      }
+    }
+
+    cache_set('features:features_list', $features);
+  }
+
+  return $features;
 }

@@ -84,8 +84,7 @@ function features_menu() {
   $items['admin/structure/features/cleanup'] = array(
     'title' => 'Cleanup',
     'description' => 'Clear cache after enabling/disabling a feature.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('features_cleanup_form', 4),
+    'page callback' => 'features_cleanup',
     'type' => MENU_CALLBACK,
     'file' => 'features.admin.inc',
     'weight' => 1,
@@ -128,7 +127,7 @@ function features_menu() {
     'description' => 'Display components of a feature.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('features_admin_components', 3),
-    'load arguments' => array(3, TRUE),
+    'load arguments' => array(TRUE),
     'access callback' => 'user_access',
     'access arguments' => array('administer features'),
     'type' => MENU_CALLBACK,
@@ -147,7 +146,7 @@ function features_menu() {
     'description' => 'Recreate an existing feature.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('features_export_form', 3),
-    'load arguments' => array(3, TRUE),
+    'load arguments' => array(TRUE),
     'access callback' => 'user_access',
     'access arguments' => array('administer features'),
     'type' => MENU_LOCAL_TASK,
@@ -160,7 +159,7 @@ function features_menu() {
       'description' => 'Compare default and current feature.',
       'page callback' => 'features_feature_diff',
       'page arguments' => array(3, 5),
-      'load arguments' => array(3, TRUE),
+      'load arguments' => array(TRUE),
       'access callback' => 'features_access_override_actions',
       'access arguments' => array(3),
       'type' => MENU_LOCAL_TASK,
@@ -173,7 +172,7 @@ function features_menu() {
     'description' => 'Lock a feature or components.',
     'page callback' => 'features_admin_lock',
     'page arguments' => array(3, 5, 6),
-    'load arguments' => array(3, TRUE, TRUE),
+    'load arguments' => array(TRUE),
     'access arguments' => array('administer features'),
     'type' => MENU_CALLBACK,
     'file' => 'features.admin.inc',
@@ -183,7 +182,7 @@ function features_menu() {
     'description' => 'Javascript status call back.',
     'page callback' => 'features_feature_status',
     'page arguments' => array(3),
-    'load arguments' => array(3, TRUE),
+    'load arguments' => array(TRUE),
     'access callback' => 'user_access',
     'access arguments' => array('administer features'),
     'type' => MENU_CALLBACK,
@@ -268,12 +267,19 @@ function features_theme() {
  * Implements hook_flush_caches().
  */
 function features_flush_caches() {
-  if (variable_get('features_rebuild_on_flush', TRUE)) {
+  if (($modules_changed = variable_get('features_modules_changed', FALSE)) || variable_get('features_rebuild_on_flush', TRUE)) {
+    if ($modules_changed) {
+      variable_set('features_modules_changed', FALSE);
+    }
     features_rebuild();
     // Don't flush the modules cache during installation, for performance reasons.
     if (variable_get('install_task') == 'done') {
       features_get_modules(NULL, TRUE);
     }
+  }
+
+  if (db_table_exists('cache_features')) {
+    return array('cache_features');
   }
   return array();
 }
@@ -349,6 +355,15 @@ function features_modules_disabled($modules) {
  * Implements hook_modules_enabled().
  */
 function features_modules_enabled($modules) {
+  // Allow distributions to disable this behavior and rebuild the features
+  // manually inside a batch.
+  if (!variable_get('features_rebuild_on_module_install', TRUE)) {
+    return;
+  }
+
+  // mark modules as being changed for test in features_flush_caches
+  variable_set('features_modules_changed', TRUE);
+
   // Go through all modules and gather features that can be enabled.
   $items = array();
   foreach ($modules as $module) {
@@ -385,7 +400,7 @@ function features_include($reset = FALSE) {
     // Features provides integration on behalf of these modules.
     // The features include provides handling for the feature dependencies.
     // Note that ctools is placed last because it implements hooks "dynamically" for other modules.
-    $modules = array('features', 'block', 'context', 'field', 'filter', 'image', 'locale', 'menu', 'node', 'taxonomy', 'user', 'views', 'ctools');
+    $modules = array('features', 'block', 'contact', 'context', 'field', 'filter', 'image', 'locale', 'menu', 'node', 'taxonomy', 'user', 'views', 'ctools');
 
     foreach (array_filter($modules, 'module_exists') as $module) {
       module_load_include('inc', 'features', "includes/features.$module");
@@ -503,7 +518,7 @@ function features_load_feature($name, $reset = FALSE) {
  * Return a module 'object' including .info information.
  *
  * @param $name
- *   The name of the module to retrieve information for. If ommitted,
+ *   The name of the module to retrieve information for. If omitted,
  *   an array of all available modules will be returned.
  * @param $reset
  *   Whether to reset the cache.
@@ -535,13 +550,13 @@ function features_get_components($component = NULL, $key = NULL, $reset = FALSE)
 
   if ($reset || !isset($components) || !isset($component_by_key)) {
     $components = $component_by_key = array();
-    if (!$reset && ($cache = cache_get('features_api'))) {
+    if (!$reset && ($cache = cache_get('features_api', 'cache_features'))) {
       $components = $cache->data;
     }
     else {
       $components = module_invoke_all('features_api');
       drupal_alter('features_api', $components);
-      cache_set('features_api', $components);
+      cache_set('features_api', $components, 'cache_features');
     }
 
     foreach ($components as $component_type => $component_information) {
@@ -607,6 +622,8 @@ function features_hook($component, $hook, $reset = FALSE) {
  *   Clear the module info cache.
  */
 function features_install_modules($modules) {
+  variable_set('features_modules_changed', TRUE);
+
   module_load_include('inc', 'features', 'features.export');
   $files = system_rebuild_module_data();
 
@@ -650,7 +667,7 @@ function features_get_features($name = NULL, $reset = FALSE) {
 function features_get_info($type = 'module', $name = NULL, $reset = FALSE) {
   static $cache;
   if (!isset($cache)) {
-    $cache = cache_get('features_module_info');
+    $cache = cache_get('features_module_info', 'cache_features');
   }
   if (empty($cache) || $reset) {
     $data = array(
@@ -661,6 +678,10 @@ function features_get_info($type = 'module', $name = NULL, $reset = FALSE) {
     $files = system_rebuild_module_data();
 
     foreach ($files as $row) {
+      // Remove modification timestamp, added in Drupal 7.33.
+      if (isset($row->info['mtime'])) {
+        unset($row->info['mtime']);
+      }
       // Avoid false-reported feature overrides for php = 5.2.4 line in .info file.
       if (isset($row->info['php'])) {
         unset($row->info['php']);
@@ -734,14 +755,14 @@ function features_get_info($type = 'module', $name = NULL, $reset = FALSE) {
     $data['feature'] = $sorted;
 
     variable_set('features_ignored_orphans', $ignored);
-    cache_set("features_module_info", $data);
+    cache_set('features_module_info', $data, 'cache_features');
     $cache = new stdClass();
     $cache->data = $data;
   }
   if (!empty($name)) {
-    return !empty($cache->data[$type][$name]) ? clone $cache->data[$type][$name] : array();
+    return !empty($cache->data[$type][$name]) ? clone $cache->data[$type][$name] : FALSE;
   }
-  return !empty($cache->data[$type]) ? $cache->data[$type] : array();
+  return !empty($cache->data[$type]) ? $cache->data[$type] : FALSE;
 }
 
 /**
@@ -888,7 +909,7 @@ function features_access_override_actions($feature) {
 
       features_include();
       module_load_include('inc', 'features', 'features.export');
-      $access[$feature->name] = in_array(features_get_storage($feature->name), array(FEATURES_OVERRIDDEN, FEATURES_NEEDS_REVIEW)) && user_access('administer features');
+      $access[$feature->name] = in_array(features_get_storage($feature->name), array(FEATURES_DEFAULT, FEATURES_OVERRIDDEN, FEATURES_NEEDS_REVIEW));
     }
     return $access[$feature->name];
   }
@@ -899,7 +920,9 @@ function features_access_override_actions($feature) {
  * Implements hook_form_alter() for system_modules form().
  */
 function features_form_system_modules_alter(&$form) {
-  features_rebuild();
+  if (variable_get('features_rebuild_modules_page', FALSE)) {
+    features_rebuild();
+  }
 }
 
 /**
@@ -1063,6 +1086,7 @@ function features_hook_info() {
     'features_api',
     'features_pipe_alter',
     'features_export_alter',
+    'features_export_options_alter',
   );
   return array_fill_keys($hooks, array('group' => 'features'));
 }
@@ -1071,6 +1095,9 @@ function features_hook_info() {
  * Change vocabularies permission, from vocab id to machine name and vice versa.
  */
 function _user_features_change_term_permission(&$perm, $type = 'vid') {
+  if (!module_exists('taxonomy')) {
+    return;
+  }
   // Export vocabulary permissions using the machine name, instead of vocabulary
   // id.
   if (strpos($perm, 'edit terms in ') !== FALSE || strpos($perm, 'delete terms in ') !== FALSE) {
@@ -1182,7 +1209,6 @@ function features_feature_lock($feature, $component = NULL) {
   variable_set('features_feature_locked', $locked);
 }
 
-
 /**
  * Unlocks a feature or it's component.
  */
@@ -1195,4 +1221,74 @@ function features_feature_unlock($feature, $component = NULL) {
     unset($locked[$feature]['_all']);
   }
   variable_set('features_feature_locked', $locked);
+}
+
+/**
+ * Sets/Returns the current language to english to ensure a proper export.
+ */
+function _features_export_language($language = NULL) {
+  $current = $GLOBALS['language'];
+  if (isset($language)) {
+    $GLOBALS['language'] = $language;
+  }
+  elseif ($GLOBALS['language']->language != 'en') {
+    // Create the language object as language_default() does.
+    $GLOBALS['language'] = (object) array(
+      'language' => 'en',
+      'name' => 'English',
+      'native' => 'English',
+      'direction' => 0,
+      'enabled' => 1,
+      'plurals' => 0,
+      'formula' => '',
+      'domain' => '',
+      'prefix' => '',
+      'weight' => 0,
+      'javascript' => '',
+    );
+  }
+  return $current;
+}
+
+/**
+ * Implements hook_features_ignore().
+ */
+function features_features_ignore($component) {
+  // Determine which keys need to be ignored for override diff for various components.
+  // Value is how many levels deep the key is.
+  $ignores = array();
+  switch ($component) {
+    case 'views_view':
+      $ignores['current_display'] = 0;
+      $ignores['display_handler'] = 0;
+      $ignores['handler'] = 2;
+      $ignores['query'] = 0;
+      $ignores['localization_plugin'] = 0;
+      // Views automatically adds these two on export to set values.
+      $ignores['api_version'] = 0;
+      $ignores['disabled'] = 0;
+      break;
+    case 'image':
+      $ignores['module'] = 0;
+      $ignores['name'] = 0;
+      $ignores['storage'] = 0;
+      // Various properties are loaded into the effect in image_styles.
+      $ignores['summary theme'] = 2;
+      $ignores['module'] = 2;
+      $ignores['label'] = 2;
+      $ignores['help'] = 2;
+      $ignores['form callback'] = 2;
+      $ignores['effect callback'] = 2;
+      $ignores['dimensions callback'] = 2;
+      break;
+    case 'field':
+      $ignores['locked'] = 1;
+      break;
+    case 'field_base':
+      $ignores['indexes'] = 0;
+      break;
+    case 'taxonomy':
+      $ignores['hierarchy'] = 0;
+  }
+  return $ignores;
 }
