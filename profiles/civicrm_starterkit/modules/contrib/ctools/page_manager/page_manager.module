@@ -213,6 +213,30 @@ function page_manager_menu_alter(&$items) {
     }
   }
 
+  // Override the core node revisions display to use the configured Page
+  // display handler.
+  if (!variable_get('page_manager_node_view_disabled', TRUE) && isset($items['node/%node/revisions/%/view'])) {
+    // Abstract the basic settings.
+    $item = array(
+      // Handle the page arguments.
+      'load arguments' => array(3),
+      'page arguments' => array(1, TRUE),
+
+      // Replace the normal node_show call with Page Manager's node view.
+      'page callback' => 'page_manager_node_view_page',
+
+      // Provide the correct path to the Page Manager file.
+      'file' => 'node_view.inc',
+      'file path' => drupal_get_path('module', 'page_manager') . '/plugins/tasks',
+    );
+    // Re-build the menu item using the normal values from node.module.
+    $items['node/%node/revisions/%/view'] = array(
+      'title' => 'Revisions',
+      'access callback' => '_node_revision_access',
+      'access arguments' => array(1),
+    ) + $item;
+  }
+
   return $items;
 }
 
@@ -416,16 +440,22 @@ function page_manager_cache_load($task_name) {
  */
 function page_manager_handler_get_name($task_name, $handlers, $handler) {
   $base = str_replace('-', '_', $task_name);
-  // Generate a unique name. Unlike most named objects, we don't let people choose
-  // names for task handlers because they mostly don't make sense.
-  $base .= '_' . $handler->handler;
+  $name = '';
 
-  // Once we have a base, check to see if it is used. If it is, start counting up.
-  $name = $base;
-  $count = 1;
-  // If taken
-  while (isset($handlers[$name])) {
-    $name = $base . '_' . ++$count;
+  // Optional machine name.
+  if (!empty($handler->conf['name'])) {
+    $name = $base . '__' . $handler->conf['name'];
+    if (count(ctools_export_load_object('page_manager_handlers', 'names', array($name)))) {
+      $name = '';
+    }
+  }
+
+  // If no machine name was provided or the name is in use, generate a unique name.
+  if (empty($name)) {
+    $base .= '__' . $handler->handler;
+
+    // Use the ctools uuid generator to generate a unique id.
+    $name = $base . '_' . ctools_uuid_generate();
   }
 
   return $name;
@@ -447,6 +477,10 @@ function page_manager_handler_add_to_page(&$page, &$handler, $title = NULL) {
 
   if ($title) {
     $handler->conf['title'] = $title;
+    $handler->conf['name'] = trim(preg_replace('/[^a-z0-9_]+/', '-', strtolower($title)), '-');
+  }
+  else {
+    $handler->conf['name'] = '';
   }
 
   $name = page_manager_handler_get_name($page->task_name, $page->handlers, $handler);
@@ -1168,7 +1202,7 @@ function page_manager_page_manager_pages_to_hook_code($names = array(), $name = 
     foreach ($objects as $object) {
       // Have to implement our own because this export func sig requires it
       $code .= $export['export callback']($object, TRUE, '  ');
-      $code .= "  \${$export['identifier']}s['" . check_plain($object->$export['key']) . "'] = \${$export['identifier']};\n\n";
+      $code .= "  \${$export['identifier']}s['" . check_plain($object->{$export['key']}) . "'] = \${$export['identifier']};\n\n";
     }
     $code .= "  return \${$export['identifier']}s;\n";
     $code .= "}\n";

@@ -34,6 +34,14 @@ function ctools_entity_field_content_type_content_types() {
     return $types;
   }
 
+  $cache_key = 'ctools_entity_field_content_type_content_types';
+  if ($cache = cache_get($cache_key)) {
+    $types = $cache->data;
+    if (!empty($types)) {
+      return $types;
+    }
+  }
+
   // This will hold all the individual field content types.
   $context_types = array();
   $entities = entity_get_info();
@@ -82,6 +90,8 @@ function ctools_entity_field_content_type_content_types() {
     unset($context_types[$key]['types']);
   }
 
+  cache_set($cache_key, $types);
+
   return $types;
 }
 
@@ -118,6 +128,8 @@ function ctools_entity_field_content_type_render($subtype, $conf, $panel_args, $
   $field_settings = array(
     'label' => $label,
     'type' => $conf['formatter'],
+    // Pass all entity field panes settings to field display settings.
+    'pane_settings' => $conf,
   );
 
   // Get the field output, and the title.
@@ -125,39 +137,24 @@ function ctools_entity_field_content_type_render($subtype, $conf, $panel_args, $
     $field_settings['settings'] = $conf['formatter_settings'];
   }
 
-  $all_values = field_get_items($entity_type, $entity, $field_name, $language);
-  if (!is_array($all_values)) {
-    $all_values = array();
-  }
-
-  // Reverse values.
-  if (isset($conf['delta_reversed']) && $conf['delta_reversed']) {
-    $all_values = array_reverse($all_values);
-  }
-
-  if (isset($conf['delta_limit'])) {
-    $delta_limit = $conf['delta_limit'];
-    $offset = intval($conf['delta_offset']);
-    $total = count($all_values);
-
-    if ($delta_limit == 0) {
-      $delta_limit = $total - $offset;
-    }
-
-    $new_values = array();
-    for ($i = 0; $i < $delta_limit; $i++) {
-      $new_delta = $offset + $i;
-
-      if (isset($all_values[$new_delta])) {
-        $new_values[] = $all_values[$new_delta];
-      }
-    }
-
-    $all_values = $new_values;
-  }
-
   $clone = clone $entity;
-  $clone->{$field_name}[$language] = $all_values;
+  $all_values = field_get_items($entity_type, $entity, $field_name, $language);
+
+  if (is_array($all_values)) {
+    // Reverse values.
+    if (isset($conf['delta_reversed']) && $conf['delta_reversed']) {
+      $all_values = array_reverse($all_values, TRUE);
+    }
+
+    if (isset($conf['delta_limit'])) {
+      $offset = intval($conf['delta_offset']);
+      $limit = !empty($conf['delta_limit']) ? $conf['delta_limit'] : NULL;
+      $all_values = array_slice($all_values, $offset, $limit, TRUE);
+    }
+
+    $clone->{$field_name}[$language] = $all_values;
+  }
+
   $field_output = field_view_field($entity_type, $clone, $field_name, $field_settings, $language);
 
   if (!empty($field_output) && !empty($conf['override_title'])) {
@@ -263,10 +260,18 @@ function ctools_entity_field_content_type_formatter_styles_submit($form, &$form_
 }
 
 /**
-* Returns the administrative title for a type.
-*/
+ * Returns the administrative title for a type.
+ */
 function ctools_entity_field_content_type_admin_title($subtype, $conf, $context) {
   list($bundle, $field_name) = explode(':', $subtype);
   ctools_include('fields');
-  return t('"@s" @field', array('@s' => $context->identifier, '@field' => ctools_field_label($field_name)));
+  if (is_object($context) && isset($context->identifier)) {
+    $identifier = $context->identifier;
+  }
+  else {
+    watchdog('ctools_entity_field_content_type_admin_title', 'Context is missing for field: @name', array('@name' => $subtype), WATCHDOG_NOTICE);
+    $identifier = t('Unknown');
+  }
+
+  return t('"@s" @field', array('@s' => $identifier, '@field' => ctools_field_label($field_name)));
 }

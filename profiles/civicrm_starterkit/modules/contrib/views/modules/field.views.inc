@@ -435,45 +435,6 @@ function field_views_field_default_views_data($field) {
           'field_name' => $field['field_name'],
         );
       }
-
-      // Expose additional language column for translatable fields.
-      if (!empty($field['translatable'])) {
-        $title_language = t('@label (!name:language)', array('@label' => $label, '!name' => $field['field_name']));
-        $title_short_language = t('@label:language', array('@label' => $label));
-
-        $data[$table]['language'] = array(
-          'group' => $group,
-          'title' => $title_language,
-          'title short' => $title_short_language,
-          'help' => t('Language - Appears in: @bundles.', array('@bundles' => implode(', ', $bundles_names))),
-        );
-        $data[$table]['language']['field'] = array(
-          'handler' => 'views_handler_field_locale_language',
-        );
-        $data[$table]['language']['argument'] = array(
-          'field' => 'language',
-          'table' => $table,
-          'handler' => 'views_handler_argument_locale_language',
-          'additional fields' => $additional_fields,
-          'empty field name' => t('<No value>'),
-          'field_name' => $field['field_name'],
-        );
-        $data[$table]['language']['filter'] = array(
-          'field' => 'language',
-          'table' => $table,
-          'handler' => 'views_handler_filter_locale_language',
-          'additional fields' => $additional_fields,
-          'field_name' => $field['field_name'],
-          'allow empty' => TRUE,
-        );
-        $data[$table]['language']['sort'] = array(
-          'field' => 'language',
-          'table' => $table,
-          'handler' => 'views_handler_sort',
-          'additional fields' => $additional_fields,
-          'field_name' => $field['field_name'],
-        );
-      }
     }
   }
 
@@ -488,7 +449,13 @@ function list_field_views_data($field) {
   foreach ($data as $table_name => $table_data) {
     foreach ($table_data as $field_name => $field_data) {
       if (isset($field_data['filter']) && $field_name != 'delta') {
-        $data[$table_name][$field_name]['filter']['handler'] = 'views_handler_filter_field_list';
+        if ($field['type'] == 'list_boolean') {
+          // Special handler for boolean fields.
+          $data[$table_name][$field_name]['filter']['handler'] = 'views_handler_filter_field_list_boolean';
+        }
+        else {
+          $data[$table_name][$field_name]['filter']['handler'] = 'views_handler_filter_field_list';
+        }
       }
       if (isset($field_data['argument']) && $field_name != 'delta') {
         if ($field['type'] == 'list_text') {
