@@ -45,6 +45,9 @@ function features_populate($info, $module_name) {
  * @return fully populated $export array.
  */
 function _features_populate($pipe, &$export, $module_name = '', $reset = FALSE) {
+  // Ensure that the export will be created in the english language.
+  $language = _features_export_language();
+
   if ($reset) {
     drupal_static_reset(__FUNCTION__);
   }
@@ -89,6 +92,7 @@ function _features_populate($pipe, &$export, $module_name = '', $reset = FALSE) 
       }
     }
   }
+  _features_export_language($language);
   return $export;
 }
 
@@ -295,6 +299,11 @@ function features_export_render($export, $module_name, $reset = FALSE) {
     }
 
     foreach ($hooks as $hook_name => $hook_info) {
+      // These are purely files that will be copied over.
+      if (is_array($hook_info) && (!empty($hook_info['file_path']) || !empty($hook_info['file_content']))) {
+        $code['_files'][$hook_name] = $hook_info;
+        continue;
+      }
       $hook_code = is_array($hook_info) ? $hook_info['code'] : $hook_info;
       $hook_args = is_array($hook_info) && !empty($hook_info['args']) ? $hook_info['args'] : '';
       $hook_file = is_array($hook_info) && !empty($hook_info['file']) ? $hook_info['file'] : $file['name'];
@@ -305,7 +314,17 @@ function features_export_render($export, $module_name, $reset = FALSE) {
   // Finalize strings to be written to files
   $code = array_filter($code);
   foreach ($code as $filename => $contents) {
-    $code[$filename] = "<?php\n/**\n * @file\n * {$module_name}.{$filename}.inc\n */\n\n". implode("\n\n", $contents) ."\n";
+    if ($filename != '_files') {
+      $code[$filename] = "<?php\n/**\n * @file\n * {$module_name}.{$filename}.inc\n */\n\n". implode("\n\n", $contents) ."\n";
+    }
+  }
+
+  // Allow extra files be added to feature.
+  if ($files =  module_invoke_all('features_export_files', $module_name, $export)) {
+    $code['_files'] = !empty($code['_files']) ? $code['_files'] + $files : $files;
+  }
+  if (!empty($code['_files'])) {
+    drupal_alter('features_export_files', $code['_files'], $module_name, $export);
   }
 
   // Generate info file output
@@ -394,8 +413,8 @@ function features_detect_overrides($module) {
     $overridden = array();
 
     // Compare feature info
-    _features_sanitize($module->info);
-    _features_sanitize($export);
+    features_sanitize($module->info);
+    features_sanitize($export);
 
     $compare = array('normal' => features_export_info($export), 'default' => features_export_info($module->info));
     if ($compare['normal'] !== $compare['default']) {
@@ -408,8 +427,8 @@ function features_detect_overrides($module) {
       if ($state != FEATURES_DEFAULT) {
         $normal = features_get_normal($component, $module->name);
         $default = features_get_default($component, $module->name);
-        _features_sanitize($normal);
-        _features_sanitize($default);
+        features_sanitize($normal, $component);
+        features_sanitize($default, $component);
 
         $compare = array('normal' => features_var_export($normal), 'default' => features_var_export($default));
         if (_features_linetrim($compare['normal']) !== _features_linetrim($compare['default'])) {
@@ -663,8 +682,7 @@ function features_get_signature($state = 'default', $module_name, $component, $r
       break;
   }
   if (!empty($objects)) {
-    $objects = (array) $objects;
-    _features_sanitize($objects);
+    features_sanitize($objects, $component);
     return md5(_features_linetrim(features_var_export($objects)));
   }
   return FALSE;
@@ -721,7 +739,7 @@ function features_get_normal($component, $module_name, $reset = FALSE) {
 
     // Special handling for dependencies component.
     if ($component === 'dependencies') {
-      $cache[$module_name][$component] = isset($module->info['dependencies']) ? array_filter($module->info['dependencies'], 'module_exists') : array();
+      $cache[$module_name][$component] = isset($module->info['dependencies']) ? array_filter($module->info['dependencies'], '_features_module_exists') : array();
     }
     // All other components.
     else {
@@ -737,6 +755,17 @@ function features_get_normal($component, $module_name, $reset = FALSE) {
     unset($module);
   }
   return isset($cache[$module_name][$component]) ? $cache[$module_name][$component] : FALSE;
+}
+
+/**
+ * Helper function to determine if a module is enabled
+ * @param $module
+ *   This module name comes from the .info file and can have version info in it.
+ */
+function _features_module_exists($module) {
+  $parsed_dependency = drupal_parse_dependency($module);
+  $name = $parsed_dependency['name'];
+  return module_exists($name);
 }
 
 /**
@@ -815,6 +844,13 @@ function features_get_default($component, $module_name = NULL, $alter = TRUE, $r
 
 /**
  * Get a map of components to their providing modules.
+ *
+ * @param string $component
+ * @param string $attribute
+ * @param callable $callback
+ * @param bool $reset
+ *
+ * @return array|bool
  */
 function features_get_default_map($component, $attribute = NULL, $callback = NULL, $reset = FALSE) {
   $map = &drupal_static(__FUNCTION__, array());
@@ -863,6 +899,9 @@ function features_get_default_map($component, $attribute = NULL, $callback = NUL
  * Retrieve an array of features/components and their current states.
  */
 function features_get_component_states($features = array(), $rebuild_only = TRUE, $reset = FALSE) {
+  // Ensure that the export will be created in the English language.
+  $language = _features_export_language();
+
   if ($reset) {
     drupal_static_reset(__FUNCTION__);
   }
@@ -873,7 +912,7 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
 
   // Retrieve only rebuildable components if requested.
   features_include();
-  $components = array_keys(features_get_components());
+  $components = array_keys(features_get_components(NULL, NULL, $reset));
   if ($rebuild_only) {
     foreach ($components as $k => $component) {
       if (!features_hook($component, 'features_rebuild')) {
@@ -956,6 +995,9 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
   foreach ($return as $k => $v) {
     $return[$k] = array_intersect_key($return[$k], array_flip($components));
   }
+
+  _features_export_language($language);
+
   return $return;
 }
 
@@ -971,24 +1013,48 @@ function _features_linetrim($code) {
 }
 
 /**
+ * Helper function to "sanitize" an array or object.
+ * Converts everything to an array, sorts the keys, removes recursion.
+ * @param $array
+ * @param $component string name of component
+ * @param bool $remove_empty if set, remove null or empty values for assoc arrays.
+ */
+function features_sanitize(&$array, $component = NULL, $remove_empty = TRUE) {
+  $array = features_remove_recursion($array);
+  if (isset($component)) {
+    $ignore_keys = _features_get_ignore_keys($component);
+    // remove keys to be ignored
+    if (count($ignore_keys)) {
+      _features_remove_ignores($array, $ignore_keys);
+    }
+  }
+  _features_sanitize($array, $remove_empty);
+}
+
+/**
  * "Sanitizes" an array recursively, performing two key operations:
  * - Sort an array by its keys (assoc) or values (non-assoc)
- * - Remove any null or empty values for associative arrays (array_filter()).
+ * @param bool $remove_empty if set, remove null or empty values for assoc arrays.
  */
-function _features_sanitize(&$array) {
+function _features_sanitize(&$array, $remove_empty = TRUE) {
+  if (is_object($array)) {
+    $array = get_object_vars($array);
+  }
   if (is_array($array)) {
     $is_assoc = _features_is_assoc($array);
     if ($is_assoc) {
       ksort($array, SORT_STRING);
-      $array = array_filter($array);
+      if ($remove_empty) {
+        $array = array_filter($array);
+      }
     }
     else {
       sort($array);
     }
     foreach ($array as $k => $v) {
-      if (is_array($v)) {
+      if (is_array($v) or is_object($v)) {
         _features_sanitize($array[$k]);
-        if ($is_assoc && empty($array[$k])) {
+        if ($remove_empty && $is_assoc && empty($array[$k])) {
           unset($array[$k]);
         }
       }
@@ -1009,4 +1075,93 @@ function _features_sanitize(&$array) {
  */
 function _features_is_assoc($array) {
   return (is_array($array) && (0 !== count(array_diff_key($array, array_keys(array_keys($array)))) || count($array)==0));
+}
+
+/**
+ * Removes recursion from an object or array.
+ *
+ * Taken from https://code.google.com/p/formaldehyde/source/browse/trunk/formaldehyde.php
+ * Also used in node_export module
+ *
+ * @param $o mixed
+ * @return mixed
+ *   returns a copy of the object or array with recursion removed
+ */
+function features_remove_recursion($o) {
+  static $replace;
+  if (!isset($replace)) {
+    $replace = create_function(
+      '$m',
+      '$r="\x00{$m[1]}ecursion_features";return \'s:\'.strlen($r.$m[2]).\':"\'.$r.$m[2].\'";\';'
+    );
+  }
+  if (is_array($o) || is_object($o)) {
+    $re = '#(r|R):([0-9]+);#';
+    $serialize = serialize($o);
+    if (preg_match($re, $serialize)) {
+      $last = $pos = 0;
+      while (false !== ($pos = strpos($serialize, 's:', $pos))) {
+        $chunk = substr($serialize, $last, $pos - $last);
+        if (preg_match($re, $chunk)) {
+          $length = strlen($chunk);
+          $chunk = preg_replace_callback($re, $replace, $chunk);
+          $serialize = substr($serialize, 0, $last) . $chunk . substr($serialize, $last + ($pos - $last));
+          $pos += strlen($chunk) - $length;
+        }
+        $pos += 2;
+        $last = strpos($serialize, ':', $pos);
+        $length = substr($serialize, $pos, $last - $pos);
+        $last += 4 + $length;
+        $pos = $last;
+      }
+      $serialize = substr($serialize, 0, $last) . preg_replace_callback($re, $replace, substr($serialize, $last));
+      $o = unserialize($serialize);
+    }
+  }
+  return $o;
+}
+
+/**
+ * Helper to removes a set of keys an object/array.
+ *
+ * @param $item
+ *   An object or array passed by reference.
+ * @param $ignore_keys
+ *   Array of keys to be ignored. Values are the level of the key.
+ * @param $level
+ *   Level of key to remove.  Up to 2 levels deep because $item can still be
+ *   recursive
+ */
+function _features_remove_ignores(&$item, $ignore_keys, $level = -1) {
+  $is_object = is_object($item);
+  if (!is_array($item) && !is_object($item)) {
+    return;
+  }
+  foreach ($item as $key => &$value) {
+    if (isset($ignore_keys[$key]) && ($ignore_keys[$key] == $level)) {
+      if ($is_object) {
+        unset($item->$key);
+      }
+      else {
+        unset($item[$key]);
+      }
+    }
+    elseif (($level < 2) && (is_array($value) || is_object($value))) {
+      _features_remove_ignores($value, $ignore_keys, $level+1);
+    }
+  }
+  unset($value);
+}
+
+/**
+ * Returns an array of keys to be ignored for various exportables
+ * @param $component
+ *   The component to retrieve ignore_keys from.
+ */
+function _features_get_ignore_keys($component) {
+  static $cache;
+  if (!isset($cache[$component])) {
+    $cache[$component] = module_invoke_all('features_ignore', $component);
+  }
+  return $cache[$component];
 }
