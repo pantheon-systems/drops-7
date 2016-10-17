@@ -209,7 +209,16 @@ class CommonURLUnitTest extends DrupalWebTestCase {
     // Test that drupal can recognize an absolute URL. Used to prevent attack vectors.
     $this->assertTrue(url_is_external($url), 'Correctly identified an external URL.');
 
+    // External URL without an explicit protocol.
+    $url = '//drupal.org/foo/bar?foo=bar&bar=baz&baz#foo';
+    $this->assertTrue(url_is_external($url), 'Correctly identified an external URL without a protocol part.');
+
+    // Internal URL starting with a slash.
+    $url = '/drupal.org';
+    $this->assertFalse(url_is_external($url), 'Correctly identified an internal URL with a leading slash.');
+
     // Test the parsing of absolute URLs.
+    $url = 'http://drupal.org/foo/bar?foo=bar&bar=baz&baz#foo';
     $result = array(
       'path' => 'http://drupal.org/foo/bar',
       'query' => array('foo' => 'bar', 'bar' => 'baz', 'baz' => ''),
@@ -349,6 +358,76 @@ class CommonURLUnitTest extends DrupalWebTestCase {
     $query = array($this->randomName(5) => $this->randomName(5));
     $result = url($url, array('query' => $query));
     $this->assertEqual($url . '&' . http_build_query($query, '', '&'), $result, 'External URL query string can be extended with a custom query string in $options.');
+
+    // Verify that an internal URL does not result in an external URL without
+    // protocol part.
+    $url = '/drupal.org';
+    $result = url($url);
+    $this->assertTrue(strpos($result, '//') === FALSE, 'Internal URL does not turn into an external URL.');
+
+    // Verify that an external URL without protocol part is recognized as such.
+    $url = '//drupal.org';
+    $result = url($url);
+    $this->assertEqual($url, $result, 'External URL without protocol is not altered.');
+  }
+}
+
+/**
+ * Tests url_is_external().
+ */
+class UrlIsExternalUnitTest extends DrupalUnitTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'External URL checking',
+      'description' => 'Performs tests on url_is_external().',
+      'group' => 'System',
+    );
+  }
+
+  /**
+   * Tests if each URL is external or not.
+   */
+  function testUrlIsExternal() {
+    foreach ($this->examples() as $path => $expected) {
+      $this->assertIdentical(url_is_external($path), $expected, $path);
+    }
+  }
+
+  /**
+   * Provides data for testUrlIsExternal().
+   *
+   * @return array
+   *   An array of test data, keyed by a path, with the expected value where
+   *   TRUE is external, and FALSE is not external.
+   */
+  protected function examples() {
+    return array(
+      // Simple external URLs.
+      'http://example.com' => TRUE,
+      'https://example.com' => TRUE,
+      'http://drupal.org/foo/bar?foo=bar&bar=baz&baz#foo' => TRUE,
+      '//drupal.org' => TRUE,
+      // Some browsers ignore or strip leading control characters.
+      "\x00//www.example.com" => TRUE,
+      "\x08//www.example.com" => TRUE,
+      "\x1F//www.example.com" => TRUE,
+      "\n//www.example.com" => TRUE,
+      // JSON supports decoding directly from UTF-8 code points.
+      json_decode('"\u00AD"') . "//www.example.com" => TRUE,
+      json_decode('"\u200E"') . "//www.example.com" => TRUE,
+      json_decode('"\uE0020"') . "//www.example.com" => TRUE,
+      json_decode('"\uE000"')  . "//www.example.com" => TRUE,
+      // Backslashes should be normalized to forward.
+      '\\\\example.com' => TRUE,
+      // Local URLs.
+      'node' => FALSE,
+      '/system/ajax' => FALSE,
+      '?q=foo:bar' => FALSE,
+      'node/edit:me' => FALSE,
+      '/drupal.org' => FALSE,
+      '<front>' => FALSE,
+    );
   }
 }
 
@@ -661,6 +740,10 @@ class CascadingStylesheetsTestCase extends DrupalWebTestCase {
     drupal_add_css($css);
     $styles = drupal_get_css();
     $this->assertTrue(strpos($styles, $css) > 0, 'Rendered CSS includes the added stylesheet.');
+    // Verify that newlines are properly added inside style tags.
+    $query_string = variable_get('css_js_query_string', '0');
+    $css_processed = "<style type=\"text/css\" media=\"all\">\n@import url(\"" . check_plain(file_create_url($css)) . "?" . $query_string ."\");\n</style>";
+    $this->assertEqual(trim($styles), $css_processed, 'Rendered CSS includes newlines inside style tags for JavaScript use.');
   }
 
   /**
@@ -864,6 +947,31 @@ class DrupalHTMLIdentifierTestCase extends DrupalUnitTestCase {
 
     // Verify that invalid characters (including non-breaking space) are stripped from the identifier.
     $this->assertIdentical(drupal_clean_css_identifier('invalid !"#$%&\'()*+,./:;<=>?@[\\]^`{|}~ identifier', array()), 'invalididentifier', 'Strip invalid characters.');
+
+    // Verify that double underscores are replaced in the identifier by default.
+    $identifier = 'css__identifier__with__double__underscores';
+    $expected = 'css--identifier--with--double--underscores';
+    $this->assertIdentical(drupal_clean_css_identifier($identifier), $expected, 'Verify double underscores are replaced with double hyphens by default.');
+
+    // Verify that double underscores are preserved in the identifier if the
+    // variable allow_css_double_underscores is set to TRUE.
+    $this->setAllowCSSDoubleUnderscores(TRUE);
+    $this->assertIdentical(drupal_clean_css_identifier($identifier), $identifier, 'Verify double underscores are preserved if the allow_css_double_underscores set to TRUE.');
+
+    // To avoid affecting other test cases, set the variable
+    // allow_css_double_underscores to FALSE which is the default value.
+    $this->setAllowCSSDoubleUnderscores(FALSE);
+  }
+
+  /**
+   * Set the variable allow_css_double_underscores and reset the cache.
+   *
+   * @param $value bool
+   *   A new value to be set to allow_css_double_underscores.
+   */
+  function setAllowCSSDoubleUnderscores($value) {
+    $GLOBALS['conf']['allow_css_double_underscores'] = $value;
+    drupal_static_reset('drupal_clean_css_identifier:allow_css_double_underscores');
   }
 
   /**
@@ -914,9 +1022,11 @@ class CascadingStylesheetsUnitTest extends DrupalUnitTestCase {
    * Tests basic CSS loading with and without optimization via drupal_load_stylesheet().
    *
    * Known tests:
-   * - Retain white-space in selectors. (http://drupal.org/node/472820)
-   * - Proper URLs in imported files. (http://drupal.org/node/265719)
-   * - Retain pseudo-selectors. (http://drupal.org/node/460448)
+   * - Retain white-space in selectors. (https://drupal.org/node/472820)
+   * - Proper URLs in imported files. (https://drupal.org/node/265719)
+   * - Retain pseudo-selectors. (https://drupal.org/node/460448)
+   * - Don't adjust data URIs. (https://drupal.org/node/2142441)
+   * - Files imported from external URLs. (https://drupal.org/node/2014851)
    */
   function testLoadCssBasic() {
     // Array of files to test living in 'simpletest/files/css_test_files/'.
@@ -1083,6 +1193,74 @@ class DrupalHTTPRequestTestCase extends DrupalWebTestCase {
 }
 
 /**
+ * Tests parsing of the HTTP response status line.
+ */
+class DrupalHTTPResponseStatusLineTest extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Drupal HTTP request response status parsing',
+      'description' => 'Perform unit tests on _drupal_parse_response_status().',
+      'group' => 'System',
+    );
+  }
+
+  /**
+   * Tests parsing HTTP response status line.
+   */
+  public function testStatusLine() {
+    // Grab the big array of test data from statusLineData().
+    $data = $this->statusLineData();
+    foreach($data as $test_case) {
+      $test_data = array_shift($test_case);
+      $expected = array_shift($test_case);
+
+      $outcome = _drupal_parse_response_status($test_data);
+
+      foreach(array_keys($expected) as $key) {
+        $this->assertIdentical($outcome[$key], $expected[$key]);
+      }
+    }
+  }
+
+  /**
+   * Data provider for testStatusLine().
+   *
+   * @return array
+   *   Test data.
+   */
+  protected function statusLineData() {
+    return array(
+      array(
+        'HTTP/1.1 200 OK',
+        array(
+          'http_version' => 'HTTP/1.1',
+          'response_code' => '200',
+          'reason_phrase' => 'OK',
+        ),
+      ),
+      // Data set with no reason phrase.
+      array(
+        'HTTP/1.1 200',
+        array(
+          'http_version' => 'HTTP/1.1',
+          'response_code' => '200',
+          'reason_phrase' => '',
+        ),
+      ),
+      // Arbitrary strings.
+      array(
+        'version code multi word explanation',
+        array(
+          'http_version' => 'version',
+          'response_code' => 'code',
+          'reason_phrase' => 'multi word explanation',
+        ),
+      ),
+    );
+  }
+}
+
+/**
  * Testing drupal_add_region_content and drupal_get_region_content.
  */
 class DrupalSetContentTestCase extends DrupalWebTestCase {
@@ -1101,7 +1279,7 @@ class DrupalSetContentTestCase extends DrupalWebTestCase {
   function testRegions() {
     global $theme_key;
 
-    $block_regions = array_keys(system_region_list($theme_key));
+    $block_regions = system_region_list($theme_key, REGIONS_ALL, FALSE);
     $delimiter = $this->randomName(32);
     $values = array();
     // Set some random content for each region available.
@@ -1162,6 +1340,15 @@ class DrupalGotoTest extends DrupalWebTestCase {
     $this->assertText('drupal_goto', 'Drupal goto redirect succeeded.');
     $this->assertEqual($this->getUrl(), url('common-test/drupal_goto', array('query' => array('foo' => '123'), 'absolute' => TRUE)), 'Drupal goto redirected to expected URL.');
 
+    // Test that calling drupal_goto() on the current path is not dangerous.
+    variable_set('common_test_redirect_current_path', TRUE);
+    $this->drupalGet('', array('query' => array('q' => 'http://www.example.com/')));
+    $headers = $this->drupalGetHeaders(TRUE);
+    list(, $status) = explode(' ', $headers[0][':status'], 3);
+    $this->assertEqual($status, 302, 'Expected response code was sent.');
+    $this->assertNotEqual($this->getUrl(), 'http://www.example.com/', 'Drupal goto did not redirect to external URL.');
+    $this->assertTrue(strpos($this->getUrl(), url('<front>', array('absolute' => TRUE))) === 0, 'Drupal redirected to itself.');
+    variable_del('common_test_redirect_current_path');
     // Test that drupal_goto() respects ?destination=xxx. Use an complicated URL
     // to test that the path is encoded and decoded properly.
     $destination = 'common-test/drupal_goto/destination?foo=%2525&bar=123';
@@ -1345,6 +1532,127 @@ class JavaScriptTestCase extends DrupalWebTestCase {
     drupal_add_js($inline, array('type' => 'inline', 'scope' => 'footer'));
     $javascript = drupal_get_js('footer');
     $this->assertTrue(strpos($javascript, $inline) > 0, 'Rendered JavaScript footer returns the inline code.');
+  }
+
+  /**
+   * Test the 'javascript_always_use_jquery' variable.
+   */
+  function testJavaScriptAlwaysUseJQuery() {
+    // The default front page of the site should use jQuery and other standard
+    // scripts and settings.
+    $this->drupalGet('');
+    $this->assertRaw('misc/jquery.js', 'Default behavior: The front page of the site includes jquery.js.');
+    $this->assertRaw('misc/drupal.js', 'Default behavior: The front page of the site includes drupal.js.');
+    $this->assertRaw('Drupal.settings', 'Default behavior: The front page of the site includes Drupal settings.');
+    $this->assertRaw('basePath', 'Default behavior: The front page of the site includes the basePath Drupal setting.');
+
+    // The default front page should not use jQuery and other standard scripts
+    // and settings when the 'javascript_always_use_jquery' variable is set to
+    // FALSE.
+    variable_set('javascript_always_use_jquery', FALSE);
+    $this->drupalGet('');
+    $this->assertNoRaw('misc/jquery.js', 'When "javascript_always_use_jquery" is FALSE: The front page of the site does not include jquery.js.');
+    $this->assertNoRaw('misc/drupal.js', 'When "javascript_always_use_jquery" is FALSE: The front page of the site does not include drupal.js.');
+    $this->assertNoRaw('Drupal.settings', 'When "javascript_always_use_jquery" is FALSE: The front page of the site does not include Drupal settings.');
+    $this->assertNoRaw('basePath', 'When "javascript_always_use_jquery" is FALSE: The front page of the site does not include the basePath Drupal setting.');
+    variable_del('javascript_always_use_jquery');
+
+    // When only settings have been added via drupal_add_js(), drupal_get_js()
+    // should still return jQuery and other standard scripts and settings.
+    $this->resetStaticVariables();
+    drupal_add_js(array('testJavaScriptSetting' => 'test'), 'setting');
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when only settings have been added includes jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when only settings have been added includes drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when only settings have been added includes Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when only settings have been added includes the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'testJavaScriptSetting') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when only settings have been added includes the added Drupal settings.');
+
+    // When only settings have been added via drupal_add_js() and the
+    // 'javascript_always_use_jquery' variable is set to FALSE, drupal_get_js()
+    // should not return jQuery and other standard scripts and settings, nor
+    // should it return the requested settings (since they cannot actually be
+    // addded to the page without jQuery).
+    $this->resetStaticVariables();
+    variable_set('javascript_always_use_jquery', FALSE);
+    drupal_add_js(array('testJavaScriptSetting' => 'test'), 'setting');
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when only settings have been added does not include jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when only settings have been added does not include drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when only settings have been added does not include Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when only settings have been added does not include the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'testJavaScriptSetting') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when only settings have been added does not include the added Drupal settings.');
+    variable_del('javascript_always_use_jquery');
+
+    // When a regular file has been added via drupal_add_js(), drupal_get_js()
+    // should return jQuery and other standard scripts and settings.
+    $this->resetStaticVariables();
+    drupal_add_js('misc/collapse.js');
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'misc/collapse.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes the custom file.');
+
+    // When a regular file has been added via drupal_add_js() and the
+    // 'javascript_always_use_jquery' variable is set to FALSE, drupal_get_js()
+    // should still return jQuery and other standard scripts and settings
+    // (since the file is assumed to require jQuery by default).
+    $this->resetStaticVariables();
+    variable_set('javascript_always_use_jquery', FALSE);
+    drupal_add_js('misc/collapse.js');
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'misc/collapse.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file has been added includes the custom file.');
+    variable_del('javascript_always_use_jquery');
+
+    // When a file that does not require jQuery has been added via
+    // drupal_add_js(), drupal_get_js() should still return jQuery and other
+    // standard scripts and settings by default.
+    $this->resetStaticVariables();
+    drupal_add_js('misc/collapse.js', array('requires_jquery' => FALSE));
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'misc/collapse.js') !== FALSE, 'Default behavior: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes the custom file.');
+
+    // When a file that does not require jQuery has been added via
+    // drupal_add_js() and the 'javascript_always_use_jquery' variable is set
+    // to FALSE, drupal_get_js() should not return jQuery and other standard
+    // scripts and setting, but it should still return the requested file.
+    $this->resetStaticVariables();
+    variable_set('javascript_always_use_jquery', FALSE);
+    drupal_add_js('misc/collapse.js', array('requires_jquery' => FALSE));
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added does not include jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added does not include drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added does not include Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') === FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added does not include the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'misc/collapse.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when a custom JavaScript file that does not require jQuery has been added includes the custom file.');
+    variable_del('javascript_always_use_jquery');
+
+    // When 'javascript_always_use_jquery' is set to FALSE and a file that does
+    // not require jQuery is added, followed by one that does, drupal_get_js()
+    // should return jQuery and other standard scripts and settings, in
+    // addition to both of the requested files.
+    $this->resetStaticVariables();
+    variable_set('javascript_always_use_jquery', FALSE);
+    drupal_add_js('misc/collapse.js', array('requires_jquery' => FALSE));
+    drupal_add_js('misc/ajax.js');
+    $javascript = drupal_get_js();
+    $this->assertTrue(strpos($javascript, 'misc/jquery.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes jquery.js.');
+    $this->assertTrue(strpos($javascript, 'misc/drupal.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes drupal.js.');
+    $this->assertTrue(strpos($javascript, 'Drupal.settings') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes Drupal.settings.');
+    $this->assertTrue(strpos($javascript, 'basePath') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes the basePath Drupal setting.');
+    $this->assertTrue(strpos($javascript, 'misc/collapse.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes the first custom file.');
+    $this->assertTrue(strpos($javascript, 'misc/ajax.js') !== FALSE, 'When "javascript_always_use_jquery" is FALSE: The JavaScript returned by drupal_get_js() when at least one custom JavaScript file that requires jQuery has been added includes the second custom file.');
+    variable_del('javascript_always_use_jquery');
   }
 
   /**
@@ -1574,6 +1882,15 @@ class JavaScriptTestCase extends DrupalWebTestCase {
     $this->drupalGet('common-test/query-string');
     $query_string = variable_get('css_js_query_string', '0');
     $this->assertRaw(drupal_get_path('module', 'node') . '/node.js?' . $query_string, 'Query string was appended correctly to js.');
+  }
+
+  /**
+   * Resets static variables related to adding JavaScript to a page.
+   */
+  function resetStaticVariables() {
+    drupal_static_reset('drupal_add_js');
+    drupal_static_reset('drupal_add_library');
+    drupal_static_reset('drupal_get_library');
   }
 }
 
@@ -1893,7 +2210,7 @@ class DrupalRenderTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Tests caching of an empty render item.
+   * Tests caching of render items.
    */
   function testDrupalRenderCache() {
     // Force a request via GET.
@@ -1918,6 +2235,59 @@ class DrupalRenderTestCase extends DrupalWebTestCase {
     $element = $test_element;
     drupal_render($element);
     $this->assertFalse(isset($element['#printed']), 'Cache hit');
+
+    // Test that user 1 does not share the cache with other users who have the
+    // same roles, even when DRUPAL_CACHE_PER_ROLE is used.
+    $user1 = user_load(1);
+    $first_authenticated_user = $this->drupalCreateUser();
+    $second_authenticated_user = $this->drupalCreateUser();
+    $user1->roles = array_intersect_key($user1->roles, array(DRUPAL_AUTHENTICATED_RID => TRUE));
+    user_save($user1);
+    // Load all the accounts again, to make sure we have complete account
+    // objects.
+    $user1 = user_load(1);
+    $first_authenticated_user = user_load($first_authenticated_user->uid);
+    $second_authenticated_user = user_load($second_authenticated_user->uid);
+    $this->assertEqual($user1->roles, $first_authenticated_user->roles, 'User 1 has the same roles as an authenticated user.');
+    // Impersonate user 1 and render content that only user 1 should have
+    // permission to see.
+    $original_user = $GLOBALS['user'];
+    $original_session_state = drupal_save_session();
+    drupal_save_session(FALSE);
+    $GLOBALS['user'] = $user1;
+    $test_element = array(
+      '#cache' => array(
+        'keys' => array('test'),
+        'granularity' => DRUPAL_CACHE_PER_ROLE,
+      ),
+    );
+    $element = $test_element;
+    $element['#markup'] = 'content for user 1';
+    $output = drupal_render($element);
+    $this->assertEqual($output, 'content for user 1');
+    // Verify the cache is working by rendering the same element but with
+    // different markup passed in; the result should be the same.
+    $element = $test_element;
+    $element['#markup'] = 'should not be used';
+    $output = drupal_render($element);
+    $this->assertEqual($output, 'content for user 1');
+    // Verify that the first authenticated user does not see the same content
+    // as user 1.
+    $GLOBALS['user'] = $first_authenticated_user;
+    $element = $test_element;
+    $element['#markup'] = 'content for authenticated users';
+    $output = drupal_render($element);
+    $this->assertEqual($output, 'content for authenticated users');
+    // Verify that the second authenticated user shares the cache with the
+    // first authenticated user.
+    $GLOBALS['user'] = $second_authenticated_user;
+    $element = $test_element;
+    $element['#markup'] = 'should not be used';
+    $output = drupal_render($element);
+    $this->assertEqual($output, 'content for authenticated users');
+    // Restore the original logged-in user.
+    $GLOBALS['user'] = $original_user;
+    drupal_save_session($original_session_state);
 
     // Restore the previous request method.
     $_SERVER['REQUEST_METHOD'] = $request_method;

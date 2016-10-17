@@ -398,7 +398,7 @@ function locale_language_switcher_session($type, $path) {
       $links[$langcode]['query'][$param] = $langcode;
     }
     else {
-      $links[$langcode]['attributes']['class'][] = ' session-active';
+      $links[$langcode]['attributes']['class'][] = 'session-active';
     }
   }
 
@@ -435,6 +435,13 @@ function locale_language_url_rewrite_url(&$path, &$options) {
     switch (variable_get('locale_language_negotiation_url_part', LOCALE_LANGUAGE_NEGOTIATION_URL_PREFIX)) {
       case LOCALE_LANGUAGE_NEGOTIATION_URL_DOMAIN:
         if ($options['language']->domain) {
+          // Save the original base URL. If it contains a port, we need to
+          // retain it below.
+          if (!empty($options['base_url'])) {
+            // The colon in the URL scheme messes up the port checking below.
+            $normalized_base_url = str_replace(array('https://', 'http://'), '', $options['base_url']);
+          }
+
           // Ask for an absolute URL with our modified base_url.
           global $is_https;
           $url_scheme = ($is_https) ? 'https://' : 'http://';
@@ -449,6 +456,19 @@ function locale_language_url_rewrite_url(&$path, &$options) {
 
           // Apply the appropriate protocol to the URL.
           $options['base_url'] = $url_scheme . $host;
+
+          // In case either the original base URL or the HTTP host contains a
+          // port, retain it.
+          $http_host = $_SERVER['HTTP_HOST'];
+          if (isset($normalized_base_url) && strpos($normalized_base_url, ':') !== FALSE) {
+            list($host, $port) = explode(':', $normalized_base_url);
+            $options['base_url'] .= ':' . $port;
+          }
+          elseif (strpos($http_host, ':') !== FALSE) {
+            list($host, $port) = explode(':', $http_host);
+            $options['base_url'] .= ':' . $port;
+          }
+
           if (isset($options['https']) && variable_get('https', FALSE)) {
             if ($options['https'] === TRUE) {
               $options['base_url'] = str_replace('http://', 'https://', $options['base_url']);
@@ -523,6 +543,22 @@ function locale_language_url_rewrite_session(&$path, &$options) {
  * possible attack vector (img).
  */
 function locale_string_is_safe($string) {
+  // Some strings have tokens in them. For tokens in the first part of href or
+  // src HTML attributes, filter_xss() removes part of the token, the part
+  // before the first colon.  filter_xss() assumes it could be an attempt to
+  // inject javascript. When filter_xss() removes part of tokens, it causes the
+  // string to not be translatable when it should be translatable. See
+  // LocaleStringIsSafeTest::testLocaleStringIsSafe().
+  //
+  // We can recognize tokens since they are wrapped with brackets and are only
+  // composed of alphanumeric characters, colon, underscore, and dashes. We can
+  // be sure these strings are safe to strip out before the string is checked in
+  // filter_xss() because no dangerous javascript will match that pattern.
+  //
+  // @todo Do not strip out the token. Fix filter_xss() to not incorrectly
+  //   alter the string. https://www.drupal.org/node/2372127
+  $string = preg_replace('/\[[a-z0-9_-]+(:[a-z0-9_-]+)+\]/i', '', $string);
+
   return decode_entities($string) == decode_entities(filter_xss($string, array('a', 'abbr', 'acronym', 'address', 'b', 'bdo', 'big', 'blockquote', 'br', 'caption', 'cite', 'code', 'col', 'colgroup', 'dd', 'del', 'dfn', 'dl', 'dt', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'ins', 'kbd', 'li', 'ol', 'p', 'pre', 'q', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'tt', 'ul', 'var')));
 }
 
@@ -631,9 +667,6 @@ function locale_add_language($langcode, $name = NULL, $native = NULL, $direction
  *   translations).
  */
 function _locale_import_po($file, $langcode, $mode, $group = NULL) {
-  // Try to allocate enough time to parse and import the data.
-  drupal_set_time_limit(240);
-
   // Check if we have the language already in the database.
   if (!db_query("SELECT COUNT(language) FROM {languages} WHERE language = :language", array(':language' => $langcode))->fetchField()) {
     drupal_set_message(t('The language selected for import is not supported.'), 'error');
@@ -717,6 +750,12 @@ function _locale_import_read_po($op, $file, $mode = NULL, $lang = NULL, $group =
   $lineno = 0;
 
   while (!feof($fd)) {
+    // Refresh the time limit every 10 parsed rows to ensure there is always
+    // enough time to import the data for large PO files.
+    if (!($lineno % 10)) {
+      drupal_set_time_limit(30);
+    }
+
     // A line should not be longer than 10 * 1024.
     $line = fgets($fd, 10 * 1024);
 
@@ -1931,7 +1970,7 @@ function _locale_translate_seek() {
       $groups[$string['group']],
       array('data' => check_plain(truncate_utf8($string['source'], 150, FALSE, TRUE)) . '<br /><small>' . $string['location'] . '</small>'),
       $string['context'],
-      array('data' => _locale_translate_language_list($string['languages'], $limit_language), 'align' => 'center'),
+      array('data' => _locale_translate_language_list($string, $limit_language), 'align' => 'center'),
       array('data' => l(t('edit'), "admin/config/regional/translate/edit/$lid", array('query' => drupal_get_destination())), 'class' => array('nowrap')),
       array('data' => l(t('delete'), "admin/config/regional/translate/delete/$lid", array('query' => drupal_get_destination())), 'class' => array('nowrap')),
     );
@@ -2126,16 +2165,21 @@ function _locale_rebuild_js($langcode = NULL) {
 /**
  * List languages in search result table
  */
-function _locale_translate_language_list($translation, $limit_language) {
+function _locale_translate_language_list($string, $limit_language) {
   // Add CSS.
   drupal_add_css(drupal_get_path('module', 'locale') . '/locale.css');
 
+  // Include both translated and not yet translated target languages in the
+  // list. The source language is English for built-in strings and the default
+  // language for other strings.
   $languages = language_list();
-  unset($languages['en']);
+  $default = language_default();
+  $omit = $string['group'] == 'default' ? 'en' : $default->language;
+  unset($languages[$omit]);
   $output = '';
   foreach ($languages as $langcode => $language) {
     if (!$limit_language || $limit_language == $langcode) {
-      $output .= (!empty($translation[$langcode])) ? $langcode . ' ' : "<em class=\"locale-untranslated\">$langcode</em> ";
+      $output .= (!empty($string['languages'][$langcode])) ? $langcode . ' ' : "<em class=\"locale-untranslated\">$langcode</em> ";
     }
   }
 
@@ -2301,6 +2345,8 @@ function _locale_batch_build($files, $finished = NULL, $components = array()) {
 }
 
 /**
+ * Implements callback_batch_operation().
+ *
  * Perform interface translation import as a batch step.
  *
  * @param $filepath
@@ -2319,6 +2365,8 @@ function _locale_batch_import($filepath, &$context) {
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * Finished callback of system page locale import batch.
  * Inform the user of translation files imported.
  */
@@ -2329,6 +2377,8 @@ function _locale_batch_system_finished($success, $results) {
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * Finished callback of language addition locale import batch.
  * Inform the user of translation files imported.
  */

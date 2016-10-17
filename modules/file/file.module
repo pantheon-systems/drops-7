@@ -92,7 +92,7 @@ function file_theme() {
       'variables' => array('file' => NULL, 'icon_directory' => NULL),
     ),
     'file_icon' => array(
-      'variables' => array('file' => NULL, 'icon_directory' => NULL),
+      'variables' => array('file' => NULL, 'icon_directory' => NULL, 'alt' => ''),
     ),
     'file_managed_file' => array(
       'render element' => 'element',
@@ -357,6 +357,10 @@ function file_file_delete($file) {
  * support for a default value.
  */
 function file_managed_file_process($element, &$form_state, $form) {
+  // Append the '-upload' to the #id so the field label's 'for' attribute
+  // corresponds with the file element.
+  $original_id = $element['#id'];
+  $element['#id'] .= '-upload';
   $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
 
   // Set some default element properties.
@@ -366,7 +370,7 @@ function file_managed_file_process($element, &$form_state, $form) {
 
   $ajax_settings = array(
     'path' => 'file/ajax/' . implode('/', $element['#array_parents']) . '/' . $form['form_build_id']['#value'],
-    'wrapper' => $element['#id'] . '-ajax-wrapper',
+    'wrapper' => $original_id . '-ajax-wrapper',
     'effect' => 'fade',
     'progress' => array(
       'type' => $element['#progress_indicator'],
@@ -453,6 +457,17 @@ function file_managed_file_process($element, &$form_state, $form) {
       '#markup' => theme('file_link', array('file' => $element['#file'])) . ' ',
       '#weight' => -10,
     );
+    // Anonymous users who have uploaded a temporary file need a
+    // non-session-based token added so file_managed_file_value() can check
+    // that they have permission to use this file on subsequent submissions of
+    // the same form (for example, after an Ajax upload or form validation
+    // error).
+    if (!$GLOBALS['user']->uid && $element['#file']->status != FILE_STATUS_PERMANENT) {
+      $element['fid_token'] = array(
+        '#type' => 'hidden',
+        '#value' => drupal_hmac_base64('file-' . $fid, drupal_get_private_key() . drupal_get_hash_salt()),
+      );
+    }
   }
 
   // Add the extension list to the page as JavaScript settings.
@@ -461,13 +476,13 @@ function file_managed_file_process($element, &$form_state, $form) {
     $element['upload']['#attached']['js'] = array(
       array(
         'type' => 'setting',
-        'data' => array('file' => array('elements' => array('#' . $element['#id'] . '-upload' => $extension_list)))
+        'data' => array('file' => array('elements' => array('#' . $element['#id'] => $extension_list)))
       )
     );
   }
 
   // Prefix and suffix used for Ajax replacement.
-  $element['#prefix'] = '<div id="' . $element['#id'] . '-ajax-wrapper">';
+  $element['#prefix'] = '<div id="' . $original_id . '-ajax-wrapper">';
   $element['#suffix'] = '</div>';
 
   return $element;
@@ -515,13 +530,39 @@ function file_managed_file_value(&$element, $input = FALSE, $form_state = NULL) 
       // public file) to confirm it exists and that the current user has access
       // to it.
       if (isset($input['fid']) && ($file = file_load($input['fid']))) {
-        if (file_uri_scheme($file->uri) == 'public' || file_download_access($file->uri)) {
-          $fid = $file->fid;
-        }
-        // If the current user doesn't have access, don't let the file be
-        // changed.
-        else {
+        // By default the public:// file scheme provided by Drupal core is the
+        // only one that allows files to be publicly accessible to everyone, so
+        // it is the only one for which the file access checks are bypassed.
+        // Other modules which provide publicly accessible streams of their own
+        // in hook_stream_wrappers() can add the corresponding scheme to the
+        // 'file_public_schema' variable to bypass file access checks for those
+        // as well. This should only be done for schemes that are completely
+        // publicly accessible, with no download restrictions; for security
+        // reasons all other schemes must go through the file_download_access()
+        // check.
+        if (!in_array(file_uri_scheme($file->uri), variable_get('file_public_schema', array('public'))) && !file_download_access($file->uri)) {
           $force_default = TRUE;
+        }
+        // Temporary files that belong to other users should never be allowed.
+        elseif ($file->status != FILE_STATUS_PERMANENT) {
+          if ($GLOBALS['user']->uid && $file->uid != $GLOBALS['user']->uid) {
+            $force_default = TRUE;
+          }
+          // Since file ownership can't be determined for anonymous users, they
+          // are not allowed to reuse temporary files at all. But they do need
+          // to be able to reuse their own files from earlier submissions of
+          // the same form, so to allow that, check for the token added by
+          // file_managed_file_process().
+          elseif (!$GLOBALS['user']->uid) {
+            $token = drupal_array_get_nested_value($form_state['input'], array_merge($element['#parents'], array('fid_token')));
+            if ($token !== drupal_hmac_base64('file-' . $file->fid, drupal_get_private_key() . drupal_get_hash_salt())) {
+              $force_default = TRUE;
+            }
+          }
+        }
+        // If all checks pass, allow the file to be changed.
+        if (!$force_default) {
+          $fid = $file->fid;
         }
       }
     }
@@ -735,7 +776,32 @@ function theme_file_link($variables) {
   $icon_directory = $variables['icon_directory'];
 
   $url = file_create_url($file->uri);
-  $icon = theme('file_icon', array('file' => $file, 'icon_directory' => $icon_directory));
+
+  // Human-readable names, for use as text-alternatives to icons.
+  $mime_name = array(
+    'application/msword' => t('Microsoft Office document icon'),
+    'application/vnd.ms-excel' => t('Office spreadsheet icon'),
+    'application/vnd.ms-powerpoint' => t('Office presentation icon'),
+    'application/pdf' => t('PDF icon'),
+    'video/quicktime' => t('Movie icon'),
+    'audio/mpeg' => t('Audio icon'),
+    'audio/wav' => t('Audio icon'),
+    'image/jpeg' => t('Image icon'),
+    'image/png' => t('Image icon'),
+    'image/gif' => t('Image icon'),
+    'application/zip' => t('Package icon'),
+    'text/html' => t('HTML icon'),
+    'text/plain' => t('Plain text icon'),
+    'application/octet-stream' => t('Binary Data'),
+  );
+
+  $mimetype = file_get_mimetype($file->uri);
+
+  $icon = theme('file_icon', array(
+    'file' => $file,
+    'icon_directory' => $icon_directory,
+    'alt' => !empty($mime_name[$mimetype]) ? $mime_name[$mimetype] : t('File'),
+  ));
 
   // Set options as per anchor format described at
   // http://microformats.org/wiki/file-format-examples
@@ -765,16 +831,19 @@ function theme_file_link($variables) {
  *   - file: A file object for which to make an icon.
  *   - icon_directory: (optional) A path to a directory of icons to be used for
  *     files. Defaults to the value of the "file_icon_directory" variable.
+ *   - alt: (optional) The alternative text to represent the icon in text-based
+ *     browsers. Defaults to an empty string.
  *
  * @ingroup themeable
  */
 function theme_file_icon($variables) {
   $file = $variables['file'];
+  $alt = $variables['alt'];
   $icon_directory = $variables['icon_directory'];
 
   $mime = check_plain($file->filemime);
   $icon_url = file_icon_url($file, $icon_directory);
-  return '<img class="file-icon" alt="" title="' . $mime . '" src="' . $icon_url . '" />';
+  return '<img class="file-icon" alt="' . check_plain($alt) . '" title="' . $mime . '" src="' . $icon_url . '" />';
 }
 
 /**

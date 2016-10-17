@@ -104,7 +104,13 @@ function update_get_projects() {
  * @see update_get_projects()
  */
 function _update_process_info_list(&$projects, $list, $project_type, $status) {
+  $admin_theme = variable_get('admin_theme', 'seven');
   foreach ($list as $file) {
+    // The admin theme is a special case. It should always be considered enabled
+    // for the purposes of update checking.
+    if ($file->name === $admin_theme) {
+      $file->status = TRUE;
+    }
     // A disabled base theme of an enabled sub-theme still has all of its code
     // run by the sub-theme, so we include it in our "enabled" projects list.
     if ($status && !$file->status && !empty($file->sub_themes)) {
@@ -418,14 +424,15 @@ function update_calculate_project_data($available) {
  * version (e.g., 5.x-1.5-beta1, 5.x-1.5-beta2, and 5.x-1.5). Development
  * snapshots for a given major version are always listed last.
  *
- * @param $project
- *   An array containing information about a specific project.
+ * @param $unused
+ *   Input is not being used, but remains in function for API compatibility
+ *   reasons.
  * @param $project_data
  *   An array containing information about a specific project.
  * @param $available
  *   Data about available project releases of a specific project.
  */
-function update_calculate_project_update_status($project, &$project_data, $available) {
+function update_calculate_project_update_status($unused, &$project_data, $available) {
   foreach (array('title', 'link') as $attribute) {
     if (!isset($project_data[$attribute]) && isset($available[$attribute])) {
       $project_data[$attribute] = $available[$attribute];

@@ -79,7 +79,7 @@ function _drupal_session_read($sid) {
   // Handle the case of first time visitors and clients that don't store
   // cookies (eg. web crawlers).
   $insecure_session_name = substr(session_name(), 1);
-  if (!isset($_COOKIE[session_name()]) && !isset($_COOKIE[$insecure_session_name])) {
+  if (empty($sid) || (!isset($_COOKIE[session_name()]) && !isset($_COOKIE[$insecure_session_name]))) {
     $user = drupal_anonymous_user();
     return '';
   }
@@ -163,7 +163,7 @@ function _drupal_session_write($sid, $value) {
   try {
     if (!drupal_save_session()) {
       // We don't have anything to do if we are not allowed to save the session.
-      return;
+      return TRUE;
     }
 
     // Check whether $_SESSION has been changed in this request.
@@ -425,7 +425,7 @@ function _drupal_session_destroy($sid) {
 
   // Nothing to do if we are not allowed to change the session.
   if (!drupal_save_session()) {
-    return;
+    return TRUE;
   }
 
   // Delete session data.
@@ -446,6 +446,8 @@ function _drupal_session_destroy($sid) {
   elseif (variable_get('https', FALSE)) {
     _drupal_session_delete_cookie('S' . session_name(), TRUE);
   }
+
+  return TRUE;
 }
 
 /**

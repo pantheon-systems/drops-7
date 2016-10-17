@@ -32,7 +32,7 @@ define('USER_REGISTER_VISITORS', 1);
 define('USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL', 2);
 
 /**
- * Implement hook_help().
+ * Implements hook_help().
  */
 function user_help($path, $arg) {
   global $user;
@@ -418,13 +418,11 @@ function user_load_by_name($name) {
  *
  * @return
  *   A fully-loaded $user object upon successful save or FALSE if the save failed.
- *
- * @todo D8: Drop $edit and fix user_save() to be consistent with others.
  */
 function user_save($account, $edit = array(), $category = 'account') {
   $transaction = db_transaction();
   try {
-    if (!empty($edit['pass'])) {
+    if (isset($edit['pass']) && strlen(trim($edit['pass'])) > 0) {
       // Allow alternate password hashing schemes.
       require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
       $edit['pass'] = user_hash_password(trim($edit['pass']));
@@ -501,12 +499,17 @@ function user_save($account, $edit = array(), $category = 'account') {
         file_usage_delete($account->original->picture, 'user', 'user', $account->uid);
         file_delete($account->original->picture);
       }
+      // Save the picture object, if it is set. drupal_write_record() expects
+      // $account->picture to be a FID.
+      $picture = empty($account->picture) ? NULL : $account->picture;
       $account->picture = empty($account->picture->fid) ? 0 : $account->picture->fid;
 
       // Do not allow 'uid' to be changed.
       $account->uid = $account->original->uid;
       // Save changes to the user table.
       $success = drupal_write_record('users', $account, 'uid');
+      // Restore the picture object.
+      $account->picture = $picture;
       if ($success === FALSE) {
         // The query failed - better to abort the save than risk further
         // data loss.
@@ -589,16 +592,16 @@ function user_save($account, $edit = array(), $category = 'account') {
       user_module_invoke('insert', $edit, $account, $category);
       module_invoke_all('entity_insert', $account, 'user');
 
-      // Save user roles.
-      if (count($account->roles) > 1) {
+      // Save user roles. Skip built-in roles, and ones that were already saved
+      // to the database during hook calls.
+      $rids_to_skip = array_merge(array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID), db_query('SELECT rid FROM {users_roles} WHERE uid = :uid', array(':uid' => $account->uid))->fetchCol());
+      if ($rids_to_save = array_diff(array_keys($account->roles), $rids_to_skip)) {
         $query = db_insert('users_roles')->fields(array('uid', 'rid'));
-        foreach (array_keys($account->roles) as $rid) {
-          if (!in_array($rid, array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID))) {
-            $query->values(array(
-              'uid' => $account->uid,
-              'rid' => $rid,
-            ));
-          }
+        foreach ($rids_to_save as $rid) {
+          $query->values(array(
+            'uid' => $account->uid,
+            'rid' => $rid,
+          ));
         }
         $query->execute();
       }
@@ -786,7 +789,7 @@ function user_role_permissions($roles = array()) {
  *   (optional) The account to check, if not given use currently logged in user.
  *
  * @return
- *   Boolean TRUE if the current user has the requested permission.
+ *   Boolean TRUE if the user has the requested permission.
  *
  * All permission checks in Drupal should go through this function. This
  * way, we guarantee consistent behavior, and ensure that the superuser
@@ -841,6 +844,26 @@ function user_is_blocked($name) {
     ->condition('name', db_like($name), 'LIKE')
     ->condition('status', 0)
     ->execute()->fetchObject();
+}
+
+/**
+ * Checks if a user has a role.
+ *
+ * @param int $rid
+ *   A role ID.
+ *
+ * @param object|null $account
+ *   (optional) A user account. Defaults to the current user.
+ *
+ * @return bool
+ *   TRUE if the user has the role, or FALSE if not.
+ */
+function user_has_role($rid, $account = NULL) {
+  if (!$account) {
+    $account = $GLOBALS['user'];
+  }
+
+  return isset($account->roles[$rid]);
 }
 
 /**
@@ -933,6 +956,8 @@ function user_search_access() {
  */
 function user_search_execute($keys = NULL, $conditions = NULL) {
   $find = array();
+  // Escape for LIKE matching.
+  $keys = db_like($keys);
   // Replace wildcards with MySQL/PostgreSQL wildcards.
   $keys = preg_replace('!\*+!', '%', $keys);
   $query = db_select('users')->extend('PagerDefault');
@@ -942,13 +967,13 @@ function user_search_execute($keys = NULL, $conditions = NULL) {
     // and they don't need to be restricted to only active users.
     $query->fields('users', array('mail'));
     $query->condition(db_or()->
-      condition('name', '%' . db_like($keys) . '%', 'LIKE')->
-      condition('mail', '%' . db_like($keys) . '%', 'LIKE'));
+      condition('name', '%' . $keys . '%', 'LIKE')->
+      condition('mail', '%' . $keys . '%', 'LIKE'));
   }
   else {
     // Regular users can only search via usernames, and we do not show them
     // blocked accounts.
-    $query->condition('name', '%' . db_like($keys) . '%', 'LIKE')
+    $query->condition('name', '%' . $keys . '%', 'LIKE')
       ->condition('status', 1);
   }
   $uids = $query
@@ -1135,7 +1160,7 @@ function user_account_form(&$form, &$form_state) {
   $form['account']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Roles'),
-    '#default_value' => (!$register && isset($account->roles) ? array_keys($account->roles) : array()),
+    '#default_value' => (!$register && !empty($account->roles) ? array_keys(array_filter($account->roles)) : array()),
     '#options' => $roles,
     '#access' => $roles && user_access('administer permissions'),
     DRUPAL_AUTHENTICATED_RID => $checkbox_authenticated,
@@ -1205,7 +1230,7 @@ function user_validate_current_pass(&$form, &$form_state) {
     // that prevent them from being empty if they are changed.
     if ((strlen(trim($form_state['values'][$key])) > 0) && ($form_state['values'][$key] != $account->$key)) {
       require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
-      $current_pass_failed = empty($form_state['values']['current_pass']) || !user_check_password($form_state['values']['current_pass'], $account);
+      $current_pass_failed = strlen(trim($form_state['values']['current_pass'])) == 0 || !user_check_password($form_state['values']['current_pass'], $account);
       if ($current_pass_failed) {
         form_set_error('current_pass', t("Your current password is missing or incorrect; it's required to change the %name.", array('%name' => $name)));
         form_set_error($key);
@@ -1281,10 +1306,12 @@ function user_user_presave(&$edit, $account, $category) {
     elseif (!empty($edit['picture_delete'])) {
       $edit['picture'] = NULL;
     }
-    // Prepare user roles.
-    if (isset($edit['roles'])) {
-      $edit['roles'] = array_filter($edit['roles']);
-    }
+  }
+
+  // Filter out roles with empty values to avoid granting extra roles when
+  // processing custom form submissions.
+  if (isset($edit['roles'])) {
+    $edit['roles'] = array_filter($edit['roles']);
   }
 
   // Move account cancellation information into $user->data.
@@ -1726,9 +1753,11 @@ function user_menu() {
 
   $items['admin/people/create'] = array(
     'title' => 'Add user',
+    'page callback' => 'user_admin',
     'page arguments' => array('create'),
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_ACTION,
+    'file' => 'user.admin.inc',
   );
 
   // Administration pages.
@@ -1886,13 +1915,13 @@ function user_menu_link_alter(&$link) {
   // for authenticated users. Authenticated users should see "My account", but
   // anonymous users should not see it at all. Therefore, invoke
   // user_translated_menu_link_alter() to conditionally hide the link.
-  if ($link['link_path'] == 'user' && $link['module'] == 'system') {
+  if ($link['link_path'] == 'user' && isset($link['module']) && $link['module'] == 'system') {
     $link['options']['alter'] = TRUE;
   }
 
   // Force the Logout link to appear on the top-level of 'user-menu' menu by
   // default (i.e., unless it has been customized).
-  if ($link['link_path'] == 'user/logout' && $link['module'] == 'system' && empty($link['customized'])) {
+  if ($link['link_path'] == 'user/logout' && isset($link['module']) && $link['module'] == 'system' && empty($link['customized'])) {
     $link['plid'] = 0;
   }
 }
@@ -2136,7 +2165,7 @@ function user_login_name_validate($form, &$form_state) {
  */
 function user_login_authenticate_validate($form, &$form_state) {
   $password = trim($form_state['values']['pass']);
-  if (!empty($form_state['values']['name']) && !empty($password)) {
+  if (!empty($form_state['values']['name']) && strlen(trim($password)) > 0) {
     // Do not allow any login from the current user's IP if the limit has been
     // reached. Default is 50 failed attempts allowed in one hour. This is
     // independent of the per-user limit to catch attempts from one IP to log
@@ -2200,7 +2229,11 @@ function user_login_final_validate($form, &$form_state) {
       }
     }
     else {
-      form_set_error('name', t('Sorry, unrecognized username or password. <a href="@password">Have you forgotten your password?</a>', array('@password' => url('user/password', array('query' => array('name' => $form_state['values']['name']))))));
+      // Use $form_state['input']['name'] here to guarantee that we send
+      // exactly what the user typed in. $form_state['values']['name'] may have
+      // been modified by validation handlers that ran earlier than this one.
+      $query = isset($form_state['input']['name']) ? array('name' => $form_state['input']['name']) : array();
+      form_set_error('name', t('Sorry, unrecognized username or password. <a href="@password">Have you forgotten your password?</a>', array('@password' => url('user/password', array('query' => $query)))));
       watchdog('user', 'Login attempt failed for %user.', array('%user' => $form_state['values']['name']));
     }
   }
@@ -2223,7 +2256,7 @@ function user_login_final_validate($form, &$form_state) {
  */
 function user_authenticate($name, $password) {
   $uid = FALSE;
-  if (!empty($name) && !empty($password)) {
+  if (!empty($name) && strlen(trim($password)) > 0) {
     $account = user_load_by_name($name);
     if ($account) {
       // Allow alternate password hashing schemes.
@@ -2330,7 +2363,7 @@ function user_external_login_register($name, $module) {
  */
 function user_pass_reset_url($account) {
   $timestamp = REQUEST_TIME;
-  return url("user/reset/$account->uid/$timestamp/" . user_pass_rehash($account->pass, $timestamp, $account->login), array('absolute' => TRUE));
+  return url("user/reset/$account->uid/$timestamp/" . user_pass_rehash($account->pass, $timestamp, $account->login, $account->uid), array('absolute' => TRUE));
 }
 
 /**
@@ -2352,7 +2385,7 @@ function user_pass_reset_url($account) {
  */
 function user_cancel_url($account) {
   $timestamp = REQUEST_TIME;
-  return url("user/$account->uid/cancel/confirm/$timestamp/" . user_pass_rehash($account->pass, $timestamp, $account->login), array('absolute' => TRUE));
+  return url("user/$account->uid/cancel/confirm/$timestamp/" . user_pass_rehash($account->pass, $timestamp, $account->login, $account->uid), array('absolute' => TRUE));
 }
 
 /**
@@ -2372,12 +2405,33 @@ function user_cancel_url($account) {
  *   A UNIX timestamp, typically REQUEST_TIME.
  * @param int $login
  *   The UNIX timestamp of the user's last login.
+ * @param int $uid
+ *   The user ID of the user account.
  *
  * @return
  *   A string that is safe for use in URLs and SQL statements.
  */
-function user_pass_rehash($password, $timestamp, $login) {
-  return drupal_hmac_base64($timestamp . $login, drupal_get_hash_salt() . $password);
+function user_pass_rehash($password, $timestamp, $login, $uid) {
+  // Backwards compatibility: Try to determine a $uid if one was not passed.
+  // (Since $uid is a required parameter to this function, a PHP warning will
+  // be generated if it's not provided, which is an indication that the calling
+  // code should be updated. But the code below will try to generate a correct
+  // hash in the meantime.)
+  if (!isset($uid)) {
+    $uids = db_query_range('SELECT uid FROM {users} WHERE pass = :password AND login = :login AND uid > 0', 0, 2, array(':password' => $password, ':login' => $login))->fetchCol();
+    // If exactly one user account matches the provided password and login
+    // timestamp, proceed with that $uid.
+    if (count($uids) == 1) {
+      $uid = reset($uids);
+    }
+    // Otherwise there is no safe hash to return, so return a random string
+    // that will never be treated as a valid token.
+    else {
+      return drupal_random_key();
+    }
+  }
+
+  return drupal_hmac_base64($timestamp . $login . $uid, drupal_get_hash_salt() . $password);
 }
 
 /**
@@ -2442,7 +2496,9 @@ function user_cancel($edit, $uid, $method) {
 }
 
 /**
- * Last batch processing step for cancelling a user account.
+ * Implements callback_batch_operation().
+ *
+ * Last step for cancelling a user account.
  *
  * Since batch and session API require a valid user account, the actual
  * cancellation of a user account needs to happen last.
@@ -2490,6 +2546,8 @@ function _user_cancel($edit, $account, $method) {
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * Finished batch processing callback for cancelling a user account.
  *
  * @see user_cancel()
@@ -2633,12 +2691,7 @@ function user_build_content($account, $view_mode = 'full', $langcode = NULL) {
   $account->content = array();
 
   // Allow modules to change the view mode.
-  $context = array(
-    'entity_type' => 'user',
-    'entity' => $account,
-    'langcode' => $langcode,
-  );
-  drupal_alter('entity_view_mode', $view_mode, $context);
+  $view_mode = key(entity_view_mode_prepare('user', array($account->uid => $account), $view_mode, $langcode));
 
   // Build fields content.
   field_attach_prepare_view('user', array($account->uid => $account), $view_mode, $langcode);
@@ -2996,6 +3049,11 @@ function user_role_delete($role) {
   }
   else {
     $role = user_role_load_by_name($role);
+  }
+
+  // If this is the administrator role, delete the user_admin_role variable.
+  if ($role->rid == variable_get('user_admin_role')) {
+    variable_del('user_admin_role');
   }
 
   db_delete('role')
@@ -3613,12 +3671,7 @@ function user_form_process_password_confirm($element) {
   );
 
   $element['#attached']['js'][] = drupal_get_path('module', 'user') . '/user.js';
-  // Ensure settings are only added once per page.
-  static $already_added = FALSE;
-  if (!$already_added) {
-    $already_added = TRUE;
-    $element['#attached']['js'][] = array('data' => $js_settings, 'type' => 'setting');
-  }
+  $element['#attached']['js'][] = array('data' => $js_settings, 'type' => 'setting');
 
   return $element;
 }
@@ -3773,8 +3826,8 @@ function user_register_form($form, &$form_state) {
   // inside the submit function interferes with form processing and breaks
   // hook_form_alter().
   $form['administer_users'] = array(
-     '#type' => 'value',
-     '#value' => $admin,
+    '#type' => 'value',
+    '#value' => $admin,
   );
 
   // If we aren't admin but already logged on, go to the user page instead.

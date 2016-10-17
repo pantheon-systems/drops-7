@@ -420,7 +420,7 @@ abstract class DatabaseTasks {
       }
     }
     if (!empty($message)) {
-      $message = '<p>In order for Drupal to work, and to continue with the installation process, you must resolve all issues reported below. For more help with configuring your database server, see the <a href="http://drupal.org/getting-started/install">installation handbook</a>. If you are unsure what any of this means you should probably contact your hosting provider.</p>' . $message;
+      $message = 'Resolve all issues below to continue the installation. For help configuring your database server, see the <a href="http://drupal.org/getting-started/install">installation handbook</a>, or contact your hosting provider.' . $message;
       throw new DatabaseTaskException($message);
     }
   }
@@ -653,6 +653,13 @@ function drupal_rewrite_settings($settings = array(), $prefix = '') {
     if ($fp && fwrite($fp, $buffer) === FALSE) {
       throw new Exception(st('Failed to modify %settings. Verify the file permissions.', array('%settings' => $settings_file)));
     }
+    else {
+      // The existing settings.php file might have been included already. In
+      // case an opcode cache is enabled, the rewritten contents of the file
+      // will not be reflected in this process. Ensure to invalidate the file
+      // in case an opcode cache is enabled.
+      drupal_clear_opcode_cache(DRUPAL_ROOT . '/' . $settings_file);
+    }
   }
   else {
     throw new Exception(st('Failed to open %settings. Verify the file permissions.', array('%settings' => $default_settings)));
@@ -743,7 +750,7 @@ function drupal_install_system() {
 /**
  * Uninstalls a given list of disabled modules.
  *
- * @param array $module_list
+ * @param string[] $module_list
  *   The modules to uninstall. It is the caller's responsibility to ensure that
  *   all modules in this list have already been disabled before this function
  *   is called.
@@ -762,6 +769,7 @@ function drupal_install_system() {
  *   included in $module_list).
  *
  * @see module_disable()
+ * @see module_enable()
  */
 function drupal_uninstall_modules($module_list = array(), $uninstall_dependents = TRUE) {
   if ($uninstall_dependents) {

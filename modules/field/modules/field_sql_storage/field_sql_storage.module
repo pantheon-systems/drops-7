@@ -65,6 +65,49 @@ function _field_sql_storage_revision_tablename($field) {
 }
 
 /**
+ * Generates a table alias for a field data table.
+ *
+ * The table alias is unique for each unique combination of field name
+ * (represented by $tablename), delta_group and language_group.
+ *
+ * @param $tablename
+ *   The name of the data table for this field.
+ * @param $field_key
+ *   The numeric key of this field in this query.
+ * @param $query
+ *   The EntityFieldQuery that is executed.
+ *
+ * @return
+ *   A string containing the generated table alias.
+ */
+function _field_sql_storage_tablealias($tablename, $field_key, EntityFieldQuery $query) {
+  // No conditions present: use a unique alias.
+  if (empty($query->fieldConditions[$field_key])) {
+    return $tablename . $field_key;
+  }
+
+  // Find the delta and language condition values and append them to the alias.
+  $condition = $query->fieldConditions[$field_key];
+  $alias = $tablename;
+  $has_group_conditions = FALSE;
+
+  foreach (array('delta', 'language') as $column) {
+    if (isset($condition[$column . '_group'])) {
+      $alias .= '_' . $column . '_' . $condition[$column . '_group'];
+      $has_group_conditions = TRUE;
+    }
+  }
+
+  // Return the alias when it has delta/language group conditions.
+  if ($has_group_conditions) {
+    return $alias;
+  }
+
+  // Return a unique alias in other cases.
+  return $tablename . $field_key;
+}
+
+/**
  * Generate a column name for a field data table.
  *
  * @param $name
@@ -180,7 +223,17 @@ function _field_sql_storage_schema($field) {
   foreach ($field['indexes'] as $index_name => $columns) {
     $real_name = _field_sql_storage_indexname($field['field_name'], $index_name);
     foreach ($columns as $column_name) {
-      $current['indexes'][$real_name][] = _field_sql_storage_columnname($field['field_name'], $column_name);
+      // Indexes can be specified as either a column name or an array with
+      // column name and length. Allow for either case.
+      if (is_array($column_name)) {
+        $current['indexes'][$real_name][] = array(
+          _field_sql_storage_columnname($field['field_name'], $column_name[0]),
+          $column_name[1],
+        );
+      }
+      else {
+        $current['indexes'][$real_name][] = _field_sql_storage_columnname($field['field_name'], $column_name);
+      }
     }
   }
 
@@ -289,7 +342,17 @@ function field_sql_storage_field_storage_update_field($field, $prior_field, $has
         $real_name = _field_sql_storage_indexname($field['field_name'], $name);
         $real_columns = array();
         foreach ($columns as $column_name) {
-          $real_columns[] = _field_sql_storage_columnname($field['field_name'], $column_name);
+          // Indexes can be specified as either a column name or an array with
+          // column name and length. Allow for either case.
+          if (is_array($column_name)) {
+            $real_columns[] = array(
+              _field_sql_storage_columnname($field['field_name'], $column_name[0]),
+              $column_name[1],
+            );
+          }
+          else {
+            $real_columns[] = _field_sql_storage_columnname($field['field_name'], $column_name);
+          }
         }
         db_add_index($table, $real_name, $real_columns);
         db_add_index($revision_table, $real_name, $real_columns);
@@ -422,7 +485,7 @@ function field_sql_storage_field_storage_write($entity_type, $entity, $op, $fiel
       $items = (array) $entity->{$field_name}[$langcode];
       $delta_count = 0;
       foreach ($items as $delta => $item) {
-        // We now know we have someting to insert.
+        // We now know we have something to insert.
         $do_insert = TRUE;
         $record = array(
           'entity_type' => $entity_type,
@@ -504,17 +567,21 @@ function field_sql_storage_field_storage_query(EntityFieldQuery $query) {
     $id_key = 'revision_id';
   }
   $table_aliases = array();
+  $query_tables = NULL;
   // Add tables for the fields used.
   foreach ($query->fields as $key => $field) {
     $tablename = $tablename_function($field);
-    // Every field needs a new table.
-    $table_alias = $tablename . $key;
+    $table_alias = _field_sql_storage_tablealias($tablename, $key, $query);
     $table_aliases[$key] = $table_alias;
     if ($key) {
-      $select_query->join($tablename, $table_alias, "$table_alias.entity_type = $field_base_table.entity_type AND $table_alias.$id_key = $field_base_table.$id_key");
+      if (!isset($query_tables[$table_alias])) {
+        $select_query->join($tablename, $table_alias, "$table_alias.entity_type = $field_base_table.entity_type AND $table_alias.$id_key = $field_base_table.$id_key");
+      }
     }
     else {
       $select_query = db_select($tablename, $table_alias);
+      // Store a reference to the list of joined tables.
+      $query_tables =& $select_query->getTables();
       // Allow queries internal to the Field API to opt out of the access
       // check, for situations where the query's results should not depend on
       // the access grants for the current user.

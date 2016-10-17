@@ -49,6 +49,9 @@ function user_schema() {
         'columns' => array('uid' => 'uid'),
       ),
     ),
+    'indexes' => array(
+      'uid_module' => array('uid', 'module'),
+    ),
   );
 
   $schema['role_permission'] = array(
@@ -81,7 +84,7 @@ function user_schema() {
     ),
     'foreign keys' => array(
       'role' => array(
-        'table' => 'roles',
+        'table' => 'role',
         'columns' => array('rid' => 'rid'),
       ),
     ),
@@ -278,7 +281,7 @@ function user_schema() {
         'columns' => array('uid' => 'uid'),
       ),
       'role' => array(
-        'table' => 'roles',
+        'table' => 'role',
         'columns' => array('rid' => 'rid'),
       ),
     ),
@@ -356,11 +359,13 @@ function user_update_dependencies() {
     'filter' => 7000,
   );
 
-  // user_update_7012() uses the file API, which relies on the {file_managed}
-  // table, so it must run after system_update_7034(), which creates that
-  // table.
+  // user_update_7012() uses the file API and inserts records into the
+  // {file_managed} table, so it therefore must run after system_update_7061(),
+  // which inserts files with specific IDs into the table and therefore relies
+  // on the table being empty (otherwise it would accidentally overwrite
+  // existing records).
   $dependencies['user'][7012] = array(
-    'system' => 7034,
+    'system' => 7061,
   );
 
   // user_update_7013() uses the file usage API, which relies on the
@@ -908,6 +913,15 @@ function user_update_7018() {
   }
 }
 
+/**
+ * Ensure there is a combined index on {authmap}.uid and {authmap}.module.
+ */
+function user_update_7019() {
+  // Check first in case it was already added manually.
+  if (!db_index_exists('authmap', 'uid_module')) {
+    db_add_index('authmap', 'uid_module', array('uid', 'module'));
+  }
+}
 /**
  * @} End of "addtogroup updates-7.x-extra".
  */

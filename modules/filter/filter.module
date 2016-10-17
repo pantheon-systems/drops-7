@@ -93,6 +93,14 @@ function filter_menu() {
     'type' => MENU_SUGGESTED_ITEM,
     'file' => 'filter.pages.inc',
   );
+  $items['filter/tips/%filter_format'] = array(
+    'title' => 'Compose tips',
+    'page callback' => 'filter_tips_long',
+    'page arguments' => array(2),
+    'access callback' => 'filter_access',
+    'access arguments' => array(2),
+    'file' => 'filter.pages.inc',
+  );
   $items['admin/config/content/formats'] = array(
     'title' => 'Text formats',
     'description' => 'Configure how content input by users is filtered, including allowed HTML tags. Also allows enabling of module-provided filters.',
@@ -340,6 +348,7 @@ function filter_admin_format_title($format) {
 function filter_permission() {
   $perms['administer filters'] = array(
     'title' => t('Administer text formats and filters'),
+    'description' => t('Define how text is handled by combining filters into <a href="@url">text formats</a>.', array('@url' => url('admin/config/content/formats'))),
     'restrict access' => TRUE,
   );
 
@@ -348,9 +357,7 @@ function filter_permission() {
   foreach (filter_formats() as $format) {
     $permission = filter_permission_name($format);
     if (!empty($permission)) {
-      // Only link to the text format configuration page if the user who is
-      // viewing this will have access to that page.
-      $format_name_replacement = user_access('administer filters') ? l($format->name, 'admin/config/content/formats/' . $format->format) : drupal_placeholder($format->name);
+      $format_name_replacement = l($format->name, 'admin/config/content/formats/' . $format->format);
       $perms[$permission] = array(
         'title' => t("Use the !text_format text format", array('!text_format' => $format_name_replacement,)),
         'description' => drupal_placeholder(t('Warning: This permission may have security implications depending on how the text format is configured.')),
@@ -1120,18 +1127,23 @@ function filter_dom_serialize($dom_document) {
   $body_node = $dom_document->getElementsByTagName('body')->item(0);
   $body_content = '';
 
-  foreach ($body_node->getElementsByTagName('script') as $node) {
-    filter_dom_serialize_escape_cdata_element($dom_document, $node);
-  }
+  if ($body_node !== NULL) {
+    foreach ($body_node->getElementsByTagName('script') as $node) {
+      filter_dom_serialize_escape_cdata_element($dom_document, $node);
+    }
 
-  foreach ($body_node->getElementsByTagName('style') as $node) {
-    filter_dom_serialize_escape_cdata_element($dom_document, $node, '/*', '*/');
-  }
+    foreach ($body_node->getElementsByTagName('style') as $node) {
+      filter_dom_serialize_escape_cdata_element($dom_document, $node, '/*', '*/');
+    }
 
-  foreach ($body_node->childNodes as $child_node) {
-    $body_content .= $dom_document->saveXML($child_node);
+    foreach ($body_node->childNodes as $child_node) {
+      $body_content .= $dom_document->saveXML($child_node);
+    }
+    return preg_replace('|<([^> ]*)/>|i', '<$1 />', $body_content);
   }
-  return preg_replace('|<([^> ]*)/>|i', '<$1 />', $body_content);
+  else {
+    return $body_content;
+  }
 }
 
 /**
@@ -1485,7 +1497,7 @@ function _filter_url($text, $filter) {
   $tasks['_filter_url_parse_full_links'] = $pattern;
 
   // Match e-mail addresses.
-  $url_pattern = "[A-Za-z0-9._-]{1,254}@(?:$domain)";
+  $url_pattern = "[A-Za-z0-9._+-]{1,254}@(?:$domain)";
   $pattern = "`($url_pattern)`";
   $tasks['_filter_url_parse_email_links'] = $pattern;
 

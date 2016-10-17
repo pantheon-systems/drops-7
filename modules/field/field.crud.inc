@@ -60,11 +60,11 @@ function field_create_field($field) {
   }
   // Field type is required.
   if (empty($field['type'])) {
-    throw new FieldException('Attempt to create a field with no type.');
+    throw new FieldException(format_string('Attempt to create field @field_name with no type.', array('@field_name' => $field['field_name'])));
   }
   // Field name cannot contain invalid characters.
   if (!preg_match('/^[_a-z]+[_a-z0-9]*$/', $field['field_name'])) {
-    throw new FieldException('Attempt to create a field with invalid characters. Only lowercase alphanumeric characters and underscores are allowed, and only lowercase letters and underscore are allowed as the first character');
+    throw new FieldException(format_string('Attempt to create a field @field_name with invalid characters. Only lowercase alphanumeric characters and underscores are allowed, and only lowercase letters and underscore are allowed as the first character', array('@field_name' => $field['field_name'])));
   }
 
   // Field name cannot be longer than 32 characters. We use drupal_strlen()
@@ -189,7 +189,7 @@ function field_create_field($field) {
   }
 
   // Clear caches
-  field_cache_clear(TRUE);
+  field_cache_clear();
 
   // Invoke external hooks after the cache is cleared for API consistency.
   module_invoke_all('field_create_field', $field);
@@ -288,7 +288,7 @@ function field_update_field($field) {
   drupal_write_record('field_config', $field, $primary_key);
 
   // Clear caches
-  field_cache_clear(TRUE);
+  field_cache_clear();
 
   // Invoke external hooks after the cache is cleared for API consistency.
   module_invoke_all('field_update_field', $field, $prior_field, $has_data);
@@ -430,7 +430,7 @@ function field_delete_field($field_name) {
     ->execute();
 
   // Clear the cache.
-  field_cache_clear(TRUE);
+  field_cache_clear();
 
   module_invoke_all('field_delete_field', $field);
 }

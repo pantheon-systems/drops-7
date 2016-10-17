@@ -10,7 +10,7 @@
  *
  * $conf['mail_line_endings'] will override this setting.
  */
-define('MAIL_LINE_ENDINGS', isset($_SERVER['WINDIR']) || strpos($_SERVER['SERVER_SOFTWARE'], 'Win32') !== FALSE ? "\r\n" : "\n");
+define('MAIL_LINE_ENDINGS', isset($_SERVER['WINDIR']) || (isset($_SERVER['SERVER_SOFTWARE']) && strpos($_SERVER['SERVER_SOFTWARE'], 'Win32') !== FALSE) ? "\r\n" : "\n");
 
 /**
  * Composes and optionally sends an e-mail message.
@@ -566,7 +566,7 @@ function _drupal_wrap_mail_line(&$line, $key, $values) {
   // Use soft-breaks only for purely quoted or unindented text.
   $line = wordwrap($line, 77 - $values['length'], $values['soft'] ? " \n" : "\n");
   // Break really long words at the maximum width allowed.
-  $line = wordwrap($line, 996 - $values['length'], $values['soft'] ? " \n" : "\n");
+  $line = wordwrap($line, 996 - $values['length'], $values['soft'] ? " \n" : "\n", TRUE);
 }
 
 /**

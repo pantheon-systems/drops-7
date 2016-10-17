@@ -191,7 +191,6 @@ function poll_node_info() {
       'base' => 'poll',
       'description' => t('A <em>poll</em> is a question with a set of possible responses. A <em>poll</em>, once created, automatically provides a simple running count of the number of votes received for each response.'),
       'title_label' => t('Question'),
-      'has_body' => FALSE,
     )
   );
 }
@@ -249,6 +248,7 @@ function poll_form($node, &$form_state) {
     '#title' => check_plain($type->title_label),
     '#required' => TRUE,
     '#default_value' => $node->title,
+    '#maxlength' => 255,
     '#weight' => -5,
   );
 
@@ -631,9 +631,6 @@ function poll_delete($node) {
  *   The node object to load.
  */
 function poll_block_latest_poll_view($node) {
-  global $user;
-  $output = '';
-
   // This is necessary for shared objects because PHP doesn't copy objects, but
   // passes them by reference.  So when the objects are cached it can result in
   // the wrong output being displayed on subsequent calls.  The cloning and
@@ -674,9 +671,6 @@ function poll_block_latest_poll_view($node) {
  * Implements hook_view().
  */
 function poll_view($node, $view_mode) {
-  global $user;
-  $output = '';
-
   if (!empty($node->allowvotes) && empty($node->show_results)) {
     $node->content['poll_view_voting'] = drupal_get_form('poll_view_voting', $node);
   }
@@ -694,7 +688,7 @@ function poll_view($node, $view_mode) {
 function poll_teaser($node) {
   $teaser = NULL;
   if (is_array($node->choice)) {
-    foreach ($node->choice as $k => $choice) {
+    foreach ($node->choice as $choice) {
       if ($choice['chtext'] != '') {
         $teaser .= '* ' . check_plain($choice['chtext']) . "\n";
       }
@@ -720,7 +714,6 @@ function poll_view_voting($form, &$form_state, $node, $block = FALSE) {
       '#type' => 'radios',
       '#title' => t('Choices'),
       '#title_display' => 'invisible',
-      '#default_value' => -1,
       '#options' => $list,
     );
   }
@@ -748,7 +741,7 @@ function poll_view_voting($form, &$form_state, $node, $block = FALSE) {
  * Validation function for processing votes
  */
 function poll_view_voting_validate($form, &$form_state) {
-  if ($form_state['values']['choice'] == -1) {
+  if (empty($form_state['values']['choice'])) {
     form_set_error( 'choice', t('Your vote could not be recorded because you did not select any of the choices.'));
   }
 }
@@ -925,7 +918,6 @@ function template_preprocess_poll_results(&$variables) {
  *
  * @see poll-bar.tpl.php
  * @see poll-bar--block.tpl.php
- * @see theme_poll_bar()
  */
 function template_preprocess_poll_bar(&$variables) {
   if ($variables['block']) {

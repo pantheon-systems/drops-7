@@ -210,7 +210,7 @@ function node_entity_info() {
         'custom settings' => FALSE,
       ),
       'search_result' => array(
-        'label' => t('Search result'),
+        'label' => t('Search result highlighting input'),
         'custom settings' => FALSE,
       ),
     );
@@ -506,7 +506,8 @@ function node_type_load($name) {
  *   - custom: TRUE or FALSE indicating whether this type is defined by a module
  *     (FALSE) or by a user (TRUE) via Add Content Type.
  *   - modified: TRUE or FALSE indicating whether this type has been modified by
- *     an administrator. Currently not used in any way.
+ *     an administrator. When modifying an existing node type, set to TRUE, or
+ *     the change will be ignored on node_types_rebuild().
  *   - locked: TRUE or FALSE indicating whether the administrator can change the
  *     machine name of this type.
  *   - disabled: TRUE or FALSE indicating whether this type has been disabled.
@@ -1397,12 +1398,7 @@ function node_build_content($node, $view_mode = 'full', $langcode = NULL) {
   $node->content = array();
 
   // Allow modules to change the view mode.
-  $context = array(
-    'entity_type' => 'node',
-    'entity' => $node,
-    'langcode' => $langcode,
-  );
-  drupal_alter('entity_view_mode', $view_mode, $context);
+  $view_mode = key(entity_view_mode_prepare('node', array($node->nid => $node), $view_mode, $langcode));
 
   // The 'view' hook can be implemented to overwrite the default function
   // to display nodes.
@@ -1585,9 +1581,7 @@ function node_permission() {
     ),
     'access content overview' => array(
       'title' => t('Access the content overview page'),
-      'description' => user_access('access content overview')
-        ? t('Get an overview of <a href="@url">all content</a>.', array('@url' => url('admin/content')))
-        : t('Get an overview of all content.'),
+      'description' => t('Get an overview of <a href="@url">all content</a>.', array('@url' => url('admin/content'))),
     ),
     'access content' => array(
       'title' => t('View published content'),
@@ -1615,7 +1609,7 @@ function node_permission() {
 }
 
 /**
- * Gathers the rankings from the the hook_ranking() implementations.
+ * Gathers the rankings from the hook_ranking() implementations.
  *
  * @param $query
  *   A query object that has been extended with the Search DB Extender.
@@ -2604,9 +2598,10 @@ function node_feed($nids = FALSE, $channel = array()) {
 
     $node->link = url("node/$node->nid", array('absolute' => TRUE));
     $node->rss_namespaces = array();
+    $account = user_load($node->uid);
     $node->rss_elements = array(
       array('key' => 'pubDate', 'value' => gmdate('r', $node->created)),
-      array('key' => 'dc:creator', 'value' => $node->name),
+      array('key' => 'dc:creator', 'value' => format_username($account)),
       array('key' => 'guid', 'value' => $node->nid . ' at ' . $base_url, 'attributes' => array('isPermaLink' => 'false'))
     );
 
@@ -2664,15 +2659,26 @@ function node_feed($nids = FALSE, $channel = array()) {
  *   An array in the format expected by drupal_render().
  */
 function node_view_multiple($nodes, $view_mode = 'teaser', $weight = 0, $langcode = NULL) {
-  field_attach_prepare_view('node', $nodes, $view_mode, $langcode);
-  entity_prepare_view('node', $nodes, $langcode);
   $build = array();
+  $entities_by_view_mode = entity_view_mode_prepare('node', $nodes, $view_mode, $langcode);
+  foreach ($entities_by_view_mode as $entity_view_mode => $entities) {
+    field_attach_prepare_view('node', $entities, $entity_view_mode, $langcode);
+    entity_prepare_view('node', $entities, $langcode);
+
+    foreach ($entities as $entity) {
+      $build['nodes'][$entity->nid] = node_view($entity, $entity_view_mode, $langcode);
+    }
+  }
+
   foreach ($nodes as $node) {
-    $build['nodes'][$node->nid] = node_view($node, $view_mode, $langcode);
     $build['nodes'][$node->nid]['#weight'] = $weight;
     $weight++;
   }
+  // Sort here, to preserve the input order of the entities that were passed to
+  // this function.
+  uasort($build['nodes'], 'element_sort');
   $build['nodes']['#sorted'] = TRUE;
+
   return $build;
 }
 
@@ -2947,7 +2953,10 @@ function node_search_validate($form, &$form_state) {
  * system. When adding a node listing to your module, be sure to use a dynamic
  * query created by db_select() and add a tag of "node_access". This will allow
  * modules dealing with node access to ensure only nodes to which the user has
- * access are retrieved, through the use of hook_query_TAG_alter().
+ * access are retrieved, through the use of hook_query_TAG_alter(). Tagging a
+ * query with "node_access" does not check the published/unpublished status of
+ * nodes, so the base query is responsible for ensuring that unpublished nodes
+ * are not displayed to inappropriate users.
  *
  * Note: Even a single module returning NODE_ACCESS_DENY from hook_node_access()
  * will block access to the node. Therefore, implementers should take care to
@@ -3629,7 +3638,8 @@ function node_access_rebuild($batch_mode = FALSE) {
       // Try to allocate enough time to rebuild node grants
       drupal_set_time_limit(240);
 
-      $nids = db_query("SELECT nid FROM {node}")->fetchCol();
+      // Rebuild newest nodes first so that recent content becomes available quickly.
+      $nids = db_query("SELECT nid FROM {node} ORDER BY nid DESC")->fetchCol();
       foreach ($nids as $nid) {
         $node = node_load($nid, NULL, TRUE);
         // To preserve database integrity, only acquire grants if the node
@@ -3662,6 +3672,8 @@ function node_access_rebuild($batch_mode = FALSE) {
 }
 
 /**
+ * Implements callback_batch_operation().
+ *
  * Performs batch operation for node_access_rebuild().
  *
  * This is a multistep operation: we go through all nodes by packs of 20. The
@@ -3676,7 +3688,7 @@ function _node_access_rebuild_batch_operation(&$context) {
     // Initiate multistep processing.
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['current_node'] = 0;
-    $context['sandbox']['max'] = db_query('SELECT COUNT(DISTINCT nid) FROM {node}')->fetchField();
+    $context['sandbox']['max'] = db_query('SELECT COUNT(nid) FROM {node}')->fetchField();
   }
 
   // Process the next 20 nodes.
@@ -3700,6 +3712,8 @@ function _node_access_rebuild_batch_operation(&$context) {
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * Performs post-processing for node_access_rebuild().
  *
  * @param bool $success

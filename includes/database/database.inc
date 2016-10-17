@@ -296,6 +296,20 @@ abstract class DatabaseConnection extends PDO {
    */
   protected $prefixReplace = array();
 
+  /**
+   * List of escaped database, table, and field names, keyed by unescaped names.
+   *
+   * @var array
+   */
+  protected $escapedNames = array();
+
+  /**
+   * List of escaped aliases names, keyed by unescaped aliases.
+   *
+   * @var array
+   */
+  protected $escapedAliases = array();
+
   function __construct($dsn, $username, $password, $driver_options = array()) {
     // Initialize and prepare the connection prefix.
     $this->setPrefix(isset($this->connectionOptions['prefix']) ? $this->connectionOptions['prefix'] : '');
@@ -626,7 +640,7 @@ abstract class DatabaseConnection extends PDO {
    *   A sanitized version of the query comment string.
    */
   protected function filterComment($comment = '') {
-    return preg_replace('/(\/\*\s*)|(\s*\*\/)/', '', $comment);
+    return strtr($comment, array('*' => ' * '));
   }
 
   /**
@@ -656,7 +670,7 @@ abstract class DatabaseConnection extends PDO {
    * @return DatabaseStatementInterface
    *   This method will return one of: the executed statement, the number of
    *   rows affected by the query (not the number matched), or the generated
-   *   insert IT of the last query, depending on the value of
+   *   insert ID of the last query, depending on the value of
    *   $options['return']. Typically that value will be set by default or a
    *   query builder and should not be set by a user. If there is an error,
    *   this method will return NULL and may throw an exception if
@@ -919,11 +933,14 @@ abstract class DatabaseConnection extends PDO {
    * For some database drivers, it may also wrap the table name in
    * database-specific escape characters.
    *
-   * @return
+   * @return string
    *   The sanitized table name string.
    */
   public function escapeTable($table) {
-    return preg_replace('/[^A-Za-z0-9_.]+/', '', $table);
+    if (!isset($this->escapedNames[$table])) {
+      $this->escapedNames[$table] = preg_replace('/[^A-Za-z0-9_.]+/', '', $table);
+    }
+    return $this->escapedNames[$table];
   }
 
   /**
@@ -933,11 +950,14 @@ abstract class DatabaseConnection extends PDO {
    * For some database drivers, it may also wrap the field name in
    * database-specific escape characters.
    *
-   * @return
+   * @return string
    *   The sanitized field name string.
    */
   public function escapeField($field) {
-    return preg_replace('/[^A-Za-z0-9_.]+/', '', $field);
+    if (!isset($this->escapedNames[$field])) {
+      $this->escapedNames[$field] = preg_replace('/[^A-Za-z0-9_.]+/', '', $field);
+    }
+    return $this->escapedNames[$field];
   }
 
   /**
@@ -948,11 +968,14 @@ abstract class DatabaseConnection extends PDO {
    * DatabaseConnection::escapeTable(), this doesn't allow the period (".")
    * because that is not allowed in aliases.
    *
-   * @return
+   * @return string
    *   The sanitized field name string.
    */
   public function escapeAlias($field) {
-    return preg_replace('/[^A-Za-z0-9_]+/', '', $field);
+    if (!isset($this->escapedAliases[$field])) {
+      $this->escapedAliases[$field] = preg_replace('/[^A-Za-z0-9_]+/', '', $field);
+    }
+    return $this->escapedAliases[$field];
   }
 
   /**
@@ -1313,6 +1336,39 @@ abstract class DatabaseConnection extends PDO {
    *   also larger than the $existing_id if one was passed in.
    */
   abstract public function nextId($existing_id = 0);
+
+  /**
+   * Checks whether utf8mb4 support is configurable in settings.php.
+   *
+   * @return bool
+   */
+  public function utf8mb4IsConfigurable() {
+    // Since 4 byte UTF-8 is not supported by default, there is nothing to
+    // configure.
+    return FALSE;
+  }
+
+  /**
+   * Checks whether utf8mb4 support is currently active.
+   *
+   * @return bool
+   */
+  public function utf8mb4IsActive() {
+    // Since 4 byte UTF-8 is not supported by default, there is nothing to
+    // activate.
+    return FALSE;
+  }
+
+  /**
+   * Checks whether utf8mb4 support is available on the current database system.
+   *
+   * @return bool
+   */
+  public function utf8mb4IsSupported() {
+    // By default we assume that the database backend may not support 4 byte
+    // UTF-8.
+    return FALSE;
+  }
 }
 
 /**

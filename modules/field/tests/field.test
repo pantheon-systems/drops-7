@@ -485,6 +485,66 @@ class FieldAttachStorageTestCase extends FieldAttachTestCase {
   }
 
   /**
+   * Test field_has_data().
+   */
+  function testFieldHasData() {
+    $entity_type = 'test_entity';
+    $langcode = LANGUAGE_NONE;
+
+    $field_name = 'field_1';
+    $field = array('field_name' => $field_name, 'type' => 'test_field');
+    $field = field_create_field($field);
+
+    $this->assertFalse(field_has_data($field), "No data should be detected.");
+
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => 'test_entity',
+      'bundle' => 'test_bundle'
+    );
+    $instance = field_create_instance($instance);
+    $table = _field_sql_storage_tablename($field);
+    $revision_table = _field_sql_storage_revision_tablename($field);
+
+    $columns = array('entity_type', 'entity_id', 'revision_id', 'delta', 'language', $field_name . '_value');
+
+    $eid = 0;
+
+    // Insert values into the field revision table.
+    $query = db_insert($revision_table)->fields($columns);
+    $query->values(array($entity_type, $eid, 0, 0, $langcode, 1));
+    $query->execute();
+
+    $this->assertTrue(field_has_data($field), "Revision data only should be detected.");
+
+    $field_name = 'field_2';
+    $field = array('field_name' => $field_name, 'type' => 'test_field');
+    $field = field_create_field($field);
+
+    $this->assertFalse(field_has_data($field), "No data should be detected.");
+
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => 'test_entity',
+      'bundle' => 'test_bundle'
+    );
+    $instance = field_create_instance($instance);
+    $table = _field_sql_storage_tablename($field);
+    $revision_table = _field_sql_storage_revision_tablename($field);
+
+    $columns = array('entity_type', 'entity_id', 'revision_id', 'delta', 'language', $field_name . '_value');
+
+    $eid = 1;
+
+    // Insert values into the field table.
+    $query = db_insert($table)->fields($columns);
+    $query->values(array($entity_type, $eid, 0, 0, $langcode, 1));
+    $query->execute();
+
+    $this->assertTrue(field_has_data($field), "Values only in field table should be detected.");
+  }
+
+  /**
    * Test field_attach_delete().
    */
   function testFieldAttachDelete() {
@@ -2146,11 +2206,12 @@ class FieldDisplayAPITestCase extends FieldTestCase {
         'alter' => TRUE,
       ),
     );
-    $output = field_view_field('test_entity', $this->entity, $this->field_name, $display);
+    $output = field_view_field('test_entity', $this->entity, $this->field_name, $display, LANGUAGE_NONE);
     $this->drupalSetContent(drupal_render($output));
     $setting = $display['settings']['test_formatter_setting_multiple'];
     $this->assertNoText($this->label, 'Label was not displayed.');
     $this->assertText('field_test_field_attach_view_alter', 'Alter fired, display passed.');
+    $this->assertText('field language is ' . LANGUAGE_NONE, 'Language is placed onto the context.');
     $array = array();
     foreach ($this->values as $delta => $value) {
       $array[] = $delta . ':' . $value['value'];

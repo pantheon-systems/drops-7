@@ -359,7 +359,7 @@ function system_element_info() {
     '#size' => 60,
     '#maxlength' => 128,
     '#autocomplete_path' => FALSE,
-    '#process' => array('ajax_process_form'),
+    '#process' => array('form_process_autocomplete', 'ajax_process_form'),
     '#theme' => 'textfield',
     '#theme_wrappers' => array('form_element'),
   );
@@ -374,6 +374,9 @@ function system_element_info() {
     '#element_validate' => array('form_validate_machine_name'),
     '#theme' => 'textfield',
     '#theme_wrappers' => array('form_element'),
+    // Use the same value callback as for textfields; this ensures that we only
+    // get string values.
+    '#value_callback' => 'form_type_textfield_value',
   );
   $types['password'] = array(
     '#input' => TRUE,
@@ -382,6 +385,9 @@ function system_element_info() {
     '#process' => array('ajax_process_form'),
     '#theme' => 'password',
     '#theme_wrappers' => array('form_element'),
+    // Use the same value callback as for textfields; this ensures that we only
+    // get string values.
+    '#value_callback' => 'form_type_textfield_value',
   );
   $types['password_confirm'] = array(
     '#input' => TRUE,
@@ -2024,7 +2030,6 @@ function system_user_timezone(&$form, &$form_state) {
     '#description' => t('Select the desired local time and time zone. Dates and times throughout this site will be displayed using this time zone.'),
   );
   if (!isset($account->timezone) && $account->uid == $user->uid && empty($form_state['input']['timezone'])) {
-    $form['timezone']['#description'] = t('Your time zone setting will be automatically detected if possible. Confirm the selection and click save.');
     $form['timezone']['timezone']['#attributes'] = array('class' => array('timezone-detect'));
     drupal_add_js('misc/timezone.js');
   }
@@ -2399,8 +2404,16 @@ function _system_rebuild_module_data() {
       continue;
     }
 
+    // Add the info file modification time, so it becomes available for
+    // contributed modules to use for ordering module lists.
+    $module->info['mtime'] = filemtime(dirname($module->uri) . '/' . $module->name . '.info');
+
     // Merge in defaults and save.
     $modules[$key]->info = $module->info + $defaults;
+
+    // The "name" key is required, but to avoid a fatal error in the menu system
+    // we set a reasonable default if it is not provided.
+    $modules[$key]->info += array('name' => $key);
 
     // Prefix stylesheets and scripts with module path.
     $path = dirname($module->uri);
@@ -2536,6 +2549,14 @@ function _system_rebuild_theme_data() {
   foreach ($themes as $key => $theme) {
     $themes[$key]->filename = $theme->uri;
     $themes[$key]->info = drupal_parse_info_file($theme->uri) + $defaults;
+
+    // The "name" key is required, but to avoid a fatal error in the menu system
+    // we set a reasonable default if it is not provided.
+    $themes[$key]->info += array('name' => $key);
+
+    // Add the info file modification time, so it becomes available for
+    // contributed modules to use for ordering theme lists.
+    $themes[$key]->info['mtime'] = filemtime($theme->uri);
 
     // Invoke hook_system_info_alter() to give installed modules a chance to
     // modify the data in the .info files if necessary.
@@ -2684,10 +2705,17 @@ function system_find_base_themes($themes, $key, $used_keys = array()) {
  * @param $show
  *   Possible values: REGIONS_ALL or REGIONS_VISIBLE. Visible excludes hidden
  *   regions.
- * @return
- *   An array of regions in the form $region['name'] = 'description'.
+ * @param bool $labels
+ *   (optional) Boolean to specify whether the human readable machine names
+ *   should be returned or not. Defaults to TRUE, but calling code can set
+ *   this to FALSE for better performance, if it only needs machine names.
+ *
+ * @return array
+ *   An associative array of regions in the form $region['name'] = 'description'
+ *   if $labels is set to TRUE, or $region['name'] = 'name', if $labels is set
+ *   to FALSE.
  */
-function system_region_list($theme_key, $show = REGIONS_ALL) {
+function system_region_list($theme_key, $show = REGIONS_ALL, $labels = TRUE) {
   $themes = list_themes();
   if (!isset($themes[$theme_key])) {
     return array();
@@ -2698,10 +2726,14 @@ function system_region_list($theme_key, $show = REGIONS_ALL) {
   // If requested, suppress hidden regions. See block_admin_display_form().
   foreach ($info['regions'] as $name => $label) {
     if ($show == REGIONS_ALL || !isset($info['regions_hidden']) || !in_array($name, $info['regions_hidden'])) {
-      $list[$name] = t($label);
+      if ($labels) {
+        $list[$name] = t($label);
+      }
+      else {
+        $list[$name] = $name;
+      }
     }
   }
-
   return $list;
 }
 
@@ -2722,12 +2754,13 @@ function system_system_info_alter(&$info, $file, $type) {
  *
  * @param $theme
  *   The name of a theme.
+ *
  * @return
  *   A string that is the region name.
  */
 function system_default_region($theme) {
-  $regions = array_keys(system_region_list($theme, REGIONS_VISIBLE));
-  return isset($regions[0]) ? $regions[0] : '';
+  $regions = system_region_list($theme, REGIONS_VISIBLE, FALSE);
+  return $regions ? reset($regions) : '';
 }
 
 /**
@@ -2794,7 +2827,7 @@ function system_settings_form_submit($form, &$form_state) {
 function _system_sort_requirements($a, $b) {
   if (!isset($a['weight'])) {
     if (!isset($b['weight'])) {
-      return strcmp($a['title'], $b['title']);
+      return strcasecmp($a['title'], $b['title']);
     }
     return -$b['weight'];
   }
@@ -3035,8 +3068,20 @@ function system_cron() {
     }
   }
 
-  $core = array('cache', 'cache_path', 'cache_filter', 'cache_page', 'cache_form', 'cache_menu');
-  $cache_tables = array_merge(module_invoke_all('flush_caches'), $core);
+  // Delete expired cache entries.
+  // Avoid invoking hook_flush_cashes() on every cron run because some modules
+  // use this hook to perform expensive rebuilding operations (which are only
+  // designed to happen on full cache clears), rather than just returning a
+  // list of cache tables to be cleared.
+  $cache_object = cache_get('system_cache_tables');
+  if (empty($cache_object)) {
+    $core = array('cache', 'cache_path', 'cache_filter', 'cache_page', 'cache_form', 'cache_menu');
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), $core);
+    cache_set('system_cache_tables', $cache_tables);
+  }
+  else {
+    $cache_tables = $cache_object->data;
+  }
   foreach ($cache_tables as $table) {
     cache_clear_all(NULL, $table);
   }
@@ -3284,7 +3329,7 @@ function system_goto_action_form($context) {
   $form['url'] = array(
     '#type' => 'textfield',
     '#title' => t('URL'),
-    '#description' => t('The URL to which the user should be redirected. This can be an internal URL like node/1234 or an external URL like http://drupal.org.'),
+    '#description' => t('The URL to which the user should be redirected. This can be an internal path like node/1234 or an external URL like http://example.com.'),
     '#default_value' => isset($context['url']) ? $context['url'] : '',
     '#required' => TRUE,
   );
@@ -3321,7 +3366,8 @@ function system_goto_action($entity, $context) {
  */
 function system_block_ip_action() {
   $ip = ip_address();
-  db_insert('blocked_ips')
+  db_merge('blocked_ips')
+    ->key(array('ip' => $ip))
     ->fields(array('ip' => $ip))
     ->execute();
   watchdog('action', 'Banned IP address %ip', array('%ip' => $ip));
@@ -3386,7 +3432,7 @@ function system_timezone($abbreviation = '', $offset = -1, $is_daylight_saving_t
  * @ingroup themeable
  */
 function theme_system_powered_by() {
-  return '<span>' . t('Powered by <a href="@poweredby">Drupal</a>', array('@poweredby' => 'http://drupal.org')) . '</span>';
+  return '<span>' . t('Powered by <a href="@poweredby">Drupal</a>', array('@poweredby' => 'https://www.drupal.org')) . '</span>';
 }
 
 /**
@@ -3483,8 +3529,7 @@ function system_retrieve_file($url, $destination = NULL, $managed = FALSE, $repl
 function system_page_alter(&$page) {
   // Find all non-empty page regions, and add a theme wrapper function that
   // allows them to be consistently themed.
-  $regions = system_region_list($GLOBALS['theme']);
-  foreach (array_keys($regions) as $region) {
+  foreach (system_region_list($GLOBALS['theme'], REGIONS_ALL, FALSE) as $region) {
     if (!empty($page[$region])) {
       $page[$region]['#theme_wrappers'][] = 'region';
       $page[$region]['#region'] = $region;

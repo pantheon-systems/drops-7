@@ -457,10 +457,70 @@ class PagePreviewTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp();
+    parent::setUp(array('taxonomy', 'node'));
 
     $web_user = $this->drupalCreateUser(array('edit own page content', 'create page content'));
     $this->drupalLogin($web_user);
+
+    // Add a vocabulary so we can test different view modes.
+    $vocabulary = (object) array(
+      'name' => $this->randomName(),
+      'description' => $this->randomName(),
+      'machine_name' => drupal_strtolower($this->randomName()),
+      'help' => '',
+      'nodes' => array('page' => 'page'),
+    );
+    taxonomy_vocabulary_save($vocabulary);
+
+    $this->vocabulary = $vocabulary;
+
+    // Add a term to the vocabulary.
+    $term = (object) array(
+      'name' => $this->randomName(),
+      'description' => $this->randomName(),
+      // Use the first available text format.
+      'format' => db_query_range('SELECT format FROM {filter_format}', 0, 1)->fetchField(),
+      'vid' => $this->vocabulary->vid,
+      'vocabulary_machine_name' => $vocabulary->machine_name,
+    );
+    taxonomy_term_save($term);
+
+    $this->term = $term;
+
+    // Set up a field and instance.
+    $this->field_name = drupal_strtolower($this->randomName());
+    $this->field = array(
+      'field_name' => $this->field_name,
+      'type' => 'taxonomy_term_reference',
+      'settings' => array(
+        'allowed_values' => array(
+          array(
+            'vocabulary' => $this->vocabulary->machine_name,
+            'parent' => '0',
+          ),
+        ),
+      )
+    );
+
+    field_create_field($this->field);
+    $this->instance = array(
+      'field_name' => $this->field_name,
+      'entity_type' => 'node',
+      'bundle' => 'page',
+      'widget' => array(
+        'type' => 'options_select',
+      ),
+      // Hide on full display but render on teaser.
+      'display' => array(
+        'default' => array(
+          'type' => 'hidden',
+        ),
+        'teaser' => array(
+          'type' => 'taxonomy_term_reference_link',
+        ),
+      ),
+    );
+    field_create_instance($this->instance);
   }
 
   /**
@@ -470,21 +530,26 @@ class PagePreviewTestCase extends DrupalWebTestCase {
     $langcode = LANGUAGE_NONE;
     $title_key = "title";
     $body_key = "body[$langcode][0][value]";
+    $term_key = "{$this->field_name}[$langcode]";
 
     // Fill in node creation form and preview node.
     $edit = array();
     $edit[$title_key] = $this->randomName(8);
     $edit[$body_key] = $this->randomName(16);
+    $edit[$term_key] = $this->term->tid;
     $this->drupalPost('node/add/page', $edit, t('Preview'));
 
-    // Check that the preview is displaying the title and body.
+    // Check that the preview is displaying the title, body, and term.
     $this->assertTitle(t('Preview | Drupal'), 'Basic page title is preview.');
     $this->assertText($edit[$title_key], 'Title displayed.');
     $this->assertText($edit[$body_key], 'Body displayed.');
+    $this->assertText($this->term->name, 'Term displayed.');
 
-    // Check that the title and body fields are displayed with the correct values.
+    // Check that the title, body, and term fields are displayed with the
+    // correct values.
     $this->assertFieldByName($title_key, $edit[$title_key], 'Title field displayed.');
     $this->assertFieldByName($body_key, $edit[$body_key], 'Body field displayed.');
+    $this->assertFieldByName($term_key, $edit[$term_key], 'Term field displayed.');
   }
 
   /**
@@ -494,6 +559,7 @@ class PagePreviewTestCase extends DrupalWebTestCase {
     $langcode = LANGUAGE_NONE;
     $title_key = "title";
     $body_key = "body[$langcode][0][value]";
+    $term_key = "{$this->field_name}[$langcode]";
     // Force revision on "Basic page" content.
     variable_set('node_options_page', array('status', 'revision'));
 
@@ -501,17 +567,21 @@ class PagePreviewTestCase extends DrupalWebTestCase {
     $edit = array();
     $edit[$title_key] = $this->randomName(8);
     $edit[$body_key] = $this->randomName(16);
+    $edit[$term_key] = $this->term->tid;
     $edit['log'] = $this->randomName(32);
     $this->drupalPost('node/add/page', $edit, t('Preview'));
 
-    // Check that the preview is displaying the title and body.
+    // Check that the preview is displaying the title, body, and term.
     $this->assertTitle(t('Preview | Drupal'), 'Basic page title is preview.');
     $this->assertText($edit[$title_key], 'Title displayed.');
     $this->assertText($edit[$body_key], 'Body displayed.');
+    $this->assertText($this->term->name, 'Term displayed.');
 
-    // Check that the title and body fields are displayed with the correct values.
+    // Check that the title, body, and term fields are displayed with the
+    // correct values.
     $this->assertFieldByName($title_key, $edit[$title_key], 'Title field displayed.');
     $this->assertFieldByName($body_key, $edit[$body_key], 'Body field displayed.');
+    $this->assertFieldByName($term_key, $edit[$term_key], 'Term field displayed.');
 
     // Check that the log field has the correct value.
     $this->assertFieldByName('log', $edit['log'], 'Log field displayed.');
@@ -1448,7 +1518,7 @@ class NodeTypeTestCase extends DrupalWebTestCase {
    * Tests editing a node type using the UI.
    */
   function testNodeTypeEditing() {
-    $web_user = $this->drupalCreateUser(array('bypass node access', 'administer content types'));
+    $web_user = $this->drupalCreateUser(array('bypass node access', 'administer content types', 'administer fields'));
     $this->drupalLogin($web_user);
 
     $instance = field_info_instance('node', 'body', 'page');
@@ -2698,8 +2768,8 @@ class NodeAccessFieldTestCase extends NodeWebTestCase {
     node_access_rebuild();
 
     // Create some users.
-    $this->admin_user = $this->drupalCreateUser(array('access content', 'bypass node access'));
-    $this->content_admin_user = $this->drupalCreateUser(array('access content', 'administer content types'));
+    $this->admin_user = $this->drupalCreateUser(array('access content', 'bypass node access', 'administer fields'));
+    $this->content_admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer fields'));
 
     // Add a custom field to the page content type.
     $this->field_name = drupal_strtolower($this->randomName() . '_field_name');
@@ -2782,8 +2852,8 @@ class NodeEntityViewModeAlterTest extends NodeWebTestCase {
     $edit = array();
     $langcode = LANGUAGE_NONE;
     $edit["title"] = $this->randomName(8);
-    $edit["body[$langcode][0][value]"] = t('Data that should appear only in the body for the node.');
-    $edit["body[$langcode][0][summary]"] = t('Extra data that should appear only in the teaser for the node.');
+    $edit["body[$langcode][0][value]"] = 'Data that should appear only in the body for the node.';
+    $edit["body[$langcode][0][summary]"] = 'Extra data that should appear only in the teaser for the node.';
     $this->drupalPost('node/add/page', $edit, t('Save'));
 
     $node = $this->drupalGetNodeByTitle($edit["title"]);
@@ -2796,6 +2866,45 @@ class NodeEntityViewModeAlterTest extends NodeWebTestCase {
     $this->assertText('Extra data that should appear only in the teaser for the node.', 'Teaser text present');
     // Make sure body text is not present.
     $this->assertNoText('Data that should appear only in the body for the node.', 'Body text not present');
+
+    // Test that the correct build mode has been set.
+    $build = node_view($node);
+    $this->assertEqual($build['#view_mode'], 'teaser', 'The view mode has correctly been set to teaser.');
+  }
+
+  /**
+   * Tests fields that were previously hidden when the view mode is changed.
+   */
+  function testNodeViewModeChangeHiddenField() {
+    // Hide the tags field on the default display
+    $instance = field_info_instance('node', 'field_tags', 'article');
+    $instance['display']['default']['type'] = 'hidden';
+    field_update_instance($instance);
+
+    $web_user = $this->drupalCreateUser(array('create article content', 'edit own article content'));
+    $this->drupalLogin($web_user);
+
+    // Create a node.
+    $edit = array();
+    $langcode = LANGUAGE_NONE;
+    $edit["title"] = $this->randomName(8);
+    $edit["body[$langcode][0][value]"] = 'Data that should appear only in the body for the node.';
+    $edit["body[$langcode][0][summary]"] = 'Extra data that should appear only in the teaser for the node.';
+    $edit["field_tags[$langcode]"] = 'Extra tag';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+
+    $node = $this->drupalGetNodeByTitle($edit["title"]);
+
+    // Set the flag to alter the view mode and view the node.
+    variable_set('node_test_change_view_mode', 'teaser');
+    $this->drupalGet('node/' . $node->nid);
+
+    // Check that teaser mode is viewed.
+    $this->assertText('Extra data that should appear only in the teaser for the node.', 'Teaser text present');
+    // Make sure body text is not present.
+    $this->assertNoText('Data that should appear only in the body for the node.', 'Body text not present');
+    // Make sure tags are present.
+    $this->assertText('Extra tag', 'Taxonomy term present');
 
     // Test that the correct build mode has been set.
     $build = node_view($node);
@@ -2876,4 +2985,37 @@ class NodePageCacheTest extends NodeWebTestCase {
     $this->drupalGet($node_path);
     $this->assertResponse(404);
   }
+}
+
+/**
+ * Tests that multi-byte UTF-8 characters are stored and retrieved correctly.
+ */
+class NodeMultiByteUtf8Test extends NodeWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Multi-byte UTF-8',
+      'description' => 'Test that multi-byte UTF-8 characters are stored and retrieved correctly.',
+      'group' => 'Node',
+    );
+  }
+
+  /**
+   * Tests that multi-byte UTF-8 characters are stored and retrieved correctly.
+   */
+  public function testMultiByteUtf8() {
+    $connection = Database::getConnection();
+    // On MySQL, this test will only run if 'charset' is set to 'utf8mb4' in
+    // settings.php.
+    if (!($connection->utf8mb4IsSupported() && $connection->utf8mb4IsActive())) {
+      return;
+    }
+    $title = '🐙';
+    $this->assertTrue(drupal_strlen($title, 'utf-8') < strlen($title), 'Title has multi-byte characters.');
+    $node = $this->drupalCreateNode(array('title' => $title));
+    $this->drupalGet('node/' . $node->nid);
+    $result = $this->xpath('//h1[@id="page-title"]');
+    $this->assertEqual(trim((string) $result[0]), $title, 'The passed title was returned.');
+  }
+
 }

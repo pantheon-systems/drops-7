@@ -211,7 +211,7 @@
  *
  * When returning an Ajax command array, it is often useful to have
  * status messages rendered along with other tasks in the command array.
- * In that case the the Ajax commands array may be constructed like this:
+ * In that case the Ajax commands array may be constructed like this:
  * @code
  *   $commands = array();
  *   $commands[] = ajax_command_replace(NULL, $output);
@@ -230,6 +230,10 @@
  *   functions.
  */
 function ajax_render($commands = array()) {
+  // Although ajax_deliver() does this, some contributed and custom modules
+  // render Ajax responses without using that delivery callback.
+  ajax_set_verification_header();
+
   // Ajax responses aren't rendered with html.tpl.php, so we have to call
   // drupal_get_css() and drupal_get_js() here, in order to have new files added
   // during this request to be loaded by the page. We only want to send back
@@ -276,7 +280,7 @@ function ajax_render($commands = array()) {
 
   $extra_commands = array();
   if (!empty($styles)) {
-    $extra_commands[] = ajax_command_prepend('head', $styles);
+    $extra_commands[] = ajax_command_add_css($styles);
   }
   if (!empty($scripts_header)) {
     $extra_commands[] = ajax_command_prepend('head', $scripts_header);
@@ -292,7 +296,7 @@ function ajax_render($commands = array()) {
   $scripts = drupal_add_js();
   if (!empty($scripts['settings'])) {
     $settings = $scripts['settings'];
-    array_unshift($commands, ajax_command_settings(call_user_func_array('array_merge_recursive', $settings['data']), TRUE));
+    array_unshift($commands, ajax_command_settings(drupal_array_merge_deep_array($settings['data']), TRUE));
   }
 
   // Allow modules to alter any Ajax response.
@@ -390,7 +394,7 @@ function ajax_form_callback() {
   if (!empty($form_state['triggering_element'])) {
     $callback = $form_state['triggering_element']['#ajax']['callback'];
   }
-  if (!empty($callback) && function_exists($callback)) {
+  if (!empty($callback) && is_callable($callback)) {
     $result = $callback($form, $form_state);
 
     if (!(is_array($result) && isset($result['#type']) && $result['#type'] == 'ajax')) {
@@ -487,6 +491,9 @@ function ajax_deliver($page_callback_result) {
     }
   }
 
+  // Let ajax.js know that this response is safe to process.
+  ajax_set_verification_header();
+
   // Print the response.
   $commands = ajax_prepare_response($page_callback_result);
   $json = ajax_render($commands);
@@ -574,6 +581,29 @@ function ajax_prepare_response($page_callback_result) {
   }
 
   return $commands;
+}
+
+/**
+ * Sets a response header for ajax.js to trust the response body.
+ *
+ * It is not safe to invoke Ajax commands within user-uploaded files, so this
+ * header protects against those being invoked.
+ *
+ * @see Drupal.ajax.options.success()
+ */
+function ajax_set_verification_header() {
+  $added = &drupal_static(__FUNCTION__);
+
+  // User-uploaded files cannot set any response headers, so a custom header is
+  // used to indicate to ajax.js that this response is safe. Note that most
+  // Ajax requests bound using the Form API will be protected by having the URL
+  // flagged as trusted in Drupal.settings, so this header is used only for
+  // things like custom markup that gets Ajax behaviors attached.
+  if (empty($added)) {
+    drupal_add_http_header('X-Drupal-Ajax-Token', '1');
+    // Avoid sending the header twice.
+    $added = TRUE;
+  }
 }
 
 /**
@@ -764,7 +794,12 @@ function ajax_pre_render_element($element) {
 
     $element['#attached']['js'][] = array(
       'type' => 'setting',
-      'data' => array('ajax' => array($element['#id'] => $settings)),
+      'data' => array(
+        'ajax' => array($element['#id'] => $settings),
+        'urlIsAjaxTrusted' => array(
+          $settings['url'] => TRUE,
+        ),
+      ),
     );
 
     // Indicate that Ajax processing was successful.
@@ -1255,5 +1290,28 @@ function ajax_command_update_build_id($form) {
     'command' => 'updateBuildId',
     'old' => $form['#build_id_old'],
     'new' => $form['#build_id'],
+  );
+}
+
+/**
+ * Creates a Drupal Ajax 'add_css' command.
+ *
+ * This method will add css via ajax in a cross-browser compatible way.
+ *
+ * This command is implemented by Drupal.ajax.prototype.commands.add_css()
+ * defined in misc/ajax.js.
+ *
+ * @param $styles
+ *   A string that contains the styles to be added.
+ *
+ * @return
+ *   An array suitable for use with the ajax_render() function.
+ *
+ * @see misc/ajax.js
+ */
+function ajax_command_add_css($styles) {
+  return array(
+    'command' => 'add_css',
+    'data' => $styles,
   );
 }

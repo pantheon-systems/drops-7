@@ -70,6 +70,15 @@ class FilterCRUDTestCase extends DrupalWebTestCase {
     $this->assertFalse($db_format->status, 'Database: Disabled text format is marked as disabled.');
     $formats = filter_formats();
     $this->assertTrue(!isset($formats[$format->format]), 'filter_formats: Disabled text format no longer exists.');
+
+    // Add a new format to check for Xss in format name.
+    $format = new stdClass();
+    $format->format = 'xss_format';
+    $format->name = '<script>alert(123)</script>';
+    filter_format_save($format);
+    user_role_change_permissions(DRUPAL_ANONYMOUS_RID, array(filter_permission_name($format) => 1));
+    $this->drupalGet('filter/tips');
+    $this->assertNoRaw($format->name, 'Text format name contains no xss.');
   }
 
   /**
@@ -546,6 +555,27 @@ class FilterFormatAccessTestCase extends DrupalWebTestCase {
     $this->assertTrue(isset($options[$this->allowed_format->format]), 'The allowed text format appears as an option when adding a new node.');
     $this->assertFalse(isset($options[$this->disallowed_format->format]), 'The disallowed text format does not appear as an option when adding a new node.');
     $this->assertTrue(isset($options[filter_fallback_format()]), 'The fallback format appears as an option when adding a new node.');
+
+    // Check regular user access to the filter tips pages.
+    $this->drupalGet('filter/tips/' . $this->allowed_format->format);
+    $this->assertResponse(200);
+    $this->drupalGet('filter/tips/' . $this->disallowed_format->format);
+    $this->assertResponse(403);
+    $this->drupalGet('filter/tips/' . filter_fallback_format());
+    $this->assertResponse(200);
+    $this->drupalGet('filter/tips/invalid-format');
+    $this->assertResponse(404);
+
+    // Check admin user access to the filter tips pages.
+    $this->drupalLogin($this->admin_user);
+    $this->drupalGet('filter/tips/' . $this->allowed_format->format);
+    $this->assertResponse(200);
+    $this->drupalGet('filter/tips/' . $this->disallowed_format->format);
+    $this->assertResponse(200);
+    $this->drupalGet('filter/tips/' . filter_fallback_format());
+    $this->assertResponse(200);
+    $this->drupalGet('filter/tips/invalid-format');
+    $this->assertResponse(404);
   }
 
   /**
@@ -1090,8 +1120,12 @@ class FilterUnitTestCase extends DrupalUnitTestCase {
     $f = filter_xss("<img src=\"jav\0a\0\0cript:alert(0)\">", array('img'));
     $this->assertNoNormalized($f, 'cript', 'HTML scheme clearing evasion -- embedded nulls.');
 
-    $f = filter_xss('<img src=" &#14;  javascript:alert(0)">', array('img'));
-    $this->assertNoNormalized($f, 'javascript', 'HTML scheme clearing evasion -- spaces and metacharacters before scheme.');
+    // @todo This dataset currently fails under 5.4 because of
+    //   https://www.drupal.org/node/1210798. Restore after it's fixed.
+    if (version_compare(PHP_VERSION, '5.4.0', '<')) {
+      $f = filter_xss('<img src=" &#14;  javascript:alert(0)">', array('img'));
+      $this->assertNoNormalized($f, 'javascript', 'HTML scheme clearing evasion -- spaces and metacharacters before scheme.');
+    }
 
     $f = filter_xss('<img src="vbscript:msgbox(0)">', array('img'));
     $this->assertNoNormalized($f, 'vbscript', 'HTML scheme clearing evasion -- another scheme.');
@@ -1139,7 +1173,7 @@ class FilterUnitTestCase extends DrupalUnitTestCase {
     // Setup dummy filter object.
     $filter = new stdClass();
     $filter->settings = array(
-      'allowed_html' => '<a> <em> <strong> <cite> <blockquote> <code> <ul> <ol> <li> <dl> <dt> <dd>',
+      'allowed_html' => '<a> <em> <strong> <cite> <blockquote> <code> <ul> <ol> <li> <dl> <dt> <dd> <test-element>',
       'filter_html_help' => 1,
       'filter_html_nofollow' => 0,
     );
@@ -1175,6 +1209,10 @@ class FilterUnitTestCase extends DrupalUnitTestCase {
 
     $f = _filter_html('<code onerror>&nbsp;</code>', $filter);
     $this->assertNoNormalized($f, 'onerror', 'HTML filter should remove empty on* attributes on default.');
+
+    // Custom tags are supported and should be allowed through.
+    $f = _filter_html('<test-element></test-element>', $filter);
+    $this->assertNormalized($f, 'test-element', 'HTML filter should allow custom elements.');
   }
 
   /**
@@ -1260,6 +1298,7 @@ class FilterUnitTestCase extends DrupalUnitTestCase {
     // Create a e-mail that is too long.
     $long_email = str_repeat('a', 254) . '@example.com';
     $too_long_email = str_repeat('b', 255) . '@example.com';
+    $email_with_plus_sign = 'one+two@example.com';
 
 
     // Filter selection/pattern matching.
@@ -1273,12 +1312,13 @@ http://example.com or www.example.com
       ),
       // MAILTO URLs.
       '
-person@example.com or mailto:person2@example.com or ' . $long_email . ' but not ' . $too_long_email . '
+person@example.com or mailto:person2@example.com or ' . $email_with_plus_sign . ' or ' . $long_email . ' but not ' . $too_long_email . '
 ' => array(
         '<a href="mailto:person@example.com">person@example.com</a>' => TRUE,
         '<a href="mailto:person2@example.com">mailto:person2@example.com</a>' => TRUE,
         '<a href="mailto:' . $long_email . '">' . $long_email . '</a>' => TRUE,
         '<a href="mailto:' . $too_long_email . '">' . $too_long_email . '</a>' => FALSE,
+        '<a href="mailto:' . $email_with_plus_sign . '">' . $email_with_plus_sign . '</a>' => TRUE,
       ),
       // URI parts and special characters.
       '
@@ -1968,5 +2008,28 @@ class FilterSettingsTestCase extends DrupalWebTestCase {
         '%previous' => $saved_settings[$name]['weight'],
       )));
     }
+  }
+}
+
+/**
+ * Tests DOMDocument serialization.
+ */
+class FilterDOMSerializeTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Serialization',
+      'description' => 'Test serialization of DOMDocument objects.',
+      'group' => 'Filter',
+    );
+  }
+
+  /**
+   * Tests empty DOMDocument object.
+   */
+  function testFilterEmptyDOMSerialization() {
+    $document = new DOMDocument();
+    $result = filter_dom_serialize($document);
+    $this->assertEqual('', $result);
   }
 }

@@ -28,7 +28,9 @@ interface DrupalEntityControllerInterface {
    * @param $ids
    *   An array of entity IDs, or FALSE to load all entities.
    * @param $conditions
-   *   An array of conditions in the form 'field' => $value.
+   *   An array of conditions. Keys are field names on the entity's base table.
+   *   Values will be compared for equality. All the comparisons will be ANDed
+   *   together. This parameter is deprecated; use an EntityFieldQuery instead.
    *
    * @return
    *   An array of entity objects indexed by their ids. When no results are
@@ -181,6 +183,11 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
       }
     }
 
+    // Ensure integer entity IDs are valid.
+    if (!empty($ids)) {
+      $this->cleanIds($ids);
+    }
+
     // Load any remaining entities from the database. This is the case if $ids
     // is set to FALSE (so we load all entities), if there are any ids left to
     // load, if loading a revision, or if $conditions was passed without $ids.
@@ -222,6 +229,35 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
   }
 
   /**
+   * Ensures integer entity IDs are valid.
+   *
+   * The identifier sanitization provided by this method has been introduced
+   * as Drupal used to rely on the database to facilitate this, which worked
+   * correctly with MySQL but led to errors with other DBMS such as PostgreSQL.
+   *
+   * @param array $ids
+   *   The entity IDs to verify. Non-integer IDs are removed from this array if
+   *   the entity type requires IDs to be integers.
+   */
+  protected function cleanIds(&$ids) {
+    $entity_info = entity_get_info($this->entityType);
+    if (isset($entity_info['base table field types'])) {
+      $id_type = $entity_info['base table field types'][$this->idKey];
+      if ($id_type == 'serial' || $id_type == 'int') {
+        $ids = array_filter($ids, array($this, 'filterId'));
+        $ids = array_map('intval', $ids);
+      }
+    }
+  }
+
+  /**
+   * Callback for array_filter that removes non-integer IDs.
+   */
+  protected function filterId($id) {
+    return is_numeric($id) && $id == (int) $id;
+  }
+
+  /**
    * Builds the query to load the entity.
    *
    * This has full revision support. For entities requiring special queries,
@@ -236,7 +272,9 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
    * @param $ids
    *   An array of entity IDs, or FALSE to load all entities.
    * @param $conditions
-   *   An array of conditions in the form 'field' => $value.
+   *   An array of conditions. Keys are field names on the entity's base table.
+   *   Values will be compared for equality. All the comparisons will be ANDed
+   *   together. This parameter is deprecated; use an EntityFieldQuery instead.
    * @param $revision_id
    *   The ID of the revision to load, or FALSE if this query is asking for the
    *   most current revision(s).
@@ -408,7 +446,7 @@ class EntityFieldQueryException extends Exception {}
  *
  * This class allows finding entities based on entity properties (for example,
  * node->changed), field values, and generic entity meta data (bundle,
- * entity type, entity id, and revision ID). It is not possible to query across
+ * entity type, entity ID, and revision ID). It is not possible to query across
  * multiple entity types. For example, there is no facility to find published
  * nodes written by users created in the last hour, as this would require
  * querying both node->status and user->created.
@@ -650,14 +688,36 @@ class EntityFieldQuery {
    * @param $field
    *   Either a field name or a field array.
    * @param $column
-   *   The column that should hold the value to be matched.
+   *   The column that should hold the value to be matched, defined in the
+   *   hook_field_schema() of this field. If this is omitted then all of the
+   *   other parameters are ignored, except $field, and this call will just be
+   *   adding a condition that says that the field has a value, rather than
+   *   testing the value itself.
    * @param $value
-   *   The value to test the column value against.
+   *   The value to test the column value against. In most cases, this is a
+   *   scalar. For more complex options, it is an array. The meaning of each
+   *   element in the array is dependent on $operator.
    * @param $operator
-   *   The operator to be used to test the given value.
+   *   The operator to be used to test the given value. The possible values are:
+   *   - '=', '<>', '>', '>=', '<', '<=', 'STARTS_WITH', 'CONTAINS': These
+   *     operators expect $value to be a literal of the same type as the
+   *     column.
+   *   - 'IN', 'NOT IN': These operators expect $value to be an array of
+   *     literals of the same type as the column.
+   *   - 'BETWEEN': This operator expects $value to be an array of two literals
+   *     of the same type as the column.
+   *   The operator can be omitted, and will default to 'IN' if the value is an
+   *   array, or to '=' otherwise.
    * @param $delta_group
    *   An arbitrary identifier: conditions in the same group must have the same
-   *   $delta_group.
+   *   $delta_group. For example, let's presume a multivalue field which has
+   *   two columns, 'color' and 'shape', and for entity ID 1, there are two
+   *   values: red/square and blue/circle. Entity ID 1 does not have values
+   *   corresponding to 'red circle'; however if you pass 'red' and 'circle' as
+   *   conditions, it will appear in the results -- by default queries will run
+   *   against any combination of deltas. By passing the conditions with the
+   *   same $delta_group it will ensure that only values attached to the same
+   *   delta are matched, and entity 1 would then be excluded from the results.
    * @param $language_group
    *   An arbitrary identifier: conditions in the same group must have the same
    *   $language_group.
@@ -732,9 +792,11 @@ class EntityFieldQuery {
    * @param $field
    *   Either a field name or a field array.
    * @param $column
-   *   A column defined in the hook_field_schema() of this field. If this is
-   *   omitted then the query will find only entities that have data in this
-   *   field, using the entity and property conditions if there are any.
+   *   The column that should hold the value to be matched, defined in the
+   *   hook_field_schema() of this field. If this is omitted then all of the
+   *   other parameters are ignored, except $field, and this call will just be
+   *   adding a condition that says that the field has a value, rather than
+   *   testing the value itself.
    * @param $value
    *   The value to test the column value against. In most cases, this is a
    *   scalar. For more complex options, it is an array. The meaning of each
@@ -753,10 +815,10 @@ class EntityFieldQuery {
    * @param $delta_group
    *   An arbitrary identifier: conditions in the same group must have the same
    *   $delta_group. For example, let's presume a multivalue field which has
-   *   two columns, 'color' and 'shape', and for entity id 1, there are two
+   *   two columns, 'color' and 'shape', and for entity ID 1, there are two
    *   values: red/square and blue/circle. Entity ID 1 does not have values
    *   corresponding to 'red circle', however if you pass 'red' and 'circle' as
-   *   conditions, it will appear in the  results - by default queries will run
+   *   conditions, it will appear in the results -- by default queries will run
    *   against any combination of deltas. By passing the conditions with the
    *   same $delta_group it will ensure that only values attached to the same
    *   delta are matched, and entity 1 would then be excluded from the results.

@@ -795,6 +795,14 @@ function update_fix_d7_requirements() {
 function update_fix_d7_install_profile() {
   $profile = drupal_get_profile();
 
+  // 'Default' profile has been renamed to 'Standard' in D7.
+  // We change the profile here to prevent a broken record in the system table.
+  // See system_update_7049().
+  if ($profile == 'default') {
+    $profile = 'standard';
+    variable_set('install_profile', $profile);
+  }
+
   $results = db_select('system', 's')
     ->fields('s', array('name', 'schema_version'))
     ->condition('name', $profile)
@@ -908,6 +916,8 @@ function update_get_d6_session_name() {
 }
 
 /**
+ * Implements callback_batch_operation().
+ *
  * Performs one update and stores the results for display on the results page.
  *
  * If an update function completes successfully, it should return a message
@@ -1078,6 +1088,8 @@ function update_batch($start, $redirect = NULL, $url = NULL, $batch = array(), $
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * Finishes the update process and stores the results for eventual display.
  *
  * After the updates run, all caches are flushed. The update results are

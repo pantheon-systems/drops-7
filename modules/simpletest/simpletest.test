@@ -322,6 +322,14 @@ class SimpleTestFunctionalTest extends DrupalWebTestCase {
  * Test internal testing framework browser.
  */
 class SimpleTestBrowserTestCase extends DrupalWebTestCase {
+
+  /**
+   * A flag indicating whether a cookie has been set in a test.
+   *
+   * @var bool
+   */
+  protected static $cookieSet = FALSE;
+
   public static function getInfo() {
     return array(
       'name' => 'SimpleTest browser',
@@ -380,6 +388,46 @@ EOF;
     $urls = $this->xpath('//a[text()=:text]', array(':text' => 'A second "even more weird" link, in memory of George O\'Malley'));
     $this->assertEqual($urls[0]['href'], 'link2', 'Match with mixed single and double quotes.');
   }
+
+  /**
+   * Tests that cookies set during a request are available for testing.
+   */
+  public function testCookies() {
+    // Check that the $this->cookies property is populated when a user logs in.
+    $user = $this->drupalCreateUser();
+    $edit = array('name' => $user->name, 'pass' => $user->pass_raw);
+    $this->drupalPost('<front>', $edit, t('Log in'));
+    $this->assertEqual(count($this->cookies), 1, 'A cookie is set when the user logs in.');
+
+    // Check that the name and value of the cookie match the request data.
+    $cookie_header = $this->drupalGetHeader('set-cookie', TRUE);
+
+    // The name and value are located at the start of the string, separated by
+    // an equals sign and ending in a semicolon.
+    preg_match('/^([^=]+)=([^;]+)/', $cookie_header, $matches);
+    $name = $matches[1];
+    $value = $matches[2];
+
+    $this->assertTrue(array_key_exists($name, $this->cookies), 'The cookie name is correct.');
+    $this->assertEqual($value, $this->cookies[$name]['value'], 'The cookie value is correct.');
+
+    // Set a flag indicating that a cookie has been set in this test.
+    // @see SimpleTestBrowserTestCase::testCookieDoesNotBleed().
+    self::$cookieSet = TRUE;
+  }
+
+  /**
+   * Tests that the cookies from a previous test do not bleed into a new test.
+   *
+   * @see SimpleTestBrowserTestCase::testCookies().
+   */
+  public function testCookieDoesNotBleed() {
+    // In order for this test to be effective it should always run after the
+    // testCookies() test.
+    $this->assertTrue(self::$cookieSet, 'Tests have been executed in the expected order.');
+    $this->assertEqual(count($this->cookies), 0, 'No cookies are present at the start of a new test.');
+  }
+
 }
 
 class SimpleTestMailCaptureTestCase extends DrupalWebTestCase {
@@ -703,7 +751,9 @@ class SimpleTestDiscoveryTestCase extends DrupalWebTestCase {
     $classes_all = simpletest_test_get_all();
     foreach (array(
       'Drupal\\simpletest\\Tests\\PSR0WebTest',
+      'Drupal\\simpletest\\Tests\\PSR4WebTest',
       'Drupal\\psr_0_test\\Tests\\ExampleTest',
+      'Drupal\\psr_4_test\\Tests\\ExampleTest',
     ) as $class) {
       $this->assert(!empty($classes_all['SimpleTest'][$class]), t('Class @class must be discovered by simpletest_test_get_all().', array('@class' => $class)));
     }
@@ -726,15 +776,20 @@ class SimpleTestDiscoveryTestCase extends DrupalWebTestCase {
       // Don't expect PSR-0 tests to be discovered on older PHP versions.
       return;
     }
-    // This one is provided by simpletest itself via PSR-0.
+    // These are provided by simpletest itself via PSR-0 and PSR-4.
     $this->assertText('PSR0 web test');
+    $this->assertText('PSR4 web test');
     $this->assertText('PSR0 example test: PSR-0 in disabled modules.');
+    $this->assertText('PSR4 example test: PSR-4 in disabled modules.');
     $this->assertText('PSR0 example test: PSR-0 in nested subfolders.');
+    $this->assertText('PSR4 example test: PSR-4 in nested subfolders.');
 
     // Test each test individually.
     foreach (array(
       'Drupal\\psr_0_test\\Tests\\ExampleTest',
       'Drupal\\psr_0_test\\Tests\\Nested\\NestedExampleTest',
+      'Drupal\\psr_4_test\\Tests\\ExampleTest',
+      'Drupal\\psr_4_test\\Tests\\Nested\\NestedExampleTest',
     ) as $class) {
       $this->drupalGet('admin/config/development/testing');
       $edit = array($class => TRUE);

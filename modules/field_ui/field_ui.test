@@ -22,7 +22,7 @@ class FieldUITestCase extends DrupalWebTestCase {
     parent::setUp($modules);
 
     // Create test user.
-    $admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer taxonomy'));
+    $admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer taxonomy', 'administer fields'));
     $this->drupalLogin($admin_user);
 
     // Create content type, with underscores.
@@ -445,6 +445,19 @@ class FieldUIManageFieldsTestCase extends FieldUITestCase {
     $this->assertText(t('The machine-readable name is already in use. It must be unique.'));
     $this->assertUrl($url, array(), 'Stayed on the same page.');
   }
+
+  /**
+   * Tests that external URLs in the 'destinations' query parameter are blocked.
+   */
+  function testExternalDestinations() {
+    $path = 'admin/structure/types/manage/article/fields/field_tags/field-settings';
+    $options = array(
+      'query' => array('destinations' => array('http://example.com')),
+    );
+    $this->drupalPost($path, NULL, t('Save field settings'), $options);
+
+    $this->assertUrl('admin/structure/types/manage/article/fields', array(), 'Stayed on the same site.');
+  }
 }
 
 /**
@@ -682,7 +695,7 @@ class FieldUIAlterTestCase extends DrupalWebTestCase {
     parent::setUp(array('field_test'));
 
     // Create test user.
-    $admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer users'));
+    $admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'administer users', 'administer fields'));
     $this->drupalLogin($admin_user);
   }
 

@@ -390,6 +390,18 @@ class ModuleDependencyTestCase extends ModuleTestCase {
   }
 
   /**
+   * Checks functionality of project namespaces for dependencies.
+   */
+  function testProjectNamespaceForDependencies() {
+    // Enable module with project namespace to ensure nothing breaks.
+    $edit = array(
+      'modules[Testing][system_project_namespace_test][enable]' => TRUE,
+    );
+    $this->drupalPost('admin/modules', $edit, t('Save configuration'));
+    $this->assertModules(array('system_project_namespace_test'), TRUE);
+  }
+
+  /**
    * Attempt to enable translation module without locale enabled.
    */
   function testEnableWithoutDependency() {
@@ -556,6 +568,34 @@ class ModuleDependencyTestCase extends ModuleTestCase {
     $this->drupalPost(NULL, NULL, t('Uninstall'));
     $this->assertText(t('The selected modules have been uninstalled.'), 'Modules status has been updated.');
   }
+
+  /**
+   * Tests whether the correct module metadata is returned.
+   */
+  function testModuleMetaData() {
+    // Generate the list of available modules.
+    $modules = system_rebuild_module_data();
+    // Check that the mtime field exists for the system module.
+    $this->assertTrue(!empty($modules['system']->info['mtime']), 'The system.info file modification time field is present.');
+    // Use 0 if mtime isn't present, to avoid an array index notice.
+    $test_mtime = !empty($modules['system']->info['mtime']) ? $modules['system']->info['mtime'] : 0;
+    // Ensure the mtime field contains a number that is greater than zero.
+    $this->assertTrue(is_numeric($test_mtime) && ($test_mtime > 0), 'The system.info file modification time field contains a timestamp.');
+  }
+
+  /**
+   * Tests whether the correct theme metadata is returned.
+   */
+  function testThemeMetaData() {
+    // Generate the list of available themes.
+    $themes = system_rebuild_theme_data();
+    // Check that the mtime field exists for the bartik theme.
+    $this->assertTrue(!empty($themes['bartik']->info['mtime']), 'The bartik.info file modification time field is present.');
+    // Use 0 if mtime isn't present, to avoid an array index notice.
+    $test_mtime = !empty($themes['bartik']->info['mtime']) ? $themes['bartik']->info['mtime'] : 0;
+    // Ensure the mtime field contains a number that is greater than zero.
+    $this->assertTrue(is_numeric($test_mtime) && ($test_mtime > 0), 'The bartik.info file modification time field contains a timestamp.');
+  }
 }
 
 /**
@@ -686,7 +726,7 @@ class IPAddressBlockingTestCase extends DrupalWebTestCase {
 
     // Block a valid IP address.
     $edit = array();
-    $edit['ip'] = '192.168.1.1';
+    $edit['ip'] = '1.2.3.3';
     $this->drupalPost('admin/config/people/ip-blocking', $edit, t('Add'));
     $ip = db_query("SELECT iid from {blocked_ips} WHERE ip = :ip", array(':ip' => $edit['ip']))->fetchField();
     $this->assertTrue($ip, t('IP address found in database.'));
@@ -694,7 +734,7 @@ class IPAddressBlockingTestCase extends DrupalWebTestCase {
 
     // Try to block an IP address that's already blocked.
     $edit = array();
-    $edit['ip'] = '192.168.1.1';
+    $edit['ip'] = '1.2.3.3';
     $this->drupalPost('admin/config/people/ip-blocking', $edit, t('Add'));
     $this->assertText(t('This IP address is already blocked.'));
 
@@ -729,6 +769,25 @@ class IPAddressBlockingTestCase extends DrupalWebTestCase {
      // $edit['ip'] = ip_address();
      // $this->drupalPost('admin/config/people/ip-blocking', $edit, t('Save'));
      // $this->assertText(t('You may not block your own IP address.'));
+  }
+
+  /**
+   * Test duplicate IP addresses are not present in the 'blocked_ips' table.
+   */
+  function testDuplicateIpAddress() {
+    drupal_static_reset('ip_address');
+    $submit_ip = $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+    system_block_ip_action();
+    system_block_ip_action();
+    $ip_count = db_query("SELECT iid from {blocked_ips} WHERE ip = :ip", array(':ip' => $submit_ip))->rowCount();
+    $this->assertEqual('1', $ip_count);
+    drupal_static_reset('ip_address');
+    $submit_ip = $_SERVER['REMOTE_ADDR'] = ' ';
+    system_block_ip_action();
+    system_block_ip_action();
+    system_block_ip_action();
+    $ip_count = db_query("SELECT iid from {blocked_ips} WHERE ip = :ip", array(':ip' => $submit_ip))->rowCount();
+    $this->assertEqual('1', $ip_count);
   }
 }
 
@@ -865,6 +924,29 @@ class CronRunTestCase extends DrupalWebTestCase {
     $result = variable_get('common_test_cron');
     $this->assertEqual($result, 'success', 'Cron correctly handles exceptions thrown during hook_cron() invocations.');
   }
+
+  /**
+   * Tests that hook_flush_caches() is not invoked on every single cron run.
+   *
+   * @see system_cron()
+   */
+  public function testCronCacheExpiration() {
+    module_enable(array('system_cron_test'));
+    variable_del('system_cron_test_flush_caches');
+
+    // Invoke cron the first time: hook_flush_caches() should be called and then
+    // get cached.
+    drupal_cron_run();
+    $this->assertEqual(variable_get('system_cron_test_flush_caches'), 1, 'hook_flush_caches() was invoked the first time.');
+    $cache = cache_get('system_cache_tables');
+    $this->assertEqual(empty($cache), FALSE, 'Cache is filled with cache table data.');
+
+    // Run cron again and ensure that hook_flush_caches() is not called.
+    variable_del('system_cron_test_flush_caches');
+    drupal_cron_run();
+    $this->assertNull(variable_get('system_cron_test_flush_caches'), 'hook_flush_caches() was not invoked the second time.');
+  }
+
 }
 
 /**
@@ -883,7 +965,7 @@ class CronQueueTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp(array('common_test', 'common_test_cron_helper'));
+    parent::setUp(array('common_test', 'common_test_cron_helper', 'cron_queue_test'));
   }
 
   /**
@@ -901,6 +983,23 @@ class CronQueueTestCase extends DrupalWebTestCase {
 
     // The item should be left in the queue.
     $this->assertEqual($queue->numberOfItems(), 1, 'Failing item still in the queue after throwing an exception.');
+  }
+
+  /**
+   * Tests worker defined as a class method callable.
+   */
+  function testCallable() {
+    $queue = DrupalQueue::get('cron_queue_test_callback');
+
+    // Enqueue an item for processing.
+    $queue->createItem(array($this->randomName() => $this->randomName()));
+
+    // Run cron; the worker should perform the task and delete the item from the
+    // queue.
+    $this->cronRun();
+
+    // The queue should be empty.
+    $this->assertEqual($queue->numberOfItems(), 0);
   }
 
 }
@@ -1039,6 +1138,11 @@ class PageNotFoundTestCase extends DrupalWebTestCase {
       'body' => array(LANGUAGE_NONE => array(array('value' => $this->randomName(100)))),
     );
     $node = $this->drupalCreateNode($edit);
+
+    // As node IDs must be integers, make sure requests for non-integer IDs
+    // return a page not found error.
+    $this->drupalGet('node/invalid');
+    $this->assertResponse(404);
 
     // Use a custom 404 page.
     $this->drupalPost('admin/config/system/site-information', array('site_404' => 'node/' . $node->nid), t('Save configuration'));
@@ -1265,7 +1369,23 @@ class DateTimeFunctionalTest extends DrupalWebTestCase {
     $this->assertEqual($this->getUrl(), url('admin/config/regional/date-time/formats', array('absolute' => TRUE)), 'Correct page redirection.');
     $this->assertText(t('Custom date format updated.'), 'Custom date format successfully updated.');
 
+    // Check that ajax callback is protected by CSRF token.
+    $this->drupalGet('admin/config/regional/date-time/formats/lookup', array('query' => array('format' => 'Y m d')));
+    $this->assertResponse(403, 'Access denied with no token');
+    $this->drupalGet('admin/config/regional/date-time/formats/lookup', array('query' => array('token' => 'invalid', 'format' => 'Y m d')));
+    $this->assertResponse(403, 'Access denied with invalid token');
+    $this->drupalGet('admin/config/regional/date-time/formats');
+    $this->clickLink(t('edit'));
+    $settings = $this->drupalGetSettings();
+    $lookup_url = $settings['dateTime']['date-format']['lookup'];
+    preg_match('/token=([^&]+)/', $lookup_url, $matches);
+    $this->assertFalse(empty($matches[1]), 'Found token value');
+    $this->drupalGet('admin/config/regional/date-time/formats/lookup', array('query' => array('token' => $matches[1], 'format' => 'Y m d')));
+    $this->assertResponse(200, 'Access allowed with valid token');
+    $this->assertText(format_date(time(), 'custom', 'Y m d'));
+
     // Delete custom date format.
+    $this->drupalGet('admin/config/regional/date-time/formats');
     $this->clickLink(t('delete'));
     $this->drupalPost($this->getUrl(), array(), t('Remove'));
     $this->assertEqual($this->getUrl(), url('admin/config/regional/date-time/formats', array('absolute' => TRUE)), 'Correct page redirection.');
@@ -2254,6 +2374,20 @@ class UpdateScriptFunctionalTest extends DrupalWebTestCase {
   }
 
   /**
+   * Tests that there are no pending updates for the first test method.
+   */
+  function testNoPendingUpdates() {
+    // Ensure that for the first test method in a class, there are no pending
+    // updates. This tests a drupal_get_schema_versions() bug that previously
+    // led to the wrong schema version being recorded for the initial install
+    // of a child site during automated testing.
+    $this->drupalLogin($this->update_user);
+    $this->drupalGet($this->update_url, array('external' => TRUE));
+    $this->drupalPost(NULL, array(), t('Continue'));
+    $this->assertText(t('No pending updates.'), 'End of update process was reached.');
+  }
+
+  /**
    * Tests access to the update script.
    */
   function testUpdateAccess() {
@@ -2334,6 +2468,12 @@ class UpdateScriptFunctionalTest extends DrupalWebTestCase {
     $this->assertText('This is a requirements error provided by the update_script_test module.');
     $this->clickLink('try again');
     $this->assertText('This is a requirements error provided by the update_script_test module.');
+
+    // Check if the optional 'value' key displays without a notice.
+    variable_set('update_script_test_requirement_type', REQUIREMENT_INFO);
+    $this->drupalGet($this->update_url, array('external' => TRUE));
+    $this->assertText('This is a requirements info provided by the update_script_test module.');
+    $this->assertNoText('Notice: Undefined index: value in theme_status_report()');
   }
 
   /**
@@ -2795,5 +2935,77 @@ class SystemValidTokenTest extends DrupalUnitTestCase {
       return parent::errorHandler($severity, $message, $file, $line);
     }
     return TRUE;
+  }
+}
+
+/**
+ * Tests drupal_set_message() and related functions.
+ */
+class DrupalSetMessageTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Messages',
+      'description' => 'Tests that messages can be displayed using drupal_set_message().',
+      'group' => 'System',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('system_test');
+  }
+
+  /**
+   * Tests setting messages and removing one before it is displayed.
+   */
+  function testSetRemoveMessages() {
+    // The page at system-test/drupal-set-message sets two messages and then
+    // removes the first before it is displayed.
+    $this->drupalGet('system-test/drupal-set-message');
+    $this->assertNoText('First message (removed).');
+    $this->assertText('Second message (not removed).');
+  }
+}
+
+/**
+ * Tests confirm form destinations.
+ */
+class ConfirmFormTest extends DrupalWebTestCase {
+  protected $admin_user;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Confirm form',
+      'description' => 'Tests that the confirm form does not use external destinations.',
+      'group' => 'System',
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+
+    $this->admin_user = $this->drupalCreateUser(array('administer users'));
+    $this->drupalLogin($this->admin_user);
+  }
+
+  /**
+   * Tests that the confirm form does not use external destinations.
+   */
+  function testConfirmForm() {
+    $this->drupalGet('user/1/cancel');
+    $this->assertCancelLinkUrl(url('user/1'));
+    $this->drupalGet('user/1/cancel', array('query' => array('destination' => 'node')));
+    $this->assertCancelLinkUrl(url('node'));
+    $this->drupalGet('user/1/cancel', array('query' => array('destination' => 'http://example.com')));
+    $this->assertCancelLinkUrl(url('user/1'));
+  }
+
+  /**
+   * Asserts that a cancel link is present pointing to the provided URL.
+   */
+  function assertCancelLinkUrl($url, $message = '', $group = 'Other') {
+    $links = $this->xpath('//a[normalize-space(text())=:label and @href=:url]', array(':label' => t('Cancel'), ':url' => $url));
+    $message = ($message ? $message : format_string('Cancel link with url %url found.', array('%url' => $url)));
+    return $this->assertTrue(isset($links[0]), $message, $group);
   }
 }

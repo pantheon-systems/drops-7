@@ -640,13 +640,13 @@ function system_theme_settings_validate($form, &$form_state) {
 
   // If the user provided a path for a logo or favicon file, make sure a file
   // exists at that path.
-  if ($form_state['values']['logo_path']) {
+  if (!empty($form_state['values']['logo_path'])) {
     $path = _system_theme_settings_validate_path($form_state['values']['logo_path']);
     if (!$path) {
       form_set_error('logo_path', t('The custom logo path is invalid.'));
     }
   }
-  if ($form_state['values']['favicon_path']) {
+  if (!empty($form_state['values']['favicon_path'])) {
     $path = _system_theme_settings_validate_path($form_state['values']['favicon_path']);
     if (!$path) {
       form_set_error('favicon_path', t('The custom favicon path is invalid.'));
@@ -703,14 +703,16 @@ function system_theme_settings_submit($form, &$form_state) {
 
   // If the user uploaded a new logo or favicon, save it to a permanent location
   // and use it in place of the default theme-provided file.
-  if ($file = $values['logo_upload']) {
+  if (!empty($values['logo_upload'])) {
+    $file = $values['logo_upload'];
     unset($values['logo_upload']);
     $filename = file_unmanaged_copy($file->uri);
     $values['default_logo'] = 0;
     $values['logo_path'] = $filename;
     $values['toggle_logo'] = 1;
   }
-  if ($file = $values['favicon_upload']) {
+  if (!empty($values['favicon_upload'])) {
+    $file = $values['favicon_upload'];
     unset($values['favicon_upload']);
     $filename = file_unmanaged_copy($file->uri);
     $values['default_favicon'] = 0;
@@ -1854,7 +1856,7 @@ function system_image_toolkit_settings() {
   if (count($toolkits_available) == 0) {
     variable_del('image_toolkit');
     $form['image_toolkit_help'] = array(
-      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('gd-link' => url('http://php.net/gd'))),
+      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('!gd-link' => url('http://php.net/gd'))),
     );
     return $form;
   }
@@ -2200,6 +2202,11 @@ function system_add_date_format_type_form_submit($form, &$form_state) {
  * Return the date for a given format string via Ajax.
  */
 function system_date_time_lookup() {
+  // This callback is protected with a CSRF token because user input from the
+  // query string is reflected in the output.
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'admin/config/regional/date-time/formats/lookup')) {
+    return MENU_ACCESS_DENIED;
+  }
   $result = format_date(REQUEST_TIME, 'custom', $_GET['format']);
   drupal_json_output($result);
 }
@@ -2590,6 +2597,8 @@ function theme_status_report($variables) {
     if (empty($requirement['#type'])) {
       $severity = $severities[isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK];
       $severity['icon'] = '<div title="' . $severity['title'] . '"><span class="element-invisible">' . $severity['title'] . '</span></div>';
+      // The requirement's 'value' key is optional, provide a default value.
+      $requirement['value'] = isset($requirement['value']) ? $requirement['value'] : '';
 
       // Output table row(s)
       if (!empty($requirement['description'])) {
@@ -2644,8 +2653,8 @@ function theme_system_modules_fieldset($variables) {
     }
     $row[] = array('data' => $description, 'class' => array('description'));
     // Display links (such as help or permissions) in their own columns.
-    foreach (array('help', 'permissions', 'configure') as $key) {
-      $row[] = array('data' => drupal_render($module['links'][$key]), 'class' => array($key));
+    foreach (array('help', 'permissions', 'configure') as $link_type) {
+      $row[] = array('data' => drupal_render($module['links'][$link_type]), 'class' => array($link_type));
     }
     $rows[] = $row;
   }
@@ -2873,13 +2882,14 @@ function system_date_time_formats() {
  * Allow users to add additional date formats.
  */
 function system_configure_date_formats_form($form, &$form_state, $dfid = 0) {
+  $ajax_path = 'admin/config/regional/date-time/formats/lookup';
   $js_settings = array(
     'type' => 'setting',
     'data' => array(
       'dateTime' => array(
         'date-format' => array(
           'text' => t('Displayed as'),
-          'lookup' => url('admin/config/regional/date-time/formats/lookup'),
+          'lookup' => url($ajax_path, array('query' => array('token' => drupal_get_token($ajax_path)))),
         ),
       ),
     ),

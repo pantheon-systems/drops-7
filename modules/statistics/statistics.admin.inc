@@ -59,7 +59,7 @@ function statistics_recent_hits() {
  * statistics settings form, but is dependent on cron running.
  *
  * @return
- *   A render array containing information about the the top pages.
+ *   A render array containing information about the top pages.
  */
 function statistics_top_pages() {
   $header = array(
@@ -137,7 +137,8 @@ function statistics_top_visitors() {
     ->groupBy('u.name')
     ->groupBy('bl.iid')
     ->limit(30)
-    ->orderByHeader($header);
+    ->orderByHeader($header)
+    ->orderBy('a.hostname');
 
   $uniques_query = db_select('accesslog')->distinct();
   $uniques_query->fields('accesslog', array('uid', 'hostname'));

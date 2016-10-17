@@ -106,8 +106,10 @@ Drupal.tableDrag = function (table, tableSettings) {
 
   // Add mouse bindings to the document. The self variable is passed along
   // as event handlers do not have direct access to the tableDrag object.
-  $(document).bind('mousemove', function (event) { return self.dragRow(event, self); });
-  $(document).bind('mouseup', function (event) { return self.dropRow(event, self); });
+  $(document).bind('mousemove pointermove', function (event) { return self.dragRow(event, self); });
+  $(document).bind('mouseup pointerup', function (event) { return self.dropRow(event, self); });
+  $(document).bind('touchmove', function (event) { return self.dragRow(event.originalEvent.touches[0], self); });
+  $(document).bind('touchend', function (event) { return self.dropRow(event.originalEvent.touches[0], self); });
 };
 
 /**
@@ -274,7 +276,10 @@ Drupal.tableDrag.prototype.makeDraggable = function (item) {
   });
 
   // Add the mousedown action for the handle.
-  handle.mousedown(function (event) {
+  handle.bind('mousedown touchstart pointerdown', function (event) {
+    if (event.originalEvent.type == "touchstart") {
+      event = event.originalEvent.touches[0];
+    }
     // Create a new dragObject recording the event information.
     self.dragObject = {};
     self.dragObject.initMouseOffset = self.getMouseOffset(item, event);
@@ -500,7 +505,7 @@ Drupal.tableDrag.prototype.dragRow = function (event, self) {
     if (self.indentEnabled) {
       var xDiff = self.currentMouseCoords.x - self.dragObject.indentMousePos.x;
       // Set the number of indentations the mouse has been moved left or right.
-      var indentDiff = Math.round(xDiff / self.indentAmount * self.rtl);
+      var indentDiff = Math.round(xDiff / self.indentAmount);
       // Indent the row with our estimated diff, which may be further
       // restricted according to the rows around this row.
       var indentChange = self.rowObject.indent(indentDiff);

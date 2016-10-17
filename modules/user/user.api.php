@@ -123,8 +123,8 @@ function hook_user_cancel($edit, $account, $method) {
  *   description is NOT used for the radio button, but instead should provide
  *   additional explanation to the user seeking to cancel their account.
  * - access: (optional) A boolean value indicating whether the user can access
- *   a method. If #access is defined, the method cannot be configured as default
- *   method.
+ *   a method. If access is defined, the method cannot be configured as the
+ *   default method.
  *
  * @param $methods
  *   An array containing user account cancellation methods, keyed by method id.
@@ -183,7 +183,23 @@ function hook_user_operations() {
 }
 
 /**
- * Retrieve a list of user setting or profile information categories.
+ * Define a list of user settings or profile information categories.
+ *
+ * There are two steps to using hook_user_categories():
+ * - Create the category with hook_user_categories().
+ * - Display that category on the form ID of "user_profile_form" with
+ *   hook_form_FORM_ID_alter().
+ *
+ * Step one builds out the category but it won't be visible on your form until
+ * you explicitly tell it to do so.
+ *
+ * The function in step two should contain the following code in order to
+ * display your new category:
+ * @code
+ * if ($form['#user_category'] == 'mycategory') {
+ *   // Return your form here.
+ * }
+ * @endcode
  *
  * @return
  *   An array of associative arrays. Each inner array has elements:
@@ -327,14 +343,6 @@ function hook_user_logout($account) {
  * The module should format its custom additions for display and add them to the
  * $account->content array.
  *
- * Note that when this hook is invoked, the changes have not yet been written to
- * the database, because a database transaction is still in progress. The
- * transaction is not finalized until the save operation is entirely completed
- * and user_save() goes out of scope. You should not rely on data in the
- * database at this time as it is not updated yet. You should also note that any
- * write/update database queries executed from this hook are also not committed
- * immediately. Check user_save() and db_transaction() for more info.
- *
  * @param $account
  *   The user object on which the operation is being performed.
  * @param $view_mode
@@ -386,7 +394,7 @@ function hook_user_view_alter(&$build) {
 }
 
 /**
- * Inform other modules that a user role is about to be saved.
+ * Act on a user role being inserted or updated.
  *
  * Modules implementing this hook can act on the user role object before
  * it has been saved to the database.
@@ -405,7 +413,7 @@ function hook_user_role_presave($role) {
 }
 
 /**
- * Inform other modules that a user role has been added.
+ * Respond to creation of a new user role.
  *
  * Modules implementing this hook can act on the user role object when saved to
  * the database. It's recommended that you implement this hook if your module
@@ -426,7 +434,7 @@ function hook_user_role_insert($role) {
 }
 
 /**
- * Inform other modules that a user role has been updated.
+ * Respond to updates to a user role.
  *
  * Modules implementing this hook can act on the user role object when updated.
  * It's recommended that you implement this hook if your module adds additional
@@ -447,7 +455,7 @@ function hook_user_role_update($role) {
 }
 
 /**
- * Inform other modules that a user role has been deleted.
+ * Respond to user role deletion.
  *
  * This hook allows you act when a user role has been deleted.
  * If your module stores references to roles, it's recommended that you

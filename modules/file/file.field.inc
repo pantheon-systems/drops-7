@@ -92,6 +92,7 @@ function file_field_instance_settings_form($field, $instance) {
     '#description' => t('Separate extensions with a space or comma and do not include the leading dot.'),
     '#element_validate' => array('_file_generic_settings_extensions'),
     '#weight' => 1,
+    '#maxlength' => 256,
     // By making this field required, we prevent a potential security issue
     // that would allow files of any type to be uploaded.
     '#required' => TRUE,
@@ -251,6 +252,12 @@ function file_field_insert($entity_type, $entity, $field, $instance, $langcode, 
  * Checks for files that have been removed from the object.
  */
 function file_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  // Check whether the field is defined on the object.
+  if (!isset($entity->{$field['field_name']})) {
+    // We cannot check for removed files if the field is not defined.
+    return;
+  }
+
   list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
 
   // On new revisions, all files are considered to be a new usage and no
@@ -625,7 +632,7 @@ function file_field_widget_process($element, &$form_state, $form) {
   $element['#theme'] = 'file_widget';
 
   // Add the display field if enabled.
-  if (!empty($field['settings']['display_field']) && $item['fid']) {
+  if (!empty($field['settings']['display_field'])) {
     $element['display'] = array(
       '#type' => empty($item['fid']) ? 'hidden' : 'checkbox',
       '#title' => t('Include file in display'),
