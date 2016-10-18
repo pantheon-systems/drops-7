@@ -104,7 +104,7 @@ function profile_switcher_admin_settings_submit($form, &$form_state) {
   $old_profile = $form['profile_switcher_profile_old']['#value'];
   
   if ($new_profile == $old_profile) {
-    return;
+    $old_profile = FALSE;
   }
   variable_set('install_profile', $new_profile);
     
@@ -135,20 +135,26 @@ function profile_switcher_admin_settings_submit($form, &$form_state) {
     ->condition('name', $new_profile, '=')
     ->execute();
   }
-
-  //@TODO: Add check to see if new profile was enabled
-  //disable the old profile if possible
-  $old_status = db_query('SELECT status FROM {system} WHERE name = :name', array(':name' => $old_profile))->fetchField();
-
-  if ($old_status) {
   
-    $old_profile_deactivated = db_update('system') // Table name no longer needs {}
-    ->fields(array(
-      'status' => 0,
-     ))
-    ->condition('name', $old_profile, '=')
-    ->execute();
-  }
+  if ($old_profile) {
+		//@TODO: Add check to see if new profile was enabled
+		//disable the old profile if possible
+		$old_status = db_query('SELECT status FROM {system} WHERE name = :name', array(':name' => $old_profile))->fetchField();
 
-  drupal_set_message(t('@new_profile was enabled.  @old_profile was disabled.', array('@new_profile' => $new_profile, '@old_profile' => $old_profile)));
+		if ($old_status) {
+	
+			$old_profile_deactivated = db_update('system') // Table name no longer needs {}
+			->fields(array(
+				'status' => 0,
+			 ))
+			->condition('name', $old_profile, '=')
+			->execute();
+		}
+		
+		drupal_set_message(t('@new_profile was enabled.  @old_profile was disabled.', array('@new_profile' => $new_profile, '@old_profile' => $old_profile)));
+  }
+  else {
+    drupal_set_message(t('@new_profile was re-enabled.', array('@new_profile' => $new_profile)));
+  }
 }
+  

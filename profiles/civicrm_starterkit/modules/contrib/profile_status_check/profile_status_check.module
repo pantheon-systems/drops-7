@@ -296,13 +296,41 @@ function profile_status_check_list_modules() {
         $version = isset($info['version']) ? $info['version'] : 'NO VERSION';
         $message = $info['name'] . ' - ' . $version . ' from ' . dirname($file->uri) . ' is overriding ' ;
         
-        // get version from profile 
+        // get version info from the original version of the module in the profile dir
         if (file_exists($info_file = dirname($files[$file->name]->uri) . '/' . $file->name . '.info')) {
           // Get the .info file for the module or theme this file belongs to.
           $info_old = drupal_parse_info_file($info_file);
           $version = isset($info_old['version']) ? $info_old['version'] : 'NO VERSION';
-          $message .= 'version ' . $version . ' from ' . dirname($files[$file->name]->uri);
+          $message .= 'version ' . $version . ' from ' . dirname($files[$file->name]->uri) . "\n"; 
+           
         }
+        
+        // check for patches at root of module
+        $dir_base = dirname($file->uri);
+        $tmp_files = file_scan_directory($dir_base, '/.*\.patch$/');
+  
+        foreach ($tmp_files as $file) {
+          //first remove the .patch
+          $filename = str_replace('.patch', '', $file->filename);
+          $patch_parts = explode('-', $filename);
+          // this isn't perfect, but if the includes a number > 1,000 that is very likely the 
+          // Drupal.org node number and not the comment number
+          foreach ($patch_parts as $part) {
+						if (is_numeric($part) && $part > 1000) {
+							//link to the drupal node
+							$part_message[$file->filename] = "<p>" . 'PATCH: ' . l($file->filename, 'https://www.drupal.org/node/' . $part) . "<p>";
+							// @TODO: can we get the name of the node and status w/ wget?	  
+						} 
+          }
+          $message .= isset($part_message[$file->filename]) ? $part_message[$file->filename] :  "<p>" . 'PATCH: ' . $file->filename . "</p>";
+        }
+        
+        // check for patches in subdirectories
+        // foreach ($search as $directory) {
+        // $tmp_files = file_scan_directory($dir_base . $directory, '/.*\.patch$/');
+        // $files = array_merge($tmp_files, $files);
+        // }
+        
         // If the module or theme is incompatible with Drupal core, remove it
         // from the array for the current search directory, so it is not
         // overwritten when merged with the $files array.
@@ -333,4 +361,4 @@ function profile_status_check_list_modules() {
   } 
   
   return $modules;
-}
+} 
