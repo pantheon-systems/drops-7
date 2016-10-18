@@ -12,6 +12,18 @@ function captcha_schema() {
   // Table for positions and types of the challenges.
   $schema['captcha_points'] = array(
     'description' => 'This table describes which challenges should be added to which forms.',
+    'export' => array(
+      'key' => 'form_id',
+      'identifier' => 'captcha',
+      'default hook' => 'captcha_default_points',  // Function hook name.
+      'status' => 'mark_status',
+      'api' => array(
+        'owner' => 'captcha',
+        'api' => 'captcha',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
     'fields' => array(
       'form_id' => array(
         'description' => 'The form_id of the form to add a CAPTCHA to.',
@@ -97,7 +109,7 @@ function captcha_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-      )
+      ),
     ),
     'primary key' => array('csid'),
     'indexes' => array(
@@ -109,7 +121,7 @@ function captcha_schema() {
 }
 
 /**
- * Implementation of hook_requirements().
+ * Implements of hook_requirements().
  */
 function captcha_requirements($phase) {
   $requirements = array();
@@ -130,29 +142,10 @@ function captcha_requirements($phase) {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements of hook_install().
  */
 function captcha_install() {
   $t = get_t();
-  // Insert some default CAPTCHA points.
-  $form_ids = array(
-    'contact_site_form', 'contact_personal_form',
-    'user_register_form', 'user_pass', 'user_login', 'user_login_block',
-    'forum_node_form'
-  );
-  // Add form_ids of all currently known node types too.
-  foreach (node_type_get_names() as $type => $name) {
-    $form_ids[] = 'comment_node_' . $type . '_form';
-  }
-  foreach ($form_ids as $form_id) {
-    db_insert('captcha_points')
-      ->fields(array(
-        'form_id' => $form_id,
-        'module' => NULL,
-        'captcha_type' => NULL,
-      ))
-      ->execute();
-  }
 
   // Be friendly to your users: what to do after install?
   drupal_set_message($t('You can now <a href="!captcha_admin">configure the CAPTCHA module</a> for your site.',
@@ -167,7 +160,7 @@ function captcha_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements of hook_uninstall().
  */
 function captcha_uninstall() {
   drupal_uninstall_schema('captcha');
@@ -176,7 +169,7 @@ function captcha_uninstall() {
 }
 
 /**
- * Implementation of hook_update_N()
+ * Implements of hook_update_N().
  */
 function captcha_update_6200() {
   $items = array();
@@ -239,7 +232,7 @@ function captcha_update_6200() {
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-      )
+      ),
     ),
     'primary key' => array('csid'),
     'indexes' => array(
@@ -253,7 +246,8 @@ function captcha_update_6200() {
 }
 
 /**
- * Implementation of hook_update_N()
+ * Implements of hook_update_N().
+ *
  * Change the captcha points with the old text CAPTCHA, which was
  * removed from the 6.x-2.x branch, to the simple math CAPTCHA.
  */
@@ -264,7 +258,8 @@ function captcha_update_6201() {
 }
 
 /**
- * Implementation of hook_update_N()
+ * Implements of hook_update_N().
+ *
  * Add a CAPTCHA token column to captcha_sessions table.
  */
 function captcha_update_6202() {
@@ -274,7 +269,8 @@ function captcha_update_6202() {
 }
 
 /**
- * Implementation of hook_update_N()
+ * Implements of hook_update_N().
+ *
  * Rename the type field to captcha_type in captcha_points.
  */
 function captcha_update_6203() {

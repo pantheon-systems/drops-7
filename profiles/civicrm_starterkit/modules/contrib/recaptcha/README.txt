@@ -6,14 +6,13 @@ improve the CAPTCHA system and protect email addresses. For
 more information on what reCAPTCHA is, please visit:
     https://www.google.com/recaptcha
 
+This version of the module uses the new Google No CAPTCHA reCAPTCHA API.
 
 DEPENDENCIES
 ------------
 
-* reCAPTCHA depends on the CAPTCHA module.
+* reCAPTCHA module depends on the CAPTCHA module.
   https://drupal.org/project/captcha
-* Some people have found that they also need to use jQuery Update module.
-  https://drupal.org/project/jquery_update
 
 
 CONFIGURATION
@@ -26,79 +25,28 @@ CONFIGURATION
    administration page available at:
        admin/config/people/captcha/recaptcha
 
-3. Register for a public and private reCAPTCHA key at:
-       https://www.google.com/recaptcha/whyrecaptcha
+3. Register your web site at
+       https://www.google.com/recaptcha/admin/create
 
-4. Input the keys into the reCAPTCHA settings. The rest of
-   the settings should be fine as their defaults.
+4. Input the site and private keys into the reCAPTCHA settings.
 
 5. Visit the Captcha administration page and set where you
    want the reCAPTCHA form to be presented:
        admin/config/people/captcha
 
+KNOWN ISSUES
+------------
 
-MAILHIDE INPUT FORMAT
----------------------
+- The PHP setting 'arg_separator.output' set by Drupal core causes conflicts
+  with the Google reCAPTCHA library. This setting is and was never used by
+  Drupal core, but still exist in "settings.php" and need to be removed.
+    
+  See https://www.drupal.org/node/2476237 for more information.
 
-The reCAPTCHA module also comes with an input format to
-protect email addresses. This, of course, is optional to
-use and is only there if you want it. The following is how
-you use that input filter:
-
-1. Enable the reCAPTCHA Mailhide module:
-       admin/modules
-
-2. Head over to your text format settings:
-       admin/config/content/formats
-
-3. Edit your default input format and add the reCAPTCHA
-   Mailhide filter.
-
-4. Click on the Configure tab and put in a public and
-   private Mailhide key obtained from:
-       https://www.google.com/recaptcha/mailhide/apikey
-
-5. Use the Rearrange tab to rearrange the weight of the
-   filter depending on what filters already exist.  Make
-   sure it is before the URL Filter.
-
-Note: You will require the installation of the mcrypt
-      PHP module in your web server for Mailhide to work:
-         http://php.net/manual/en/ref.mcrypt.php
-
-
-MULTI-DOMAIN SUPPORT
---------------------
-
-Since reCAPTCHA uses API keys that are unique to each
-domain, if you're using a multi-domain system using the
-same database, the reCAPTCHA module won't work when
-querying the reCAPTCHA web service.  If you put the
-following into your sites/mysite/settings.php file for
-each domain, it will override the API key values and make
-it so multi-domain systems are capable.
-
-  $conf = array(
-    'recaptcha_public_key' =>  'my other public key',
-    'recaptcha_private_key' =>  'my other private key',
-  );
-
-
-CUSTOM RECAPTCHA THEME
-----------------------
-
-You can create a custom reCAPTCHA theme widget by setting
-the theme of the reCAPTCHA form to "custom" in the
-reCAPTCHA administration page.  This will output a custom
-form that is themeable through the theme function:
-  theme_recaptcha_custom_widget().
-
-If you don't implement this function, it is still quite
-easily customizable through manipulating the CSS.
-
-For more information on this, visit:
-https://developers.google.com/recaptcha/docs/customization
-
+- cURL requests fail because of outdated root certificate. The reCAPTCHA module
+  may not able to connect to Google servers and fails to verify the answer.
+  
+  See https://www.drupal.org/node/2481341 for more information.
 
 THANK YOU
 ---------
