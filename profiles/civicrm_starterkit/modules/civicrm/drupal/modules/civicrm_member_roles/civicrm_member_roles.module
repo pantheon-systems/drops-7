@@ -518,25 +518,48 @@ function _civicrm_member_roles_sync($ext_uid = NULL, $cid = NULL) {
       'contact_id' => $cid,
       'version' => 3,
     );
-    $memberships = civicrm_api('membership', 'get', $memParams);
+    //CRM-16000 added try/catch to api call
+    try {
+      $memberships = civicrm_api('membership', 'get', $memParams);
+    } catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      return $error;
+    }
+    //CRM-16000 remove inactive memberships if member has both active and inactive memberships
+    if ($memberships['count'] > 1){
+      $params = array(
+        'sequential' => 1,
+        'name' => array('IN' => array("Deceased", "Cancelled", "Pending", "Expired")),
+      );
+      try {
+        $result = civicrm_api3('MembershipStatus', 'get', $params);
+      } catch (CiviCRM_API3_Exception $e){
+        $error = $e->getMessage();
+        return $error;
+      }
+      foreach ($result['values'] as $value){
+        $inactive[] = $value['id'];
+      }
+      foreach ($memberships['values'] as $key => $membership) {
+        if (in_array($membership['status_id'], $inactive)){
+          unset($membership['values'][$key]);
+        }
+      }
+    }
 
     $contactMemberships = CRM_Utils_Array::value('values', $memberships);
     $addRoles           = array();
     $expRoles           = array();
 
+    $roleCondition = is_array($rid) ? 'IN' : '=';
+
     if (empty($contactMemberships) && !empty($rid)) {
-      if (is_array($rid)) {
-        $rid = implode(",", $rid);
-      }
-      db_delete('users_roles')->condition('uid', $uid)->condition('rid', $rid)->execute();
+      db_delete('users_roles')->condition('uid', $uid)->condition('rid', $rid, $roleCondition)->execute();
     }
     else {
       foreach ($contactMemberships as $membership) {
         if (!empty($rid)) {
-          if (is_array($rid)) {
-            $rid = implode(",", $rid);
-          }
-          db_delete('users_roles')->condition('uid', $uid)->condition('rid', $rid)->execute();
+          db_delete('users_roles')->condition('uid', $uid)->condition('rid', $rid, $roleCondition)->execute();
         }
         if (is_array($memberroles[$membership['membership_type_id']])) {
           foreach ($memberroles[$membership['membership_type_id']] as $rolerule) {

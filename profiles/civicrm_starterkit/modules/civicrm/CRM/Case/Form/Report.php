@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -50,18 +50,18 @@ class CRM_Case_Form_Report extends CRM_Core_Form {
   public $_clientID = NULL;
 
   /**
-   * activity set name
+   * Activity set name
    */
   public $_activitySetName = NULL;
 
   public $_report = NULL;
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
-   */ function preProcess() {
+   * @return void
+   */
+  public function preProcess() {
     $this->_caseID = CRM_Utils_Request::retrieve('caseid', 'Integer', $this, TRUE);
     $this->_clientID = CRM_Utils_Request::retrieve('cid', 'Integer', $this, TRUE);
     $this->_activitySetName = CRM_Utils_Request::retrieve('asn', 'String', $this, TRUE);
@@ -84,8 +84,9 @@ class CRM_Case_Form_Report extends CRM_Core_Form {
       return;
     }
 
-    $includeActivites = array(1 => ts('Include All Activities'),
-      2 => ts('Include Missing Activities Only'),
+    $includeActivites = array(
+      1 => ts('All Activities'),
+      2 => ts('Exclude Completed Activities'),
     );
     $includeActivitesGroup = $this->addRadio('include_activities',
       NULL,
@@ -105,7 +106,6 @@ class CRM_Case_Form_Report extends CRM_Core_Form {
         array(
           'type' => 'refresh',
           'name' => ts('Generate Report'),
-          'spacing' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
           'isDefault' => TRUE,
         ),
         array(
@@ -114,14 +114,15 @@ class CRM_Case_Form_Report extends CRM_Core_Form {
         ),
       )
     );
+    // We want this form to redirect to a full page
+    $this->preventAjaxSubmit();
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     // store the submitted values in an array
@@ -135,5 +136,5 @@ class CRM_Case_Form_Report extends CRM_Core_Form {
     );
     $this->set('report', $contents);
   }
-}
 
+}

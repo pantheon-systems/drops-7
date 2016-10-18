@@ -440,9 +440,9 @@
 			}
 
 			function fixDeletingFirstCharOfList(ed, e) {
-				function listElements(li) {
+				function listElements(list, li) {
 					var elements = [];
-					var walker = new tinymce.dom.TreeWalker(li.firstChild, li);
+					var walker = new tinymce.dom.TreeWalker(li, list);
 					for (var node = walker.current(); node; node = walker.next()) {
 						if (ed.dom.is(node, 'ol,ul,li')) {
 							elements.push(node);
@@ -454,11 +454,9 @@
 				if (e.keyCode == tinymce.VK.BACKSPACE) {
 					var li = getLi();
 					if (li) {
-						var list = ed.dom.getParent(li, 'ol,ul'),
-							rng  = ed.selection.getRng();
-						if (list && list.firstChild === li && rng.startOffset == 0) {
-							var elements = listElements(li);
-							elements.unshift(li);
+						var list = ed.dom.getParent(li, 'ol,ul');
+						if (list && list.firstChild === li) {
+							var elements = listElements(list, li);
 							ed.execCommand("Outdent", false, elements);
 							ed.undoManager.add();
 							return Event.cancel(e);
@@ -476,7 +474,7 @@
 						ed.dom.remove(li, true);
 						var textNodes = tinymce.grep(prevLi.childNodes, function(n){ return n.nodeType === 3 });
 						if (textNodes.length === 1) {
-							var textNode = textNodes[0];
+							var textNode = textNodes[0]
 							ed.selection.setCursorLocation(textNode, textNode.length);
 						}
 						ed.undoManager.add();
@@ -724,8 +722,7 @@
 			} else {
 				actions = {
 					defaultAction: convertListItemToParagraph,
-					elements: this.selectedBlocks(),
-					processEvenIfEmpty: true
+					elements: this.selectedBlocks()
 				};
 			}
 			this.process(actions);
@@ -829,7 +826,7 @@
 
 			function processElement(element) {
 				dom.removeClass(element, '_mce_act_on');
-				if (!element || element.nodeType !== 1 || ! actions.processEvenIfEmpty && selectedBlocks.length > 1 && isEmptyElement(element)) {
+				if (!element || element.nodeType !== 1 || selectedBlocks.length > 1 && isEmptyElement(element)) {
 					return;
 				}
 				element = findItemToOperateOn(element, dom);
@@ -841,7 +838,7 @@
 			}
 
 			function recurse(element) {
-				t.splitSafeEach(element.childNodes, processElement, true);
+				t.splitSafeEach(element.childNodes, processElement);
 			}
 
 			function brAtEdgeOfSelection(container, offset) {
@@ -892,11 +889,9 @@
 			}
 		},
 
-		splitSafeEach: function(elements, f, forceClassBase) {
-			if (forceClassBase ||
-				(tinymce.isGecko &&
-					(/Firefox\/[12]\.[0-9]/.test(navigator.userAgent) ||
-					 /Firefox\/3\.[0-4]/.test(navigator.userAgent)))) {
+		splitSafeEach: function(elements, f) {
+			if (tinymce.isGecko && (/Firefox\/[12]\.[0-9]/.test(navigator.userAgent) ||
+					/Firefox\/3\.[0-4]/.test(navigator.userAgent))) {
 				this.classBasedEach(elements, f);
 			} else {
 				each(elements, f);
@@ -937,7 +932,8 @@
 		},
 
 		selectedBlocks: function() {
-			var ed = this.ed, selectedBlocks = ed.selection.getSelectedBlocks();
+			var ed = this.ed
+			var selectedBlocks = ed.selection.getSelectedBlocks();
 			return selectedBlocks.length == 0 ? [ ed.dom.getRoot() ] : selectedBlocks;
 		},
 

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -56,16 +56,8 @@ class civicrm_handler_filter_datetime extends views_handler_filter_date {
   }
 
   function op_between($field) {
-    if ($this->operator == 'between') {
-      $a = intval(strtotime($this->value['min'], 0));
-      $b = intval(strtotime($this->value['max'], 0));
-    }
-    else {
-      $a = intval(strtotime($this->value['max'], 0));
-      $b = intval(strtotime($this->value['min'], 0));
-
-      $this->query->set_where_group('OR', $this->options['group']);
-    }
+    $a = intval(strtotime($this->value['min'], 0));
+    $b = intval(strtotime($this->value['max'], 0));
 
     if ($this->value['type'] == 'offset') {
       $now = time();
@@ -78,9 +70,11 @@ class civicrm_handler_filter_datetime extends views_handler_filter_date {
     $a = $this->format_date($a);
     $b = $this->format_date($b);
 
-    // %s is safe here because strtotime + format_date scrubbed the input
-    $this->query->add_where($this->options['group'], $field, $a, '>=');
-    $this->query->add_where($this->options['group'], $field, $b, '<=');
+
+    // This is safe because we are manually scrubbing the values.
+    // It is necessary to do it this way because $a and $b are formulas when using an offset.
+    $operator = strtoupper($this->operator);
+    $this->query->add_where_expression($this->options['group'], "$field $operator '$a' AND '$b'");
   }
 
   function format_date($unixtime) {

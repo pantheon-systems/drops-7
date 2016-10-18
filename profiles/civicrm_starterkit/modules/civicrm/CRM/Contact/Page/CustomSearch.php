@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,13 +40,15 @@
 class CRM_Contact_Page_CustomSearch extends CRM_Core_Page {
 
   /**
-   * The action links that we need to display for the browse screen
+   * The action links that we need to display for the browse screen.
    *
    * @var array
-   * @static
    */
   static $_links = NULL;
 
+  /**
+   * @return array
+   */
   public static function &info() {
     $sql = "
 SELECT v.value, v.label, v.description
@@ -76,21 +78,21 @@ ORDER By  v.weight
   /**
    * Browse all custom searches.
    *
-   * @return content of the parents run method
-   *
+   * @return mixed
+   *   content of the parents run method
    */
-  function browse() {
+  public function browse() {
     $rows = self::info();
     $this->assign('rows', $rows);
     return parent::run();
   }
 
   /**
-   * run this page (figure out the action needed and perform it).
+   * Run this page (figure out the action needed and perform it).
    *
    * @return void
    */
-  function run() {
+  public function run() {
     $action = CRM_Utils_Request::retrieve('action',
       'String',
       $this, FALSE, 'browse'
@@ -99,5 +101,5 @@ ORDER By  v.weight
     $this->assign('action', $action);
     return $this->browse();
   }
-}
 
+}

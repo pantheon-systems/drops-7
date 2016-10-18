@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -37,7 +37,7 @@
 
 {if $showLinks}
     <div class="action-link">
-      <a accesskey="N" href="{crmURL p=$newMassUrl q='reset=1'}" class="button"><span><div class="icon email-icon"></div>{ts}{$linkTitle}{/ts}</span></a><br/><br/>
+      {crmButton accesskey="N"  p=$newMassUrl q='reset=1' icon="mail-closed"}{ts}{$linkTitle}{/ts}{/crmButton}<br/><br/>
     </div>
 {/if}
 {include file="CRM/Mailing/Form/Search.tpl"}
@@ -47,7 +47,7 @@
     {include file="CRM/common/pagerAToZ.tpl"}
 
     {strip}
-    <table class="selector">
+    <table class="selector row-highlight">
       <thead class="sticky">
       {foreach from=$columnHeaders item=header}
         <th>
@@ -84,7 +84,7 @@
     {include file="CRM/common/pager.tpl" location="bottom"}
     {if $showLinks}
       <div class="action-link">
-            <a accesskey="N" href="{crmURL p=$newMassUrl q='reset=1'}" class="button"><span><div class="icon email-icon"></div>{ts}{$linkTitle}{/ts}</span></a><br/>
+            {crmButton accesskey="N"  p=$newMassUrl q='reset=1' icon="mail-closed"}{ts}{$linkTitle}{/ts}{/crmButton}<br/>
       </div>
     {/if}
 

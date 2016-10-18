@@ -19,7 +19,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
      * @access public
      */
     var $Width = '95%';
-    
+
     /**
      * The height of the editor in pixels or percent
      *
@@ -27,7 +27,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
      * @access public
      */
     var $Height = '400';
-    
+
     /**
      * The path where to find the editor files
      *
@@ -35,7 +35,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
      * @access public
      */
     var $BasePath = 'packages/tinymce/jscripts/tiny_mce/';
-    
+
     /**
      * Check for browser compatibility
      *
@@ -51,7 +51,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
      * @access public
      */
     var $Config = array();
-    
+
     /**
      * Class constructor
      *
@@ -68,7 +68,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
         HTML_QuickForm_element::HTML_QuickForm_element($elementName, $elementLabel, $attributes);
         $this->_persistantFreeze = true;
         $this->_type = 'TinyMCE';
-        
+
         if ( is_array($attributes) && array_key_exists( 'rows', $attributes ) && $attributes['rows'] <= 4 ) {
             $this->Height = 200;
         }
@@ -76,14 +76,14 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
             $this->Config = $options;
         }
     }
-    
+
     /**
      * Set config variable for TinyMCE
      *
      * @param mixed Key of config setting
      * @param mixed Value of config settinh
      * @access public
-     * @return void     
+     * @return void
      */
     function SetConfig($key, $value = null)
     {
@@ -95,7 +95,7 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
             $this->Config[$key] = $value;
         }
     }
-    
+
     /**
      * Check if the browser is compatible (IE 5.5+, Gecko > 20030210)
      *
@@ -110,17 +110,17 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
             if (($msie = strpos($agent, 'msie')) !== false &&
                 strpos($agent, 'opera') === false &&
                 strpos($agent, 'mac') === false)
-            {                
+            {
                 return ((float) substr($agent, $msie + 5, 3) >= 5.5);
             } elseif (($gecko = strpos($agent, 'gecko/')) !== false) {
                 return ((int) substr($agent, $gecko + 6, 8 ) >= 20030210);
-            }             
+            }
             return true;
-        }   
+        }
         return false;
     }
 
-    
+
     /**
      * Return the htmlarea in HTML
      *
@@ -141,12 +141,18 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
             // load tinyMCEeditor
             $config = CRM_Core_Config::singleton( );
             $browseUrl = $config->userFrameworkResourceURL . 'packages/kcfinder/browse.php?opener=tinymce&cms=civicrm&type=';
-            
+
             // tinymce is wierd, it needs to be loaded initially along with jquery
             $html = null;
+            $click = $this->getAttribute('click_wysiwyg');
+            if ($click) {
+              $html .= '<div id="' . $this->_attributes['id'] .'-plain" class="replace-plain" tabindex="0" title="'. ts('Click to edit') .'"><span class="icon ui-icon-pencil"></span>' . $this->getFrozenHtml() . '</div>';
+            }
+            $html .= parent::toHtml();
+
             $html .= sprintf( '<script type="text/javascript">
         var configArray = [{
-        
+
         theme : "advanced",
         editor_selector : "form-TinyMCE",
         plugins : "safari,spellchecker,layer,table,advhr,advimage,advlink,emotions,iespell,inlinepopups,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template,pagebreak",
@@ -167,22 +173,40 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
         width : "' . $this->Width .'%",
         file_browser_callback: "openKCFinder",
         setup : function(ed) {
-                 ed.onInit.addToTop( function(){ 
+                 ed.onInit.addToTop( function(){
                     var height = cj("#" + ed.editorId).attr("height");
                     cj("#" + ed.editorId + "_tbl").css("height", height);
                     cj("#" + ed.editorId + "_ifr").css("height", height);
                 });
-                ed.onKeyUp.add(function(ed, l) {
-                    global_formNavigate = false;
-                });
         }'.$this->getConfigString().'
         }];
- 
-        tinyMCE.settings = configArray[0];
-        //remove the control if element is already having 
-        tinyMCE.execCommand("mceRemoveControl", false,"' . $this->_attributes['id'] .'");
-        tinyMCE.execCommand("mceAddControl"   , true, "' . $this->_attributes['id'] .'");
 
+        tinyMCE.settings = configArray[0];');
+
+        if ($click) {
+          $html .= sprintf('
+          CRM.$(function($) {
+            $("#' . $this->_attributes['id'] . '").hide();
+            var openWysiwyg = function() {
+              $("#' . $this->_attributes['id'] . '-plain").remove();
+              $("#' . $this->_attributes['id'] . '").show();
+              //remove the control if element is already having
+              tinyMCE.execCommand("mceRemoveControl", false,"' . $this->_attributes['id'] .'");
+              tinyMCE.execCommand("mceAddControl"   , true, "' . $this->_attributes['id'] .'");
+            }
+            $("#' . $this->_attributes['id'] . '-plain").click(openWysiwyg);
+            $("#' . $this->_attributes['id'] . '-plain").keypress(openWysiwyg);
+          });
+          ');
+        }
+        else {
+          $html .= sprintf('
+          //remove the control if element is already having
+          tinyMCE.execCommand("mceRemoveControl", false,"' . $this->_attributes['id'] .'");
+          tinyMCE.execCommand("mceAddControl"   , true, "' . $this->_attributes['id'] .'"); ');
+        }
+
+        $html .= sprintf('
         function openKCFinder(field_name, url, type, win) {
             tinyMCE.activeEditor.windowManager.open({
                 file: "'. $browseUrl .'" + type,
@@ -200,19 +224,17 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
             return false;
         }
 </script>' );
-                        
-            // include textarea as well (TinyMCE transforms it)
-            $html .=  parent::toHTML();
+
             $html .= sprintf( '<script type="text/javascript">
                                  cj("#' . $this->_attributes['id'] .'").attr( "height","'.$this->Height.'px");
                               </script>' );
             return $html;
         }
     }
-    
+
     /**
      * Returns the htmlarea content in HTML
-     * 
+     *
      * @access public
      * @return string
      */
@@ -220,10 +242,10 @@ class HTML_QuickForm_TinyMCE extends HTML_QuickForm_textarea
     {
         return $this->getValue();
     }
-    
+
     /**
      * Returns the config variables for TinyMCE as a string
-     * 
+     *
      * @access public
      * @return string
      */

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -48,20 +48,17 @@ class CRM_Contact_Form_Task_SMS extends CRM_Contact_Form_Task {
   public $_single = FALSE;
 
   /**
-   * all the existing templates in the system
+   * All the existing templates in the system.
    *
    * @var array
    */
   public $_templates = NULL;
 
-  function preProcess() {
+  public function preProcess() {
 
     $this->_context = CRM_Utils_Request::retrieve('context', 'String', $this);
 
     $cid = CRM_Utils_Request::retrieve('cid', 'Positive', $this, FALSE);
-    if ($cid) {
-      CRM_Contact_Page_View::setTitle($cid);
-    }
 
     CRM_Contact_Form_Task_SMSCommon::preProcessProvider($this);
 
@@ -76,9 +73,8 @@ class CRM_Contact_Form_Task_SMS extends CRM_Contact_Form_Task {
   }
 
   /**
-   * Build the form
+   * Build the form object.
    *
-   * @access public
    *
    * @return void
    */
@@ -90,14 +86,13 @@ class CRM_Contact_Form_Task_SMS extends CRM_Contact_Form_Task {
   }
 
   /**
-   * process the form after the input has been submitted and validated
+   * Process the form after the input has been submitted and validated.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     CRM_Contact_Form_Task_SMSCommon::postProcess($this);
   }
-}
 
+}

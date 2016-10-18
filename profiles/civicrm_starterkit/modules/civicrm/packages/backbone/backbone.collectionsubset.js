@@ -1,8 +1,8 @@
 /*! backbone.collectionsubset - v0.1.2 - 2012-12-20
 * https://github.com/anthonyshort/backbone.collectionsubset
 * Copyright (c) 2012 Anthony Short; Licensed MIT */
-
-(function() {
+// Patched for civicrm by colemanw - added global import of _ variable
+(function(_) {
 
   Backbone.CollectionSubset = (function() {
 
@@ -230,4 +230,4 @@
     module.exports = Backbone.CollectionSubset;
   }
 
-}).call(this);
+}(_));

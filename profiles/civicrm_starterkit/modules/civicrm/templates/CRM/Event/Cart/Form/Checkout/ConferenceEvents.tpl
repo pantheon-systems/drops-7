@@ -12,11 +12,10 @@
     <div class="slot_options">
       <ul class="indented">
         {$form.$field_name.html}
-        <span class="crm-clear-link">(<a href="#" title="unselect" onclick="unselectRadio('{$field_name}', '{$form.formName}'); return false;">{ts}clear{/ts}</a>)</span>
       </ul>
     </div>
   </fieldset>
-{/foreach}    
+{/foreach}
 
 <script type="text/javascript">
 var session_options = {$session_options};
@@ -27,7 +26,7 @@ for (var radio_id in session_options)
   var label_sel = "label[for=" + radio_id + "]";
   cj("#"+radio_id +","+ label_sel).wrapAll("<li>");
   if (info.session_full) {
-    cj("#"+radio_id).attr('disabled', 'disabled');
+    cj("#"+radio_id).prop('disabled', true);
     cj("#"+radio_id).after('<span class="error">{/literal}{ts escape='js'}Session is Full{/ts}{literal}: </span>');
   }
   var more = cj('<a href="#">{/literal}{ts escape='js'}more info{/ts}{literal}</a>').click(function(event) {

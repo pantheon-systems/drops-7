@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -41,32 +41,20 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
   protected $_isTagSet;
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
+    $this->setPageTitle($this->_isTagSet ? ts('Tag Set') : ts('Tag'));
+
     if ($this->_action == CRM_Core_Action::DELETE) {
       if ($this->_id && $tag = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Tag', $this->_id, 'name', 'parent_id')) {
-        CRM_Core_Session::setStatus(ts("This tag cannot be deleted. You must delete all its child tags ('%1', etc) prior to deleting this tag.", array(1 => $tag)), ts('Sorry'), 'error');
         $url = CRM_Utils_System::url('civicrm/admin/tag', "reset=1");
-        CRM_Utils_System::redirect($url);
-        return TRUE;
+        CRM_Core_Error::statusBounce(ts("This tag cannot be deleted. You must delete all its child tags ('%1', etc) prior to deleting this tag.", array(1 => $tag)), $url);
       }
-      else {
-        $this->addButtons(array(
-            array(
-              'type' => 'next',
-              'name' => ts('Delete'),
-              'isDefault' => TRUE,
-            ),
-            array(
-              'type' => 'cancel',
-              'name' => ts('Cancel'),
-            ),
-          )
-        );
+      if ($this->_values['is_reserved'] == 1 && !CRM_Core_Permission::check('administer reserved tags')) {
+        CRM_Core_Error::statusBounce(ts("You do not have sufficient permission to delete this reserved tag."));
       }
     }
     else {
@@ -79,14 +67,22 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
         $this->_isTagSet = TRUE;
       }
 
-      $allTag = array('' => '- ' . ts('select') . ' -') + CRM_Core_BAO_Tag::getTagsNotInTagset();
+      $allTag = array('' => ts('- select -')) + CRM_Core_BAO_Tag::getTagsNotInTagset();
 
       if ($this->_id) {
         unset($allTag[$this->_id]);
       }
 
       if (!$this->_isTagSet) {
-        $this->add('select', 'parent_id', ts('Parent Tag'), $allTag);
+        $this->add('select', 'parent_id', ts('Parent Tag'), $allTag, FALSE, array('class' => 'crm-select2'));
+
+        // Tagsets are not selectable by definition so only include the selectable field if NOT a tagset.
+        $selectable = $this->add('checkbox', 'is_selectable', ts('Selectable?'));
+        // Selectable should be checked by default when creating a new tag
+        if ($this->_action == CRM_Core_Action::ADD) {
+          $selectable->setValue(1);
+        }
+
       }
 
       $this->assign('isTagSet', $this->_isTagSet);
@@ -96,21 +92,18 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
       $this->add('text', 'name', ts('Name'),
         CRM_Core_DAO::getAttribute('CRM_Core_DAO_Tag', 'name'), TRUE
       );
-      $this->addRule('name', ts('Name already exists in Database.'), 'objectExists', array('CRM_Core_DAO_Tag', $this->_id));
+      $this->addRule('name', ts('Name already exists in Database.'), 'objectExists', array(
+          'CRM_Core_DAO_Tag',
+          $this->_id,
+        ));
 
       $this->add('text', 'description', ts('Description'),
         CRM_Core_DAO::getAttribute('CRM_Core_DAO_Tag', 'description')
       );
 
-      //@lobo haven't a clue why the checkbox isn't displayed (it should be checked by default
-      $this->add('checkbox', 'is_selectable', ts("If it's a tag or a category"));
-
       $isReserved = $this->add('checkbox', 'is_reserved', ts('Reserved?'));
 
-      $usedFor = $this->add('select', 'used_for', ts('Used For'),
-        CRM_Core_OptionGroup::values('tag_used_for')
-      );
-      $usedFor->setMultiple(TRUE);
+      $usedFor = $this->addSelect('used_for', array('multiple' => TRUE, 'option_url' => NULL));
 
       if ($this->_id &&
         CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Tag', $this->_id, 'parent_id')
@@ -131,16 +124,15 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
       }
       $this->assign('adminReservedTags', $adminReservedTags);
 
-      parent::buildQuickForm();
     }
+    parent::buildQuickForm();
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     $params = $ids = array();
@@ -164,6 +156,10 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
       $params['is_reserved'] = 0;
     }
 
+    if (!isset($params['is_selectable'])) {
+      $params['is_selectable'] = 0;
+    }
+
     if ($this->_action == CRM_Core_Action::DELETE) {
       if ($this->_id > 0) {
         $tag = civicrm_api3('tag', 'getsingle', array('id' => $this->_id));
@@ -176,6 +172,5 @@ class CRM_Admin_Form_Tag extends CRM_Admin_Form {
       CRM_Core_Session::setStatus(ts('The tag \'%1\' has been saved.', array(1 => $tag->name)), ts('Saved'), 'success');
     }
   }
-  //end of function
-}
 
+}

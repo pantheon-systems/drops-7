@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -34,19 +34,20 @@
     {/if}
 
     <div id="help">
-        <p>{ts 1=$displayName}This page lists all grants for %1 since inception.{/ts} 
+        <p>{ts 1=$displayName}This page lists all grants for %1 since inception.{/ts}
         {if $permission EQ 'edit'}
-            {ts 1=$newGrantURL}Click <a accesskey='N' href='%1'>Add Grant</a> to record a Grant for this contact.{/ts}
+          {capture assign=link}accesskey='N' href='{$newGrantURL}' class='action-item'{/capture}
+            {ts 1=$link}Click <a %1>Add Grant</a> to record a Grant for this contact.{/ts}
         {/if}
         </p>
     </div>
 {if $action eq 16 and $permission EQ 'edit'}
             <div class="action-link">
-            <a href="{$newGrantURL}" class="button"><span><div class="icon add-icon"></div>{ts}Add Grant{/ts}</span></a><br/><br/>
+            <a href="{$newGrantURL}" class="button"><span><div class="icon ui-icon-circle-plus"></div>{ts}Add Grant{/ts}</span></a><br/><br/>
             </div>
         {/if}
     {if $rows}
-        
+
         {include file="CRM/Grant/Form/Selector.tpl"}
     {else}
         <div class="messages status">

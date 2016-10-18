@@ -1,7 +1,7 @@
 {*
 Display a table of locally-available extensions.
 
-Depends: CRM/common/enableDisable.tpl and CRM/common/jsortable.tpl
+Depends: CRM/common/enableDisableApi.tpl and CRM/common/jsortable.tpl
 *}
 {if $localExtensionRows}
   <div id="extensions">
@@ -19,7 +19,7 @@ Depends: CRM/common/enableDisable.tpl and CRM/common/jsortable.tpl
       </thead>
       <tbody>
         {foreach from=$localExtensionRows key=extKey item=row}
-        <tr id="row_{$row.id}" class="crm-extensions crm-extensions_{$row.id}{if $row.status eq 'disabled'} disabled{/if}{if $row.status eq 'installed-missing' or $row.status eq 'disabled-missing'} extension-missing{/if}{if $row.upgradable} extension-upgradable{elseif $row.status eq 'installed'} extension-installed{/if}">
+        <tr id="extension-{$row.id}" class="crm-entity crm-extension_{$row.id}{if $row.status eq 'disabled'} disabled{/if}{if $row.status eq 'installed-missing' or $row.status eq 'disabled-missing'} extension-missing{/if}{if $row.upgradable} extension-upgradable{elseif $row.status eq 'installed'} extension-installed{/if}">
           <td class="crm-extensions-label">
               <a class="collapsed" href="#"></a>&nbsp;<strong>{$row.label}</strong><br/>({$row.key})
               {if $extAddNewEnabled && $remoteExtensionRows[$extKey] && $remoteExtensionRows[$extKey].is_upgradeable}
@@ -46,6 +46,6 @@ Depends: CRM/common/enableDisable.tpl and CRM/common/jsortable.tpl
 {else}
   <div class="messages status no-popup">
        <div class="icon inform-icon"></div>
-      {ts 1="http://civicrm.org/extensions"}There are no extensions to display. Click the "Add New" tab to browse and install extensions posted on the <a href="%1">public CiviCRM Extensions Directory</a>. If you have downloaded extensions manually and don't see them here, try clicking the "Refresh" button.{/ts}
+      {ts 1="https://civicrm.org/extensions"}There are no extensions to display. Click the "Add New" tab to browse and install extensions posted on the <a href="%1">public CiviCRM Extensions Directory</a>. If you have downloaded extensions manually and don't see them here, try clicking the "Refresh" button.{/ts}
   </div>
 {/if}

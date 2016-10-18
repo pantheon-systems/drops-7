@@ -5,22 +5,14 @@
  */
 class HTMLPurifier_HTMLModule_SafeEmbed extends HTMLPurifier_HTMLModule
 {
-    /**
-     * @type string
-     */
+
     public $name = 'SafeEmbed';
 
-    /**
-     * @param HTMLPurifier_Config $config
-     */
-    public function setup($config)
-    {
+    public function setup($config) {
+
         $max = $config->get('HTML.MaxImgLength');
         $embed = $this->addElement(
-            'embed',
-            'Inline',
-            'Empty',
-            'Common',
+            'embed', 'Inline', 'Empty', 'Common',
             array(
                 'src*' => 'URI#embedded',
                 'type' => 'Enum#application/x-shockwave-flash',
@@ -34,7 +26,9 @@ class HTMLPurifier_HTMLModule_SafeEmbed extends HTMLPurifier_HTMLModule
             )
         );
         $embed->attr_transform_post[] = new HTMLPurifier_AttrTransform_SafeEmbed();
+
     }
+
 }
 
 // vim: et sw=4 sts=4

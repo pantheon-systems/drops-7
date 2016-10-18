@@ -5,24 +5,12 @@
  */
 class HTMLPurifier_Injector_Linkify extends HTMLPurifier_Injector
 {
-    /**
-     * @type string
-     */
-    public $name = 'Linkify';
 
-    /**
-     * @type array
-     */
+    public $name = 'Linkify';
     public $needed = array('a' => array('href'));
 
-    /**
-     * @param HTMLPurifier_Token $token
-     */
-    public function handleText(&$token)
-    {
-        if (!$this->allowsElement('a')) {
-            return;
-        }
+    public function handleText(&$token) {
+        if (!$this->allowsElement('a')) return;
 
         if (strpos($token->data, '://') === false) {
             // our really quick heuristic failed, abort
@@ -33,8 +21,7 @@ class HTMLPurifier_Injector_Linkify extends HTMLPurifier_Injector
 
         // there is/are URL(s). Let's split the string:
         // Note: this regex is extremely permissive
-        $bits = preg_split('#((?:https?|ftp)://[^\s\'",<>()]+)#Su', $token->data, -1, PREG_SPLIT_DELIM_CAPTURE);
-
+        $bits = preg_split('#((?:https?|ftp)://[^\s\'"<>()]+)#S', $token->data, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $token = array();
 
@@ -43,9 +30,7 @@ class HTMLPurifier_Injector_Linkify extends HTMLPurifier_Injector
         // $l = is link
         for ($i = 0, $c = count($bits), $l = false; $i < $c; $i++, $l = !$l) {
             if (!$l) {
-                if ($bits[$i] === '') {
-                    continue;
-                }
+                if ($bits[$i] === '') continue;
                 $token[] = new HTMLPurifier_Token_Text($bits[$i]);
             } else {
                 $token[] = new HTMLPurifier_Token_Start('a', array('href' => $bits[$i]));
@@ -53,7 +38,9 @@ class HTMLPurifier_Injector_Linkify extends HTMLPurifier_Injector
                 $token[] = new HTMLPurifier_Token_End('a');
             }
         }
+
     }
+
 }
 
 // vim: et sw=4 sts=4

@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -98,6 +98,14 @@
       &nbsp;&nbsp;&nbsp;<span class="description">{ts}Select Saved Mapping or Leave blank to create a new One.{/ts}</span></td>
          </tr>
         { /if}
+
+        {if $form.disableUSPS}
+         <tr  class="crm-import-datasource-form-block-disableUSPS">
+              <td class="label"></td>
+              <td>{$form.disableUSPS.html} <label for="disableUSPS">{$form.disableUSPS.label}</label></td>
+         </tr>
+
+        {/if}
  </table>
   </div>
 
@@ -105,7 +113,7 @@
 
   {literal}
     <script type="text/javascript">
-      cj(document).ready(function() {
+      CRM.$(function($) {
          //build data source form block
          buildDataSourceFormBlock();
          buildSubTypes();

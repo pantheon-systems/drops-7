@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,7 +23,7 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  * This class acts as our base controller class and adds additional
@@ -38,7 +38,7 @@
  * for other useful tips and suggestions
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -46,31 +46,34 @@
 require_once 'HTML/QuickForm/Controller.php';
 require_once 'HTML/QuickForm/Action/Direct.php';
 
+/**
+ * Class CRM_Core_Controller
+ */
 class CRM_Core_Controller extends HTML_QuickForm_Controller {
 
   /**
-   * the title associated with this controller
+   * The title associated with this controller.
    *
    * @var string
    */
   protected $_title;
 
   /**
-   * The key associated with this controller
+   * The key associated with this controller.
    *
    * @var string
    */
   public $_key;
 
   /**
-   * the name of the session scope where values are stored
+   * The name of the session scope where values are stored.
    *
    * @var object
    */
   protected $_scope;
 
   /**
-   * the state machine associated with this controller
+   * The state machine associated with this controller.
    *
    * @var object
    */
@@ -113,33 +116,35 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   public $_generateQFKey = TRUE;
 
   /**
-   * QF response type
+   * QF response type.
+   *
+   * @var string
    */
   public $_QFResponseType = 'html';
 
   /**
-   * cache the smarty template for efficiency reasons
+   * Cache the smarty template for efficiency reasons.
    *
    * @var CRM_Core_Smarty
    */
   static protected $_template;
 
   /**
-   * cache the session for efficiency reasons
+   * Cache the session for efficiency reasons.
    *
    * @var CRM_Core_Session
    */
   static protected $_session;
 
   /**
-   * The parent of this form if embedded
+   * The parent of this form if embedded.
    *
    * @var object
    */
   protected $_parent = NULL;
 
   /**
-   * The destination if set will override the destination the code wants to send it to
+   * The destination if set will override the destination the code wants to send it to.
    *
    * @var string;
    */
@@ -156,18 +161,19 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   /**
    * All CRM single or multi page pages should inherit from this class.
    *
-   * @param string  title        descriptive title of the controller
-   * @param boolean whether      controller is modal
-   * @param string  scope        name of session if we want unique scope, used only by Controller_Simple
-   * @param boolean addSequence  should we add a unique sequence number to the end of the key
-   * @param boolean ignoreKey    should we not set a qfKey for this controller (for standalone forms)
-   *
-   * @access public
-   *
-   * @return void
-   *
+   * @param string $title
+   *   Descriptive title of the controller.
+   * @param bool $modal
+   *   Whether controller is modal.
+   * @param mixed $mode
+   * @param string $scope
+   *   Name of session if we want unique scope, used only by Controller_Simple.
+   * @param bool $addSequence
+   *   Should we add a unique sequence number to the end of the key.
+   * @param bool $ignoreKey
+   *   Should we not set a qfKey for this controller (for standalone forms).
    */
-  function __construct(
+  public function __construct(
     $title = NULL,
     $modal = TRUE,
     $mode = NULL,
@@ -187,8 +193,8 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     // lets try to get it from the session and/or the request vars
     // we do this early on in case there is a fatal error in retrieving the
     // key and/or session
-    $this->_entryURL =
-      CRM_Utils_Request::retrieve('entryURL', 'String', $this);
+    $this->_entryURL
+      = CRM_Utils_Request::retrieve('entryURL', 'String', $this);
 
     // add a unique validable key to the name
     $name = CRM_Utils_System::getClassName($this);
@@ -197,7 +203,7 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
       // definitely different for different forms
       $name = $scope;
     }
-    $name         = $name . '_' . $this->key($name, $addSequence, $ignoreKey);
+    $name = $name . '_' . $this->key($name, $addSequence, $ignoreKey);
     $this->_title = $title;
     if ($scope) {
       $this->_scope = $scope;
@@ -212,11 +218,11 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     if (!empty($this->_key)) {
       CRM_Core_Session::registerAndRetrieveSessionObjects(array(
         "_{$name}_container",
-          array('CiviCRM', $this->_scope),
-        ));
+        array('CiviCRM', $this->_scope),
+      ));
     }
 
-    $this->HTML_QuickForm_Controller($name, $modal);
+    parent::__construct($name, $modal);
 
     $snippet = CRM_Utils_Array::value('snippet', $_REQUEST);
     if ($snippet) {
@@ -230,12 +236,13 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
         $this->_generateQFKey = FALSE;
       }
       elseif ($snippet == 5) {
-        // this is used for popups and inlined ajax forms
-        // also used for the various tabs via TabHeader
+        // mode deprecated in favor of json
+        // still used by dashlets, probably nothing else
         $this->_print = CRM_Core_Smarty::PRINT_NOFORM;
       }
-      elseif ($snippet == 6) {
-        $this->_print = CRM_Core_Smarty::PRINT_NOFORM;
+      // Respond with JSON if in AJAX context (also support legacy value '6')
+      elseif (in_array($snippet, array(CRM_Core_Smarty::PRINT_JSON, 6))) {
+        $this->_print = CRM_Core_Smarty::PRINT_JSON;
         $this->_QFResponseType = 'json';
       }
       else {
@@ -243,8 +250,8 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
       }
     }
 
-   // if the request has a reset value, initialize the controller session
-    if (CRM_Utils_Array::value('reset', $_GET)) {
+    // if the request has a reset value, initialize the controller session
+    if (!empty($_GET['reset'])) {
       $this->reset();
 
       // in this case we'll also cache the url as a hidden form variable, this allows us to
@@ -258,7 +265,6 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     // and created the scope etc
     $this->set('qfKey', $this->_key);
 
-
     // also retrieve and store destination in session
     $this->_destination = CRM_Utils_Request::retrieve(
       'civicrmDestination',
@@ -270,16 +276,23 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     );
   }
 
-  function fini() {
+  public function fini() {
     CRM_Core_BAO_Cache::storeSessionToCache(array(
-      "_{$this->_name}_container",
+        "_{$this->_name}_container",
         array('CiviCRM', $this->_scope),
       ),
       TRUE
     );
   }
 
-  function key($name, $addSequence = FALSE, $ignoreKey = FALSE) {
+  /**
+   * @param string $name
+   * @param bool $addSequence
+   * @param bool $ignoreKey
+   *
+   * @return mixed|string
+   */
+  public function key($name, $addSequence = FALSE, $ignoreKey = FALSE) {
     $config = CRM_Core_Config::singleton();
 
     if (
@@ -317,8 +330,9 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
    * This run is basically a composition of the original run and the
    * jump action
    *
+   * @return mixed
    */
-  function run() {
+  public function run() {
     // the names of the action and page should be saved
     // note that this is split into two, because some versions of
     // php 5.x core dump on the triple assignment :)
@@ -339,7 +353,10 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     return $this->_pages[$pageName]->handle($action);
   }
 
-  function validate() {
+  /**
+   * @return bool
+   */
+  public function validate() {
     $this->_actionName = $this->getActionName();
     list($pageName, $action) = $this->_actionName;
 
@@ -362,15 +379,13 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
    * Helper function to add all the needed default actions. Note that the framework
    * redefines all of the default QFC actions
    *
-   * @param string   directory to store all the uploaded files
-   * @param array    names for the various upload buttons (note u can have more than 1 upload)
+   * @param string $uploadDirectory to store all the uploaded files
+   * @param array $uploadNames for the various upload buttons (note u can have more than 1 upload)
    *
-   * @access private
    *
    * @return void
-   *
    */
-  function addActions($uploadDirectory = NULL, $uploadNames = NULL) {
+  public function addActions($uploadDirectory = NULL, $uploadNames = NULL) {
     $names = array(
       'display' => 'CRM_Core_QuickForm_Action_Display',
       'next' => 'CRM_Core_QuickForm_Action_Next',
@@ -393,47 +408,41 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   }
 
   /**
-   * getter method for stateMachine
+   * Getter method for stateMachine.
    *
-   * @return object
-   * @access public
+   * @return CRM_Core_StateMachine
    */
-  function getStateMachine() {
+  public function getStateMachine() {
     return $this->_stateMachine;
   }
 
   /**
-   * setter method for stateMachine
+   * Setter method for stateMachine.
    *
-   * @param object a stateMachineObject
-   *
-   * @return void
-   * @access public
+   * @param CRM_Core_StateMachine $stateMachine
    */
-  function setStateMachine($stateMachine) {
+  public function setStateMachine($stateMachine) {
     $this->_stateMachine = $stateMachine;
   }
 
   /**
-   * add pages to the controller. Note that the controller does not really care
+   * Add pages to the controller. Note that the controller does not really care
    * the order in which the pages are added
    *
-   * @param object $stateMachine  the state machine object
-   * @param int    $action        the mode in which the state machine is operating
+   * @param CRM_Core_StateMachine $stateMachine
+   * @param \const|int $action the mode in which the state machine is operating
    *                              typicaly this will be add/view/edit
    *
    * @return void
-   * @access public
-   *
    */
-  function addPages(&$stateMachine, $action = CRM_Core_Action::NONE) {
+  public function addPages(&$stateMachine, $action = CRM_Core_Action::NONE) {
     $pages = $stateMachine->getPages();
     foreach ($pages as $name => $value) {
       $className = CRM_Utils_Array::value('className', $value, $name);
-      $title     = CRM_Utils_Array::value('title', $value);
-      $options   = CRM_Utils_Array::value('options', $value);
+      $title = CRM_Utils_Array::value('title', $value);
+      $options = CRM_Utils_Array::value('options', $value);
       $stateName = CRM_Utils_String::getClassName($className);
-      if (CRM_Utils_Array::value('className', $value)) {
+      if (!empty($value['className'])) {
         $formName = $name;
       }
       else {
@@ -442,10 +451,10 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
 
       $ext = CRM_Extension_System::singleton()->getMapper();
       if ($ext->isExtensionClass($className)) {
-        require_once ($ext->classToPath($className));
+        require_once $ext->classToPath($className);
       }
       else {
-        require_once (str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php');
+        require_once str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
       }
       $$stateName = new $className($stateMachine->find($className), $action, 'post', $formName);
       if ($title) {
@@ -453,6 +462,9 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
       }
       if ($options) {
         $$stateName->setOptions($options);
+      }
+      if (property_exists($$stateName, 'urlPath') && isset($_GET[CRM_Core_Config::singleton()->userFrameworkURLVar])) {
+        $$stateName->urlPath = explode('/', $_GET[CRM_Core_Config::singleton()->userFrameworkURLVar]);
       }
       $this->addPage($$stateName);
       $this->addAction($stateName, new HTML_QuickForm_Action_Direct());
@@ -469,81 +481,77 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
    * we have two submit buttons, we could have one displayed as a button and
    * the other as an image, both are of type 'submit'.
    *
-   * @return string the name of the button that has been pressed by the user
-   * @access public
+   * @return string
+   *   the name of the button that has been pressed by the user
    */
-  function getButtonName() {
+  public function getButtonName() {
     $data = &$this->container();
     return CRM_Utils_Array::value('_qf_button_name', $data);
   }
 
   /**
-   * function to destroy all the session state of the controller.
+   * Destroy all the session state of the controller.
    *
-   * @access public
    *
    * @return void
    */
-  function reset() {
+  public function reset() {
     $this->container(TRUE);
     self::$_session->resetScope($this->_scope);
   }
 
   /**
-   * virtual function to do any processing of data.
+   * Virtual function to do any processing of data.
    * Sometimes it is useful for the controller to actually process data.
    * This is typically used when we need the controller to figure out
    * what pages are potentially involved in this wizard. (this is dynamic
    * and can change based on the arguments
    *
    * @return void
-   * @access public
    */
-  function process() {}
+  public function process() {
+  }
 
   /**
-   * Store the variable with the value in the form scope
+   * Store the variable with the value in the form scope.
    *
-   * @param  string|array $name  name  of the variable or an assoc array of name/value pairs
-   * @param  mixed        $value value of the variable if string
+   * @param string|array $name name of the variable or an assoc array of name/value pairs
+   * @param mixed $value
+   *   Value of the variable if string.
    *
-   * @access public
    *
    * @return void
-   *
    */
-  function set($name, $value = NULL) {
+  public function set($name, $value = NULL) {
     self::$_session->set($name, $value, $this->_scope);
   }
 
   /**
-   * Get the variable from the form scope
+   * Get the variable from the form scope.
    *
-   * @param  string name  : name  of the variable
+   * @param string $name
+   *   name of the variable.
    *
-   * @access public
-
    *
    * @return mixed
-   *
    */
-  function get($name) {
+  public function get($name) {
     return self::$_session->get($name, $this->_scope);
   }
 
   /**
-   * Create the header for the wizard from the list of pages
+   * Create the header for the wizard from the list of pages.
    * Store the created header in smarty
    *
-   * @param string $currentPageName name of the page being displayed
+   * @param string $currentPageName
+   *   Name of the page being displayed.
    *
    * @return array
-   * @access public
    */
-  function wizardHeader($currentPageName) {
-    $wizard          = array();
+  public function wizardHeader($currentPageName) {
+    $wizard = array();
     $wizard['steps'] = array();
-    $count           = 0;
+    $count = 0;
     foreach ($this->_pages as $name => $page) {
       $count++;
       $wizard['steps'][] = array(
@@ -572,11 +580,14 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     return $wizard;
   }
 
-  function addWizardStyle(&$wizard) {
+  /**
+   * @param array $wizard
+   */
+  public function addWizardStyle(&$wizard) {
     $wizard['style'] = array(
       'barClass' => '',
       'stepPrefixCurrent' => '&raquo;',
-      'stepPrefixPast' => '&radic;',
+      'stepPrefixPast' => '&#x2714;',
       'stepPrefixFuture' => ' ',
       'subStepPrefixCurrent' => '&nbsp;&nbsp;',
       'subStepPrefixPast' => '&nbsp;&nbsp;',
@@ -586,98 +597,100 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   }
 
   /**
-   * assign value to name in template
+   * Assign value to name in template.
    *
-   * @param array|string $name  name  of variable
-   * @param mixed $value value of varaible
+   * @param string $var
+   * @param mixed $value
+   *   Value of varaible.
    *
    * @return void
-   * @access public
    */
-  function assign($var, $value = NULL) {
+  public function assign($var, $value = NULL) {
     self::$_template->assign($var, $value);
   }
 
   /**
-   * assign value to name in template by reference
+   * Assign value to name in template by reference.
    *
-   * @param array|string $name  name  of variable
-   * @param mixed $value (reference) value of varaible
+   * @param string $var
+   * @param mixed $value
+   *   (reference) value of varaible.
    *
    * @return void
-   * @access public
    */
-  function assign_by_ref($var, &$value) {
+  public function assign_by_ref($var, &$value) {
     self::$_template->assign_by_ref($var, $value);
   }
 
   /**
-   * appends values to template variables
+   * Appends values to template variables.
    *
    * @param array|string $tpl_var the template variable name(s)
-   * @param mixed $value the value to append
+   * @param mixed $value
+   *   The value to append.
    * @param bool $merge
    */
-  function append($tpl_var, $value=NULL, $merge=FALSE) {
+  public function append($tpl_var, $value = NULL, $merge = FALSE) {
     self::$_template->append($tpl_var, $value, $merge);
   }
 
   /**
-   * Returns an array containing template variables
+   * Returns an array containing template variables.
    *
    * @param string $name
-   * @param string $type
+   *
    * @return array
    */
-  function get_template_vars($name=null) {
+  public function get_template_vars($name = NULL) {
     return self::$_template->get_template_vars($name);
   }
 
   /**
-   * setter for embedded
+   * Setter for embedded.
    *
-   * @param boolean $embedded
+   * @param bool $embedded
    *
    * @return void
-   * @access public
    */
-  function setEmbedded($embedded) {
+  public function setEmbedded($embedded) {
     $this->_embedded = $embedded;
   }
 
   /**
-   * getter for embedded
+   * Getter for embedded.
    *
-   * @return boolean return the embedded value
-   * @access public
+   * @return bool
+   *   return the embedded value
    */
-  function getEmbedded() {
+  public function getEmbedded() {
     return $this->_embedded;
   }
 
   /**
-   * setter for skipRedirection
+   * Setter for skipRedirection.
    *
-   * @param boolean $skipRedirection
+   * @param bool $skipRedirection
    *
    * @return void
-   * @access public
    */
-  function setSkipRedirection($skipRedirection) {
+  public function setSkipRedirection($skipRedirection) {
     $this->_skipRedirection = $skipRedirection;
   }
 
   /**
-   * getter for skipRedirection
+   * Getter for skipRedirection.
    *
-   * @return boolean return the skipRedirection value
-   * @access public
+   * @return bool
+   *   return the skipRedirection value
    */
-  function getSkipRedirection() {
+  public function getSkipRedirection() {
     return $this->_skipRedirection;
   }
 
-  function setWord($fileName = NULL) {
+  /**
+   * @param null $fileName
+   */
+  public function setWord($fileName = NULL) {
     //Mark as a CSV file.
     header('Content-Type: application/vnd.ms-word');
 
@@ -688,7 +701,10 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     header("Content-Disposition: attachment; filename=Contacts_$fileName");
   }
 
-  function setExcel($fileName = NULL) {
+  /**
+   * @param null $fileName
+   */
+  public function setExcel($fileName = NULL) {
     //Mark as an excel file.
     header('Content-Type: application/vnd.ms-excel');
 
@@ -701,14 +717,13 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   }
 
   /**
-   * setter for print
+   * Setter for print.
    *
-   * @param boolean $print
+   * @param bool $print
    *
    * @return void
-   * @access public
    */
-  function setPrint($print) {
+  public function setPrint($print) {
     if ($print == "xls") {
       $this->setExcel();
     }
@@ -719,16 +734,19 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   }
 
   /**
-   * getter for print
+   * Getter for print.
    *
-   * @return boolean return the print value
-   * @access public
+   * @return bool
+   *   return the print value
    */
-  function getPrint() {
+  public function getPrint() {
     return $this->_print;
   }
 
-  function getTemplateFile() {
+  /**
+   * @return string
+   */
+  public function getTemplateFile() {
     if ($this->_print) {
       if ($this->_print == CRM_Core_Smarty::PRINT_PAGE) {
         return 'CRM/common/print.tpl';
@@ -746,6 +764,10 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     }
   }
 
+  /**
+   * @param $uploadDir
+   * @param $uploadNames
+   */
   public function addUploadAction($uploadDir, $uploadNames) {
     if (empty($uploadDir)) {
       $config = CRM_Core_Config::singleton();
@@ -771,18 +793,31 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     $this->addAction('upload', $action);
   }
 
+  /**
+   * @param $parent
+   */
   public function setParent($parent) {
     $this->_parent = $parent;
   }
 
+  /**
+   * @return object
+   */
   public function getParent() {
     return $this->_parent;
   }
 
+  /**
+   * @return string
+   */
   public function getDestination() {
     return $this->_destination;
   }
 
+  /**
+   * @param null $url
+   * @param bool $setToReferer
+   */
   public function setDestination($url = NULL, $setToReferer = FALSE) {
     if (empty($url)) {
       if ($setToReferer) {
@@ -798,6 +833,9 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
     $this->set('civicrmDestination', $this->_destination);
   }
 
+  /**
+   * @return mixed
+   */
   public function cancelAction() {
     $actionName = $this->getActionName();
     list($pageName, $action) = $actionName;
@@ -809,7 +847,6 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
    * and present the user a better message and/or redirect to the same page with a reset url
    *
    * @return void
-   *
    */
   public function invalidKey() {
     self::invalidKeyCommon();
@@ -821,18 +858,25 @@ class CRM_Core_Controller extends HTML_QuickForm_Controller {
   }
 
   /**
-   * Instead of outputting a fatal error message, we'll just redirect to the entryURL if present
+   * Instead of outputting a fatal error message, we'll just redirect
+   * to the entryURL if present
    *
    * @return void
    */
   public function invalidKeyRedirect() {
-    if ($this->_entryURL) {
-      CRM_Core_Session::setStatus(ts('Your browser session has expired and we are unable to complete your form submission. We have returned you to the initial step so you can complete and resubmit the form. If you experience continued difficulties, please contact us for assistance.'));
-      return CRM_Utils_System::redirect($this->_entryURL);
+    if ($this->_entryURL && $url_parts = parse_url($this->_entryURL)) {
+      // CRM-16832: Ensure local redirects only.
+      if (!empty($url_parts['path'])) {
+        // Prepend a slash, but don't duplicate it.
+        $redirect_url = '/' . ltrim($url_parts['path'], '/');
+        if (!empty($url_parts['query'])) {
+          $redirect_url .= '?' . $url_parts['query'];
+        }
+        CRM_Core_Session::setStatus(ts('Your browser session has expired and we are unable to complete your form submission. We have returned you to the initial step so you can complete and resubmit the form. If you experience continued difficulties, please contact us for assistance.'));
+        return CRM_Utils_System::redirect($redirect_url);
+      }
     }
-    else {
-      self::invalidKeyCommon();
-    }
+    self::invalidKeyCommon();
   }
 
 }

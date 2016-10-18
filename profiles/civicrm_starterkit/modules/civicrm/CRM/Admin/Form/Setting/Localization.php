@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,19 +23,16 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
- * $Id$
- *
+ * @copyright CiviCRM LLC (c) 2004-2015
  */
 
 /**
  * This class generates form components for Localization
- *
  */
 class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
   // use this variable to store mappings that we compute in buildForm and also
@@ -43,10 +40,7 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
   protected $_currencySymbols;
 
   /**
-   * Function to build the form
-   *
-   * @return None
-   * @access public
+   * Build the form object.
    */
   public function buildQuickForm() {
     $config = CRM_Core_Config::singleton();
@@ -134,33 +128,7 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
     $includeState->setButtonAttributes('remove', array('value' => ts('<< Remove')));
 
     $this->addElement('select', 'defaultContactCountry', ts('Default Country'), array('' => ts('- select -')) + $country);
-
-    /***Default State/Province***/
-    $stateCountryMap = array();
-    $stateCountryMap[] = array(
-      'state_province' => 'defaultContactStateProvince',
-      'country' => 'defaultContactCountry',
-    );
-
-    $countryDefault = isset($this->_submitValues['defaultContactCountry']) ? $this->_submitValues['defaultContactCountry'] : $config->defaultContactCountry;
-
-    if ($countryDefault) {
-      $selectStateProvinceOptions = array('' => ts('- select -')) + CRM_Core_PseudoConstant::stateProvinceForCountry($countryDefault);
-    }
-    else {
-      $selectStateProvinceOptions = array('' => ts('- select a country -'));
-    }
-
-    $i18n->localizeArray($selectStateProvinceOptions, array('context' => 'state_province'));
-    asort($selectStateProvinceOptions);
-
-    $this->addElement('select', 'defaultContactStateProvince', ts('Default State/Province'), $selectStateProvinceOptions);
-
-    // state country js
-    CRM_Core_BAO_Address::addStateCountryMap($stateCountryMap);
-
-    $defaults = array();
-    CRM_Core_BAO_Address::fixAllStateSelects($form, $defaults);
+    $this->addChainSelect('defaultContactStateProvince', array('label' => ts('Default State/Province')));
 
     // we do this only to initialize currencySymbols, kinda hackish but works!
     $config->defaultCurrencySymbol();
@@ -195,7 +163,12 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
     parent::buildQuickForm();
   }
 
-  static function formRule($fields) {
+  /**
+   * @param $fields
+   *
+   * @return array|bool
+   */
+  public static function formRule($fields) {
     $errors = array();
     if (CRM_Utils_Array::value('monetaryThousandSeparator', $fields) ==
       CRM_Utils_Array::value('monetaryDecimalPoint', $fields)
@@ -223,7 +196,7 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
 
     // CRM-7962, CRM-7713, CRM-9004
     if (!empty($fields['defaultContactCountry']) &&
-      (CRM_Utils_Array::value('countryLimit', $fields) &&
+      (!empty($fields['countryLimit']) &&
         (!in_array($fields['defaultContactCountry'], $fields['countryLimit']))
       )
     ) {
@@ -233,7 +206,7 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
     return empty($errors) ? TRUE : $errors;
   }
 
-  function setDefaultValues() {
+  public function setDefaultValues() {
     parent::setDefaultValues();
 
     // CRM-1496
@@ -273,8 +246,9 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
       $values['currencyLimit'] = array($values['defaultCurrency']);
     }
     elseif (!in_array($values['defaultCurrency'],
-        $values['currencyLimit']
-      )) {
+      $values['currencyLimit']
+    )
+    ) {
       $values['currencyLimit'][] = $values['defaultCurrency'];
     }
 
@@ -304,12 +278,12 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
     unset($values['currencyLimit']);
 
     // make the site multi-lang if requested
-    if (CRM_Utils_Array::value('makeMultilingual', $values)) {
+    if (!empty($values['makeMultilingual'])) {
       CRM_Core_I18n_Schema::makeMultilingual($values['lcMessages']);
       $values['languageLimit'][$values['lcMessages']] = 1;
       // make the site single-lang if requested
     }
-    elseif (CRM_Utils_Array::value('makeSinglelingual', $values)) {
+    elseif (!empty($values['makeSinglelingual'])) {
       CRM_Core_I18n_Schema::makeSinglelingual($values['lcMessages']);
       $values['languageLimit'] = '';
     }
@@ -325,7 +299,7 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
     }
 
     // if we manipulated the language list, return to the localization admin screen
-    $return = (bool)(CRM_Utils_Array::value('makeMultilingual', $values) or CRM_Utils_Array::value('addLanguage', $values));
+    $return = (bool) (CRM_Utils_Array::value('makeMultilingual', $values) or CRM_Utils_Array::value('addLanguage', $values));
 
     // save all the settings
     parent::commonProcess($values);
@@ -334,5 +308,5 @@ class CRM_Admin_Form_Setting_Localization extends CRM_Admin_Form_Setting {
       CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/admin/setting/localization', 'reset=1'));
     }
   }
-}
 
+}

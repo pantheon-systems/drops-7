@@ -47,7 +47,7 @@
      <title>Get Image File</title>
      <page_callback>CRM_Contact_Page_ImageFile</page_callback>
      <access_arguments>*always allow*</access_arguments>
-  </item>  
+  </item>
   <item>
      <path>civicrm/contact/search/basic</path>
      <title>Find Contacts</title>
@@ -77,11 +77,6 @@
      <page_callback>CRM_Contact_Page_CustomSearch</page_callback>
      <page_type>1</page_type>
      <weight>16</weight>
-  </item>
-  <item>
-     <path>civicrm/contact/search/simple</path>
-     <title>Simple Search</title>
-     <page_callback>CRM_Contact_Form_Search_Simple</page_callback>
   </item>
   <item>
      <path>civicrm/contact/add</path>
@@ -256,20 +251,10 @@
      <page_callback>CRM_Dashlet_Page_Blog</page_callback>
   </item>
   <item>
-    <path>civicrm/ajax/state</path>
-    <page_callback>CRM_Core_Page_AJAX_Location::state</page_callback>
-    <access_arguments>access CiviCRM</access_arguments>
+     <path>civicrm/dashlet/getting-started</path>
+     <title>CiviCRM Getting Started</title>
+     <page_callback>CRM_Dashlet_Page_GettingStarted</page_callback>
   </item>
-  <item>
-    <path>civicrm/ajax/country</path>
-    <page_callback>CRM_Core_Page_AJAX_Location::country</page_callback>
-    <access_arguments>access CiviCRM</access_arguments>
-  </item>
-  <item>
-    <path>civicrm/ajax/search</path>
-    <page_callback>CRM_Contact_Page_AJAX::search</page_callback>
-    <access_arguments>access CiviCRM</access_arguments>
-</item>
 <item>
      <path>civicrm/ajax/relation</path>
      <page_callback>CRM_Contact_Page_AJAX::relationship</page_callback>
@@ -282,11 +267,6 @@
      <access_arguments>access CiviCRM</access_arguments>
 </item>
 <item>
-     <path>civicrm/ajax/contact</path>
-     <page_callback>CRM_Contact_Page_AJAX::contact</page_callback>
-     <access_arguments>access CiviCRM</access_arguments>
-</item>
-<item>
      <path>civicrm/ajax/custom</path>
      <page_callback>CRM_Contact_Page_AJAX::customField</page_callback>
      <access_arguments>access CiviCRM</access_arguments>
@@ -294,12 +274,6 @@
 <item>
      <path>civicrm/ajax/customvalue</path>
      <page_callback>CRM_Contact_Page_AJAX::deleteCustomValue</page_callback>
-     <access_arguments>access CiviCRM</access_arguments>
-     <page_type>3</page_type>
-</item>
-<item>
-     <path>civicrm/ajax/ed</path>
-     <page_callback>CRM_Contact_Page_AJAX::enableDisable</page_callback>
      <access_arguments>access CiviCRM</access_arguments>
      <page_type>3</page_type>
 </item>
@@ -319,11 +293,6 @@
      <access_callback>1</access_callback>
 </item>
 <item>
-     <path>civicrm/ajax/auto</path>
-     <page_callback>CRM_Contact_Page_AJAX::autocomplete</page_callback>
-     <access_callback>1</access_callback>
-</item>
-<item>
      <path>civicrm/ajax/subtype</path>
      <page_callback>CRM_Contact_Page_AJAX::buildSubTypes</page_callback>
      <access_arguments>access CiviCRM</access_arguments>
@@ -337,11 +306,6 @@
 <item>
      <path>civicrm/ajax/signature</path>
      <page_callback>CRM_Contact_Page_AJAX::getSignature</page_callback>
-     <access_arguments>access CiviCRM</access_arguments>
-</item>
-<item>
-     <path>civicrm/ajax/relationshipcontacts</path>
-     <page_callback>CRM_Contact_Page_AJAX::relationshipContacts</page_callback>
      <access_arguments>access CiviCRM</access_arguments>
 </item>
 <item>
@@ -409,11 +373,6 @@
      <access_arguments>access CiviCRM</access_arguments>
 </item>
 <item>
-     <path>civicrm/ajax/relationshipContactTypeList</path>
-     <page_callback>CRM_Contact_Page_AJAX::relationshipContactTypeList</page_callback>
-     <access_arguments>access CiviCRM</access_arguments>
-</item>
-<item>
     <path>civicrm/contact/view/useradd</path>
     <path_arguments>cid=%%cid%%</path_arguments>
     <title>Add User</title>
@@ -430,4 +389,9 @@
   <title>Activities</title>
   <page_callback>CRM_Contact_Form_Task_SMS</page_callback>
 </item>
+  <item>
+    <path>civicrm/ajax/contactrelationships</path>
+    <page_callback>CRM_Contact_Page_AJAX::getContactRelationships</page_callback>
+    <access_arguments>access CiviCRM;view my contact</access_arguments>
+  </item>
 </menu>

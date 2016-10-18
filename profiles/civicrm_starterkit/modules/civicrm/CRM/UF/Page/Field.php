@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -43,28 +43,28 @@
  */
 class CRM_UF_Page_Field extends CRM_Core_Page {
 
+  public $useLivePageJS = TRUE;
+
   /**
-   * The group id of the field
+   * The group id of the field.
    *
    * @var int
-   * @access protected
    */
   protected $_gid;
 
   /**
-   * The action links that we need to display for the browse screen
+   * The action links that we need to display for the browse screen.
    *
    * @var array
-   * @access private
    */
   private static $_actionLinks;
 
   /**
    * Get the action links for this page.
    *
-   * @return array $_actionLinks
-   *
-   */ function &actionLinks() {
+   * @return array
+   */
+  public function &actionLinks() {
     if (!isset(self::$_actionLinks)) {
       self::$_actionLinks = array(
         CRM_Core_Action::UPDATE => array(
@@ -81,14 +81,12 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
         ),
         CRM_Core_Action::DISABLE => array(
           'name' => ts('Disable'),
-          'extra' => 'onclick = "enableDisable( %%id%%,\'' . 'CRM_Core_BAO_UFField' . '\',\'' . 'enable-disable' . '\',0,\'UFField\' );"',
-          'ref' => 'disable-action',
+          'ref' => 'crm-enable-disable',
           'title' => ts('Disable CiviCRM Profile Field'),
         ),
         CRM_Core_Action::ENABLE => array(
           'name' => ts('Enable'),
-          'extra' => 'onclick = "enableDisable( %%id%%,\'' . 'CRM_Core_BAO_UFField' . '\',\'' . 'disable-enable' . '\',0,\'UFField\' );"',
-          'ref' => 'enable-action',
+          'ref' => 'crm-enable-disable',
           'title' => ts('Enable CiviCRM Profile Field'),
         ),
         CRM_Core_Action::DELETE => array(
@@ -106,10 +104,13 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
    * Browse all CiviCRM Profile group fields.
    *
    * @return void
-   * @access public
-   * @static
    */
-  function browse() {
+  public function browse() {
+    $resourceManager = CRM_Core_Resources::singleton();
+    if (!empty($_GET['new']) && $resourceManager->ajaxPopupsEnabled) {
+      $resourceManager->addScriptFile('civicrm', 'js/crm.addNew.js', 999, 'html-header');
+    }
+
     $ufField = array();
     $ufFieldBAO = new CRM_Core_BAO_UFField();
 
@@ -124,8 +125,8 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
     $isGroupReserved = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_UFGroup', $this->_gid, 'is_reserved');
     $this->assign('isGroupReserved', $isGroupReserved);
 
-    $profileType = CRM_Core_BAO_UFField::getProfileType($this->_gid);
-    if ($profileType == 'Contribution' || $profileType == 'Membership' || $profileType == 'Activity' || $profileType == 'Participant') {
+    $isMixedProfile = CRM_Core_BAO_UFField::checkProfileType($this->_gid);
+    if ($isMixedProfile) {
       $this->assign('skipCreate', TRUE);
     }
 
@@ -144,11 +145,12 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
     $select['group'] = ts('Group(s)');
     $select['tag'] = ts('Tag(s)');
 
+    $visibility = CRM_Core_SelectValues::ufVisibility();
     while ($ufFieldBAO->fetch()) {
       $ufField[$ufFieldBAO->id] = array();
       $phoneType = $locType = '';
       CRM_Core_DAO::storeValues($ufFieldBAO, $ufField[$ufFieldBAO->id]);
-      CRM_Core_DAO_UFField::addDisplayEnums($ufField[$ufFieldBAO->id]);
+      $ufField[$ufFieldBAO->id]['visibility_display'] = $visibility[$ufFieldBAO->visibility];
 
       $ufField[$ufFieldBAO->id]['label'] = $ufFieldBAO->label;
 
@@ -171,7 +173,12 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
         array(
           'id' => $ufFieldBAO->id,
           'gid' => $this->_gid,
-        )
+        ),
+        ts('more'),
+        FALSE,
+        'ufField.row.actions',
+        'UFField',
+        $ufFieldBAO->id
       );
     }
 
@@ -193,24 +200,24 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
   }
 
   /**
-   * edit CiviCRM Profile data.
+   * Edit CiviCRM Profile data.
    *
    * editing would involved modifying existing fields + adding data to new fields.
    *
-   * @param string $action the action to be invoked
+   * @param string $action
+   *   The action to be invoked.
    *
    * @return void
-   * @access public
    */
-  function edit($action) {
+  public function edit($action) {
     // create a simple controller for editing CiviCRM Profile data
     $controller = new CRM_Core_Controller_Simple('CRM_UF_Form_Field', ts('CiviCRM Profile Field'), $action);
 
     // set the userContext stack
     $session = CRM_Core_Session::singleton();
     $session->pushUserContext(CRM_Utils_System::url('civicrm/admin/uf/group/field',
-        'reset=1&action=browse&gid=' . $this->_gid
-      ));
+      'reset=1&action=browse&gid=' . $this->_gid
+    ));
     $controller->set('gid', $this->_gid);
     $controller->setEmbedded(TRUE);
     $controller->process();
@@ -224,10 +231,8 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
    * type of action and executes that action.
    *
    * @return void
-   * @access public
-   *
    */
-  function run() {
+  public function run() {
     // get the group id
     $this->_gid = CRM_Utils_Request::retrieve('gid', 'Positive',
       $this, FALSE, 0
@@ -270,24 +275,25 @@ class CRM_UF_Page_Field extends CRM_Core_Page {
   }
 
   /**
-   * Preview custom field
+   * Preview custom field.
    *
-   * @param int $id custom field id
+   * @param int $fieldId
+   *   Custom field id.
+   * @param int $groupId
    *
    * @return void
-   * @access public
    */
-  function preview($fieldId, $groupId) {
+  public function preview($fieldId, $groupId) {
     $controller = new CRM_Core_Controller_Simple('CRM_UF_Form_Preview', ts('Preview Custom Data'), CRM_Core_Action::PREVIEW);
     $session = CRM_Core_Session::singleton();
     $session->pushUserContext(CRM_Utils_System::url('civicrm/admin/uf/group/field',
-        'reset=1&action=browse&gid=' . $this->_gid
-      ));
+      'reset=1&action=browse&gid=' . $this->_gid
+    ));
     $controller->set('fieldId', $fieldId);
     $controller->set('id', $groupId);
     $controller->setEmbedded(TRUE);
     $controller->process();
     $controller->run();
   }
-}
 
+}

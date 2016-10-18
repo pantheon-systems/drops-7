@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -46,6 +46,7 @@ class civicrm_handler_field_custom_file extends views_handler_field {
   function render($values) {
     $value = $values->{$this->field_alias};
     if (!is_null($value)) {
+      $path = 'civicrm/file';
       $fileType = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_File',
         $value,
         'mime_type'
@@ -57,16 +58,18 @@ class civicrm_handler_field_custom_file extends views_handler_field {
           $value,
           'uri'
         );
-        $config = CRM_Core_Config::singleton();
-        return str_replace('persist/contribute', 'custom', $config->imageUploadURL) . $uri;
+
+        $path = sprintf('%s/imagefile',$path);
       }
-      else {
         $entityField = $this->aliases['entity_id'];
-        return CRM_Utils_System::url('civicrm/file',
-          "reset=1&id={$value}&eid={$values->$entityField}",
-          TRUE, NULL, TRUE, TRUE
+        $url = CRM_Utils_System::url($path,
+          "id={$value}&eid={$values->$entityField}",
+          TRUE, FALSE, FALSE, TRUE
         );
-      }
+        return CRM_Utils_System::url($path,
+          "id={$value}&eid={$values->$entityField}",
+          TRUE, FALSE, FALSE, TRUE
+        );
     }
     return NULL;
   }

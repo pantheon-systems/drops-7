@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -56,10 +56,8 @@ function verify( ) {
     width         : 350,
     height        : 160,
     resizable     : false,
-    bgiframe      : true,
     draggable     : true,
     closeOnEscape : false,
-    overlay       : { opacity: 0.5, background: "black" },
     open          : function ( ) {
         cj("#id-processing").dialog().parents(".ui-dialog").find(".ui-dialog-titlebar").remove();
     }
@@ -161,6 +159,10 @@ function verify( ) {
                <td class="description label">{$form.newGroupDesc.label}</td>
                <td>{$form.newGroupDesc.html}</td>
              </tr>
+             <tr>
+               <td class="description label">{$form.newGroupType.label}</td>
+               <td>{$form.newGroupType.html}</td>
+             </tr>
             </table>
  </div><!-- /.crm-accordion-body -->
 </div><!-- /.crm-accordion-wrapper -->
@@ -230,9 +232,6 @@ function verify( ) {
 
 {literal}
 <script type="text/javascript">
-cj(function() {
-   cj().crmAccordions();
-});
 
 {/literal}{if $invalidGroupName}{literal}
 cj("#new-group.collapsed").crmAccordionToggle();

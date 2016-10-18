@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -87,6 +87,9 @@
 
 {if $rows and $action ne 2 and $action ne 4}
 
+  {* include wysiwyg related files*}
+  {include file="CRM/common/wysiwyg.tpl" includeWysiwygEditor=true}
+
   <div id='mainTabContainer'>
     <ul>
       <li id='tab_user'>    <a href='#user'     title='{ts}User-driven Messages{/ts}'>    {ts}User-driven Messages{/ts}    </a></li>
@@ -94,7 +97,7 @@
     </ul>
 
     {* create two selector tabs, first being the ‘user’ one, the second being the ‘workflow’ one *}
-    {include file="CRM/common/enableDisable.tpl"}
+    {include file="CRM/common/enableDisableApi.tpl"}
     {include file="CRM/common/jsortable.tpl"}
     {foreach from=$rows item=template_row key=type}
       <div id="{if $type eq 'userTemplates'}user{else}workflow{/if}" class='ui-tabs-panel ui-widget-content ui-corner-bottom'>
@@ -122,7 +125,7 @@
                 </thead>
                 <tbody>
                 {foreach from=$template_row item=row}
-                    <tr id="row_{$row.id}" class="{$row.class}{if NOT $row.is_active} disabled{/if}">
+                    <tr id="message_template-{$row.id}" class="crm-entity {$row.class}{if NOT $row.is_active} disabled{/if}">
                       <td>{$row.msg_title}</td>
                       {if $type eq 'userTemplates'}
                         <td>{$row.msg_subject}</td>
@@ -137,7 +140,7 @@
 
             {if $action ne 1 and $action ne 2 and $type eq 'userTemplates'}
               <div class="action-link">
-                <a href="{crmURL p='civicrm/admin/messageTemplates/add' q="action=add&reset=1"}" id="newMessageTemplates" class="button"><span><div class="icon add-icon"></div>{ts}Add Message Template{/ts}</span></a>
+                {crmButton p='civicrm/admin/messageTemplates/add' q="action=add&reset=1" id="newMessageTemplates"  icon="circle-plus"}{ts}Add Message Template{/ts}{/crmButton}
               </div>
               <div class="spacer"></div>
             {/if}
@@ -157,9 +160,9 @@
     var selectedTab = 'user';
     {if $selectedChild}selectedTab = '{$selectedChild}';{/if}
     {literal}
-      cj( function() {
-        var tabIndex = cj('#tab_' + selectedTab).prevAll().length
-        cj("#mainTabContainer").tabs( {selected: tabIndex} );
+      CRM.$(function($) {
+        var tabIndex = $('#tab_' + selectedTab).prevAll().length
+        $("#mainTabContainer").tabs( {active: tabIndex} );
       });
     {/literal}
   </script>

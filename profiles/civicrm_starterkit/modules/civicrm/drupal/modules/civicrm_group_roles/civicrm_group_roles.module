@@ -1,7 +1,7 @@
 <?php
 /*
   +--------------------------------------------------------------------+
-  | CiviCRM version 4.4                                                |
+  | CiviCRM version 4.6                                                |
   +--------------------------------------------------------------------+
   | This file is a part of CiviCRM.                                    |
   |                                                                    |
@@ -75,8 +75,6 @@ function civicrm_group_roles_user_login(&$edit, $account) {
     return;
   }
 
-  $roles = array_diff($all = user_roles(TRUE), array('anonymous user', 'authenticated user'));
-
   require_once 'api/api.php';
   require_once 'CRM/Core/BAO/UFMatch.php';
 
@@ -93,8 +91,17 @@ function civicrm_group_roles_user_login(&$edit, $account) {
   $query->join('role', 'r', 'r.rid=cgr.role_id');
   $query->fields('r', array('name'))->fields('cgr', array('role_id', 'group_id'));
 
+  // Determine which group-role-sync'd roles the user should have.
+  // Assemble a  list of sync'd roles that the user currently has, in $currentSyncedRoles
+  // and a list of sync'd roles that the user should have, in $correctSyncedRoles.
+  $allCurrentRoleIDs = array_keys($account->roles);
+  $currentSyncedRoles = array();
+  $correctSyncedRoles = array();
   $result = $query->execute();
   foreach ($result as $group) {
+    if (in_array($group->role_id, $allCurrentRoleIDs)) {
+      $currentSyncedRoles[$group->role_id] = $group->name;
+    }
     $params = array(
       'filter.group_id' => $group->group_id,
       'id' => $contact,
@@ -102,12 +109,33 @@ function civicrm_group_roles_user_login(&$edit, $account) {
     );
     $contacts = civicrm_api('contact', 'get', $params);
     if ($contacts['count'] > 0) { // The user is in there
-      $msg = sprintf('assigning role %s (%d) to user %s because they are part of group %d (contactID: %d)',
-             $group->name, $group->role_id, $account->uid, $group->group_id, $contact);
-      watchdog('civicrm_group_roles', $msg);
-      civicrm_group_roles_add_role($account->uid, $group->role_id, $group->name);
+      $message = 'Role @role (@rid) should be held by user @user (@uid) because they are part of group @group (contactID: @cid)';
+      $params = array(
+        '@role' => $group->name,
+        '@rid' => $group->role_id,
+        '@user' => $account->name,
+        '@uid' => $account->uid,
+        '@group' => $group->group_id,
+        '@cid' => $contact,
+      );
+      watchdog('civicrm_group_roles', $message, $params, WATCHDOG_ERROR);
+      $correctSyncedRoles[$group->role_id] = $group->name;
     }
   }
+
+  $rolesToAdd    = array_diff_key($correctSyncedRoles, $currentSyncedRoles);
+  $rolesToRemove = array_diff_key($currentSyncedRoles, $correctSyncedRoles);
+
+  $finalRoles = $account->roles + $rolesToAdd;
+  $finalRoles = array_diff($finalRoles, $rolesToRemove);
+  $params = array(
+    '@initial' => print_r($account->roles, TRUE),
+    '@add' => print_r($rolesToAdd, TRUE),
+    '@remove' => print_r($rolesToRemove, TRUE),
+    '@final' => print_r($finalRoles, TRUE),
+  );
+  watchdog('civicrm_group_roles', 'Initial roles: @roles, roles to add: @add, roles to remove: @remove, final roles: @final', $params, WATCHDOG_NOTICE);
+  user_save($account, array('roles' => $finalRoles));
 }
 
 function civicrm_group_roles_add_groups_oncreate($account, $roles) {
@@ -124,12 +152,8 @@ function civicrm_group_roles_add_groups_oncreate($account, $roles) {
 
   }
 
-  $groups = db_select('civicrm_group_roles_rules', 'cgr')->fields('cgr', array('group_id'))->condition('role_id', array_keys($roles))->execute()->fetchAll();
-  if (empty($groups)) {
-    return;
-  }
-
-  require_once 'CRM/Contact/BAO/GroupContact.php';
+  $result = db_select('civicrm_group_roles_rules', 'cgr')->fields('cgr', array('group_id'))->condition('role_id', array_keys($roles))->execute()->fetchAll();
+  $groups = _civicrm_group_roles_validate_groups($result);
   foreach ($groups as $group) {
     $groupContact = new CRM_Contact_DAO_GroupContact();
     $groupContact->group_id = $group->group_id;
@@ -443,7 +467,7 @@ function civicrm_group_roles_show_rules($action = NULL, $id = NULL) {
   $roles = user_roles(TRUE);
 
   // get civicrm groups
-  $params = array('version' => 3);
+  $params = array('version' => 3, 'option.limit' => 0);
   $groups = civicrm_api('group', 'get', $params);
   $groups = CRM_Utils_Array::value('values', $groups);
 
@@ -598,9 +622,13 @@ function civicrm_group_roles_add_rule_form_submit($form, &$form_state) {
 
 /**
  * Helper function to add and remove users from groups, use after user_save to remove roles $roles = $edit['roles'] for user_save
- * @roles list of role to add/remove
- * @user Drupal user object
- * $op either add or remove
+ *
+ * @param array $roles
+ *   list of role to add/remove
+ * @param object $user
+ *   Drupal user object
+ * @param string $op
+ *   either add or remove
  */
 function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
   if (!civicrm_initialize()) {
@@ -621,32 +649,26 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
   // make sure user has other roles other than authenticated
   if ($roles) {
     //find the contact record
-    $params = array('version' => 3, 'sequential' => 1, 'email' => $user->mail );
-    $contact = civicrm_api('contact', 'get', $params);
+    $params = array(
+      'version' => 3,
+      'sequential' => 1,
+      'return' => 'contact_id',
+      'uf_id' => $user->uid
+    );
+    $contact = civicrm_api('UFMatch', 'get', $params);
 
-    if ( empty($contact) || $contact['is_error'] == 1 || $contact['count'] < 1 ) {
-      $msg = 'CiviCRM contact not found for @mail';
-      $variables = array( '@mail' => $user->mail );
-      watchdog( 'civicrm',  $msg, $variables );
-      if ( $debug_mode ) drupal_set_message( t( 'CiviCRM contact not found for %mail', array( '%mail' => $user->mail ) ) );
-      return;
-    }
-
-    $contact_id = CRM_Utils_Array::value( 'contact_id', $contact['values'][0] );
-
-    if ( $contact_id ) {
+    if (!empty($contact['values']) && !CRM_Utils_Array::value('is_error', $contact) && is_numeric($contact['values'][0]['contact_id'])) {
+      $contact_id = CRM_Utils_Array::value('contact_id', $contact['values'][0]);
 
       //loop over user's roles
       foreach ($roles as $rid => $role) {
 
-        //find the group(s) for the role
-        $groups = db_select('civicrm_group_roles_rules', 'cgr' )->fields( 'cgr', array('group_id') )->condition('role_id', $rid)->execute( )->fetchAll( );
-        foreach ( $groups as $group ) {
-
+        // Find the group(s) for the role
+        $result = db_select('civicrm_group_roles_rules', 'cgr' )->fields( 'cgr', array('group_id') )->condition('role_id', $rid)->execute( )->fetchAll( );
+        $groups = _civicrm_group_roles_validate_groups($result);
+        foreach ($groups as $group) {
           //add the contact
-          $groupId = $group->group_id;
-          $contacts = array($contact);
-          $gparams = array('version' => 3, 'group_id' => $groupId, 'contact_id' => $contact_id);
+          $gparams = array('version' => 3, 'group_id' => $group->group_id, 'contact_id' => $contact_id);
           if ($op == 'add') {
             $result = civicrm_api('GroupContact', 'create', $gparams);
           }
@@ -657,9 +679,10 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
           if ($result['is_error'] > 0) {
             $msg = 'Error: Unable to sync role @role';
             $variables = array('@role' => $role);
-            watchdog('civicrm_group_roles', $msg, $variables);
+            watchdog('civicrm_group_roles', $msg, $variables, WATCHDOG_ERROR);
             if ( $debug_mode ) drupal_set_message( t( 'Error: Unable to sync role %role', array( '%role' => $role ) ) );
-          } elseif ( $debug_mode && $result['values'][$txt] > 0 ) {
+          }
+          elseif ( $debug_mode && $result['values'][$txt] > 0 ) {
             drupal_set_message("$txt user $user->name Group: $role");
             drupal_set_message(var_export($result, TRUE));
           }
@@ -670,7 +693,17 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
         } //end foreach
       } //end foreach
 
-    } //end if $contact
+    } //end if contact_id
+
+    else {
+      $msg = 'CiviCRM contact not found for Drupal user ID @id';
+      $variables = array('@id' => $user->uid);
+      watchdog('civicrm_group_roles', $msg, $variables, WATCHDOG_ERROR);
+      if ($debug_mode) {
+        drupal_set_message(t($msg, $variables));
+      }
+    }
+
   } //endif $roles
 }
 
@@ -761,4 +794,42 @@ function civicrm_group_roles_batch_finished($success, $results, $operations) {
   }
 
   drupal_set_message($message);
+}
+
+/**
+ * Filters invalid groups out of a civicrm_group_roles_rules query result
+ *
+ * @param array $groups Result of a Drupal Query::execute() against
+ *                      civicrm_group_roles_rules - An array of stdClass objects
+ *                      having a group_id property
+ * @return array
+ */
+function _civicrm_group_roles_validate_groups(array $groups) {
+  foreach ($groups as $key => $group) {
+    $groupId = $group->group_id;
+    $group_result = civicrm_api('Group', 'get', array(
+      'group_id' => $groupId,
+      'sequential' => 1,
+      'version' => 3,
+    ));
+
+    // CRM-16033: Ensure the group hasn't been deleted
+    if ($group_result['count'] === 0) {
+      $msg = 'Error: Cannot add contact to nonexistent group (ID @groupId)';
+      $variables = array('@groupId' => $groupId);
+      watchdog('civicrm_group_roles', $msg, $variables, WATCHDOG_ERROR);
+      unset($groups[$key]);
+      continue;
+    }
+
+    // CRM-11161: Exclude smart groups as we don't want to add contacts statically to a smart group
+    if (CRM_Utils_Array::value('saved_search_id', $group_result['values'][0])) {
+      $msg = 'Error: Cannot statically add contacts to a smart group (ID @groupId)';
+      $variables = array('@groupId' => $groupId);
+      watchdog('civicrm_group_roles', $msg, $variables, WATCHDOG_ERROR);
+      unset($groups[$key]);
+      continue;
+    }
+  }
+  return $groups;
 }

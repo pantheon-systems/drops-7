@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2014                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,17 +23,17 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2014
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id: $
  *
  */
 class CRM_Utils_Check {
-  CONST
+  const
     // How often to run checks and notify admins about issues.
     CHECK_TIMER = 86400;
 
@@ -42,7 +42,6 @@ class CRM_Utils_Check {
    * singleton pattern and cache the instance in this variable
    *
    * @var object
-   * @static
    */
   static private $_singleton = NULL;
 
@@ -51,7 +50,7 @@ class CRM_Utils_Check {
    *
    * @return CRM_Utils_Check
    */
-  static function &singleton() {
+  public static function &singleton() {
     if (!isset(self::$_singleton)) {
       self::$_singleton = new CRM_Utils_Check();
     }
@@ -59,7 +58,7 @@ class CRM_Utils_Check {
   }
 
   /**
-   * Execute "checkAll"
+   * Execute "checkAll".
    *
    * @param array|NULL $messages list of CRM_Utils_Check_Message; or NULL if the default list should be fetched
    */
@@ -85,9 +84,11 @@ class CRM_Utils_Check {
   }
 
   /**
-   * Throw an exception if any of the checks fail
+   * Throw an exception if any of the checks fail.
    *
    * @param array|NULL $messages list of CRM_Utils_Check_Message; or NULL if the default list should be fetched
+   *
+   * @throws Exception
    */
   public function assertValid($messages = NULL) {
     if ($messages === NULL) {
@@ -112,17 +113,30 @@ class CRM_Utils_Check {
    * We might even expose the results of these checks on the Wordpress
    * plugin status page or the Drupal admin/reports/status path.
    *
-   * @return array of messages
-   * @see Drupal's hook_requirements() -
-   * https://api.drupal.org/api/drupal/modules%21system%21system.api.php/function/hook_requirements
+   * @return array
+   *   Array of messages
+   * @link https://api.drupal.org/api/drupal/modules%21system%21system.api.php/function/hook_requirements
    */
   public function checkAll() {
-    $security = new CRM_Utils_Check_Security();
-    $env = new CRM_Utils_Check_Env();
-    $messages = array_merge(
-      $security->checkAll(),
-      $env->checkAll()
-    );
+    $checks = array();
+    $checks[] = new CRM_Utils_Check_Security();
+    $checks[] = new CRM_Utils_Check_Env();
+
+    $compInfo = CRM_Core_Component::getEnabledComponents();
+    foreach ($compInfo as $compObj) {
+      switch ($compObj->info['name']) {
+        case 'CiviCase':
+          $checks[] = new CRM_Utils_Check_Case(CRM_Case_XMLRepository::singleton(), CRM_Case_PseudoConstant::caseType('name'));
+          break;
+
+        default:
+      }
+    }
+
+    $messages = array();
+    foreach ($checks as $check) {
+      $messages = array_merge($messages, $check->checkAll());
+    }
     return $messages;
   }
 

@@ -12,8 +12,7 @@ class HTMLPurifier_URIParser
      */
     protected $percentEncoder;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->percentEncoder = new HTMLPurifier_PercentEncoder();
     }
 
@@ -23,15 +22,15 @@ class HTMLPurifier_URIParser
      * @return HTMLPurifier_URI representation of URI. This representation has
      *         not been validated yet and may not conform to RFC.
      */
-    public function parse($uri)
-    {
+    public function parse($uri) {
+
         $uri = $this->percentEncoder->normalize($uri);
 
         // Regexp is as per Appendix B.
         // Note that ["<>] are an addition to the RFC's recommended
         // characters, because they represent external delimeters.
         $r_URI = '!'.
-            '(([a-zA-Z0-9\.\+\-]+):)?'. // 2. Scheme
+            '(([^:/?#"<>]+):)?'. // 2. Scheme
             '(//([^/?#"<>]*))?'. // 4. Authority
             '([^?#"<>]*)'.       // 5. Path
             '(\?([^#"<>]*))?'.   // 7. Query

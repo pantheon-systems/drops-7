@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,17 +39,16 @@
 class CRM_Mailing_Form_Test extends CRM_Core_Form {
 
   /**
-   * Function to set variables up before form is built
+   * Set variables up before form is built.
    *
    * @return void
-   * @access public
    */
   public function preProcess() {
     //when user come from search context.
     $ssID = $this->get('ssID');
-    $this->assign('ssid',$ssID);
+    $this->assign('ssid', $ssID);
     $this->_searchBasedMailing = CRM_Contact_Form_Search::isSearchContext($this->get('context'));
-    if(CRM_Contact_Form_Search::isSearchContext($this->get('context')) && !$ssID){
+    if (CRM_Contact_Form_Search::isSearchContext($this->get('context')) && !$ssID) {
       $params = array();
       $result = CRM_Core_BAO_PrevNextCache::getSelectedContacts();
       $this->assign("value", $result);
@@ -57,13 +56,12 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
   }
 
   /**
-   * This function sets the default values for the form.
+   * Set default values for the form.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
-  function setDefaultValues() {
+  public function setDefaultValues() {
     $count = $this->get('count');
     $this->assign('count', $count);
   }
@@ -82,7 +80,7 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
     $this->setDefaults($defaults);
 
     $this->add('submit', 'sendtest', ts('Send a Test Mailing'));
-    $name = ts('Next >>');
+    $name = ts('Next');
     if (CRM_Mailing_Info::workflowEnabled()) {
       if (!CRM_Core_Permission::check('schedule mailings') &&
         CRM_Core_Permission::check('create mailings')
@@ -92,8 +90,9 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
     }
 
     $buttons = array(
-      array('type' => 'back',
-        'name' => ts('<< Previous'),
+      array(
+        'type' => 'back',
+        'name' => ts('Previous'),
       ),
       array(
         'type' => 'next',
@@ -114,8 +113,8 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
     $this->addButtons($buttons);
 
     $mailingID = $this->get('mailing_id');
-    $textFile  = $this->get('textFile');
-    $htmlFile  = $this->get('htmlFile');
+    $textFile = $this->get('textFile');
+    $htmlFile = $this->get('htmlFile');
 
     $this->addFormRule(array('CRM_Mailing_Form_Test', 'testMail'), $this);
     $preview = array();
@@ -147,8 +146,8 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
     );
 
     $returnProperties = $mailing->getReturnProperties();
-    $userID           = $session->get('userID');
-    $params           = array('contact_id' => $userID);
+    $userID = $session->get('userID');
+    $params = array('contact_id' => $userID);
 
     $details = CRM_Utils_Token::getTokenDetails($params,
       $returnProperties,
@@ -172,14 +171,16 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
   /**
    * Form rule to send out a test mailing.
    *
-   * @param array $params     Array of the form values
-   * @param array $files      Any files posted to the form
-   * @param array $self       an current this object
+   * @param aray $testParams
+   * @param array $files
+   *   Any files posted to the form.
+   * @param array $self
+   *   An current this object.
    *
-   * @return boolean          true on successful SMTP handoff
-   * @access public
+   * @return bool
+   *   true on successful SMTP handoff
    */
-  static function testMail($testParams, $files, $self) {
+  public static function testMail($testParams, $files, $self) {
     $error = NULL;
 
     $urlString = 'civicrm/mailing/send';
@@ -202,7 +203,7 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
       $urlString = 'civicrm/contact/' . $fragment;
     }
     $emails = NULL;
-    if (CRM_Utils_Array::value('sendtest', $testParams)) {
+    if (!empty($testParams['sendtest'])) {
       if (!($testParams['test_group'] || $testParams['test_email'])) {
         CRM_Core_Session::setStatus(ts('You did not provide an email address or select a group.'), ts('Test not sent.'), 'error');
         $error = TRUE;
@@ -213,9 +214,9 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
         foreach ($emailAdd as $key => $value) {
           $email = trim($value);
           $testParams['emails'][] = $email;
-          $emails .= $emails ? ",'$email'" : "'$email'";
+          $emails .= ($emails ? ',' : '') . "'" . CRM_Core_DAO::escapeString($email)  . "'";
           if (!CRM_Utils_Rule::email($email)) {
-            CRM_Core_Session::setStatus(ts('Please enter a valid email addresses.'), ts('Test not sent.'), 'error');
+            CRM_Core_Session::setStatus(ts('Please enter a valid email address.'), ts('Test not sent.'), 'error');
             $error = TRUE;
           }
         }
@@ -228,7 +229,7 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
       }
     }
 
-    if (CRM_Utils_Array::value('_qf_Test_submit', $testParams)) {
+    if (!empty($testParams['_qf_Test_submit'])) {
       //when user perform mailing from search context
       //redirect it to search result CRM-3711.
       if ($ssID && $self->_searchBasedMailing) {
@@ -260,25 +261,23 @@ class CRM_Mailing_Form_Test extends CRM_Core_Form {
       }
     }
 
-    if (CRM_Utils_Array::value('_qf_Test_next', $testParams) &&
-      $self->get('count') <= 0) {
+    if (!empty($testParams['_qf_Test_next']) &&
+      $self->get('count') <= 0
+    ) {
       return array(
         '_qf_default' =>
         ts("You can not schedule or send this mailing because there are currently no recipients selected. Click 'Previous' to return to the Select Recipients step, OR click 'Save & Continue Later'."),
       );
     }
 
-    if (CRM_Utils_Array::value('_qf_Import_refresh', $_POST) ||
-      CRM_Utils_Array::value('_qf_Test_next', $testParams) ||
-      !CRM_Utils_Array::value('sendtest', $testParams)
-    ) {
+    if (!empty($_POST['_qf_Import_refresh']) || !empty($testParams['_qf_Test_next']) || empty($testParams['sendtest'])) {
       $error = TRUE;
       return $error;
     }
 
-    $job             = new CRM_Mailing_BAO_MailingJob();
+    $job = new CRM_Mailing_BAO_MailingJob();
     $job->mailing_id = $self->get('mailing_id');
-    $job->is_test    = TRUE;
+    $job->is_test = TRUE;
     $job->save();
     $newEmails = NULL;
     $session = CRM_Core_Session::singleton();
@@ -291,6 +290,7 @@ WHERE      e.email IN ($emails)
 AND        e.on_hold = 0
 AND        c.is_opt_out = 0
 AND        c.do_not_email = 0
+AND        c.is_deleted = 0
 AND        c.is_deceased = 0
 GROUP BY   e.id
 ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
@@ -308,7 +308,9 @@ ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
 
       $dao->free();
       foreach ($testParams['emails'] as $key => $email) {
-        $email = trim($email);
+        // Email addresses are forced to lower case when saved, so ensure
+        // we have the same case when comparing.
+        $email = trim(strtolower($email));
         $contactId = $emailId = NULL;
         if (array_key_exists($email, $emailDetail)) {
           $emailId = $emailDetail[$email]['email_id'];
@@ -320,13 +322,15 @@ ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
           $params = array(
             'contact_type' => 'Individual',
             'email' => array(
-              1 => array('email' => $email,
+              1 => array(
+                'email' => $email,
                 'is_primary' => 1,
                 'location_type_id' => 1,
-              )),
+              ),
+            ),
           );
-          $contact   = CRM_Contact_BAO_Contact::create($params);
-          $emailId   = $contact->email[0]->id;
+          $contact = CRM_Contact_BAO_Contact::create($params);
+          $emailId = $contact->email[0]->id;
           $contactId = $contact->id;
           $contact->free();
         }
@@ -345,7 +349,7 @@ ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
       $isComplete = CRM_Mailing_BAO_MailingJob::runJobs($testParams);
     }
 
-    if (CRM_Utils_Array::value('sendtest', $testParams)) {
+    if (!empty($testParams['sendtest'])) {
       $status = NULL;
       if (CRM_Mailing_Info::workflowEnabled()) {
         if ((
@@ -372,9 +376,8 @@ ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
   }
 
   /**
-   * Display Name of the form
+   * Display Name of the form.
    *
-   * @access public
    *
    * @return string
    */
@@ -386,4 +389,3 @@ ORDER BY   e.is_bulkmail DESC, e.is_primary DESC
   }
 
 }
-

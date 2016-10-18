@@ -3,32 +3,14 @@
 /**
  * Validates ftp (File Transfer Protocol) URIs as defined by generic RFC 1738.
  */
-class HTMLPurifier_URIScheme_ftp extends HTMLPurifier_URIScheme
-{
-    /**
-     * @type int
-     */
+class HTMLPurifier_URIScheme_ftp extends HTMLPurifier_URIScheme {
+
     public $default_port = 21;
-
-    /**
-     * @type bool
-     */
     public $browsable = true; // usually
-
-    /**
-     * @type bool
-     */
     public $hierarchical = true;
 
-    /**
-     * @param HTMLPurifier_URI $uri
-     * @param HTMLPurifier_Config $config
-     * @param HTMLPurifier_Context $context
-     * @return bool
-     */
-    public function doValidate(&$uri, $config, $context)
-    {
-        $uri->query = null;
+    public function doValidate(&$uri, $config, $context) {
+        $uri->query    = null;
 
         // typecode check
         $semicolon_pos = strrpos($uri->path, ';'); // reverse
@@ -51,8 +33,10 @@ class HTMLPurifier_URIScheme_ftp extends HTMLPurifier_URIScheme
             $uri->path = str_replace(';', '%3B', $uri->path);
             $uri->path .= $type_ret;
         }
+
         return true;
     }
+
 }
 
 // vim: et sw=4 sts=4

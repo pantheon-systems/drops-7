@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -37,11 +37,25 @@
  */
 
 return array(
+  'userFrameworkLogging' => array(
+    'group_name' => 'Developer Preferences',
+    'group' => 'developer',
+    'name' => 'userFrameworkLogging',
+    'type' => 'Boolean',
+    'quick_form_type' => 'YesNo',
+    'default' => '0',
+    'add' => '4.3',
+    'title' => 'Enable Drupal Watchdog Logging',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => "Set this value to Yes if you want CiviCRM error/debugging messages to appear in the Drupal error logs",
+    'prefetch' => 1,
+    'help_text' => "Set this value to Yes if you want CiviCRM error/debugging messages the appear in your CMS' error log. In the case of Drupal, this will cause all CiviCRM error messages to appear in the watchdog (assuming you have Drupal's watchdog enabled)",
+  ),
   'debug_enabled' => array(
     'group_name' => 'Developer Preferences',
     'group' => 'developer',
     'name' => 'debug_enabled',
-    'config_only' => 1, // store only in config - this is expected to be transitional
     'config_key' => 'debug', // we can't call the setting debug as that has other meanings in api
     'type' => 'Boolean',
     'quick_form_type' => 'YesNo',
@@ -54,28 +68,10 @@ return array(
     'prefetch' => 1,
     'help_text' => 'Do not turn this on on production sites',
   ),
-  'userFrameworkLogging' => array(
-    'group_name' => 'Developer Preferences',
-    'group' => 'developer',
-    'name' => 'userFrameworkLogging',
-    'config_only' => 1, // store only in config - this is expected to be transitional
-    'type' => 'Boolean',
-    'quick_form_type' => 'YesNo',
-    'default' => '0',
-    'add' => '4.3',
-    'title' => 'Enable Drupal Watchdog Logging',
-    'is_domain' => 1,
-    'is_contact' => 0,
-    'description' => "Set this value to Yes if you want CiviCRM error/debugging messages to also appear in Drupal error logs",
-    'prefetch' => 1,
-    'help_text' => "Set this value to Yes if you want CiviCRM error/debugging messages the appear in your CMS' error log.
-In the case of Drupal, this will cause all CiviCRM error messages to appear in the watchdog (assuming you have Drupal's watchdog enabled)",
-  ),
   'backtrace' => array(
     'group_name' => 'Developer Preferences',
     'group' => 'developer',
     'name' => 'backtrace',
-    'config_only' => 1, // store only in config - this is expected to be transitional
     'type' => 'Boolean',
     'quick_form_type' => 'YesNo',
     'default' => '0',
@@ -90,9 +86,9 @@ In the case of Drupal, this will cause all CiviCRM error messages to appear in t
     'group_name' => 'Developer Preferences',
     'group' => 'developer',
     'name' => 'fatalErrorTemplate',
-    'config_only' => 1, // store only in config - this is expected to be transitional
     'type' => 'String',
-    'quick_form_type' => 'text',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
     'default' => 'CRM/common/fatal.tpl',
     'add' => '4.3',
     'title' => 'Fatal Error Template',
@@ -105,10 +101,10 @@ In the case of Drupal, this will cause all CiviCRM error messages to appear in t
     'group_name' => 'Developer Preferences',
     'group' => 'developer',
     'name' => 'fatalErrorHandler',
-    'config_only' => 1, // store only in config - this is expected to be transitional
     'type' => 'String',
-    'quick_form_type' => 'text',
-    'default' => 'null',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'default' => NULL,
     'add' => '4.3',
     'title' => 'Fatal Error Handler',
     'is_domain' => 1,

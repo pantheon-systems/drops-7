@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,12 +39,13 @@
 class CRM_Contact_Form_Edit_CustomData {
 
   /**
-   * build all the data structures needed to build the form
+   * Build all the data structures needed to build the form.
+   *
+   * @param CRM_Core_Form $form
    *
    * @return void
-   * @access public
    */
-  static function preProcess(&$form) {
+  public static function preProcess(&$form) {
     $form->_type = CRM_Utils_Request::retrieve('type', 'String', CRM_Core_DAO::$_nullObject);
     $form->_subType = CRM_Utils_Request::retrieve('subType', 'String', CRM_Core_DAO::$_nullObject);
 
@@ -65,23 +66,22 @@ class CRM_Contact_Form_Edit_CustomData {
   }
 
   /**
-   * build the form elements for CustomData object
+   * Build the form object elements for CustomData object.
    *
-   * @param CRM_Core_Form $form       reference to the form object
+   * @param CRM_Core_Form $form
+   *   Reference to the form object.
    *
    * @return void
-   * @access public
-   * @static
    */
-  static function buildQuickForm(&$form) {
-    if(!empty($form->_submitValues)) {
+  public static function buildQuickForm(&$form) {
+    if (!empty($form->_submitValues)) {
       if ($customValueCount = CRM_Utils_Array::value('hidden_custom_group_count', $form->_submitValues)) {
         if (is_array($customValueCount)) {
           if (array_key_exists(0, $customValueCount)) {
             unset($customValueCount[0]);
           }
           $form->_customValueCount = $customValueCount;
-          $form->assign( 'customValueCount', $customValueCount);
+          $form->assign('customValueCount', $customValueCount);
         }
       }
     }
@@ -89,9 +89,7 @@ class CRM_Contact_Form_Edit_CustomData {
 
     //build custom data.
     $contactSubType = NULL;
-    if (CRM_Utils_Array::value("hidden_custom", $_POST) &&
-      CRM_Utils_Array::value('contact_sub_type', $_POST)
-    ) {
+    if (!empty($_POST["hidden_custom"]) && !empty($_POST['contact_sub_type'])) {
       $contactSubType = $_POST['contact_sub_type'];
     }
     else {
@@ -102,15 +100,17 @@ class CRM_Contact_Form_Edit_CustomData {
   }
 
   /**
-   * This function sets the default values for the form. Note that in edit/view mode
+   * Set default values for the form. Note that in edit/view mode
    * the default values are retrieved from the database
    *
-   * @access public
    *
-   * @return None
+   * @param CRM_Core_Form $form
+   * @param $defaults
+   *
+   * @return void
    */
-  static function setDefaultValues(&$form, &$defaults) {
+  public static function setDefaultValues(&$form, &$defaults) {
     $defaults += CRM_Custom_Form_CustomData::setDefaultValues($form);
   }
-}
 
+}

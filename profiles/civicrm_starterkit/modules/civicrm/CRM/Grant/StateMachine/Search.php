@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,28 +23,31 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
 class CRM_Grant_StateMachine_Search extends CRM_Core_StateMachine {
 
   /**
-   * The task that the wizard is currently processing
+   * The task that the wizard is currently processing.
    *
    * @var string
-   * @protected
    */
   protected $_task;
 
   /**
-   * class constructor
-   */ function __construct($controller, $action = CRM_Core_Action::NONE) {
+   * Class constructor.
+   *
+   * @param object $controller
+   * @param \const|int $action
+   */
+  public function __construct($controller, $action = CRM_Core_Action::NONE) {
     parent::__construct($controller, $action);
 
     $this->_pages = array();
@@ -74,20 +77,17 @@ class CRM_Grant_StateMachine_Search extends CRM_Core_StateMachine {
    * to avoid using  conditional state machine, much more efficient
    * and simpler
    *
-   * @param CRM_Core_Controller $controller the controller object
+   * @param CRM_Core_Controller $controller
+   *   The controller object.
    *
-   * @return string the name of the form that will handle the task
-   * @access protected
+   * @param string $formName
+   *
+   * @return string
+   *   the name of the form that will handle the task
    */
-  function taskName($controller, $formName = 'Search') {
+  public function taskName($controller, $formName = 'Search') {
     // total hack, check POST vars and then session to determine stuff
-    // fix value if print button is pressed
-    if (CRM_Utils_Array::value('_qf_' . $formName . '_next_print', $_POST)) {
-      $value = CRM_Grant_Task::PRINT_GRANTS;
-    }
-    else {
-      $value = CRM_Utils_Array::value('task', $_POST);
-    }
+    $value = CRM_Utils_Array::value('task', $_POST);
     if (!isset($value)) {
       $value = $this->_controller->get('task');
     }
@@ -97,13 +97,12 @@ class CRM_Grant_StateMachine_Search extends CRM_Core_StateMachine {
   }
 
   /**
-   * return the form name of the task
+   * Return the form name of the task.
    *
    * @return string
-   * @access public
    */
-  function getTaskFormName() {
+  public function getTaskFormName() {
     return CRM_Utils_String::getClassName($this->_task);
   }
-}
 
+}

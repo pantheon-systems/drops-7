@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,7 +35,7 @@ class views_handler_argument_civicrm_day extends views_handler_argument_date {
     parent::construct();
     $this->format     = 'j';
     $this->arg_format = 'd';
-    $this->formula    = views_date_sql_extract('DAY', "***table***.$this->real_field");
+    $this->formula    = views_date_sql_extract('DAY', "***table***.$this->real_field","datetime",0);
   }
 
   /**

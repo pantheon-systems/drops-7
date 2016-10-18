@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -26,7 +26,7 @@
 {if (!$chartEnabled || !$chartSupported )&& $rows}
     {if $pager and $pager->_response and $pager->_response.numPages > 1}
         <div class="report-pager">
-            {include file="CRM/common/pager.tpl" location="top" noForm=0}
+            {include file="CRM/common/pager.tpl" location="top"}
         </div>
     {/if}
     <table class="report-layout display">
@@ -68,6 +68,7 @@
             {assign var=columnCount value=$columnHeaders|@count}
             {assign var=l value=$smarty.ldelim}
             {assign var=r value=$smarty.rdelim}
+            {assign var=pageBroke value=0}
             {foreach from=$sections item=section key=column name=sections}
                 {counter assign="h"}
                 {$l}isValueChange value=$row.{$column} key="{$column}" assign=isValueChanged{$r}
@@ -80,14 +81,24 @@
                     {$l}else{$r}
                         {$l}assign var=printValue value=$row.{$column}{$r}
                     {$l}/if{$r}
+                    {$l}if $rowid neq 0{$r}
+                      {if $section.pageBreak}
+                        {$l}if $pageBroke >= {$h} or $pageBroke == 0{$r}
+                          </table>
+                          <div class="page-break"></div>
+                          <table class="report-layout display">
+                        {$l}/if{$r}
+                        {$l}assign var=pageBroke value={$h}{$r}
+                      {/if}
+                    {$l}/if{$r}
+                    <tr class="crm-report-sectionHeader crm-report-sectionHeader-{$h}"><th colspan="{$columnCount}">
 
-                    <tr><th colspan="{$columnCount}">
                         <h{$h}>{$section.title}: {$l}$printValue|default:"<em>none</em>"{$r}
                             ({$l}sectionTotal key=$row.{$column} depth={$smarty.foreach.sections.index}{$r})
                         </h{$h}>
                     </th></tr>
                     {if $smarty.foreach.sections.last}
-                        <tr>{$l}$tableHeader{$r}</tr>
+                        <tr class="crm-report-sectionCols">{$l}$tableHeader{$r}</tr>
                     {/if}
                 {$l}/if{$r}
             {/foreach}
@@ -112,7 +123,7 @@
                             {elseif $header.group_by eq 'YEAR'}
                                 {$row.$field|crmDate:$config->dateformatYear}
                             {else}
-                                {if $header.type & 4}
+                                {if $header.type == 4}
                                    {$row.$field|truncate:10:''|crmDate}
                                 {else}
                                    {$row.$field|crmDate}
@@ -152,7 +163,7 @@
     </table>
     {if $pager and $pager->_response and $pager->_response.numPages > 1}
         <div class="report-pager">
-            {include file="CRM/common/pager.tpl"  noForm=0}
+            {include file="CRM/common/pager.tpl" }
         </div>
     {/if}
 {/if}

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2014                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2014
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id: $
  *
  */
@@ -41,11 +41,18 @@ class CRM_Utils_Check_Env {
    */
   public function checkAll() {
     $messages = array_merge(
-      $this->checkMysqlTime()
+      $this->checkMysqlTime(),
+      $this->checkDebug(),
+      $this->checkOutboundMail()
     );
     return $messages;
   }
 
+  /**
+   * Check that the MySQL time settings match the PHP time settings.
+   *
+   * @return array<CRM_Utils_Check_Message> an empty array, or a list of warnings
+   */
   public function checkMysqlTime() {
     $messages = array();
 
@@ -65,4 +72,47 @@ class CRM_Utils_Check_Env {
 
     return $messages;
   }
+
+  /**
+   * @return array
+   */
+  public function checkDebug() {
+    $messages = array();
+
+    $config = CRM_Core_Config::singleton();
+    if ($config->debug) {
+      $messages[] = new CRM_Utils_Check_Message(
+        'checkDebug',
+        ts('Warning: Debug is enabled in <a href="%1">system settings</a>. This should not be enabled on production servers.',
+          array(1 => CRM_Utils_System::url('civicrm/admin/setting/debug', 'reset=1'))),
+        ts('Debug Mode')
+      );
+    }
+
+    return $messages;
+  }
+
+  /**
+   * @return array
+   */
+  public function checkOutboundMail() {
+    $messages = array();
+
+    $mailingInfo = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::MAILING_PREFERENCES_NAME, 'mailing_backend');
+    if (($mailingInfo['outBound_option'] == CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB
+      || (defined('CIVICRM_MAIL_LOG') && CIVICRM_MAIL_LOG)
+      || $mailingInfo['outBound_option'] == CRM_Mailing_Config::OUTBOUND_OPTION_DISABLED
+      || $mailingInfo['outBound_option'] == CRM_Mailing_Config::OUTBOUND_OPTION_MOCK)
+    ) {
+      $messages[] = new CRM_Utils_Check_Message(
+        'checkOutboundMail',
+        ts('Warning: Outbound email is disabled in <a href="%1">system settings</a>. Proper settings should be enabled on production servers.',
+          array(1 => CRM_Utils_System::url('civicrm/admin/setting/smtp', 'reset=1'))),
+        ts('Outbound Email Settings')
+      );
+    }
+
+    return $messages;
+  }
+
 }

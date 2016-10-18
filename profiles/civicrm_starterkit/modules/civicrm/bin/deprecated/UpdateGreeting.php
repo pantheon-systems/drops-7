@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                               |
+ | CiviCRM version 4.6                                               |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,7 +23,7 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 
 /*
@@ -37,8 +37,14 @@
  * IMPORTANT: You must first create valid option value before using via admin interface.
  * Check option lists for Email Greetings, Postal Greetings and Addressee
  */
+
+/**
+ * Class CRM_UpdateGreeting
+ */
 class CRM_UpdateGreeting {
-  function __construct() {
+  /**
+   */
+  public function __construct() {
     $this->initialize();
 
     $config = CRM_Core_Config::singleton();
@@ -54,7 +60,7 @@ class CRM_UpdateGreeting {
     CRM_Core_Error::debug_log_message('UpdateGreeting.php');
   }
 
-  function initialize() {
+  public function initialize() {
     require_once '../../civicrm.config.php';
     require_once 'CRM/Core/Config.php';
   }
@@ -63,20 +69,25 @@ class CRM_UpdateGreeting {
     $config = CRM_Core_Config::singleton();
     $contactType = CRM_Utils_Request::retrieve('ct', 'String', CRM_Core_DAO::$_nullArray, FALSE, NULL, 'REQUEST');
     if (!in_array($contactType,
-        array('Individual', 'Household', 'Organization')
-      )) {
+      array('Individual', 'Household', 'Organization')
+    )
+    ) {
       CRM_Core_Error::fatal(ts('Invalid Contact Type.'));
     }
 
     $greeting = CRM_Utils_Request::retrieve('gt', 'String', CRM_Core_DAO::$_nullArray, FALSE, NULL, 'REQUEST');
     if (!in_array($greeting,
-        array('email_greeting', 'postal_greeting', 'addressee')
-      )) {
+      array('email_greeting', 'postal_greeting', 'addressee')
+    )
+    ) {
       CRM_Core_Error::fatal(ts('Invalid Greeting Type.'));
     }
 
     if (in_array($greeting, array(
-      'email_greeting', 'postal_greeting')) && $contactType == 'Organization') {
+        'email_greeting',
+        'postal_greeting',
+      )) && $contactType == 'Organization'
+    ) {
       CRM_Core_Error::fatal(ts('You cannot use %1 for contact type %2.', array(1 => $greeting, 2 => $contactType)));
     }
 
@@ -86,8 +97,8 @@ class CRM_UpdateGreeting {
     if (!$valueID) {
       require_once 'CRM/Core/OptionGroup.php';
       $contactTypeFilters = array(1 => 'Individual', 2 => 'Household', 3 => 'Organization');
-      $filter             = CRM_Utils_Array::key($contactType, $contactTypeFilters);
-      $defaulValueID      = CRM_Core_OptionGroup::values($greeting, NULL, NULL, NULL,
+      $filter = CRM_Utils_Array::key($contactType, $contactTypeFilters);
+      $defaulValueID = CRM_Core_OptionGroup::values($greeting, NULL, NULL, NULL,
         " AND is_default = 1 AND ( filter = {$filter} OR filter = 0 )",
         "value"
       );
@@ -118,7 +129,9 @@ class CRM_UpdateGreeting {
     $force = CRM_Utils_Request::retrieve('force', 'String', CRM_Core_DAO::$_nullArray, FALSE, NULL, 'REQUEST');
     $processAll = $processOnlyIdSet = FALSE;
     if (in_array($force, array(
-      1, 'true'))) {
+      1,
+      'true',
+    ))) {
       $processAll = TRUE;
     }
     elseif ($force == 2) {
@@ -202,7 +215,7 @@ SELECT DISTINCT id, $idFldName
           $contactIds[] = $contactID;
         }
       }
-      CRM_Utils_Token::replaceGreetingTokens($greetingString, $contactDetails, $contactID, 'CRM_UpdateGreeting');
+      CRM_Contact_BAO_Contact_Utils::processGreetingTemplate($greetingString, $contactDetails, $contactID, 'CRM_UpdateGreeting');
       $greetingString = CRM_Core_DAO::escapeString($greetingString);
       $cacheFieldQuery .= " WHEN {$contactID} THEN '{$greetingString}' ";
 
@@ -225,9 +238,9 @@ UPDATE civicrm_contact
       CRM_Core_DAO::executeQuery($cacheFieldQuery);
     }
   }
+
 }
 
 $obj = new CRM_UpdateGreeting();
 $obj->updateGreeting();
 echo "\n\n Greeting is updated for contact(s). (Done) \n";
-

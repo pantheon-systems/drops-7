@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,10 +40,9 @@
 class CRM_Admin_Form_OptionGroup extends CRM_Admin_Form {
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     parent::buildQuickForm();
@@ -80,7 +79,10 @@ class CRM_Admin_Form_OptionGroup extends CRM_Admin_Form {
     $element = $this->add('checkbox', 'is_active', ts('Enabled?'));
     if ($this->_action & CRM_Core_Action::UPDATE) {
       if (in_array($this->_values['name'], array(
-        'encounter_medium', 'case_type', 'case_status'))) {
+        'encounter_medium',
+        'case_type',
+        'case_status',
+      ))) {
         static $caseCount = NULL;
         if (!isset($caseCount)) {
           $caseCount = CRM_Case_BAO_Case::caseCount(NULL, FALSE);
@@ -90,7 +92,7 @@ class CRM_Admin_Form_OptionGroup extends CRM_Admin_Form {
           $element->freeze();
         }
       }
-      if (CRM_Utils_Array::value('is_reserved', $this->_values)) {
+      if (!empty($this->_values['is_reserved'])) {
         $this->freeze(array('name', 'is_active'));
       }
     }
@@ -99,11 +101,10 @@ class CRM_Admin_Form_OptionGroup extends CRM_Admin_Form {
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     CRM_Utils_System::flushCache();
@@ -127,4 +128,5 @@ class CRM_Admin_Form_OptionGroup extends CRM_Admin_Form {
       CRM_Core_Session::setStatus(ts('The Option Group \'%1\' has been saved.', array(1 => $optionGroup->name)), ts('Saved'), 'success');
     }
   }
+
 }

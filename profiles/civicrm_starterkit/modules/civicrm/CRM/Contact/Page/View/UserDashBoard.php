@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -41,30 +41,31 @@
 class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
   public $_contactId = NULL;
 
-  /*
-     * always show public groups
-     */
-
+  /**
+   * Always show public groups.
+   * @var bool
+   */
   public $_onlyPublicGroups = TRUE;
 
   public $_edit = TRUE;
 
   /**
-   * The action links that we need to display for the browse screen
+   * The action links that we need to display for the browse screen.
    *
    * @var array
-   * @static
    */
   static $_links = NULL;
 
-  function __construct() {
+  /**
+   * @throws Exception
+   */
+  public function __construct() {
     parent::__construct();
 
     $check = CRM_Core_Permission::check('access Contact Dashboard');
 
     if (!$check) {
       CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/dashboard', 'reset=1'));
-      break;
     }
 
     $this->_contactId = CRM_Utils_Request::retrieve('id', 'Positive', $this);
@@ -77,7 +78,7 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
     }
     elseif ($this->_contactId != $userID) {
       if (!CRM_Contact_BAO_Contact_Permission::allow($this->_contactId, CRM_Core_Permission::VIEW)) {
-        CRM_Core_Error::fatal(ts('You do not have permission to view this contact'));
+        CRM_Core_Error::fatal(ts('You do not have permission to access this contact.'));
       }
       if (!CRM_Contact_BAO_Contact_Permission::allow($this->_contactId, CRM_Core_Permission::EDIT)) {
         $this->_edit = FALSE;
@@ -85,15 +86,13 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
     }
   }
 
-  /*
-     * Heart of the viewing process. The runner gets all the meta data for
-     * the contact and calls the appropriate type of page to view.
-     *
-     * @return void
-     * @access public
-     *
-     */
-  function preProcess() {
+  /**
+   * Heart of the viewing process. The runner gets all the meta data for
+   * the contact and calls the appropriate type of page to view.
+   *
+   * @return void
+   */
+  public function preProcess() {
     if (!$this->_contactId) {
       CRM_Core_Error::fatal(ts('You must be logged in to view this page.'));
     }
@@ -109,12 +108,11 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
   }
 
   /**
-   * Function to build user dashboard
+   * Build user dashboard.
    *
-   * @return none
-   * @access public
+   * @return void
    */
-  function buildUserDashBoard() {
+  public function buildUserDashBoard() {
     //build component selectors
     $dashboardElements = array();
     $config = CRM_Core_Config::singleton();
@@ -131,7 +129,7 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
         continue;
       }
 
-      if (CRM_Utils_Array::value($name, $this->_userOptions) &&
+      if (!empty($this->_userOptions[$name]) &&
         (CRM_Core_Permission::access($component->name) ||
           CRM_Core_Permission::check($elem['perm'][0])
         )
@@ -148,24 +146,18 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
       }
     }
 
-    if (CRM_Utils_Array::value('Permissioned Orgs', $this->_userOptions)) {
+    // CRM-16512 - Hide related contact table if user lacks permission to view self
+    if (!empty($this->_userOptions['Permissioned Orgs']) && CRM_Core_Permission::check('view my contact')) {
       $dashboardElements[] = array(
         'class' => 'crm-dashboard-permissionedOrgs',
-        'templatePath' => 'CRM/Contact/Page/View/Relationship.tpl',
+        'templatePath' => 'CRM/Contact/Page/View/RelationshipSelector.tpl',
         'sectionTitle' => ts('Your Contacts / Organizations'),
         'weight' => 40,
       );
 
-      $links = self::links();
-      $currentRelationships = CRM_Contact_BAO_Relationship::getRelationship($this->_contactId,
-        CRM_Contact_BAO_Relationship::CURRENT,
-        0, 0, 0,
-        $links, NULL, TRUE
-      );
-      $this->assign('currentRelationships', $currentRelationships);
     }
 
-    if (CRM_Utils_Array::value('PCP', $this->_userOptions)) {
+    if (!empty($this->_userOptions['PCP'])) {
       $dashboardElements[] = array(
         'class' => 'crm-dashboard-pcp',
         'templatePath' => 'CRM/Contribute/Page/PcpUserDashboard.tpl',
@@ -177,7 +169,7 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
       $this->assign('pcpInfo', $pcpInfo);
     }
 
-    if (CRM_Utils_Array::value('Assigned Activities', $this->_userOptions)) {
+    if (!empty($this->_userOptions['Assigned Activities'])) {
       // Assigned Activities section
       $dashboardElements[] = array(
         'class' => 'crm-dashboard-assignedActivities',
@@ -185,14 +177,17 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
         'sectionTitle' => ts('Your Assigned Activities'),
         'weight' => 5,
       );
-      $userDashboard = new CRM_Activity_Page_UserDashboard;
+      $userDashboard = new CRM_Activity_Page_UserDashboard();
       $userDashboard->run();
     }
 
     usort($dashboardElements, array('CRM_Utils_Sort', 'cmpFunc'));
     $this->assign('dashboardElements', $dashboardElements);
 
-    if (CRM_Utils_Array::value('Groups', $this->_userOptions)) {
+    // return true when 'Invoices / Credit Notes' checkbox is checked
+    $this->assign('invoices', $this->_userOptions['Invoices / Credit Notes']);
+
+    if (!empty($this->_userOptions['Groups'])) {
       $this->assign('showGroup', TRUE);
       //build group selector
       $gContact = new CRM_Contact_Page_View_UserDashBoard_GroupContact();
@@ -204,26 +199,23 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
   }
 
   /**
-   * perform actions and display for user dashboard
+   * Perform actions and display for user dashboard.
    *
-   * @return none
-   *
-   * @access public
+   * @return void
    */
-  function run() {
+  public function run() {
     $this->preProcess();
     $this->buildUserDashBoard();
     return parent::run();
   }
 
   /**
-   * Get action links
+   * Get action links.
    *
-   * @return array (reference) of action links
-   * @static
+   * @return array
+   *   (reference) of action links
    */
-  static
-  function &links() {
+  public static function &links() {
     if (!(self::$_links)) {
       $disableExtra = ts('Are you sure you want to disable this relationship?');
 
@@ -237,22 +229,22 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
         CRM_Core_Action::VIEW => array(
           'name' => ts('Dashboard'),
           'url' => 'civicrm/user',
+          'class' => 'no-popup',
           'qs' => 'reset=1&id=%%cbid%%',
           'title' => ts('View Relationship'),
         ),
       );
 
-
       if (CRM_Core_Permission::check('access CiviCRM')) {
         self::$_links = array_merge(self::$_links, array(
           CRM_Core_Action::DISABLE => array(
-              'name' => ts('Disable'),
-              'url' => 'civicrm/contact/view/rel',
-              'qs' => 'action=disable&reset=1&cid=%%cid%%&id=%%id%%&rtype=%%rtype%%&selectedChild=rel%%&context=dashboard',
-              'extra' => 'onclick = "return confirm(\'' . $disableExtra . '\');"',
-              'title' => ts('Disable Relationship'),
-            ),
-          ));
+            'name' => ts('Disable'),
+            'url' => 'civicrm/contact/view/rel',
+            'qs' => 'action=disable&reset=1&cid=%%cid%%&id=%%id%%&rtype=%%rtype%%&selectedChild=rel&context=dashboard',
+            'extra' => 'onclick = "return confirm(\'' . $disableExtra . '\');"',
+            'title' => ts('Disable Relationship'),
+          ),
+        ));
       }
     }
 
@@ -261,8 +253,10 @@ class CRM_Contact_Page_View_UserDashBoard extends CRM_Core_Page {
       'Contact',
       CRM_Core_DAO::$_nullObject,
       self::$_links,
+      CRM_Core_DAO::$_nullObject,
       CRM_Core_DAO::$_nullObject
     );
     return self::$_links;
   }
+
 }

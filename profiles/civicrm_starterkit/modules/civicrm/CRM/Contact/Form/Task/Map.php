@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -49,12 +49,11 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
   protected $_single = FALSE;
 
   /**
-   * build all the data structures needed to build the form
+   * Build all the data structures needed to build the form.
    *
    * @return void
-   * @access public
    */
-  function preProcess() {
+  public function preProcess() {
     $cid = CRM_Utils_Request::retrieve('cid', 'Positive',
       $this, FALSE
     );
@@ -115,9 +114,8 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
   }
 
   /**
-   * Build the form
+   * Build the form object.
    *
-   * @access public
    *
    * @return void
    */
@@ -133,25 +131,28 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
   }
 
   /**
-   * process the form after the input has been submitted and validated
+   * Process the form after the input has been submitted and validated.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
-  public function postProcess() {}
-  //end of function
+  public function postProcess() {
+  }
 
   /**
-   * assign smarty variables to the template that will be used by google api to plot the contacts
+   * Assign smarty variables to the template that will be used by google api to plot the contacts.
    *
-   * @param array $contactIds list of contact ids that we need to plot
-   * @param int   $locationId location_id
+   * @param $ids
+   * @param int $locationId
+   *   Location_id.
+   * @param $page
+   * @param $addBreadCrumb
+   * @param string $type
    *
-   * @return string           the location of the file we have created
-   * @access protected
+   * @return void
+   *   the location of the file we have created
    */
-  static function createMapXML($ids, $locationId, &$page, $addBreadCrumb, $type = 'Contact') {
+  public static function createMapXML($ids, $locationId, &$page, $addBreadCrumb, $type = 'Contact') {
     $config = CRM_Core_Config::singleton();
 
     CRM_Utils_System::setTitle(ts('Map Location(s)'));
@@ -175,6 +176,9 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
       CRM_Core_Error::statusBounce(ts('This address does not contain latitude/longitude information and cannot be mapped.'));
     }
 
+    if (empty($config->mapProvider)) {
+      CRM_Core_Error::statusBounce(ts('You need to configure a Mapping Provider before using this feature (Administer > System Settings > Mapping and Geocoding).'));
+    }
     if ($addBreadCrumb) {
       $session = CRM_Core_Session::singleton();
       $redirect = $session->readUserContext();
@@ -210,7 +214,7 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
 
     $sumLat = $sumLng = 0;
     $maxLat = $maxLng = -400;
-    $minLat = $minLng = + 400;
+    $minLat = $minLng = 400;
     foreach ($locations as $location) {
       $sumLat += $location['lat'];
       $sumLng += $location['lng'];
@@ -235,11 +239,11 @@ class CRM_Contact_Form_Task_Map extends CRM_Contact_Form_Task {
       'lng' => (float ) $sumLng / count($locations),
     );
     $span = array(
-      'lat' => (float )($maxLat - $minLat),
-      'lng' => (float )($maxLng - $minLng),
+      'lat' => (float ) ($maxLat - $minLat),
+      'lng' => (float ) ($maxLng - $minLng),
     );
     $page->assign_by_ref('center', $center);
     $page->assign_by_ref('span', $span);
   }
-}
 
+}

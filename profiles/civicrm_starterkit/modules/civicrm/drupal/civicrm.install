@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -85,5 +85,14 @@ function civicrm_requirements($phase) {
  */
 function civicrm_update_7400(&$sandbox) {
   db_query("UPDATE {system} SET weight = 100 WHERE name = 'civicrm'");
+}
+
+/**
+ * Trigger cache clear to pick up TZ handling change from CRM-6877.
+ */
+function civicrm_update_7401($sandbox) {
+  // This is an empty hook_update_N() so that caches will be
+  // cleared when update_finished() is called.
+  return t('TZ changes in CiviCRM Views picked up.');
 }
 

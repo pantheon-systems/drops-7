@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,10 +40,9 @@
 class CRM_Admin_Form_Mapping extends CRM_Admin_Form {
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function preProcess() {
     parent::preProcess();
@@ -55,6 +54,8 @@ class CRM_Admin_Form_Mapping extends CRM_Admin_Form {
 
   public function buildQuickForm() {
     parent::buildQuickForm();
+    $this->setPageTitle(ts('Field Mapping'));
+
     if ($this->_action == CRM_Core_Action::DELETE) {
       return;
     }
@@ -64,7 +65,10 @@ class CRM_Admin_Form_Mapping extends CRM_Admin_Form {
       $this->add('text', 'name', ts('Name'),
         CRM_Core_DAO::getAttribute('CRM_Core_DAO_Mapping', 'name'), TRUE
       );
-      $this->addRule('name', ts('Name already exists in Database.'), 'objectExists', array('CRM_Core_DAO_Mapping', $this->_id));
+      $this->addRule('name', ts('Name already exists in Database.'), 'objectExists', array(
+          'CRM_Core_DAO_Mapping',
+          $this->_id,
+        ));
 
       $this->addElement('text', 'description', ts('Description'),
         CRM_Core_DAO::getAttribute('CRM_Core_DAO_Mapping', 'description')
@@ -78,17 +82,19 @@ class CRM_Admin_Form_Mapping extends CRM_Admin_Form {
     }
   }
 
-  function setDefaultValues() {
+  /**
+   * @return array
+   */
+  public function setDefaultValues() {
     $defaults = parent::setDefaultValues();
     return $defaults;
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     // store the submitted values in an array
@@ -107,6 +113,5 @@ class CRM_Admin_Form_Mapping extends CRM_Admin_Form {
       CRM_Core_BAO_Mapping::add($params);
     }
   }
-  //end of function
-}
 
+}

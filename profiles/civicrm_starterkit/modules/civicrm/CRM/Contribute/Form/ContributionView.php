@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,22 +40,27 @@
 class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
 
   /**
-   * Function to set variables up before form is built
+   * Set variables up before form is built.
    *
    * @return void
-   * @access public
    */
   public function preProcess() {
-    $id      = $this->get('id');
-    $values  = $ids = array();
-    $params  = array('id' => $id);
+    $id = $this->get('id');
+    $values = $ids = array();
+    $params = array('id' => $id);
     $context = CRM_Utils_Request::retrieve('context', 'String', $this);
     $this->assign('context', $context);
 
     CRM_Contribute_BAO_Contribution::getValues($params, $values, $ids);
     CRM_Contribute_BAO_Contribution::resolveDefaults($values);
+    $cancelledStatus = TRUE;
+    $status = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+    if (CRM_Utils_Array::value('contribution_status_id', $values) == array_search('Cancelled', $status)) {
+      $cancelledStatus = FALSE;
+    }
+    $this->assign('cancelledStatus', $cancelledStatus);
 
-    if (CRM_Utils_Array::value('contribution_page_id', $values)) {
+    if (!empty($values['contribution_page_id'])) {
       $contribPages = CRM_Contribute_PseudoConstant::contributionPage(NULL, TRUE);
       $values['contribution_page_title'] = CRM_Utils_Array::value(CRM_Utils_Array::value('contribution_page_id', $values), $contribPages);
     }
@@ -63,29 +68,21 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
     // get recieved into i.e to_financial_account_id from last trxn
     $financialTrxnId = CRM_Core_BAO_FinancialTrxn::getFinancialTrxnId($values['contribution_id'], 'DESC');
     $values['to_financial_account'] = '';
-    if (CRM_Utils_Array::value('financialTrxnId', $financialTrxnId)) {
+    if (!empty($financialTrxnId['financialTrxnId'])) {
       $values['to_financial_account_id'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_FinancialTrxn', $financialTrxnId['financialTrxnId'], 'to_financial_account_id');
       if ($values['to_financial_account_id']) {
         $values['to_financial_account'] = CRM_Contribute_PseudoConstant::financialAccount($values['to_financial_account_id']);
       }
-    }
-
-    if (CRM_Utils_Array::value('honor_contact_id', $values)) {
-      $sql    = "SELECT display_name FROM civicrm_contact WHERE id = %1";
-      $params = array(1 => array($values['honor_contact_id'], 'Integer'));
-      $dao    = CRM_Core_DAO::executeQuery($sql, $params);
-      if ($dao->fetch()) {
-        $url = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid=$values[honor_contact_id]");
-        $values['honor_display'] = "<A href = $url>" . $dao->display_name . "</A>";
+      $values['payment_processor_id'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_FinancialTrxn', $financialTrxnId['financialTrxnId'], 'payment_processor_id');
+      if ($values['payment_processor_id']) {
+        $values['payment_processor_name'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_PaymentProcessor', $values['payment_processor_id'], 'name');
       }
-      $honor = CRM_Core_PseudoConstant::get('CRM_Contribute_DAO_Contribution', 'honor_type_id');
-      $values['honor_type'] = CRM_Utils_Array::value(CRM_Utils_Array::value('honor_type_id', $values), $honor);
     }
 
-    if (CRM_Utils_Array::value('contribution_recur_id', $values)) {
-      $sql    = "SELECT  installments, frequency_interval, frequency_unit FROM civicrm_contribution_recur WHERE id = %1";
+    if (!empty($values['contribution_recur_id'])) {
+      $sql = "SELECT  installments, frequency_interval, frequency_unit FROM civicrm_contribution_recur WHERE id = %1";
       $params = array(1 => array($values['contribution_recur_id'], 'Integer'));
-      $dao    = CRM_Core_DAO::executeQuery($sql, $params);
+      $dao = CRM_Core_DAO::executeQuery($sql, $params);
       if ($dao->fetch()) {
         $values['recur_installments'] = $dao->installments;
         $values['recur_frequency_unit'] = $dao->frequency_unit;
@@ -121,20 +118,32 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
     $values['note'] = array_values($noteValue);
 
     // show billing address location details, if exists
-    if (CRM_Utils_Array::value('address_id', $values)) {
+    if (!empty($values['address_id'])) {
       $addressParams = array('id' => CRM_Utils_Array::value('address_id', $values));
       $addressDetails = CRM_Core_BAO_Address::getValues($addressParams, FALSE, 'id');
       $addressDetails = array_values($addressDetails);
       $values['billing_address'] = $addressDetails[0]['display'];
     }
 
-    //get soft credit record if exists.
-    $values['softContributions'] = CRM_Contribute_BAO_ContributionSoft::getSoftContribution($values['contribution_id']);
+    //assign soft credit record if exists.
+    $SCRecords = CRM_Contribute_BAO_ContributionSoft::getSoftContribution($values['contribution_id'], TRUE);
+    if (!empty($SCRecords['soft_credit'])) {
+      $this->assign('softContributions', $SCRecords['soft_credit']);
+      unset($SCRecords['soft_credit']);
+    }
+
+    //assign pcp record if exists
+    foreach ($SCRecords as $name => $value) {
+      $this->assign($name, $value);
+    }
 
     $lineItems = array();
     if ($id) {
-      $lineItem = CRM_Price_BAO_LineItem::getLineItems($id, 'contribution', 1);
-      empty($lineItem) ? null :$lineItems[] =  $lineItem;
+      $lineItem = CRM_Price_BAO_LineItem::getLineItems($id, 'contribution', 1, TRUE, TRUE);
+      if (!empty($lineItem)) {
+        $lineItems[] = $lineItem;
+      }
+
     }
     $this->assign('lineItem', empty($lineItems) ? FALSE : $lineItems);
     $values['totalAmount'] = $values['total_amount'];
@@ -147,6 +156,12 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
 
     // assign values to the template
     $this->assign($values);
+    $invoiceSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
+    $invoicing = CRM_Utils_Array::value('invoicing', $invoiceSettings);
+    $this->assign('invoicing', $invoicing);
+    if ($invoicing && isset($values['tax_amount'])) {
+      $this->assign('totalTaxAmount', $values['tax_amount']);
+    }
 
     $displayName = CRM_Contact_BAO_Contact::displayName($values['contact_id']);
     $this->assign('displayName', $displayName);
@@ -157,7 +172,7 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
     }
 
     // omitting contactImage from title for now since the summary overlay css doesn't work outside of our crm-container
-    CRM_Utils_System::setTitle(ts('View Contribution from') .  ' ' . $displayName);
+    CRM_Utils_System::setTitle(ts('View Contribution from') . ' ' . $displayName);
 
     // add viewed contribution to recent items list
     $url = CRM_Utils_System::url('civicrm/contact/view/contribution',
@@ -188,10 +203,9 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
 
@@ -205,5 +219,5 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
       )
     );
   }
-}
 
+}

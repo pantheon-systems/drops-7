@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -32,22 +32,22 @@
 {/if}
 
 <div class="action-link">
-  <a href="{crmURL p='civicrm/admin/job' q="reset=1"}" id="jobsList-top" class="button"><span><div class="icon back-icon"></div>{ts}Back to Scheduled Jobs Listing{/ts}</span></a>
+  <a href="{crmURL p='civicrm/admin/job' q="reset=1"}" id="jobsList-top" class="button"><span><div class="icon ui-icon-arrowreturnthick-1-w"></div>{ts}Back to Scheduled Jobs Listing{/ts}</span></a>
 </div>
 
 {if $rows}
 <div id="ltype">
         {strip}
         {* handle enable/disable actions*}
-   {include file="CRM/common/enableDisable.tpl"}
-        <table class="selector">
+   {include file="CRM/common/enableDisableApi.tpl"}
+        <table class="selector row-highlight">
         <tr class="columnheader">
             <th >{ts}Date{/ts}</th>
             <th >{ts}Job Name{/ts}</th>
             <th >{ts}Command{/ts}/{ts}Job Status{/ts}/{ts}Additional Information{/ts}</th>
         </tr>
         {foreach from=$rows item=row}
-        <tr id="row_{$row.id}" class="crm-job {cycle values="odd-row,even-row"} {$row.class}">
+        <tr id="job-{$row.id}" class="crm-entity {cycle values="odd-row,even-row"} {$row.class}">
             <td class="crm-joblog-run_datetime">{$row.run_time}</td>
             <td class="crm-joblog-name">{$row.name}</td>
             <td class="crm-joblog-details">
@@ -73,5 +73,5 @@
 {/if}
 
 <div class="action-link">
-  <a href="{crmURL p='civicrm/admin/job' q="reset=1"}" id="jobsList-bottom" class="button"><span><div class="icon back-icon"></div>{ts}Back to Scheduled Jobs Listing{/ts}</span></a>
+  <a href="{crmURL p='civicrm/admin/job' q="reset=1"}" id="jobsList-bottom" class="button"><span><div class="icon ui-icon-arrowreturnthick-1-w"></div>{ts}Back to Scheduled Jobs Listing{/ts}</span></a>
 </div>

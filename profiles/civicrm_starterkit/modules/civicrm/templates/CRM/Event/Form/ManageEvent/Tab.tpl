@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
     <div class="crm-actions-ribbon crm-event-manage-tab-actions-ribbon">
       <ul id="actions">
       <li><div id="crm-event-links-wrapper">
-            <a id="crm-event-links-link" class="button"><span><div class="icon dropdown-icon"></div>{ts}Event Links{/ts}</span></a>
+            <a id="crm-event-links-link" class="button"><span><div class="icon ui-icon-arrow-1-se css_right"></div>{ts}Event Links{/ts}</span></a>
             <div class="ac_results" id="crm-event-links-list">
                  <div class="crm-event-links-list-inner">
                    <ul>
@@ -44,7 +44,7 @@
         </div></li>
 
       <li><div id="crm-participant-wrapper">
-            <a id="crm-participant-link" class="button"><span><div class="icon dropdown-icon"></div>{ts}Find Participants{/ts}</span></a>
+            <a id="crm-participant-link" class="button"><span><div class="icon ui-icon-arrow-1-se css_right"></div>{ts}Find Participants{/ts}</span></a>
             <div class="ac_results" id="crm-participant-list">
                  <div class="crm-participant-list-inner">
                    <ul>
@@ -75,27 +75,35 @@
 
 {literal}
 <script>
-
-cj('body').click(function() {
-  cj('#crm-event-links-list').hide();
-  cj('#crm-participant-list').hide();
+CRM.$(function($) {
+  $('body').click(function() {
+    $('#crm-event-links-list, #crm-participant-list').hide();
   });
 
-cj('#crm-event-links-link').click(function(event) {
-  cj('#crm-event-links-list').toggle();
-  cj('#crm-participant-list').hide();
-  event.stopPropagation();
-  return false;
+  $('#crm-event-links-link').click(function(event) {
+    $('#crm-event-links-list').toggle();
+    $('#crm-participant-list').hide();
+    event.stopPropagation();
+    return false;
+  });
+
+  $('#crm-participant-link').click(function(event) {
+    $('#crm-participant-list').toggle();
+    $('#crm-event-links-list').hide();
+    event.stopPropagation();
+    return false;
+  });
+
+  // Update title dynamically
+  $('h1').each(function() {
+    var title = {/literal}{$title|json_encode}{literal};
+    $(this).html($(this).html().replace(title, '<span id="crm-event-name-page-title">' + title + '</span>'));
+  });
+  $('#crm-main-content-wrapper').on('keyup change', 'input#title', function() {
+    $('#crm-event-name-page-title').text($(this).val());
+  });
+
 });
-
-cj('#crm-participant-link').click(function(event) {
-  cj('#crm-participant-list').toggle();
-  cj('#crm-event-links-list').hide();
-  event.stopPropagation();
-  return false;
-});
-
-cj().crmAccordions();
-
 </script>
 {/literal}
+{include file="CRM/Event/Form/ManageEvent/ConfirmRepeatMode.tpl" entityID=$id entityTable="civicrm_event"}

@@ -7,8 +7,7 @@
 
 require_once dirname(__FILE__) . '/HTMLPurifier.auto.php';
 
-function kses($string, $allowed_html, $allowed_protocols = null)
-{
+function kses($string, $allowed_html, $allowed_protocols = null) {
     $config = HTMLPurifier_Config::createDefault();
     $allowed_elements = array();
     $allowed_attributes = array();
@@ -20,6 +19,7 @@ function kses($string, $allowed_html, $allowed_protocols = null)
     }
     $config->set('HTML.AllowedElements', $allowed_elements);
     $config->set('HTML.AllowedAttributes', $allowed_attributes);
+    $allowed_schemes = array();
     if ($allowed_protocols !== null) {
         $config->set('URI.AllowedSchemes', $allowed_protocols);
     }

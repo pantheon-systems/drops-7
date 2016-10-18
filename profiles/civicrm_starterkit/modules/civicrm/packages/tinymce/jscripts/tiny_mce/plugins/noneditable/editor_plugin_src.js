@@ -14,7 +14,10 @@
 	var VK = tinymce.VK;
 
 	function handleContentEditableSelection(ed) {
-		var dom = ed.dom, selection = ed.selection, invisibleChar, caretContainerId = 'mce_noneditablecaret', invisibleChar = '\uFEFF';
+		var dom = ed.dom, selection = ed.selection, invisibleChar, caretContainerId = 'mce_noneditablecaret';
+
+		// Setup invisible character use zero width space on Gecko since it doesn't change the height of the container
+		invisibleChar = tinymce.isGecko ? '\u200B' : '\uFEFF';
 
 		// Returns the content editable state of a node "true/false" or null
 		function getContentEditable(node) {

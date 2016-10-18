@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id: Display.php 36505 2011-10-03 14:19:56Z lobo $
  *
  */
@@ -38,14 +38,14 @@
  *
  */
 class CRM_Admin_Form_Preferences_Member extends CRM_Admin_Form_Preferences {
-  function preProcess() {
+  public function preProcess() {
     CRM_Utils_System::setTitle(ts('CiviMember Component Settings'));
     $this->_varNames = array(
-      CRM_Core_BAO_Setting::MEMBER_PREFERENCES_NAME =>
-      array(
+      CRM_Core_BAO_Setting::MEMBER_PREFERENCES_NAME => array(
         'default_renewal_contribution_page' => array(
           'html_type' => 'select',
           'title' => ts('Default online membership renewal page'),
+          'option_values' => array('' => ts('- select -')) + CRM_Contribute_PseudoConstant::contributionPage(),
           'weight' => 1,
           'description' => ts('If you select a default online contribution page for self-service membership renewals, a "renew" link pointing to that page will be displayed on the Contact Dashboard for memberships which were entered offline. You will need to ensure that the membership block for the selected online contribution page includes any currently available memberships.'),
         ),
@@ -56,21 +56,12 @@ class CRM_Admin_Form_Preferences_Member extends CRM_Admin_Form_Preferences {
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
-  function buildQuickForm() {
-
-    $this->add('select', 'default_renewal_contribution_page',
-      ts('Default Online Membership Renewal Page'),
-      array(
-        '' => ts('- select -')) +
-      CRM_Contribute_PseudoConstant::contributionPage()
-    );
-
+  public function buildQuickForm() {
     parent::buildQuickForm();
   }
-}
 
+}

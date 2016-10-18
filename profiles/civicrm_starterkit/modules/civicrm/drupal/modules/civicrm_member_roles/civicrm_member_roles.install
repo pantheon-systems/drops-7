@@ -30,6 +30,7 @@ function civicrm_member_roles_schema() {
     'fields' => array(
       'rule_id' => array(
         'type' => 'serial',
+        'not null' => TRUE,
       ),
       'rid' => array(
         'type' => 'int',

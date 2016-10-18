@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -41,13 +41,12 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
   /**
    * Constants for number of options for data types of multiple option.
    */
-  CONST NUM_OPTION = 15;
+  const NUM_OPTION = 15;
 
   /**
-   * the custom set id saved to the session for an update
+   * The custom set id saved to the session for an update.
    *
    * @var int
-   * @access protected
    */
   protected $_sid;
 
@@ -55,40 +54,30 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
    * The field id, used when editing the field
    *
    * @var int
-   * @access protected
    */
   protected $_fid;
 
   /**
-   * The extended component Id
+   * The extended component Id.
    *
    * @var array
-   * @access protected
    */
   protected $_extendComponentId;
 
   /**
-   * variable is set if price set is used for membership
-   * @access protected
+   * Variable is set if price set is used for membership.
    */
   protected $_useForMember;
 
   /**
-   * Function to set variables up before form is built
-   *
-   * @param null
-   *
-   * @return void
-   * @access public
+   * Set variables up before form is built.
    */
   public function preProcess() {
 
     $this->_sid = CRM_Utils_Request::retrieve('sid', 'Positive', $this, FALSE, NULL, 'REQUEST');
     $this->_fid = CRM_Utils_Request::retrieve('fid', 'Positive', $this, FALSE, NULL, 'REQUEST');
-    $url        = CRM_Utils_System::url('civicrm/admin/price/field', "reset=1&action=browse&sid={$this->_sid}");
-    $breadCrumb = array(array('title' => ts('Price Set Fields'),
-        'url' => $url,
-      ));
+    $url = CRM_Utils_System::url('civicrm/admin/price/field', "reset=1&action=browse&sid={$this->_sid}");
+    $breadCrumb = array(array('title' => ts('Price Set Fields'), 'url' => $url));
 
     $this->_extendComponentId = array();
     $extendComponentId = CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $this->_sid, 'extends', 'id');
@@ -97,18 +86,18 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
     }
 
     CRM_Utils_System::appendBreadCrumb($breadCrumb);
+
+    $this->setPageTitle(ts('Price Field'));
   }
 
   /**
-   * This function sets the default values for the form. Note that in edit/view mode
+   * Set default values for the form. Note that in edit/view mode
    * the default values are retrieved from the database
    *
-   * @param null
-   *
-   * @return array    array of default values
-   * @access public
+   * @return array
+   *   array of default values
    */
-  function setDefaultValues() {
+  public function setDefaultValues() {
     $defaults = array();
     // is it an edit operation ?
     if (isset($this->_fid)) {
@@ -119,24 +108,26 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
 
       // if text, retrieve price
       if ($defaults['html_type'] == 'Text') {
+        $isActive = $defaults['is_active'];
         $valueParams = array('price_field_id' => $this->_fid);
 
         CRM_Price_BAO_PriceFieldValue::retrieve($valueParams, $defaults);
 
         // fix the display of the monetary value, CRM-4038
         $defaults['price'] = CRM_Utils_Money::format($defaults['amount'], NULL, '%a');
+        $defaults['is_active'] = $isActive;
       }
 
-      if (CRM_Utils_Array::value('active_on', $defaults)) {
+      if (!empty($defaults['active_on'])) {
         list($defaults['active_on'],
           $defaults['active_on_time']
-        ) = CRM_Utils_Date::setDateDefaults($defaults['active_on'], 'activityDateTime');
+          ) = CRM_Utils_Date::setDateDefaults($defaults['active_on'], 'activityDateTime');
       }
 
-      if (CRM_Utils_Array::value('expire_on', $defaults)) {
+      if (!empty($defaults['expire_on'])) {
         list($defaults['expire_on'],
           $defaults['expire_on_time']
-        ) = CRM_Utils_Date::setDateDefaults($defaults['expire_on'], 'activityDateTime');
+          ) = CRM_Utils_Date::setDateDefaults($defaults['expire_on'], 'activityDateTime');
       }
     }
     else {
@@ -153,7 +144,11 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
       $defaults['options_per_line'] = 1;
       $defaults['is_display_amounts'] = 1;
     }
-    $eventComponentId  = CRM_Core_Component::getComponentID('CiviEvent');
+    $enabledComponents = CRM_Core_Component::getEnabledComponents();
+    $eventComponentId = NULL;
+    if (array_key_exists('CiviEvent', $enabledComponents)) {
+      $eventComponentId = CRM_Core_Component::getComponentID('CiviEvent');
+    }
 
     if (isset($this->_sid) && $this->_action == CRM_Core_Action::ADD) {
       $financialTypeId = CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $this->_sid, 'financial_type_id');
@@ -166,12 +161,7 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
   }
 
   /**
-   * Function to actually build the form
-   *
-   * @param null
-   *
-   * @return void
-   * @access public
+   * Build the form object.
    */
   public function buildQuickForm() {
     // lets trim all the whitespace
@@ -197,14 +187,20 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
     if (count($financialType)) {
       $this->assign('financialType', $financialType);
     }
+    $enabledComponents = CRM_Core_Component::getEnabledComponents();
+    $eventComponentId = $memberComponentId = NULL;
+    if (array_key_exists('CiviEvent', $enabledComponents)) {
+      $eventComponentId = CRM_Core_Component::getComponentID('CiviEvent');
+    }
+    if (array_key_exists('CiviMember', $enabledComponents)) {
+      $memberComponentId = CRM_Core_Component::getComponentID('CiviMember');
+    }
 
-    $eventComponentId  = CRM_Core_Component::getComponentID('CiviEvent');
-    $memberComponentId = CRM_Core_Component::getComponentID('CiviMember');
-    $attributes        = CRM_Core_DAO::getAttribute('CRM_Price_DAO_PriceFieldValue');
+    $attributes = CRM_Core_DAO::getAttribute('CRM_Price_DAO_PriceFieldValue');
 
     $this->add('select', 'financial_type_id',
       ts('Financial Type'),
-      array(' '=> ts('- select -')) + $financialType
+      array(' ' => ts('- select -')) + $financialType
     );
 
     $this->assign('useForMember', FALSE);
@@ -266,7 +262,7 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
       //Financial Type
       $this->add(
         'select',
-        'option_financial_type_id['.$i.']',
+        'option_financial_type_id[' . $i . ']',
         ts('Financial Type'),
         array('' => ts('- select -')) + $financialType
       );
@@ -287,10 +283,9 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
         $js = array('onchange' => "calculateRowValues( $i );");
 
         $this->add('select', 'membership_type_id[' . $i . ']', ts('Membership Type'),
-          array(
-            '' => ' ') + $membershipTypes, FALSE, $js
-          );
-        $this->add('text', 'membership_num_terms[' . $i . ']', ts('Number of terms'), CRM_Utils_Array::value('membership_num_terms', $attributes));
+          array('' => ' ') + $membershipTypes, FALSE, $js
+        );
+        $this->add('text', 'membership_num_terms[' . $i . ']', ts('Number of Terms'), CRM_Utils_Array::value('membership_num_terms', $attributes));
       }
 
       // weight
@@ -379,16 +374,19 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
   }
 
   /**
-   * global validation rules for the form
+   * Global validation rules for the form.
    *
-   * @param array  $fields   (referance) posted values of the form
+   * @param array $fields
+   *   Posted values of the form.
    *
-   * @return array    if errors then list of errors to be posted back to the form,
+   * @param $files
+   * @param CRM_Core_Form $form
+   *
+   * @return array
+   *   if errors then list of errors to be posted back to the form,
    *                  true otherwise
-   * @static
-   * @access public
    */
-  static function formRule($fields, $files, $form) {
+  public static function formRule($fields, $files, $form) {
 
     // all option fields are of type "money"
     $errors = array();
@@ -404,7 +402,8 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
     }
 
     if (($form->_action & CRM_Core_Action::ADD || $form->_action & CRM_Core_Action::UPDATE) &&
-         $fields['html_type'] == 'Text' && $fields['financial_type_id'] == '') {
+      $fields['html_type'] == 'Text' && $fields['financial_type_id'] == ''
+    ) {
       $errors['financial_type_id'] = ts('Financial Type is a required field');
     }
 
@@ -479,7 +478,7 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
               $_flagOption = 1;
             }
           }
-          if (!$noLabel && !$noAmount && CRM_Utils_Array::value('option_financial_type_id', $fields) && $fields['option_financial_type_id'][$index] == '' && $fields['html_type'] != 'Text') {
+          if (!$noLabel && !$noAmount && !empty($fields['option_financial_type_id']) && $fields['option_financial_type_id'][$index] == '' && $fields['html_type'] != 'Text') {
             $errors["option_financial_type_id[{$index}]"] = ts('Financial Type is a Required field.');
           }
           if ($noLabel && !$noAmount) {
@@ -527,28 +526,28 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
         if (!empty($memTypesIDS)) {
           // check for checkboxes allowing user to select multiple memberships from same membership organization
           if ($fields['html_type'] == 'CheckBox') {
-          $foundDuplicate = FALSE;
-          $orgIds = array();
-          foreach ($memTypesIDS as $key => $val) {
-            $org = CRM_Member_BAO_MembershipType::getMembershipTypeOrganization($val);
-            if (in_array($org[$val], $orgIds)) {
-              $foundDuplicate = TRUE;
-              break;
-            }
-            $orgIds[$val] = $org[$val];
+            $foundDuplicate = FALSE;
+            $orgIds = array();
+            foreach ($memTypesIDS as $key => $val) {
+              $org = CRM_Member_BAO_MembershipType::getMembershipTypeOrganization($val);
+              if (in_array($org[$val], $orgIds)) {
+                $foundDuplicate = TRUE;
+                break;
+              }
+              $orgIds[$val] = $org[$val];
 
+            }
+            if ($foundDuplicate) {
+              $errors['_qf_default'] = ts('You have selected multiple memberships for the same organization or entity. Please review your selections and choose only one membership per entity.');
+            }
           }
-          if ($foundDuplicate) {
-            $errors['_qf_default'] = ts('You have selected multiple memberships for the same organization or entity. Please review your selections and choose only one membership per entity.');
-          }
-        }
 
           // CRM-10390 - Only one price field in a set can include auto-renew membership options
           $foundAutorenew = FALSE;
           foreach ($memTypesIDS as $key => $val) {
             // see if any price field option values in this price field are for memberships with autorenew
             $memTypeDetails = CRM_Member_BAO_MembershipType::getMembershipTypeDetails($val);
-            if (CRM_Utils_Array::value('auto_renew', $memTypeDetails)) {
+            if (!empty($memTypeDetails['auto_renew'])) {
               $foundAutorenew = TRUE;
               break;
             }
@@ -594,12 +593,7 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
   }
 
   /**
-   * Process the form
-   *
-   * @param null
-   *
-   * @return void
-   * @access public
+   * Process the form.
    */
   public function postProcess() {
     // store the submitted values in an array
@@ -609,7 +603,7 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
     $params['is_display_amounts'] = CRM_Utils_Array::value('is_display_amounts', $params, FALSE);
     $params['is_required'] = CRM_Utils_Array::value('is_required', $params, FALSE);
     $params['is_active'] = CRM_Utils_Array::value('is_active', $params, FALSE);
-    $params['financial_type_id']  = CRM_Utils_Array::value('financial_type_id', $params, false);
+    $params['financial_type_id'] = CRM_Utils_Array::value('financial_type_id', $params, FALSE);
     if (isset($params['active_on'])) {
       $params['active_on'] = CRM_Utils_Date::processDate($params['active_on'],
         CRM_Utils_Array::value('active_on_time', $params),
@@ -655,7 +649,6 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
       //$params['option_description']  = array( 1 => $params['description'] );
       $params['option_weight'] = array(1 => $params['weight']);
       $params['option_financial_type_id'] = array(1 => $params['financial_type_id']);
-      $params['is_active'] = array(1 => 1);
     }
 
     if ($this->_fid) {
@@ -679,5 +672,5 @@ class CRM_Price_Form_Field extends CRM_Core_Form {
       $session->replaceUserContext(CRM_Utils_System::url('civicrm/admin/price/field', 'reset=1&action=browse&sid=' . $this->_sid));
     }
   }
-}
 
+}

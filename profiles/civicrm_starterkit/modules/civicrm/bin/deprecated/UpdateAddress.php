@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,7 +23,7 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  * A PHP cron script to format all the addresses in the database. Currently
@@ -132,6 +132,13 @@ function run() {
   processContacts($config, $processGeocode, $parseStreetAddress, $start, $end);
 }
 
+/**
+ * @param $config
+ * @param $processGeocode
+ * @param $parseStreetAddress
+ * @param null $start
+ * @param null $end
+ */
 function processContacts(&$config, $processGeocode, $parseStreetAddress, $start = NULL, $end = NULL) {
   // build where clause.
   $clause = array('( c.id = a.contact_id )');
@@ -169,7 +176,7 @@ WHERE      {$whereClause}
   $dao = CRM_Core_DAO::executeQuery($query, CRM_Core_DAO::$_nullArray);
 
   if ($processGeocode) {
-    require_once (str_replace('_', DIRECTORY_SEPARATOR, $config->geocodeMethod) . '.php');
+    require_once str_replace('_', DIRECTORY_SEPARATOR, $config->geocodeMethod) . '.php';
   }
 
   require_once 'CRM/Core/DAO/Address.php';
@@ -224,9 +231,7 @@ WHERE      {$whereClause}
       $success = TRUE;
       // consider address is automatically parseable,
       // when we should found street_number and street_name
-      if (!CRM_Utils_Array::value('street_name', $parsedFields) ||
-        !CRM_Utils_Array::value('street_number', $parsedFields)
-      ) {
+      if (empty($parsedFields['street_name']) || empty($parsedFields['street_number'])) {
         $success = FALSE;
       }
 
@@ -268,9 +273,6 @@ WHERE      {$whereClause}
       }
     }
   }
-
-  return;
 }
 
 run();
-

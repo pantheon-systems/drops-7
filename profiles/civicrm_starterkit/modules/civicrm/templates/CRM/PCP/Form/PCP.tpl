@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -65,6 +65,10 @@
         <td class="label">{$form.supporter_profile_id.label}</td>
         <td>{$form.supporter_profile_id.html} {help id="id-supporter_profile"}</td>
      </tr>
+     <tr class="crm-contribution-contributionpage-pcp-form-block-owner_notify_id">
+        <td class="label">{$form.owner_notify_id.label}</td>
+        <td>{$form.owner_notify_id.html}</td>
+     </tr>
      <tr class="crm-contribution-contributionpage-pcp-form-block-is_tellfriend_enabled">
         <td class="label">{$form.is_tellfriend_enabled.label}</td>
         <td>{$form.is_tellfriend_enabled.html} {help id="id-is_tellfriend"}</td>
@@ -108,6 +112,3 @@
     field_type          = "radio"
     invert              = "false"
 }
-
-{* include jscript to warn if unsaved form field changes *}
-{include file="CRM/common/formNavigate.tpl"}

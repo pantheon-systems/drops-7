@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -47,7 +47,7 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
   protected $_entityID;
   protected $_entityTable;
 
-  function preProcess() {
+  public function preProcess() {
     if ($this->get('entityID')) {
       $this->_entityID = $this->get('entityID');
     }
@@ -66,10 +66,9 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     // get categories for the contact id
@@ -83,14 +82,12 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
     foreach ($allTag as $tagID => $varValue) {
       if (in_array($tagID, $entityTag)) {
         $tagAttribute = array(
-          'onclick' => "return changeRowColor(\"rowidtag_$tagID\")",
           'checked' => 'checked',
           'id' => "tag_{$tagID}",
         );
       }
       else {
         $tagAttribute = array(
-          'onclick' => "return changeRowColor(\"rowidtag_$tagID\")",
           'id' => "tag_{$tagID}",
         );
       }
@@ -102,6 +99,17 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
 
     $tags = new CRM_Core_BAO_Tag();
     $tree = $tags->getTree($this->_entityTable, TRUE);
+
+    // let's not load jstree if there are not children. This also fixes blank
+    // display at the beginning of checkboxes
+    $loadJsTree = CRM_Utils_Array::retrieveValueRecursive($tree, 'children');
+    $this->assign('loadjsTree', FALSE);
+    if (!empty($loadJsTree)) {
+      CRM_Core_Resources::singleton()
+        ->addScriptFile('civicrm', 'packages/jquery/plugins/jstree/jquery.jstree.js', 0, 'html-header', FALSE)
+        ->addStyleFile('civicrm', 'packages/jquery/plugins/jstree/themes/default/style.css', 0, 'html-header');
+      $this->assign('loadjsTree', TRUE);
+    }
     $this->assign('tree', $tree);
 
     $this->assign('tag', $allTag);
@@ -109,31 +117,11 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
     //build tag widget
     $parentNames = CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
     CRM_Core_Form_Tag::buildQuickForm($this, $parentNames, $this->_entityTable, $this->_entityID);
-
-    if ($this->_action & CRM_Core_Action::BROWSE) {
-      $this->freeze();
-    }
-    else {
-      $this->addButtons(array(
-          array(
-            'type' => 'next',
-            'name' => ts('Update Tags'),
-            'isDefault' => TRUE,
-          ),
-          array(
-            'type' => 'cancel',
-            'name' => ts('Cancel'),
-          ),
-        )
-      );
-    }
   }
 
   /**
    *
-   * @access public
-   *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     CRM_Utils_System::flushCache('CRM_Core_DAO_Tag');
@@ -147,6 +135,5 @@ class CRM_Tag_Form_Tag extends CRM_Core_Form {
 
     CRM_Core_Session::setStatus(ts('Your update(s) have been saved.'), ts('Saved'), 'success');
   }
-  //end of function
-}
 
+}

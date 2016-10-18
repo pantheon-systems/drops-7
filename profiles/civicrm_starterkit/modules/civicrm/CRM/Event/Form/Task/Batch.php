@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,40 +39,36 @@
 class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
 
   /**
-   * the title of the group
+   * The title of the group.
    *
    * @var string
    */
   protected $_title;
 
   /**
-   * maximum profile fields that will be displayed
-   *
+   * Maximum profile fields that will be displayed.
    */
   protected $_maxFields = 9;
 
   /**
-   * variable to store redirect path
-   *
+   * Variable to store redirect path.
    */
   protected $_userContext;
 
   /**
-   * variable to store previous status id.
-   *
+   * Variable to store previous status id.
    */
   protected $_fromStatusIds;
 
   /**
-   * build all the data structures needed to build the form
+   * Build all the data structures needed to build the form.
    *
    * @return void
-   * @access public
    */
-  function preProcess() {
-   /*
-    * initialize the task and row fields
-    */
+  public function preProcess() {
+    /*
+     * initialize the task and row fields
+     */
     parent::preProcess();
 
     //get the contact read only fields to display.
@@ -92,13 +88,12 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
   }
 
   /**
-   * Build the form
+   * Build the form object.
    *
-   * @access public
    *
    * @return void
    */
-  function buildQuickForm() {
+  public function buildQuickForm() {
     $ufGroupId = $this->get('ufGroupId');
 
     if (!$ufGroupId) {
@@ -144,7 +139,6 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
       )
     );
 
-
     $this->assign('profileTitle', $this->_title);
     $this->assign('componentIds', $this->_participantIds);
     $fileFieldExists = FALSE;
@@ -163,29 +157,35 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
     // get the option value for custom data type
     $this->_roleCustomDataTypeID = CRM_Core_OptionGroup::getValue('custom_data_type', 'ParticipantRole', 'name');
     $this->_eventNameCustomDataTypeID = CRM_Core_OptionGroup::getValue('custom_data_type', 'ParticipantEventName', 'name');
+    $this->_eventTypeCustomDataTypeID = CRM_Core_OptionGroup::getValue('custom_data_type', 'ParticipantEventType', 'name');
 
     // build custom data getFields array
     $customFieldsRole = CRM_Core_BAO_CustomField::getFields('Participant', FALSE, FALSE, NULL, $this->_roleCustomDataTypeID);
 
     $customFieldsEvent = CRM_Core_BAO_CustomField::getFields('Participant', FALSE, FALSE, NULL, $this->_eventNameCustomDataTypeID);
+    $customFieldsEventType = CRM_Core_BAO_CustomField::getFields('Participant', FALSE, FALSE, NULL, $this->_eventTypeCustomDataTypeID);
+
     $customFields = CRM_Utils_Array::crmArrayMerge($customFieldsRole,
       CRM_Core_BAO_CustomField::getFields('Participant', FALSE, FALSE, NULL, NULL, TRUE)
     );
+    $customFields = CRM_Utils_Array::crmArrayMerge($customFieldsEventType, $customFields);
     $this->_customFields = CRM_Utils_Array::crmArrayMerge($customFieldsEvent, $customFields);
 
     foreach ($this->_participantIds as $participantId) {
       $roleId = CRM_Core_DAO::getFieldValue("CRM_Event_DAO_Participant", $participantId, 'role_id');
       $eventId = CRM_Core_DAO::getFieldValue("CRM_Event_DAO_Participant", $participantId, 'event_id');
+      $eventTypeId = CRM_Core_DAO::getFieldValue("CRM_Event_DAO_Event", $eventId, 'event_type_id');
       foreach ($this->_fields as $name => $field) {
         if ($customFieldID = CRM_Core_BAO_CustomField::getKeyID($name)) {
           $customValue = CRM_Utils_Array::value($customFieldID, $this->_customFields);
           $entityColumnValue = array();
-          if (CRM_Utils_Array::value('extends_entity_column_value', $customValue)) {
+          if (!empty($customValue['extends_entity_column_value'])) {
             $entityColumnValue = explode(CRM_Core_DAO::VALUE_SEPARATOR,
               $customValue['extends_entity_column_value']
             );
           }
           $entityColumnValueRole = CRM_Utils_Array::value($roleId, $entityColumnValue);
+          $entityColumnValueEventType = in_array($eventTypeId, $entityColumnValue) ? $eventTypeId : NULL;
           if (($this->_roleCustomDataTypeID == $customValue['extends_entity_column_id']) &&
             ($entityColumnValueRole)
           ) {
@@ -193,6 +193,11 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
           }
           elseif (($this->_eventNameCustomDataTypeID == $customValue['extends_entity_column_id']) &&
             ($eventId == $entityColumnValueRole)
+          ) {
+            CRM_Core_BAO_UFGroup::buildProfile($this, $field, NULL, $participantId);
+          }
+          elseif ($this->_eventTypeCustomDataTypeID == $customValue['extends_entity_column_id'] &&
+            ($entityColumnValueEventType == $eventTypeId)
           ) {
             CRM_Core_BAO_UFGroup::buildProfile($this, $field, NULL, $participantId);
           }
@@ -216,20 +221,19 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
     $buttonName = $this->controller->getButtonName('submit');
 
     if ($suppressFields && $buttonName != '_qf_Batch_next') {
-      CRM_Core_Session::setStatus(ts("FILE or Autocomplete Select type field(s) in the selected profile are not supported for Batch Update and have been excluded."), ts('Unsupported Field Type'), 'info');
+      CRM_Core_Session::setStatus(ts("File or Autocomplete-Select type field(s) in the selected profile are not supported for Batch Update."), ts('Unsupported Field Type'), 'info');
     }
 
     $this->addDefaultButtons(ts('Update Participant(s)'));
   }
 
   /**
-   * This function sets the default values for the form.
+   * Set default values for the form.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
-  function setDefaultValues() {
+  public function setDefaultValues() {
     if (empty($this->_fields)) {
       return;
     }
@@ -261,11 +265,10 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
   }
 
   /**
-   * process the form after the input has been submitted and validated
+   * Process the form after the input has been submitted and validated.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     $params = $this->exportValues();
@@ -281,11 +284,11 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
         );
 
         $value['id'] = $key;
-        if (CRM_Utils_Array::value('participant_register_date', $value)) {
+        if (!empty($value['participant_register_date'])) {
           $value['register_date'] = CRM_Utils_Date::processDate($value['participant_register_date'], $value['participant_register_date_time']);
         }
 
-        if (CRM_Utils_Array::value('participant_role', $value)) {
+        if (!empty($value['participant_role'])) {
           $participantRoles = CRM_Event_PseudoConstant::participantRole();
           if (is_array($value['participant_role'])) {
             $value['role_id'] = implode(CRM_Core_DAO::VALUE_SEPARATOR, array_keys($value['participant_role']));
@@ -298,7 +301,7 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
         //need to send mail when status change
         $statusChange = FALSE;
         $relatedStatusChange = FALSE;
-        if (CRM_Utils_Array::value('participant_status', $value)) {
+        if (!empty($value['participant_status'])) {
           $value['status_id'] = $value['participant_status'];
           $fromStatusId = CRM_Utils_Array::value($key, $this->_fromStatusIds);
           if (!$fromStatusId) {
@@ -313,7 +316,7 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
           }
         }
 
-        if (CRM_Utils_Array::value('participant_source', $value)) {
+        if (!empty($value['participant_source'])) {
           $value['source'] = $value['participant_source'];
         }
         unset($value['participant_register_date']);
@@ -337,11 +340,16 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
       CRM_Core_Session::setStatus(ts('No updates have been saved.'), ts('Not Saved'), 'alert');
     }
   }
-  //end of function
 
-  static function updatePendingOnlineContribution($participantId, $statusId) {
+  /**
+   * @param int $participantId
+   * @param int $statusId
+   *
+   * @return Ambigous|void
+   */
+  public static function updatePendingOnlineContribution($participantId, $statusId) {
     if (!$participantId || !$statusId) {
-      return;
+      return NULL;
     }
 
     $contributionId = CRM_Contribute_BAO_Contribution::checkOnlinePendingContribution($participantId,
@@ -376,7 +384,7 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
       'componentName' => 'Event',
       'contribution_id' => $contributionId,
       'contribution_status_id' => $contributionStatusId,
-      'skipComponentSync' => 1
+      'skipComponentSync' => 1,
     );
 
     //change related contribution status.
@@ -384,5 +392,5 @@ class CRM_Event_Form_Task_Batch extends CRM_Event_Form_Task {
 
     return $updatedStatusId;
   }
-}
 
+}

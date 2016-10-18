@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -43,10 +43,9 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
   protected $_oldSiteName;
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(ts('Settings - Cleanup Caches and Update Paths'));
@@ -55,7 +54,7 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
       $this->_oldBaseURL,
       $this->_oldBaseDir,
       $this->_oldSiteName
-    ) = CRM_Core_BAO_ConfigSetting::getConfigSettings();
+      ) = CRM_Core_BAO_ConfigSetting::getConfigSettings();
 
     $this->assign('oldBaseURL', $this->_oldBaseURL);
     $this->assign('oldBaseDir', $this->_oldBaseDir);
@@ -63,7 +62,7 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
 
     $this->addElement(
       'submit', $this->getButtonName('next', 'cleanup'), 'Cleanup Caches',
-      array('class' => 'form-submit', 'id' => 'cleanup-cache')
+      array('class' => 'crm-form-submit', 'id' => 'cleanup-cache')
     );
 
     $this->add('text', 'newBaseURL', ts('New Base URL'), NULL, TRUE);
@@ -76,7 +75,7 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
     parent::buildQuickForm();
   }
 
-  function setDefaultValues() {
+  public function setDefaultValues() {
     if (!$this->_defaults) {
       parent::setDefaultValues();
 
@@ -85,17 +84,22 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
         $this->_defaults['newBaseURL'],
         $this->_defaults['newBaseDir'],
         $this->_defaults['newSiteName']
-      ) = CRM_Core_BAO_ConfigSetting::getBestGuessSettings();
+        ) = CRM_Core_BAO_ConfigSetting::getBestGuessSettings();
     }
 
     return $this->_defaults;
   }
 
-  static function formRule($fields) {
+  /**
+   * @param $fields
+   *
+   * @return array
+   */
+  public static function formRule($fields) {
     $tmpDir = trim($fields['newBaseDir']);
 
     $errors = array();
-    if (!is_writeable($tmpDir)) {
+    if (!is_writable($tmpDir)) {
       $errors['newBaseDir'] = ts('%1 directory does not exist or cannot be written by webserver',
         array(1 => $tmpDir)
       );
@@ -103,16 +107,18 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
     return $errors;
   }
 
-  function postProcess() {
-    if (CRM_Utils_Array::value('_qf_UpdateConfigBackend_next_cleanup', $_POST)) {
+  public function postProcess() {
+    if (!empty($_POST['_qf_UpdateConfigBackend_next_cleanup'])) {
 
       $config = CRM_Core_Config::singleton();
 
       // cleanup templates_c directory
       $config->cleanup(1, FALSE);
 
-      // clear db caching
+      // clear all caches
       CRM_Core_Config::clearDBCache();
+      CRM_Utils_System::flushCache();
+
       parent::rebuildMenu();
 
       CRM_Core_BAO_WordReplacement::rebuild();
@@ -129,14 +135,21 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
 
     //CRM-5679
     foreach ($params as $name => & $val) {
-      if ($val && in_array($name, array(
-        'newBaseURL', 'newBaseDir', 'newSiteName'))) {
+      if ($val && in_array($name, array('newBaseDir', 'newSiteName'))) {
         $val = CRM_Utils_File::addTrailingSlash($val);
       }
     }
 
+    //CRM-15365 - Fix BaseURL to avoid wrong trailing slash on Windows installs
+    foreach ($params as $name => & $val) {
+      if ($val && in_array($name, array('newBaseURL'))) {
+        $val = CRM_Utils_File::addTrailingSlash($val, "/");
+      }
+    }
+
     $from = array($this->_oldBaseURL, $this->_oldBaseDir);
-    $to = array(trim($params['newBaseURL']),
+    $to = array(
+      trim($params['newBaseURL']),
       trim($params['newBaseDir']),
     );
     if ($this->_oldSiteName &&
@@ -155,5 +168,5 @@ class CRM_Admin_Form_Setting_UpdateConfigBackend extends CRM_Admin_Form_Setting 
 
     parent::rebuildMenu();
   }
-}
 
+}

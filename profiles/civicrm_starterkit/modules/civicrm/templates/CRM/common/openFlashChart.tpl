@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
 {literal}
 <script type="text/javascript">
     function createSWFObject( chartID, divName, xSize, ySize, loadDataFunction ) {
-       var flashFilePath = "{/literal}{$config->resourceBase}{literal}packages/OpenFlashChart/open-flash-chart.swf";
+       var flashFilePath = {/literal}"{$config->resourceBase}packages/OpenFlashChart/open-flash-chart.swf"{literal};
 
        //create object.
        swfobject.embedSWF( flashFilePath, divName,

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,16 +39,16 @@
 class CRM_Contact_Form_Edit_Website {
 
   /**
-   * build the form elements for an Website object
+   * Build the form object elements for an Website object.
    *
-   * @param CRM_Core_Form $form       reference to the form object
-   * @param int           $blockCount block number to build
+   * @param CRM_Core_Form $form
+   *   Reference to the form object.
+   * @param int $blockCount
+   *   Block number to build.
    *
    * @return void
-   * @access public
-   * @static
    */
-  static function buildQuickForm(&$form, $blockCount = NULL) {
+  public static function buildQuickForm(&$form, $blockCount = NULL) {
     if (!$blockCount) {
       $blockId = ($form->get('Website_Block_Count')) ? $form->get('Website_Block_Count') : 1;
     }
@@ -59,7 +59,7 @@ class CRM_Contact_Form_Edit_Website {
     $form->applyFilter('__ALL__', 'trim');
 
     //Website type select
-    $form->addElement('select', "website[$blockId][website_type_id]", '', CRM_Core_PseudoConstant::get('CRM_Core_DAO_Website', 'website_type_id'));
+    $form->addSelect("website[$blockId][website_type_id]", array('entity' => 'website', 'class' => 'eight'));
 
     //Website box
     $form->addElement('text', "website[$blockId][url]", ts('Website'),
@@ -74,5 +74,5 @@ class CRM_Contact_Form_Edit_Website {
 
     $form->addRule("website[$blockId][url]", ts('Enter a valid web location beginning with \'http://\' or \'https://\'. EXAMPLE: http://www.mysite.org/'), 'url');
   }
-}
 
+}

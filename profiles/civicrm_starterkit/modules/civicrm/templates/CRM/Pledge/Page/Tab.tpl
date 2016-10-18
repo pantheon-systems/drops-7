@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -33,13 +33,14 @@
     {ts 1=$displayName}Pledges received from %1 since inception.{/ts}
     {if $permission EQ 'edit'}
      {capture assign=newContribURL}{crmURL p="civicrm/contact/view/pledge" q="reset=1&action=add&cid=`$contactId`&context=pledge"}{/capture}
-     {ts 1=$newContribURL}Click <a href='%1'>Add Pledge</a> to record a new pledge received from this contact.{/ts}
+     {capture assign=link}class="action-item" href="{$newContribURL}"{/capture}
+     {ts 1=$link}Click <a %1>Add Pledge</a> to record a new pledge received from this contact.{/ts}
     {/if}
 </div>
 
 {if $action eq 16 and $permission EQ 'edit'}
     <div class="action-link">
-       <a accesskey="N" href="{$newContribURL}" class="button"><span><div class="icon add-icon"></div>{ts}Add Pledge{/ts}</a></span>
+       <a accesskey="N" href="{$newContribURL}" class="button"><span><div class="icon ui-icon-circle-plus"></div>{ts}Add Pledge{/ts}</a></span>
        <br/><br/>
     </div>
 {/if}

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,34 +40,33 @@
 class CRM_Admin_Form_Setting_Mapping extends CRM_Admin_Form_Setting {
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     CRM_Utils_System::setTitle(ts('Settings - Mapping and Geocoding Providers'));
 
     $map = CRM_Core_SelectValues::mapProvider();
     $geo = CRM_Core_SelectValues::geoProvider();
-    $this->addElement('select', 'mapProvider', ts('Mapping Provider'), array('' => '- select -') + $map, array('onChange' => 'showHideMapAPIkey( this.value );'));
+    $this->addElement('select', 'mapProvider', ts('Mapping Provider'), array('' => '- select -') + $map, array('class' => 'crm-select2'));
     $this->add('text', 'mapAPIKey', ts('Map Provider Key'), NULL);
-    $this->addElement('select', 'geoProvider', ts('Geocoding Provider'), array('' => '- select -') + $geo);
+    $this->addElement('select', 'geoProvider', ts('Geocoding Provider'), array('' => '- select -') + $geo, array('class' => 'crm-select2'));
     $this->add('text', 'geoAPIKey', ts('Geo Provider Key'), NULL);
 
     parent::buildQuickForm();
   }
 
   /**
-   * global form rule
+   * Global form rule.
    *
-   * @param array $fields  the input form values
+   * @param array $fields
+   *   The input form values.
    *
-   * @return true if no errors, else array of errors
-   * @access public
-   * @static
+   * @return bool|array
+   *   true if no errors, else array of errors
    */
-  static function formRule($fields) {
+  public static function formRule($fields) {
     $errors = array();
 
     if (!CRM_Utils_System::checkPHPVersion(5, FALSE)) {
@@ -86,16 +85,13 @@ class CRM_Admin_Form_Setting_Mapping extends CRM_Admin_Form_Setting {
   }
 
   /**
-   * This function is used to add the rules (mainly global rules) for form.
+   * add the rules (mainly global rules) for form.
    * All local rules are added near the element
    *
-   * @param null
-   *
    * @return void
-   * @access public
    */
-  function addRules() {
+  public function addRules() {
     $this->addFormRule(array('CRM_Admin_Form_Setting_Mapping', 'formRule'));
   }
-}
 
+}

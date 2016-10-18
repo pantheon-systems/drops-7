@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,20 +40,19 @@
 class CRM_Admin_Form_Navigation extends CRM_Admin_Form {
 
   /**
-   * The parent id of the navigation menu
+   * The parent id of the navigation menu.
    */
   protected $_currentParentID = NULL;
 
   /**
-   * Default values
+   * Default values.
    */
   protected $_defaults = array();
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     parent::buildQuickForm();
@@ -112,14 +111,17 @@ class CRM_Admin_Form_Navigation extends CRM_Admin_Form {
       $homeMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Navigation', 'Home', 'id', 'name');
       unset($parentMenu[$homeMenuId]);
 
-      $parent = $this->add('select', 'parent_id', ts('Parent'), array('' => ts('-- select --')) + $parentMenu);
+      $parent = $this->add('select', 'parent_id', ts('Parent'), array('' => ts('- select -')) + $parentMenu);
     }
   }
 
+  /**
+   * @return array
+   */
   public function setDefaultValues() {
     $defaults = $this->_defaults;
     if (isset($this->_id)) {
-      if (CRM_Utils_Array::value('permission', $this->_defaults)) {
+      if (!empty($this->_defaults['permission'])) {
         foreach (explode(',', $this->_defaults['permission']) as $value) {
           $components[$value] = $value;
         }
@@ -140,11 +142,10 @@ class CRM_Admin_Form_Navigation extends CRM_Admin_Form {
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     // get the submitted form values.
@@ -161,7 +162,8 @@ class CRM_Admin_Form_Navigation extends CRM_Admin_Form {
     CRM_Core_BAO_Navigation::resetNavigation();
 
     CRM_Core_Session::setStatus(ts('Menu \'%1\' has been saved.',
-        array(1 => $navigation->label)
-      ), ts('Saved'), 'success');
+      array(1 => $navigation->label)
+    ), ts('Saved'), 'success');
   }
+
 }

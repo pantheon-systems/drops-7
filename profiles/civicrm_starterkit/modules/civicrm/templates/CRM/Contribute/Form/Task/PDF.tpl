@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,11 +35,20 @@
   <tr>
     <td>{$form.output.email_receipt.html}</td>
   </tr>
+  <tr id="selectEmailFrom" style="display: none">
+    <td>{$form.fromEmailAddress.label}: {$form.fromEmailAddress.html}</td>
+  </tr>
   <tr>
     <td>{$form.output.pdf_receipt.html}</td>
   </tr>
   <tr id="selectPdfFormat" style="display: none;">
     <td>{$form.pdf_format_id.html} {$form.pdf_format_id.label} {help id="id-contribution-receipt" file="CRM/Contact/Form/Task/PDFLetterCommon.hlp"}</td>
+  </tr>
+  <tr>
+    <td>{$form.receipt_update.html} {$form.receipt_update.label}</td>
+  </tr>
+  <tr>
+    <td>{$form.override_privacy.html} {$form.override_privacy.label}</td>
   </tr>
 </table>
 

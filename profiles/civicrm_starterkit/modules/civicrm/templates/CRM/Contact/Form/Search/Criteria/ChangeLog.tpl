@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -34,10 +34,6 @@
       </td>
       <td width="100%">
         {$form.log_date.html}
-        <span class="crm-clear-link">(<a href="#" title="unselect"
-                                         onclick="unselectRadio('log_date', '{$form.formName}');
-                                           return false;">{ts}clear{/ts}</a>)
-        </span>
         <br/>
       </td>
     </tr>
@@ -55,26 +51,24 @@
 
 {literal}
   <script type="text/javascript">
-    cj(function () {
-      updateChangeLogLabels();
-    });
-
-    cj('[name=log_date]:input').change(function () {
-      updateChangeLogLabels();
-    });
-
-    function updateChangeLogLabels() {
-      var changeType = cj('input[name=log_date]:checked').val();
-      if (changeType == 2) {
-        cj('.addedBy').hide();
-        cj('.modifiedBy').show();
-      }
-      else {
-        if (changeType == 1) {
-          cj('.addedBy').show();
-          cj('.modifiedBy').hide();
+    CRM.$(function($) {
+      function updateChangeLogLabels() {
+        var changeType = $('input[name=log_date]:checked').val();
+        if (changeType == 2) {
+          $('.addedBy').hide();
+          $('.modifiedBy').show();
+        }
+        else {
+          if (changeType == 1) {
+            $('.addedBy').show();
+            $('.modifiedBy').hide();
+          }
         }
       }
-    }
+      $('[name=log_date]:input').change(updateChangeLogLabels);
+      updateChangeLogLabels();
+    });
+
+
   </script>
 {/literal}

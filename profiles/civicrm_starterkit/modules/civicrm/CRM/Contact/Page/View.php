@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,18 +40,16 @@
 class CRM_Contact_Page_View extends CRM_Core_Page {
 
   /**
-   * the id of the object being viewed (note/relationship etc)
+   * The id of the object being viewed (note/relationship etc)
    *
    * @int
-   * @access protected
    */
   protected $_id;
 
   /**
-   * the contact id of the contact being viewed
+   * The contact id of the contact being viewed
    *
    * @int
-   * @access protected
    */
   protected $_contactId;
 
@@ -59,7 +57,6 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
    * The action that we are performing
    *
    * @string
-   * @access protected
    */
   protected $_action;
 
@@ -67,7 +64,6 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
    * The permission we have on this contact
    *
    * @string
-   * @access protected
    */
   protected $_permission;
 
@@ -76,10 +72,8 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
    * the contact and calls the appropriate type of page to view.
    *
    * @return void
-   * @access public
-   *
    */
-  function preProcess() {
+  public function preProcess() {
     // process url params
     $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
     $this->assign('id', $this->_id);
@@ -109,7 +103,7 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     }
 
     // ensure that the id does exist
-    if ( CRM_Core_DAO::getFieldValue( 'CRM_Contact_DAO_Contact', $this->_contactId, 'id' ) != $this->_contactId ) {
+    if (CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $this->_contactId, 'id') != $this->_contactId) {
       CRM_Core_Error::statusBounce(
         ts('A Contact with that ID does not exist: %1', array(1 => $this->_contactId)),
         CRM_Utils_System::url('civicrm/dashboard', 'reset=1')
@@ -157,7 +151,7 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     $this->assign($navContacts);
 
     $path = CRM_Utils_System::url('civicrm/contact/view', 'reset=1&cid=' . $this->_contactId);
-    CRM_Utils_System::appendBreadCrumb(array(array('title' => ts('View Contact'), 'url' => $path,)));
+    CRM_Utils_System::appendBreadCrumb(array(array('title' => ts('View Contact'), 'url' => $path)));
 
     if ($image_URL = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $this->_contactId, 'image_URL')) {
       //CRM-7265 --time being fix.
@@ -186,9 +180,7 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     // check logged in user permission
     self::checkUserPermission($this);
 
-    list($displayName, $contactImage,
-      $contactType, $contactSubtype, $contactImageUrl
-    ) = self::getContactDetails($this->_contactId);
+    list($displayName, $contactImage, $contactType, $contactSubtype, $contactImageUrl) = self::getContactDetails($this->_contactId);
     $this->assign('displayName', $displayName);
 
     $this->set('contactType', $contactType);
@@ -232,7 +224,8 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     // Check if this is default domain contact CRM-10482
     if (CRM_Contact_BAO_Contact::checkDomainContact($this->_contactId)) {
       $this->assign('domainContact', TRUE);
-    } else {
+    }
+    else {
       $this->assign('domainContact', FALSE);
     }
 
@@ -259,22 +252,28 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
   /**
    * Get meta details of the contact.
    *
-   * @return array contact fields in fixed order
-   * @access public
+   * @param int $contactId
+   *
+   * @return array
+   *   contact fields in fixed order
    */
-  static function getContactDetails($contactId) {
+  public static function getContactDetails($contactId) {
     return list($displayName,
       $contactImage,
       $contactType,
       $contactSubtype,
       $contactImageUrl
-    ) = CRM_Contact_BAO_Contact::getDisplayAndImage($contactId,
+      ) = CRM_Contact_BAO_Contact::getDisplayAndImage($contactId,
       TRUE,
       TRUE
-    );
+      );
   }
 
-  static function checkUserPermission($page, $contactID = NULL) {
+  /**
+   * @param $page
+   * @param int $contactID
+   */
+  public static function checkUserPermission($page, $contactID = NULL) {
     // check for permissions
     $page->_permission = NULL;
 
@@ -309,7 +308,13 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     }
   }
 
-  static function setTitle($contactId, $isDeleted = FALSE) {
+  /**
+   * @param int $contactId
+   * @param bool $isDeleted
+   *
+   * @return string
+   */
+  public static function setTitle($contactId, $isDeleted = FALSE) {
     static $contactDetails;
     $displayName = $contactImage = NULL;
     if (!isset($contactDetails[$contactId])) {
@@ -317,6 +322,7 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
       $contactDetails[$contactId] = array(
         'displayName' => $displayName,
         'contactImage' => $contactImage,
+        'isDeceased' => (bool) CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $contactId, 'is_deceased'),
       );
     }
     else {
@@ -326,6 +332,9 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
 
     // set page title
     $title = "{$contactImage} {$displayName}";
+    if ($contactDetails[$contactId]['isDeceased']) {
+      $title .= '  <span class="crm-contact-deceased">(deceased)</span>';
+    }
     if ($isDeleted) {
       $title = "<del>{$title}</del>";
     }
@@ -337,48 +346,20 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
   }
 
   /**
-   * Add urls for display in the actions menu
+   * Add urls for display in the actions menu.
+   * @param CRM_Core_Page $obj
+   * @param int $cid
    */
-  static function addUrls(&$obj, $cid) {
-    // TODO rewrite without so many hard-coded CMS bits; use abstractions like CRM_Core_Permission::check('cms:...') and CRM_Utils_System
-
-    $config = CRM_Core_Config::singleton();
-    $session = CRM_Core_Session::singleton();
+  public static function addUrls(&$obj, $cid) {
     $uid = CRM_Core_BAO_UFMatch::getUFId($cid);
-    $userRecordUrl = NULL;
+
     if ($uid) {
-      if ($config->userSystem->is_drupal == '1' &&
-        ($session->get('userID') == $cid || CRM_Core_Permission::checkAnyPerm(array('cms:administer users', 'cms:view user account')))
-      ) {
-        $userRecordUrl = CRM_Utils_System::url('user/' . $uid);
-      }
-      elseif ($config->userFramework == 'Joomla') {
-        $userRecordUrl = NULL;
-        // if logged in user is super user, then he can view other users joomla profile
-        if (JFactory::getUser()->authorise('core.admin')) {
-          $userRecordUrl = $config->userFrameworkBaseURL . "index.php?option=com_users&view=user&task=user.edit&id=" . $uid;
-        }
-        elseif ($session->get('userID') == $cid) {
-          $userRecordUrl = $config->userFrameworkBaseURL . "index.php?option=com_admin&view=profile&layout=edit&id=" . $uid;
-        }
-      }
-      // For WordPress, provide link to user profile is contact belongs to logged in user OR user has administrator role
-      elseif ($config->userFramework == 'WordPress' &&
-        ($session->get('userID') == $cid || CRM_Core_Permission::checkAnyPerm(array('cms:administer users')))
-        ) {
-          $userRecordUrl = $config->userFrameworkBaseURL . "wp-admin/user-edit.php?user_id=" . $uid;
-      }
+      $userRecordUrl = CRM_Core_Config::singleton()->userSystem->getUserRecordUrl($cid);
       $obj->assign('userRecordUrl', $userRecordUrl);
       $obj->assign('userRecordId', $uid);
     }
-    elseif (($config->userSystem->is_drupal == '1' && CRM_Core_Permission::check('administer users')) ||
-      ($config->userFramework == 'Joomla' &&
-        JFactory::getUser()->authorise('core.create', 'com_users')
-      )
-    ) {
-      $userAddUrl = CRM_Utils_System::url('civicrm/contact/view/useradd',
-        'reset=1&action=add&cid=' . $cid
-      );
+    elseif (CRM_Core_Config::singleton()->userSystem->checkPermissionAddUser()) {
+      $userAddUrl = CRM_Utils_System::url('civicrm/contact/view/useradd', 'reset=1&action=add&cid=' . $cid);
       $obj->assign('userAddUrl', $userAddUrl);
     }
 
@@ -390,9 +371,11 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     }
 
     // See if other modules want to add links to the activtity bar
-    $hookLinks = CRM_Utils_Hook::links('view.contact.activity',
+    $hookLinks = array();
+    CRM_Utils_Hook::links('view.contact.activity',
       'Contact',
       $cid,
+      $hookLinks,
       CRM_Core_DAO::$_nullObject,
       CRM_Core_DAO::$_nullObject
     );
@@ -400,5 +383,5 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
       $obj->assign('hookLinks', $hookLinks);
     }
   }
-}
 
+}

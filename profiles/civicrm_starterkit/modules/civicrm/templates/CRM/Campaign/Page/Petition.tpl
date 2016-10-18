@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -27,9 +27,11 @@
 
 {if $surveys}
   <div class="action-link">
-    <a href="{$addSurveyUrl}" class="button"><span>&raquo; {ts}Add Survey{/ts}</span></a>
+    <a href="{$addSurveyUrl}" class="button">
+      <span><div class="icon ui-icon-circle-plus"></div> {ts}Add Survey{/ts}</span>
+    </a>
   </div>
- {include file="CRM/common/enableDisable.tpl"}
+ {include file="CRM/common/enableDisableApi.tpl"}
  {include file="CRM/common/jsortable.tpl"}
   <div id="surveyList">
     <table id="options" class="display">
@@ -47,7 +49,7 @@
         </tr>
       </thead>
       {foreach from=$surveys item=survey}
-        <tr id="row_{$survey.id}" {if $survey.is_active neq 1}class="disabled"{/if}>
+        <tr id="survey-{$survey.id}" class="crm-entity {if $survey.is_active neq 1} disabled{/if}">
     <td>{$survey.title}</td>
           <td>{$survey.campaign_id}</td>
           <td>{$survey.activity_type_id}</td>
@@ -64,9 +66,11 @@
 
 {else}
   <div class="status">
-    <div class="icon inform-icon"></div>&nbsp;{ts}No survey found.{/ts}
+    <div class="icon inform-icon"></div>&nbsp;{ts}None found.{/ts}
   </div>
 {/if}
 <div class="action-link">
-   <a href="{$addSurveyUrl}" class="button"><span>&raquo; {ts}Add Survey{/ts}</span></a>
+  <a href="{$addSurveyUrl}" class="button">
+    <span><div class="icon ui-icon-circle-plus"></div> {ts}Add Survey{/ts}</span>
+  </a>
 </div>

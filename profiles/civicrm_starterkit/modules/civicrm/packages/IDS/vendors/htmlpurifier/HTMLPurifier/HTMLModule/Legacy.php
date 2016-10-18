@@ -18,58 +18,29 @@
 
 class HTMLPurifier_HTMLModule_Legacy extends HTMLPurifier_HTMLModule
 {
-    /**
-     * @type string
-     */
+
     public $name = 'Legacy';
 
-    /**
-     * @param HTMLPurifier_Config $config
-     */
-    public function setup($config)
-    {
-        $this->addElement(
-            'basefont',
-            'Inline',
-            'Empty',
-            null,
-            array(
-                'color' => 'Color',
-                'face' => 'Text', // extremely broad, we should
-                'size' => 'Text', // tighten it
-                'id' => 'ID'
-            )
-        );
+    public function setup($config) {
+
+        $this->addElement('basefont', 'Inline', 'Empty', false, array(
+            'color' => 'Color',
+            'face' => 'Text', // extremely broad, we should
+            'size' => 'Text', // tighten it
+            'id' => 'ID'
+        ));
         $this->addElement('center', 'Block', 'Flow', 'Common');
-        $this->addElement(
-            'dir',
-            'Block',
-            'Required: li',
-            'Common',
-            array(
-                'compact' => 'Bool#compact'
-            )
-        );
-        $this->addElement(
-            'font',
-            'Inline',
-            'Inline',
-            array('Core', 'I18N'),
-            array(
-                'color' => 'Color',
-                'face' => 'Text', // extremely broad, we should
-                'size' => 'Text', // tighten it
-            )
-        );
-        $this->addElement(
-            'menu',
-            'Block',
-            'Required: li',
-            'Common',
-            array(
-                'compact' => 'Bool#compact'
-            )
-        );
+        $this->addElement('dir', 'Block', 'Required: li', 'Common', array(
+            'compact' => 'Bool#compact'
+        ));
+        $this->addElement('font', 'Inline', 'Inline', array('Core', 'I18N'), array(
+            'color' => 'Color',
+            'face' => 'Text', // extremely broad, we should
+            'size' => 'Text', // tighten it
+        ));
+        $this->addElement('menu', 'Block', 'Required: li', 'Common', array(
+            'compact' => 'Bool#compact'
+        ));
 
         $s = $this->addElement('s', 'Inline', 'Inline', 'Common');
         $s->formatting = true;
@@ -118,7 +89,7 @@ class HTMLPurifier_HTMLModule_Legacy extends HTMLPurifier_HTMLModule
         $hr->attr['width'] = 'Length';
 
         $img = $this->addBlankElement('img');
-        $img->attr['align'] = 'IAlign';
+        $img->attr['align'] = 'Enum#top,middle,bottom,left,right';
         $img->attr['border'] = 'Pixels';
         $img->attr['hspace'] = 'Pixels';
         $img->attr['vspace'] = 'Pixels';
@@ -127,7 +98,7 @@ class HTMLPurifier_HTMLModule_Legacy extends HTMLPurifier_HTMLModule
 
         $li = $this->addBlankElement('li');
         $li->attr['value'] = new HTMLPurifier_AttrDef_Integer();
-        $li->attr['type'] = 'Enum#s:1,i,I,a,A,disc,square,circle';
+        $li->attr['type']  = 'Enum#s:1,i,I,a,A,disc,square,circle';
 
         $ol = $this->addBlankElement('ol');
         $ol->attr['compact'] = 'Bool#compact';
@@ -165,22 +136,8 @@ class HTMLPurifier_HTMLModule_Legacy extends HTMLPurifier_HTMLModule
         $ul->attr['compact'] = 'Bool#compact';
         $ul->attr['type'] = 'Enum#square,disc,circle';
 
-        // "safe" modifications to "unsafe" elements
-        // WARNING: If you want to add support for an unsafe, legacy
-        // attribute, make a new TrustedLegacy module with the trusted
-        // bit set appropriately
-
-        $form = $this->addBlankElement('form');
-        $form->content_model = 'Flow | #PCDATA';
-        $form->content_model_type = 'optional';
-        $form->attr['target'] = 'FrameTarget';
-
-        $input = $this->addBlankElement('input');
-        $input->attr['align'] = 'IAlign';
-
-        $legend = $this->addBlankElement('legend');
-        $legend->attr['align'] = 'LAlign';
     }
+
 }
 
 // vim: et sw=4 sts=4

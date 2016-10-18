@@ -400,11 +400,15 @@ function _civicrm_contact_ref_potential_references_standard($field, $string = ''
 /**
  * Helper function for formatters.
  *
- * Store node titles collected in the curent request.
+ * Store node titles collected in the current request.
+ *
+ * @param int $cid
+ * @param string $field
+ * @return string|null
  */
 function _civicrm_contact_ref_titles($cid, $field = 'display_name') {
-  if (!civicrm_initialize()) {
-    return;
+  if (!civicrm_initialize() || !$cid) {
+    return NULL;
   }
   static $titles = array();
 

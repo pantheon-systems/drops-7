@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -48,7 +48,28 @@ class CRM_Activity_Form_ActivityFilter extends CRM_Core_Form {
     $this->assign('suppressForm', TRUE);
   }
 
-  function setDefaultValues() {
+  /**
+   * This virtual function is used to set the default values of
+   * various form elements
+   *
+   * access        public
+   *
+   * @return array
+   *   reference to the array of default values
+   */
+  /**
+   * This virtual function is used to set the default values of
+   * various form elements
+   *
+   * access        public
+   *
+   * @return array
+   *   reference to the array of default values
+   */
+  /**
+   * @return array
+   */
+  public function setDefaultValues() {
     // CRM-11761 retrieve user's activity filter preferences
     $defaults = array();
     $session = CRM_Core_Session::singleton();
@@ -63,5 +84,5 @@ class CRM_Activity_Form_ActivityFilter extends CRM_Core_Form {
     }
     return $defaults;
   }
-}
 
+}

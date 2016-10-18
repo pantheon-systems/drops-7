@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -26,7 +26,7 @@
 {if (!$chartEnabled || !$chartSupported )&& $rows}
     {if $pager and $pager->_response and $pager->_response.numPages > 1}
         <div class="report-pager">
-            {include file="CRM/common/pager.tpl" location="top" noForm=0}
+            {include file="CRM/common/pager.tpl" location="top"}
         </div>
     {/if}
     <div class="crm-report-overlay form-layout-compressed">
@@ -110,7 +110,7 @@
                             {elseif $header.group_by eq 'YEAR'}
                                 {$row.$field|crmDate:$config->dateformatYear}
                             {else}
-                                {if $header.type & 4}
+                                {if $header.type == 4}
                                    {$row.$field|truncate:10:''|crmDate}
                                 {else}
                                    {$row.$field|crmDate}
@@ -147,7 +147,7 @@
     </div>
     {if $pager and $pager->_response and $pager->_response.numPages > 1}
         <div class="report-pager">
-            {include file="CRM/common/pager.tpl"  noForm=0}
+            {include file="CRM/common/pager.tpl" }
         </div>
     {/if}
 {/if}

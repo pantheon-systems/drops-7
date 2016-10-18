@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -43,12 +43,12 @@
     <td align="center" id="IM-Primary-html" {if $blockId eq 1}class="hiddenElement"{/if}>{$form.im.$blockId.is_primary.1.html}</td>
     {if $blockId gt 1}
         <td><a href="#" title="{ts}Delete IM Block{/ts}" onClick="removeBlock('IM','{$blockId}'); return false;">{ts}delete{/ts}</a></td>
-    {/if}    
+    {/if}
 </tr>
 {if !$addBlock}
 <tr>
 <td colspan="4">
-&nbsp;&nbsp;<a href="#" title={ts}Add{/ts} onClick="buildAdditionalBlocks( 'IM', '{$className}');return false;">{ts}Add another IM Id{/ts}</a>
+&nbsp;&nbsp;<a href="#" title={ts}Add{/ts} onClick="buildAdditionalBlocks( 'IM', '{$className}');return false;">{ts}Add another IM{/ts}</a>
 </td>
 </tr>
 {/if}

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -42,7 +42,7 @@
  */
 class CRM_Core_Config_Defaults {
 
-  function setCoreVariables() {
+  public function setCoreVariables() {
     global $civicrm_root;
 
     // set of base directories relying on $civicrm_root
@@ -70,6 +70,16 @@ class CRM_Core_Config_Defaults {
 
     $size = trim(ini_get('upload_max_filesize'));
     if ($size) {
+      $this->maxImportFileSize = self::formatUnitSize($size);
+    }
+  }
+
+  /**
+   * Format size.
+   *
+   */
+  public static function formatUnitSize($size, $checkForPostMax = FALSE) {
+    if ($size) {
       $last = strtolower($size{strlen($size) - 1});
       switch ($last) {
         // The 'G' modifier is available since PHP 5.1.0
@@ -81,21 +91,33 @@ class CRM_Core_Config_Defaults {
         case 'k':
           $size *= 1024;
       }
-      $this->maxImportFileSize = $size;
+
+      if ($checkForPostMax) {
+        $maxImportFileSize = self::formatUnitSize(ini_get('upload_max_filesize'));
+        $postMaxSize = self::formatUnitSize(ini_get('post_max_size'));
+        if ($maxImportFileSize > $postMaxSize && $postMaxSize == $size) {
+          CRM_Core_Session::setStatus(ts("Note: Upload max filesize ('upload_max_filesize') should not exceed Post max size ('post_max_size') as defined in PHP.ini, please check with your system administrator."), ts("Warning"), "alert");
+        }
+        //respect php.ini upload_max_filesize
+        if ($size > $maxImportFileSize && $size !== $postMaxSize) {
+          $size = $maxImportFileSize;
+          CRM_Core_Session::setStatus(ts("Note: Please verify your configuration for Maximum File Size (in MB) <a href='%1'>Administrator >> System Settings >> Misc</a>. It should support 'upload_max_size' as defined in PHP.ini.Please check with your system administrator.", array(1 => CRM_Utils_System::url('civicrm/admin/setting/misc', 'reset=1'))), ts("Warning"), "alert");
+        }
+      }
+      return $size;
     }
   }
 
   /**
-   * Function to set the default values
+   * Set the default values.
+   * in an empty db, also called when setting component using GUI
    *
-   * @param array   $defaults  associated array of form elements
-   * @param boolena $formMode  this funtion is called to set default
-   *                           values in an empty db, also called when setting component using GUI
-   *                           this variable is set true for GUI
-   *                           mode (eg: Global setting >> Components)
+   * @param array $defaults
+   *   Associated array of form elements.
+   * @param bool $formMode
+   *   this variable is set true for GUI
+   *   mode (eg: Global setting >> Components)
    *
-   * @access public
-   * @static
    */
   public static function setValues(&$defaults, $formMode = FALSE) {
     $config = CRM_Core_Config::singleton();
@@ -126,7 +148,12 @@ class CRM_Core_Config_Defaults {
         $defaults['userFrameworkResourceURL'] = $baseURL . "components/com_civicrm/civicrm/";
       }
       elseif ($config->userFramework == 'WordPress') {
-        $defaults['userFrameworkResourceURL'] = $baseURL . "wp-content/plugins/civicrm/civicrm/";
+        if (defined('CIVICRM_PLUGIN_URL')) {
+          $defaults['userFrameworkResourceURL'] = CIVICRM_PLUGIN_URL . "civicrm/";
+        }
+        else {
+          $defaults['userFrameworkResourceURL'] = $baseURL . "wp-content/plugins/civicrm/civicrm/";
+        }
       }
       else {
         // Drupal setting
@@ -137,14 +164,15 @@ class CRM_Core_Config_Defaults {
         global $civicrm_root;
         $cmsPath = $config->userSystem->cmsRootPath();
         $defaults['userFrameworkResourceURL'] = $baseURL . str_replace("$cmsPath/", '',
-          str_replace('\\', '/', $civicrm_root)
-        );
+            str_replace('\\', '/', $civicrm_root)
+          );
 
         if (strpos($civicrm_root,
             DIRECTORY_SEPARATOR . 'sites' .
             DIRECTORY_SEPARATOR . 'all' .
             DIRECTORY_SEPARATOR . 'modules'
-          ) === FALSE) {
+          ) === FALSE
+        ) {
           $startPos = strpos($civicrm_root,
             DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR
           );
@@ -177,7 +205,13 @@ class CRM_Core_Config_Defaults {
       }
       elseif ($config->userFramework == 'WordPress') {
         //for standalone no need of sites/defaults directory
-        $defaults['imageUploadURL'] = $baseURL . "wp-content/plugins/files/civicrm/persist/contribute/";
+        if (defined('CIVICRM_PLUGIN_DIR')) {
+          // CIVICRM_PLUGIN_DIR points to: wp-content/plugins/civicrm/ or similar (with trailing '/')
+          $defaults['imageUploadURL'] = str_replace('civicrm', 'files/civicrm', CIVICRM_PLUGIN_DIR) . 'persist/contribute/';
+        }
+        else {
+          $defaults['imageUploadURL'] = $baseURL . "wp-content/plugins/files/civicrm/persist/contribute/";
+        }
       }
       else {
         $defaults['imageUploadURL'] = $baseURL . "sites/default/files/civicrm/persist/contribute/";
@@ -207,11 +241,9 @@ class CRM_Core_Config_Defaults {
       $defaults['customFileUploadDir'] = $customDir;
     }
 
-    /* FIXME: hack to bypass the step for generating defaults for components,
-                  while running upgrade, to avoid any serious non-recoverable error
-                  which might hinder the upgrade process. */
-
-
+    // FIXME: hack to bypass the step for generating defaults for components,
+    // while running upgrade, to avoid any serious non-recoverable error
+    // which might hinder the upgrade process.
     $args = array();
     if (isset($_GET[$config->userFrameworkURLVar])) {
       $args = explode('/', $_GET[$config->userFrameworkURLVar]);
@@ -227,5 +259,5 @@ class CRM_Core_Config_Defaults {
       }
     }
   }
-}
 
+}

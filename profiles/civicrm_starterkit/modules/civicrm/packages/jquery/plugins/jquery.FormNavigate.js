@@ -33,10 +33,10 @@ var global_formNavigate = true;		// Js Global Variable for onChange Flag
         $(":input[type=text], :input[type='textarea'], :input[type='password'], :input[type='radio'], :input[type='checkbox'], :input[type='file'], select", this).change(function(){
             global_formNavigate = false;
         });
-		//to handle back button
-		$(":input[type='textarea']", this).keyup(function(){ 
-			global_formNavigate = false; 
-		}); 
+        //to handle back button
+        $(":input[type='textarea']", this).keyup(function(){ 
+          global_formNavigate = false; 
+        }); 
         $(":submit", this).click(function(){
             global_formNavigate = true;
         });
@@ -45,4 +45,3 @@ var global_formNavigate = true;		// Js Global Variable for onChange Flag
         });
     }
 })(jQuery);
-

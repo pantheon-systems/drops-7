@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -36,7 +36,7 @@
 <p></p>
     <div class="form-item">
         {strip}
-  {include file="CRM/common/enableDisable.tpl"}
+  {include file="CRM/common/enableDisableApi.tpl"}
         <table cellpadding="0" cellspacing="0" border="0">
         <tr class="columnheader">
             <th>{ts}Name{/ts}</th>
@@ -47,9 +47,9 @@
             <th></th>
         </tr>
         {foreach from=$rows item=row}
-        <tr id="row_{$row.id}" class="{cycle values="odd-row,even-row"} {$row.class} crm-paymentProcessorType {if NOT $row.is_active} disabled{/if}">
+        <tr id="paymentProcessorType-{$row.id}" class="{cycle values="odd-row,even-row"} {$row.class} crm-entity {if NOT $row.is_active} disabled{/if}">
           <td class="crm-paymentProcessorType-name">{$row.name}</td>
-          <td class="crm-paymentProcessorType-title">{$row.title}</td>
+          <td class="crm-paymentProcessorType-title crm-editable" data-field="title">{$row.title}</td>
             <td class="crm-paymentProcessorType-description">{$row.description}</td>
           <td id="row_{$row.id}_status" class="crm-paymentProcessorType-is_active">{if $row.is_active eq 1} {ts}Yes{/ts} {else} {ts}No{/ts} {/if}</td>
             <td class="crm-paymentProcessorType-is_default">{if $row.is_default eq 1}<img src="{$config->resourceBase}i/check.gif" alt="{ts}Default{/ts}" />{/if}&nbsp;</td>
@@ -60,17 +60,17 @@
         {/strip}
 
         {if $action ne 1 and $action ne 2}
-      <div class="action-link">
-      <a href="{crmURL q="action=add&reset=1"}" id="newPaymentProcessor">&raquo; {ts}New Payment Processor{/ts}</a>
+        <div class="action-link">
+          <a href="{crmURL q="action=add&reset=1"}" id="newPaymentProcessor">&raquo; {ts}New Payment Processor{/ts}</a>
+          {crmButton p="civicrm/admin" q="reset=1" class="cancel" icon="close"}{ts}Done{/ts}{/crmButton}
         </div>
         {/if}
     </div>
 </div>
 {elseif $action ne 1}
     <div class="messages status no-popup">
-        <img src="{$config->resourceBase}i/Inform.gif" alt="{ts}status{/ts}"/>
-        {capture assign=crmURL}{crmURL p='civicrm/admin/paymentProcessorType' q="action=add&reset=1"}{/capture}
-        {ts 1=$crmURL}There are no Payment Processors entered. You can <a href='%1'>add one</a>.{/ts}
+      <img src="{$config->resourceBase}i/Inform.gif" alt="{ts}status{/ts}"/>
+      {ts}None found.{/ts}
     </div>
 {/if}
 {/if}

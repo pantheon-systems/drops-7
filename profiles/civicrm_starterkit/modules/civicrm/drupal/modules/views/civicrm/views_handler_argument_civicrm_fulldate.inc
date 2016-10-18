@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,7 +35,9 @@ class views_handler_argument_civicrm_fulldate extends views_handler_argument_dat
     parent::construct();
     $this->format     = 'F j, Y';
     $this->arg_format = 'Ymd';
-    $this->formula    = views_date_sql_format($this->arg_format, "***table***.$this->real_field");
+    $this->formula    = views_date_sql_format($this->arg_format, "***table***.$this->real_field", "datetime");
+    //$this->formula = views_date_sql_extract($this->arg_format, "***table***.$this->real_field",'datetime',0);
+    // Any reason the above was used?
   }
 
   /**

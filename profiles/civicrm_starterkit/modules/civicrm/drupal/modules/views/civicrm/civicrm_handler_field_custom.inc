@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -34,20 +34,50 @@ class civicrm_handler_field_custom extends views_handler_field {
     civicrm_initialize();
   }
 
+  function option_definition() {
+    $options = parent::option_definition();
+    $options['civicrm_custom_formatter'] = array(
+      'default' => 'label'
+    );
+    return $options;
+  }
+
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    // Replicate Drupal UI for formatter options, but with CiviCRM
+    // terminology.
+    $form['civicrm_custom_formatter'] = array(
+      '#title' => 'Formatter',
+      '#type' => 'select',
+      '#default_value' => $this->options['civicrm_custom_formatter'],
+      '#options' => array(
+        'label' => t('Label'),
+        'value' => t('Value'),
+      ),
+    );
+  }
+
   function render($values) {
     $value = $values->{$this->field_alias};
-    if (!is_null($value)) {
-      // get the field id from the db
-      if (!empty($this->definition['title'])) {
-        $customFieldID = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_CustomField', $this->definition['title'], 'id', 'label');
-        require_once 'CRM/Core/BAO/CustomOption.php';
-        return CRM_Core_BAO_CustomOption::getOptionLabel($customFieldID, $value);
-      }
-      // could not get custom id, lets just return what we have
-      return $value;
+    switch ($this->options['civicrm_custom_formatter']) {
+      case 'value':
+        $value = trim($value, CRM_Core_DAO::VALUE_SEPARATOR);
+        $value = implode(', ', explode(CRM_Core_DAO::VALUE_SEPARATOR, $value));
+        return $value;
+
+      case 'label':
+      default:
+        if (!is_null($value)) {
+          // get the field id from the db
+          if (!empty($this->definition['title'])) {
+            $customFieldID = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_CustomField', $this->definition['title'], 'id', 'label');
+            require_once 'CRM/Core/BAO/CustomOption.php';
+            return CRM_Core_BAO_CustomOption::getOptionLabel($customFieldID, $value);
+          }
+          // could not get custom id, lets just return what we have
+          return $value;
+        }
+        return NULL;
     }
-    return NULL;
   }
 }
-
-

@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,7 +30,7 @@
   {if $batchAmountMismatch}
     <div class="status message status-warning">
       <div
-        class="icon alert-icon"></div> {ts}Total for amounts entered below does not match the expected batch total.{/ts}
+        class="icon ui-icon-alert"></div> {ts}Total for amounts entered below does not match the expected batch total.{/ts}
     </div>
     <div class="crm-button crm-button_qf_Entry_upload_force-save">
       {$form._qf_Entry_upload_force.html}
@@ -52,15 +52,20 @@
     <div class="crm-grid-header">
       <div class="crm-grid-cell">&nbsp;</div>
       <div class="crm-grid-cell">{ts}Contact{/ts}</div>
-      {if $batchType eq 2 }
+      {if $batchType eq 2}
         <div class="crm-grid-cell">&nbsp;</div>
+      {/if}
+      {if $batchType eq 3}
+        <div class="crm-grid-cell">{ts}Open Pledges (Due Date - Amount){/ts}</div>
       {/if}
       {foreach from=$fields item=field key=fieldName}
         <div class="crm-grid-cell">
+          {if $field.name|substr:0:11 ne 'soft_credit'}
           <img src="{$config->resourceBase}i/copy.png"
                alt="{ts 1=$field.title}Click to copy %1 from row one to all rows.{/ts}"
                fname="{$field.name}" class="action-icon"
-               title="{ts}Click here to copy the value in row one to ALL rows.{/ts}"/>{$field.title}
+               title="{ts}Click here to copy the value in row one to ALL rows.{/ts}"/>
+          {/if}{$field.title}
         </div>
       {/foreach}
     </div>
@@ -71,13 +76,15 @@
         <div class="compressed crm-grid-cell"><span class="batch-edit"></span></div>
         {* contact select/create option*}
         <div class="compressed crm-grid-cell">
-          {include file="CRM/Contact/Form/NewContact.tpl" blockNo = $rowNumber noLabel=true prefix="primary_" newContactCallback="updateContactInfo($rowNumber, 'primary_')"}
+          {$form.primary_contact_id.$rowNumber.html|crmAddClass:big}
         </div>
 
-        {if $batchType eq 2 }
+        {if $batchType eq 2}
           {$form.member_option.$rowNumber.html}
         {/if}
-
+        {if $batchType eq 3}
+          {$form.open_pledges.$rowNumber.html}
+        {/if}
         {foreach from=$fields item=field key=fieldName}
           {assign var=n value=$field.name}
           {if ( $fields.$n.data_type eq 'Date') or ( in_array( $n, array( 'thankyou_date', 'cancel_date', 'receipt_date', 'receive_date', 'join_date', 'membership_start_date', 'membership_end_date' ) ) ) }
@@ -88,11 +95,20 @@
             </div>
           {elseif $n eq 'soft_credit'}
             <div class="compressed crm-grid-cell">
-              {include file="CRM/Contact/Form/NewContact.tpl" blockNo = $rowNumber noLabel=true prefix="soft_credit_"}
+              {$form.soft_credit_contact_id.$rowNumber.html|crmAddClass:big}
               {$form.soft_credit_amount.$rowNumber.label}&nbsp;{$form.soft_credit_amount.$rowNumber.html|crmAddClass:eight}
             </div>
+            <div class="compressed crm-grid-cell">{$form.soft_credit_type.$rowNumber.html}</div>
           {elseif in_array( $fields.$n.html_type, array('Radio', 'CheckBox'))}
             <div class="compressed crm-grid-cell">&nbsp;{$form.field.$rowNumber.$n.html}</div>
+          {elseif $n eq 'total_amount'}
+             <div class="compressed crm-grid-cell">
+               {$form.field.$rowNumber.$n.html}
+               {if $batchType eq 3 }
+		 {ts}<span id={$rowNumber} class="pledge-adjust-option"><a href='#'>adjust payment amount</a></span>{/ts}
+                 <span id="adjust-select-{$rowNumber}" class="adjust-selectbox">{$form.option_type.$rowNumber.html}</span>
+               {/if}
+             </div>
           {else}
             <div class="compressed crm-grid-cell">{$form.field.$rowNumber.$n.html}</div>
           {/if}
@@ -104,18 +120,33 @@
 </div>
 {literal}
 <script type="text/javascript">
-cj(function () {
-  cj('.selector-rows').change(function () {
+CRM.$(function($) {
+  var $form = $('form.{/literal}{$form.formClass}{literal}');
+  $('.selector-rows').change(function () {
     var options = {
       'url': {/literal}"{crmURL p='civicrm/ajax/batch' h=0}"{literal}
-    };
+    }; 
+    $($form).ajaxSubmit(options);
+  });
+ 
+ $('input[id*="primary_contact_"]').change(function() {
+ var temp = this.id.split('_');
+   var ROWID = temp[3];
+   if ($(this).val()) {
+     updateContactInfo(ROWID,'primary_');
+   }
+ });
 
-    cj("#Entry").ajaxSubmit(options);
+ $('select[id^="option_type_"]').each(function () {
+    if ($(this).val() == 1) {
+      $(this).attr('disabled', true);
+      $(this).hide();
+    }
   });
 
-  cj('#crm-container').on('keyup change', '*.selector-rows', function () {
+  $('#crm-container').on('keyup change', '*.selector-rows', function () {
     // validate rows
-    checkColumns(cj(this));
+    checkColumns($(this));
   });
 
   // validate rows
@@ -124,7 +155,7 @@ cj(function () {
   //calculate the actual total for the batch
   calculateActualTotal();
 
-  cj('input[id*="_total_amount"]').bind('keyup change', function () {
+  $('input[id*="_total_amount"]').bind('keyup change', function () {
     calculateActualTotal();
   });
 
@@ -133,34 +164,34 @@ cj(function () {
   hideSendReceipt();
 
   // hide the receipt date if send receipt is checked
-  cj('input[id*="][send_receipt]"]').change(function () {
-    showHideReceipt(cj(this));
+  $('input[id*="][send_receipt]"]').change(function () {
+    showHideReceipt($(this));
   });
 
-  {/literal}{else}{literal}
-  cj('select[id^="member_option_"]').each(function () {
-    if (cj(this).val() == 1) {
-      cj(this).attr('disabled', true);
+  {/literal}{elseif $batchType eq 2}{literal}
+  $('select[id^="member_option_"]').each(function () {
+    if ($(this).val() == 1) {
+      $(this).prop('disabled', true);
     }
   });
 
   // set payment info accord to membership type
-  cj('select[id*="_membership_type_0"]').change(function () {
-    setPaymentBlock(cj(this), null);
+  $('select[id*="_membership_type_0"]').change(function () {
+    setPaymentBlock($(this), null);
   });
 
-  cj('select[id*="_membership_type_1"]').change(function () {
-    setPaymentBlock(cj(this), cj(this).val());
+  $('select[id*="_membership_type_1"]').change(function () {
+    setPaymentBlock($(this), $(this).val());
   });
 
   {/literal}{/if}{literal}
 
   // line breaks between radio buttons and checkboxes
-  cj('input.form-radio').next().after('<br />');
-  cj('input.form-checkbox').next().after('<br />');
+  $('input.form-radio').next().after('<br />');
+  $('input.form-checkbox').next().after('<br />');
 
   //set the focus on first element
-  cj('#primary_contact_1').focus();
+  $('#primary_contact_1').focus();
 
 });
 
@@ -284,11 +315,11 @@ function formatMoney(amount) {
 }
 
 function updateContactInfo(blockNo, prefix) {
-  var contactHiddenElement = 'input[name="' + prefix + 'contact_select_id[' + blockNo + ']"]';
+  var contactHiddenElement = 'input[id="' + prefix + 'contact_id_' + blockNo + '"]';
   var contactId = cj(contactHiddenElement).val();
 
   var returnProperties = '';
-  var profileFields = new Array();
+  var profileFields = [];
   {/literal}
   {if $contactFields}
   {foreach from=$contactFields item=val key=fldName}
@@ -338,7 +369,7 @@ function updateContactInfo(blockNo, prefix) {
               },
               { success: function (data) {
                 var memTypeContactId = data.values[0].member_of_contact_id;
-                cj('select[id="member_option_' + blockNo + '"]').removeAttr('disabled').val(2);
+                cj('select[id="member_option_' + blockNo + '"]').prop('disabled', false).val(2);
                 cj('select[id="field_' + blockNo + '_membership_type_0"]').val(memTypeContactId).change();
                 cj('select[id="field_' + blockNo + '_membership_type_1"]').val(membershipTypeId).change();
                 setDateFieldValue('join_date', membershipJoinDate, blockNo)
@@ -346,6 +377,29 @@ function updateContactInfo(blockNo, prefix) {
               });
           }
         }
+        });
+      {/literal}{elseif $batchType eq 3}{literal}
+      cj('#open_pledges_'+blockNo).empty();
+         cj('#open_pledges_'+blockNo).append(cj('<option>', {
+			    value: '',
+			    text: '-select-'
+			}));
+	 CRM.api('Pledge', 'get', {
+	  'sequential': 1,
+	 'contact_id': contactId || 0
+	 },
+	{success: function(data) {
+	 cj.each(data['values'], function(key, value) {
+	  if (value['pledge_status'] != 'Completed') {
+	   var date = cj.datepicker.parseDate('yy-mm-dd', value['pledge_next_pay_date']);
+           var dateformat = "{/literal}{$config->dateInputFormat}{literal}";
+	    cj('#open_pledges_'+ blockNo).append(cj('<option>', {
+		value: value['pledge_id'],
+		text: cj.datepicker.formatDate(dateformat, date) + ", " + value['pledge_next_pay_amount'] + ' ' + value['pledge_currency']
+		}));
+	     }
+	   });
+	 }
         });
       {/literal}{/if}{literal}
     }
@@ -451,8 +505,7 @@ function setDateFieldValue(fname, fieldValue, blockNo) {
   if (date_format != 'mm/dd/yy') {
     displayDateValue = cj.datepicker.formatDate(date_format, actualDateValue);
   }
-
-  cj('#field_' + blockNo + '_' + fname + '_display').val(displayDateValue);
+  cj('[id^=field_' + blockNo + '_' + fname + '_display]').val(displayDateValue);
 
   // need to fix time formatting
   if (dateValues[1]) {
@@ -460,8 +513,37 @@ function setDateFieldValue(fname, fieldValue, blockNo) {
   }
 }
 
+if (CRM.batch.type_id == 3){
+  cj('select[id*="open_pledges_"]').change(function () {
+    setPledgeAmount(cj(this), cj(this).val());
+  });
+  cj('.pledge-adjust-option').click(function(){
+    var blockNo = cj(this).attr('id');
+    cj('select[id="option_type_' + blockNo + '"]').show();
+    cj('select[id="option_type_' + blockNo + '"]').removeAttr('disabled');
+    cj('#field_' + blockNo + '_total_amount').removeAttr('readonly');
+  });
+}
+
+function setPledgeAmount(form, pledgeID) {
+  var rowID = form.closest('div.crm-grid-row').attr('entity_id');
+  var dataUrl = CRM.url('civicrm/ajax/pledgeAmount');
+  if (pledgeID) { 
+    cj.post(dataUrl, {pid: pledgeID}, function (data) {
+    cj('#field_' + rowID + '_financial_type').val(data.financial_type_id).change();
+    cj('#field_' + rowID + '_total_amount').val(data.amount).change();
+    cj('#field_' + rowID + '_total_amount').attr('readonly', true);
+    }, 'json');
+  }
+  else {
+    cj('#field_' + rowID + '_total_amount').val('').change();
+    cj('#field_' + rowID + '_financial_type').val('').change(); 
+    cj('#field_' + rowID + '_total_amount').removeAttr('readonly');
+  }
+}
+
+//end for pledge amount
 </script>
 {/literal}
-
 {*include batch copy js js file*}
 {include file="CRM/common/batchCopy.tpl"}

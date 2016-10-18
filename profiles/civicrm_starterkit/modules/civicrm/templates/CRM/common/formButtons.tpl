@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -27,15 +27,20 @@
 {* Loops through $form.buttons.html array and assigns separate spans with classes to allow theming
    by button and name. crmBtnType grabs type keyword from button name (e.g. 'upload', 'next', 'back', 'cancel') so
    types of buttons can be styled differently via css. *}
-
-{foreach from=$form.buttons item=button key=key name=btns}
+{crmRegion name='form-buttons'}
+  {foreach from=$form.buttons item=button key=key name=btns}
     {if $key|substring:0:4 EQ '_qf_'}
         {if $location}
           {assign var='html' value=$form.buttons.$key.html|crmReplace:id:"$key-$location"}
         {else}
           {assign var='html' value=$form.buttons.$key.html}
         {/if}
-        {capture assign=validate}{$key|crmBtnValidate}{/capture}
-        <span class="crm-button crm-button-type-{$key|crmBtnType} crm-button{$key}"{if $buttonStyle} style="{$buttonStyle}"{/if}>{$html|crmAddClass:$validate}</span>
+        {crmGetAttribute html=$html attr='crm-icon' assign='icon'}
+        {crmGetAttribute html=$html attr='disabled' assign='disabled'}
+        <span class="crm-button crm-button-type-{$key|crmBtnType} crm-button{$key}{if $icon} crm-icon-button{/if}{if $disabled} crm-button-disabled{/if}"{if $buttonStyle} style="{$buttonStyle}"{/if}>
+          {if $icon}<span class="crm-button-icon ui-icon-{$icon}"> </span>{/if}
+          {$html}
+        </span>
     {/if}
-{/foreach}
+  {/foreach}
+{/crmRegion}

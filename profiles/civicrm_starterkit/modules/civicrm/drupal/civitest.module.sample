@@ -862,18 +862,17 @@ ORDER BY c.sort_name ";
  *     params after the processor code has translated them into its own key/value pairs
  * @return void
  */
-function civitest_civicrm_alterPaymentProcessorParams( $paymentObj,
+function civitest_civicrm_alterPaymentProcessorParams($paymentObj,
   &$rawParams,
-  &$cookedParams ) {
-  $mode = $paymentObj->getVar('_mode');
-  $type = $paymentObj->getVar('_paymentProcessor');
-  $processorType = $type['payment_processor_type'];
-  if ( $paymentObj instanceof CRM_Core_Payment_Dummy ) {
+  &$cookedParams) {
+
+  if ($paymentObj->class_name == Payment_Dummy ) {
     $employer   = empty($rawParams['custom_1']) ? '' : $rawParams['custom_1'];
     $occupation = empty($rawParams['custom_2']) ? '' : $rawParams['custom_2'];
     $cookedParams['custom'] = "$employer|$occupation";
 
-  } else if ( $paymentObj instanceof CRM_Core_Payment_AuthorizeNet ) {
+  }
+  else if ($paymentObj->class_name == Payment_AuthorizeNet) {
     //Actual translation for one application:
     //Employer > Ship to Country (x_ship_to_country)
     //Occupation > Company (x_company)
@@ -886,19 +885,8 @@ function civitest_civicrm_alterPaymentProcessorParams( $paymentObj,
     $cookedParams['x_ship_to_last_name'] = $rawParams['accountingCode']; //for now
     $country_info = da_core_fetch_country_data_by_crm_id($rawParams['country-1']);
     $cookedParams['x_ship_to_company']   = $country_info['iso_code'];
-  } else if( $paymentObj instanceof CRM_Core_Payment_PayPalImpl && $processorType == 'PayPal' ) {
-    // Website Pro  Checkout
-    $obj   = $paymentObj->getVar('_paymentForm');
-    $value = $obj->getVar('_values');
-    $id    = $value['id'];
-    if ( $value['event']['id'] ) {
-      $id =  $value['event']['id'];
-    }
-
-    $cookedParams['desc'] = $rawParams['description'];
-    $cookedParams['custom'] = $id;
-
-  } elseif ( $paymentObj instanceof CRM_Core_Payment_PayPalImpl && $processorType == 'PayPal_Express' ) {
+  }
+   elseif ($paymentObj->billing_mode == 2) {
 
     // Express  Checkout
     $cookedParams['desc']   = $rawParams['eventName'];
@@ -1275,6 +1263,28 @@ function civitest_civicrm_merge ( $type, &$data, $mainId = NULL, $otherId = NULL
       // $data['fields_in_conflict'] could be looked into and filled with proper values which will help
       // resolve conflict & allow batch merge process to run without any problems / conflicts.
       break;
+
+    case 'flip':
+      // implement complex biasing decisions on which contact to keep or merge into.
+      // In example below we bias to contact with max contributions
+      $doSwap = FALSE;
+      $query  = "SELECT count(*) FROM civicrm_contribution WHERE contact_id = %1";
+      $SrcCount = CRM_Core_DAO::singleValueQuery($query, array(1 => array($data['srcID'], 'Integer')));
+      $dstCount = CRM_Core_DAO::singleValueQuery($query, array(1 => array($data['dstID'], 'Integer')));
+      if ($SrcCount > $dstCount) {
+        // keep contact with max contributions as destination (contact to be retained)
+        $doSwap = TRUE;
+      }
+      // we 'll add some more logic here to decide biasing
+
+      if ($doSwap) {
+        $tempID = $data['srcID'];
+        $data['srcID'] = $data['dstID'];
+        $data['dstID'] = $tempID;
+      }
+      $data['auto_flip'] = FALSE;
+      break;
+
   }
 }
 
@@ -1520,21 +1530,21 @@ function civitest_civicrm_buildStateProvinceForCountry( $countryID, &$states ) {
   $states = $topStates + $otherStates;
 }
 
-function civitest_civicrm_dupeQuery( $obj, $type, &$query ) {
+function civitest_civicrm_dupeQuery( $obj, $type, &$data ) {
   //don't run these during user account/contact creation
   if( $obj->noRules || $type != 'table')
     return;
 
   if ( $obj->name=='My Dedupe Rule Group Name' ) {
     //first unset existing queries
-    $query = array();
+    $data = array();
 
     //now set threshold to match our revised rule
     $obj->threshold = 5;
 
     if ( empty($obj->params) ) {
       //set new query when doing an internal dedupe (finding duplicate contacts)
-      $query['civicrm_contact.last_name.5'] = "
+      $data['civicrm_contact.last_name.5'] = "
 SELECT t1.id id1, t2.id id2, 5 weight
 FROM   civicrm_contact t1
 INNER JOIN civicrm_contact t2 ON ( t1.first_name = t2.first_name AND
@@ -1555,6 +1565,46 @@ WHERE t1.contact_type = 'Individual'
 ";
     }
   }
+
+  // ============= ANOTHER USE CASE =========
+  if ($type == 'supportedFields' && !empty($data)) {
+    // This makes a new custom rule appear in UI
+    $data['Individual']['civicrm_contact']['custom_initial_last_email']    = "Custom: Initial AND Last Name AND Email";
+  }
+
+  if ($type == 'dedupeIndexes' && !empty($data)) {
+    // since we don't want any index to be created for our new custom rule:
+    foreach ($data['civicrm_contact'] as $key => $val) {
+      if (in_array($val, array('custom_initial_last_email'))) {
+        unset($data['civicrm_contact'][$key]);
+      }
+    }
+  }
+
+  // This is how one could add the custom rule query:
+  if ($type == 'table' && !empty($data)) {
+    foreach ($data as $key => &$query) {
+      list($table, $col, $wt) = explode('.', $key);
+      if ($table == 'civicrm_contact' && $col == 'custom_initial_last_email') {
+        $data[$key] = "
+          SELECT t1.id id1, t2.id id2, $wt weight
+          FROM civicrm_contact t1
+          INNER JOIN civicrm_email em1 ON t1.id = em1.contact_id
+          JOIN ( SELECT cc.id, cc.first_name, cc.last_name, cc.contact_type, em2.email
+              FROM civicrm_contact cc
+              INNER JOIN civicrm_email em2 ON cc.id = em2.contact_id ) t2 ON SUBSTR(t1.first_name, 1, 1) = SUBSTR(t2.first_name, 1, 1) AND
+          t1.last_name = t2.last_name AND
+          em1.email = t2.email
+          WHERE t1.contact_type = 'Individual' AND
+          t2.contact_type = 'Individual' AND
+          t1.id < t2.id AND
+          t1.first_name IS NOT NULL AND
+          t1.last_name  IS NOT NULL AND
+          em1.email IS NOT NULL";
+      }
+    }
+  }
+
 }
 
 /**
@@ -1945,4 +1995,47 @@ function civitest_civicrm_unsubscribeGroups( $op, $mailingId, $contactId, &$grou
     }
     CRM_Utils_System::civiExit();
   }
+}
+
+function civitest_civicrm_tabset($tabsetName, &$tabs, $context) {
+  //check if the tab set is Event manage
+  if ($tabsetName == 'civicrm/event/manage') {
+    if (!empty($context)) {
+      $eventID = $context['event_id'];
+      $url = CRM_Utils_System::url( 'civicrm/event/manage/volunteer',
+        "reset=1&snippet=5&force=1&id=$eventID&action=update&component=event" );
+    //add a new Volunteer tab along with url
+     $tab['volunteer'] = array(
+        'title' => ts('Volunteers'),
+        'link' => $url,
+        'valid' => 1,
+        'active' => 1,
+        'current' => false,
+      );
+    }
+    else {
+      $tab['volunteer'] = array(
+      'title' => ts('Volunteers'),
+        'url' => 'civicrm/event/manage/volunteer',
+      );
+    }
+
+  //Insert this tab into position 4
+
+  $tabs = array_merge(
+      array_slice($tabs, 0, 4),
+      $tab,
+      array_slice($tabs, 4)
+    );
+  }
+}
+
+function civitest_civicrm_dashboard_defaults($availableDashlets, &$defaultDashlets){
+  $contactID = CRM_Core_Session::singleton()->get('userID');
+  $defaultDashlets[] = array(
+    'dashboard_id' => 3,
+    'is_active' => 1,
+    'column_no' => 1,
+    'contact_id' => $contactID,
+  );
 }

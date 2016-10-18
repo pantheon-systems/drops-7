@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,33 +23,25 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id: Display.php 45499 2013-02-08 12:31:05Z kurund $
  *
  */
 
-/**r
- * This class generates form components for the display preferences
- *
+/**
+ * This class generates form components for the display preferences.
  */
 class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
-  function preProcess() {
+  public function preProcess() {
     CRM_Utils_System::setTitle(ts('Settings - Display Preferences'));
 
-    if (defined('CIVICRM_ACTIVITY_ASSIGNEE_MAIL') && CIVICRM_ACTIVITY_ASSIGNEE_MAIL) {
-      CRM_Core_Session::setStatus(ts('Your civicrm.settings.php file contains CIVICRM_ACTIVITY_ASSIGNEE_MAIL but this
-      constant is no longer used. Please remove this from your config file and set your "Notify Activity Assignees"
-      preference below.'), ts("Deprecated Constant"), "alert");
-    }
-
     $this->_varNames = array(
-      CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME =>
-      array(
+      CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME => array(
         'contact_view_options' => array(
           'html_type' => 'checkboxes',
           'title' => ts('Viewing Contacts'),
@@ -104,13 +96,21 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
           'html_type' => NULL,
           'weight' => 11,
         ),
+        'ajaxPopupsEnabled' => array(
+          'html_type' => 'checkbox',
+          'title' => ts('Enable Popup Forms'),
+          'weight' => 12,
+        ),
       ),
     );
 
     parent::preProcess();
   }
 
-  function setDefaultValues() {
+  /**
+   * @return array
+   */
+  public function setDefaultValues() {
     $defaults = parent::setDefaultValues();
     parent::cbsDefaultValues($defaults);
 
@@ -118,8 +118,7 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
       $defaults['editor_id'] = $this->_config->editor_id;
     }
     if (empty($this->_config->display_name_format)) {
-      $defaults['display_name_format'] =
-        "{contact.individual_prefix}{ }{contact.first_name}{ }{contact.last_name}{ }{contact.individual_suffix}";
+      $defaults['display_name_format'] = "{contact.individual_prefix}{ }{contact.first_name}{ }{contact.last_name}{ }{contact.individual_suffix}";
     }
     else {
       $defaults['display_name_format'] = $this->_config->display_name_format;
@@ -141,14 +140,17 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     $wysiwyg_options = array('' => ts('Textarea')) + CRM_Core_OptionGroup::values('wysiwyg_editor');
 
+    //changes for freezing the invoices/credit notes checkbox if invoicing is uncheck
+    $invoiceSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
+    $invoicing = CRM_Utils_Array::value('invoicing', $invoiceSettings);
+    $this->assign('invoicing', $invoicing);
     $config = CRM_Core_Config::singleton();
     $extra = array();
 
@@ -170,8 +172,8 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
         cj("#crm-preferences-display-form-block-wysiwyg_input_format").hide()
       }';
 
-      $formats           = filter_formats();
-      $format_options    = array();
+      $formats = filter_formats();
+      $format_options = array();
       foreach ($formats as $id => $format) {
         $format_options[$id] = $format->name;
       }
@@ -189,17 +191,22 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
     $contactBlocks = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, 'AND v.filter = 1');
     $this->assign('contactBlocks', $contactBlocks);
 
+    $nameFields = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, 'AND v.filter = 2');
+    $this->assign('nameFields', $nameFields);
+
     $this->addElement('hidden', 'contact_edit_preferences', NULL, array('id' => 'contact_edit_preferences'));
 
+    $optionValues = CRM_Core_OptionGroup::values('user_dashboard_options', FALSE, FALSE, FALSE, NULL, 'name');
+    $invoicesKey = array_search('Invoices / Credit Notes', $optionValues);
+    $this->assign('invoicesKey', $invoicesKey);
     parent::buildQuickForm();
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     if ($this->_action == CRM_Core_Action::VIEW) {
@@ -208,7 +215,7 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
 
     $this->_params = $this->controller->exportValues($this->_name);
 
-    if (CRM_Utils_Array::value('contact_edit_preferences', $this->_params)) {
+    if (!empty($this->_params['contact_edit_preferences'])) {
       $preferenceWeights = explode(',', $this->_params['contact_edit_preferences']);
       foreach ($preferenceWeights as $key => $val) {
         if (!$val) {
@@ -232,6 +239,5 @@ class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
 
     $this->postProcessCommon();
   }
-  //end of function
-}
 
+}

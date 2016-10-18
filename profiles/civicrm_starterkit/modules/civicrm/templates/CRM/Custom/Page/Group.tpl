@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -40,32 +40,29 @@
     <div id="custom_group">
      {strip}
    {* handle enable/disable actions*}
-   {include file="CRM/common/enableDisable.tpl"}
-   {include file="CRM/common/jsortable.tpl"}
-      <table id="options" class="display">
+   {include file="CRM/common/enableDisableApi.tpl"}
+      <table id="options" class="row-highlight">
         <thead>
           <tr>
             <th>{ts}Set{/ts}</th>
             <th>{ts}Enabled?{/ts}</th>
             <th>{ts}Used For{/ts}</th>
             <th>{ts}Type{/ts}</th>
-            <th id="order" class="sortable">{ts}Order{/ts}</th>
+            <th>{ts}Order{/ts}</th>
             <th>{ts}Style{/ts}</th>
             <th></th>
-            <th class='hiddenElement'></th>
           </tr>
         </thead>
         <tbody>
         {foreach from=$rows item=row}
         <tr id="CustomGroup-{$row.id}" class="crm-entity {cycle values="odd-row,even-row"} {$row.class}{if NOT $row.is_active} disabled{/if}">
-          <td><span class="crmf-title crm-editable">{$row.title}</span></td>
+          <td class="crmf-title crm-editable">{$row.title}</td>
           <td id="row_{$row.id}_status">{if $row.is_active eq 1} {ts}Yes{/ts} {else} {ts}No{/ts} {/if}</td>
           <td>{if $row.extends eq 'Contact'}{ts}All Contact Types{/ts}{else}{$row.extends_display}{/if}</td>
           <td>{$row.extends_entity_column_value}</td>
-          <td class="nowrap">{$row.order}</td>
+          <td class="nowrap">{$row.weight}</td>
           <td>{$row.style_display}</td>
           <td>{$row.action|replace:'xx':$row.id}</td>
-          <td class="order hiddenElement">{$row.weight}</td>
         </tr>
         {/foreach}
         </tbody>
@@ -73,7 +70,7 @@
 
         {if NOT ($action eq 1 or $action eq 2) }
         <div class="action-link">
-        <a href="{crmURL p='civicrm/admin/custom/group' q="action=add&reset=1"}" id="newCustomDataGroup" class="button"><span><div class="icon add-icon"></div>{ts}Add Set of Custom Fields{/ts}</span></a>
+        {crmButton p='civicrm/admin/custom/group' q="action=add&reset=1" id="newCustomDataGroup"  icon="circle-plus"}{ts}Add Set of Custom Fields{/ts}{/crmButton}
         </div>
         {/if}
 
@@ -90,5 +87,4 @@
        {/if}
     {/if}
 {/if}
-{include file="CRM/common/crmeditable.tpl"}
 

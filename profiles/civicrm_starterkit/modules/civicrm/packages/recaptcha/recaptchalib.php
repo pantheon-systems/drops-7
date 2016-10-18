@@ -35,8 +35,8 @@
 /**
  * The reCAPTCHA server URL's
  */
-define("RECAPTCHA_API_SERVER", "http://www.google.com/recaptcha/api");
-define("RECAPTCHA_API_SECURE_SERVER", "https://www.google.com/recaptcha/api");
+define("RECAPTCHA_API_SERVER", "http://www.google.com/recaptcha/api.js");
+define("RECAPTCHA_API_SECURE_SERVER", "https://www.google.com/recaptcha/api.js");
 define("RECAPTCHA_VERIFY_SERVER", "www.google.com");
 
 /**
@@ -119,12 +119,12 @@ function recaptcha_get_html ($pubkey, $error = null, $use_ssl = false)
         if ($error) {
            $errorpart = "&amp;error=" . $error;
         }
-        return '<script type="text/javascript" src="'. $server . '/challenge?k=' . $pubkey . $errorpart . '"></script>
+        return '<div class="g-recaptcha" data-sitekey="'.$pubkey.'"></div>
+                <script type="text/javascript" src="'. $server.'"></script>
 
 	<noscript>
-  		<iframe src="'. $server . '/noscript?k=' . $pubkey . $errorpart . '" height="300" width="500" frameborder="0"></iframe><br/>
-  		<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
-  		<input type="hidden" name="recaptcha_response_field" value="manual_challenge"/>
+		<iframe src="'. $server.'" height="300" width="500" frameborder="0"></iframe><br/>
+		<div class="g-recaptcha" data-sitekey="'.$pubkey.'"></div>
 	</noscript>';
 }
 

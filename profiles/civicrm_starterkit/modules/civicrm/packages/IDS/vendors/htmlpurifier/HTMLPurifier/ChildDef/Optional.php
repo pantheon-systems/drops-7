@@ -9,34 +9,15 @@
  */
 class HTMLPurifier_ChildDef_Optional extends HTMLPurifier_ChildDef_Required
 {
-    /**
-     * @type bool
-     */
     public $allow_empty = true;
-
-    /**
-     * @type string
-     */
     public $type = 'optional';
-
-    /**
-     * @param array $children
-     * @param HTMLPurifier_Config $config
-     * @param HTMLPurifier_Context $context
-     * @return array
-     */
-    public function validateChildren($children, $config, $context)
-    {
-        $result = parent::validateChildren($children, $config, $context);
-        // we assume that $children is not modified
+    public function validateChildren($tokens_of_children, $config, $context) {
+        $result = parent::validateChildren($tokens_of_children, $config, $context);
+        // we assume that $tokens_of_children is not modified
         if ($result === false) {
-            if (empty($children)) {
-                return true;
-            } elseif ($this->whitespace) {
-                return $children;
-            } else {
-                return array();
-            }
+            if (empty($tokens_of_children)) return true;
+            elseif ($this->whitespace) return $tokens_of_children;
+            else return array();
         }
         return $result;
     }

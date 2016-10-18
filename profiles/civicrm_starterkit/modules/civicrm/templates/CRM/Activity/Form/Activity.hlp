@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,4 +28,10 @@
 {/htxt}
 {htxt id="id-is_multi_activity"}
   <p>{ts}By default a single activity record will be created and linked to all the contacts listed above. However, if you think you might be editing the activity later - and entering different information for different contacts - check this box to create separate activity records.{/ts}</p>
+{/htxt}
+
+{htxt id="assignee_contact_id"}
+  <p>
+    {ts}You can optionally assign this activity to someone. Assigned activities will appear in their Activities listing at CiviCRM Home.{/ts}
+  </p>
 {/htxt}

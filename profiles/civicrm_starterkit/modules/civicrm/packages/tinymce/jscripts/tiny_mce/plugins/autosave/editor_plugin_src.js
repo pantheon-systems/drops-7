@@ -136,10 +136,8 @@
 
 					// Auto save contents each interval time
 					setInterval(function() {
-						if (!ed.removed) {
-							self.storeDraft();
-							ed.nodeChanged();
-						}
+						self.storeDraft();
+						ed.nodeChanged();
 					}, settings.autosave_interval);
 				}
 			});

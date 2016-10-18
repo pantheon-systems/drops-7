@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -50,16 +50,26 @@
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
       <td class="description">
-        {ts}Controls display of the smart groups that a contact is part of in each contact's "Groups" tab.
-          "Show on Demand" provides the best performance, and is recommended for most sites.{/ts}
+        {ts}Controls display of the smart groups that a contact is part of in each contact's "Groups" tab. "Show on Demand" provides the best performance, and is recommended for most sites.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-contact_edit_options">
       <td class="label">{$form.contact_edit_options.label}</td>
       <td>
-        <table style="width:80%">
+        <table style="width:90%">
           <tr>
-            <td style="width:40%">
+            <td style="width:30%">
+              <span class="label"><strong>{ts}Individual Name Fields{/ts}</strong></span>
+              <ul id="contactEditNameFields">
+                {foreach from=$nameFields item="title" key="opId"}
+                  <li id="preference-{$opId}-contactedit" class="ui-state-default ui-corner-all"
+                      style="padding-left:1px;">
+                    <span>{$form.contact_edit_options.$opId.html}</span>
+                  </li>
+                {/foreach}
+              </ul>
+            </td>
+            <td style="width:30%">
               <span class="label"><strong>{ts}Contact Details{/ts}</strong></span>
               <ul id="contactEditBlocks">
                 {foreach from=$contactBlocks item="title" key="opId"}
@@ -90,10 +100,7 @@
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
       <td class="description">
-        {ts}Select the sections that should be included when adding or editing a contact record.
-          EXAMPLE: If your organization does not record Gender and Birth Date for individuals, then simplify the form
-          by un-checking this option. Drag interface allows you to change the order of the panes displayed on contact
-          add/edit screen.{/ts}
+        {ts}Select the sections that should be included when adding or editing a contact record. EXAMPLE: If your organization does not record Gender and Birth Date for individuals, then simplify the form by un-checking this option. Drag interface allows you to change the order of the panes displayed on contact add/edit screen.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-advanced_search_options">
@@ -102,10 +109,8 @@
     </tr>
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
-      <td
-        class="description">{ts}Select the sections that should be included in the Basic and Advanced Search forms.
-          EXAMPLE: If you don't track Relationships - then you do not need this section included in the advanced search
-          form. Simplify the form by un-checking this option.{/ts}
+      <td class="description">
+        {ts}Select the sections that should be included in the Basic and Advanced Search forms. EXAMPLE: If you don't track Relationships - then you do not need this section included in the advanced search form. Simplify the form by un-checking this option.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-contact_ajax_check_similar">
@@ -114,8 +119,7 @@
     </tr>
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
-      <td class="description">{ts}When enabled, checks for contacts with similar names as the user types values into
-          the contact form name fields.{/ts}
+      <td class="description">{ts}When enabled, checks for contacts with similar names as the user types values into the contact form name fields.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-activity_assignee_notification">
@@ -125,8 +129,7 @@
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
       <td class="description">
-        {ts}When enabled, contacts who are assigned activities will automatically receive an email notification
-          with a copy of the activity.{/ts}
+        {ts}When enabled, contacts who are assigned activities will automatically receive an email notification with a copy of the activity.{/ts}
       </td>
     </tr>
 
@@ -136,20 +139,18 @@
     </tr>
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
-      <td class="description">{ts}When enabled, the assignee notification sent out above will also include
-          an ical meeting invite.{/ts}
+      <td class="description">{ts}When enabled, the assignee notification sent out above will also include an ical meeting invite.{/ts}
       </td>
     </tr>
 
     <tr class="crm-preferences-display-form-block-user_dashboard_options">
       <td class="label">{$form.user_dashboard_options.label}</td>
-      <td>{$form.user_dashboard_options.html}</td>
+      <td>{$form.user_dashboard_options.html}<span id="invoice_help">  {help id="id-invoices_id"}</span></td>
     </tr>
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
       <td class="description">
-        {ts}Select the sections that should be included in the Contact Dashboard. EXAMPLE: If you don't want
-          constituents to view their own contribution history, un-check that option.{/ts}
+        {ts}Select the sections that should be included in the Contact Dashboard. EXAMPLE: If you don't want constituents to view their own contribution history, un-check that option.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-editor_id">
@@ -161,16 +162,17 @@
         <td class="label">{$form.wysiwyg_input_format.label}</td>
         <td>
           {$form.wysiwyg_input_format.html}{literal}
-            <script type="text/javascript">cj(document).ready(function () {
-                if (cj('#editor_id').val() == 4) {
-                  cj('#crm-preferences-display-form-block-wysiwyg_input_format').show();
+            <script type="text/javascript">
+              CRM.$(function($) {
+                if ($('#editor_id').val() == 4) {
+                  $('#crm-preferences-display-form-block-wysiwyg_input_format').show();
                 }
-              });</script>
+              });
+            </script>
           {/literal}
           <br/>
           <span class="description">
-            {ts}You will need to enable and configure several modules if you want to allow users to upload images
-              while using a Drupal Default Editor.{/ts}
+            {ts}You will need to enable and configure several modules if you want to allow users to upload images while using a Drupal Default Editor.{/ts}
             {docURL page="Configuring CiviCRM to Use the Default Drupal Editor" resource="wiki"}
           </span>
         </td>
@@ -179,9 +181,17 @@
     <tr class="crm-preferences-display-form-block-description">
       <td>&nbsp;</td>
       <td class="description">
-        {ts}Select the HTML WYSIWYG Editor provided for fields that allow HTML formatting. Select 'Textarea'
-          if you don't want to provide a WYSIWYG Editor (users will type text and / or HTML code into plain text
-          fields).{/ts} {help id="id-editor_id"}
+        {ts}Select the HTML WYSIWYG Editor provided for fields that allow HTML formatting. Select 'Textarea' if you don't want to provide a WYSIWYG Editor (users will type text and / or HTML code into plain text fields).{/ts} {help id="id-editor_id"}
+      </td>
+    </tr>
+    <tr class="crm-preferences-display-form-block-ajaxPopupsEnabled">
+      <td class="label">{$form.ajaxPopupsEnabled.label}</td>
+      <td>{$form.ajaxPopupsEnabled.html}</td>
+    </tr>
+    <tr class="crm-preferences-display-form-block-description">
+      <td>&nbsp;</td>
+      <td class="description">
+        {ts}If you disable this option, the CiviCRM interface will be limited to traditional browsing. Opening a form will refresh the page rather than opening a popup dialog.{/ts}
       </td>
     </tr>
     <tr class="crm-preferences-display-form-block-display_name_format">
@@ -206,37 +216,40 @@
 {if $form.contact_edit_options.html}
   {literal}
     <script type="text/javascript">
-      cj(function () {
-        cj("#contactEditBlocks").sortable({
-          placeholder: 'ui-state-highlight',
-          update: getSorting
-        });
-        cj("#contactEditOptions").sortable({
+      CRM.$(function($) {
+        function getSorting(e, ui) {
+          var params = [];
+          var y = 0;
+          var items = $("#contactEditBlocks li");
+          if (items.length > 0) {
+            for (var y = 0; y < items.length; y++) {
+              var idState = items[y].id.split('-');
+              params[y + 1] = idState[1];
+            }
+          }
+
+          items = $("#contactEditOptions li");
+          if (items.length > 0) {
+            for (var x = 0; x < items.length; x++) {
+              var idState = items[x].id.split('-');
+              params[x + y + 1] = idState[1];
+            }
+          }
+          $('#contact_edit_preferences').val(params.toString());
+        }
+
+        var invoicesKey = '{/literal}{$invoicesKey}{literal}';
+        var invoicing = '{/literal}{$invoicing}{literal}';
+        if (!invoicing) {
+          $('#user_dashboard_options_' + invoicesKey).attr("disabled", true);
+        }
+        $("#invoice_help").insertAfter("label[for='user_dashboard_options_" + invoicesKey + "']");
+
+        $("#contactEditBlocks, #contactEditOptions").sortable({
           placeholder: 'ui-state-highlight',
           update: getSorting
         });
       });
-
-      function getSorting(e, ui) {
-        var params = new Array();
-        var y = 0;
-        var items = cj("#contactEditBlocks li");
-        if (items.length > 0) {
-          for (var y = 0; y < items.length; y++) {
-            var idState = items[y].id.split('-');
-            params[y + 1] = idState[1];
-          }
-        }
-
-        items = cj("#contactEditOptions li");
-        if (items.length > 0) {
-          for (var x = 0; x < items.length; x++) {
-            var idState = items[x].id.split('-');
-            params[x + y + 1] = idState[1];
-          }
-        }
-        cj('#contact_edit_preferences').val(params.toString());
-      }
     </script>
   {/literal}
 {/if}

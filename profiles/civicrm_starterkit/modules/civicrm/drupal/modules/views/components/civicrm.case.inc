@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,7 +28,7 @@
  * Includes the following tables
  * civicrm_case
  */
- 
+
 function _civicrm_case_data(&$data, $enabled) {
 
   /**
@@ -43,25 +43,25 @@ function _civicrm_case_data(&$data, $enabled) {
     'title' => t('CiviCRM Cases'),
     'help' => t("View displays CiviCRM Cases Data"),
   );
-  
+
   //TABLE JOINS FOR CIVICRM CASE GO HERE!
-  
+
   $data['civicrm_case']['table']['join'] = array(
     // Directly links to contact table.
     'civicrm_case_contact' => array(
       'left_field' => 'case_id',
       'field' => 'id',
-    ),    
-	'civicrm_case_activity' => array(
+    ),
+    'civicrm_case_activity' => array(
       'left_field' => 'case_id',
       'field' => 'id',
-    ),	
-	'civicrm_relationship' => array(
+    ),
+    'civicrm_relationship' => array(
       'left_field' => 'case_id',
       'field' => 'id',
-    ), 
+    ),
   );
-  
+
   // Campaign ID
   $data['civicrm_case']['id'] = array(
     'title' => t('Case ID'),
@@ -81,8 +81,8 @@ function _civicrm_case_data(&$data, $enabled) {
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
-  ); 
-  
+  );
+
   // Case Type
   $data['civicrm_case']['case_type'] = array(
     'title' => t('Case Type'),
@@ -93,7 +93,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'click sortable' => TRUE,
       'pseudo class' => 'CRM_Case_PseudoConstant',
       'pseudo method' => 'caseType',
-	  'pseudo args' => array('Label', FALSE),
+      'pseudo args' => array('Title', FALSE),
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
@@ -102,14 +102,14 @@ function _civicrm_case_data(&$data, $enabled) {
       'handler' => 'civicrm_handler_filter_pseudo_constant',
       'pseudo class' => 'CRM_Case_PseudoConstant',
       'pseudo method' => 'caseType',
-	  'pseudo args' => array('Label', FALSE),
+      'pseudo args' => array('Title', FALSE),
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
-	  'pseudo args' => 'caseType',
+      'pseudo args' => 'caseType',
     ),
   );
-  
+
   //DISPLAY Name for the Contact (Full Name with Prefixes and Suffixes)
   $data['civicrm_case']['subject'] = array(
     'title' => t('Subject'),
@@ -129,7 +129,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   //CASE Start DATE
   $data['civicrm_case']['start_date'] = array(
     'title' => t('Start Date'),
@@ -156,7 +156,7 @@ function _civicrm_case_data(&$data, $enabled) {
     'title' => 'Start Date',
       'name' => 'start_date',
     ));
-	
+
   //CASE END DATE
   $data['civicrm_case']['end_date'] = array(
     'title' => t('End Date'),
@@ -178,7 +178,7 @@ function _civicrm_case_data(&$data, $enabled) {
     'title' => 'End Date',
       'name' => 'end_date',
     ));
-	
+
   //Case Details / Notes
   $data['civicrm_case']['details'] = array(
     'title' => t('Details'),
@@ -198,7 +198,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   //Case Status
   $data['civicrm_case']['status'] = array(
     'title' => t('Case Status'),
@@ -209,7 +209,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'click sortable' => TRUE,
       'pseudo class' => 'CRM_Case_PseudoConstant',
       'pseudo method' => 'caseStatus',
-	  'pseudo args' => array('Label', FALSE),
+      'pseudo args' => array('Label', FALSE),
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
@@ -219,13 +219,13 @@ function _civicrm_case_data(&$data, $enabled) {
       'allow empty' => TRUE,
       'pseudo class' => 'CRM_Case_PseudoConstant',
       'pseudo method' => 'caseStatus',
-	  'pseudo args' => array('Label', FALSE),
+      'pseudo args' => array('Label', FALSE),
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   //Case is deleted
   $data['civicrm_case']['is_deleted'] = array(
     'title' => t('Is Deleted'),
@@ -243,7 +243,7 @@ function _civicrm_case_data(&$data, $enabled) {
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
-  ); 
+  );
 
 
   //----------------------------------------------------------------
@@ -258,7 +258,7 @@ function _civicrm_case_data(&$data, $enabled) {
     'title' => t('CiviCRM Case Activity'),
     'help' => t("View displays CiviCRM Case Activities"),
   );
-  
+
   // Explain how this table joins to others.
   $data['civicrm_case_activity']['table']['join'] = array(
     // Directly links to activity table.
@@ -266,12 +266,12 @@ function _civicrm_case_data(&$data, $enabled) {
       'left_field' => 'id',
       'field' => 'activity_id',
     ),
-	'civicrm_case' => array(
+    'civicrm_case' => array(
       'left_field' => 'id',
       'field' => 'case_id',
     ),
   );
-  
+
   //CiviCRM Case Activity - FIELDS
 
   //Numeric Case Activity ID
@@ -293,7 +293,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   //Numeric Case ID
   $data['civicrm_case_activity']['case_id'] = array(
     'title' => t('Case ID'),
@@ -306,7 +306,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'label' => t('CiviCRM Case, with custom fields'),
     ),
   );
-  
+
   //Numeric Activity ID
   $data['civicrm_case_activity']['activity_id'] = array(
     'title' => t('Case Activity\'s Activity ID'),
@@ -346,16 +346,16 @@ function _civicrm_case_data(&$data, $enabled) {
     'title' => t('CiviCRM Case Contact'),
     'help' => t("View displays CiviCRM Case Contact"),
   );
-    
+
   // Explain how this table joins to others.
   $data['civicrm_case_contact']['table']['join'] = array(
     // Directly links to case table.
-	'civicrm_case' => array(
+    'civicrm_case' => array(
       'left_field' => 'id',
       'field' => 'case_id',
     ),
   );
-  
+
   // display user fields in Case Contacts view
   $data['civicrm_case_contact']['table']['join']['users'] = array(
     'left_table' => 'civicrm_uf_match',
@@ -372,7 +372,7 @@ function _civicrm_case_data(&$data, $enabled) {
     'left_field' => 'contact_id',
     'field' => 'contact_id',
   );
- 
+
   //CiviCRM Case Contacts - FIELDS
 
   //Numeric Case Contact ID
@@ -394,7 +394,7 @@ function _civicrm_case_data(&$data, $enabled) {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   //Numeric Case ID
   $data['civicrm_case_contact']['case_id'] = array(
     'title' => t('Case ID'),
@@ -434,6 +434,6 @@ function _civicrm_case_data(&$data, $enabled) {
       'label' => t('CiviCRM Contact, with custom fields'),
     ),
   );
-  
+
 }
 

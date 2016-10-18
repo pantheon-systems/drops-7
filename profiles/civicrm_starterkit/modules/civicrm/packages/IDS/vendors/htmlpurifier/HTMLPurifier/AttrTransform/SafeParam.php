@@ -14,30 +14,15 @@
  */
 class HTMLPurifier_AttrTransform_SafeParam extends HTMLPurifier_AttrTransform
 {
-    /**
-     * @type string
-     */
     public $name = "SafeParam";
-
-    /**
-     * @type HTMLPurifier_AttrDef_URI
-     */
     private $uri;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->uri = new HTMLPurifier_AttrDef_URI(true); // embedded
         $this->wmode = new HTMLPurifier_AttrDef_Enum(array('window', 'opaque', 'transparent'));
     }
 
-    /**
-     * @param array $attr
-     * @param HTMLPurifier_Config $config
-     * @param HTMLPurifier_Context $context
-     * @return array
-     */
-    public function transform($attr, $config, $context)
-    {
+    public function transform($attr, $config, $context) {
         // If we add support for other objects, we'll need to alter the
         // transforms.
         switch ($attr['name']) {

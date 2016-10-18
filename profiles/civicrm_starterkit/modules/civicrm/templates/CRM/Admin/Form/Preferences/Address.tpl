@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,14 +30,10 @@
         <tr class="crm-preferences-address-form-block-mailing_format">
             <td class="label">{$form.mailing_format.label}<br />{help id='label-tokens'}</td>
             <td>
-                <span>
-                     <a href="#" onClick="return showToken('Text', 1);">{ts}Insert Tokens{/ts}</a>
-                     <div id='tokenText' style="display:none">
-                         <input  style="border:1px solid #999999;" type="text" id="filter1" size="20" name="filter1" onkeyup="filter(this, 1)"/><br />
-                         <span class="description">{ts}Begin typing to filter list of tokens{/ts}</span><br/>
-                         {$form.token1.html}
-                     </div>
-                </span><br />
+              <div class="helpIcon" id="helphtml">
+                <input class="crm-token-selector big" data-field="mailing_format" />
+                {help id="id-token-text" tplFile=$tplFile file="CRM/Contact/Form/Task/Email.hlp"}
+              </div>
                 {$form.mailing_format.html|crmAddClass:huge12}<br />
                 <span class="description">{ts}Content and format for mailing labels.{/ts}</span>
             </td>
@@ -48,8 +44,13 @@
         <table class="form-layout">
           <tr class="crm-preferences-address-form-block-address_format">
               <td class="label">{$form.address_format.label}<br />{help id='address-tokens'}</td>
-              <td>{$form.address_format.html|crmAddClass:huge12}<br />
-                  <span class="description">{ts}Format for displaying addresses in the Contact Summary and Event Information screens.{/ts}<br />{ts 1=&#123;contact.state_province&#125; 2=&#123;contact.state_province_name&#125;}Use %1 for state/province abbreviation or %2 for state province name.{/ts}</span>
+              <td>
+              <div class="helpIcon" id="helphtml">
+                <input class="crm-token-selector big" data-field="address_format" />
+                {help id="id-token-text" tplFile=$tplFile file="CRM/Contact/Form/Task/Email.hlp"}
+              </div>
+                {$form.address_format.html|crmAddClass:huge12}<br />
+                <span class="description">{ts}Format for displaying addresses in the Contact Summary and Event Information screens.{/ts}<br />{ts 1=&#123;contact.state_province&#125; 2=&#123;contact.state_province_name&#125;}Use %1 for state/province abbreviation or %2 for state province name.{/ts}</span>
               </td>
           </tr>
       </table>
@@ -69,7 +70,7 @@
              <tr class="crm-preferences-address-form-block-description">
                 <td colspan="2">
                   <span class="description">
-                      {ts 1=https://www.usps.com/business/webtools-address-information.htm}CiviCRM includes an optional plugin for interfacing with the United States Postal Services (USPS) Address Standardization web service. You must register to use the USPS service at <a href='%1' target='_blank'>%1</a>. If you are approved, they will provide you with a User ID and the URL for the service.{/ts}
+                      {ts 1=https://www.usps.com/business/web-tools-apis/welcome.htm}CiviCRM includes an optional plugin for interfacing with the United States Postal Services (USPS) Address Standardization web service. You must register to use the USPS service at <a href='%1' target='_blank'>%1</a>. If you are approved, they will provide you with a User ID and the URL for the service.{/ts}
                       {ts}Plugins for other address standardization services may be available from 3rd party developers. If installed, they will be included in the drop-down below.{/ts}
                   </span>
               </td>
@@ -89,7 +90,7 @@
             <tr class="crm-preferences-address-form-block-address_standardization_url">
               <td class="label">{$form.address_standardization_url.label}
               <td>{$form.address_standardization_url.html}<br />
-              <span class="description">{ts}Web service URL.{/ts}</span>
+              <span class="description">{ts}Web Service URL{/ts}</span>
               </td>
             </tr>
         </table>

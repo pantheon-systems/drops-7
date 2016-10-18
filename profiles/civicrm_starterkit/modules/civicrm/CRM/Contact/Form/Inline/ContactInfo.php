@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,10 +39,9 @@
 class CRM_Contact_Form_Inline_ContactInfo extends CRM_Contact_Form_Inline {
 
   /**
-   * build the form elements
+   * Build the form object elements.
    *
    * @return void
-   * @access public
    */
   public function buildQuickForm() {
     parent::buildQuickForm();
@@ -53,37 +52,25 @@ class CRM_Contact_Form_Inline_ContactInfo extends CRM_Contact_Form_Inline {
   }
 
   /**
-   * set defaults for the form
+   * Set defaults for the form.
    *
    * @return array
-   * @access public
    */
   public function setDefaultValues() {
-    $defaults = parent::setDefaultValues();
-
-    if ($this->_contactType == 'Individual') {
-      // set current employer details
-      $currentEmployer = CRM_Contact_BAO_Relationship::getCurrentEmployer(array($this->_contactId));
-      $defaults['current_employer_id'] = CRM_Utils_Array::value('org_id', $currentEmployer[$this->_contactId]);
-
-      $this->assign('currentEmployer', CRM_Utils_Array::value('current_employer_id', $defaults));
-    }
-
-    return $defaults;
+    return parent::setDefaultValues();
   }
 
   /**
-   * process the form
+   * Process the form.
    *
    * @return void
-   * @access public
    */
   public function postProcess() {
     $params = $this->exportValues();
 
     // Process / save contact info
     $params['contact_type'] = $this->_contactType;
-    $params['contact_id']   = $this->_contactId;
+    $params['contact_id'] = $this->_contactId;
 
     if (!empty($this->_contactSubType)) {
       $params['contact_sub_type'] = $this->_contactSubType;
@@ -91,6 +78,18 @@ class CRM_Contact_Form_Inline_ContactInfo extends CRM_Contact_Form_Inline {
 
     CRM_Contact_BAO_Contact::create($params);
 
+    // Saving current employer affects relationship tab, and possibly related memberships and contributions
+    $this->ajaxResponse['updateTabs'] = array(
+      '#tab_rel' => CRM_Contact_BAO_Contact::getCountComponent('rel', $this->_contactId),
+    );
+    if (CRM_Core_Permission::access('CiviContribute')) {
+      $this->ajaxResponse['updateTabs']['#tab_contribute'] = CRM_Contact_BAO_Contact::getCountComponent('contribution', $this->_contactId);
+    }
+    if (CRM_Core_Permission::access('CiviMember')) {
+      $this->ajaxResponse['updateTabs']['#tab_member'] = CRM_Contact_BAO_Contact::getCountComponent('membership', $this->_contactId);
+    }
+
     $this->response();
   }
+
 }

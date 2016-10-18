@@ -1,10 +1,9 @@
 <?php
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -24,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -51,9 +50,13 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     'bar_3dChart' => 'Bar Chart',
   );
 
-  public $campaignEnabled = False;
+  public $campaignEnabled = FALSE;
 
-  function __construct() {
+  /**
+   */
+  /**
+   */
+  public function __construct() {
     $this->_columns = array();
 
     $this->_columns['civicrm_mailing'] = array(
@@ -143,7 +146,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
       'dao' => 'CRM_Mailing_DAO_Mailing',
       'fields' => array(
         'delivered_count' => array(
-          'name' => 'id',
+          'name' => 'event_queue_id',
           'title' => ts('Delivered'),
         ),
         'accepted_rate' => array(
@@ -161,7 +164,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
       'dao' => 'CRM_Mailing_DAO_Mailing',
       'fields' => array(
         'bounce_count' => array(
-          'name' => 'id',
+          'name' => 'event_queue_id',
           'title' => ts('Bounce'),
         ),
         'bounce_rate' => array(
@@ -179,7 +182,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
       'dao' => 'CRM_Mailing_DAO_Mailing',
       'fields' => array(
         'open_count' => array(
-          'name' => 'id',
+          'name' => 'event_queue_id',
           'title' => ts('Opened'),
         ),
         'open_rate' => array(
@@ -197,7 +200,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
       'dao' => 'CRM_Mailing_DAO_Mailing',
       'fields' => array(
         'click_count' => array(
-          'name' => 'id',
+          'name' => 'event_queue_id',
           'title' => ts('Clicks'),
         ),
         'CTR' => array(
@@ -250,7 +253,10 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     parent::__construct();
   }
 
-  function mailing_select() {
+  /**
+   * @return array
+   */
+  public function mailing_select() {
 
     $data = array();
 
@@ -265,13 +271,15 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     return $data;
   }
 
-  function preProcess() {
+  public function preProcess() {
     $this->assign('chartSupported', TRUE);
     parent::preProcess();
   }
 
-  // manipulate the select function to query count functions
-  function select() {
+  /**
+   * manipulate the select function to query count functions.
+   */
+  public function select() {
 
     $count_tables = array(
       'civicrm_mailing_event_queue',
@@ -287,12 +295,10 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     foreach ($this->_columns as $tableName => $table) {
       if (array_key_exists('fields', $table)) {
         foreach ($table['fields'] as $fieldName => $field) {
-          if (CRM_Utils_Array::value('required', $field) ||
-            CRM_Utils_Array::value($fieldName, $this->_params['fields'])
-          ) {
+          if (!empty($field['required']) || !empty($this->_params['fields'][$fieldName])) {
 
             # for statistics
-            if (CRM_Utils_Array::value('statistics', $field)) {
+            if (!empty($field['statistics'])) {
               switch ($field['statistics']['calc']) {
                 case 'PERCENTAGE':
                   $base_table_column = explode('.', $field['statistics']['base']);
@@ -324,7 +330,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     //print_r($this->_select);
   }
 
-  function from() {
+  public function from() {
 
     $this->_from = "
     FROM civicrm_mailing {$this->_aliases['civicrm_mailing']}
@@ -355,7 +361,7 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     //print_r($this->_from);
   }
 
-  function where() {
+  public function where() {
     $clauses = array();
     //to avoid the sms listings
     $clauses[] = "{$this->_aliases['civicrm_mailing']}.sms_provider_id IS NULL";
@@ -366,8 +372,8 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
           $clause = NULL;
           if (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
             $relative = CRM_Utils_Array::value("{$fieldName}_relative", $this->_params);
-            $from     = CRM_Utils_Array::value("{$fieldName}_from", $this->_params);
-            $to       = CRM_Utils_Array::value("{$fieldName}_to", $this->_params);
+            $from = CRM_Utils_Array::value("{$fieldName}_from", $this->_params);
+            $to = CRM_Utils_Array::value("{$fieldName}_to", $this->_params);
 
             $clause = $this->dateClause($this->_aliases[$tableName] . '.' . $field['name'], $relative, $from, $to, $field['type']);
           }
@@ -408,15 +414,15 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     // }
   }
 
-  function groupBy() {
+  public function groupBy() {
     $this->_groupBy = "GROUP BY {$this->_aliases['civicrm_mailing']}.id";
   }
 
-  function orderBy() {
+  public function orderBy() {
     $this->_orderBy = " ORDER BY {$this->_aliases['civicrm_mailing_job']}.end_date DESC ";
   }
 
-  function postProcess() {
+  public function postProcess() {
 
     $this->beginPostProcess();
 
@@ -435,14 +441,20 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     $this->endPostProcess($rows);
   }
 
-  static function getChartCriteria() {
-    return array('count' => array('civicrm_mailing_event_delivered_delivered_count' => ts('Delivered'),
+  /**
+   * @return array
+   */
+  public static function getChartCriteria() {
+    return array(
+      'count' => array(
+        'civicrm_mailing_event_delivered_delivered_count' => ts('Delivered'),
         'civicrm_mailing_event_bounce_bounce_count' => ts('Bounce'),
         'civicrm_mailing_event_opened_open_count' => ts('Opened'),
         'civicrm_mailing_event_trackable_url_open_click_count' => ts('Clicks'),
         'civicrm_mailing_event_unsubscribe_unsubscribe_count' => ts('Unsubscribe'),
       ),
-      'rate' => array('civicrm_mailing_event_delivered_accepted_rate' => ts('Accepted Rate'),
+      'rate' => array(
+        'civicrm_mailing_event_delivered_accepted_rate' => ts('Accepted Rate'),
         'civicrm_mailing_event_bounce_bounce_rate' => ts('Bounce Rate'),
         'civicrm_mailing_event_opened_open_rate' => ts('Confirmed Open Rate'),
         'civicrm_mailing_event_trackable_url_open_CTR' => ts('Click through Rate'),
@@ -451,10 +463,17 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     );
   }
 
-  function formRule($fields, $files, $self) {
+  /**
+   * @param $fields
+   * @param $files
+   * @param $self
+   *
+   * @return array
+   */
+  public function formRule($fields, $files, $self) {
     $errors = array();
 
-    if (!CRM_Utils_Array::value('charts', $fields)) {
+    if (empty($fields['charts'])) {
       return $errors;
     }
 
@@ -462,26 +481,43 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     $isError = TRUE;
     foreach ($fields['fields'] as $fld => $isActive) {
       if (in_array($fld, array(
-        'delivered_count', 'bounce_count', 'open_count', 'click_count', 'unsubscribe_count', 'accepted_rate', 'bounce_rate', 'open_rate', 'CTR', 'CTO'))) {
+        'delivered_count',
+        'bounce_count',
+        'open_count',
+        'click_count',
+        'unsubscribe_count',
+        'accepted_rate',
+        'bounce_rate',
+        'open_rate',
+        'CTR',
+        'CTO',
+      ))) {
         $isError = FALSE;
       }
     }
 
     if ($isError) {
-      $errors['_qf_default'] = ts('For Chart view, please select at least one field from %1 OR %2.', array(1 => implode(', ', $criterias['count']), 2 => implode(', ', $criterias['rate'])));
+      $errors['_qf_default'] = ts('For Chart view, please select at least one field from %1 OR %2.', array(
+          1 => implode(', ', $criterias['count']),
+          2 => implode(', ', $criterias['rate']),
+        ));
     }
 
     return $errors;
   }
 
-  function buildChart(&$rows) {
+  /**
+   * @param $rows
+   */
+  public function buildChart(&$rows) {
     if (empty($rows)) {
       return;
     }
 
     $criterias = self::getChartCriteria();
 
-    $chartInfo = array('legend' => ts('Mail Summary'),
+    $chartInfo = array(
+      'legend' => ts('Mail Summary'),
       'xname' => ts('Mailing'),
       'yname' => ts('Statistics'),
       'xLabelAngle' => 20,
@@ -534,8 +570,16 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
     $this->assign('chartType', $this->_params['charts']);
   }
 
-  function alterDisplay(&$rows) {
-    // custom code to alter rows
+  /**
+   * Alter display of rows.
+   *
+   * Iterate through the rows retrieved via SQL and make changes for display purposes,
+   * such as rendering contacts as links.
+   *
+   * @param array $rows
+   *   Rows generated by SQL, with an array for each row.
+   */
+  public function alterDisplay(&$rows) {
     $entryFound = FALSE;
     foreach ($rows as $rowNum => $row) {
       // make count columns point to detail report
@@ -566,7 +610,6 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
         $entryFound = TRUE;
       }
 
-
       // skip looking further in rows, if first row itself doesn't
       // have the column we need
       if (!$entryFound) {
@@ -574,5 +617,5 @@ class CRM_Report_Form_Mailing_Summary extends CRM_Report_Form {
       }
     }
   }
-}
 
+}

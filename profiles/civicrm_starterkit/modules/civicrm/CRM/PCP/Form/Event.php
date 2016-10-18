@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,10 +40,9 @@
 class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
 
   /**
-   * the type of pcp component.
+   * The type of pcp component.
    *
    * @var int
-   * @protected
    */
   public $_component = 'event';
 
@@ -53,19 +52,18 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
   }
 
   /**
-   * This function sets the default values for the form.
+   * Set default values for the form.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function setDefaultValues() {
     $defaults = array();
 
     $defaults = array();
     if (isset($this->_id)) {
-    $title = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Event', $this->_id, 'title');
-    CRM_Utils_System::setTitle(ts('Personal Campaign Page Settings (%1)', array(1 => $title)));
+      $title = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Event', $this->_id, 'title');
+      CRM_Utils_System::setTitle(ts('Personal Campaign Page Settings (%1)', array(1 => $title)));
 
       $params = array('entity_id' => $this->_id, 'entity_table' => 'civicrm_event');
       CRM_Core_DAO::commonRetrieve('CRM_PCP_DAO_PCPBlock', $params, $defaults);
@@ -74,15 +72,17 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
       $this->assign('pageId', $this->_id);
     }
 
-    if (!CRM_Utils_Array::value('id', $defaults)) {
+    if (empty($defaults['id'])) {
       $defaults['target_entity_type'] = 'event';
       $defaults['is_approval_needed'] = 1;
       $defaults['is_tellfriend_enabled'] = 1;
       $defaults['tellfriend_limit'] = 5;
       $defaults['link_text'] = ts('Promote this event with a personal campaign page');
+      $defaults['owner_notify_id'] = CRM_Core_OptionGroup::getDefaultValue('pcp_owner_notify');
 
       if ($this->_id &&
-          $ccReceipt = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', $this->_id, 'cc_receipt')) {
+        $ccReceipt = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', $this->_id, 'cc_receipt')
+      ) {
         $defaults['notify_email'] = $ccReceipt;
       }
     }
@@ -90,10 +90,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     CRM_PCP_BAO_PCP::buildPCPForm($this);
@@ -108,7 +107,8 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
     $this->add('select', 'target_entity_id',
       ts('Online Contribution Page'),
       array(
-        '' => ts('- select -')) +
+        '' => ts('- select -'),
+      ) +
       CRM_Contribute_PseudoConstant::contributionPage()
     );
 
@@ -122,7 +122,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
 
     if (!empty($pcpBlock->id) && CRM_PCP_BAO_PCP::getPcpBlockInUse($pcpBlock->id)) {
       foreach (array(
-        'target_entity_type', 'target_entity_id') as $element_name) {
+                 'target_entity_type',
+                 'target_entity_id',
+               ) as $element_name) {
         $element = $this->getElement($element_name);
         $element->freeze();
       }
@@ -131,24 +133,27 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
   }
 
   /**
-   * Function for validation
+   * Validation.
    *
-   * @param array $params (ref.) an assoc array of name/value pairs
+   * @param array $params
+   *   (ref.) an assoc array of name/value pairs.
    *
-   * @return mixed true or array of errors
-   * @access public
-   * @static
+   * @param $files
+   * @param $self
+   *
+   * @return bool|array
+   *   mixed true or array of errors
    */
   public static function formRule($params, $files, $self) {
     $errors = array();
-    if (CRM_Utils_Array::value('is_active', $params)) {
+    if (!empty($params['is_active'])) {
 
-      if (CRM_Utils_Array::value('is_tellfriend_enabled', $params) &&
+      if (!empty($params['is_tellfriend_enabled']) &&
         (CRM_Utils_Array::value('tellfriend_limit', $params) <= 0)
       ) {
         $errors['tellfriend_limit'] = ts('if Tell Friend is enable, Maximum recipients limit should be greater than zero.');
       }
-      if (!CRM_Utils_Array::value('supporter_profile_id', $params)) {
+      if (empty($params['supporter_profile_id'])) {
         $errors['supporter_profile_id'] = ts('Supporter profile is a required field.');
       }
       else {
@@ -170,11 +175,10 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     // get the submitted form values.
@@ -193,9 +197,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
       $params['target_entity_id'] = CRM_Utils_Array::value('target_entity_id', $params, $this->_id);
     }
 
-    $dao               = new CRM_PCP_DAO_PCPBlock();
+    $dao = new CRM_PCP_DAO_PCPBlock();
     $dao->entity_table = $params['entity_table'];
-    $dao->entity_id    = $this->_id;
+    $dao->entity_id = $this->_id;
     $dao->find(TRUE);
     $params['id'] = $dao->id;
     $params['is_active'] = CRM_Utils_Array::value('pcp_active', $params, FALSE);
@@ -204,6 +208,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
 
     $dao = CRM_PCP_BAO_PCP::add($params);
 
+    // Update tab "disabled" css class
+    $this->ajaxResponse['tabValid'] = !empty($params['is_active']);
+
     parent::endPostProcess();
   }
 
@@ -211,10 +218,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
    * Return a descriptive name for the page, used in wizard header
    *
    * @return string
-   * @access public
    */
   public function getTitle() {
     return ts('Enable Personal Campaign Pages');
   }
-}
 
+}

@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -24,20 +24,22 @@
  +--------------------------------------------------------------------+
 *}
 {* This template is used for adding/editing/deleting offline Event Registrations *}
-{if $showFeeBlock }
+
+{* Ajax callback for showing event fee snippet *}
+{if $showFeeBlock}
   {if $priceSet}
   <div id='validate_pricefield' class='messages crm-error hiddenElement'></div>
     {literal}
     <script type="text/javascript">
 
-    var fieldOptionsFull = new Array( );
+    var fieldOptionsFull = [];
     {/literal}
     {foreach from=$priceSet.fields item=fldElement key=fldId}
       {if $fldElement.options}
         {foreach from=$fldElement.options item=fldOptions key=opId}
           {if $fldOptions.is_full}
             {literal}
-              fieldOptionsFull[{/literal}{$fldId}{literal}] = new Array( );
+              fieldOptionsFull[{/literal}{$fldId}{literal}] = [];
             fieldOptionsFull[{/literal}{$fldId}{literal}][{/literal}{$opId}{literal}] = 1;
           {/literal}
           {/if}
@@ -47,24 +49,24 @@
     {literal}
 
     if ( fieldOptionsFull.length > 0 ) {
-      cj(function() {
-        cj("input,#priceset select,#priceset").each(function () {
-          if ( cj(this).attr('price') ) {
-            switch( cj(this).attr('type') ) {
+      CRM.$(function($) {
+        $("input,#priceset select,#priceset").each(function () {
+          if ( $(this).attr('price') ) {
+            switch( $(this).attr('type') ) {
               case 'checkbox':
               case 'radio':
-                cj(this).click( function() {
+                $(this).click( function() {
                   validatePriceField(this);
                 });
                 break;
 
               case 'select-one':
-                cj(this).change( function() {
+                $(this).change( function() {
                   validatePriceField(this);
                 });
                 break;
               case 'text':
-                cj(this).bind( 'keyup', function() { validatePriceField(this) });
+                $(this).bind( 'keyup', function() { validatePriceField(this) });
                 break;
             }
           }
@@ -97,7 +99,7 @@
 
           case 'checkbox':
             var checkBoxValue = eleIdpart[1].split(']');
-            if ( cj(obj).attr("checked") == true &&
+            if ( cj(obj).prop("checked") == true &&
               fieldOptionsFull[eleId] &&
               fieldOptionsFull[eleId][checkBoxValue[0]]) {
               showError = true;
@@ -120,27 +122,65 @@
           }
 
         if ( showError ) {
-          cj('#validate_pricefield').show().html("<span class='icon red-icon alert-icon'></span>{/literal}{ts escape='js'}This Option is already full for this event.{/ts}{literal}");
+          cj('#validate_pricefield').show().html("<span class='icon red-icon ui-icon-alert'></span>{/literal}{ts escape='js'}This Option is already full for this event.{/ts}{literal}");
         }
         else {
           cj('#validate_pricefield').hide( ).html('');
         }
       }
     }
+
+  // change the status to default 'partially paid' for partial payments
+  var feeAmount, userModifiedAmount;
+  var partiallyPaidStatusId = {/literal}{$partiallyPaidStatusId}{literal};
+
+  cj('#total_amount')
+   .focus(
+     function() {
+       feeAmount = cj(this).val();
+       feeAmount = parseInt(feeAmount);
+     }
+   )
+   .change(
+    function() {
+      userModifiedAmount = cj(this).val();
+      userModifiedAmount = parseInt(userModifiedAmount);
+      if (userModifiedAmount < feeAmount) {
+        cj('#status_id').val(partiallyPaidStatusId).change();
+      }
+    }
+  );
+
+  cj('form[name=Participant]').on("click", '.validate',
+    function(e) {
+      var userSubmittedStatus = cj('#status_id').val();
+      var statusLabel = cj('#status_id option:selected').text();
+      if (userModifiedAmount < feeAmount && userSubmittedStatus != partiallyPaidStatusId) {
+        var msg = "{/literal}{ts escape="js" 1="%1"}Payment amount is less than the amount owed. Expected participant status is 'Partially paid'. Are you sure you want to set the participant status to %1? Click OK to continue, Cancel to change your entries.{/ts}{literal}";
+        var result = confirm(ts(msg, {1: statusLabel}));
+        if (result == false) {
+          return false;
+        }
+      }
+    }
+  );
   </script>
   {/literal}
   {/if}
+
   {include file="CRM/Event/Form/EventFees.tpl"}
 
-{elseif $cdType }
+{* Ajax callback for custom data snippet *}
+{elseif $cdType}
   {include file="CRM/Custom/Form/CustomData.tpl"}
+
+{* Main event form template *}
 {else}
   {if $participantMode == 'test' }
     {assign var=registerMode value="TEST"}
     {elseif $participantMode == 'live'}
     {assign var=registerMode value="LIVE"}
   {/if}
-  <h3>{if $action eq 1}{ts}New Event Registration{/ts}{elseif $action eq 8}{ts}Delete Event Registration{/ts}{else}{ts}Edit Event Registration{/ts}{/if}</h3>
   <div class="crm-block crm-form-block crm-participant-form-block">
     <div class="view-content">
       {if $participantMode}
@@ -158,7 +198,6 @@
       {/if}
 
       {if $action eq 8} {* If action is Delete *}
-        <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="top"}</div>
         <div class="crm-participant-form-block-delete messages status no-popup">
           <div class="crm-content">
             <div class="icon inform-icon"></div> &nbsp;
@@ -182,10 +221,10 @@
               <td class="font-size12pt view-value">{$displayName}&nbsp;</td>
             </tr>
             {else}
-            {if !$participantMode and !$email and $outBound_option != 2 }
-              {assign var='profileCreateCallback' value=1}
-            {/if}
-          {include file="CRM/Contact/Form/NewContact.tpl"}
+            <tr class="crm-participant-form-contact-id">
+              <td class="label">{$form.contact_id.label}</td>
+              <td>{$form.contact_id.html}</td>
+            </tr>
           {/if}
           {if $action EQ 2}
             {if $additionalParticipants} {* Display others registered by this participant *}
@@ -215,19 +254,17 @@
             </tr>
           {/if}
           <tr class="crm-participant-form-block-event_id">
-            <td class="label">{$form.event_id.label}</td><td class="view-value bold">{$form.event_id.html}&nbsp;
-            {if $action eq 1}<span id='past-event-section'>
-              <br />&raquo; <span id="showing-event-info"></span>
-            {/if}
-            {if $is_test}
-              {ts}(test){/ts}
-            {/if}
-          </td>
+            <td class="label">{$form.event_id.label}</td>
+            <td class="view-value">
+              {$form.event_id.html}
+              {if $is_test}
+                {ts}(test){/ts}
+              {/if}
+            </td>
           </tr>
 
         {* CRM-7362 --add campaign *}
-        {include file="CRM/Campaign/Form/addCampaignToComponent.tpl"
-        campaignTrClass="crm-participant-form-block-campaign_id"}
+        {include file="CRM/Campaign/Form/addCampaignToComponent.tpl" campaignTrClass="crm-participant-form-block-campaign_id"}
 
           <tr class="crm-participant-form-block-role_id">
             <td class="label">{$form.role_id.label}</td>
@@ -239,7 +276,7 @@
               {if $hideCalendar neq true}
                     {include file="CRM/common/jcalendar.tpl" elementName=register_date}
                   {else}
-                    {$form.register_date.html|crmDate}
+                    {$form.register_date.value|crmDate}
                   {/if}
             </td>
           </tr>
@@ -254,9 +291,17 @@
             <span class="description">{ts}Source for this registration (if applicable).{/ts}</span></td>
           </tr>
         </table>
-
+       {if $participantId and $hasPayment}
+        <table class='form-layout'>
+          <tr>
+            <td class='label'>{ts}Fees{/ts}</td>
+            {* this is where the payment info is shown using CRM/Contribute/Page/PaymentInfo.tpl tpl*}
+            <td id='payment-info'></td>
+          </tr>
+         </table>
+        {/if}
       {* Fee block (EventFees.tpl) is injected here when an event is selected. *}
-        <div id="feeBlock"></div>
+        <div class="crm-event-form-fee-block"></div>
         <fieldset>
           <table class="form-layout">
             <tr class="crm-participant-form-block-note">
@@ -280,303 +325,124 @@
       <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="bottom"}</div>
     </div>
   </div>
+  {* JS block for ADD or UPDATE actions only *}
   {if $action eq 1 or $action eq 2}
-    {literal}
-    <script type="text/javascript">
-    // event select
-    function buildSelect( selectID, listallVal ) {
-      var elementID = '#' + selectID;
-      cj( elementID ).html('');
-      var postUrl = "{/literal}{crmURL p='civicrm/ajax/eventlist' h=0}{literal}";
-      cj.post( postUrl, {listall:listallVal}, function ( response ) {
-        response = eval( response );
-        for (i = 0; i < response.length; i++) {
-          cj( elementID ).get(0).add(new Option(response[i].name, response[i].value), document.all ? i : null);
-        }
-        getShowEventInfo(listallVal);
-        cj('input[name="past_event"]').val(listallVal);
-        cj("#feeBlock").html( '' );
-      });
-    }
-
-    {/literal}
-    {if $action eq 1}getShowEventInfo({$past});{/if}
-    {literal}
-
-    function getShowEventInfo (listallVal) {
-      switch(listallVal) {
-        case 1:
-          cj('#showing-event-info').html({/literal}'{ts}Showing all events: show{/ts}'{literal}+' <a href="#" onclick="buildSelect(\'event_id\', 0); return false;">'+{/literal}'{ts}current and future{/ts}'{literal}+'</a> | <a href="#" onclick="buildSelect(\'event_id\', 2); return false;">'+{/literal}'{ts}past three months{/ts}'{literal}+'</a>');
-          break;
-        case 2:
-          cj('#showing-event-info').html({/literal}'{ts}Showing events since three months ago: show{/ts}'{literal}+' <a href="#" onclick="buildSelect(\'event_id\', 0); return false;">'+{/literal}'{ts}current and future{/ts}'{literal}+'</a> | <a href="#" onclick="buildSelect(\'event_id\', 1); return false;">'+{/literal}'{ts}all{/ts}'{literal}+'</a>');
-          break;
-        default:
-          cj('#showing-event-info').html({/literal}'{ts}Showing current and future events: show{/ts}'{literal}+' <a href="#" onclick="buildSelect(\'event_id\', 2); return false;">'+{/literal}'{ts}past three months{/ts}'{literal}+'</a> | <a href="#" onclick="buildSelect(\'event_id\', 1); return false;">'+{/literal}'{ts}all{/ts}'{literal}+'</a>');
-          break;
-      }
-    }
-    {/literal}
-
-    {if $preloadJSSnippet}
-      {$preloadJSSnippet}
-    {else}
-      //build fee block
-      buildFeeBlock( );
+    {if $participantId and $hasPayment}
+      {include file="CRM/Contribute/Page/PaymentInfo.tpl" show='event-payment'}
     {/if}
 
-    {literal}
-    //build discount block
-    if ( document.getElementById('discount_id') ) {
-      var discountId  = document.getElementById('discount_id').value;
-      if ( discountId ) {
-        var eventId  = document.getElementById('event_id').value;
-        buildFeeBlock( eventId, discountId );
-      }
-    }
+    {*include custom data js file*}
+    {include file="CRM/common/customData.tpl"}
 
-    function buildFeeBlock( eventId, discountId )  {
-      var dataUrl = {/literal}"{crmURL p=$urlPath h=0 q='snippet=4'}";
-      dataUrl = dataUrl + '&qfKey=' + '{$qfKey}'
-
-      {if $urlPathVar}
-        dataUrl = dataUrl + '&' + '{$urlPathVar}'
-      {/if}
-
+    <script type="text/javascript">
       {literal}
-      if ( !eventId ) {
-        var eventId  = document.getElementById('event_id').value;
-      }
+      CRM.$(function($) {
 
-      if ( eventId) {
-        dataUrl = dataUrl + '&eventId=' + eventId;
-      }
-      else {
-        cj('#eventFullMsg').hide( );
-        cj('#feeBlock').html('');
-        return;
-      }
+        var $form = $('form.{/literal}{$form.formClass}{literal}');
 
-      var participantId  = "{/literal}{$participantId}{literal}";
+        // Handle event selection
+        $('#event_id', $form).change(function() {
+          var eventId = $(this).val();
+          if (!eventId) {
+            return;
+          }
+          var info = $(this).select2('data').extra;
 
-      if ( participantId ) {
-        dataUrl = dataUrl + '&participantId=' + participantId;
-      }
+          // Set role from default
+          $('select[name^=role_id]', $form).select2('val', [info.default_role_id], true);
 
-      if ( discountId ) {
-        dataUrl = dataUrl + '&discountId=' + discountId;
-      }
+          // Set campaign default
+          $('#campaign_id', $form).select2('val', info.campaign_id);
 
-      cj.ajax({
-        url: dataUrl,
-        async: false,
-        global: false,
-        success: function ( html ) {
-          cj("#feeBlock").html( html );
+          // Event and event-type custom data
+          CRM.buildCustomData('Participant', eventId, {/literal}{$eventNameCustomDataTypeID}{literal});
+          CRM.buildCustomData('Participant', info.event_type_id, {/literal}{$eventTypeCustomDataTypeID}{literal});
+
+          buildFeeBlock();
+        });
+
+        // Handle participant role selection
+        $('select[name^=role_id]', $form).change(buildRoleCustomData);
+        if ($('select[name^=role_id]', $form).val()) {
+          buildRoleCustomData();
         }
-      });
 
-      cj("#feeBlock").ajaxStart(function(){
-        cj(".disable-buttons input").attr('disabled', true);
-      });
+        buildFeeBlock();
 
-      cj("#feeBlock").ajaxStop(function(){
-        cj(".disable-buttons input").attr('disabled', false);
-      });
+        //build discount block
+        if ($('#discount_id', $form).val()) {
+          buildFeeBlock($('#discount_id', $form).val());
+        }
+        $($form).on('change', '#discount_id', function() {
+          buildFeeBlock($(this).val());
+        });
 
-      //show event real full as well as waiting list message.
-      if ( cj("#hidden_eventFullMsg").val( ) ) {
-        cj( "#eventFullMsg" ).show( ).html( cj("#hidden_eventFullMsg" ).val( ) );
-      }
-      else {
-        cj( "#eventFullMsg" ).hide( );
-      }
-    }
+        function buildRoleCustomData() {
+          var roleId = $('select[name^=role_id]', $form).val().join();
+          CRM.buildCustomData('Participant', roleId, {/literal}{$roleCustomDataTypeID}{literal});
+        }
 
-  </script>
-  {/literal}
+        //build fee block
+        function buildFeeBlock(discountId)  {
+          var dataUrl = {/literal}"{crmURL p=$urlPath h=0 q="snippet=4&qfKey=$qfKey"}";
 
-  {*include custom data js file*}
-  {include file="CRM/common/customData.tpl"}
-  {literal}
-  <script type="text/javascript">
-    var roleGroupMapper = new Array( );
-    {/literal}
-    {foreach from=$participantRoleIds item="grps" key="rlId"}
-    {literal}
-      roleGroupMapper[{/literal}{$rlId}{literal}] = '{/literal}{$grps}{literal}';
-    {/literal}
-    {/foreach}
-    {literal}
+          {if $urlPathVar}
+          dataUrl += '&' + '{$urlPathVar}';
+          {/if}
 
-    function buildParticipantRole( eventID ) {
-      var dataUrl = "{/literal}{crmURL p='civicrm/ajax/rest' q='className=CRM_Event_Page_AJAX&fnName=participantRole&json=1&context=participant' h=0 }"{literal};
+          {literal}
+          var eventId = $('[name=event_id], #event_id', $form).val();
 
-      if ( !eventId ) {
-        var eventId  = document.getElementById( 'event_id' ).value;
-      }
+          if (eventId) {
+            dataUrl += '&eventId=' + eventId;
+          }
+          else {
+            $('#eventFullMsg', $form).hide( );
+            $('.crm-event-form-fee-block', $form).html('');
+            return;
+          }
 
-      if ( eventId ) {
-        dataUrl = dataUrl + '&eventId=' + eventID;
-      }
+          var participantId  = "{/literal}{$participantId}{literal}";
 
-      cj.ajax({
-        url: dataUrl,
-        async: false,
-        global: false,
-        dataType: "json",
-        success: function ( response ) {
-          if ( response.role ) {
-            for ( var i in roleGroupMapper ) {
-              if ( i != 0 ) {
-                if ( i == response.role ) {
-                  document.getElementById("role_id_" +i  ).checked = true;
-                }
-                else {
-                  document.getElementById("role_id_" +i  ).checked = false;
-                }
-                showCustomData( 'Participant', i, {/literal} {$roleCustomDataTypeID} {literal} );
+          if (participantId) {
+            dataUrl += '&participantId=' + participantId;
+          }
+
+          if (discountId) {
+            dataUrl += '&discountId=' + discountId;
+          }
+
+          $.ajax({
+            url: dataUrl,
+            success: function ( html ) {
+              $(".crm-event-form-fee-block", $form).html( html ).trigger('crmLoad');
+              //show event real full as well as waiting list message.
+              if ( $("#hidden_eventFullMsg", $form).val( ) ) {
+                $( "#eventFullMsg", $form).show( ).html( $("#hidden_eventFullMsg", $form).val( ) );
+              }
+              else {
+                $( "#eventFullMsg", $form ).hide( );
               }
             }
-          }
-        }
-      });
-    }
-
-    function showCustomData( type, subType, subName ) {
-      var dataUrl = {/literal}"{crmURL p=$urlPath h=0 q='snippet=4&type='}"{literal} + type;
-      var roleid = "role_id_"+subType;
-      var loadData = false;
-
-      if ( document.getElementById( roleid ).checked == true ) {
-        if ( roleGroupMapper[subType] ) {
-          var splitGroup = roleGroupMapper[subType].split(",");
-          for ( i = 0; i < splitGroup.length; i++ ) {
-            var roleCustomGroupId = splitGroup[i];
-            if ( cj( '#'+roleCustomGroupId ).length > 0 ) {
-              cj( '#'+roleCustomGroupId ).remove( );
-            }
-          }
-          loadData = true;
-        }
-      }
-      else {
-        var groupUnload = new Array( );
-        var x = 0;
-
-        if ( roleGroupMapper[0] ) {
-          var splitGroup = roleGroupMapper[0].split(",");
-          for ( x = 0; x < splitGroup.length; x++ ) {
-            groupUnload[x] = splitGroup[x];
-          }
+          });
         }
 
-        for ( var i in roleGroupMapper ) {
-          if ( ( i > 0 ) && ( document.getElementById( "role_id_"+i ).checked ) ) {
-            var splitGroup = roleGroupMapper[i].split(",");
-            for ( j = 0; j < splitGroup.length; j++ ) {
-              groupUnload[x+j+1] = splitGroup[j];
-            }
-          }
-        }
-
-        if ( roleGroupMapper[subType] ) {
-          var splitGroup = roleGroupMapper[subType].split(",");
-          for ( i = 0; i < splitGroup.length; i++ ) {
-            var roleCustomGroupId = splitGroup[i];
-            if ( cj( '#'+roleCustomGroupId ).length > 0 ) {
-              if ( cj.inArray( roleCustomGroupId, groupUnload ) == -1  ) {
-                cj( '#'+roleCustomGroupId ).remove( );
-              }
-            }
-          }
-        }
-      }
-
-      if ( !( loadData ) ) {
-        return false;
-      }
-
-      if ( subType ) {
-        dataUrl = dataUrl + '&subType=' + subType;
-      }
-
-      if ( subName ) {
-        dataUrl = dataUrl + '&subName=' + subName;
-        cj( '#customData' + subName ).show( );
-      }
-      else {
-        cj( '#customData' ).show( );
-      }
-
-      {/literal}
-      {if $urlPathVar}
-        dataUrl = dataUrl + '&' + '{$urlPathVar}'
-      {/if}
-      {if $groupID}
-        dataUrl = dataUrl + '&groupID=' + '{$groupID}'
-      {/if}
-      {if $qfKey}
-        dataUrl = dataUrl + '&qfKey=' + '{$qfKey}'
-      {/if}
-      {if $entityID}
-        dataUrl = dataUrl + '&entityID=' + '{$entityID}'
-      {/if}
-
-      {literal}
-
-      if ( subName && subName != 'null' ) {
-        var fname = '#customData' + subName;
-      }
-      else {
-        var fname = '#customData';
-      }
-
-      var response = cj.ajax({url: dataUrl,
-        async: false
-      }).responseText;
-
-      if ( subType != 'null' ) {
-        if ( document.getElementById(roleid).checked == true ) {
-          var response_text = '<div style="display:block;" id = '+subType+'_chk >'+response+'</div>';
-          cj( fname ).append(response_text);
-        }
-        else {
-          cj('#'+subType+'_chk').remove();
-        }
-      }
-    }
-
-    cj(function() {
-      {/literal}
-      CRM.buildCustomData( '{$customDataType}', 'null', 'null' );
-      {literal}
-      for ( var i in roleGroupMapper ) {
-        if ( ( i > 0 ) && ( document.getElementById( "role_id_"+i ).checked ) ) {
         {/literal}
-        showCustomData( '{$customDataType}', i, {$roleCustomDataTypeID} );
+        CRM.buildCustomData( '{$customDataType}', 'null', 'null' );
+        {if $eventID}
+          CRM.buildCustomData( '{$customDataType}', {$eventID}, {$eventNameCustomDataTypeID} );
+        {/if}
+        {if $eventTypeID}
+          CRM.buildCustomData( '{$customDataType}', {$eventTypeID}, {$eventTypeCustomDataTypeID} );
+        {/if}
         {literal}
-        }
-      }
-      {/literal}
-      {if $eventID}
-        CRM.buildCustomData( '{$customDataType}', {$eventID}, {$eventNameCustomDataTypeID} );
-      {/if}
-      {if $eventTypeID}
-        CRM.buildCustomData( '{$customDataType}', {$eventTypeID}, {$eventTypeCustomDataTypeID} );
-      {/if}
-      {literal}
 
-      //call pane js
-      cj().crmAccordions();
-    });
+      });
     </script>
     {/literal}
 
   {/if}
 
-  {* include jscript to warn if unsaved form field changes *}
-  {include file="CRM/common/formNavigate.tpl"}
 
 <script type="text/javascript">
   {literal}
@@ -587,41 +453,16 @@
     notificationStatusIds = notificationStatusIds.split(',');
     if (cj.inArray(cj('select#status_id option:selected').val(), notificationStatusIds) > -1) {
       cj("#notify").show();
-      cj("#is_notify").attr('checked', true);
+      cj("#is_notify").prop('checked', true);
     }
     else {
       cj("#notify").hide();
-      cj("#is_notify").removeAttr('checked');
+      cj("#is_notify").prop('checked', false);
     }
-  }
-
-  function buildEventTypeCustomData( eventID, eventTypeCustomDataTypeID, eventAndTypeMapping ) {
-    var mapping = eval('(' + eventAndTypeMapping + ')');
-    CRM.buildCustomData( 'Participant', mapping[eventID], eventTypeCustomDataTypeID );
-  }
-
-  function loadCampaign( eventId, campaigns ) {
-    cj( "#campaign_id" ).val( campaigns[eventId] );
   }
 
   {/literal}
-  {if $profileCreateCallback}
-    {literal}
-    function profileCreateCallback( blockNo ) {
-      if( cj('#event_id').val( ) &&  cj('#email-receipt').length > 0 ) {
-        checkEmail( );
-      }
-    }
-    {/literal}
-  {/if}
 </script>
-{literal}
-<script type="text/javascript">
-  cj(function() {
-    cj().crmAccordions();
-  });
-</script>
-{/literal}
 
 {/if} {* end of main event block*}
 

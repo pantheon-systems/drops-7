@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                               |
+ | CiviCRM version 4.6                                               |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,16 +23,22 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 
 /*
  */
+
+/**
+ * Class CRM_Cron_Action
+ */
 class CRM_Cron_Action {
-  function __construct() {
+  /**
+   */
+  public function __construct() {
     // you can run this program either from an apache command, or from the cli
     if (php_sapi_name() == "cli") {
-      require_once ("cli.php");
+      require_once "cli.php";
       $cli = new civicrm_cli();
       //if it doesn't die, it's authenticated
     }
@@ -50,19 +56,22 @@ class CRM_Cron_Action {
     }
   }
 
-  function initialize() {
+  public function initialize() {
     require_once '../civicrm.config.php';
     require_once 'CRM/Core/Config.php';
 
     $config = CRM_Core_Config::singleton();
   }
 
+  /**
+   * @param null $now
+   */
   public function run($now = NULL) {
     require_once 'CRM/Core/BAO/ActionSchedule.php';
     CRM_Core_BAO_ActionSchedule::processQueue($now);
   }
+
 }
 
 $cron = new CRM_Cron_Action();
 $cron->run();
-

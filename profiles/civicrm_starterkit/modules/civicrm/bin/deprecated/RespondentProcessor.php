@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,7 +23,7 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 
 /*
@@ -33,8 +33,14 @@
 
 require_once '../civicrm.config.php';
 require_once 'CRM/Core/Config.php';
+
+/**
+ * Class CRM_RespondentProcessor
+ */
 class CRM_RespondentProcessor {
-  function __construct() {
+  /**
+   */
+  public function __construct() {
     $config = CRM_Core_Config::singleton();
 
     //this does not return on failure
@@ -95,11 +101,10 @@ UPDATE  civicrm_activity
 
     echo "<br /><br />Number of respondents released = {$releasedCount}";
   }
+
 }
 
 $obj = new CRM_RespondentProcessor();
 echo "Releasing..";
 $obj->releaseRespondent();
 echo "<br /><br />Respondent Release Done";
-
-

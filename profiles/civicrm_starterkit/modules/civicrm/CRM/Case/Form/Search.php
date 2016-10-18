@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,120 +23,54 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
- * $Id$
- *
+ * @copyright CiviCRM LLC (c) 2004-2015
  */
 
 /**
- * This file is for Case search
+ * This file is for Case search.
  */
-class CRM_Case_Form_Search extends CRM_Core_Form {
+class CRM_Case_Form_Search extends CRM_Core_Form_Search {
 
   /**
-   * Are we forced to run a search
-   *
-   * @var int
-   * @access protected
-   */
-  protected $_force;
-
-  /**
-   * name of search button
-   *
-   * @var string
-   * @access protected
-   */
-  protected $_searchButtonName;
-
-  /**
-   * name of print button
-   *
-   * @var string
-   * @access protected
-   */
-  protected $_printButtonName;
-
-  /**
-   * name of action button
-   *
-   * @var string
-   * @access protected
-   */
-  protected $_actionButtonName;
-
-  /**
-   * form values that we will be using
+   * The params that are sent to the query
    *
    * @var array
-   * @access protected
-   */
-  public $_formValues;
-
-  /**
-   * the params that are sent to the query
-   *
-   * @var array
-   * @access protected
    */
   protected $_queryParams;
 
   /**
-   * have we already done this search
+   * Are we restricting ourselves to a single contact
    *
-   * @access protected
-   * @var boolean
-   */
-  protected $_done;
-
-  /**
-   * are we restricting ourselves to a single contact
-   *
-   * @access protected
    * @var boolean
    */
   protected $_single = FALSE;
 
   /**
-   * are we restricting ourselves to a single contact
+   * Are we restricting ourselves to a single contact
    *
-   * @access protected
    * @var boolean
    */
   protected $_limit = NULL;
 
   /**
-   * what context are we being invoked from
-   *
-   * @access protected
-   * @var string
-   */
-  protected $_context = NULL;
-
-  /**
-   * prefix for the controller
-   *
+   * Prefix for the controller
    */
   protected $_prefix = 'case_';
 
   protected $_defaults;
 
   /**
-   * processing needed for buildForm and later
+   * Processing needed for buildForm and later.
    *
    * @return void
-   * @access public
    */
-  function preProcess() {
+  public function preProcess() {
     $this->set('searchFormName', 'Search');
-
-    // js for changing activity status
-    CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'templates/CRM/Case/Form/ActivityChangeStatus.js');
 
     //check for civicase access.
     if (!CRM_Case_BAO_Case::accessCiviCase()) {
@@ -154,20 +88,19 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
      * set the button names
      */
     $this->_searchButtonName = $this->getButtonName('refresh');
-    $this->_printButtonName = $this->getButtonName('next', 'print');
     $this->_actionButtonName = $this->getButtonName('next', 'action');
 
     $this->_done = FALSE;
     $this->defaults = array();
 
     /*
-         * we allow the controller to set force/reset externally, useful when we are being
-         * driven by the wizard framework
-         */
+     * we allow the controller to set force/reset externally, useful when we are being
+     * driven by the wizard framework
+     */
 
-    $this->_reset   = CRM_Utils_Request::retrieve('reset', 'Boolean', CRM_Core_DAO::$_nullObject);
-    $this->_force   = CRM_Utils_Request::retrieve('force', 'Boolean', $this, FALSE);
-    $this->_limit   = CRM_Utils_Request::retrieve('limit', 'Positive', $this);
+    $this->_reset = CRM_Utils_Request::retrieve('reset', 'Boolean', CRM_Core_DAO::$_nullObject);
+    $this->_force = CRM_Utils_Request::retrieve('force', 'Boolean', $this, FALSE);
+    $this->_limit = CRM_Utils_Request::retrieve('limit', 'Positive', $this);
     $this->_context = CRM_Utils_Request::retrieve('context', 'String', $this, FALSE, 'search');
 
     $this->assign('context', $this->_context);
@@ -198,7 +131,6 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
         $this->get(CRM_Utils_Sort::SORT_DIRECTION)
       );
     }
-
 
     $this->_queryParams = CRM_Contact_BAO_Query::convertFormValues($this->_formValues);
     $selector = new CRM_Case_Selector_Search($this->_queryParams,
@@ -232,86 +164,59 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
   }
 
   /**
-   * Build the form
+   * Build the form object.
    *
-   * @access public
    *
    * @return void
    */
-  function buildQuickForm() {
-    $this->addElement('text',
-      'sort_name',
-      ts('Client Name or Email'),
-      CRM_Core_DAO::getAttribute('CRM_Contact_DAO_Contact', 'sort_name')
-    );
+  public function buildQuickForm() {
+    parent::buildQuickForm();
+    $this->addSortNameField();
 
     CRM_Case_BAO_Query::buildSearchForm($this);
 
-    /*
-     * add form checkboxes for each row. This is needed out here to conform to QF protocol
-     * of all elements being declared in builQuickForm
-     */
     $rows = $this->get('rows');
     if (is_array($rows)) {
-
       if (!$this->_single) {
-        $this->addElement('checkbox',
-          'toggleSelect',
-          NULL,
-          NULL,
-          array('onclick' => "toggleTaskAction( true ); return toggleCheckboxVals('mark_x_',this);")
-        );
-
-        foreach ($rows as $row) {
-          $this->addElement('checkbox', $row['checkbox'],
-            NULL, NULL,
-            array('onclick' => "toggleTaskAction( true ); return checkSelectedBox('" . $row['checkbox'] . "');")
-          );
-        }
+        $this->addRowSelectors($rows);
       }
-
-      $total = $cancel = 0;
 
       $permission = CRM_Core_Permission::getPermission();
 
-      $tasks = array('' => ts('- actions -')) + CRM_Case_Task::permissionedTaskTitles($permission);
+      $tasks = CRM_Case_Task::permissionedTaskTitles($permission);
 
-      if (CRM_Utils_Array::value('case_deleted', $this->_formValues)) {
+      if (!empty($this->_formValues['case_deleted'])) {
         unset($tasks[1]);
       }
       else {
         unset($tasks[4]);
       }
 
-      $this->add('select', 'task', ts('Actions:') . ' ', $tasks);
-      $this->add('submit', $this->_actionButtonName, ts('Go'),
-        array(
-          'class' => 'form-submit',
-          'id' => 'Go',
-          'onclick' => "return checkPerformAction('mark_x', '" . $this->getName() . "', 0);",
-        )
-      );
-
-      $this->add('submit', $this->_printButtonName, ts('Print'),
-        array(
-          'class' => 'form-submit',
-          'onclick' => "return checkPerformAction('mark_x', '" . $this->getName() . "', 1);",
-        )
-      );
-
-      // need to perform tasks on all or selected items ? using radio_ts(task selection) for it
-      $this->addElement('radio', 'radio_ts', NULL, '', 'ts_sel', array('checked' => 'checked'));
-      $this->addElement('radio', 'radio_ts', NULL, '', 'ts_all', array('onclick' => $this->getName() . ".toggleSelect.checked = false; toggleCheckboxVals('mark_x_',this); toggleTaskAction( true );"));
+      $this->addTaskMenu($tasks);
     }
 
-    // add buttons
-    $this->addButtons(array(
-        array(
-          'type' => 'refresh',
-          'name' => ts('Search'),
-          'isDefault' => TRUE,
-        ),
-      ));
+  }
+
+  /**
+   * Get the label for the sortName field if email searching is on.
+   *
+   * (email searching is a setting under search preferences).
+   *
+   * @return string
+   */
+  protected function getSortNameLabelWithEmail() {
+    return ts('Client Name or Email');
+  }
+
+  /**
+   * Get the label for the sortName field if email searching is off.
+   *
+   * (email searching is a setting under search preferences).
+   *
+   * @return string
+   */
+  protected function getSortNameLabelWithOutEmail() {
+    return ts('Client Name');
   }
 
   /**
@@ -329,9 +234,8 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
    * @param
    *
    * @return void
-   * @access public
    */
-  function postProcess() {
+  public function postProcess() {
     if ($this->_done) {
       return;
     }
@@ -357,10 +261,10 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
       $this->_formValues['case_owner'] = 2;
     }
 
-    if (!CRM_Utils_Array::value('case_deleted', $this->_formValues)) {
+    if (empty($this->_formValues['case_deleted'])) {
       $this->_formValues['case_deleted'] = 0;
     }
-    CRM_Core_BAO_CustomValue::fixFieldValueOfTypeMemo($this->_formValues);
+    CRM_Core_BAO_CustomValue::fixCustomFieldValue($this->_formValues);
 
     $this->_queryParams = CRM_Contact_BAO_Query::convertFormValues($this->_formValues);
 
@@ -368,7 +272,7 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
     $this->set('queryParams', $this->_queryParams);
 
     $buttonName = $this->controller->getButtonName();
-    if ($buttonName == $this->_actionButtonName || $buttonName == $this->_printButtonName) {
+    if ($buttonName == $this->_actionButtonName) {
       // check actionName and if next, then do not repeat a search, since we are going to the next page
 
       // hack, make sure we reset the task values
@@ -422,28 +326,25 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
   }
 
   /**
-   * This function is used to add the rules (mainly global rules) for form.
+   * add the rules (mainly global rules) for form.
    * All local rules are added near the element
    *
-   * @return None
-   * @access public
+   * @return void
    * @see valid_date
    */
-  function addRules() {
+  public function addRules() {
     $this->addFormRule(array('CRM_Case_Form_Search', 'formRule'));
   }
 
   /**
-   * global validation rules for the form
+   * Global validation rules for the form.
    *
-   * @param array $fields posted values of the form
-   * @param array $errors list of errors to be posted back to the form
+   * @param array $fields
+   *   Posted values of the form.
    *
    * @return void
-   * @static
-   * @access public
    */
-  static function formRule($fields) {
+  public static function formRule($fields) {
     $errors = array();
 
     if (!empty($errors)) {
@@ -454,19 +355,19 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
   }
 
   /**
-   * Set the default form values
+   * Set the default form values.
    *
-   * @access protected
    *
-   * @return array the default array reference
+   * @return array
+   *   the default array reference
    */
-  function setDefaultValues() {
+  public function setDefaultValues() {
     $defaults = array();
     $defaults = $this->_formValues;
     return $defaults;
   }
 
-  function fixFormValues() {
+  public function fixFormValues() {
     if (!$this->_force) {
       return;
     }
@@ -482,8 +383,8 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
       CRM_Core_DAO::$_nullObject
     );
     if ($caseType) {
-      $this->_formValues['case_type_id'][$caseType] = 1;
-      $this->_defaults['case_type_id'][$caseType] = 1;
+      $this->_formValues['case_type_id'] = $caseType;
+      $this->_defaults['case_type_id'] = $caseType;
     }
 
     $caseFromDate = CRM_Utils_Request::retrieve('pstart', 'Date',
@@ -518,7 +419,7 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
       }
     }
     else {
-        // First, if "all" is stored in the session, default to all cases, otherwise default to no selection.
+      // First, if "all" is stored in the session, default to all cases, otherwise default to no selection.
       $session = CRM_Core_Session::singleton();
       if (CRM_Utils_Request::retrieve('all', 'Positive', $session)) {
         $this->_formValues['case_owner'] = 1;
@@ -540,7 +441,10 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
     }
   }
 
-  function getFormValues() {
+  /**
+   * @return null
+   */
+  public function getFormValues() {
     return NULL;
   }
 
@@ -548,10 +452,9 @@ class CRM_Case_Form_Search extends CRM_Core_Form {
    * Return a descriptive name for the page, used in wizard header
    *
    * @return string
-   * @access public
    */
   public function getTitle() {
     return ts('Find Cases');
   }
-}
 
+}

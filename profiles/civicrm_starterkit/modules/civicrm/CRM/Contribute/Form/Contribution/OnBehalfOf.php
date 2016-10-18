@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,24 +23,25 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
 class CRM_Contribute_Form_Contribution_OnBehalfOf {
 
   /**
-   * Function to set variables up before form is built
+   * Set variables up before form is built.
+   *
+   * @param CRM_Core_Form $form
    *
    * @return void
-   * @access public
    */
-  static function preProcess(&$form) {
+  public static function preProcess(&$form) {
     $session = CRM_Core_Session::singleton();
     $contactID = $form->_contactID;
 
@@ -76,7 +77,8 @@ class CRM_Contribute_Form_Contribution_OnBehalfOf {
           // if _membershipContactID belongs to employers list, we can say:
           $form->_relatedOrganizationFound = TRUE;
         }
-      } else if (!empty($form->_employers)) {
+      }
+      elseif (!empty($form->_employers)) {
         // not a renewal case and _employers list is not empty
         $form->_relatedOrganizationFound = TRUE;
       }
@@ -95,7 +97,9 @@ class CRM_Contribute_Form_Contribution_OnBehalfOf {
         $form->assign('locDataURL', $locDataURL);
 
         if (!empty($form->_submitValues['onbehalf'])) {
-          $form->assign('submittedOnBehalf', $form->_submitValues['onbehalfof_id']);
+          if (!empty($form->_submitValues['onbehalfof_id'])) {
+            $form->assign('submittedOnBehalf', $form->_submitValues['onbehalfof_id']);
+          }
           $form->assign('submittedOnBehalfInfo', json_encode($form->_submitValues['onbehalf']));
         }
       }
@@ -119,15 +123,12 @@ class CRM_Contribute_Form_Contribution_OnBehalfOf {
   }
 
   /**
-   * Function to build form for related contacts / on behalf of organization.
+   * Build form for related contacts / on behalf of organization.
    *
-   * @param $form              object  invoking Object
-   * @param $contactType       string  contact type
-   * @param $title             string  fieldset title
+   * @param CRM_Core_Form $form
    *
-   * @static
    */
-  static function buildQuickForm(&$form) {
+  public static function buildQuickForm(&$form) {
     $form->assign('fieldSetTitle', ts('Organization Details'));
     $form->assign('buildOnBehalfForm', TRUE);
 
@@ -152,9 +153,9 @@ class CRM_Contribute_Form_Contribution_OnBehalfOf {
       NULL, FALSE, NULL, FALSE, NULL,
       CRM_Core_Permission::CREATE, NULL
     );
-    $fieldTypes     = array('Contact', 'Organization');
+    $fieldTypes = array('Contact', 'Organization');
     $contactSubType = CRM_Contact_BAO_ContactType::subTypes('Organization');
-    $fieldTypes     = array_merge($fieldTypes, $contactSubType);
+    $fieldTypes = array_merge($fieldTypes, $contactSubType);
 
     if (is_array($form->_membershipBlock) && !empty($form->_membershipBlock)) {
       $fieldTypes = array_merge($fieldTypes, array('Membership'));
@@ -163,37 +164,19 @@ class CRM_Contribute_Form_Contribution_OnBehalfOf {
       $fieldTypes = array_merge($fieldTypes, array('Contribution'));
     }
 
-    $stateCountryMap = array();
     foreach ($profileFields as $name => $field) {
       if (in_array($field['field_type'], $fieldTypes)) {
         list($prefixName, $index) = CRM_Utils_System::explode('-', $name, 2);
-        if (in_array($prefixName, array(
-          'state_province', 'country', 'county'))) {
-          if (!array_key_exists($index, $stateCountryMap)) {
-            $stateCountryMap[$index] = array();
-          }
-
-          $stateCountryMap[$index][$prefixName] = 'onbehalf[' . $name . ']';
-        }
-        elseif (in_array($prefixName, array(
-          'organization_name', 'email')) &&
-          !CRM_Utils_Array::value('is_required', $field)
-        ) {
+        if (in_array($prefixName, array('organization_name', 'email')) && empty($field['is_required'])) {
           $field['is_required'] = 1;
         }
 
-        CRM_Core_BAO_UFGroup::buildProfile($form, $field, NULL, NULL, FALSE, TRUE);
+        CRM_Core_BAO_UFGroup::buildProfile($form, $field, NULL, NULL, FALSE, 'onbehalf');
       }
-    }
-
-    if (!empty($stateCountryMap)) {
-      CRM_Core_BAO_Address::addStateCountryMap($stateCountryMap);
-
-      // now fix all state country selectors
-      CRM_Core_BAO_Address::fixAllStateSelects($form, CRM_Core_DAO::$_nullArray);
     }
 
     $form->assign('onBehalfOfFields', $profileFields);
     $form->addElement('hidden', 'hidden_onbehalf_profile', 1);
   }
+
 }

@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -49,7 +49,7 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
       $this->_customSearchID,
       $this->_customSearchClass,
       $formValues
-    ) = CRM_Contact_BAO_SearchCustom::details($csID, $ssID, $gID);
+      ) = CRM_Contact_BAO_SearchCustom::details($csID, $ssID, $gID);
 
     if (!$this->_customSearchID) {
       CRM_Core_Error::fatal('Could not get details for custom search.');
@@ -64,11 +64,14 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
     }
 
     // set breadcrumb to return to Custom Search listings page
-    $breadCrumb = array(array('title' => ts('Custom Searches'),
+    $breadCrumb = array(
+      array(
+        'title' => ts('Custom Searches'),
         'url' => CRM_Utils_System::url('civicrm/contact/search/custom/list',
           'reset=1'
         ),
-      ));
+      ),
+    );
     CRM_Utils_System::appendBreadCrumb($breadCrumb);
 
     // use the custom selector
@@ -80,29 +83,62 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
     parent::preProcess();
 
     // instantiate the new class
-    $this->_customClass = new $this->_customSearchClass( $this->_formValues );
+    $this->_customClass = new $this->_customSearchClass($this->_formValues);
 
     // CRM-12747
     if (isset($this->_customClass->_permissionedComponent) &&
-      !self::isPermissioned($this->_customClass->_permissionedComponent)) {
+      !self::isPermissioned($this->_customClass->_permissionedComponent)
+    ) {
       CRM_Utils_System::permissionDenied();
     }
   }
 
-  function setDefaultValues() {
+  /**
+   * This virtual function is used to set the default values of
+   * various form elements
+   *
+   * access        public
+   *
+   * @return array
+   *   reference to the array of default values
+   */
+  /**
+   * @return array
+   */
+  public function setDefaultValues() {
     if (method_exists($this->_customSearchClass, 'setDefaultValues')) {
       return $this->_customClass->setDefaultValues();
     }
     return $this->_formValues;
   }
 
-  function buildQuickForm() {
+  /**
+   * Builds the list of tasks or actions that a searcher can perform on a result set.
+   *
+   * @return array
+   */
+  public function buildTaskList() {
+    // call the parent method to populate $this->_taskList for the custom search
+    parent::buildTaskList();
+
+    return $this->_customClass->buildTaskList($this);
+  }
+
+  public function buildQuickForm() {
     $this->_customClass->buildForm($this);
 
     parent::buildQuickForm();
   }
 
-  function getTemplateFileName() {
+  /**
+   * Use the form name to create the tpl file name.
+   *
+   * @return string
+   */
+  /**
+   * @return string
+   */
+  public function getTemplateFileName() {
 
     $ext = CRM_Extension_System::singleton()->getMapper();
 
@@ -116,7 +152,7 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
     return $fileName ? $fileName : parent::getTemplateFileName();
   }
 
-  function postProcess() {
+  public function postProcess() {
     $this->set('isAdvanced', '3');
     $this->set('isCustom', '1');
 
@@ -135,11 +171,24 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
     parent::postProcess();
   }
 
+  /**
+   * Return a descriptive name for the page, used in wizard header
+   *
+   * @return string
+   */
+  /**
+   * @return string
+   */
   public function getTitle() {
     return ts('Custom Search');
   }
 
-  function isPermissioned($components) {
+  /**
+   * @param $components
+   *
+   * @return bool
+   */
+  public function isPermissioned($components) {
     if (empty($components)) {
       return TRUE;
     }
@@ -157,4 +206,5 @@ class CRM_Contact_Form_Search_Custom extends CRM_Contact_Form_Search {
     }
     return TRUE;
   }
+
 }

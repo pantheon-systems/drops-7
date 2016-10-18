@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -36,20 +36,19 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
 class CRM_ACL_Form_ACLBasic extends CRM_Admin_Form {
 
   /**
-   * This function sets the default values for the form.
+   * Set default values for the form.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
-  function setDefaultValues() {
+  public function setDefaultValues() {
     $defaults = array();
 
     if ($this->_id ||
@@ -75,10 +74,9 @@ SELECT object_table
   }
 
   /**
-   * Function to build the form
+   * Build the form object.
    *
-   * @return None
-   * @access public
+   * @return void
    */
   public function buildQuickForm() {
     parent::buildQuickForm();
@@ -95,9 +93,9 @@ SELECT object_table
       array('</td><td>', '</td></tr><tr><td>')
     );
 
-
     $label = ts('Role');
-    $role = array('-1' => ts('- select role -'),
+    $role = array(
+      '-1' => ts('- select role -'),
       '0' => ts('Everyone'),
     ) + CRM_Core_OptionGroup::values('acl_role');
     $entityID = &$this->add('select', 'entity_id', $label, $role, TRUE);
@@ -110,7 +108,12 @@ SELECT object_table
     $this->addFormRule(array('CRM_ACL_Form_ACLBasic', 'formRule'));
   }
 
-  static function formRule($params) {
+  /**
+   * @param array $params
+   *
+   * @return array|bool
+   */
+  public static function formRule($params) {
     if ($params['entity_id'] == -1) {
       $errors = array('entity_id' => ts('Role is a required field'));
       return $errors;
@@ -120,11 +123,10 @@ SELECT object_table
   }
 
   /**
-   * Function to process the form
+   * Process the form submission.
    *
-   * @access public
    *
-   * @return None
+   * @return void
    */
   public function postProcess() {
     CRM_ACL_BAO_Cache::resetCache();
@@ -140,7 +142,7 @@ DELETE
    AND ( object_table NOT IN ( 'civicrm_saved_search', 'civicrm_uf_group', 'civicrm_custom_group' ) )
 ";
       $deleteParams = array(1 => array($this->_id, 'Integer'));
-      $dao = CRM_Core_DAO::executeQuery($query, $deleteParams);
+      CRM_Core_DAO::executeQuery($query, $deleteParams);
 
       if ($this->_action & CRM_Core_Action::DELETE) {
         CRM_Core_Session::setStatus(ts('Selected ACL has been deleted.'), ts('Record Deleted'), 'success');
@@ -163,5 +165,5 @@ DELETE
       }
     }
   }
-}
 
+}

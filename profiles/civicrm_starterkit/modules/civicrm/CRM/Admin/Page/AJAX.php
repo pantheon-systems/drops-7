@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -39,51 +39,62 @@
 class CRM_Admin_Page_AJAX {
 
   /**
-   * Function to build menu tree
+   * CRM-12337 Output navigation menu as executable javascript
+   * @see smarty_function_crmNavigationMenu
    */
-  static function getNavigationList() {
+  public static function getNavigationMenu() {
+    $contactID = CRM_Core_Session::singleton()->get('userID');
+    if ($contactID) {
+      CRM_Core_Page_AJAX::setJsHeaders();
+      $smarty = CRM_Core_Smarty::singleton();
+      $smarty->assign('includeEmail', civicrm_api3('setting', 'getvalue', array('name' => 'includeEmailInName', 'group' => 'Search Preferences')));
+      print $smarty->fetchWith('CRM/common/navigation.js.tpl', array(
+        'navigation' => CRM_Core_BAO_Navigation::createNavigation($contactID),
+      ));
+    }
+    CRM_Utils_System::civiExit();
+  }
+
+  /**
+   * Return menu tree as json data for editing.
+   */
+  public static function getNavigationList() {
     echo CRM_Core_BAO_Navigation::buildNavigation(TRUE, FALSE);
     CRM_Utils_System::civiExit();
   }
 
   /**
-   * Function to process drag/move action for menu tree
+   * Process drag/move action for menu tree
    */
-  static function menuTree() {
-    echo CRM_Core_BAO_Navigation::processNavigation($_GET);
-    CRM_Utils_System::civiExit();
+  public static function menuTree() {
+    CRM_Core_BAO_Navigation::processNavigation($_GET);
   }
 
   /**
-   * Function to build status message while
+   * Build status message while.
    * enabling/ disabling various objects
    */
-  static function getStatusMsg() {
-    $recordID  = CRM_Utils_Type::escape($_POST['recordID'], 'Integer');
-    $recordBAO = CRM_Utils_Type::escape($_POST['recordBAO'], 'String');
-    $op        = CRM_Utils_Type::escape($_POST['op'], 'String');
-    $show      = NULL;
+  public static function getStatusMsg() {
+    require_once 'api/v3/utils.php';
+    $recordID = CRM_Utils_Type::escape($_GET['id'], 'Integer');
+    $entity = CRM_Utils_Type::escape($_GET['entity'], 'String');
+    $ret = array();
 
-    if ($op == 'disable-enable') {
-      $status = ts('Are you sure you want to enable this record?');
-    }
-    else {
+    if ($recordID && $entity && $recordBAO = _civicrm_api3_get_BAO($entity)) {
       switch ($recordBAO) {
         case 'CRM_Core_BAO_UFGroup':
-          require_once (str_replace('_', DIRECTORY_SEPARATOR, $recordBAO) . '.php');
           $method = 'getUFJoinRecord';
           $result = array($recordBAO, $method);
           $ufJoin = call_user_func_array(($result), array($recordID, TRUE));
           if (!empty($ufJoin)) {
-            $status = ts('This profile is currently used for %1.', array(1 => implode(', ', $ufJoin))) . ' <br/><br/>' . ts('If you disable the profile - it will be removed from these forms and/or modules. Do you want to continue?');
+            $ret['content'] = ts('This profile is currently used for %1.', array(1 => implode(', ', $ufJoin))) . ' <br/><br/>' . ts('If you disable the profile - it will be removed from these forms and/or modules. Do you want to continue?');
           }
           else {
-            $status = ts('Are you sure you want to disable this profile?');
+            $ret['content'] = ts('Are you sure you want to disable this profile?');
           }
           break;
 
         case 'CRM_Price_BAO_PriceSet':
-          require_once (str_replace('_', DIRECTORY_SEPARATOR, $recordBAO) . '.php');
           $usedBy = CRM_Price_BAO_PriceSet::getUsedBy($recordID);
           $priceSet = CRM_Price_BAO_PriceSet::getTitle($recordID);
 
@@ -93,7 +104,7 @@ class CRM_Admin_Page_AJAX {
             $comps = array(
               'Event' => 'civicrm_event',
               'Contribution' => 'civicrm_contribution_page',
-              'EventTemplate' => 'civicrm_event_template'
+              'EventTemplate' => 'civicrm_event_template',
             );
             $contexts = array();
             foreach ($comps as $name => $table) {
@@ -103,201 +114,145 @@ class CRM_Admin_Page_AJAX {
             }
             $template->assign('contexts', $contexts);
 
-            $show   = 'noButton';
-            $table  = $template->fetch('CRM/Price/Page/table.tpl');
-            $status = ts('Unable to disable the \'%1\' price set - it is currently in use by one or more active events, contribution pages or contributions.', array(
-              1 => $priceSet)) . "<br/> $table";
+            $ret['illegal'] = TRUE;
+            $table = $template->fetch('CRM/Price/Page/table.tpl');
+            $ret['content'] = ts('Unable to disable the \'%1\' price set - it is currently in use by one or more active events, contribution pages or contributions.', array(
+                1 => $priceSet,
+              )) . "<br/> $table";
           }
           else {
-            $status = ts('Are you sure you want to disable \'%1\' Price Set?', array(1 => $priceSet));
+            $ret['content'] = ts('Are you sure you want to disable \'%1\' Price Set?', array(1 => $priceSet));
           }
           break;
 
         case 'CRM_Event_BAO_Event':
-          $status = ts('Are you sure you want to disable this Event?');
+          $ret['content'] = ts('Are you sure you want to disable this Event?');
           break;
 
         case 'CRM_Core_BAO_UFField':
-          $status = ts('Are you sure you want to disable this CiviCRM Profile field?');
+          $ret['content'] = ts('Are you sure you want to disable this CiviCRM Profile field?');
           break;
 
         case 'CRM_Contribute_BAO_ManagePremiums':
-          $status = ts('Are you sure you want to disable this premium? This action will remove the premium from any contribution pages that currently offer it. However it will not delete the premium record - so you can re-enable it and add it back to your contribution page(s) at a later time.');
+          $ret['content'] = ts('Are you sure you want to disable this premium? This action will remove the premium from any contribution pages that currently offer it. However it will not delete the premium record - so you can re-enable it and add it back to your contribution page(s) at a later time.');
+          break;
+
+        case 'CRM_Contact_BAO_Relationship':
+          $ret['content'] = ts('Are you sure you want to disable this relationship?');
           break;
 
         case 'CRM_Contact_BAO_RelationshipType':
-          $status = ts('Are you sure you want to disable this relationship type?') . '<br/><br/>' . ts('Users will no longer be able to select this value when adding or editing relationships between contacts.');
+          $ret['content'] = ts('Are you sure you want to disable this relationship type?') . '<br/><br/>' . ts('Users will no longer be able to select this value when adding or editing relationships between contacts.');
           break;
 
         case 'CRM_Financial_BAO_FinancialType':
-          $status = ts('Are you sure you want to disable this financial type?');
+          $ret['content'] = ts('Are you sure you want to disable this financial type?');
           break;
 
         case 'CRM_Financial_BAO_FinancialAccount':
           if (!CRM_Financial_BAO_FinancialAccount::getARAccounts($recordID)) {
-            $show   = 'noButton';
-            $status = ts('The selected financial account cannot be disabled because at least one Accounts Receivable type account is required (to ensure that accounting transactions are in balance).');
+            $ret['illegal'] = TRUE;
+            $ret['content'] = ts('The selected financial account cannot be disabled because at least one Accounts Receivable type account is required (to ensure that accounting transactions are in balance).');
           }
           else {
-            $status = ts('Are you sure you want to disable this financial account?');
+            $ret['content'] = ts('Are you sure you want to disable this financial account?');
           }
           break;
 
         case 'CRM_Financial_BAO_PaymentProcessor':
-          $status = ts('Are you sure you want to disable this payment processor?') . ' <br/><br/>' . ts('Users will no longer be able to select this value when adding or editing transaction pages.');
+          $ret['content'] = ts('Are you sure you want to disable this payment processor?') . ' <br/><br/>' . ts('Users will no longer be able to select this value when adding or editing transaction pages.');
           break;
 
         case 'CRM_Financial_BAO_PaymentProcessorType':
-          $status = ts('Are you sure you want to disable this payment processor type?');
+          $ret['content'] = ts('Are you sure you want to disable this payment processor type?');
           break;
 
         case 'CRM_Core_BAO_LocationType':
-          $status = ts('Are you sure you want to disable this location type?') . ' <br/><br/>' . ts('Users will no longer be able to select this value when adding or editing contact locations.');
+          $ret['content'] = ts('Are you sure you want to disable this location type?') . ' <br/><br/>' . ts('Users will no longer be able to select this value when adding or editing contact locations.');
           break;
 
         case 'CRM_Event_BAO_ParticipantStatusType':
-          $status = ts('Are you sure you want to disable this Participant Status?') . '<br/><br/> ' . ts('Users will no longer be able to select this value when adding or editing Participant Status.');
+          $ret['content'] = ts('Are you sure you want to disable this Participant Status?') . '<br/><br/> ' . ts('Users will no longer be able to select this value when adding or editing Participant Status.');
           break;
 
         case 'CRM_Mailing_BAO_Component':
-          $status = ts('Are you sure you want to disable this component?');
+          $ret['content'] = ts('Are you sure you want to disable this component?');
           break;
 
         case 'CRM_Core_BAO_CustomField':
-          $status = ts('Are you sure you want to disable this custom data field?');
+          $ret['content'] = ts('Are you sure you want to disable this custom data field?');
           break;
 
         case 'CRM_Core_BAO_CustomGroup':
-          $status = ts('Are you sure you want to disable this custom data group? Any profile fields that are linked to custom fields of this group will be disabled.');
+          $ret['content'] = ts('Are you sure you want to disable this custom data group? Any profile fields that are linked to custom fields of this group will be disabled.');
           break;
 
         case 'CRM_Core_BAO_MessageTemplate':
-          $status = ts('Are you sure you want to disable this message tempate?');
+          $ret['content'] = ts('Are you sure you want to disable this message tempate?');
           break;
 
         case 'CRM_ACL_BAO_ACL':
-          $status = ts('Are you sure you want to disable this ACL?');
+          $ret['content'] = ts('Are you sure you want to disable this ACL?');
           break;
 
         case 'CRM_ACL_BAO_EntityRole':
-          $status = ts('Are you sure you want to disable this ACL Role Assignment?');
+          $ret['content'] = ts('Are you sure you want to disable this ACL Role Assignment?');
           break;
 
         case 'CRM_Member_BAO_MembershipType':
-          $status = ts('Are you sure you want to disable this membership type?');
+          $ret['content'] = ts('Are you sure you want to disable this membership type?');
           break;
 
         case 'CRM_Member_BAO_MembershipStatus':
-          $status = ts('Are you sure you want to disable this membership status rule?');
+          $ret['content'] = ts('Are you sure you want to disable this membership status rule?');
           break;
 
         case 'CRM_Price_BAO_PriceField':
-          $status = ts('Are you sure you want to disable this price field?');
+          $ret['content'] = ts('Are you sure you want to disable this price field?');
           break;
 
         case 'CRM_Contact_BAO_Group':
-          $status = ts('Are you sure you want to disable this Group?');
+          $ret['content'] = ts('Are you sure you want to disable this Group?');
           break;
 
         case 'CRM_Core_BAO_OptionGroup':
-          $status = ts('Are you sure you want to disable this Option?');
+          $ret['content'] = ts('Are you sure you want to disable this Option?');
           break;
 
         case 'CRM_Contact_BAO_ContactType':
-          $status = ts('Are you sure you want to disable this Contact Type?');
+          $ret['content'] = ts('Are you sure you want to disable this Contact Type?');
           break;
 
         case 'CRM_Core_BAO_OptionValue':
-          require_once (str_replace('_', DIRECTORY_SEPARATOR, $recordBAO) . '.php');
           $label = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionValue', $recordID, 'label');
-          $status = ts('Are you sure you want to disable the \'%1\' option ?', array(1 => $label));
-          $status .= '<br /><br />' . ts('WARNING - Disabling an option which has been assigned to existing records will result in that option being cleared when the record is edited.');
+          $ret['content'] = ts('Are you sure you want to disable the \'%1\' option ?', array(1 => $label));
+          $ret['content'] .= '<br /><br />' . ts('WARNING - Disabling an option which has been assigned to existing records will result in that option being cleared when the record is edited.');
           break;
 
         case 'CRM_Contribute_BAO_ContributionRecur':
           $recurDetails = CRM_Contribute_BAO_ContributionRecur::getSubscriptionDetails($recordID);
-          $status = ts('Are you sure you want to mark this recurring contribution as cancelled?');
-          $status .= '<br /><br /><strong>' . ts('WARNING - This action sets the CiviCRM recurring contribution status to Cancelled, but does NOT send a cancellation request to the payment processor. You will need to ensure that this recurring payment (subscription) is cancelled by the payment processor.') . '</strong>';
+          $ret['content'] = ts('Are you sure you want to mark this recurring contribution as cancelled?');
+          $ret['content'] .= '<br /><br /><strong>' . ts('WARNING - This action sets the CiviCRM recurring contribution status to Cancelled, but does NOT send a cancellation request to the payment processor. You will need to ensure that this recurring payment (subscription) is cancelled by the payment processor.') . '</strong>';
           if ($recurDetails->membership_id) {
-            $status .= '<br /><br /><strong>' . ts('This recurring contribution is linked to an auto-renew membership. If you cancel it, the associated membership will no longer renew automatically. However, the current membership status will not be affected.') . '</strong>';
-          }
-          break;
-
-        case 'CRM_Batch_BAO_Batch':
-          if ($op == 'close') {
-            $status = ts('Are you sure you want to close this batch?');
-          }
-          elseif ($op == 'open') {
-            $status = ts('Are you sure you want to reopen this batch?');
-          }
-          elseif ($op == 'delete') {
-            $status = ts('Are you sure you want to delete this batch?');
-          }
-          elseif ($op == 'remove') {
-            $status = ts('Are you sure you want to remove this financial transaction?');
-          }
-          elseif ($op == 'export') {
-            $status = ts('Are you sure you want to close and export this batch?');
-          }
-          else {
-            $status = ts('Are you sure you want to assign this financial transaction to the batch?');
+            $ret['content'] .= '<br /><br /><strong>' . ts('This recurring contribution is linked to an auto-renew membership. If you cancel it, the associated membership will no longer renew automatically. However, the current membership status will not be affected.') . '</strong>';
           }
           break;
 
         default:
-          $status = ts('Are you sure you want to disable this record?');
+          $ret['content'] = ts('Are you sure you want to disable this record?');
           break;
       }
     }
-    $statusMessage['status'] = $status;
-    $statusMessage['show'] = $show;
-
-    echo json_encode($statusMessage);
-    CRM_Utils_System::civiExit();
+    else {
+      $ret = array('status' => 'error', 'content' => 'Error: Unknown entity type.', 'illegal' => TRUE);
+    }
+    CRM_Core_Page_AJAX::returnJsonResponse($ret);
   }
 
-  static function getTagList() {
-    $name = CRM_Utils_Type::escape($_GET['name'], 'String');
-    $parentId = CRM_Utils_Type::escape($_GET['parentId'], 'Integer');
-
-    $isSearch = NULL;
-    if (isset($_GET['search'])) {
-      $isSearch = CRM_Utils_Type::escape($_GET['search'], 'Integer');
-    }
-
-    $tags = array();
-
-    // always add current search term as possible tag
-    // here we append :::value to determine if existing / new tag should be created
-    if (!$isSearch) {
-      $tags[] = array(
-        'name' => $name,
-        'id' => $name . ":::value",
-      );
-    }
-
-    $query = "SELECT id, name FROM civicrm_tag WHERE parent_id = {$parentId} and name LIKE '%{$name}%'";
-    $dao = CRM_Core_DAO::executeQuery($query);
-
-    while ($dao->fetch()) {
-      // make sure we return tag name entered by user only if it does not exists in db
-      if ($name == $dao->name) {
-        $tags = array();
-      }
-      // escape double quotes, which break results js
-      $tags[] = array('name' => addcslashes($dao->name, '"'),
-        'id' => $dao->id,
-      );
-    }
-
-    echo json_encode($tags);
-    CRM_Utils_System::civiExit();
-  }
-
-  static function mergeTagList() {
-    $name   = CRM_Utils_Type::escape($_GET['s'], 'String');
+  public static function mergeTagList() {
+    $name = CRM_Utils_Type::escape($_GET['term'], 'String');
     $fromId = CRM_Utils_Type::escape($_GET['fromId'], 'Integer');
-    $limit  = CRM_Utils_Type::escape($_GET['limit'], 'Integer');
+    $limit = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'search_autocomplete_count', NULL, 10);
 
     // build used-for clause to be used in main query
     $usedForTagA = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Tag', $fromId, 'used_for');
@@ -321,163 +276,57 @@ WHERE  t1.id <> {$fromId} AND
        ({$usedForClause})
 LIMIT $limit";
     $dao = CRM_Core_DAO::executeQuery($query);
+    $result = array();
 
     while ($dao->fetch()) {
-      $warning = 0;
+      $row = array(
+        'id' => $dao->id,
+        'text' => ($dao->parent ? "{$dao->parent} :: " : '') . $dao->name,
+      );
+      // Add warning about used_for types
       if (!empty($dao->used_for)) {
         $usedForTagB = explode(',', $dao->used_for);
         sort($usedForTagB);
         $usedForDiff = array_diff($usedForTagA, $usedForTagB);
         if (!empty($usedForDiff)) {
-          $warning = 1;
+          $row['warning'] = TRUE;
         }
       }
-      $tag = addcslashes($dao->name, '"') . "|{$dao->id}|{$warning}\n";
-      echo $tag = $dao->parent ? (addcslashes($dao->parent, '"') . ' :: ' . $tag) : $tag;
+      $result[] = $row;
     }
-    CRM_Utils_System::civiExit();
+    CRM_Utils_JSON::output($result);
   }
 
-  static function processTags() {
-    $skipTagCreate = $skipEntityAction = $entityId = NULL;
-    $action        = CRM_Utils_Type::escape($_POST['action'], 'String');
-    $parentId      = CRM_Utils_Type::escape($_POST['parentId'], 'Integer');
-    if ($_POST['entityId']) {
-      $entityId = CRM_Utils_Type::escape($_POST['entityId'], 'Integer');
+  /**
+   * Get a list of mappings.
+   *
+   * This appears to be only used by scheduled reminders.
+   */
+  static public function mappingList() {
+    if (empty($_GET['mappingID'])) {
+      CRM_Utils_JSON::output(array('status' => 'error', 'error_msg' => 'required params missing.'));
     }
 
-    $entityTable = CRM_Utils_Type::escape($_POST['entityTable'], 'String');
+    $selectionOptions = CRM_Core_BAO_ActionSchedule::getSelection1($_GET['mappingID'], $_GET['isLimit']);
 
-    if ($_POST['skipTagCreate']) {
-      $skipTagCreate = CRM_Utils_Type::escape($_POST['skipTagCreate'], 'Integer');
-    }
-
-    if ($_POST['skipEntityAction']) {
-      $skipEntityAction = CRM_Utils_Type::escape($_POST['skipEntityAction'], 'Integer');
-    }
-
-    // check if user has selected existing tag or is creating new tag
-    // this is done to allow numeric tags etc.
-    $tagValue = explode(':::', $_POST['tagID']);
-
-    $createNewTag = FALSE;
-    $tagID = $tagValue[0];
-    if (isset($tagValue[1]) && $tagValue[1] == 'value') {
-      $createNewTag = TRUE;
-    }
-
-    $tagInfo = array();
-    // if action is select
-    if ($action == 'select') {
-      // check the value of tagID
-      // if numeric that means existing tag
-      // else create new tag
-      if (!$skipTagCreate && $createNewTag) {
-        $params = array(
-          'name' => $tagID,
-          'parent_id' => $parentId,
+    $output = array(
+      'sel4' => array(),
+      'sel5' => array(),
+      'recipientMapping' => $selectionOptions['recipientMapping'],
+    );
+    foreach (array(4, 5) as $sel) {
+      foreach ($selectionOptions["sel$sel"] as $id => $name) {
+        $output["sel$sel"][] = array(
+          'value' => $name,
+          'key' => $id,
         );
-
-        $tagObject = CRM_Core_BAO_Tag::add($params, CRM_Core_DAO::$_nullArray);
-
-        $tagInfo = array(
-          'name' => $tagID,
-          'id' => $tagObject->id,
-          'action' => $action,
-        );
-        $tagID = $tagObject->id;
       }
-
-      if (!$skipEntityAction && $entityId) {
-        // save this tag to contact
-        $params = array(
-          'entity_table' => $entityTable,
-          'entity_id' => $entityId,
-          'tag_id' => $tagID,
-        );
-
-        CRM_Core_BAO_EntityTag::add($params);
-      }
-      // if action is delete
-    }
-    elseif ($action == 'delete') {
-      if (!is_numeric($tagID)) {
-        $tagID = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Tag', $tagID, 'id', 'name');
-      }
-      if (!$skipEntityAction && $entityId) {
-        // delete this tag entry for the entity
-        $params = array(
-          'entity_table' => $entityTable,
-          'entity_id' => $entityId,
-          'tag_id' => $tagID,
-        );
-
-        CRM_Core_BAO_EntityTag::del($params);
-      }
-      $tagInfo = array(
-        'id' => $tagID,
-        'action' => $action,
-      );
     }
 
-    echo json_encode($tagInfo);
-    CRM_Utils_System::civiExit();
+    CRM_Utils_JSON::output($output);
   }
 
-  function mappingList() {
-    $params = array('mappingID');
-    foreach ($params as $param) {
-      $$param = CRM_Utils_Array::value($param, $_POST);
-    }
-
-    if (!$mappingID) {
-      echo json_encode(array('error_msg' => 'required params missing.'));
-      CRM_Utils_System::civiExit();
-    }
-
-    $selectionOptions = CRM_Core_BAO_ActionSchedule::getSelection1($mappingID);
-    extract($selectionOptions);
-
-    $elements = array();
-    foreach ($sel4 as $id => $name) {
-      $elements[] = array(
-        'name' => $name,
-        'value' => $id,
-      );
-    }
-
-    echo json_encode($elements);
-    CRM_Utils_System::civiExit();
-  }
-
-  function mappingList1() {
-    $params = array('mappingID');
-    foreach ($params as $param) {
-      $$param = CRM_Utils_Array::value($param, $_POST);
-    }
-
-    if (!$mappingID) {
-      echo json_encode(array('error_msg' => 'required params missing.'));
-      CRM_Utils_System::civiExit();
-    }
-
-    $selectionOptions = CRM_Core_BAO_ActionSchedule::getSelection1($mappingID);
-    extract($selectionOptions);
-
-    $elements = array();
-    foreach ($sel5 as $id => $name) {
-      $elements['sel5'][] = array(
-        'name' => $name,
-        'value' => $id,
-      );
-    }
-    $elements['recipientMapping'] = $recipientMapping;
-
-    echo json_encode($elements);
-    CRM_Utils_System::civiExit();
-  }
-
-  static function mergeTags() {
+  public static function mergeTags() {
     $tagAId = CRM_Utils_Type::escape($_POST['fromId'], 'Integer');
     $tagBId = CRM_Utils_Type::escape($_POST['toId'], 'Integer');
 
@@ -491,44 +340,11 @@ LIMIT $limit";
       $result['tagB_used_for'] = implode(', ', $result['tagB_used_for']);
     }
 
-    echo json_encode($result);
-    CRM_Utils_System::civiExit();
+    $result['message'] = ts('"%1" has been merged with "%2". All records previously tagged "%1" are now tagged "%2".',
+      array(1 => $result['tagA'], 2 => $result['tagB'])
+    );
+
+    CRM_Utils_JSON::output($result);
   }
 
-  function recipient() {
-    $params = array('recipient');
-    foreach ($params as $param) {
-      $$param = CRM_Utils_Array::value($param, $_POST);
-    }
-
-    if (!$recipient) {
-      echo json_encode(array('error_msg' => 'required params missing.'));
-      CRM_Utils_System::civiExit();
-    }
-
-    switch ($recipient) {
-      case 'Participant Status':
-        $values = CRM_Event_PseudoConstant::participantStatus();
-        break;
-
-      case 'participant_role':
-        $values = CRM_Event_PseudoConstant::participantRole();
-        break;
-
-      default:
-        exit;
-    }
-
-    $elements = array();
-    foreach ($values as $id => $name) {
-      $elements[] = array(
-        'name' => $name,
-        'value' => $id,
-      );
-    }
-
-    echo json_encode($elements);
-    CRM_Utils_System::civiExit();
-  }
 }
-

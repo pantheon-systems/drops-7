@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -39,7 +39,7 @@
 
     {include file="CRM/Admin/Page/Extensions/About.tpl"}
 
-    {include file="CRM/common/enableDisable.tpl"}
+    {include file="CRM/common/enableDisableApi.tpl"}
     {include file="CRM/common/jsortable.tpl"}
 
     <div id="mainTabContainer" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
@@ -83,9 +83,9 @@
     {* Expand/Collapse *}
     {literal}
     <script type="text/javascript">
-      cj( function( ) {
-          cj('.collapsed').click( function( ) {
-              var currentObj = cj( this );
+      CRM.$(function($) {
+          $('.collapsed').click( function( ) {
+              var currentObj = $( this );
               if ( currentObj.hasClass( 'expanded') ) {
                   currentObj.removeClass( 'expanded' );
                   currentObj.parent( ).parent( ).next( ).hide( );
@@ -103,20 +103,14 @@
     {* Tab management *}
     <script type="text/javascript">
     var selectedTab  = 'summary';
-    var spinnerImage = '<img src="{$config->resourceBase}i/loading.gif" style="width:10px;height:10px"/>';
     {if $selectedChild}selectedTab = "{$selectedChild}";{/if}
 
     {literal}
 
-    //explicitly stop spinner
-    function stopSpinner( ) {
-      cj('li.crm-tab-button').each(function(){ cj(this).find('span').text(' ');})
-    }
-
-    cj( function() {
-      var tabIndex = cj('#tab_' + selectedTab).prevAll().length;
-      cj("#mainTabContainer").tabs({ selected: tabIndex, spinner: spinnerImage, cache: true, load: stopSpinner});
-      cj(".crm-tab-button").addClass("ui-corner-bottom");
+    CRM.$(function($) {
+      var tabIndex = $('#tab_' + selectedTab).prevAll().length;
+      $("#mainTabContainer").tabs({active: tabIndex});
+      $(".crm-tab-button").addClass("ui-corner-bottom");
     });
     {/literal}
     </script>
@@ -124,8 +118,8 @@
     {* Refresh buttons *}
     {literal}
     <script type="text/javascript">
-    cj(function() {
-      cj('.crm-extensions-refresh').click(function(event){
+    CRM.$(function($) {
+      $('.crm-extensions-refresh').click(function(event){
         event.stopPropagation();
         CRM.alert('', '{/literal}{ts escape="js"}Refreshing...{/ts}{literal}', 'crm-msg-loading', {expires: 0});
         CRM.api('Extension', 'refresh', {}, {

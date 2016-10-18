@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -27,17 +27,16 @@
 {literal}
 <script type="text/Javascript">
   function option_html_type(form) {
-    var html_type = document.getElementById("html_type");
-    var html_type_name = html_type.options[html_type.selectedIndex].value;
+    var html_type_name = cj('#html_type').val();
 
     if (html_type_name == "Text") {
-      document.getElementById("price-block").style.display="block";
-      document.getElementById("showoption").style.display="none";
+      cj("#price-block").show();
+      cj("#showoption").hide();
 
     }
     else {
-      document.getElementById("price-block").style.display="none";
-      document.getElementById("showoption").style.display="block";
+      cj("#price-block").hide();
+      cj("#showoption").show();
     }
 
     if (html_type_name == 'Radio' || html_type_name == 'CheckBox') {
@@ -51,16 +50,16 @@
     var radioOption, checkBoxOption;
 
     for (var i=1; i<=15; i++) {
-      radioOption = 'radio'+i;
-      checkBoxOption = 'checkbox'+i
+      radioOption = '#radio'+i;
+      checkBoxOption = '#checkbox'+i;
       if (html_type_name == 'Radio' || html_type_name == 'CheckBox' || html_type_name == 'Select') {
         if (html_type_name == "CheckBox") {
-          document.getElementById(checkBoxOption).style.display="block";
-          document.getElementById(radioOption).style.display="none";
+          cj(checkBoxOption).show();
+          cj(radioOption).hide();
         }
         else {
-          document.getElementById(radioOption).style.display="block";
-          document.getElementById(checkBoxOption).style.display="none";
+          cj(radioOption).show();
+          cj(checkBoxOption).hide();
         }
       }
     }
@@ -68,7 +67,6 @@
   }
 </script>
 {/literal}
-<h3>{if $action eq 1}{ts}Add Field{/ts}{elseif $action eq 2}{ts}Edit Field{/ts}{/if}</h3>
 <div class="crm-block crm-form-block crm-price-field-form-block">
   <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="top"}</div>
   <table class="form-layout">
@@ -92,7 +90,7 @@
   </table>
 
   <div class="spacer"></div>
-  <div id="price-block" {if $action eq 2 && $form.html_type.value.0 eq 'Text'} class="show-block" {else} class="hide-block" {/if}>
+  <div id="price-block" {if $action eq 2 && $form.html_type.value.0 eq 'Text'} class="show-block" {else} class="hiddenElement" {/if}>
     <table class="form-layout">
       <tr class="crm-price-field-form-block-price">
         <td class="label">{$form.price.label} <span class="crm-marker" title="{ts}This field is required.{/ts}">*</span></td>
@@ -132,7 +130,7 @@
 
 {if $action eq 1}
 {* Conditionally show table for setting up selection options - for field types = radio, checkbox or select *}
-  <div id='showoption' class="hide-block">{ include file="CRM/Price/Form/OptionFields.tpl"}</div>
+  <div id='showoption' class="hiddenElement">{ include file="CRM/Price/Form/OptionFields.tpl"}</div>
 {/if}
   <table class="form-layout">
     <tr id="optionsPerLine" class="crm-price-field-form-block-options_per_line">

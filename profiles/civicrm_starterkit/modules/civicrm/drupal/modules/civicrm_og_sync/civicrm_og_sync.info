@@ -1,10 +1,11 @@
 name = CiviCRM OG Sync
 description = Synchronize Organic Groups and CiviCRM Groups and ACL's. More information at: http://wiki.civicrm.org/confluence/display/CRMDOC/CiviCRM+vs.+Organic+Groups
-version = 4.4.7
+version = 4.6.22
+core = 7.x
+package = CiviCRM
+project = civicrm
+
 dependencies[] = civicrm
 dependencies[] = og
-package = CiviCRM
-core = 7.x
-php = 5.2
 
 files[] = civicrm_og_sync.module

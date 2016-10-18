@@ -245,8 +245,66 @@ function civicrm_engage_load_custom_data() {
   $xml_file = civicrm_engage_get_absolute_module_path() . '/CustomGroupData.xml';
   require_once 'CRM/Utils/Migrate/Import.php';
   $import = new CRM_Utils_Migrate_Import();
-
   $import->run($xml_file);
+
+  // The xml file sets up a field with a contact reference limited to the staff
+  // group (staff responsible). So, we have to make sure the staff group exists
+  // and if not create it and update the id number in the staff responsible
+  // field definition.
+  drupal_set_message("Creating staff group.");
+  return civicrm_engage_load_staff_group();
+}
+
+/**
+ * Create group that will be used to populate the responsible
+ * staff custom data field.
+ **/
+function civicrm_engage_load_staff_group() {
+  // Record the id of the group we create so we can ensure that the
+  // staff responsible contact reference field is restricted to the 
+  // right group.
+  $id = NULL;
+  try {
+    // Check if it exists already
+    $params = array('name' => 'staff');
+    $result = civicrm_api3('Group', 'Get', $params);
+    if($result['count'] > 0) {
+      // We already have the group in place.
+      drupal_set_message(t("Staff group already exists."));
+      $row = array_pop($result['values']);
+      $id = $row['id'];
+    }
+    else {
+      // Otherwise, we have to add it.
+      $params = array(
+        'name' => 'staff',
+        'title' => 'Staff',
+        'description' => 'Contacts in this group are used to populate the staff responsible field.',
+        'is_active' => 1,
+        'group_type' => '2',
+        'is_hidden' => '0',
+        'is_reserved' => '0'
+      );
+      $result = civicrm_api3('Group', 'create', $params);
+      drupal_set_message(t("Staff group created."));
+      $row = array_pop($result['values']);
+      $id = $row['id'];
+    }
+    if($id) {
+      $sql = "UPDATE civicrm_custom_field SET filter = 'action=lookup&group=%0' WHERE
+        name = 'staff_responsible' OR name = 'event_contact_person'";
+      $params = array(
+        0 => array($id, 'Integer')
+      );
+      CRM_Core_DAO::executeQuery($sql, $params);
+    }
+  }
+  catch (CiviCRM_API3_Exception $e) {
+    drupal_set_message(t("Failed to load staff group."));
+    drupal_set_message($e->getMessage());
+    return FALSE;
+  }
+  return TRUE;
 }
 
 function civicrm_engage_load_custom_voter_us_data() {

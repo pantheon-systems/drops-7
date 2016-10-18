@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.4                                                |
+ | CiviCRM version 4.6                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2013                                |
+ | Copyright CiviCRM LLC (c) 2004-2015                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -23,12 +23,12 @@
  | GNU Affero General Public License or the licensing of CiviCRM,     |
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
-*/
+ */
 
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2013
+ * @copyright CiviCRM LLC (c) 2004-2015
  * $Id$
  *
  */
@@ -40,13 +40,11 @@
 class CRM_Activity_Page_Tab extends CRM_Core_Page {
 
   /**
-   * Browse all activities for a particular contact
+   * Browse all activities for a particular contact.
    *
-   * @return none
-   *
-   * @access public
+   * @return void
    */
-  function browse() {
+  public function browse() {
     $this->assign('admin', FALSE);
     $this->assign('context', 'activity');
 
@@ -60,9 +58,10 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
     $controller->set('contactId', $this->_contactId);
     $controller->setEmbedded(TRUE);
     $controller->run();
+    $this->ajaxResponse['tabCount'] = CRM_Contact_BAO_Contact::getCountComponent('activity', $this->_contactId);
   }
 
-  function edit() {
+  public function edit() {
     // used for ajax tabs
     $context = CRM_Utils_Request::retrieve('context', 'String', $this);
     $this->assign('context', $context);
@@ -83,7 +82,6 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
       'Print PDF Letter',
       'name'
     );
-
 
     switch ($activityTypeId) {
       case $emailTypeValue:
@@ -122,10 +120,8 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
    * the contact and calls the appropriate type of page to view.
    *
    * @return void
-   * @access public
-   *
    */
-  function preProcess() {
+  public function preProcess() {
     $this->_contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $this, TRUE);
     $this->assign('contactId', $this->_contactId);
     //FIX ME: need to fix this conflict
@@ -133,9 +129,6 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
 
     // check logged in url permission
     CRM_Contact_Page_View::checkUserPermission($this);
-
-    // set page title
-    CRM_Contact_Page_View::setTitle($this->_contactId);
 
     $this->_action = CRM_Utils_Request::retrieve('action', 'String', $this, FALSE, 'browse');
     $this->assign('action', $this->_action);
@@ -151,7 +144,7 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
     $controller->run();
   }
 
-  function delete() {
+  public function delete() {
     $controller = new CRM_Core_Controller_Simple(
       'CRM_Activity_Form_Activity',
       ts('Activity Record'),
@@ -164,16 +157,14 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
   }
 
   /**
-   * perform actions and display for activities.
+   * Perform actions and display for activities.
    *
-   * @return none
-   *
-   * @access public
+   * @return void
    */
-  function run() {
-    $context   = CRM_Utils_Request::retrieve('context', 'String', $this);
+  public function run() {
+    $context = CRM_Utils_Request::retrieve('context', 'String', $this);
     $contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
-    $action    = CRM_Utils_Request::retrieve('action', 'String', $this);
+    $action = CRM_Utils_Request::retrieve('action', 'String', $this);
     $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
 
     //do check for view/edit operation.
@@ -195,8 +186,7 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
     }
 
     // route behaviour of contact/view/activity based on action defined
-    if ($this->_action &
-      (CRM_Core_Action::UPDATE | CRM_Core_Action::ADD | CRM_Core_Action::VIEW)
+    if ($this->_action & (CRM_Core_Action::UPDATE | CRM_Core_Action::ADD | CRM_Core_Action::VIEW)
     ) {
       $this->edit();
       $activityTypeId = CRM_Utils_Request::retrieve('atype', 'Positive', $this);
@@ -213,7 +203,9 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
       );
 
       if (in_array($activityTypeId, array(
-        $emailTypeValue, $letterTypeValue))) {
+        $emailTypeValue,
+        $letterTypeValue,
+      ))) {
         return;
       }
     }
@@ -226,5 +218,5 @@ class CRM_Activity_Page_Tab extends CRM_Core_Page {
 
     return parent::run();
   }
-}
 
+}
