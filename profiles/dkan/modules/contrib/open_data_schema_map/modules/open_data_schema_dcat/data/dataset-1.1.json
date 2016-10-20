@@ -1,0 +1,216 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "http://jsonschema.net",
+    "type": "object",
+    "title": "European Data Portal DKAN Schema",
+    "description": "European Data Portal DKAN Schema - Based on DCAT-AP Draft 5",
+    "title": "DCAT",
+    "properties": {
+      "@rdf:about": {
+        "id": "http://jsonschema.net/@rdf:about",
+        "type": "string",
+        "title": "rdf:about"
+      },
+      "dct:title": {
+        "id": "http://jsonschema.net/dct:title",
+        "type": "string",
+        "title": "title"
+      },
+      "dct:description": {
+        "id": "http://jsonschema.net/dct:description",
+        "type": "string",
+        "title": "description"
+      },
+      "dcat:keyword": {
+        "id": "http://jsonschema.net/dcat:keyword",
+        "type": "array",
+        "title": "dcat:keyword",
+        "items": {
+          "id": "http://jsonschema.net/tags/0",
+          "type": "object",
+          "title": "item",
+          "properties": {
+            "title": {
+              "id": "http://jsonschema.net/tags/0/title",
+              "type": "string",
+              "title": "title"
+            }
+          }
+        }
+      },
+      "dcat:theme": {
+        "id": "http://jsonschema.net/dcat:theme",
+        "type": "string",
+        "title": "theme"
+      },
+      "dct:identifier": {
+        "id": "http://jsonschema.net/dct:identifier",
+        "type": "string",
+        "title": "identifier"
+      },
+      "dct:issued": {
+        "id": "http://jsonschema.net/dct:issued",
+        "type": "string",
+        "title": "issued"
+      },
+      "dct:modified": {
+        "id": "http://jsonschema.net/dct:modified",
+        "type": "string",
+        "title": "modified"
+      },
+      "owl:versionInfo": {
+        "id": "http://jsonschema.net/owl:versionInfo",
+        "type": "string",
+        "title": "versionInfo"
+      },
+      "adms:versionNotes": {
+        "id": "http://jsonschema.net/adms:versionNotes",
+        "type": "string",
+        "title": "versionNotes"
+      },
+      "dct:language": {
+        "id": "http://jsonschema.net/dct:language",
+        "type": "array",
+        "title": "language",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dcat:landingPage": {
+        "id": "http://jsonschema.net/dcat:landingPage",
+        "type": "string",
+        "title": "landingPage"
+      },
+      "dct:accrualPeriodicity": {
+        "id": "http://jsonschema.net/dct:accrualPeriodicity",
+        "type": "string",
+        "title": "accrualPeriodicity"
+      },
+      "dct:conformsTo": {
+        "id": "http://jsonschema.net/dct:conformsTo",
+        "type": "array",
+        "title": "conformsTo",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dct:accessRights": {
+        "id": "http://jsonschema.net/dct:accessRights",
+        "type": "string",
+        "title": "accessRights"
+      },
+      "dct:provenance": {
+        "id": "http://jsonschema.net/dct:provenance",
+        "type": "string",
+        "title": "Provenance"
+      },
+      "dct:type": {
+        "id": "http://jsonschema.net/dct:type",
+        "type": "string",
+        "title": "Type"
+      },
+      "dct:hasVersion": {
+        "id": "http://jsonschema.net/dct:hasVersion",
+        "type": "array",
+        "title": "hasVersion",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dct:isVersionOf": {
+        "id": "http://jsonschema.net/dct:isVersionOf",
+        "type": "array",
+        "title": "VersionOf",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dct:source": {
+        "id": "http://jsonschema.net/dct:source",
+        "type": "array",
+        "title": "Source",
+        "items": {
+          "type": "string"
+        }
+      },
+      "adms:sample": {
+        "id": "http://jsonschema.net/adms:sample",
+        "type": "array",
+        "title": "Sample",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dct:spatial": {
+        "id": "http://jsonschema.net/dct:spatial",
+        "type": "string",
+        "title": "Spatial"
+      },
+      "dct:temporal": {
+        "id": "http://jsonschema.net/dct:temporal",
+        "title": "Temporal",
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "id": "http://jsonschema.net/dct:temporal/0",
+              "type": "object",
+              "title": "item",
+              "properties": {
+                "schema:startDate": {
+                  "id": "http://jsonschema.net/dct:temporal/0/startDate",
+                  "type": "string",
+                  "title": "start Date"
+                },
+                "schema:endDate": {
+                  "id": "http://jsonschema.net/dct:temporal/0/endDate",
+                  "type": "string",
+                  "title": "End Date"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "dct:publisher": {
+        "id": "http://jsonschema.net/dct:publisher",
+        "type": "string",
+        "title": "Publisher"
+      },
+      "dcat:contactPoint": {
+        "title": "ContactPoint",
+        "anyOf": [
+          {
+            "type": "array",
+            "id": "http://jsonschema.net/dcat:contactPoint",
+            "items": {
+              "$ref": "vcard.json",
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        ]
+      },
+      "dcat:Distribution": {
+        "title": "Distribution",
+        "description": "A container for the array of Distribution objects",
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "$ref": "distribution.json",
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "string",
+            "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
+          }
+        ]
+      }
+    }
+  }

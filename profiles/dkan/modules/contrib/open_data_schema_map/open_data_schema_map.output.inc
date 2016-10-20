@@ -18,6 +18,19 @@ function open_data_schema_map_form_output_formats() {
 }
 
 /**
+ * Returns a full, single output format array
+ */
+function open_data_schema_map_output_format_load($name) {
+  $output_formats = open_data_schema_map_retrieve_output_formats();
+  if (in_array($name, array_keys($output_formats))) {
+    return $output_formats[$name];
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
  * Returns list of formats off hook_odsm_output_format implementations.
  */
 function open_data_schema_map_retrieve_output_formats() {
@@ -58,7 +71,6 @@ function open_data_schema_map_odsm_output_format() {
  * Default json output.
  */
 function open_data_schema_map_json_output($api, $results) {
-  drupal_add_http_header('Content-Type', 'application/json');
   return drupal_json_encode($results);
 }
 
@@ -67,7 +79,6 @@ function open_data_schema_map_json_output($api, $results) {
  */
 function open_data_schema_map_json_pretty_output($api, $results) {
   // We are returning JSON, so tell the browser.
-  drupal_add_http_header('Content-Type', 'application/json');
 
   if (isset($results)) {
     // The PHP version cannot change within a request.

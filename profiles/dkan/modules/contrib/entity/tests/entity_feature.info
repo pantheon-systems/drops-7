@@ -6,7 +6,7 @@ files[] = entity_feature.module
 dependencies[] = entity_test
 hidden = TRUE
 
-; Information added by drush on 2016-03-17
+; Information added by drush on 2016-09-28
 version = "7.x-1.7"
 project = "entity"
-datestamp = "1458234169"
+datestamp = "1475068387"

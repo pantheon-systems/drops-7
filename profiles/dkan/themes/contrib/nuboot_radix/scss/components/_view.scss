@@ -97,6 +97,9 @@
     .btn-primary {
       margin: 0 auto 1.5em;
     }
+    .field-name-field-image {
+      text-align: center;
+    }
   }
 }
 .view-groups-page {
@@ -109,6 +112,9 @@
 .view-group-block {
   .views-field-title {
     font-size:1.2em;
+  }
+  .views-field-field-image {
+    text-align: center;
   }
   .views-field-nid a {
     background: $brand-primary;

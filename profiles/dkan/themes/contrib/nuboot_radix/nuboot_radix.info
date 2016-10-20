@@ -2,6 +2,7 @@ name        = NuBoot Radix
 description = A Radix based subtheme built for DKAN.
 screenshot  = screenshot.png
 core        = 7.x
+version     = 7.x-1.12.x
 
 ; Base - Radix
 base theme  = radix

@@ -37,12 +37,10 @@ function open_data_schema_map_file_cache_endpoint($machine_name) {
     drush_log('Beginning processing for endpoint (this could take a while)', 'success');
     $render = open_data_schema_map_render_api($api);
     $result = $render['result'];
-    $output_formats = open_data_schema_map_retrieve_output_formats();
-    if (in_array($api->outputformat, array_keys($output_formats))) {
-      // Not ready for this. We need to do some refactoring on output formats.
-      // $function = $output_formats[$api->outputformat];
-      // $response = $function($api, $result);
-      $response = drupal_json_encode($result);
+
+    // Load the correct output format, render results, and write to a file.
+    if ($output_format = open_data_schema_map_output_format_load($api->outputformat)) {
+      $response = $output_format['callback']($api, $result);
       drush_log('Saving ' . $filename, 'success');
       file_save_data($response, $filename, FILE_EXISTS_REPLACE);
       drush_log($filename . ' saved', 'success');

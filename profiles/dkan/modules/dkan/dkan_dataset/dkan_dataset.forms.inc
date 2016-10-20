@@ -185,7 +185,8 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     }
     else {
       $form['actions']['submit']['#value'] = t('Finish');
-      $form['#action'] = url('node/add/dataset');
+      // This is here for AJAX compatibililty but causing other problems; commenting out for now
+      // $form['#action'] = url('node/add/dataset');
     }
   }
   if ($form_id == 'resource_node_form') {
@@ -263,6 +264,9 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     }
     else {
       $form['#action'] = url('node/add/resource');
+      if (drupal_match_path(current_path(), 'node/*/edit')) {
+          $form['#action'] = url('node/' . $form['#node']->nid . '/edit');
+       }    
     }
     if (variable_get('dkan_dataset_form_additional_info', 1 )) {
       if (isset($query['dataset']) || (isset($form_state['input']['field_dataset_ref']['und'][0]))) {
