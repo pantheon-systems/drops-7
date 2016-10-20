@@ -28,7 +28,7 @@ function manualcrop_requirements($phase) {
         $requirements[$name] = array(
           'title' => $info['name'],
           'value' => $t('Not installed'),
-          'description' => $t('Download and copy the <a href="@link">@name</a> library to %path.', array(
+          'description' => $info['error message'] . '<br />' . $t('Download and copy the <a href="@link">@name</a> library to %path.', array(
             '@link' => $info['vendor url'],
             '@name' => $info['name'],
             '%path' => 'sites/all/libraries/' . $name,

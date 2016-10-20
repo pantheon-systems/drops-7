@@ -419,34 +419,37 @@ function open_data_schema_map_add_type(&$values, $mapping) {
 }
 
 /**
- * Creates endpoint.
+ * Main endpoint callback
  */
 function open_data_schema_map_endpoint($api) {
+  // Start by setting the content type header based on the API settings
+  if ($output_format = open_data_schema_map_output_format_load($api->outputformat)) {
+    foreach($output_format['headers'] as $key => $value) {
+      drupal_add_http_header($key, $value);
+    }
+  }
+
+  // Check if a file cache exists, and simply return this if it does
   if (open_data_schema_map_file_cache_exits($api)) {
-    // This will only work for data.json (for now).
     $filename = open_data_schema_map_file_cache_name_helper($api);
-    drupal_add_http_header('Content-Type', 'application/json');
     drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 3600));
     ob_clean();
     flush();
     readfile($filename);
   }
+
+  // If not, render the results and output with the appropriate formatter
   else {
     $render = open_data_schema_map_render_api($api);
     $headers = $render['headers'];
     $result = $render['result'];
 
-    foreach ($headers as $key => $value) {
-      drupal_add_http_header($key, $value);
-    }
-
-    $output_formats = open_data_schema_map_retrieve_output_formats();
-    if (in_array($api->outputformat, array_keys($output_formats))) {
-      $function = $output_formats[$api->outputformat]['callback'];
-      foreach ($output_formats[$api->outputformat]['headers'] as $header => $value) {
-        
-      }
+    if ($output_format = open_data_schema_map_output_format_load($api->outputformat)) {
+      $function = $output_format['callback'];
       $response = $function($api, $result);
+      foreach ($headers as $key => $value) {
+        drupal_add_http_header($key, $value);
+      }
       echo $response;
     }
     else {

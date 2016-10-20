@@ -104,24 +104,51 @@ function manualcrop_libraries_info() {
 
   $libraries['jquery.imagesloaded'] = array(
     'name' => 'imagesLoaded',
-    'vendor url' => 'http://desandro.github.io/imagesloaded',
+    'vendor url' => 'http://imagesloaded.desandro.com/',
+    'version callback' => 'imagesloaded_get_version',
     'version arguments' => array(
-      'file' => 'jquery.imagesloaded.js',
-      'pattern' => '# v([0-9\.]+)#',
-      'lines' => 5,
+      'pattern' => '#imagesLoaded.*v([0-9\.]+)#',
+      'lines' => 3,
       'cols' => 40,
     ),
-    'files' => array(
-      'js' => array(
-        'jquery.imagesloaded.min.js',
-      ),
-    ),
-    'variants' => array(
-      'source' => array(
+    'versions' => array(
+      '2.1.2' => array(
         'files' => array(
           'js' => array(
-            'jquery.imagesloaded.js',
+            'jquery.imagesloaded.min.js',
           ),
+        ),
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'jquery.imagesloaded.js',
+              ),
+            ),
+          ),
+        ),
+      ),
+      '3.1.5' => array(
+        'files' => array(
+          'js' => array(
+            'imagesloaded.pkgd.min.js',
+          ),
+        ),
+        'variants' => array(
+          'packaged' => array(
+            'files' => array(
+              'js' => array(
+                'imagesloaded.pkgd.js',
+              ),
+            ),
+          ),
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'imagesloaded.js',
+              ),
+            ),
+         ),
         ),
       ),
     ),
@@ -131,17 +158,21 @@ function manualcrop_libraries_info() {
     'name' => 'imgAreaSelect',
     'vendor url' => 'http://odyniec.net/projects/imgareaselect',
     'version arguments' => array(
-      'file' => 'scripts/jquery.imgareaselect.js',
-      'pattern' => '#version ([0-9\.]+)#',
-      'lines' => 10,
-      'cols' => 20,
+      'file' => 'imgareaselect.jquery.json',
+      'pattern' => '#"version"[\t ]*:[\t ]*"([^"]+)"#',
+      'lines' => 6,
+      'cols' => 30,
     ),
-    'files' => array(
-      'js' => array(
-        'scripts/jquery.imgareaselect.min.js',
-      ),
-      'css' => array(
-        'css/imgareaselect-animated.css',
+    'versions' => array(
+      '0.9.11-rc.1' => array(
+        'files' => array(
+          'js' => array(
+            'jquery.imgareaselect.dev.js',
+          ),
+          'css' => array(
+            'distfiles/css/imgareaselect-animated.css',
+          ),
+        ),
       ),
     ),
     'variants' => array(
@@ -169,6 +200,41 @@ function manualcrop_libraries_info() {
   );
 
   return $libraries;
+}
+
+/**
+ * Custom function to get imagesLoaded library version.
+ */
+function imagesloaded_get_version($library, $options) {
+  // Provide defaults.
+  $options += array(
+    'pattern' => '',
+    'lines' => 20,
+    'cols' => 200,
+  );
+
+  // Get list of possible filenames.
+  $filenames = array(
+    'jquery.imagesloaded.js',
+    'imagesloaded.pkgd.min.js',
+    'imagesloaded.pkgd.js',
+    'imagesloaded.js',
+  );
+
+  foreach ($filenames as $filename) {
+    $file = DRUPAL_ROOT . '/' . $library['library path'] . '/' . $filename;
+    if (file_exists($file)) {
+      $file = fopen($file, 'r');
+      while ($options['lines'] && $line = fgets($file, $options['cols'])) {
+        if (preg_match($options['pattern'], $line, $version)) {
+          fclose($file);
+          return $version[1];
+        }
+        $options['lines']--;
+      }
+      fclose($file);
+    }
+  }
 }
 
 /**

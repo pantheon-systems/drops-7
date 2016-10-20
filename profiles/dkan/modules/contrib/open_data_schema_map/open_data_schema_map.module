@@ -117,6 +117,22 @@ function open_data_schema_map_menu() {
     'file' => 'open_data_schema_map.pages.inc',
   );
 
+  //Read validation implementation and add to menu.
+  foreach (module_implements('open_data_schema_map_validation') as $module) {
+    $data = module_invoke($module, 'open_data_schema_map_validation');
+    $path = 'admin/config/services/odsm/validate/' . $data['name'];
+
+    $items[$path] = array(
+      'title' => $data['title'],
+      'page callback' => $data['page callback'],
+      'page arguments' => array(),
+      'access arguments' => array('Administer Open Data Schema Mapper'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => $data['file'],
+      'file path' => $data['file path'],
+    );
+  }
+
   return $items;
 }
 
@@ -130,6 +146,30 @@ function open_data_schema_map_permission() {
       'description' => t('Make and update open data schema maps'),
       'restrict access' => TRUE,
     ));
+}
+
+
+/**
+ * Implements hook_libraries_info().
+ */
+function open_data_schema_map_libraries_info() {
+  $libraries['symfonyserializer'] = array(
+    'name' => 'Simfony Serializer',
+    'vendor url' => 'https://github.com/symfony/serializer',
+    'download url' => 'https://github.com/symfony/serializer/zipball/master',
+    'version' => 'master',
+    'files' => array(),
+  );
+
+  $libraries['json-schema'] = array(
+    'name' => 'Justinrainbow JSON-Schema',
+    'vendor url' => 'https://github.com/justinrainbow/json-schema.git',
+    'download url' => 'https://github.com/justinrainbow/json-schema/tree/master/src/JsonSchema',
+    'version' => 'master',
+    'files' => array(),
+  );
+
+  return $libraries;
 }
 
 /**
@@ -639,7 +679,7 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
       $form[$item] = array(
         '#title' => $data['title'],
         '#type' => 'fieldset',
-        '#description' => $data['description'],
+        '#description' => isset($data['description']) ? $data['description'] : '',
       );
       $form[$item]['odsm_entity_reference'] = array(
         '#title' => $item . ' Multivalue Field',
@@ -1083,4 +1123,91 @@ function open_data_schema_map_additional_fields_add($fields, $api) {
     $api->mapping['dkan_additional_fields'][$field_name]['type'] = 'array';
   }
   return $api;
+}
+
+ /*
+ * Adds node links to errors.
+ */
+function open_data_schema_validation_process_errors($rows) {
+  foreach ($rows as $key => $row) {
+    if (!isset($ids[$row['id']])) {
+      $nid = entity_get_id_by_uuid('node', array($row['id']));
+      $nid = $nid[$row['id']];
+      $node = node_load($nid);
+      $ids[$row['id']] = $node;
+    }
+    else {
+      $node = $ids[$row['id']];
+    }
+    $rows[$key]['title'] = l($node->title,'node/' . $node->nid);
+  }
+  return $rows;
+}
+
+/**
+ * Implements hook_tokens_alter().
+ */
+function open_data_schema_map_tokens_alter(array &$replacements, array $context) {
+  if (isset($replacements['[node:field-odfe-program-code]']) && !empty($context['data']['node']->field_odfe_program_code['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_odfe_program_code['und'] as $key => $item) {
+      $field[] = str_replace("-", ":", $item['value']);
+    }
+    $replacements['[node:field-odfe-program-code]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field_related_content]']) && isset($context['data']['node']->field_related_content['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_related_content['und'] as $key => $item) {
+      $field[] = $item['url'];
+    }
+    $replacements['[node:field_related_content]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field-frequency]']) && isset($context['data']['node']->field_frequency['und'])) {
+    $replacements['[node:field-frequency]'] = open_data_schema_map_accrual_iso_8601_value($replacements['[node:field-frequency]']);
+  }
+  if (isset($replacements['[node:field-data-dictionary]'])) {
+    $replacements['[node:field-data-dictionary]'] = check_url($context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value']);
+  }
+}
+
+/**
+ * Provides value for human readable name.
+ */
+function open_data_schema_map_accrual_iso_8601_value($name) {
+  if ($name == 'Annually') {
+    $name = 'Annual';
+  }
+  $iso = open_data_schema_map_accrual_iso_8601();
+  if (isset($iso[$name])) {
+    return $iso[$name];
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Provides iso 8601 accrual periodicity.
+ */
+function open_data_schema_map_accrual_iso_8601() {
+  return array(
+    'Decennial' => 'R/P10Y',
+    'Quadrennial' => 'R/P4Y',
+    'Annual' => 'R/P1Y',
+    'Bimonthly' => 'R/P2M',
+    'Semiweekly' => 'R/P3.5D',
+    'Daily' => 'R/P1D',
+    'Biweekly' => 'R/P2W',
+    'Semiannual' => 'R/P6M',
+    'Biennial' => 'R/P2Y',
+    'Triennial' => 'R/P3Y',
+    'Three times a week' => 'R/P0.33W',
+    'Three times a month' => 'R/P0.33M',
+    'Continuously updated' => 'R/PT1S',
+    'Monthly' => 'R/P1M',
+    'Quarterly' => ' R/P3M',
+    'Semimonthly' => 'R/P0.5M',
+    'Three times a year' => 'R/P4M',
+    'Weekly' => 'R/P1W',
+  );
 }

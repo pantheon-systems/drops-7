@@ -176,7 +176,7 @@ function recline_field_widget_form(&$form, &$form_state, $field, $instance, $lan
     }
     // If file is already uploaded, but removed.
     elseif (isset($element['#entity']->{$element['#field_name']}) && $element['#entity']->{$element['#field_name']}) {
-      $default_value = $element['#entity']->{$element['#field_name']}[$element['#language']][$delta][$view];
+      $default_value = isset($element['#entity']->{$element['#field_name']}[$element['#language']][$delta][$view]) ? $element['#entity']->{$element['#field_name']}[$element['#language']][$delta][$view] : '';
     }
     // If selections are made, then file is uploaded.
     elseif (isset($elements[$delta]['#default_value']['view'][$view])) {
@@ -413,6 +413,14 @@ function theme_recline_default_formatter($variables) {
  */
 function recline_default_formatter_output($variables) {
   $file = $variables['item'];
+
+  //Fix problem with missing information on file object.
+  if (!isset($file['uri']) && $file['fid']) {
+    $file_info = file_load($file['fid']);
+    $file_info = (array)$file_info;
+    $file = array_replace($file, $file_info);
+  }
+
   $url = file_create_url($file['uri']);
   $icon = '';
 
@@ -496,10 +504,10 @@ function recline_default_formatter_output($variables) {
     $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
     $file_path = isset($variables['item']['uri']) ? file_create_url($variables['item']['uri']) : '';
     $delimiter = isset($variables['item']['delimiter']) ? $variables['item']['delimiter'] : ',';
-    $real_path = drupal_realpath($variables['item']['uri']);
+    $real_path = drupal_realpath($file['uri']);
     $settings['recline'] = array(
       'file' => $file_path,
-      'fileType' => $variables['item']['filemime'],
+      'fileType' => $file['filemime'],
       'fileSize' => (file_exists($real_path)) ? filesize($real_path) : 0,
       'delimiter' => $delimiter,
       'uuid' => $uuid,

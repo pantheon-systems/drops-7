@@ -31,7 +31,7 @@ var fontyourfaceSampleMarkup = '';
 
       if (selector && selector.length > 0) {
 
-        var select = $('<select id="edit-css-select"><option value="">-- none --</option><option value="h1, h2, h3, h4, h5, h6">all headers (h1, h2, h3, h4, h5, h6)</option><option value="h1">h1</option><option value="h2">h2</option><option value="h3">h3</option><option value="p, div">standard text (p, div)</option><option value="body">everything (body)</option><option value="&lt;none&gt;">-- add selector in theme CSS --</option><option value="-- other --">other</option>')
+        var select = $('<select id="edit-css-select"><option value="">-- none --</option><option value="h1, h2, h3, h4, h5, h6">all headers (h1, h2, h3, h4, h5, h6)</option><option value="h1">h1</option><option value="h2">h2</option><option value="h3">h3</option><option value="p">standard text (p)</option><option value="body">everything (body)</option><option value="&lt;none&gt;">-- add selector in theme CSS --</option><option value="-- other --">other</option>')
           .change(fontyourfaceCssSelectChange)
           .insertBefore(input);
 

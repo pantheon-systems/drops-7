@@ -8,20 +8,18 @@
 require_once('podValidator.php');
 
 /**
- * Implements hook_menu().
+ * Implements hook_open_data_schema_map_validation().
  */
-function open_data_schema_pod_menu() {
-  $items['admin/config/services/odsm/validate/pod'] = array(
+function open_data_schema_pod_open_data_schema_map_validation() {
+  return array(
     'title' => 'Project Open Data validation',
+    'name' => 'pod',
     'page callback' => 'open_data_schema_pod_validation_page',
-    'page arguments' => array(),
-    'access arguments' => array('Administer Open Data Schema Mapper'),
-    'type' => MENU_NORMAL_ITEM,
     'file' => 'open_data_schema_pod.pages.inc',
+    'file path' => drupal_get_path('module', 'open_data_schema_pod'),
   );
-
-  return $items;
 }
+
 /**
  * Implements hook_open_data_schema().
  */
@@ -166,7 +164,7 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
         }
         if (isset($dataset['distribution'])) {
           foreach ($dataset['distribution'] as $num => $dist) {
-            if ($dist['format'] && !$dist['mediaType']) {
+            if ($dist['format'] && $dist['format'] != 'data' && !$dist['mediaType']) {
               include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
               $map = file_mimetype_mapping();
               $dataset['distribution'][$num]['mediaType'] = isset($map['mimetypes'][$map['extensions'][$dist['format']]]) ? $map['mimetypes'][$map['extensions'][$dist['format']]] : 'text/html';
@@ -325,71 +323,6 @@ function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$s
 }
 
 /**
- * Implements hook_tokens_alter().
- */
-function open_data_schema_pod_tokens_alter(array &$replacements, array $context) {
-  if (isset($replacements['[node:field-odfe-program-code]']) && !empty($context['data']['node']->field_odfe_program_code['und'])) {
-    $field = array();
-    foreach ($context['data']['node']->field_odfe_program_code['und'] as $key => $item) {
-      $field[] = str_replace("-", ":", $item['value']);
-    }
-    $replacements['[node:field-odfe-program-code]'] = implode(", ", $field);
-  }
-  if (isset($replacements['[node:field_related_content]']) && isset($context['data']['node']->field_related_content['und'])) {
-    $field = array();
-    foreach ($context['data']['node']->field_related_content['und'] as $key => $item) {
-      $field[] = $item['url'];
-    }
-    $replacements['[node:field_related_content]'] = implode(", ", $field);
-  }
-  if (isset($replacements['[node:field-frequency]']) && isset($context['data']['node']->field_frequency['und'])) {
-    $replacements['[node:field-frequency]'] = open_data_schema_pod_accrual_iso_8601_value($replacements['[node:field-frequency]']);
-  }
-}
-
-/**
- * Provides value for human readable name.
- */
-function open_data_schema_pod_accrual_iso_8601_value($name) {
-  if ($name == 'Annually') {
-    $name = 'Annual';
-  }
-  $iso = open_data_schema_pod_accrual_iso_8601();
-  if (isset($iso[$name])) {
-    return $iso[$name];
-  }
-  else {
-    return '';
-  }
-}
-
-/**
- * Provides iso 8601 accrual periodicity.
- */
-function open_data_schema_pod_accrual_iso_8601() {
-  return array(
-    'Decennial' => 'R/P10Y',
-    'Quadrennial' => 'R/P4Y',
-    'Annual' => 'R/P1Y',
-    'Bimonthly' => 'R/P2M',
-    'Semiweekly' => 'R/P3.5D',
-    'Daily' => 'R/P1D',
-    'Biweekly' => 'R/P2W',
-    'Semiannual' => 'R/P6M',
-    'Biennial' => 'R/P2Y',
-    'Triennial' => 'R/P3Y',
-    'Three times a week' => 'R/P0.33W',
-    'Three times a month' => 'R/P0.33M',
-    'Continuously updated' => 'R/PT1S',
-    'Monthly' => 'R/P1M',
-    'Quarterly' => ' R/P3M',
-    'Semimonthly' => 'R/P0.5M',
-    'Three times a year' => 'R/P4M',
-    'Weekly' => 'R/P1W',
-  );
-}
-
-/**
  * Validates individual datasets.
  */
 function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
@@ -409,7 +342,7 @@ function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
       foreach ($errors as $error) {
         $error_datasets[$error['id']] = 1;
       }
-      $errors = open_data_schema_pod_validation_process_errors($errors);
+      $errors = open_data_schema_validation_process_errors($errors);
     }
     $results = array(
       'errors' => $errors,
@@ -420,23 +353,4 @@ function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
     $cache = cache_set('pod_validate_result', $results, 'cache');
   }
   return $results;
-}
-
-/**
- * Adds node links to errors.
- */
-function open_data_schema_pod_validation_process_errors($rows) {
-  foreach ($rows as $key => $row) {
-    if (!isset($ids[$row['id']])) {
-      $nid = entity_get_id_by_uuid('node', array($row['id']));
-      $nid = $nid[$row['id']];
-      $node = node_load($nid);
-      $ids[$row['id']] = $node;
-    }
-    else {
-      $node = $ids[$row['id']];
-    }
-    $rows[$key]['title'] = l($node->title,'node/' . $node->nid);
-  }
-  return $rows;
 }

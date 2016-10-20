@@ -311,4 +311,8 @@ img {
   background-color: transparent;
   border: none;
   border-radius: 0;
-} 
+}
+
+.screenreader {
+  @extend %screenreader;
+}

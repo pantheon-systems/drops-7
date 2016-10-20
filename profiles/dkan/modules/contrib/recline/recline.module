@@ -191,14 +191,17 @@ function recline_libraries_info() {
         'css/map.css',
         'css/multiview.css',
         'css-site/pygments.css',
-        'vendor/bootstrap/3.2.0/css/bootstrap.css',
       ),
       'js' => array(
-        'vendor/bootstrap/3.2.0/js/bootstrap.js',
         'dist/recline.js',
       ),
     ),
   );
+
+  if(!is_boostrap_available()) {
+    $libraries['recline']['files']['js'][] = 'vendor/bootstrap/3.2.0/js/bootstrap.js';
+    $libraries['recline']['files']['css'][] = 'vendor/bootstrap/3.2.0/css/bootstrap.css';
+  }
 
   $libraries['lodash'] = array(
     'name' => 'lodash',
@@ -383,6 +386,28 @@ function recline_libraries_info() {
   );
 
   return $libraries;
+}
+
+/**
+ * Check if bootstrap is already added.
+ */
+function is_boostrap_available(){
+  global $theme;
+  $themes = list_themes();
+  $base_theme = drupal_find_base_themes($themes, $theme);
+
+  if($theme == 'nuboot_radix' || in_array('NuBoot Radix', $base_theme)) {
+    return TRUE;
+  } else {
+    $re = '/bootstrap(\\.min)?\\.js/';
+    $js = array_keys(drupal_add_js());
+    foreach ($js as $j) {
+      if(preg_match($re, $j)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
 }
 
 /**

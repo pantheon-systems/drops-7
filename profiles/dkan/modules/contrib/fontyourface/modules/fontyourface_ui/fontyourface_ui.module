@@ -859,7 +859,7 @@ function fontyourface_ui_apply_by_selector_form($form, &$form_state) {
     'h1' => 'h1',
     'h2' => 'h2',
     'h3' => 'h3',
-    'p, div' => t('standard text') . ' (p, div)',
+    'p' => t('standard text') . ' (p)',
     'body' => t('everything') . ' (body)',
   );
 

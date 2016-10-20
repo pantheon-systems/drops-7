@@ -332,7 +332,7 @@ li .heading:hover {
 .item-list .list-group li {
   margin:0;
 }
-.node-type-resource .item-list .list-group li {
+.node-type-resource .pane-dkan-dataset-dkan-dataset-resource-nodes .item-list .list-group li {
   margin: -1px;
 }
 .node-type-resource .list-group-item {
@@ -436,6 +436,10 @@ li .heading:hover {
   top: auto;
   right: auto;
 }
+.resource-list .count-resource {
+  font-size: 12px;
+  vertical-align: baseline;
+}
 .resource-list .label {
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
@@ -443,10 +447,10 @@ li .heading:hover {
   background-color: olive;
   color: white;
   display: inline;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
-  line-height: 14px;
-  margin: 0 0 0 5px;
+  line-height: 16px;
+  margin: -3px 5px 0;
   padding: 1px 4px 2px;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
   vertical-align: baseline;

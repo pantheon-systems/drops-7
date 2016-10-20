@@ -6,8 +6,22 @@
  */
 
 
-function open_data_schema_map_xml_output_update_7001() {
+/**
+ * Implements hook_install().
+ */
+function open_data_schema_map_xml_output_install() {
+  open_data_schema_map_xml_output_add_new_schema_fields();
+}
 
+
+/**
+ * Implements hook_update_N().
+ */
+function open_data_schema_map_xml_output_update_7001() {
+  open_data_schema_map_xml_output_add_new_schema_fields();
+}
+
+function open_data_schema_map_xml_output_add_new_schema_fields() {
   $column = array(
     'type' => 'varchar',
     'description' => "XML Root",

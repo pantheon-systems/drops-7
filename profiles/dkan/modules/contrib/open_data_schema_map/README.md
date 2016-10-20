@@ -1,15 +1,13 @@
-**DEPRECATED BRANCH**
-
-Please note that the master branch of this module, which was the default branch for the first two years of its life, has been abandonded in favor of the 7.x-1.x brach, as we move into a noral release cycle for it. No further commits will be made or merged to this branch. Please update any makefiles that point to it; future releases of DKAN will point to specific versions.
-
 [![Circle CI](https://circleci.com/gh/NuCivic/open_data_schema_map.svg?style=svg)](https://circleci.com/gh/NuCivic/open_data_schema_map)
 
 Open Data Schema Map
 ====================
 
-This module provides a flexible way to expose your Drupal content via APIs following specific Open Data schemas. Currently, the [CKAN](http://docs.ckan.org/en/ckan-1.8/domain-model-dataset.html) and [Project Open Data schemas](http://project-open-data.github.io/schema/) are provided, but new schemas can be easily added through your own modules. A user interface is in place to create endpoints and map fields from the chosen schema to Drupal content using tokens.
+This module provides a flexible way to expose your Drupal content via APIs following specific Open Data schemas. Currently, the [CKAN](http://docs.ckan.org/en/ckan-1.8/domain-model-dataset.html), [Project Open Data](http://project-open-data.github.io/schema/) and [DCAT-AP](https://joinup.ec.europa.eu/asset/dcat_application_profile/description) schemas are provided, but new schemas can be easily added through your own modules. A user interface is in place to create endpoints and map fields from the chosen schema to Drupal content using tokens.
 
-DKAN-specific implementation: https://github.com/NuCivic/open_data_schema_map_dkan
+This module was developed as part of the DKAN project, but will work on an Drupal 7 site. A [separate module exists for DKAN-specific implementation](https://github.com/NuCivic/open_data_schema_map_dkan).
+
+Note that serious performance issues can result if you do not follow recommendations in the [ODSM File Cache section](#the-odsm-file-cache).
 
 ## Basic concepts
 
@@ -54,19 +52,19 @@ The results of the API call can be filtered by a particular field via arguments 
 
 ### Field Mapping
 
-The API form presents you with a field for each field in your schema. Map the fields using Drupal's token system. Note: using more than one token in a single field may produce unexpected results and is not recommended. 
+The API form presents you with a field for each field in your schema. Map the fields using Drupal's token system. Note: using more than one token in a single field may produce unexpected results and is not recommended.
 
 #### Multi-value fields
 
 For Drupal multi-value entity reference fields, the schema can use an array to instruct the API to iterate over each value and map the referenced data to multiple schema fields. For instance, in the CKAN schema, tags are described like this in schema_ckan.json:
 
-```    
+```
       "tags": {
       "title":"Tags",
       "description":"",
       "anyOf": [
         {
-          "type": "array",                    
+          "type": "array",
           "items": {
             "type": "object",
             "properties": {
@@ -119,7 +117,7 @@ We've isolated xml output into its own module. A few reasons why:
 
 + It relies on a composer dependency
 + This module is distributed with dkan, a drupal installation profile, and we don't have a way of installing composer dependencies while building the distro with ```drush make```
-+ We don't want to force all this trouble on users that just want ***json output*** 
++ We don't want to force all this trouble on users that just want ***json output***
 
 Because of all this, if you still want to use xml output for your odsm endpoints (we don't judge), you need to:
 
@@ -143,40 +141,44 @@ If you need instructions to install composer globally in your system please refe
 Date formats can be chanaged manually by changing the "Medium" date time format in "admin/config/regional/date-time" or in code by using one of the alter hooks:
 ![screen shot 2014-09-04 at 11 15 01 am](https://cloud.githubusercontent.com/assets/512243/4152408/a9cb06b2-344e-11e4-84c8-c2174b5fc566.png)
 
-## Drush
+## A Note on XML Output
 
-### odsm-filecache
-#### Use:
-The Open Data Schema Map module now defines a drush command called `odsm-filecache`.  This command takes as  its argument the machine name for an ODSM endpoint.  For example:
+Open Data Schema Map provides an XML output format. This is provided via a separate submodule in the `modules/` folder for historical reasons, but should be refactored into the main ODSM module in a future release. 
+
+XML endpoints still require a _schema_ defined in JSON. Defining your own XML endpoint may be less than intuitive for the time beind, but take a look at the [DCAT schema module](https://github.com/NuCivic/open_data_schema_map/tree/master/modules/open_data_schema_dcat) for a model.
+
+## The ODSM File Cache
+
+Open Data Schema Map endpoints that list a large number of entities -- Project Open Data (`data.json`), the CKAN Package List (`/api/3/action/package_list`) and DCAT-AP Catalog (`catalog.xml`) -- perform a full entity load for each record listed in order to perform the token replacements. This can cause a major performance hit each time any of these URLs is hit on a site with more than a few dozen datasets, and on a site with thousands the response time can be two minutes or more.
+
+Open Data Schema Map includes a file caching function to save a snapshot of any endpoint as a static file to be served up quickly, with very few hits to the database. 
+
+File caches at present can only be generated by a Drush command. The recommended usage on a production website is to set up a cron job or use a task runner like [Jenkins](https://jenkins.io/) to regenerate the file caches for your performance-intensive endpoints daily, at whatever time your site experiences the least amount of traffic. The trade-off of course is that any additions or changes to your site will not be reflected on these endpoints until they are regenerated.
+
+An administrative UI to regenerate a file cache manually may be included in a future release.
+
+### Use
+
+The Drush command supplied by Open Data Schema Map is `odsm-filecache` (also available simply as the alias `odsmfc`).  This command takes as  its argument the machine name for an ODSM endpoint.  For example:
 
 ```
-drush odsm-filecache data_json_1_1;
+drush odsm-filecache data_json_1_1
 ```
 
-The above command triggers the processing for the endpoint defined for the data_json_1_1 ODSM API and results in the following cached file being generated on completion:
+This will render the full `data_json_1_1` endpoint (which is the `data.json` implementation that ships with DKAN) to the filesystem, saving it to:
 
 ```
 public://odsm_cache_data_json_1_1
 ```
 
-The command `odsm-filecache` is a direct callback to `open_data_schema_map_file_cache_endpoint` which wraps ` open_data_schema_map_render_api` with some logic for dumping output to a file. 
+Now a hit to `/data.json` will be routed to this file, which in most cases will actually live at `/sites/default/files/odsm_cache_data_json_1_1`.
 
-In order to enable the cached version of an API endpoint you need to run the command above replacing `data_json_1_1` with
-the machine  name of the ODSM endpoint to be cached.
+## Schema Validation
 
-In order to update this cache you need to re-run the command that generated it.
+Both the Project Open Data and DCAT-AP schemas ship with validation tools you can access from the Drupal admin menu. More documentation on this feature coming soon...
 
-We recommend you set up a cron job to run the command on a regular schedule, perhaps in sync with your data harvesting schedule.
+## Community
 
-## Contributing
+We are accepting issues for Open Data Schema Map in the [DKAN issue queue](https://github.com/NuCivic/dkan/issues) only. Please label your issue as **"Component: ODSM"** after submitting so we can identify problems and feature requests faster.
 
-We are accepting issues in the dkan issue thread only -> https://github.com/NuCivic/dkan/issues -> Please label your issue as **"component: open_data_schema_map"** after submitting so we can identify problems and feature requests faster.
-
-If you can, please cross-reference commits in this repo to the corresponding issue in the dkan issue thread. You can do that easily adding this text:
-
-```
-NuCivic/dkan#issue_id
-``` 
-
-to any commit message or comment replacing **issue_id** with the corresponding issue id.
-
+If submitting a pull request to this project, please try to link your PR to the corresponding  issue in the DKAN issue thread.
