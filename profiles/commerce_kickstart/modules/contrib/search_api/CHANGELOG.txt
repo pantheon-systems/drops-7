@@ -1,3 +1,12 @@
+Search API 1.20 (2016-07-21):
+-----------------------------
+- #2731103 by drunken monkey: Fixed the default value for the taxonomy term
+  filter "multiple" setting.
+- #1818572 by morningtime, drunken monkey, lodey, guillaumev: Added pretty
+  paths support to the Views facets block.
+- #2753441 by Johnny vd Laar: Fixed translated field names in
+  language-independent cache.
+
 Search API 1.19 (2016-07-05):
 -----------------------------
 - #2724687 by StefanPr, drunken monkey: Fixed failed sanitization of NULL field

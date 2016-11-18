@@ -36,9 +36,9 @@ files[] = includes/service.inc
 
 configure = admin/config/search/search_api
 
-; Information added by Drupal.org packaging script on 2016-07-05
-version = "7.x-1.19"
+; Information added by Drupal.org packaging script on 2016-07-21
+version = "7.x-1.20"
 core = "7.x"
 project = "search_api"
-datestamp = "1467710914"
+datestamp = "1469117342"
 

@@ -5,9 +5,8 @@ api = 2
 defaults[projects][subdir] = contrib
 
 ; Basic contributed modules.
-projects[ctools][version] = 1.9
-projects[ctools][patch][2528736] = "https://www.drupal.org/files/issues/deprecating_php4_style-2528736-23.patch"
-projects[entity][version] = 1.7
+projects[ctools][version] = 1.11
+projects[entity][version] = 1.8
 projects[entityreference][version] = 1.1
 projects[entityreference][patch][] = "http://drupal.org/files/1580348-universal-formatters-17.patch"
 projects[rules][version] = 2.9
@@ -51,7 +50,7 @@ projects[commerce_paypal][version] = 2.3
 projects[commerce_paypal][patch][2458721] = "https://www.drupal.org/files/issues/commerce_paypal-addressfield-default-values-2458721-1.patch"
 projects[commerce_backoffice][version] = 1.5
 projects[commerce_message][version] = 1.0-rc4
-projects[commerce_search_api][version] = 1.4
+projects[commerce_search_api][version] = 1.6
 projects[commerce_add_to_cart_confirmation][version] = 1.0-rc2
 projects[commerce_kiala][version] = 1.0-rc1
 ; projects[commerce_physical][version] = 1.x-dev
@@ -94,7 +93,7 @@ projects[mailsystem][patch][1534706] = "https://www.drupal.org/files/mailsystem.
 projects[mimemail][version] = 1.0-beta4
 projects[token][version] = 1.6
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
-projects[eva][version] = 1.2
+projects[eva][version] = 1.3
 projects[message][version] = 1.12
 projects[message_notify][version] = 2.5
 projects[migrate][version] = 2.8
@@ -103,14 +102,14 @@ projects[migrate_extras][patch][] = "http://drupal.org/files/migrate_extras-fix-
 projects[date][version] = 2.9
 projects[yottaa][version] = 1.2
 projects[menu_attributes][version] = 1.0
-projects[fences][version] = "1.2"
+projects[fences][version] = 1.2
 projects[title][version] = 1.0-alpha8
-projects[kameleoon][version] = "1.1"
-projects[mailup][version] = "1.1"
-projects[mailjet][version] = "2.5"
+projects[kameleoon][version] = 1.1
+projects[mailup][version] = 1.1
+projects[mailjet][version] = 2.5
 
 ; Search related modules.
-projects[search_api][version] = 1.19
+projects[search_api][version] = 1.20
 projects[search_api_db][version] = 1.5
 projects[search_api_ranges][version] = 1.5
 projects[search_api_ranges][patch][] = "https://drupal.org/files/issues/search_api_ranges-rewrite-data-alteration-callback-2001846-4.patch"
@@ -138,7 +137,7 @@ projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5
-projects[i18n][version] = "1.13"
+projects[i18n][version] = 1.13
 projects[lingotek][version] = 6.02
 
 ; Base theme.
@@ -179,7 +178,7 @@ libraries[selectnav.js][download][revision] = 538237c7c5e95736fc376f4efc3e40f5b9
 libraries[selectnav.js][download][branch] = master
 libraries[ie7-js][type] = "libraries"
 libraries[ie7-js][download][type] = "file"
-libraries[ie7-js][download][url] = "https://ie7-js.googlecode.com/files/ie7-2.1%28beta4%29.zip"
+libraries[ie7-js][download][url] = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/ie7-js/ie7-2.1(beta4).zip"
 libraries[chosen][type] = "libraries"
 libraries[chosen][download][type] = "get"
 libraries[chosen][download][url] = "https://github.com/harvesthq/chosen/releases/download/v1.1.0/chosen_v1.1.0.zip"

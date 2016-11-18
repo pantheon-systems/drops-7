@@ -3,7 +3,6 @@ description = Provides Search API commerce related enhancements.
 core = 7.x
 package = Commerce (contrib)
 configure = admin/commerce/config/commerce_search_api
-php = 5.2.4
 dependencies[] = commerce_product_reference
 dependencies[] = search_api
 files[] = includes/facetapi/filter_same_search.inc
@@ -12,9 +11,9 @@ files[] = includes/facetapi/widget_fancy_attributes.inc
 files[] = includes/commerce_search_api_product_display_filter.inc
 files[] = includes/callback_product_status.inc
 
-; Information added by Drupal.org packaging script on 2015-07-15
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2016-07-14
+version = "7.x-1.6"
 core = "7.x"
 project = "commerce_search_api"
-datestamp = "1436974444"
+datestamp = "1468517340"
 

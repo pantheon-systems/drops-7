@@ -247,6 +247,31 @@ class SearchApiViewsFacetsBlockDisplay extends views_plugin_display_block {
         ),
       );
 
+      // Override the $variables['#path'] if facetapi_pretty_paths is enabled.
+      if (module_exists('facetapi_pretty_paths')) {
+        // Get the appropriate facet adapter.
+        $adapter = facetapi_adapter_load('search_api@' . $index->machine_name);
+
+        // Get the URL processor and check if it uses pretty paths.
+        $urlProcessor = $adapter->getUrlProcessor();
+        if ($urlProcessor instanceof FacetapiUrlProcessorPrettyPaths) {
+          // Retrieve the pretty path alias from the URL processor.
+          $facet = facetapi_facet_load($facet_field, 'search_api@' . $index->machine_name);
+          $values = array(trim($term['filter'], '"'));
+
+          // Get the pretty path for the facet and remove the current search's
+          // base path from it.
+          $base_path_current = $urlProcessor->getBasePath();
+          $pretty_path = $urlProcessor->getFacetPath($facet, $values, FALSE);
+          $pretty_path = str_replace($base_path_current, '', $pretty_path);
+
+          // Set the new, pretty path for the facet and remove the "f" query
+          // parameter.
+          $variables['path'] = $variables['path'] . $pretty_path;
+          unset($variables['options']['query']['f']);
+        }
+      }
+
       // Themes the link, adds row to facets.
       $facets[] = array(
         'class' => array('leaf'),

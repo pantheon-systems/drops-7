@@ -8,9 +8,9 @@ dependencies[] = commerce_message
 dependencies[] = commerce_cart
 dependencies[] = ctools
 
-; Information added by Drupal.org packaging script on 2016-08-18
-version = "7.x-2.39"
+; Information added by Drupal.org packaging script on 2016-11-18
+version = "7.x-2.40"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1471524521"
+datestamp = "1479484018"
 
