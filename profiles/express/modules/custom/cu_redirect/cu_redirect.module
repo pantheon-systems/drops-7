@@ -201,6 +201,14 @@ function cu_redirect_redirect_presave($redirect) {
   if (strpos(current_path(), 'node') == 0) {
     $redirect->uid = 1;
   }
+
+  // Make new redirects have a count of one to avoid them being deleted.
+  // This avoids applying a patch to the redirect module.
+  // Explanation of bug: https://www.drupal.org/node/1396446
+  if ($redirect->is_new == TRUE) {
+    $redirect->count = 1;
+    $redirect->access = REQUEST_TIME;
+  }
 }
 
 

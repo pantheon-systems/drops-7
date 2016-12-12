@@ -93,8 +93,8 @@ function cu_social_links_field_default_field_bases() {
     'module' => 'list',
     'settings' => array(
       'allowed_values' => array(
-        'vertical' => 'Vertical',
-        'horizontal' => 'Horizontal',
+        'horizontal' => 'Horizontal: horizontal with text',
+        'vertical' => 'Vertical: vertical with text',
         'horizontal-icons-only' => 'Horizontal Icons Only',
       ),
       'allowed_values_function' => '',

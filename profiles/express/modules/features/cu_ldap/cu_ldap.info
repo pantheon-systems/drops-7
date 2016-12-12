@@ -15,4 +15,3 @@ features[ldap_servers][] = directory
 features[variable][] = ldap_authentication_conf
 features[variable][] = ldap_servers_encryption
 features[variable][] = ldap_servers_require_ssl_for_credentails
-required = 1

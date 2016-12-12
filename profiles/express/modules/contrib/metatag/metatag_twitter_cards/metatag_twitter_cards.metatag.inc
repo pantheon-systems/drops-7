@@ -367,7 +367,7 @@ function metatag_twitter_cards_metatag_info() {
   ) + $defaults;
   $info['tags']['twitter:app:id:googleplay'] = array(
     'label' => t('Google Play app ID'),
-    'description' => t("String value, and should be the numeric representation of your app's ID in Google Play."),
+    'description' => t("String value, and should be the domain hierarchy representation of your app's ID in Google Play."),
     'weight' => ++$weight,
     'element' => array(
       '#theme' => 'metatag_twitter_cards'

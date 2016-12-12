@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_install().
+ */
+function rave_alerts_install() {
+  // set sane defaults
+  variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
+  variable_set('rave_alerts_deafult_read_more_url', 'http://alerts.colorado.edu');
+  variable_set('rave_alerts_check_enable', 0);
+  variable_set('rave_alerts_display', 0);
+  variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rave_alerts_uninstall() {
+  variable_del('rave_alerts_rss_url');
+  variable_del('rave_alerts_deafult_read_more_url');
+  variable_del('rave_alerts_network_fail_message');
+  variable_del('rave_alerts_clear_text');
+  variable_del('rave_alerts_enable');
+  variable_del('rave_alerts_display');
+  variable_del('rave_alerts_pubdate');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function rave_alerts_schema() {
+  $schema['cache_rave_alerts'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}

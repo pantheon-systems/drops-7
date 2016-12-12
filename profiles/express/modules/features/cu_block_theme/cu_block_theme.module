@@ -1,0 +1,127 @@
+<?php
+/**
+ * @file
+ * Code for the Block Styles feature.
+ */
+
+include_once 'cu_block_theme.features.inc';
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will be used to alter the block bean creation/modification to add
+ *  a style selection.
+ */
+function cu_block_theme_form_bean_form_alter(&$form, &$form_state, $form_id) { 
+
+  $delta = $form['bean']['#value']->delta;
+
+  if(isset($delta)) {  
+    $form['module'] = array(
+      '#type' => 'hidden',
+      '#value' => 'bean',
+    );
+    $module = 'bean';
+    $form['delta'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['bean']['#value']->delta,
+    );
+
+    $var_name = $module . '-' . $delta;
+    $options = blocktheme_get_blockthemes();
+    $blocktheme = blocktheme_get();
+    $blocktheme_vars = blocktheme_get_vars();
+    $form['actions']['#weight'] = 200;
+    $form['settings']['#weight'] = -2;
+    $form['regions']['#weight'] = -1;
+    $form['custom_block_theme'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Theme'),
+      '#weight' => 100,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['custom_block_theme']['blocktheme'] = array(
+      '#type' => 'select',
+      '#title' => t('Custom theme'),
+      '#default_value' => isset($blocktheme[$var_name]) ? $blocktheme[$var_name] : '',
+      '#options' => $options,
+    );
+    $form['custom_block_theme']['blocktheme_vars'] = array(
+      '#type' => 'textarea',
+      '#default_value' => isset($blocktheme_vars[$var_name]) ? blocktheme_format_vars_admin($blocktheme_vars[$var_name]) : '',
+      '#title' => t('Custom block variables'),
+      '#description' => t('Enter one entry per line, in the format: <em>variable_name|variable_content</em>.'),
+      '#wysiwyg' => FALSE,
+      '#access' => FALSE,
+    );
+    $form['#submit'][] = 'blocktheme_update';
+    $form['custom_block_theme']['examples']['#markup'] = '<div id="blocktheme-examples">';
+    $form['custom_block_theme']['examples']['#markup'] .= _cu_block_theme_examples();
+    $form['custom_block_theme']['examples']['#markup'] .= '</div>';    
+  }
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+
+function cu_block_theme_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
+  drupal_add_css(drupal_get_path('theme', 'cu_omega') . '/css/menus.css');
+  drupal_add_css(drupal_get_path('module', 'cu_block_theme') . '/css/blockstyles.css');
+  //$form['custom_block_theme']['#description'] = 'Theme block styles will only work if your selected theme supports them.';
+  $form['custom_block_theme']['examples']['#markup'] = '<div id="blocktheme-examples">';
+  switch ($form_id) {
+    case 'block_admin_configure':
+      $form['custom_block_theme']['examples']['#markup'] .= _cu_block_theme_examples();
+      // TURNING OFF FOR UI REASONS
+      $form['custom_block_theme']['blocktheme_vars']['#access'] = FALSE;
+      $form['regions']['#access'] = FALSE;
+      $form['visibility_title']['#access'] = FALSE;
+      $form['visibility']['#access'] = FALSE;
+      
+      // COLLAPSING FOR BETTER UX
+      $form['custom_block_theme']['#collapsible'] = TRUE;
+      $form['custom_block_theme']['#collapsed'] = TRUE;
+    break;
+  }
+  
+  if( ($form['module']['#value'] == 'menu') || ($form['module']['#value'] == 'menu_block') || ($form['delta']['#value'] == 'main-menu') ) {
+
+  } else {
+    unset($form['custom_block_theme']['blocktheme']['#options']['blockstylesteps']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav1']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav2']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav3']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav4']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav5']);
+    unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav6']);
+  }
+  
+    $form['custom_block_theme']['examples']['#markup'] .= '</div>';
+}
+
+function _cu_block_theme_examples() {
+   $path = base_path() . drupal_get_path('module', 'cu_block_theme') . '/examples/';
+   $output = '<table cellspacing="0" cellpadding="10" border="0" class="block-style-examples">
+    <thead>
+      <td colspan="4"><strong>Block Style Examples</strong></td>
+    </thead>
+
+    <tr>
+      <td><div class="blockgray-example">Gray</div></td>
+      <td><div class="blockdarkgray-example">Dark Gray</div></td>
+      <td><div class="blockoutline-example">Outline</div></td>
+      <td><div class="blockunderline-example">Underline</div></td>
+    </tr>
+    </table><br />';
+    
+    return $output;
+}
+
+function cu_block_theme_page_alter(&$vars) {
+  //drupal_add_js(drupal_get_path('module', 'cu_block_theme') . '/cu_block_theme.js');
+  drupal_add_css(drupal_get_path('module', 'cu_block_theme') . '/css/cu_block_theme.css');
+}

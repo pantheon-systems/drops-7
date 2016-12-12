@@ -2,10 +2,109 @@
 
 /**
  * @file
- * Add icons to block titles.
- *
- * This uses font awesome.
+ * Main functions for block_title_icons module.
  */
+
+define('BLOCKTITLEICONS_LIBRARY', 'fontawesome');
+define('BLOCKTITLEICONS_NAME', 'Font Awesome');
+define('BLOCKTITLEICONS_URL', 'http://fontawesome.io');
+define('BLOCKTITLEICONS_ICONS_URL', 'scss/_icons.scss');
+define('BLOCKTITLEICONS_DOWNLOAD_URL', 'https://github.com/FortAwesome/Font-Awesome/archive/v4.6.3.zip');
+define('BLOCKTITLEICONS_PREFIX', 'fa');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function block_title_icons_libraries_info() {
+  $libraries[BLOCKTITLEICONS_LIBRARY] = array(
+    'name' => BLOCKTITLEICONS_NAME,
+    'vendor url' => BLOCKTITLEICONS_URL,
+    'download url' => BLOCKTITLEICONS_DOWNLOAD_URL,
+    'version arguments' => array(
+      'file' => 'css/font-awesome.css',
+      'pattern' => '/((?:\d+\.?){2,3})/',
+      'lines' => 10,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/font-awesome.min.css',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Return array of icons for option lists.
+ */
+function block_title_icons_icon_list($add_icon = TRUE) {
+  // Check to see if this is saved already.
+  $icons = variable_get('block_title_icons_list', array());
+  if (empty($icons)) {
+    // Load icon scss file.
+    $library = libraries_load(BLOCKTITLEICONS_LIBRARY);
+    $icons_file = file_get_contents($library['library path'] . '/' . BLOCKTITLEICONS_ICONS_URL);
+    $icons = array();
+    // Break each line into array.
+    $icons_styles = explode("\n", $icons_file);
+    // Use this to see if it's a line we want.
+    $icon_query = 'content: $fa-var-';
+    foreach ($icons_styles as $icon_style) {
+      // Check to see if line includes our query variable.
+      if (strpos($icon_style, $icon_query) !== FALSE) {
+        // Get the part out of the string that we want and add to array.
+        $icon_name = _block_title_icons_regex($icon_style);
+        $icons[] = $icon_name;
+      }
+    }
+    // Sort icons alphabetically.
+    asort($icons);
+    // Save icons array.
+    variable_set('block_title_icons_list', $icons);
+  }
+  $icon_names = array();
+  // Theme the option list.
+  foreach ($icons as $icon) {
+    if ($add_icon) {
+      // If type is radio, render icon as well.
+      $icon_names['fa-' . $icon] = theme('block_title_icons_option', array('icon' => $icon));
+    }
+    else {
+      // Otherwise just add name (for a select list).
+      $icon_names['fa-' . $icon] = $icon;
+    }
+  }
+  return $icon_names;
+}
+
+/**
+ * Parse and manipulate css rule to get icon name.
+ */
+function _block_title_icons_regex($string) {
+  $prefix = ' $fa-var-';
+  $parts = explode(':', $string);
+  return substr($parts[2], strlen($prefix), -3);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function block_title_icons_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $registry['block_title_icons_option'] = array(
+    'arguments' => array('icon' => NULL),
+  );
+
+  return $registry;
+}
+
+/**
+ * Theme function for icon options.
+ */
+function theme_block_title_icons_option($vars) {
+  return '<i class="fa fa-' . $vars['icon'] . '" aria-hidden="true"></i> ' . $vars['icon'];
+}
 
 /**
  * Implements hook_page_alter().
@@ -30,11 +129,13 @@ function block_title_icons_form_block_admin_configure_alter(&$form, &$form_state
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
+  $options = array('none' => 'none');
+  $options = array_merge($options, block_title_icons_icon_list());
   $form['block_title_icons']['block_title_icons_options'] = array(
     '#type' => 'radios',
     '#title' => '',
-    '#options' => cu_font_awesome_icon_list(),
-    '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : '',
+    '#options' => $options,
+    '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : 'none',
   );
   $form['#submit'][] = 'block_title_icons_update';
 }
@@ -50,7 +151,7 @@ function block_title_icons_form_bean_form_alter(&$form, &$form_state, $form_id) 
 
   $delta = $form['bean']['#value']->delta;
 
-  if(isset($delta)) {
+  if (isset($delta)) {
     $form['module'] = array(
       '#type' => 'hidden',
       '#value' => 'bean',
@@ -69,18 +170,17 @@ function block_title_icons_form_bean_form_alter(&$form, &$form_state, $form_id) 
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
+    $options = array('none' => 'none');
+    $options = array_merge($options, block_title_icons_icon_list());
     $form['block_title_icons']['block_title_icons_options'] = array(
       '#type' => 'radios',
       '#title' => '',
-      '#options' => cu_font_awesome_icon_list(),
-      '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : '',
+      '#options' => $options,
+      '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : 'none',
     );
     $form['#submit'][] = 'block_title_icons_update';
   }
 }
-
-
-
 
 
 /**
@@ -116,7 +216,7 @@ function block_title_icons_preprocess_block(&$variables) {
   if ($block_icon = block_title_icons_get_display($variables['block'])) {
     $elements = $variables['elements']['#block'];
     if (!empty($elements->subject)) {
-      $elements->subject = '<i class="blockicon fa ' . $block_icon  . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
+      $elements->subject = '<i class="blockicon fa ' . $block_icon . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
     }
   }
 }
@@ -142,4 +242,11 @@ function block_title_icons_get() {
     $icons_value = variable_get('block_title_icons', array());
   }
   return $icons_value;
+}
+
+/**
+ * Implements hook_init().
+ */
+function block_title_icons_init() {
+  $library = libraries_load(BLOCKTITLEICONS_LIBRARY);
 }

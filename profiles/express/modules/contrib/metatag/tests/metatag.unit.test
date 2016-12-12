@@ -46,7 +46,7 @@ class MetatagCoreUnitTest extends MetatagTestHelper {
       $this->assertMetatagEntitySupportsMetatags($test_case['type'], $test_case['bundle'], $test_case['expected']);
     }
 
-    // Enable meta tags for this new content type.
+    // Disable meta tags for these.
     metatag_entity_type_disable('node', 'page');
     metatag_entity_type_disable('user');
 

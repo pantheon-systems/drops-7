@@ -205,6 +205,47 @@ sup,',
           'video_filter_autoplay' => 0,
           'video_filter_related' => 0,
           'video_filter_html5' => 1,
+          'video_filter_codecs' => array(
+            'archive' => 'Archive.org',
+            'bliptv' => 'Blip.tv',
+            'candidcareer' => 'Candid Career',
+            'capped' => 'Capped',
+            'collegehumor' => 'College Humor',
+            'coub' => 'Coub',
+            'dailymotion' => 'DailyMotion',
+            'democracynow_fullshow' => 'DemocracyNow Fullshow',
+            'democracynow_story' => 'DemocracyNow Story',
+            'flickr_slideshows' => 'Flickr Slideshows',
+            'flickr_video' => 'Flickr Video',
+            'foxnews' => 'Fox News',
+            'gametrailers' => 'Game Trailers',
+            'gamevideos' => 'Game Videos',
+            'giphy' => 'Giphy',
+            'godtube' => 'GodTube',
+            'google' => 'Google Video',
+            'instagram' => 'Instagram',
+            'metacafe' => 'Meta Cafe',
+            'mailru' => 'Mail.Ru',
+            'myspace' => 'MySpace',
+            'myvideo' => 'MyVideo',
+            'picasa_slideshows' => 'Picasa Slideshows',
+            'rutube' => 'Rutube',
+            'slideshare' => 'Slideshare',
+            'streamhoster' => 'Streamhoster',
+            'teachertube' => 'Teachertube',
+            'ted' => 'TED',
+            'twitch' => 'Twitch',
+            'ustream' => 'Ustream',
+            'vbox' => 'Vbox7',
+            'vimeo' => 'Vimeo',
+            'vine' => 'Vine',
+            'whatchado' => 'whatchado',
+            'wistia' => 'Wistia',
+            'youku' => 'YouKu',
+            'youtube' => 'YouTube',
+            'youtube_playlist' => 'YouTube (Playlist)',
+          ),
+          'video_filter_multiple_sources' => TRUE,
         ),
       ),
       'shortcode' => array(
@@ -232,6 +273,8 @@ sup,',
           'sidebar' => 0,
           'tooltip' => 0,
           'tweet' => 0,
+          'close-margin' => 1,
+          'soundcloud' => 1,
         ),
       ),
       'ckeditor_link_filter' => array(
@@ -268,22 +311,19 @@ sup,',
 function _create_cu_pathologic_paths() {
   $cu_sid = variable_get('cu_sid', FALSE);
   $cu_path = variable_get('cu_path', FALSE);
-
   if ($cu_sid || $cu_path) {
-
     $paths = array();
-
     // Build hash paths
     if ($cu_sid) {
-        $paths[] = "/$cu_sid";
-        $paths[] = "http://www.colorado.edu/$cu_sid";
-        $paths[] = "https://www.colorado.edu/$cu_sid";
+      $paths[] = "/$cu_sid";
+      $paths[] = "http://www.colorado.edu/$cu_sid";
+      $paths[] = "https://www.colorado.edu/$cu_sid";
     }
     // Build real paths
     if ($cu_path) {
-        $paths[] = "/$cu_path";
-        $paths[] = "http://www.colorado.edu/$cu_path";
-        $paths[] = "https://www.colorado.edu/$cu_path";
+      $paths[] = "/$cu_path";
+      $paths[] = "http://www.colorado.edu/$cu_path";
+      $paths[] = "https://www.colorado.edu/$cu_path";
     }
     // Build pathologic settings on one path per line
     return $all_paths = join("\n", $paths);

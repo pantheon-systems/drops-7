@@ -5,16 +5,9 @@ core = 7.x
 
 configure = admin/config/system/module-manager
 
-; Information added by Drupal.org packaging script on 2015-11-19
-version = "7.x-1.x-dev"
+; Information added by Drupal.org packaging script on 2016-09-23
+version = "7.x-1.0"
 core = "7.x"
 project = "profile_module_manager"
-datestamp = "1447966745"
-
-
-; Information added by Drupal.org packaging script on 2016-08-30
-version = "7.x-1.0-beta1"
-core = "7.x"
-project = "profile_module_manager"
-datestamp = "1472530140"
+datestamp = "1474658640"
 

@@ -69,7 +69,7 @@ html {
   padding-bottom: 20px;
 }
 .node-view-mode-teaser-content {
-  overflow: auto;
+  overflow: hidden;
 }
 .node-view-mode-title a {
   display: block;
@@ -107,6 +107,7 @@ html {
 }
 .node-view-mode-sidebar-content {
   @include clearfloats;
+  overflow: hidden;
 }
 .node-view-mode-embed {
   margin-bottom:20px;

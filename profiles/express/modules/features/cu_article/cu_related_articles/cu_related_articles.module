@@ -1,0 +1,162 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_related_articles_block_info() {
+
+  $blocks['related_articles_block_grid'] = array(
+    'info' => t('Related Articles Grid'),
+  );
+  $blocks['related_articles_block_column'] = array(
+    'info' => t('Related Articles Column'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function cu_related_articles_block_view($delta = '') {
+  switch ($delta) {
+
+    case 'related_articles_block_grid':
+      $block = cu_related_articles_block_output('grid');
+      break;
+    case 'related_articles_block_column':
+      $block = cu_related_articles_block_output('sidebar');
+      break;
+  }
+  return $block;
+}
+
+function cu_related_articles_block_output($view_mode) {
+  $related_articles = array();
+  // Get current node
+  if (($node = menu_get_object()) && $node->type =='article') {
+    $current_nid = $node->nid;
+    // Get categories from current article
+    $categories = array();
+    if (!empty($node->field_article_categories[LANGUAGE_NONE])) {
+      foreach ($node->field_article_categories[LANGUAGE_NONE] as $category_term) {
+        $tid = $category_term['tid'];
+        $categories[$tid] = $tid;
+      }
+    }
+    // Get tags from current article
+    $tags = array();
+    if (!empty($node->field_tags[LANGUAGE_NONE])) {
+      foreach ($node->field_tags[LANGUAGE_NONE] as $tag_term) {
+        $tid = $tag_term['tid'];
+        $tags[$tid] = $tid;
+      }
+    }
+
+    // Start queries
+    // Categories + Tags = most related
+    // Just categories = second most related
+    // Just tags = third most related
+    // Query #1 - Categories AND Tags
+    if (!empty($categories) && !empty($tags)) {
+      $query = db_select('node', 'n');
+      $query->condition('n.type', 'article', '=');
+      $query->condition('n.status', 1, '=');
+      $query->fields('n', array('nid', 'title'));
+      // Don't include current article
+      $query->condition('n.nid', $current_nid, '!=');
+      // Query for categories
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $categories, 'in');
+      // Query for tags
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $tags, 'in');
+      // Get results
+      $results = $query->execute()->fetchCol();
+      // Count occurances of node id - more occurances = more related
+      $occurences = array_count_values($results);
+      // Sort by occurances
+      arsort($occurences);
+      // Add node ids to related articles array
+      foreach ($occurences as $key => $occurence) {
+        $related_articles[$key] = $key;
+      }
+    }
+
+    // Query #2 - Categories
+    if (!empty($categories)) {
+      $query = db_select('node', 'n');
+      $query->condition('n.type', 'article', '=');
+      $query->condition('n.status', 1, '=');
+      $query->fields('n', array('nid', 'title'));
+      // Don't include current article
+      $query->condition('n.nid', $current_nid, '!=');
+      // Query for categories
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $categories, 'in');
+      // Get results
+      $results = $query->execute()->fetchCol();
+      // Count occurances of node id - more occurances = more related
+      $occurences = array_count_values($results);
+      // Sort by occurances
+      arsort($occurences);
+      // Add node ids to related articles array
+      foreach ($occurences as $key => $occurence) {
+        $related_articles[$key] = $key;
+      }
+    }
+
+    // Query #3 - Tags
+    if (!empty($tags)) {
+      $query = db_select('node', 'n');
+      $query->condition('n.type', 'article', '=');
+      $query->condition('n.status', 1, '=');
+      $query->fields('n', array('nid', 'title'));
+      // Don't include current article
+      $query->condition('n.nid', $current_nid, '!=');
+      // Query for tags
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $tags, 'in');
+      // Get results
+      $results = $query->execute()->fetchCol();
+      // Count occurances of node id - more occurances = more related
+      $occurences = array_count_values($results);
+      // Sort by occurances
+      arsort($occurences);
+      // Add node ids to related articles array
+      foreach ($occurences as $key => $occurence) {
+        $related_articles[$key] = $key;
+      }
+    }
+    // If there are related articles, show the top 3.
+    if (!empty($related_articles)) {
+      $top_related = array_slice($related_articles, 0, 3, TRUE);
+      $nodes = node_load_multiple($top_related);
+
+      if ($view_mode == 'grid') {
+        foreach ($nodes as $key => $node) {
+          $nodes[$key]->heading_tag['#tag'] = 'h3';
+        }
+        $block['content']['articles'] = node_view_multiple($nodes, 'grid');
+        unset($block['content']['articles']['nodes']['#sorted']);
+        foreach($block['content']['articles']['nodes'] as $key => $node) {
+          $block['content']['articles']['nodes'][$key]['#prefix'] = '<div class="related-article col-lg-4 col-md-4 col-sm-4 col-xs-12">';
+          $block['content']['articles']['nodes'][$key]['#suffix'] = '</div>';
+        }
+        $block['content']['articles']['#prefix'] = '<div class="related-articles row">';
+      }
+      else {
+        $block['content']['articles'] = node_view_multiple($nodes, 'sidebar');
+        unset($block['content']['articles']['nodes']['#sorted']);
+        $block['content']['articles']['#prefix'] = '<div class="related-articles">';
+      }
+
+      $block['content']['articles']['#suffix'] = '</div>';
+      $block['subject'] = 'Related Articles';
+    }
+  }
+  return $block;
+}

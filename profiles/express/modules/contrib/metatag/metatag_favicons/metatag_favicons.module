@@ -21,6 +21,10 @@ function metatag_favicons_theme() {
     'render element' => 'element',
   );
 
+  $info['metatag_mask_icon'] = array(
+    'render element' => 'element',
+  );
+
   $info['metatag_shortcut_icon'] = array(
     'render element' => 'element',
   );
@@ -40,6 +44,25 @@ function theme_metatag_favicon($variables) {
     '#value' => 'href',
     '#sizes' => 'sizes',
     '#mask' => 'mask',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/**
+ * Theme callback for the mask-icon meta tag.
+ *
+ * The format is:
+ * <link rel="mask-icon" href="[value]" sizes="[sizes]" />
+ */
+function theme_metatag_mask_icon($variables) {
+  $element = &$variables['element'];
+
+  $args = array(
+    '#rel' => 'rel',
+    '#value' => 'href',
+    '#color' => 'color',
   );
   element_set_attributes($element, $args);
   unset($element['#value']);

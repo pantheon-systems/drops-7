@@ -1,4 +1,4 @@
-<div class="person-view-mode-embed node-view-mode-embed clearfix">
+<a name="<?php print urlencode(strtolower($title)); ?>" id="<?php print urlencode(strtolower($title)); ?>"></a><div class="person-view-mode-embed node-view-mode-embed clearfix">
   <?php if(!empty($content['field_person_photo'][0])): ?>
     <?php print render($content['field_person_photo'][0]); ?>
   <?php endif; ?>

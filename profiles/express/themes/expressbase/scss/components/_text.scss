@@ -203,9 +203,11 @@ h6 {
 // List Styles
 ol {
   list-style: decimal;
+  overflow: hidden;
 }
 ul {
   list-style: disc;
+  overflow: hidden;
 }
 .item-list,
 .field-type-text-with-summary,

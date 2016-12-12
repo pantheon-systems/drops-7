@@ -1,9 +1,0 @@
-<?php
-
-/*
- * Update block styles list to include subnav style 5
- */
- 
-function block_styles_update_7010() {
-  features_revert('block_styles');
-}

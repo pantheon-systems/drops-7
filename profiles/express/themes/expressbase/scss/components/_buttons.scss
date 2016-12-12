@@ -140,17 +140,30 @@ a.button-small {
 }
 
 .buttongroup {
-  display: table;
-  border-collapse: separate;
-  border-spacing: 1px;
-  layout: fixed;
+  display: block;
+
   @include rounded($radius: $radius_small);
   a.button {
-    display: table-cell;
+    display: block;
     @include rounded($radius: 0px);
     text-align: center;
-    vertical-align: middle;
     font-weight: 500;
+  }
+}
+@media screen and (min-width:768px) {
+  .buttongroup {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 1px;
+    layout: fixed;
+    a.button {
+      display: table-cell;
+      @include rounded($radius: 0px);
+      text-align: center;
+      vertical-align: middle;
+      border-width: 1px;
+      border-style: solid;
+    }
   }
 }
 .buttongroup-size-small {
@@ -163,32 +176,32 @@ a.button-small {
   font-size: 115%;
 }
 .buttongroup-color-blue {
-  border:1px solid $blue;
+  border-color: $blue;
   a.button {
     @include buttons($color: $blue);
   }
 }
 .buttongroup-color-gold {
-  border:1px solid $cugold;
+  border-color: $cugold;
   a.button {
     @include buttons($color: $cugold);
     color:#363636 !important;
   }
 }
 .buttongroup-color-black {
-  border:1px solid $black;
+  border-color: $black;
   a.button {
     @include buttons($color: $black);
   }
 }
 .buttongroup-color-gray {
-  border:1px solid $gray;
+  border-color: $gray;
   a.button {
     @include buttons($color: $gray);
   }
 }
 .buttongroup-color-white {
-  border:1px solid #e0e0e0;
+  border-color: #e0e0e0;
   a.button {
     @include buttons($color: $white);
     color:#363636 !important;

@@ -1,7 +1,0 @@
-name = CU Class
-core = 7.x
-package = CU-Classes
-dependencies[] = list
-dependencies[] = number
-dependencies[] = options
-dependencies[] = views

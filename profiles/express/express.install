@@ -75,7 +75,16 @@ function express_install() {
   db_delete('block')->condition('module', 'system')->execute();
   db_delete('block')->condition('module', 'user')->execute();
   // add in our blocks defined above
-  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
+  $query = db_insert('block')->fields(array(
+    'module',
+    'delta',
+    'theme',
+    'status',
+    'weight',
+    'region',
+    'pages',
+    'cache'
+  ));
   foreach ($blocks as $block) {
     $query->values($block);
   }
@@ -85,11 +94,11 @@ function express_install() {
   $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
   $shortcut_set->links = NULL;
   $shortcut_set->links = array(
-   array(
-     'link_path' => 'admin/structure/menu/manage/main-menu',
-     'link_title' => st('Main Menu'),
-     'weight' => -12,
-   ),
+    array(
+      'link_path' => 'admin/structure/menu/manage/main-menu',
+      'link_title' => st('Main Menu'),
+      'weight' => -12,
+    ),
   );
   shortcut_set_save($shortcut_set);
 
@@ -130,7 +139,7 @@ function express_install() {
   // Update the menu router information.
   menu_rebuild();
   // revert features to ensure they are all installed
-  //$features = array('files', 'block_styles', 'cu_block_selector', 'cu_view_modes','cu_jquery', 'quicktab_beans');
+  //$features = array('files', 'cu_block_theme', 'cu_block_selector', 'cu_view_modes','cu_jquery', 'quicktab_beans');
   //features_revert($features);
   // ignore any rebuild messages
   node_access_needs_rebuild(FALSE);
@@ -139,9 +148,28 @@ function express_install() {
 }
 
 /**
- * Express 2.0.1 Updates
+ * Express 2.0.1 Updates.
  */
 function express_update_7001() {
   // Registry rebuild due to contrib module updates.
   registry_rebuild();
+}
+
+/**
+ * Express 2.2.7 Updates
+ *
+ * Enable express_version.
+ */
+function express_update_7002() {
+  module_enable(array('express_version'));
+}
+
+/**
+ * Express 2.3.0 update.
+ *
+ * Enable field_reference_delete module.
+ */
+function express_update_7003() {
+  // Enable module.
+  module_enable(array('field_reference_delete'));
 }

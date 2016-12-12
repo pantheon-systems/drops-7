@@ -96,7 +96,14 @@ function cu_advanced_layout_bundle_express_help($variables) {
     'url' => '/node/560',
   );
 
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_advanced_layout_bundle';
+      return $a;
+    },
+    $variables);
 }
 
 /**
@@ -109,6 +116,5 @@ function cu_advanced_layout_bundle_express_help($variables) {
  * @return $variables
  */
 function cu_advanced_layout_bundle_express_help_fields($variables) {
-
-  return $variables;
+  
 }

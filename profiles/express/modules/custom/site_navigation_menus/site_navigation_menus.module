@@ -155,9 +155,23 @@ function site_navigation_menus_page_alter(&$page) {
  * @param $form_id
  */
 function site_navigation_menus_form_alter(&$form, &$form_state, $form_id) {
+
   if (isset($form['delta']['#value']) && strrpos($form['delta']['#value'], 'site_navigation_menus') !== FALSE) {
     unset($form['custom_block_theme']);
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove option for including menu selected by page so users can't disable it.
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function site_navigation_menus_form_menu_edit_menu_alter(&$form, &$form_state, $form_id) {
+  $form['menu_block_menu_order']['#access'] = FALSE;
 }
 
 /**

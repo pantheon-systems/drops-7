@@ -16,11 +16,16 @@ function express_settings_permission() {
       'title' => 'Administer Redirect Settings',
       'description' => 'Overrides some permissions of the Redirect contrib project to expose specific settings to users',
     ),
+    'administer cache settings' => array(
+      'title' => 'Administer Cache Settings',
+      'description' => 'Gives users access to reset cache and some cache realted settings',
+    ),
   );
 }
 
 /**
  * Implements hook_menu().
+ * Icons are configured in expressadmin_preprocess_admin_block in expressadmin/template.php
  */
 function express_settings_menu() {
   // IN ADMIN, BUT NOT ADMIN/CONFIG
@@ -80,6 +85,7 @@ function express_settings_menu() {
     'weight' => 25,
   );
 
+  // DEFINES URL MANAGEMENT SECTION
   $items['admin/settings/url-management'] = array(
     'title' => 'URL Management',
     'position' => 'left',
@@ -98,6 +104,39 @@ function express_settings_menu() {
     'access arguments' => array('administer redirects'),
     'weight' => 0,
   );
+
+  // DEFINES ADMINSTRATOR SECTION
+  $items['admin/settings/admin'] = array(
+    'title' => 'Administrator',
+    'description' => '',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 99,
+  );
+  $items['admin/settings/admin/clear-cache'] = array(
+    'title' => 'Clear Cache',
+    'description' => 'Delete and rebuild all site caches.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_cache_form'),
+    'access arguments' => array('administer cache settings'),
+    'weight' => 0,
+  );
+    $items['admin/settings/admin/bundle-settings'] = array(
+    'title' => 'Bundle Settings',
+    'description' => 'Control which bundles are visible to users',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_admin_settings'),
+    'access arguments' => array('configure profile module manager'),
+    'file' => 'profile_module_manager.admin.inc',
+    'file path' => drupal_get_path('module', 'profile_module_manager'),
+    'weight' => -10,
+  );
+
   return $items;
 }
 
@@ -293,7 +332,35 @@ function express_settings_contact_info_form($form, &$form_state) {
   return system_settings_form($form);
 }
 
+/**
+ * Page callback for admin/settings/performance/cache.
+ */
+function express_settings_cache_form($form, &$form_state) {
+  $cache_last = variable_get('cache_last', NULL);
 
+  if (date('H', $cache_last) != date('H', time())) {
+    $form['clear_cache'] = array(
+      '#type' => 'submit',
+      '#value' => t('Clear all caches'),
+      '#submit' => array('express_clear_cache_submit'),
+    );
+  } else {
+    drupal_set_message(t('Cache was recently cleared.  Because repeatly clearing the cache can cause performance problems, it cannot be cleared again until @time', array('@time' => date('h:i A', $cache_last + 60*60))), 'warning');
+  }
+
+  return $form;
+}
+
+/**
+ * Submit callback; clear system caches.
+ *
+ * @ingroup forms
+ */
+function express_clear_cache_submit($form, &$form_state) {
+  variable_set('cache_last', REQUEST_TIME);
+  drupal_flush_all_caches();
+  drupal_set_message(t('Caches cleared.'));
+}
 
 /**
  * Preprocess theme variables for a specific theme hook.
@@ -343,8 +410,6 @@ function express_settings_preprocess_html(&$variables) {
     drupal_add_html_head($element, 'description');
   }
 }
-
-
 
 /**
  * Menu callback; Provide the administration overview page.
@@ -405,25 +470,6 @@ function express_settings_menu_link_insert($item) {
 
     // without this rebuild, the children aren't found
     menu_rebuild();
-
-    //just rebuilding seems to have fixed the issue... don't need to manually fix after?
-
-    //$menus = db_select('menu_links', 'ml')
-    //->fields('ml')
-    //->condition('ml.depth', 4, '=')
-    //->condition('ml.router_path', db_like($item['path']) .'%', 'LIKE')
-    //->execute()
-    //->fetchAll();
-
-    //foreach ($menus as $menu) {
-    //  if ($item['mlid'] != $menu->plid) {
-    //    $updated_menu = menu_link_load($item['mlid']);
-    //    $updated_menu['plid'] = $mlid;
-    //    $updated_menu['hidden'] = 0;
-    //    menu_link_save($updated_menu);
-    //   }
-    // }
-
 
   }
 }

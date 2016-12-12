@@ -298,8 +298,8 @@ a:hover .icon-color-gold.icon-wrapper-circle {
 .field-type-text-with-summary .auto-anchor ul li {
   margin: 0;
   padding: 0;
-  list-style: none;
-  list-style-image: none;
+  list-style: none !important;
+  list-style-image: none !important;
 }
 .auto-anchor ul {
   margin:10px 0 0;
@@ -377,13 +377,17 @@ a.expand-title:focus {
   display: table;
   margin-bottom: 20px;
 }
-.image-caption-right {
-  float: right;
-  margin-left: 20px;
-}
-.image-caption-left {
-  float: left;
-  margin-right: 20px;
+@media screen and (min-width:540px) {
+  .image-caption-right {
+    float: right;
+    margin-left: 20px;
+    max-width:50%;
+  }
+  .image-caption-left {
+    float: left;
+    margin-right: 20px;
+    max-width:50%;
+  }
 }
 .image-caption p {
   display: table-caption;

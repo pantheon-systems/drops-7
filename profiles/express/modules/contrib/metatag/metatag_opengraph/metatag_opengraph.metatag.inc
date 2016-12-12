@@ -301,6 +301,7 @@ function metatag_opengraph_metatag_info() {
     'label' => t('Locale'),
     'description' => 'The locale these tags are marked up in, must be in the format language_TERRITORY. Default is en_US.',
     'weight' => ++$weight,
+    'is_language' => TRUE,
     'devel_generate' => array(
       'maxlength' => 1,
     ),
@@ -310,6 +311,7 @@ function metatag_opengraph_metatag_info() {
     'description' => 'Other locales this content is available in, must be in the format language_TERRITORY, e.g. "fr_FR".',
     'weight' => ++$weight,
     'multiple' => TRUE,
+    'is_language' => TRUE,
     'devel_generate' => array(
       'maxlength' => 1,
     ),

@@ -1,0 +1,5 @@
+name = Atlas API
+description = Used to make calls to and from Atlas (https://github.com/CuBoulder/atlas).
+package = Atlas
+core = 7.x
+version = 7.x-1.0

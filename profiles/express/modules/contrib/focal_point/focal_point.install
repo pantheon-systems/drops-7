@@ -14,7 +14,7 @@ function focal_point_install() {
   $count_plural = format_plural($count, '%count image', '%count images', array('%count' => $count));
 
   if (!empty($count)) {
-    drupal_set_message($t('Migrated the imagefield_focus data for %count. Any changes you make to imagefield_focus data from now on will not be reflected in your focal point data.', array('%count' => $count_plural)));
+    drupal_set_message($t('Migrated the imagefield_focus data for @count images. Any changes you make to imagefield_focus data from now on will not be reflected in your focal point data.', array('@count' => $count_plural)));
   }
 
   focal_point_update_7005();
@@ -66,7 +66,7 @@ function focal_point_schema() {
  * Convert existing imagefield_focus data to focal point.
  *
  * @param bool $overwrite
- *   If TRUE, existing focal point data will be overwritten
+ *   If TRUE, existing focal point data will be overwritten.
  *
  * @return int|NULL
  *   Returns the number of images that were converted or NULL.
@@ -85,7 +85,7 @@ function focal_point_migrate_imagefield_focus_data($overwrite = FALSE) {
 
     foreach ($rows as $row) {
       $file = file_load($row->fid);
-      list($x1,$y1,$x2,$y2) = explode(',', $row->focus_rect);
+      list($x1, $y1, $x2, $y2) = explode(',', $row->focus_rect);
 
       $focal_point_x = $x1 + round($x2 / 2);
       $focal_point_y = $y1 + round($y2 / 2);

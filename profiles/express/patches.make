@@ -49,3 +49,6 @@ projects[insert][patch][] = file://modules/contrib/insert/insert-pathologic.patc
 
 ; @see https://cuboulder.atlassian.net/browse/FIT-2066
 projects[module_missing_message_fixer][patch][] = file://modules/contrib/module_missing_message_fixer/drush_integration-2770115-2.patch
+
+; @see https://cuboulder.atlassian.net/browse/FIT-1474
+projects[field_reference_delete][patch][] = https://www.drupal.org/files/issues/bulk-delete-using-drush-2772589-2.patch

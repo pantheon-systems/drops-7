@@ -34,6 +34,7 @@ function metatag_favicons_metatag_info() {
     'description' => '',
     'class' => 'DrupalLinkMetaTag',
     'group' => 'favicons',
+    'url' => TRUE,
     'context' => array('global'),
   );
 
@@ -49,12 +50,12 @@ function metatag_favicons_metatag_info() {
 
   $info['tags']['mask-icon'] = array(
     'label' => t('Icon: SVG'),
-    'description' => t('A grayscale scalable vector graphic (SVG) file. To color the icon, use the "theme color" meta tag under "Mobile & UI Adjustments".'),
+    'description' => t('A grayscale scalable vector graphic (SVG) file.'),
     'weight' => ++$weight,
     'element' => array(
-      '#rel' => 'icon-mask',
-      '#theme' => 'metatag_favicon',
+      '#theme' => 'metatag_mask_icon',
     ),
+    'class' => 'DrupalMaskIconMetaTag',
     'replaces' => array('icon_any'),
   ) + $favicon_defaults;
 

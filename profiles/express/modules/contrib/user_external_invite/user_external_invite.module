@@ -98,30 +98,6 @@ function user_external_invite_page() {
 function user_external_invite_pending_invites_form($form, &$form_state) {
   $form = array();
 
-  // Add container for operations functionality.
-  $form['operations'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Operations',
-  );
-
-  // Add select list for choosing operations.
-  $select_options = array(
-    'user_external_invite_cancel_invites' => 'Cancel Invites',
-  );
-
-  $form['operations']['select'] = array(
-    '#type' => 'select',
-    //'#title' => t('Operations'),
-    '#options' => $select_options,
-    '#default_value' => $select_options[0],
-  );
-
-  // Add submit button for operations.
-  $form['operations']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Submit'),
-  );
-
   $headers = array(
     'id' => t('ID'),
     'mail' => t('Email'),
@@ -132,11 +108,15 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
   );
 
   $rids = variable_get('user_external_invite_roles', NULL);
-  foreach ($rids as $rid) {
-    $roles[$rid] = _user_external_invite_role_name_from_rid($rid);
+  $rids = variable_get('user_external_invite_roles', NULL);
+  if (!empty($rids)) {
+    foreach ($rids as $rid) {
+      $roles[$rid] = _user_external_invite_role_name_from_rid($rid);
+    }
   }
-
   $pending = _user_external_invite_pending_invites(NULL, $headers);
+  $rows = array();
+
   while ($r = $pending->fetchObject()){
     $inviter = user_load($r->uid);
     $rows[] = array(
@@ -149,18 +129,45 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
     );
   }
 
-  $form['table'] = array(
-    '#type' => 'tableselect',
-    '#header' => $headers,
-    '#options' => $rows,
-    '#suffix' => empty($rows) ? 'No pending invites.' : '',
-    '#weight' => 10,
-  );
+  // Add operations only if rows are present.
+  if (!empty($rows)) {
+    // Add container for operations functionality.
+    $form['operations'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Operations',
+    );
 
-  $form['pager'] = array(
-    '#theme' => 'pager',
-    '#weight' => 11,
-  );
+    // Add select list for choosing operations.
+    $select_options = array(
+      0 => 'Cancel Invites'
+    );
+
+    $form['operations']['select'] = array(
+      '#type' => 'select',
+      //'#title' => t('Operations'),
+      '#options' => $select_options,
+      '#default_value' => $select_options[0],
+    );
+
+    // Add submit button for operations.
+    $form['operations']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    );
+
+    $form['table'] = array(
+      '#type' => 'tableselect',
+      '#header' => $headers,
+      '#options' => $rows,
+      '#suffix' => empty($rows) ? 'No pending invites.' : '',
+      '#weight' => 10,
+    );
+
+    $form['pager'] = array(
+      '#theme' => 'pager',
+      '#weight' => 11,
+    );
+  }
 
   return $form;
 }
@@ -175,7 +182,7 @@ function user_external_invite_pending_invites_form_submit(&$form, &$form_state) 
 
   $table_options = $form['table']['#options'];
   $selected_options = $form_state['input']['table'];
-  $operation = $form_state['values']['select'];
+  //$operation = $form_state['values']['select'];
   $ids = array();
 
   // Loop through selected rows and match with invite IDs.
@@ -185,8 +192,9 @@ function user_external_invite_pending_invites_form_submit(&$form, &$form_state) 
     }
   }
 
-  // Pass IDs to submit callback function.
-  call_user_func($operation, $ids);
+  // Pass IDs into corresponding callback function.
+  // No logic yet since only one option to cancel invites.
+  user_external_invite_cancel_invites($ids);
 }
 
 /**
@@ -507,7 +515,7 @@ function user_external_invite_grant_invite($key, $mail, $account) {
     _user_external_invite_send_inviter_confirmation($invite['uid'], $invite['mail'], $invite['rid']);
 
     // Once granted, change status of invite in database.
-    _user_external_invite_change_invite_status($mail, 'granted');
+    _user_external_invite_change_invite_status($mail, 'Granted');
   }
   else {
     drupal_set_message(
@@ -653,6 +661,10 @@ function user_external_invite_token_info() {
     'name' => t('Custom Message'),
     'description' => t('Returns custom message for the invite'),
   );
+  $info['invite_expiration'] = array(
+    'name' => t('Invite Expiration'),
+    'description' => t('Returns expiration time of invite.'),
+  );
   return array(
     'types' => $types,
     'tokens' => array(
@@ -703,6 +715,10 @@ function user_external_invite_tokens($type, $tokens, array $data = array(), arra
           $replacements[$original] = $data['ext-invite']->message;
           break;
 
+        case 'invite_expiration':
+          $replacements[$original] = date('F j, Y g:i', $data['ext-invite']->expire) . ' '. date_default_timezone_get();
+          break;
+
       }
     }
   }
@@ -728,4 +744,55 @@ function _user_external_invite_load_related_invites($entity) {
   }
 
   return $emails;
+}
+
+/**
+ * Implements hook_user_role_delete().
+ *
+ * Removes role from invited roles upon deletion.
+ */
+function user_external_invite_user_role_delete($role) {
+  $rids = variable_get('user_external_invite_roles', NULL);
+  $removed_id = $role->rid;
+  if (in_array($removed_id, $rids)) {
+    unset($rids[$removed_id]);
+    variable_set('user_external_invite_roles', $rids);
+  }
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * Prevent disabling of module if pending invites are present.
+ */
+function user_external_invite_system_info_alter(&$info, $file, $type) {
+  if ($type == 'module' && $file->name == 'user_external_invite') {
+    if ($result = db_query('SELECT * FROM {user_external_invite} WHERE status = :status', array(':status' => 'Pending'))->fetchAll()) {
+      $info['required'] = TRUE;
+      $explanation = t('This module can\'t be disabled when there are invites pending. See a list of pending invites here - <a href="@invites">Invites list</a>', array('@invites' => url('admin/people/invite')));
+      $info['explanation'] = $explanation;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * If there are still invites pending, then changing anything related to roles could interfere with the invite process.
+ * Users should get a warning message to proceed with caution.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function user_external_invite_form_alter(&$form, &$form_state) {
+  // Only alter the roles and permissions forms.
+  if ($form['#form_id'] == 'user_admin_permissions' || $form['#form_id'] == 'user_admin_roles') {
+    // Check to see if any invites are pending and what role ids are associated with them.
+    if ($role_ids = db_query('SELECT rid FROM {user_external_invite} WHERE status = :status', array(':status' => 'Pending'))->fetchCol()) {
+      // Print out role names to attach to warning message.
+      $role_names = array_map(function($a) {return _user_external_invite_role_name_from_rid($a);}, $role_ids);
+      drupal_set_message(
+        t('User Invites are still pending with roles of: :roles. Altering roles or permissions could interfere with the user invite process. Pending invites can be viewed at: <a href="' . base_path() . 'admin/people/invite">admin/people/invite</a>', array(':roles' => implode(', ', $role_names))), 'warning');
+    }
+  }
 }

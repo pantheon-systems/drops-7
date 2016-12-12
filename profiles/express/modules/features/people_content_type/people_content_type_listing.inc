@@ -169,7 +169,7 @@ function _people_content_type_listing($view_mode, $type, $department, $filter_1,
         // prepare contact section
         $contact = '';
         if (!empty($output['nodes'][$nid]['field_person_email'])) {
-          $contact .= '<div class="table-person-email"><i class="fa fa-envelope"></i> <a href="mailto:' . render($output['nodes'][$nid]['field_person_email']) . '">Email</a></div>';
+          $contact .= '<div class="table-person-email"><i class="fa fa-envelope"></i> <a href="mailto:' . trim(render($output['nodes'][$nid]['field_person_email'])) . '" title="' . trim(render($output['nodes'][$nid]['field_person_email'])) . '">Email</a></div>';
         }
         if (!empty($output['nodes'][$nid]['field_person_phone'])) {
           $contact .= '<div class="table-person-phone"><i class="fa fa-phone"></i> ' . render($output['nodes'][$nid]['field_person_phone']) . '</div>';

@@ -42,7 +42,7 @@ img.print-logo { border: 0; }
 
 .clearfix:after { clear: both; }
 
-#mobile-menu-toggle, #toggle, #alerts-wide-wrapper, #search, #secondary-menu-wrapper, #main-menu-wrapper, #mobile-navigation-wrapper, .sidebar, #after-content-wrapper, #after-content2-wrapper, #footer-wrapper, #backstretch, #breadcrumb, #logo, #site-slogan, #skip-link, .element-invisible, #slider-wrapper, #intro-wide-wrapper, #post-wide-wrapper iframe, img.beboulder, .cu-boulder-block .required-links, #cu_back_to_top, a.print-link { display: none !important; }
+#mobile-menu-toggle, #toggle, #alerts-wide-wrapper, #search, #secondary-menu-wrapper, #main-menu-wrapper, #mobile-navigation-wrapper, .sidebar, #after-content-wrapper, #after-content2-wrapper, #footer-wrapper, #backstretch, #breadcrumb, #logo, #site-slogan, #skip-link, .element-invisible, #slider-wrapper, #intro-wide-wrapper, #post-wide-wrapper iframe, img.beboulder, .cu-boulder-block .required-links, #cu_back_to_top, a.print-link, .custom-logo, .cu-share-sidebar, .cu-share-inline-mobile { display: none !important; }
 
 #print-header { border-bottom: 1px solid #aaa; padding-bottom: 20px; margin-bottom: 20px; }
 

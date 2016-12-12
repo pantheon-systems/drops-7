@@ -81,7 +81,7 @@ function express_dashboards_dashboard_output($dashboard, $id) {
     $dashboard_section_output = array();
     // Check for missing widget weights and then sort
     foreach ($dashboard_sections[$section_key]['widgets'] as $key => $widget) {
-      $dashboard_sections[$section_key['widgets']][$key]['weight'] = isset($dashboard_sections[$section_key]['widgets'][$key]['weight']) ? $dashboard_sections[$section_key]['widgets'][$key]['weight'] : 0;
+      $dashboard_sections[$section_key]['widgets'][$key]['weight'] = isset($dashboard_sections[$section_key]['widgets'][$key]['weight']) ? $dashboard_sections[$section_key]['widgets'][$key]['weight'] : 0;
     }
     uasort($dashboard_sections[$section_key]['widgets'], 'drupal_sort_weight');
 
@@ -118,14 +118,17 @@ function express_dashboards_theme(&$existing, $type, $theme, $path) {
   $registry['express_dashboard'] = array(
     'template' => 'express-dashboard',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['express_dashboard_section'] = array(
     'template' => 'express-dashboard-section',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['express_dashboard_widget'] = array(
     'template' => 'express-dashboard-widget',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   return $registry;
 }

@@ -969,17 +969,47 @@ function metatag_field_attach_delete_revision($entity_type, $entity) {
 }
 
 /**
+ * Build and alter metatag instance name.
+ *
+ * @param object $entity
+ *   The entity object to generate the metatags instance name for.
+ *
+ * @param string $entity_type
+ *   The entity type of the entity.
+ *
+ * @param string $bundle
+ *   The bundle of the entity.
+ *
+ * @return string
+ *   The resulting name of the config instance.
+ */
+function metatag_get_entity_metatags_instance($entity, $entity_type, $bundle) {
+  $instance = "{$entity_type}:{$bundle}";
+  drupal_alter('metatag_get_entity_metatags_instance', $instance, $entity, $entity_type, $bundle);
+  return $instance;
+}
+
+/**
  * Implements hook_entity_view().
  *
  * Provides additional argument to allow the display to be forced, to work
  * around problems elsewhere in the APIs.
  */
 function metatag_entity_view($entity, $entity_type, $view_mode, $langcode, $force = FALSE) {
-  // Only run this function once per page load.
+  // Only run this function once per page load, for an entity which is allowed
+  // metatags.
   static $i_will_say_this_only_once = FALSE;
 
   // Only proceed if this entity object is the page being viewed.
   if (_metatag_entity_is_page($entity_type, $entity)) {
+    // Get the entity's extra information.
+    list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
+
+    // If this entity object isn't allowed meta tags, don't continue.
+    if (!metatag_entity_supports_metatags($entity_type, $bundle)) {
+      return;
+    }
+
     // Some API calls need to force the data loading.
     if (!$force) {
       // Only run this function once per page load.
@@ -997,8 +1027,7 @@ function metatag_entity_view($entity, $entity_type, $view_mode, $langcode, $forc
 
     // Generate metatags output.
     if ($output = metatag_generate_entity_metatags($entity, $entity_type, $langcode, $view_mode)) {
-      list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
-      $instance = "{$entity_type}:{$bundle}";
+      $instance = metatag_get_entity_metatags_instance($entity, $entity_type, $bundle);
       // We need to register the term's metatags, so we can later fetch them.
       // @see metatag_page_build().
       metatag_page_set_metatags($instance, $output);
@@ -1037,7 +1066,7 @@ function metatag_generate_entity_metatags($entity, $entity_type, $langcode = NUL
 
   // Check if a specific metatag config exists, otherwise just use the global
   // one, stripping out the bundle.
-  $instance = "{$entity_type}:{$bundle}";
+  $instance = metatag_get_entity_metatags_instance($entity, $entity_type, $bundle);
   if (!metatag_config_load_with_defaults($instance, FALSE)) {
     $instance = "{$entity_type}";
   }
@@ -1855,7 +1884,7 @@ function metatag_field_attach_form($entity_type, $entity, &$form, &$form_state, 
     return;
   }
 
-  $instance = "{$entity_type}:{$bundle}";
+  $instance = metatag_get_entity_metatags_instance($entity, $entity_type, $bundle);
 
   // Grab the meta tags for display in the form if there are any.
   if (!empty($entity->metatags)) {
@@ -2008,6 +2037,9 @@ function metatag_get_value($metatag, array $data, array $options = array()) {
   if ($metatag_instance = metatag_get_instance($metatag, $data)) {
     $options["instance"] = $metatag;
     $value = $metatag_instance->getValue($options);
+    if (is_array($value)) {
+      $value = implode(', ', $value);
+    }
   }
   return $value;
 }
@@ -2073,6 +2105,12 @@ function metatag_html_head_alter(&$elements) {
     }
   }
 
+  // The meta tag keys to look for.
+  $metatag_keys = array('name', 'property');
+
+  // Attributes to look for.
+  $attributes = array('name', 'rel');
+
   // Look for meta tags that were added by other modules and hide them.
   foreach ($metatags as $metatag_name) {
     $metatag = &$elements[$metatag_name];
@@ -2082,19 +2120,17 @@ function metatag_html_head_alter(&$elements) {
     foreach ($other_tags as $other_tag) {
       $other = &$elements[$other_tag];
 
-      // Look for other meta tags that have a 'name' attribute which matches the
-      // '#name' value from Metatag's tag.
-      if (isset($other['#attributes'], $other['#attributes']['name']) && is_string($other['#attributes']['name'])) {
-        if (strtolower($other['#attributes']['name']) == $metatag['#name']) {
-          $other['#access'] = FALSE;
-        }
-      }
-
-      // Look for other meta tags that have a 'rel' attribute which matches the
-      // '#name' value from Metatag's tag.
-      elseif (isset($other['#attributes'], $other['#attributes']['rel']) && is_string($other['#attributes']['rel'])) {
-        if (strtolower($other['#attributes']['rel']) == $metatag['#name']) {
-          $other['#access'] = FALSE;
+      // Look for other meta tags that have one of the defined attributes which
+      // matches one of the values from Metatag's tag.
+      foreach ($attributes as $attribute) {
+        if (isset($other['#attributes'], $other['#attributes'][$attribute]) && is_string($other['#attributes'][$attribute])) {
+          foreach ($metatag_keys as $metatag_key) {
+            if (isset($metatag[$metatag_key])) {
+              if (strtolower($other['#attributes'][$attribute]) == $metatag[$metatag_key]) {
+                $other['#access'] = FALSE;
+              }
+            }
+          }
         }
       }
     }

@@ -76,10 +76,7 @@ function cu_inventory_stats_process_site_stats($process = TRUE) {
   $site_data['statistics']['num_nodes'] = $number_nodes;
 
   // Days since last edit.
-  $most_recent_edit = $all_types[0]->max_changed;
-  $days_since_last_edit = ((time() - $most_recent_edit) / 86400);
-  $days_since_last_edit = floor($days_since_last_edit);
-  $site_data['statistics']['num_days_since_last_edit'] = $days_since_last_edit;
+  $site_data['statistics']['num_days_since_last_edit'] = cu_inventory_days_since_last_edit();
 
   // Bean counting time.
   $bean_query = db_select('bean', 'b');

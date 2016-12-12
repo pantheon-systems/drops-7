@@ -258,7 +258,7 @@ function googleanalytics_admin_settings_form($form_state) {
     '#type' => 'checkboxes',
     '#title' => t('Track messages of type'),
     '#default_value' => variable_get('googleanalytics_trackmessages', array()),
-    '#description' => t('This will track the selected message types shown to users. Tracking of form validation errors may help you identifying usability issues in your site. For each visit (user session), a maximum of approximately 500 combined GATC requests (both events and page views) can be tracked. Every message is tracked as one individual event. Note that - as the number of events in a session approaches the limit - additional events might not be tracked. Messages from excluded pages cannot tracked.'),
+    '#description' => t('This will track the selected message types shown to users. Tracking of form validation errors may help you identifying usability issues in your site. For each visit (user session), a maximum of approximately 500 combined GATC requests (both events and page views) can be tracked. Every message is tracked as one individual event. Note that - as the number of events in a session approaches the limit - additional events might not be tracked. Messages from excluded pages cannot be tracked.'),
     '#options' => array(
       'status' => t('Status message'),
       'warning' => t('Warning message'),
@@ -440,6 +440,8 @@ function googleanalytics_admin_settings_form($form_state) {
     );
   }
 
+  $user_access_add_js_snippets = !user_access('add JS snippets for google analytics');
+  $user_access_add_js_snippets_permission_warning = $user_access_add_js_snippets ? ' <em>' . t('This field has been disabled because you do not have sufficient permissions to edit it.') . '</em>' : '';
   $form['advanced']['codesnippet'] = array(
     '#type' => 'fieldset',
     '#title' => t('Custom JavaScript code'),
@@ -459,15 +461,17 @@ function googleanalytics_admin_settings_form($form_state) {
     '#type' => 'textarea',
     '#title' => t('Code snippet (before)'),
     '#default_value' => variable_get('googleanalytics_codesnippet_before', ''),
+    '#disabled' => $user_access_add_js_snippets,
     '#rows' => 5,
-    '#description' => t('Code in this textarea will be added <strong>before</strong> <code>ga("send", "pageview");</code>.'),
+    '#description' => t('Code in this textarea will be added <strong>before</strong> <code>ga("send", "pageview");</code>.') . $user_access_add_js_snippets_permission_warning,
   );
   $form['advanced']['codesnippet']['googleanalytics_codesnippet_after'] = array(
     '#type' => 'textarea',
     '#title' => t('Code snippet (after)'),
     '#default_value' => variable_get('googleanalytics_codesnippet_after', ''),
+    '#disabled' => $user_access_add_js_snippets,
     '#rows' => 5,
-    '#description' => t('Code in this textarea will be added <strong>after</strong> <code>ga("send", "pageview");</code>. This is useful if you\'d like to track a site in two accounts.'),
+    '#description' => t('Code in this textarea will be added <strong>after</strong> <code>ga("send", "pageview");</code>. This is useful if you\'d like to track a site in two accounts.') . $user_access_add_js_snippets_permission_warning,
   );
 
   $form['advanced']['googleanalytics_debug'] = array(

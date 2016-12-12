@@ -29,29 +29,7 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
    * Enable bundle and add authentication data.
    */
   public static function prepare($scope) {
-    $data = array(
-      'sids' => array (
-        'directory' => 'directory',
-        ),
-      'authenticationMode' => 1,
-      'loginConflictResolve' => 2,
-      'acctCreation' => 4,
-      'loginUIUsernameTxt' => NULL,
-      'loginUIPasswordTxt' => NULL,
-      'ldapUserHelpLinkUrl' => NULL,
-      'ldapUserHelpLinkText' => 'Logon Help',
-      'emailOption' => 3,
-      'emailUpdate' => 1,
-      'allowOnlyIfTextInDn' => array (),
-      'excludeIfTextInDn' => array (),
-      'allowTestPhp' => '',
-      'excludeIfNoAuthorizations' => NULL,
-      'ssoRemoteUserStripDomainName' => NULL,
-      'seamlessLogin' => NULL,
-      'ldapImplementation' => NULL,
-      'cookieExpire' => NULL,
-    );
-    variable_set('ldap_authentication_conf', $data);
+
   }
 
   /**

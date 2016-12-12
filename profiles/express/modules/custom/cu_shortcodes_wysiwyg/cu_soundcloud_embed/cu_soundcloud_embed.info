@@ -1,0 +1,4 @@
+name = Soundcloud Embed
+core = 7.x
+package = CU Soundcloud Bundle
+dependencies[] = shortcode

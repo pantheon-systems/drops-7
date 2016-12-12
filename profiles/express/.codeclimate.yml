@@ -1,27 +1,29 @@
 engines:
   duplication:
     enabled: true
+    checks:
+      Similar code:
+        enabled: false
     config:
       languages:
       - php
       - javascript
-  phpcodesniffer:
-    enabled: true
-    config:
-      file_extensions: "php,inc,lib,module"
   phpmd:
     enabled: true
     config:
-      file_extensions: "php,inc,lib,module"
-    exclude_fingerprints:
-    # Excludes 'The variable $site_data is not named in camelCase.'
-    # modules/custom/cu_inventory/cu_inventory_stats/cu_inventory_stats.inc Line 23
-    - 793e02706ebf47a81718e392be7af9b0
-
+      file_extensions: "php,inc,module,install"
+      rulesets: ".phpmd.xml"
+  phpcodesniffer:
+    enabled: true
+    config:
+      file_extensions: "php,inc,module,install"
+      encoding: utf-8
+      standard: "Drupal"
+      ignore_warnings: true
 ratings:
   paths:
-  - "modules/custom/"
-  - "modules/features/"
+  - "modules/custom"
+  - "modules/features"
 exclude_paths:
 - "**.scss"
 - "libraries/"

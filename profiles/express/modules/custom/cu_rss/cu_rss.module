@@ -115,6 +115,12 @@ function cu_rss_menu() {
     'access callback' => TRUE,
     'title' => 'Site RSS Feed',
   );
+  // feed/all/all/rss.xml
+  $items['feed/%/%/rss.xml'] = array(
+    'page callback' => 'cu_rss_feed_output',
+    'page arguments' => array(1,2),
+    'access callback' => TRUE,
+  );
   return $items;
 }
 
@@ -263,7 +269,12 @@ function cu_rss_express_help($variables) {
     'url' => '/node/1080',
   );
 
-  return $variables;
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_rss';
+      return $a;
+    },
+    $variables);
 }
 
 /**
@@ -272,8 +283,6 @@ function cu_rss_express_help($variables) {
  * Provide callback function for editing rss feed*/
 function cu_rss_express_help_custom_paths($variables) {
   $variables['admin/settings/feeds/rss/manage/%/edit'] = 'cu_rss_express_help_callback';
-
-  return $variables;
 }
 
 /**
@@ -316,4 +325,105 @@ function cu_rss_secure_permissions($role) {
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function cu_rss_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_rss');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * Callback function for feed/%/%/rss.xml
+ *
+ * Outputs article rss feed, filterable by categories and tags.
+ */
+function cu_rss_feed_output($categories = NULL, $tags = NULL) {
+  // Start query.
+  $query = db_select('node', 'n');
+  $query->range(0, 10);
+  $query->condition('n.type', 'article', '=');
+  $query->condition('n.status', 1, '=');
+  $query->fields('n', array('nid', 'created'));
+
+  if ($categories == 'all') {
+    $categories = NULL;
+  }
+  if ($tags == 'all') {
+    $tags = NULL;
+  }
+  $categories = isset($categories) ? explode(' ', $categories) : array();
+  $tags = isset($tags) ? explode(' ', $tags) : array();
+  // Filter by tag.
+  if (!empty($tags)) {
+    $terms = array();
+    foreach ($tags as $tid) {
+      $terms[$tid] = $tid;
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('tags');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+    }
+    $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+    $query->fields('tags', array('field_tags_tid'));
+    $query->condition('tags.field_tags_tid', $terms, 'in');
+  }
+
+  // Filter by category.
+  if (!empty($categories)) {
+    $terms = array();
+    foreach ($categories as $tid) {
+      $terms[$tid] = $tid;
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('category');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+    }
+    $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+    $query->fields('cats', array('field_article_categories_tid'));
+    $query->condition('cats.field_article_categories_tid', $terms, 'in');
+  }
+
+  $query->distinct();
+  $query->groupBy('n.nid');
+  // Display the newest first.
+  $query->orderBy('created', 'DESC');
+  $nids = $query->execute()->fetchCol();
+  $channel = array();
+
+  // Build channel elements
+  global $base_url;
+  $path = current_path();
+  // convert spaces to + to match against feed url query
+  $path = str_replace(' ', '+', $path);
+  if ($path == 'feed/all/all/rss.xml') {
+    $path = 'feed/rss.xml';
+  }
+  $current_url = $base_url . '/' . $path;
+  $query = db_select('rss_feed', 'rf');
+  $query->fields('rf', array('id', 'name', 'url'));
+  $query->condition('rf.url', $current_url, '=');
+  $feeds = $query->execute()->fetchAssoc();
+  $feed_title = isset($feeds['name']) ? $feeds['name'] : variable_get('site_name') . ' - ' . variable_get('site_slogan');
+
+  $channel['title'] = $feed_title;
+  $channel['description'] = 'Feed from ' . variable_get('site_name', '') . ', University of Colorado Boulder';
+
+
+  node_feed($nids, $channel);
 }

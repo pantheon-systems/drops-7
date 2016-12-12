@@ -1,12 +1,13 @@
 .gallery-view-mode-embed-summary { margin-bottom: 20px; }
 
-.view-photo-gallery .view-content { margin-left: -10px; margin-right: -10px; }
-.view-photo-gallery .view-content:after { content: ""; display: table; clear: both; }
+.gallery-view-mode-full-content .view-photo-gallery .view-content { margin-left: -10px; margin-right: -10px; }
+.gallery-view-mode-full-content .view-photo-gallery .view-content:after { content: ""; display: table; clear: both; }
+.gallery-view-mode-full-content .view-photo-gallery .views-row { width: 33.333%; padding: 0 10px 20px; float: left; }
+.gallery-view-mode-full-content .view-photo-gallery .views-row a { display: block; }
+@media screen and (min-width: 480px) { .gallery-view-mode-full-content .view-photo-gallery .views-row { width: 20%; padding: 0 10px 20px; float: left; } }
+@media screen and (min-width: 768px) { .gallery-view-mode-full-content .view-photo-gallery .views-row { width: 20%; padding: 0 10px 20px; float: left; } }
+.gallery-view-mode-full-content .view-photo-gallery img.image-large_square_thumbnail { display: block; float: none; margin: 0; width: 100%; height: auto; }
 
-.view-photo-gallery .views-row { width: 33.333%; padding: 0 10px 20px; float: left; }
-
-.view-photo-gallery .views-row a { display: block; }
-
-@media screen and (min-width: 480px) { .view-photo-gallery .views-row { width: 20%; padding: 0 10px 20px; float: left; } }
-@media screen and (min-width: 768px) { .view-photo-gallery .views-row { width: 20%; padding: 0 10px 20px; float: left; } }
-.view-photo-gallery img.image-large_square_thumbnail { display: block; float: none; margin: 0; width: 100%; height: auto; }
+.gallery-view-mode-embed-content .views-row, .gallery-view-mode-embed-content .views-field, .gallery-view-mode-embed-content .views-field .field-content { display: inline; }
+.gallery-view-mode-embed-content .view-photo-gallery img.image-large_square_thumbnail { display: inline-block; margin: 0 10px 10px 0; width: 50px; height: auto; float: none; }
+@media screen and (min-width: 768px) { .gallery-view-mode-embed-content .view-photo-gallery img.image-large_square_thumbnail { width: 100px; } }

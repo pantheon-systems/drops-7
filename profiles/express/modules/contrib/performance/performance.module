@@ -1,0 +1,852 @@
+<?php
+
+/**
+ * @file
+ *
+ * Logs detailed and/or summary page generation time and memory consumption for
+ * page requests.
+ * Copyright Khalid Baheyeldin 2008 of http://2bits.com
+ */
+
+// Check for a variable for the performance key. This allows you to set a
+// unique key in the case that you have multiple domains accessing the same
+// site. If this is not set, fall back to the hostname which we get from the
+// base_url global variable for drush compatibility (you will need to pass the
+// --url parameter to drush).
+define('PERFORMANCE_KEY', 'dru-perf:' . variable_get('performance_key', parse_url($GLOBALS['base_url'], PHP_URL_HOST)) . ':');
+
+define('PERFORMANCE_BIN', 'cache_performance');
+
+define('PERFORMANCE_QUERY_VAR', 'performance_query');
+
+define('PERFORMANCE_CACHE', 'cache_default_class');
+
+define('PERFORMANCE_SETTINGS', 'admin/config/development/performance-logging');
+
+include_once variable_get('performance_detail_logging', 'includes/performance.details.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function performance_menu() {
+  $items = array();
+
+  $items[PERFORMANCE_SETTINGS] = array(
+    'title' => 'Performance logging',
+    'description' => 'Logs performance data: page generation times and memory usage.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('performance_settings_form'),
+    'access arguments' => array('administer performance logging'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/reports/performance-logging'] = array(
+    'title' => 'Performance logs',
+    'description' => 'View summary performance logs: page generation times and memory usage.',
+    'page callback' => 'performance_view_summary',
+    'access arguments' => array('administer performance logging'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/reports/performance-logging/summary'] = array(
+    'title' => 'Summary',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+
+  $items['admin/reports/performance-logging/details'] = array(
+    'title' => 'Details',
+    'description' => 'View detailed, per page, performance logs: page generation times and memory usage.',
+    'page callback' => 'performance_view_details',
+    'access arguments' => array('administer performance logging'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  // We use no % after clear here (clear/%) to catch the arguments because we do
+  // not want the clear page to fall back on its parent when no argument is
+  // passed. See the callback of the page for more info.
+  $items['admin/reports/performance-logging/clear'] = array(
+    'title' => 'Clear logs',
+    'description' => 'Clears all collected performance statistics.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('performance_clear_form'),
+    'access arguments' => array('administer performance logging'),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function performance_permission() {
+  return array(
+  'administer performance logging' => array(
+    'title' => t('Administer performance logging'),
+    'description' => t('Allows both configuring the performance module and accessing its reports.'),
+    )
+  );
+}
+
+/**
+ * Implements hook_cron().
+ */
+function performance_cron() {
+  // Remove all entries that have expired.
+  // TODO: make this work as expected, seems to throw away everything now :-s
+  cache_clear_all(NULL, PERFORMANCE_BIN);
+
+  // Remove entries that have less than so many accesses
+  performance_traverse_cache('performance_cron_prune');
+
+  // Remove performance_detail rows on a daily basis.
+  if (variable_get('performance_detail', 0)) {
+    performance_prune_details();
+  }
+}
+
+/**
+ * Callback used by performance_traverse_cache() for pruning data on cron based
+ * on a preset threshold.
+ *
+ * @param $cache cache object
+ *
+ * @see performance_traverse_cache()
+ */
+function performance_cron_prune($cache) {
+  static $threshold;
+  // Prevent a variable_get() each time this callback is triggered.
+  if(!isset($threshold)) {
+    $threshold = variable_get('performance_threshold_accesses', 0);
+  }
+
+  if ($threshold && $cache->data['num_accesses'] <= $threshold) {
+    cache_clear_all($cache->cid, PERFORMANCE_BIN);
+  }
+
+  return;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function performance_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'performance') . '/includes',
+  );
+}
+
+/**
+ * System settings form.
+ */
+function performance_settings_form() {
+  $status = performance_caching_message();
+
+  // Setup settings form.
+  $form['mode'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Logging mode'),
+    '#collapsible' => TRUE,
+  );
+
+  $form['mode']['performance_detail'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Detailed logging'),
+    '#default_value' => variable_get('performance_detail', 0),
+    '#description' => t('Log memory usage and page generation times for every page. This logging mode is <strong>not</strong> suitable for large sites, as it can degrade performance severly. It is intended for use by developers, or on a test copy of the site.'),
+  );
+
+  $form['mode']['performance_summary'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Summary logging'),
+    '#default_value' => variable_get('performance_summary', 0),
+    '#description' => t('Log summary data, such as average and maximum page generation times and memory usage.'),
+  );
+
+  if ($status != 'error') {
+    $form['mode']['performance_summary']['#description'] .= ' ' . t('The summary will be stored in an alternative cache, and hence there is no load on the database. This logging is suitable for most live sites, unless the number of unique page accesses is excessively high.');
+  }
+  else {
+    $form['mode']['performance_summary']['#description'] .= ' ' . t('This logging mode is <strong>not</strong> suitable for most live sites.');
+  }
+
+  $form['other'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Other'),
+    '#collapsible' => TRUE,
+  );
+
+  $form['other'][PERFORMANCE_QUERY_VAR] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Database Query timing and count'),
+    '#default_value' => variable_get(PERFORMANCE_QUERY_VAR, 0),
+    '#description' => t('Log database query timing and query count for each page. This is useful to know if the bottleneck is in excessive database query counts, or the time required to execute those queries is high. Enabling this will incurr some memory overhead as query times and the actual query strings are cached in memory as arrays for each page, hence skewing the overall page memory reported.'),
+  );
+
+  $form['other']['performance_threshold_accesses'] = array(
+    '#type' => 'select',
+    '#title' => t('Accesses threshold'),
+    '#default_value' => variable_get('performance_threshold_accesses', 0),
+    '#options' => array(0, 1, 2, 5, 10),
+    '#description' => t("When displaying the summary report, only pages with the number of accesses larger than the specified threshold will be shown. Also, when cron runs and summary is <strong>not</strong> logged to DB, pages with that number of accesses or less will be removed, so as not to overflow the cache's memory. This is useful on a live site with a high volume of hits. On a development site, you probably want this set to 0, so you can see all pages."),
+  );
+
+  $form['other']['performance_nodrush'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Do not log drush access'),
+    '#default_value' => variable_get('performance_nodrush', 1),
+    '#description' => t('Prevent !link access to the site from being logged.', array('!link' => l(t('drush'), 'http://www.drupal.org/project/drush', array('attributes' => array('target' => '_blank'))))),
+  );
+
+  $form['other']['performance_skip_paths'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Paths to exclude'),
+    '#default_value' => variable_get('performance_skip_paths', ''),
+    '#description' => t("Enter one path per line as Drupal paths. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Display message on settings form.
+ */
+function performance_caching_message() {
+  $default = 'DrupalDatabaseCache';
+  $type = 'error';
+
+  $cache = variable_get(PERFORMANCE_CACHE, $default);
+  if ($cache != $default) {
+    $message = t('Alternative caching (%class) is enabled. It is reasonably safe to enable summary logging on live sites.', array('%class' => $cache));
+    $type = 'status';
+  }
+  else {
+    $message = t('Only the default database caching mechanism is enabled. It is <strong>not</strong> safe to enable summary logging to the database on live sites!');
+  }
+
+  drupal_set_message($message, $type, FALSE);
+
+  return $type;
+}
+
+/**
+ * Implements hook_boot().
+ */
+function performance_boot() {
+  register_shutdown_function('performance_shutdown');
+  if (variable_get(PERFORMANCE_QUERY_VAR, 0)) {
+    @include_once DRUPAL_ROOT . '/includes/database/log.inc';
+    Database::startLog('performance', 'default');
+  }
+}
+
+/**
+ * Shutdown function that collects all performance data.
+ */
+function performance_shutdown() {
+  global $user, $language;
+
+  // Don't log drush access.
+  if (drupal_is_cli() && variable_get('performance_nodrush', 1)) {
+    return;
+  }
+
+  if (isset($_GET['q']) && $_GET['q']) {
+    // q= has a value, use that for the path
+    $path = $_GET['q'];
+  }
+  elseif (drupal_is_cli()) {
+    $path = 'drush';
+  }
+  else {
+    // q= is empty, use whatever the site_frontpage is set to
+    $path = variable_get('site_frontpage', 'node');
+  }
+
+  // Skip if page from cache or on certain paths defined by the user.
+  if (!function_exists('drupal_match_path') || drupal_match_path($path, variable_get('performance_skip_paths', ''))) {
+    return;
+  }
+
+  $params = array(
+    'timer' => timer_read('page'),
+    'path'  => $path,
+  );
+
+  // Memory.
+  // No need to check if this function exists in D7, as it has a minimal
+  // requirement of PHP 5.2.5.
+  $params['mem'] = memory_get_peak_usage(TRUE);
+
+  // Query time and count
+  $query_count = $query_timer = $sum = 0;
+
+  if (variable_get(PERFORMANCE_QUERY_VAR, 0)) {
+    // See http://drupal.org/node/1022204
+    $queries = Database::getLog('performance', 'default');
+    foreach ($queries as $query) {
+      $sum += $query['time'];
+      $query_count++;
+    }
+    $query_timer = round($sum * 1000, 2);
+  }
+
+  $params['query_count'] = $query_count;
+  $params['query_timer'] = $query_timer;
+
+  // Anonymous access?
+  $params['anon'] = ($user->uid) ? 0 : 1;
+
+  // Language
+  $params['language'] = $language->language;
+
+  // There used to be a module_invoke_all('performance', 'header', $header) call
+  // here but it has been removed. $header was an associative array containing
+  // path, timer (ms) and anon ('Yes' or 'No').
+
+  if (variable_get('performance_detail', 0)) {
+    // There used to be a module_invoke_all('performance', 'data') call here. As
+    // it was undocumented and therefore unknown, it has been removed. The data
+    // column has been kept so that we can re-implement if needed.
+    $params['data'] = NULL;
+    performance_log_details($params);
+  }
+  // There used to be a module_invoke_all('performance', 'disable') call here in
+  // an else statement.
+
+  if (variable_get('performance_summary', 0)) {
+    performance_log_summary($params);
+  }
+}
+
+/**
+ * Store the summary data.
+ */
+function performance_log_summary($params) {
+  $key = PERFORMANCE_KEY . $params['path'] . ':' . $params['language'] . ':' . $params['anon'];
+  $data = cache_get($key, PERFORMANCE_BIN);
+  if (is_object($data)) {
+    $data = $data->data;
+  }
+  $result = performance_build_summary_data($data, $params);
+
+  if ($result['type'] == 'new') {
+    // $keys_cache is used to easily retrieve our data later on.
+    if ($keys_cache = cache_get(PERFORMANCE_KEY, PERFORMANCE_BIN)) {
+      $keys_values = $keys_cache->data;
+    }
+    // Keep the key for the key cache store. We do it this way so that keys
+    // will replace eachother which would not happen when using
+    // $keys_values[] = $key;
+    $keys_values[$key] = 1;
+    cache_set(PERFORMANCE_KEY, $keys_values, PERFORMANCE_BIN);
+  }
+
+  // Keep records for 1 day.
+  $expire = $result['data']['last_access'] + (24 * 60 * 60);
+  cache_set($key, $result['data'], PERFORMANCE_BIN, $expire);
+}
+
+/**
+ * Helper function to build summary data array.
+ *
+ * @param data array of previous data
+ * @param params array of current data
+ * @return array holding summary data
+ */
+function performance_build_summary_data($data, $params) {
+  if ($data) {
+    $type = 'existing';
+    $data = array(
+      'path' => $data['path'],
+      'bytes_max' => max($params['mem'], $data['bytes_max']),
+      'bytes_sum' => $data['bytes_sum'] + $params['mem'],
+      'ms_max' => max($params['timer'], $data['ms_max']),
+      'ms_sum' => $data['ms_sum'] + $params['timer'],
+      'query_timer_max' => max($params['query_timer'], $data['query_timer_max']),
+      'query_timer_sum' => $data['query_timer_sum'] + $params['query_timer'],
+      'query_count_max' => max($params['query_count'], $data['query_count_max']),
+      'query_count_sum' => $data['query_count_sum'] + $params['query_count'],
+      'num_accesses' => $data['num_accesses'] + 1,
+      'last_access' => REQUEST_TIME,
+      'anon' => $params['anon'],
+      'language' => $params['language'],
+    );
+  }
+  else {
+    $type = 'new';
+    $data = array(
+      'path' => $params['path'],
+      'bytes_max' => $params['mem'],
+      'bytes_sum' => $params['mem'],
+      'ms_max' => (int)$params['timer'],
+      'ms_sum' => (int)$params['timer'],
+      'query_timer_max' => $params['query_timer'],
+      'query_timer_sum' => $params['query_timer'],
+      'query_count_max' => (int)$params['query_count'],
+      'query_count_sum' => (int)$params['query_count'],
+      'num_accesses' => 1,
+      'last_access' => REQUEST_TIME,
+      'anon' => $params['anon'],
+      'language' => $params['language'],
+    );
+  }
+
+  return array('data' => $data, 'type' => $type);
+}
+
+/**
+ * Helper function to traverse the cache_bin data for retrieving and/or
+ * pruning data.
+ *
+ * @param $callback string function to execute on the data fetched
+ * @param $args optional additional argument(s) to pass to the callback (use an
+ * array or object to pass multiple arguments)
+ * @return array of data where the contents depends on the callback
+ */
+function performance_traverse_cache($callback, $args = NULL) {
+  $data_list = array();
+  $pruned = FALSE;
+
+  if ($keys_cache = cache_get(PERFORMANCE_KEY, PERFORMANCE_BIN)) {
+    // is_array() check to prevent anything from ever going wrong here.
+    if (is_array($keys_cache->data)) {
+      foreach ($keys_cache->data as $key => $value) {
+        $cache = cache_get($key, PERFORMANCE_BIN);
+        if (!$cache) {
+          // Cache entry for this key has expired, remove the key.
+          unset($keys_cache->data[$key]);
+          // Mark as pruned: we have to rewrite the keys cache!
+          $pruned = TRUE;
+        }
+        else {
+          // call_user_func() does not support passing by reference. See
+          // http://php.net/manual/en/function.call-user-func-array.php and the
+          // note about PHP 5.4 concerning the possibility of passing by
+          // reference there. Hence this approach to prevent future
+          // compatibility issues
+          if ($data = call_user_func($callback, $cache, $args)) {
+            $data_list[] = $data;
+          }
+        }
+      }
+    }
+  }
+
+  // Write the pruned key cache if needed.
+  if ($pruned) {
+    cache_set(PERFORMANCE_KEY, $keys_cache->data, PERFORMANCE_BIN);
+  }
+
+  return $data_list;
+}
+
+/**
+ * Callback used by performance_traverse_cache() for fetching summary data.
+ *
+ * @param $cache cache object
+ * @param $timestamp unix timestamp to start fetching data from
+ * @return the processed data or NULL
+ *
+ * @see performance_traverse_cache()
+ */
+function performance_get_summary($cache, $timestamp) {
+  static $count = 0;
+
+  // Don't combine these IF statemens here, otherwise else might get executed
+  // while $timestamp IS set!
+  if ($timestamp !== NULL) {
+    if($cache->created >= $timestamp) {
+      // return based on timestamp
+      return $cache->data;
+    }
+  }
+  else {
+    // return paged
+    global
+      $pager_page_array,  // array of element-keyed current page - 1
+      $pager_total_items, // array of element-keyed total number of data rows
+      $pager_limits,      // array of element-keyed number of rows per page
+      $pager_total;       // array of element-keyed total number of pages
+
+    $pager_total_items[0]++;
+    if (($pager_page_array[0] * $pager_limits[0]) < $pager_total_items[0] && $count < $pager_limits[0]) {
+      $count++;
+      return $cache->data;
+    }
+  }
+
+  return;
+}
+
+/**
+ * Summary page callback.
+ */
+function performance_view_summary() {
+  drupal_set_title(t('Performance logs: Summary'));
+
+  global
+    $pager_page_array,  // array of element-keyed current page - 1
+    $pager_total_items, // array of element-keyed total number of data rows
+    $pager_limits,      // array of element-keyed number of rows per page
+    $pager_total;       // array of element-keyed total number of pages
+
+  $rows = $data_list = array();
+
+  // Build table header.
+  $header = array(
+    array('data' => t('Path'), 'field' => 'path'),
+    array('data' => t('Last access'), 'field' => 'last_access'),
+    array('data' => t('# accesses'), 'field' => 'num_accesses'),
+    array('data' => t('MB Memory (Max)'), 'field' => 'bytes_max'),
+    array('data' => t('MB Memory (Avg)'), 'field' => 'bytes_sum'),
+    array('data' => t('ms (Max)'), 'field' => 'ms_max'),
+    array('data' => t('ms (Avg)'), 'field' => 'ms_sum'),
+    array('data' => t('Language'), 'field' => 'language'),
+    array('data' => t('Anonymous?'), 'field' => 'anon'),
+  );
+  if (variable_get(PERFORMANCE_QUERY_VAR, 0)) {
+    $header[] = array('data' => t('Query ms (Max)'), 'field' => 'query_timer_max');
+    $header[] = array('data' => t('Query ms (Avg)'), 'field' => 'query_timer_sum');
+    $header[] = array('data' => t('Query Count (Max)'), 'field' => 'query_count_max');
+    $header[] = array('data' => t('Query Count (Avg)'), 'field' => 'query_count_sum');
+  }
+
+  // Set up pager since this is not done automatically when using caching bins.
+  // Note that there can be data in these variables already hence the 'keyed'
+  // setup of the arrays.
+  $pager_height = 50;
+  $pager_total_items = array(0 => 0);
+  $pager_limits = array(0 => $pager_height);
+  $page = isset($_GET['page']) ? sprintf('%d', $_GET['page']) : 0;
+  $pager_page_array = array(0 => $page);
+
+  $data_list = performance_traverse_cache('performance_get_summary');
+
+  if (empty($data_list) && !variable_get('performance_summary', 0)) {
+    return t('Summary performance log is not enabled. Go to the !link to enable it.', array('!link' => l(t('settings page'), PERFORMANCE_SETTINGS, array('query' => drupal_get_destination())))
+    );
+  }
+  elseif (!variable_get('performance_summary', 0)) {
+    drupal_set_message(t('Summary performance log is not enabled! Showing stored logs.'), 'warning');
+  }
+
+  $pager_total = array(0 => ceil($pager_total_items[0] / $pager_limits[0]));
+
+  // Setup sorting since this is not done automatically when using caching bins.
+  $sort_direction = tablesort_get_sort($header);
+  $sort_field = tablesort_get_order($header);
+  // TODO: find a solution for the avg columns! These need to be calculated
+  // first, prolly...
+  $data_list = performance_sort_summary($data_list, $sort_direction, $sort_field['sql']);
+
+  // Format data into table.
+  $threshold = variable_get('performance_threshold_accesses', 0);
+  $total_rows = $shown = $last_max = $total_bytes = $total_ms = $total_accesses = 0;
+  $last_min = REQUEST_TIME;
+
+  foreach ($data_list as $data) {
+    $total_rows++;
+    $last_max = max($last_max, $data['last_access']);
+    $last_min = min($last_min, $data['last_access']);
+
+    // Calculate running averages.
+    $total_bytes += $data['bytes_sum'] / $data['num_accesses'];
+    $total_ms += $data['ms_sum'] / $data['num_accesses'];
+    $total_accesses += $data['num_accesses'];
+
+    $row_data = array();
+    if ($data['num_accesses'] > $threshold) {
+      $shown++;
+      $row_data[] = l($data['path'], $data['path']);
+      $row_data[] = format_date($data['last_access'], 'small');
+      $row_data[] = $data['num_accesses'];
+      $row_data[] = number_format($data['bytes_max'] / 1024 / 1024, 2);
+      $row_data[] = number_format($data['bytes_sum'] / $data['num_accesses'] / 1024 / 1024, 2);
+      $row_data[] = number_format($data['ms_max'], 1);
+      $row_data[] = number_format($data['ms_sum'] / $data['num_accesses'], 1);
+      $row_data[] = $data['language'];
+      $row_data[] = ($data['anon']) ? t('Yes') : t('No');
+      if (variable_get(PERFORMANCE_QUERY_VAR, 0)) {
+        $row_data[] = number_format($data['query_timer_max'], 1);
+        $row_data[] = number_format($data['query_timer_sum'] / $data['num_accesses'], 1);
+        $row_data[] = $data['query_count_max'];
+        $row_data[] = $data['query_count_sum'] / $data['num_accesses'];
+      }
+    }
+    $rows[] = array('data' => $row_data);
+  }
+
+  $output = '';
+  if ($threshold) {
+    $output .= t('Showing !shown paths with more than !threshold accesses, out of !total total paths.',
+      array('!threshold' => $threshold, '!shown' => $shown, '!total' => $total_rows)) . '<br/>';
+  }
+  else {
+    $output .= t('Showing all !total paths.', array('!total' => $total_rows)) . '<br/>';
+  }
+
+  // Protect against divide by zero.
+  if ($total_rows > 0) {
+    $mb_avg = number_format($total_bytes / $total_rows / 1024 / 1024, 1);
+    $ms_avg = number_format($total_ms / $total_rows, 2);
+  }
+  else {
+    $mb_avg = 'n/a';
+    $ms_avg = 'n/a';
+  }
+
+  $output .= t('Average memory per page: !mb_avg MB', array('!mb_avg' => $mb_avg)) . '<br/>';
+  $output .= t('Average duration per page: !ms_avg ms', array('!ms_avg' => $ms_avg)) . '<br/>';
+  $output .= t('Total number of page accesses: !accesses', array('!accesses' => $total_accesses)) . '<br/>';
+  $output .= t('First access: !access.', array('!access' => format_date($last_min, 'small'))) . '<br/>';
+  $output .= t('Last access: !access.',  array('!access' => format_date($last_max, 'small')));
+
+  // Return a renderable array.
+  return array(
+    'general_info' => array(
+      '#prefix' => '<p>',
+      '#markup' => $output,
+      '#suffix' => '</p><p>&nbsp;</p>',
+    ),
+    'query_data_summary' => array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#sticky' => TRUE,
+      '#empty' => t('No statistics available yet.'),
+    ),
+    'pager' => array(
+      '#theme' => 'pager',
+      '#quantity' => $pager_height,
+    ),
+    'clear' => array(
+      '#markup' => l(t('Clear logs'), 'admin/reports/performance-logging/clear/summary'),
+    ),
+  );
+}
+
+/**
+ * Helper function to sort data from the cache bin.
+ *
+ * @param $data array of data to sort
+ * @param $direction string asc or desc
+ * @param $field string name of field to sort
+ * @return sorted $data array
+ *
+ * @see array_multisort()
+ */
+function performance_sort_summary($data, $direction, $field) {
+  if(empty($data)) {
+    return $data;
+  }
+
+  switch($direction) {
+    case 'asc':
+      $direction = SORT_ASC;
+      break;
+    case 'desc':
+      $direction = SORT_DESC;
+      break;
+  }
+
+  // Extract the column of data to be sorted.
+  $column = array();
+  foreach ($data as $key => $row) {
+    $column[$key] = $row[$field];
+  }
+  array_multisort($column, $direction, $data);
+
+  return $data;
+}
+
+/**
+ * Clear logs form.
+ */
+function performance_clear_form($form, &$form_state, $store = NULL) {
+  $base = 'admin/reports/performance-logging/';
+
+  // Seemed the best solution, instead of doing something like
+  // t('Are you sure you want to clear all @store data?', array ('@store' => $store));
+  switch ($store) {
+    case 'summary':
+      $question = t('Are you sure you want to clear all summary data?');
+      $path = $base . 'summary';
+      break;
+    case 'details':
+      $question = t('Are you sure you want to clear all detail data?');
+      $path = $base . 'details';
+      break;
+    default:
+      // None or unrecognised store => 404.
+      drupal_not_found();
+      return 2;
+  }
+
+  $form['store'] = array(
+     '#type' => 'value',
+     '#value' => $store,
+  );
+
+  $form['redirect'] = array(
+     '#type' => 'value',
+     '#value' => $path,
+  );
+
+  return confirm_form($form, $question, $path);
+}
+
+/**
+ * Clear logs form submit handler.
+ */
+function performance_clear_form_submit($form, &$form_state) {
+  switch ($form_state['values']['store']) {
+    case 'summary':
+      cache_clear_all('*', PERFORMANCE_BIN, TRUE);
+      break;
+    case 'details':
+      performance_clear_details();
+      break;
+  }
+
+  $form_state['redirect'] = array($form_state['values']['redirect']);
+}
+
+/**
+ * Gather performance data for external modules.
+ */
+function performance_gather_summary_data() {
+  // Data from last 15 minutes.
+  $timestamp = REQUEST_TIME - 15 * 60;
+  $data_list = performance_traverse_cache('performance_get_summary', $timestamp);
+
+  // Initialize variables.
+  $total_rows = $total_bytes = $total_ms = $total_accesses = $total_query_time = $total_query_count = 0;
+
+  foreach ($data_list as $data) {
+    $total_rows++;
+
+    // Calculate running averages.
+    $total_bytes += $data['bytes_sum'] / $data['num_accesses'];
+    $total_ms += $data['ms_sum'] / $data['num_accesses'];
+    $total_accesses += $data['num_accesses'];
+    $total_query_time += $data['query_timer_sum'] / $data['num_accesses'];
+    $total_query_count += $data['query_count_sum'] / $data['num_accesses'];
+  }
+
+  $results = array();
+  $results['total_accesses'] = $total_accesses;
+  // Protect against divide by zero.
+  if ($total_rows > 0) {
+    $results['ms_avg'] = number_format($total_ms / $total_rows, 1, '.', '');
+    $results['ms_query'] = number_format($total_query_time / $total_rows, 1, '.', '');
+    $results['query_count'] = number_format($total_query_count / $total_rows, 2, '.', '');
+    $results['mb_avg'] = number_format($total_bytes / $total_rows / 1024 / 1024, 1);
+  }
+  else {
+    $results['ms_avg'] = '';
+    $results['ms_query'] = '';
+    $results['mb_avg'] = '';
+    $results['query_count'] = '';
+  }
+
+  return $results;
+}
+
+/**
+ * Implements hook_nagios_info().
+ */
+function performance_nagios_info() {
+  return array(
+    'name'   => 'Performance logging',
+    'id'     => 'PERF',
+  );
+}
+
+/**
+ * Implements hook_nagios().
+ */
+function performance_nagios() {
+  $data = performance_gather_summary_data();
+
+  if (!$data) {
+    $info = performance_nagios_info();
+    return array(
+      $info['id'] => array(
+        'status' => NAGIOS_STATUS_UNKNOWN,
+        'type'   => 'perf',
+        'text'   => t('Performance logging is not enabled'),
+      ),
+    );
+  }
+
+  $status = NAGIOS_STATUS_OK;
+
+  return array(
+    'ACC' => array(
+      'status' => $status,
+      'type'   => 'perf',
+      'text'   => $data['total_accesses'],
+    ),
+    'MS' => array(
+      'status' => $status,
+      'type'   => 'perf',
+      'text'   => $data['ms_avg'],
+    ),
+    'MMB' => array(
+      'status' => $status,
+      'type'   => 'perf',
+      'text'   => $data['mb_avg'],
+    ),
+    'QRC' => array(
+      'status' => $status,
+      'type'   => 'perf',
+      'text'   => $data['query_count'],
+    ),
+    'QRT' => array(
+      'status' => $status,
+      'type'   => 'perf',
+      'text'   => $data['ms_query'],
+    ),
+  );
+}
+
+/**
+ * Implements hook_prod_check_alter().
+ */
+function performance_prod_check_alter(&$checks) {
+  $checks['perf_data']['functions']['performance_prod_check_return_data'] = 'Performance logging';
+}
+
+/**
+ * Return performance data to Production Monitor.
+ */
+function performance_prod_check_return_data() {
+  $data = performance_gather_summary_data();
+
+  if (!$data) {
+    return array(
+      'performance' => array(
+        'title' => 'Performance logging',
+        'data' => 'No performance data found.',
+      ),
+    );
+  }
+
+  return array(
+    'performance' => array(
+      'title' => 'Performance logging',
+      'data' => array(
+        'Total number of page accesses' => array($data['total_accesses']),
+        'Average duration per page' => array($data['ms_avg'], 'ms'),
+        'Average memory per page' => array($data['mb_avg'], 'MB'),
+        'Average querycount' => array($data['query_count']),
+        'Average duration per query' => array($data['ms_query'], 'ms'),
+      ),
+    ),
+  );
+}

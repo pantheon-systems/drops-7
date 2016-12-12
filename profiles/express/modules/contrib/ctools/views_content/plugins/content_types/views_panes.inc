@@ -321,6 +321,10 @@ function views_content_views_panes_content_type_render($subtype, $conf, $panel_a
 function views_content_views_panes_add_defaults(&$conf, $view) {
   $pager = $view->display_handler->get_option('pager');
 
+  if (empty($conf)) {
+    $conf = array();
+  }
+
   $conf += array(
     'link_to_view' => $view->display_handler->get_option('link_to_view'),
     'more_link' => $view->display_handler->get_option('use_more'),

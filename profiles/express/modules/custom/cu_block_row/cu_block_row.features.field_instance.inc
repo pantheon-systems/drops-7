@@ -10,7 +10,7 @@
 function cu_block_row_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-block_row-field_block_row_collection'
+  // Exported field_instance: 'bean-block_row-field_block_row_collection'.
   $field_instances['bean-block_row-field_block_row_collection'] = array(
     'bundle' => 'block_row',
     'default_value' => NULL,
@@ -44,7 +44,7 @@ function cu_block_row_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block_row-field_block_row_distribution'
+  // Exported field_instance: 'bean-block_row-field_block_row_distribution'.
   $field_instances['bean-block_row-field_block_row_distribution'] = array(
     'bundle' => 'block_row',
     'default_value' => array(
@@ -80,7 +80,8 @@ function cu_block_row_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'field_collection_item-field_block_row_collection-field_block_row_block'
+  // Exported field_instance:
+  // 'field_collection_item-field_block_row_collection-field_block_row_block'.
   $field_instances['field_collection_item-field_block_row_collection-field_block_row_block'] = array(
     'bundle' => 'field_block_row_collection',
     'default_value' => NULL,
@@ -92,6 +93,7 @@ function cu_block_row_field_default_field_instances() {
         'module' => 'entityreference',
         'settings' => array(
           'links' => 0,
+          'use_content_language' => TRUE,
           'view_mode' => 'default',
         ),
         'type' => 'entityreference_entity_view',

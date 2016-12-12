@@ -61,5 +61,11 @@ function cu_photo_gallery_express_help($variables) {
     'short_title' => 'Photo Gallery Help',
     'url' => '/node/700',
   );
-  return $variables;
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_photo_gallery_bundle';
+      return $a;
+    },
+    $variables);
 }

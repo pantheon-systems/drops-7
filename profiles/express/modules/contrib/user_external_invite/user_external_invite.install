@@ -23,27 +23,32 @@ function user_external_invite_schema() {
         'type' => 'varchar',
         'length' => 254,
         'not null' => TRUE,
+        'default' => variable_get('site_mail', 'admin@example.com'),
       ),
       'rid' => array(
         'description' => 'Role ID to be granted',
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 2,
       ),
       'expire' => array(
         'description' => 'Valid until unix timestamp',
         'type' => 'int',
         'not null' => TRUE,
+        'default' => REQUEST_TIME + (60 * 60 * 24 * 5),
       ),
       'status' => array(
         'description' => 'Status of the Invitation',
         'type' => 'varchar',
         'length' => 254,
         'not null' => TRUE,
+        'default' => 'Pending',
       ),
       'uid' => array(
         'description' => 'User ID of who sent the invite',
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 1,
       ),
       'message' => array(
         'description' => 'Custom message included with invite',
@@ -63,14 +68,6 @@ function user_external_invite_schema() {
  * Implements hook_install().
  */
 function user_external_invite_install() {
-  // Add default roles for invite page.
-  $user_roles = user_roles();
-  if (($key = array_search('anonymous user', $user_roles)) !== FALSE) {
-    unset($user_roles[$key]);
-  }
-  $user_roles = array_keys($user_roles);
-  variable_set('user_external_invite_roles', array_combine($user_roles, $user_roles));
-
   // Add content for initial templates.
   _user_external_invite_initial_templates();
 }
@@ -82,6 +79,7 @@ function user_external_invite_uninstall() {
   // Delete variables related to this module.
   variable_del('user_external_invite_roles');
   variable_del('user_external_invite_days_valid_for');
+  variable_del('user_external_invite_delete_old_invites');
   variable_del('user_external_invite_confirmation_template');
   variable_del('user_external_invite_use_universal_from_email');
   variable_del('user_external_invite_invite_template');
@@ -102,15 +100,15 @@ To accept this invitation:
 1) Go to [user_external_invite:invite_link]
 2) Login with your username and password.
 
-Upon completion, you will receive an email confirming your access.');
-
+Upon completion, you will receive an email confirming your access. Please note that invite is only valid until [user_external_invite:invite_expiration]. You will have to contact the site owner if you haven\'t accepted the invite by that date.' );
+  
   variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following:
 
 [user_external_invite:invited_emails]
 
-An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent.
-
-If you did not submit this request or need to modify it, please contact your administrator at [site:mail].');
+An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent. Please note that invite is valid until [user_external_invite:invite_expiration] and you will have to send out another invite if the invitee hasn\'t accepted it by this date.
+ 
+ If you did not submit this request or need to modify it, please contact your administrator at [site:mail].');
 
   variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.');
 
@@ -125,13 +123,16 @@ To access and edit this site:
  * Add status row to table.
  */
 function user_external_invite_update_7001() {
-  $spec = array(
-    'description' => 'Status of the Invitation',
-    'type' => 'varchar',
-    'length' => 254,
-    'not null' => TRUE,
-  );
-  db_add_field('user_external_invite', 'status', $spec);
+  if (!db_field_exists('user_external_invite','status')) {
+    $spec = array(
+      'description' => 'Status of the Invitation',
+      'type' => 'varchar',
+      'length' => 254,
+      'not null' => TRUE,
+      'default' => 'Pending',
+    );
+    db_add_field('user_external_invite', 'status', $spec);
+  }
 }
 
 /**

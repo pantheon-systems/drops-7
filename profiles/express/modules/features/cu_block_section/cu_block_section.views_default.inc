@@ -53,10 +53,7 @@ function cu_block_section_views_default_views() {
   $handler->display->display_options['filters']['type']['field'] = 'type';
   $handler->display->display_options['filters']['type']['operator'] = 'not in';
   $handler->display->display_options['filters']['type']['value'] = array(
-    'article_slider' => 'article_slider',
     'block_section' => 'block_section',
-    'hero_unit' => 'hero_unit',
-    'slider' => 'slider',
   );
 
   /* Display: Entity Reference */

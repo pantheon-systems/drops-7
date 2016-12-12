@@ -69,6 +69,11 @@ function googleanalytics_permission() {
       'description' => t('Enter PHP code in the field for tracking visibility settings.'),
       'restrict access' => TRUE,
     ),
+    'add JS snippets for google analytics' => array(
+      'title' => t('Add JavaScript snippets'),
+      'description' => 'Enter JavaScript code snippets for advanced Google Analytics functionality.',
+      'restrict access' => TRUE,
+    ),
   );
 }
 

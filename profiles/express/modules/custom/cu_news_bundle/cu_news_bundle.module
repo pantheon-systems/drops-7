@@ -237,7 +237,12 @@ function cu_news_bundle_express_help($variables) {
     'url' => '/node/1050',
   );
 
-  return $variables;
+  return array_map(
+    function ($a) {
+      $a[0]['module'] = 'cu_news_bundle';
+      return $a;
+    },
+    $variables);
 }
 
 /**
@@ -255,16 +260,19 @@ function cu_news_bundle_express_help_fields($variables) {
       'title' => 'Adding Images Help',
       'short_title' => 'Images',
       'url' => '/tutorial/v2/add-images',
+      'module' => 'cu_news_bundle',
     ),
     'author' => array(
       'title' => 'Change Article Order',
       'short_title' => 'Article Order',
       'url' => '/tutorial/v2/change-article-order',
+      'module' => 'cu_news_bundle',
     ),
     'field_article_external_url' => array(
       'title' => 'Including External Articles',
       'short_title' => 'External Articles',
       'url' => '/tutorial/v2/including-external-articles-your-news-feed',
+      'module' => 'cu_news_bundle',
     ),
   );
 

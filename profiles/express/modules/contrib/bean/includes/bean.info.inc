@@ -55,6 +55,27 @@ class BeanMetadataController extends EntityDefaultMetadataController {
       'description' => t('The bean type.'),
     ) + $properties['type'];
 
+    $properties['created'] = array(
+      'label' => t('Date created'),
+      'description' => t('The date the bean was created.'),
+      'type' => 'date',
+      'schema field' => 'created',
+    );
+
+    $properties['changed'] = array(
+      'label' => t('Date changed'),
+      'description' => t('The date the bean was most recently updated.'),
+      'type' => 'date',
+      'schema field' => 'changed',
+    );
+
+    $properties['user'] = array(
+      'label' => t('User'),
+      'description' => t('The owner of the block'),
+      'type' => 'user',
+      'schema field' => 'uid',
+    );
+
     return $info;
   }
 }

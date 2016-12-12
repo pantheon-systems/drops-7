@@ -38,6 +38,7 @@ function express_layout_context_default_contexts() {
         'node/*' => 'node/*',
         '~node/*/edit' => '~node/*/edit',
         '~node/*/layout' => '~node/*/layout',
+        '~node/*/revisions' => '~node/*/revisions',
       ),
     ),
   );

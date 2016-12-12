@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for site_navigation_menus module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function site_navigation_menus_install() {
+  // Ensure main menu is set to be menu selected by the page.
+  // It looks like all menus have this option set, but set it again to be sure.
+  $menus = variable_get('menu_block_menu_order', array());
+
+  if ($menus) {
+    $menus['main-menu'] = '0';
+  }
+
+  variable_set('menu_block_menu_order', $menus);
+}

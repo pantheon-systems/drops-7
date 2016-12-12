@@ -1843,20 +1843,18 @@ function metatag_update_7040(&$sandbox) {
     // The count of records visited so far.
     $sandbox['progress'] = 0;
 
-    // Get a list of {metatag} records that have a robots meta tag definition
+    // Get a count of {metatag} records that have a robots meta tag definition
     // that is not in the correct format.
-    $nodes = db_select('metatag', 'm')
+    $records = db_select('metatag', 'm')
       ->fields('m')
       ->condition('m.data', '%:6:"robots";%', 'LIKE')
       ->condition('m.data', '%:6:"robots";a:1:{s:5:"value";%', 'NOT LIKE')
-      ->execute();
-    $sandbox['records'] = array();
-    foreach ($nodes as $record) {
-      $sandbox['records'][] = $record;
-    }
+      ->countQuery()
+      ->execute()
+      ->fetchField();
 
     // If there's no data, don't bother with the extra work.
-    if (empty($sandbox['records'])) {
+    if (empty($records)) {
       watchdog('metatag', 'Update 7040: No robots meta tags need to be fixed.', array(), WATCHDOG_INFO);
       if (drupal_is_cli()) {
         drupal_set_message(t('Update 7040: No robots meta tags need to be fixed.'));
@@ -1865,7 +1863,7 @@ function metatag_update_7040(&$sandbox) {
     }
 
     // Total records that must be visited.
-    $sandbox['max'] = count($sandbox['records']);
+    $sandbox['max'] = $records;
 
     // A place to store messages during the run.
     $sandbox['messages'] = array();
@@ -1876,27 +1874,24 @@ function metatag_update_7040(&$sandbox) {
       drupal_set_message(t('Update 7040: !count records to examine.', array('!count' => $sandbox['max'])));
     }
 
-    // Last record processed.
-    $sandbox['current_record'] = -1;
-
     // Log how many records are fixed.
     $sandbox['fixed'] = 0;
 
     // Because a lot of other processing happens on the first iteration, just do
-    // one.
-    $limit = 1;
+    // ten.
+    $limit = 10;
   }
 
+  // Get a list of records that need to be fixed.
+  $records = db_select('metatag', 'm')
+    ->fields('m')
+    ->condition('m.data', '%:6:"robots";%', 'LIKE')
+    ->condition('m.data', '%:6:"robots";a:1:{s:5:"value";%', 'NOT LIKE')
+    ->range(0, $limit)
+    ->execute();
+
   // Set default values.
-  for ($ctr = 0; $ctr < $limit; $ctr++) {
-    $sandbox['current_record']++;
-    if (empty($sandbox['records'][$sandbox['current_record']])) {
-      break;
-    }
-
-    // Shortcuts for later.
-    $record = $sandbox['records'][$sandbox['current_record']];
-
+  foreach ($records as $record) {
     // Extract the record.
     $record->data = unserialize($record->data);
 

@@ -274,5 +274,12 @@ function cu_advanced_content_bundle_express_help($variables) {
     'short_title' => 'Content List Page Help',
     'url' => '/node/1110',
   );
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'advanced_content_bundle';
+      return $a;
+    },
+    $variables);
 }

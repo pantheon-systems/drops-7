@@ -59,6 +59,19 @@ function cu_core_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function cu_core_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  // Remove "Redirect URL" accordion on bean edit forms.
+  $form['redirect']['#access'] = FALSE;
+
+  // Move revision group to bottom of bean edit forms.
+  $form['revision2'] = $form['revision'];
+  $form['revision2']['#weight'] = 101;
+  unset($form['revision']);
+}
+
+/**
  * Implements hook_modules_enabled().
  * Add shortcut link for context AFTER context_ui is enabled.
  */

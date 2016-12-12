@@ -21,5 +21,12 @@ function cu_feeds_bundle_express_help($variables) {
     'url' => '/node/1078',
   );
 
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_feeds_bundle';
+      return $a;
+    },
+    $variables);
 }

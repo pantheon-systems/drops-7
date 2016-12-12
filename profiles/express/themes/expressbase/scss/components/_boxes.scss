@@ -55,7 +55,7 @@ $radius: 0px;
   @include border_outline($color: $dark_gray, $stroke: 1px);
 }
 .box-lightgray.box-style-border {
-  @include border_outline($color: $light_gray, $stroke: 1px);
+  @include border_outline($color: $border_color, $stroke: 1px);
   color:$text_black;
 }
 
@@ -100,7 +100,7 @@ $radius: 0px;
   border-bottom: 1px solid $border_color;
 }
 .box-lightgray.box-style-border .box-title {
-  border-bottom: 1px solid $light_gray;
+  border-bottom: 1px solid $border_color;
 }
 
 

@@ -1,0 +1,22 @@
+
+user_external_invite 7.x-1.x-dev
+==================
+
+
+user_external_invite 7.x-1.1
+==================
+Issue #2820175 by afinnarn: Add a license to the project
+Issue #2820173 by afinnarn: Add changelog.txt file to repository
+Issue #2820219 by afinnarn: Remove License.txt from project
+Issue #2816077 by darshi: Deleting roles can result in blank options in invite form
+Issue #2816091 by darshi, afinnarn: Two action buttons on the invites page is confusing
+Issue #2816653 by darshi, afinnarn: Form Items Need Better Help Text/Descriptions
+Issue #2820720 by darshi: Error on selecting universal email
+Issue #2816659 by darshi, afinnarn: A default role to invite can be selected without having that role included on Invite page
+Issue #2822572 by darshi, afinnarn: Prevent disabling module if invites are pending
+Issue #2824541 by darshi: Can not change Invite Deletion value
+Issue #2822401 by darshi: On Install All Roles Are Available to Invite
+Issue #2649660 by naresh.bavaskar, afinnarn: Create Warning or Notice if Changing Roles When There Are Current Active Invite
+Issue #2825035 by darshi, afinnarn: Add Expiration Information to Invitation Emails
+Issue #2826114 by afinnarn: Add .gitignore with exclusion of patch files
+Issue #2822151 by afinnarn, kreynen: Update hook fails when pending invites exist

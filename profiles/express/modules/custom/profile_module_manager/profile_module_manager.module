@@ -59,7 +59,7 @@ function profile_module_manager_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('profile_module_manager_admin_settings'),
     'file' => 'profile_module_manager.admin.inc',
-    'access arguments' => array('administer modules'),
+    'access arguments' => array('configure profile module manager'),
   );
 
   return $items;
@@ -77,6 +77,10 @@ function profile_module_manager_permission() {
     'enable admin bundles' => array(
       'title' => t('Enable Admin Bundles'),
       'description' => t('Enable modules in admin bundles without administer modules permission.'),
+    ),
+    'configure profile module manager' => array(
+      'title' => t('Configure Profile Module Manager'),
+      'description' => t('Manage hidden bundles and access to UI.'),
     ),
   );
 }
@@ -107,21 +111,6 @@ function profile_module_manager_system_info_alter(&$info, $file, $type) {
 function profile_module_manager_is_config_ideal(){
   $reality = module_list();
   $ideal = profile_module_manager_build_ideal();
-
-  // remove any items configured to be ignored
-  // @TDOD: make this a variable that is set by cu_debug_admin_bundle
-  $ignore = variable_get('profile_module_manager_ignore', array());
-
-  foreach ($ignore as $name) {
-    $name = trim($name);
-    if (isset($reality[$name])) {
-      unset($reality[$name]);
-    }
-    if (isset($ideal[$name])) {
-      unset($ideal[$name]);
-    }
-  }
-
 
   //does the reality match the ideal?
   $diff1 = array_diff_assoc($reality, $ideal);
@@ -188,28 +177,11 @@ function profile_module_manager_build_ideal() {
   $profile_name = drupal_get_profile();
   $profile = install_profile_info($profile_name);
 
-  $ideal = $profile['dependencies'];
-  // if no hooks, just compare with dependencies
-  // in active profiles .info
-  //$ideal = cu_module_manager_should_be_enabled();
+  // Start with the profile
+  $ideal = isset($profile['dependencies']) ? $profile['dependencies'] : array();
+  $ignore = isset($profile['optional-dependencies']) ? $profile['optional-dependencies'] : array();
 
-  // Add dependencies from any bundle to ideal.
-  $bundles = profile_module_manager_get_bundles('enabled');
-
-  foreach($bundles as $bundle) {
-    // could just replace .module w/ .info from $bundle->filename
-    // which is faster?
-    $path = drupal_get_path('module', $bundle->name) . '/' . $bundle->name . '.info';
-    $info = drupal_parse_info_file($path);
-    if (isset($info['dependencies'])) {
-      $ideal = array_merge($ideal, $info['dependencies']);
-    }
-
-    // and the bundle itself
-    $ideal[] = $bundle->name;
-  }
-
-  // Add core modules to ideal array.
+  // Add core dependencies to ideal and ignore arrays.
   $core_modules = profile_module_manager_get_core_modules('enabled');
   foreach($core_modules as $core) {
     // could just replace .module w/ .info from $bundle->filename
@@ -219,15 +191,45 @@ function profile_module_manager_build_ideal() {
     if (isset($info['dependencies'])) {
       $ideal = array_merge($ideal, $info['dependencies']);
     }
-
-    // and the bundle itself
+    if (isset($info['optional-dependencies'])) {
+      $ignore = array_merge($ignore, $info['optional-dependencies']);
+    }
+    // and the core itself
     $ideal[] = $core->name;
   }
 
-  // rebuild ideal so keys = value
+  // Add enabled bundle dependencies to ideal and ignore arrays.
+  $bundles = profile_module_manager_get_bundles('enabled');
+
+  foreach($bundles as $bundle) {
+    // could just replace .module w/ .info from $bundle->filename
+    // which is faster?
+    $path = drupal_get_path('module', $bundle->name) . '/' . $bundle->name . '.info';
+    $info = drupal_parse_info_file($path);
+
+    if (isset($info['dependencies'])) {
+      $ideal = array_merge($ideal, $info['dependencies']);
+    }
+    if (isset($info['optional-dependencies'])) {
+      $ignore = array_merge($ignore, $info['optional-dependencies']);
+    }
+
+    // and the bundle itself
+    $ideal[] = $bundle->name;
+  }
+
+  // rebuild ideal so keys = value and ignore optional dependencies
   foreach ($ideal as $item) {
     $new_ideal[$item] = $item;
   }
+
+  // add any ignored project to new_ideal
+  foreach ($ignore as $item) {
+    if (module_exists($item)) {
+      $new_ideal[$item] = $item;
+    }
+  }
+
 
   // add the profile itself to the list
   $new_ideal[$profile_name] = $profile_name;
@@ -309,22 +311,27 @@ function profile_module_manager_theme(&$existing, $type, $theme, $path) {
   $registry['profile_module_manager_bundle_page'] = array(
     'template' => 'profile-module-manager-bundle-page',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['profile_module_manager_bundle_group'] = array(
     'template' => 'profile-module-manager-bundle-group',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['profile_module_manager_bundle'] = array(
     'template' => 'profile-module-manager-bundle',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['profile_module_manager_bundle_actions_disabled'] = array(
     'template' => 'profile-module-manager-bundle-actions-disabled',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   $registry['profile_module_manager_bundle_actions_enabled'] = array(
     'template' => 'profile-module-manager-bundle-actions-enabled',
     'path' => $template_dir,
+    'render element' => 'elements',
   );
   return $registry;
 }

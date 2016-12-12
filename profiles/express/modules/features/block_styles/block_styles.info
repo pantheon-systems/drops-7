@@ -1,13 +1,6 @@
 name = Block Styles
-description = Styles of blocks, block menus, etc.
+description = Empty module. See cu_block_theme.
 core = 7.x
 package = CU-Core
 version = 7.x-1.0
 project = block_styles
-dependencies[] = blocktheme
-dependencies[] = ctools
-dependencies[] = strongarm
-features[ctools][] = strongarm:strongarm:1
-features[features_api][] = api:2
-features[variable][] = blocktheme_show_custom_block_theme
-features[variable][] = blocktheme_themes

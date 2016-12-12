@@ -74,4 +74,11 @@ class EntityTranslationBeanHandler extends EntityTranslationDefaultHandler {
     return parent::getEntityId();
   }
 
+  /**
+   * @inheritdoc
+   */
+  public function isNewEntity() {
+    return empty($this->entityId);
+  }
+
 }

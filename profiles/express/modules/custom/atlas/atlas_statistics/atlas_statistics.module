@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * @file
+ * Provides statistics reporting for Atlas.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function atlas_statistics_menu() {
+  $items['admin/config/development/atlas/statistics'] = array(
+    'title' => 'Statistics',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('atlas_statistics'),
+    'access arguments' => array('administer modules'),
+    'weight' => 0,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for admin/config/development/atlas Statistics tab.
+ */
+function atlas_statistics() {
+  $form = array();
+
+  // Check the base requirements to interact with Atlas.
+  // We need Atlas to be up.
+  if (!atlas_up()) {
+    drupal_set_message(t("Atlas must be up to configure these settings"), 'error');
+    return;
+  }
+
+  // We need to know the 'statistics_id'.
+  $atlas_id = variable_get('atlas_id', NULL);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  $statistics_id = $site_array['statistics'];
+  $statistics_array = atlas_api_request('statistics', $statistics_id);
+
+  if (!$statistics_id) {
+    drupal_set_message(t("A 'statistic' item is not defined for this site."), 'error');
+    return;
+  }
+
+  module_load_include('inc', 'atlas_statistics');
+  $atlas_statistics = atlas_statistics_get_statistics();
+
+  $form['atlas_statistics'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<pre>',
+    '#markup' => print_r($atlas_statistics, TRUE),
+    '#suffix' => '</pre>',
+  );
+
+
+  // Store the etag when we load the form for concurrency control with Atlas.
+  // Need to make sure the Atlas item hasn't changed since we loaded the form.
+  $form['atlas_etag'] = array(
+    '#type' => 'hidden',
+    '#title' => t('eTag'),
+    '#default_value' => $statistics_array['_etag'],
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save Statistics',
+    '#submit' => array('atlas_statistics_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit function for atlas_admin_settings().
+ */
+function atlas_statistics_submit($form, &$form_state) {
+  $atlas_id = variable_get('atlas_id', NULL);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  $statistics_id = $site_array['statistics'];
+
+  module_load_include('inc', 'atlas_statistics');
+  $request_data = atlas_statistics_get_statistics();
+
+  // Set the etag from the form.
+  $request_data['_etag'] = $form_state['values']['atlas_etag'];
+  $request_data['site'] = $atlas_id;
+
+  atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+}

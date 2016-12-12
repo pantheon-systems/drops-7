@@ -1,6 +1,5 @@
 name = Block Title Icons
-description = Provides a icons for block titles
+description = Add FontAwesome icons to block titles
 core = 7.x
 package = CU-Advanced Design
 version = 7.x-1.0
-project = "block_title_icons"

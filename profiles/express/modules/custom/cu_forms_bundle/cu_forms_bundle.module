@@ -134,7 +134,13 @@ function cu_forms_bundle_express_help($variables) {
     'short_title' => 'Feedback Form Help',
     'url' => '/node/16',
   );
-  return $variables;
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_forms_bundle';
+      return $a;
+    },
+    $variables);
 }
 
 /**
@@ -148,5 +154,12 @@ function cu_forms_bundle_express_help_fields($variables) {
       'url' => '/tutorial/v2/add-spam-prevention-webforms',
     ),
   );
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_forms_bundle';
+      return $a;
+    },
+    $variables);
 }

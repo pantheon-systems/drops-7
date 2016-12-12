@@ -1,0 +1,9 @@
+/* Related Articles */
+
+.related-articles .more-link {
+  display: none;
+}
+.related-articles .related-article h3 {
+  font-size: 100%;
+  margin-bottom: 5px;
+}
