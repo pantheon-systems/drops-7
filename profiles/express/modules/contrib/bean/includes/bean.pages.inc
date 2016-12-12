@@ -312,14 +312,14 @@ function bean_form($form, &$form_state, Bean $bean, $type = NULL) {
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
-    '#weight' => 200,
+    '#weight' => 0,
     '#submit' => array('bean_form_submit'),
   );
   if (!empty($bean->bid) && entity_access('delete', 'bean', $bean)) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete'),
-      '#weight' => 201,
+      '#weight' => 1,
       '#submit' => array('bean_form_delete_submit'),
     );
   }

@@ -1,3 +1,24 @@
+Metatag 7.x-1.17, 2016-06-30
+----------------------------
+#2748627 by jalpesh: Corrected twitter:app:id:googleplay description.
+#2752319 by DamienMcKenna: Fixed output of the mask-icon meta tag.
+#2752319 by DamienMcKenna: Added the mask-icon 'color' attribute, the new 'url'
+  option for meta tag definitions, and tests for the mask-icon meta tag.
+#2754263 by DamienMcKenna: Meta tags with multiple values should still be
+  returned as a string from metatag_get_value().
+#1953080 by DamienMcKenna: Don't output language/locale meta tags if they are
+  equal to LANGUAGE_NONE/"und".
+#2659906 by DamienMcKenna: Rewrote update 7040 to use less memory and work
+  better.
+#2720723 by IRuslan: Allow config instance names to be changed.
+#2669592 by DamienMcKenna: Fix for possible problem with removal of meta tags
+  that Metatag is already outputting.
+#2162397 by DamienMckenna: Added test dependency for Profile2.
+#2162397 by roderick, DamienMckenna, hideaway: Fixed loading multiple entities
+  on the same path when at least one of them is not enabled for use with
+  Metatag and gets in the way of the one which is enabled.
+
+
 Metatag 7.x-1.16, 2016-06-03
 ----------------------------
 #2742063 by jalpesh, DamienMcKenna: Fix syntax error in verification module.

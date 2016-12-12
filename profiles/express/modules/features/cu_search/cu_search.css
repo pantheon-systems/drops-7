@@ -52,3 +52,6 @@
 #content .search-results h3 {
   font-style: normal;
 }
+.search-results .google-appliance-info {
+  word-break: break-all;
+}

@@ -9,10 +9,10 @@
 
 <?php
   $links = array();
-  if ($enable_url) {
+  if (isset($enable_url)) {
     $links[] =  l('<i class="fa fa-plus-circle"></i> ' . t('Enable'), $enable_url, array('attributes' => array('class' => array('bundle-enable-link btn btn-primary')), 'html' => TRUE));
   }
-  if ($demo_url) {
+  if (isset($demo_url)) {
     $links[] = l('<i class="fa fa-info-circle"></i> ' . t('More Information'), $demo_url, array('attributes' => array('class' => array('bundle-demo-link btn btn-default'), 'target' => '_blank'), 'html' => TRUE));
   }
   print join(' ', $links);

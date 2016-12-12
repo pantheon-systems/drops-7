@@ -171,7 +171,12 @@ function cu_social_media_bundle_express_help($variables) {
     'url' => '/node/1186',
   );
 
-  return $variables;
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_social_media_bundle';
+      return $a;
+    },
+    $variables);
 }
 
 /**

@@ -123,6 +123,27 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
     $this->assertEqual(trim((string)$xpath[0]), $desc_target);
   }
 
+  /**
+   * Verify language meta tags don't output LANGUAGE_NONE / 'und'.
+   */
+  function testLanguageNone() {
+    // Set the global node defaults to set "content-language" to the node's
+    // language.
+    $config = metatag_config_load('node');
+    $config->config['content-language']['value'] = '[node:language]';
+    metatag_config_save($config);
+
+    // Create a test node.
+    $node = $this->drupalCreateNode();
+    $this->assertEqual($node->language, LANGUAGE_NONE);
+
+    // Load the node page, confirm that the "content-language" meta tag is not
+    // output.
+    $this->drupalGet('node/' . $node->nid);
+    $xpath = $this->xpath("//meta[@http-equiv='content-language']");
+    $this->assertEqual(count($xpath), 0, 'The content-language meta tag was not found.');
+  }
+
   // @todo Make sure the meta tag fields are displayed in the correct locale.
   // @todo Make sure the node records are stored with the correct language.
 }

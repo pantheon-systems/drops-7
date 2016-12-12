@@ -152,13 +152,13 @@ h2.people-list-grid-group-title { font-size: 120%; }
 
 .people-list-filter { padding: 10px 10px 0; margin-bottom: 20px; overflow: hidden; background-color: #e7e7e7; }
 
-.people-list-filter label { font-size: 75%; font-weight: 500; display: inline; }
+.people-list-filter label { font-size: 75%; font-weight: 500; display: block; }
 
 .people-list-filter .form-item, .people-list-filter .form-actions { float: left; margin: 0; margin-right: 15px; margin-bottom: 10px; }
 
 .people-list-filter .form-item select { max-width: 150px; }
 
-.people-list-filter .form-submit { float: left; margin-bottom: 10px; }
+.people-list-filter .form-submit { float: left; margin-bottom: 10px; margin-top: 21px; font-size: 11px; font-weight: 500; }
 
 /* People List Block */
 .person-view-mode-sidebar img.image-square_thumbnail, .person-view-mode-sidebar img.image-small { width: 50px; height: auto; float: left; margin: 0 10px 10px 0; }

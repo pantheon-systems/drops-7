@@ -1,0 +1,14 @@
+name = Performance Logging
+description = Logs detailed and/or summary page generation time and memory consumption for page requests.
+package = Development
+core = 7.x
+configure = admin/config/development/performance-logging
+tags[] = developer
+tags[] = monitoring
+
+; Information added by Drupal.org packaging script on 2016-09-26
+version = "7.x-2.1"
+core = "7.x"
+project = "performance"
+datestamp = "1474895941"
+

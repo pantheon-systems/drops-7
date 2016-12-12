@@ -25,7 +25,7 @@ function cu_custom_logo_upload_form($form, &$form_state) {
     '#upload_location' => 'public://custom_logo/',
     '#default_value' => variable_get('custom_white_logo', ''),
   );
-  
+
   $form['custom_black_logo'] = array(
     '#type' => 'managed_file',
     '#name' => 'custom_black_logo',
@@ -34,18 +34,25 @@ function cu_custom_logo_upload_form($form, &$form_state) {
     '#description' => t('Image should be a transparent png which will be displayed on a light background. Width should be fewer than 440 pixels.'),
     '#upload_location' => 'public://custom_logo/',
     '#default_value' => variable_get('custom_black_logo', ''),
-  ); 
+  );
+  $form['custom_logo_retina'] = array(
+    '#type' => 'checkbox',
+    '#name' => 'custom_logo_retina',
+    '#title' => 'Retina Images',
+    '#description' => 'Check this if the images should be treated as retina images',
+    '#default_value' => variable_get('custom_logo_retina', 0),
+  );
   //$form = system_settings_form($form);
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
   $form['#submit'][] = 'cu_custom_logo_upload_form_submit';
-  return $form; 
+  return $form;
 }
 
 function cu_custom_logo_upload_form_submit($form, &$form_state) {
-  
+
   // White logo remove.
   if ($form_state['values']['custom_white_logo'] == 0 || $form_state['values']['custom_white_logo'] == 'remove') {
     $white_file = variable_get('custom_white_logo', FALSE);
@@ -54,7 +61,7 @@ function cu_custom_logo_upload_form_submit($form, &$form_state) {
       file_delete($white_file, TRUE);
       variable_del('custom_white_logo');
     }
-  } 
+  }
   // White logo upload.
   elseif (isset($form_state['values']['custom_white_logo'])) {
     $white_file = file_load($form_state['values']['custom_white_logo']);
@@ -63,7 +70,7 @@ function cu_custom_logo_upload_form_submit($form, &$form_state) {
     file_usage_add($white_file, 'cu_custom_logo', 'white_logo', 1, 1);
     variable_set('custom_white_logo', $form_state['values']['custom_white_logo']);
   }
-  
+
   // Black logo remove.
   if ($form_state['values']['custom_black_logo'] == 0 || $form_state['values']['custom_black_logo'] == 'remove') {
     $black_file = variable_get('custom_black_logo', FALSE);
@@ -81,13 +88,17 @@ function cu_custom_logo_upload_form_submit($form, &$form_state) {
     file_usage_add($black_file, 'cu_custom_logo', 'black_logo', 1, 1);
     variable_set('custom_black_logo', $form_state['values']['custom_black_logo']);
   }
+  variable_set('custom_logo_retina', $form_state['values']['custom_logo_retina']);
 }
 
 function cu_custom_logo_page_alter(&$page) {
   if (variable_get('custom_white_logo', '') && variable_get('custom_black_logo', '')) {
+    // Get retina settings
+    $retina = variable_get('custom_logo_retina', 0);
     // Load logo file to get dimensions
     $custom_logo = file_load(variable_get('custom_white_logo', ''));
     $logo_info = image_get_info($custom_logo->uri);
-    drupal_add_css('img.custom-logo {max-width:' . $logo_info['width'] . 'px !important; width:100%;}', array('type' => 'inline'));
+    $logo_width = $retina ? $logo_info['width']/2 : $logo_info['width'];
+    drupal_add_css('img.custom-logo {max-width:' . $logo_width . 'px !important; width:100%;}', array('type' => 'inline'));
   }
 }

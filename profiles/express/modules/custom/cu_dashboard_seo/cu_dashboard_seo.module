@@ -41,7 +41,14 @@ function cu_dashboard_seo_express_help($variables) {
     'short_title' => 'SEO Help',
     'url' => '/node/1190',
   );
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_dashboard_seo';
+      return $a;
+    },
+    $variables);
 }
 
 /**

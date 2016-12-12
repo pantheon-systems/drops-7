@@ -3,7 +3,7 @@ name = "Express"
 description = "Express installation profile"
 exclusive = "1"
 core = "7.x"
-version = 7.x-2.2
+version = 7.x-2.3
 
 ; ----------
 ; Dependencies
@@ -36,7 +36,6 @@ dependencies[] = number
 dependencies[] = options
 dependencies[] = path
 dependencies[] = shortcut
-dependencies[] = syslog
 dependencies[] = system
 dependencies[] = taxonomy
 dependencies[] = text
@@ -107,6 +106,7 @@ dependencies[] = chain_menu_access
 dependencies[] = cu_wysiwyg
 dependencies[] = cu_shortcodes
 dependencies[] = cu_shortcodes_wysiwyg
+dependencies[] = cu_soundcloud_embed
 dependencies[] = wysiwyg
 dependencies[] = wysiwyg_filter
 dependencies[] = shortcode
@@ -168,7 +168,7 @@ dependencies[] = menu_firstchild
 
 ; ============ BLOCK ============
 dependencies[] = blocktheme
-dependencies[] = block_styles
+dependencies[] = cu_block_theme
 dependencies[] = cu_block
 
 ; ============ FLEXSLIDER ============
@@ -201,12 +201,13 @@ dependencies[] = stringoverrides
 dependencies[] = cu_content_lock
 dependencies[] = content_lock
 dependencies[] = context_sitewide_public
+dependencies[] = field_reference_delete
 
 ; ============ FEATURE EXPORTS ============
 dependencies[] = express_linkit_profiles
 
 ; REMOVE IN FUTURE
-dependencies[] = grid_size_blocks
+
 
 ; STILL NEEDS WORK?
 dependencies[] = cu_bean_override_view

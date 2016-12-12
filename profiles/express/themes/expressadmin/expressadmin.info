@@ -9,6 +9,8 @@ stylesheets[screen][] = css/btn.css
 stylesheets[screen][] = css/styles.css
 stylesheets[screen][] = css/expressadmin-grid.css
 
+scripts[] = js/expressadmin.js
+
 settings[shortcut_module_link] = 1
 regions[content] = Content
 regions[help] = Help

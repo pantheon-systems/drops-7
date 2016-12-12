@@ -19,4 +19,3 @@ Feature: CU Permissions
     Given I am logged in as a user with the developer role
     When I go to "admin/index"
     Then I should see "jQuery Update"
-    And I should see "LDAP Configuration"

@@ -9,6 +9,7 @@
  * Implements hook_schema_alter().
  */
 function bean_uuid_schema_alter(&$schema = array()) {
+  module_load_include('install', 'uuid');
   $field = uuid_schema_field_definition();
   $schema['bean']['fields']['uuid'] = $field;
   $schema['bean_revision']['fields']['vuuid'] = $field;
@@ -18,6 +19,7 @@ function bean_uuid_schema_alter(&$schema = array()) {
  * Implements hook_install().
  */
 function bean_uuid_install() {
+  module_load_include('install', 'uuid');
   $field = uuid_schema_field_definition();
   db_add_field('bean', 'uuid', $field);
   db_add_index('bean', 'uuid', array('uuid'));
@@ -46,6 +48,7 @@ function bean_uuid_uninstall() {
  * Add vuuid field to bean_revision table
  */
 function bean_uuid_update_7201() {
+  module_load_include('install', 'uuid');
   $field = uuid_schema_field_definition();
   db_add_field('bean_revision', 'vuuid', $field);
   db_add_index('bean_revision', 'vuuid', array('vuuid'));

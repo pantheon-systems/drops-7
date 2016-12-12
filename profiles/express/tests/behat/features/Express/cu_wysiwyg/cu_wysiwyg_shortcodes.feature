@@ -53,7 +53,7 @@ I should be able to use the full functionality of the WYSIWYG editor
       And I fill in "Title" with "My Icon Shortcode"
       And I press the "Icon Shortcode Generator" button
       And I wait for AJAX
-      And I select "ambulance" from "Icon [see icons]"
+      And I select "ambulance" from "Icon [View Icons]"
       And I select "fa-5x" from "Icon Size"
       And I select "Black" from "Icon Color"
       And I select "square" from "Icon Wrapper"

@@ -27,6 +27,34 @@ textarea.form-textarea:focus {
   background-color: #f4f4f4;
   outline: $link_blue solid 2px;
 }
+input[type=submit] {
+  color:#222;
+  background:#f0f0f0;
+  font-size: 85%;
+  border:none;
+  padding:5px 10px;
+  font-weight:600;
+  font-family: $base_font;
+  @include rounded($radius: $radius_small);
+  transition: background-color 0.5s ease;
+  @include shadowtransition;
+  @include rgbashadow(0, 1px, 2px, #000000, .20);
+  border:1px solid #ddd;
+}
+#search,
+#mobile-search {
+  input[type=submit] {
+    @include rgbashadow(0, 0px, 0px, #ffffff, 0);
+    border: none;
+  }
+}
+.banner-black,
+.banner-dark,
+.banner-light {
+  #search input.form-text {
+    border: none;
+  }
+}
 input[type=submit]:focus {
   outline: $green solid 2px;
 }

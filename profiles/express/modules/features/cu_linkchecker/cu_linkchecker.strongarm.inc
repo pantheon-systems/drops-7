@@ -161,13 +161,6 @@ example.org';
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'linkchecker_impersonate_user';
-  $strongarm->value = 'admin';
-  $export['linkchecker_impersonate_user'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
   $strongarm->name = 'linkchecker_log_level';
   $strongarm->value = '6';
   $export['linkchecker_log_level'] = $strongarm;

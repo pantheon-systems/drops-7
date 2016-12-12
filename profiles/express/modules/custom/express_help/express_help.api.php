@@ -12,8 +12,10 @@ function hook_express_help($variables) {
     'title' => 'Adding Content Help',
     'short_title' => 'Adding Content',
     'url' => 'http://www.colorado.edu/webcentral/tutorials/adding-content',
+    'module' => 'cu_help',
   );
-  return $variables = array();
+
+  return $variables;
 }
 
 /**
@@ -25,18 +27,21 @@ function hook_express_help_fields($variables) {
       'title' => 'External URL Help',
       'short_title' => 'External URL',
       'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
+      'module' => 'cu_article',
     ),
     'metatags' => array(
       'title' => 'Metatags Help',
       'short_title' => 'Metatags',
       'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
+      'module' => 'cu_article',
     ),
   );
+
   return $variables;
 }
 
 /**
- * Hook for providing custom paths which inlcude wildcards for help links.
+ * Hook for providing custom paths which include wildcards for help links.
  */
 function hook_express_help_custom_paths($variables) {
   $variables['path/to/custom/%/page'] = 'callback-function';

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Provides general shortcodes for WYSIWYG.
+ */
+
+/**
  * Implementation of hook_wysiwyg_plugin().
  */
 function cu_shortcodes_wysiwyg_wysiwyg_plugin($editor, $version) {

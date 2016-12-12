@@ -103,7 +103,7 @@ function _express_help_list() {
 
   $help_list = array(
     'items' => array(),
-  // Leave the title element empty to omit the ul title.
+    // Leave the title element empty to omit the ul title.
     'title' => '',
     'type' => 'ul',
     'attributes' => array(
@@ -112,19 +112,29 @@ function _express_help_list() {
       ),
     ),
   );
+
+  $base_help_url = variable_get('express_help_base_url', 0);
+
   foreach ($express_help as $help) {
     foreach ($help as $key => $value) {
-      $help_list['items'][$value['short_title']] = l($value['short_title'], $value['url'], array('attributes' => array('target' => '_blank')));
+      $help_list['items'][$value['short_title']] = l($value['short_title'], $base_help_url . $value['url'], array('attributes' => array('target' => '_blank'))) . " <small>(" . $value['module'] . ')</small>';
     }
   }
+
   foreach ($help_fields as $form_id => $form) {
     foreach ($form['fields'] as $field_name => $field) {
-      $help_list['items'][$field['short_title']] = l($field['short_title'], $field['url'], array('attributes' => array('target' => '_blank')));
+      $help_list['items'][$field['short_title']] = l($field['short_title'], $base_help_url . $field['url'], array('attributes' => array('target' => '_blank'))) . " <small>(" . $field['module'] . ')</small>';
     }
   }
+
   ksort($help_list['items']);
   $output['list']['#markup'] = theme('item_list', $help_list);
-  $output['more']['#markup'] = l(t('Find more Web Express help at www.colorado.edu/webcentral'), 'http://www.colorado.edu/webcentral', array('attributes' => array('target' => '_blank', 'class' => array('help-more-link'))));
+  $output['more']['#markup'] = l(t('Find more Express help at: !base_url', array('!base_url' => $base_help_url)), $base_help_url, array(
+    'attributes' => array(
+      'target' => '_blank',
+      'class' => array('help-more-link')
+    )
+  ));
   $output['more']['#prefix'] = '<p>';
   $output['more']['#suffix'] = '</p>';
   return $output;
@@ -290,10 +300,12 @@ function express_help_form_alter(&$form, &$form_state, $form_id) {
         }
 
         $help_link = l('<span class="element-invisible1">' . $help_fields[$form_id]['fields'][$key]['title'] . '</span>', $url, array(
-          'attributes' => array(
-            'target' => '_blank',
-            'class' => 'field-help-link'),
-          'html' => TRUE)
+            'attributes' => array(
+              'target' => '_blank',
+              'class' => 'field-help-link'
+            ),
+            'html' => TRUE
+          )
         );
         // If description is set at this level (i.e. a fieldset), add help.
         if ($form[$key]['#type'] == 'fieldset') {

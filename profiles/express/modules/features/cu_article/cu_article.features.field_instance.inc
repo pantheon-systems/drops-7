@@ -11,6 +11,69 @@ function cu_article_field_default_field_instances() {
   $field_instances = array();
 
   // Exported field_instance:
+  // 'bean-article_feature-field_article_exclude_category'.
+  $field_instances['bean-article_feature-field_article_exclude_category'] = array(
+    'bundle' => 'article_feature',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 3,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_category',
+    'label' => 'Exclude Category',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 32,
+    ),
+  );
+
+  // Exported field_instance: 'bean-article_feature-field_article_exclude_tag'.
+  $field_instances['bean-article_feature-field_article_exclude_tag'] = array(
+    'bundle' => 'article_feature',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 4,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_tag',
+    'label' => 'Exclude Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 33,
+    ),
+  );
+
+  // Exported field_instance:
   // 'bean-article_feature-field_article_feature_category'.
   $field_instances['bean-article_feature-field_article_feature_category'] = array(
     'bundle' => 'article_feature',
@@ -22,7 +85,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 2,
+        'weight' => 5,
       ),
     ),
     'entity_type' => 'bean',
@@ -60,7 +123,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 4,
+        'weight' => 7,
       ),
     ),
     'entity_type' => 'bean',
@@ -92,7 +155,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 3,
+        'weight' => 6,
       ),
     ),
     'entity_type' => 'bean',
@@ -130,7 +193,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 5,
+        'weight' => 8,
       ),
     ),
     'entity_type' => 'bean',
@@ -169,7 +232,7 @@ function cu_article_field_default_field_instances() {
         'module' => 'list',
         'settings' => array(),
         'type' => 'list_default',
-        'weight' => 6,
+        'weight' => 2,
       ),
     ),
     'entity_type' => 'bean',
@@ -243,6 +306,71 @@ function cu_article_field_default_field_instances() {
       'settings' => array(),
       'type' => 'link_field',
       'weight' => 9,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'bean-article_grid-field_article_exclude_category'.
+  $field_instances['bean-article_grid-field_article_exclude_category'] = array(
+    'bundle' => 'article_grid',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'taxonomy',
+        'settings' => array(),
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 6,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_category',
+    'label' => 'Exclude Category',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 32,
+    ),
+  );
+
+  // Exported field_instance: 'bean-article_grid-field_article_exclude_tag'.
+  $field_instances['bean-article_grid-field_article_exclude_tag'] = array(
+    'bundle' => 'article_grid',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'taxonomy',
+        'settings' => array(),
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 7,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_tag',
+    'label' => 'Exclude Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 33,
     ),
   );
 
@@ -442,6 +570,69 @@ function cu_article_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'bean-article_slider-field_article_exclude_category'.
+  $field_instances['bean-article_slider-field_article_exclude_category'] = array(
+    'bundle' => 'article_slider',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_category',
+    'label' => 'Exclude Category',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 32,
+    ),
+  );
+
+  // Exported field_instance: 'bean-article_slider-field_article_exclude_tag'.
+  $field_instances['bean-article_slider-field_article_exclude_tag'] = array(
+    'bundle' => 'article_slider',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 3,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_tag',
+    'label' => 'Exclude Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 33,
+    ),
+  );
+
+  // Exported field_instance:
   // 'bean-article_slider-field_article_slider_category'.
   $field_instances['bean-article_slider-field_article_slider_category'] = array(
     'bundle' => 'article_slider',
@@ -453,7 +644,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 3,
+        'weight' => 5,
       ),
     ),
     'entity_type' => 'bean',
@@ -484,7 +675,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 2,
+        'weight' => 4,
       ),
     ),
     'entity_type' => 'bean',
@@ -521,7 +712,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 2,
+        'weight' => 4,
       ),
     ),
     'entity_type' => 'bean',
@@ -538,6 +729,68 @@ function cu_article_field_default_field_instances() {
       'settings' => array(),
       'type' => 'options_buttons',
       'weight' => 5,
+    ),
+  );
+
+  // Exported field_instance: 'bean-articles-field_article_exclude_category'.
+  $field_instances['bean-articles-field_article_exclude_category'] = array(
+    'bundle' => 'articles',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_category',
+    'label' => 'Exclude Category',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 32,
+    ),
+  );
+
+  // Exported field_instance: 'bean-articles-field_article_exclude_tag'.
+  $field_instances['bean-articles-field_article_exclude_tag'] = array(
+    'bundle' => 'articles',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_tag',
+    'label' => 'Exclude Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 33,
     ),
   );
 
@@ -558,7 +811,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 1,
+        'weight' => 3,
       ),
     ),
     'entity_type' => 'bean',
@@ -594,7 +847,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 4,
+        'weight' => 6,
       ),
     ),
     'entity_type' => 'bean',
@@ -650,7 +903,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 6,
+        'weight' => 8,
       ),
     ),
     'entity_type' => 'bean',
@@ -687,7 +940,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 3,
+        'weight' => 5,
       ),
     ),
     'entity_type' => 'bean',
@@ -718,7 +971,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 5,
+        'weight' => 7,
       ),
     ),
     'entity_type' => 'bean',
@@ -1992,6 +2245,82 @@ function cu_article_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'node-article_list_page-field_article_exclude_category'.
+  $field_instances['node-article_list_page-field_article_exclude_category'] = array(
+    'bundle' => 'article_list_page',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_category',
+    'label' => 'Exclude Category',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 10,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'node-article_list_page-field_article_exclude_tag'.
+  $field_instances['node-article_list_page-field_article_exclude_tag'] = array(
+    'bundle' => 'article_list_page',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_article_exclude_tag',
+    'label' => 'Exclude Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 11,
+    ),
+  );
+
+  // Exported field_instance:
   // 'node-article_list_page-field_article_page_cat_expose'.
   $field_instances['node-article_list_page-field_article_page_cat_expose'] = array(
     'bundle' => 'article_list_page',
@@ -2009,7 +2338,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 1,
+        'weight' => 3,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -2047,7 +2376,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 3,
+        'weight' => 5,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -2091,7 +2420,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 5,
+        'weight' => 7,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -2129,7 +2458,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 4,
+        'weight' => 6,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -2173,7 +2502,7 @@ function cu_article_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 2,
+        'weight' => 4,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -2489,6 +2818,8 @@ function cu_article_field_default_field_instances() {
   t('Enter a comma-separated list of words to describe your content. Categories are general topics for broad grouping of articles.');
   t('Enter a comma-separated list of words to describe your content. Tags describe the specific details of your article.');
   t('Enter author\'s first name and last name. Separate multiple authors with a comma.');
+  t('Exclude Category');
+  t('Exclude Tag');
   t('External URL');
   t('Filter by Category');
   t('Filter by Tag');

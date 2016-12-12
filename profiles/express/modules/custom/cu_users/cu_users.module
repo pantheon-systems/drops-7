@@ -16,7 +16,8 @@ function cu_users_get_users($type = 'all') {
     'sniderc' => 'Catherine.Snider@Colorado.EDU',
     'kere7580' => 'Kevin.Reynen@Coloardo.EDU',
     'jafu6031' => 'James.W.Fuller@Colorado.EDU',
-    'alfi2595' => 'alexander.finnarn@colorado.edu'
+    'alfi2595' => 'alexander.finnarn@colorado.edu',
+    'owmo7772' => 'owen.morrill@colorado.edu'
   );
 
   $user_array['administrator'] = array(
@@ -26,15 +27,15 @@ function cu_users_get_users($type = 'all') {
     'wetu1300' => 'wendy.turnbull@Colorado.EDU',
     'mortone' => 'Emily.Kellagher@Colorado.EDU'
   );
-  
+
   $user_array['site_owner'] = array(
     'osr-test-owner' => 'osr-test-owner@colorado.edu',
   );
-  
+
   $user_array['content_editor'] = array(
     'osr-test-content' => 'osr-test-content@colorado.edu',
   );
-  
+
   $user_array['edit_my_content'] = array(
     'osr-test-edit-own' => 'osr-test-edit-own@colorado.edu',
   );

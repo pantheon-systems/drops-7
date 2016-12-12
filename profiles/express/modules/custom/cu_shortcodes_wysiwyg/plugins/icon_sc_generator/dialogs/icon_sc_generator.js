@@ -7,8 +7,10 @@
 
 // Our dialog definition.
 CKEDITOR.dialog.add( 'icon_sc_generatorDialog', function( editor ) {
-  
+
   var iconList = Drupal.settings.font_awesome_icons;
+  var iconListURL = Drupal.settings.cu_font_awesome;
+  var iconListLabel = 'Icon [<a href="' + iconListURL['font_awesome_icon_list'] + '" target="_blank">View Icons</a>]';
 
 	return {
 
@@ -30,10 +32,10 @@ CKEDITOR.dialog.add( 'icon_sc_generatorDialog', function( editor ) {
 						// select input field for the icon shape.
 						type: 'select',
 						id: 'icon-shape',
-						label: 'Icon [<a href="http://fortawesome.github.io/Font-Awesome/icons/" target="_blank">see icons</a>]',
+            label: iconListLabel,
 						items: iconList,
 					},
-					
+
 					{
 						// select input field for the icon size.
 						type: 'select',
@@ -62,9 +64,9 @@ CKEDITOR.dialog.add( 'icon_sc_generatorDialog', function( editor ) {
 						label: 'Icon Wrapper',
 						items: [ [ 'None', 'none' ], [ 'Circle', 'circle' ], [ 'Square', 'square' ], [ 'Rounded', 'rounded' ] ],
 					},
-										
-					
-					
+
+
+
 				]
 			},
 
@@ -77,32 +79,32 @@ CKEDITOR.dialog.add( 'icon_sc_generatorDialog', function( editor ) {
 			// http://docs.ckeditor.com/#!/api/CKEDITOR.dialog
 			var dialog = this;
 
-			
-			
-			
-			
+
+
+
+
 			// Get Fields
-				
+
 		  var icon = dialog.getValueOf( 'tab-settings', 'icon-shape' );
 			if ( icon )
 				icon = ' shape="fa-' + icon + '"';
-				
+
 		  var size = dialog.getValueOf( 'tab-settings', 'icon-size' );
-		  if ( size ) 
+		  if ( size )
 		    size = ' size="' + size + '"';
-		    
+
 		  var pull = dialog.getValueOf( 'tab-settings', 'icon-pull' );
-		  if ( pull ) 
+		  if ( pull )
 		    pull = ' pull="' + pull + '"';
-		    
+
 		  var color = dialog.getValueOf( 'tab-settings', 'icon-color' );
-		  if ( color ) 
+		  if ( color )
 		    color = ' color="' + color + '"';
-		    
+
 		  var wrapper = dialog.getValueOf( 'tab-settings', 'icon-wrapper' );
-		  if ( wrapper ) 
+		  if ( wrapper )
 		    wrapper = ' wrapper="' + wrapper + '"';
-			 
+
 			editor.insertHtml( '[icon ' + icon + size + pull + color + wrapper + ' /]');
 		}
 	};

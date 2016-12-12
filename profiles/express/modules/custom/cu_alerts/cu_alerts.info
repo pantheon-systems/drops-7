@@ -3,5 +3,3 @@ description = CU Boulder Emergency Alerts
 package = CU-Core
 core = 7.x
 version = 7.x-1.0
-configure = admin/config/system/cu_alerts
-stylesheets[all][] = css/cu_alerts.css

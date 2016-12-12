@@ -153,7 +153,9 @@ function express_permissions_secure_permissions($role) {
       'enable module bundles',
       'view status messages',
       'view warning messages',
-      'view error messages',
+      'view error messages', // currently only the perms below diff with site owner role
+      'administer cache settings',
+      'configure profile module manager',
     ),
     'anonymous user' => array(
       'access content',
@@ -275,10 +277,11 @@ function express_permissions_secure_permissions($role) {
       'administer ckeditor link',
       'administer content types',
       'administer contexts',
-      'administer cu alerts',
+      'administer rave alerts',
       'administer express settings',
       'administer express theme picker',
       'administer features',
+      'administer fields',
       'administer field collections',
       'administer fieldgroups',
       'administer filters',
@@ -399,6 +402,8 @@ function express_permissions_secure_permissions($role) {
       'view warning messages',
       'view error messages',
       'exclude from message filtering',
+      'configure profile module manager',
+      'administer cache settings',
     ),
     'edit_my_content' => array(
       'access ckeditor link',

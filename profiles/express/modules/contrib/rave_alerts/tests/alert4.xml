@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+  <channel>
+    <title>Test RAVE Feed</title>
+    <link>http://www.getrave.com/rss/XXX/channel1</link>
+    <description>Alert feed for testing Drupal RAVE module</description>
+    <category>ALERTS</category>
+    <dc:subject>ALERTS</dc:subject>
+    <item>
+      <title>Test 3 [CLEAR]</title>
+      <link />
+      <description>This should not be displayed</description>
+      <category>ALERTS</category>
+      <pubDate>Tue, 18 Oct 2016 23:58:15 GMT</pubDate>
+      <guid />
+      <dc:date>2016-10-18T23:58:15Z</dc:date>
+    </item>
+  </channel>
+</rss>

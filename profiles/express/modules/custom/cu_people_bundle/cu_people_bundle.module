@@ -152,7 +152,12 @@ function cu_people_bundle_express_help($variables) {
     'url' => '/node/620',
   );
 
-  return $variables;
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_people_bundle';
+      return $a;
+    },
+    $variables);
 }
 
 /**

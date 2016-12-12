@@ -1,4 +1,4 @@
-<div class="person-view-mode-grid grid-person clearfix <?php if (isset($content['grid_classes'])) { print $content['grid_classes']; } ?>">
+<a name="<?php print urlencode(strtolower($title)); ?>" id="<?php print urlencode(strtolower($title)); ?>"></a><div class="person-view-mode-grid grid-person clearfix <?php if (isset($content['grid_classes'])) { print $content['grid_classes']; } ?>">
   <?php if(!empty($content['field_person_photo'])): ?>
     <?php print render($content['field_person_photo']); ?>
   <?php else: ?>

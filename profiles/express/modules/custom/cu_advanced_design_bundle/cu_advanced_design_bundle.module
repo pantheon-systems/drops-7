@@ -57,5 +57,11 @@ function cu_advanced_design_bundle_express_help($variables) {
     'short_title' => 'Context Tutorial',
     'url' => '/node/434',
   );
-}
 
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_advanced_design_bundle';
+      return $a;
+    },
+    $variables);
+}

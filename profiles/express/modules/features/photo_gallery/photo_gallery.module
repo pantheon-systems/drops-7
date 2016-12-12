@@ -45,7 +45,7 @@ function photo_gallery_form_photo_gallery_node_form_alter(&$form, &$form_state, 
 function photo_gallery_preprocess_node(&$vars) {
   if ($vars['node']->type == 'page') {
     // Add thumbnail to OpenGraph meta for facebook sharing
-    if (!empty($vars['field_photo'])) {
+    if ($vars['view_mode'] == 'full' && !empty($vars['field_photo'])) {
       if (!empty($vars['field_photo'][LANGUAGE_NONE])) {
         $thumbnail_uri = $vars['field_photo'][LANGUAGE_NONE][0]['uri'];
       }

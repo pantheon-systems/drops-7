@@ -1,0 +1,62 @@
+/* Colors */
+body, table.body { background-color: #000000; }
+
+.container { background-color: #FFFFFF; }
+
+/* Newsletter Title & Logo */
+.title, .title td { background-color: #000000; color: #ffffff; }
+
+.title td.newsletter-name h1 { color: #ffffff; }
+
+/* Newsletter Issue & Weblink */
+.title-bottom { background-color: #000000; }
+
+.issue { background-color: #ffffff; }
+
+td.issue-date { color: #cccccc; }
+
+td.web-link a { color: #cccccc; }
+td.web-link a:link, td.web-link a:visited, td.web-link a:active { color: #cccccc !important; }
+
+td.web-link a:hover { color: #ffffff !important; }
+
+.title td h1 { color: #ffffff; }
+
+/* Article List */
+.article-list { background-color: #fff; }
+
+/* Articles */
+.content-top td.newsletter-sections { padding-top: 10px; background-color: #FFFFFF; }
+
+.article-section-title, .article-section-link, .article-content { background-color: #FFFFFF; }
+
+.article-content { background-color: #FFFFFF; }
+
+.article-intro, .article-intro td { background-color: #FFFFFF; }
+
+/* Ads/Promos */
+.newsletter-ad-1 { background-color: #FFFFFF; }
+
+.newsletter-ad-2 { background-color: #FFFFFF; }
+
+/* Blocks */
+.blocks { background-color: #FFFFFF; }
+
+/* Footer */
+.footer { background-color: #000000; }
+
+.footer-content { color: #FFFFFF; }
+
+.footer-content p { color: #FFFFFF; }
+
+.footer-content a { color: #cfb87c; }
+.footer-content a:link, .footer-content a:visited, .footer-content a:active { color: #cfb87c !important; }
+
+.footer-content a:hover { color: #cfb87c !important; }
+
+.hero-image .content-padding { padding: 0px; }
+.hero-image .content-padding .intro-text { padding: 0 10px; }
+
+.article-teaser-border { border-bottom: 1px solid #e7e7e7; display: block; margin: 0 10px 20px; }
+
+.article-teaser-border.last { display: none; }

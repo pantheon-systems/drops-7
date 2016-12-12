@@ -1,0 +1,11 @@
+name = Rave Alerts
+description = Checks RAVE for new alerts via RSS.  Provides block to display alerts.
+core = 7.x
+configure = admin/config/system/rave-alerts
+stylesheets[all][] = css/rave_alerts.css
+
+; Information added by Drupal.org packaging script on 2016-10-24
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "rave_alerts"
+datestamp = "1477337044"

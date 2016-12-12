@@ -175,7 +175,7 @@ function people_content_type_preprocess_node(&$vars) {
         $vars['content']['grid_classes'] = join(' ', $vars['content']['attributes']['classes']);
       }
       // Add thumbnail to OpenGraph meta for facebook sharing
-      if (!empty($vars['field_person_photo'])) {
+      if ($vars['view_mode'] == 'full' && !empty($vars['field_person_photo'])) {
         if (!empty($vars['field_person_photo'][LANGUAGE_NONE])) {
           $thumbnail_uri = $vars['field_person_photo'][LANGUAGE_NONE][0]['uri'];
         }

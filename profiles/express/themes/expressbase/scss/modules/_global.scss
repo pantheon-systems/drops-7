@@ -3,9 +3,7 @@ $radius_small: 3px;
 $radius_medium: 5px;
 $radius_large: 7px;
 $radius_none: 0px;
-
 $spacing: 20px;
-
 @mixin rounded($radius) {
   -webkit-border-radius: $radius;
   -moz-border-radius: $radius;

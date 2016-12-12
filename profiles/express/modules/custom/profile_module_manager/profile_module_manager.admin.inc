@@ -31,18 +31,6 @@ function profile_module_manager_admin_settings() {
       ),
     ),
   );
-  // Add explode of ignore variable.
-  $ignore_modules = variable_get('profile_module_manager_ignore', array());
-  $ignore_modules = implode(',', $ignore_modules);
-
-  $form['profile_module_manager_ignore'] = array(
-    '#type' => 'textarea',
-    '#cols' => 40,
-    '#rows' => 5,
-    '#default_value' => $ignore_modules,
-    '#title' => t('Ignore these projects'),
-    '#description' => t('Comma separated list of the machine names of the permissions to ignore like \'varnish, memcache\'.'),
-  );
 
   $bundles = array_keys(profile_module_manager_get_bundles('all'));
   $form['profile_module_manager_bundle_ignore'] = array(
@@ -61,25 +49,7 @@ function profile_module_manager_admin_settings() {
     ),
   );
 
-  return $form;
-}
-
-/**
- * Submit handler for admin settings form.
- *
- * @param $form
- * @param $form_state
- */
-function profile_module_manager_admin_settings_submit($form, &$form_state) {
-  // Save module ignore variable as array.
-  $ignore_modules = explode(',', $form_state['values']['profile_module_manager_ignore']);
-  variable_set('profile_module_manager_ignore', $ignore_modules);
-
-  // Unset ignore modules values.
-  unset($form_state['values']['profile_module_manager_ignore']);
-
-  // Save rest of form values.
-  system_settings_form_submit($form, $form_state);
+  return system_settings_form($form);
 }
 
 /**

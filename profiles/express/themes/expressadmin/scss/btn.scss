@@ -126,8 +126,9 @@ fieldset[disabled] .btn-primary:active,
 .btn-primary.disabled.active,
 .btn-primary[disabled].active,
 fieldset[disabled] .btn-primary.active {
-  background-color: #428bca;
-  border-color: #357ebd;
+  background-color: #fff;
+  border-color: #ccc;
+  color:#666;
 }
 .btn-primary .badge {
   color: #428bca;
@@ -210,26 +211,27 @@ fieldset[disabled] .btn-info:active,
 .btn-info.disabled.active,
 .btn-info[disabled].active,
 fieldset[disabled] .btn-info.active {
-  background-color: #5bc0de;
-  border-color: #46b8da;
+  background-color: #fff;
+  border-color: #ccc;
+  color:#666;
 }
 .btn-info .badge {
   color: #5bc0de;
   background-color: #fff;
 }
 .btn-warning {
-  color: #fff;
-  background-color: #f0ad4e;
-  border-color: #eea236;
+  color: #000;
+  background-color: #FFC12F;
+  border-color: darken(#FFC12F, 5%);
 }
 .btn-warning:hover,
 .btn-warning:focus,
 .btn-warning:active,
 .btn-warning.active,
 .open > .dropdown-toggle.btn-warning {
-  color: #fff;
-  background-color: #ec971f;
-  border-color: #d58512;
+  color: #000;
+  background-color: darken(#FFC12F, 5%);
+  border-color: darken(#FFC12F, 10%);
 }
 .btn-warning:active,
 .btn-warning.active,
@@ -251,8 +253,8 @@ fieldset[disabled] .btn-warning:active,
 .btn-warning.disabled.active,
 .btn-warning[disabled].active,
 fieldset[disabled] .btn-warning.active {
-  background-color: #f0ad4e;
-  border-color: #eea236;
+  background-color: #FFC12F;
+  border-color: darken(#FFC12F, 5%);
 }
 .btn-warning .badge {
   color: #f0ad4e;

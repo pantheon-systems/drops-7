@@ -408,7 +408,7 @@ function cu_shortcodes_buttongroup($attrs, $content = NULL) {
  * Buttongroup tips.
  */
 function cu_shortcodes_buttongroup_tips($format, $long) {
-  $output = '[buttongroup color=blue,gold,black,gray,white size=regular,small,large]Button Shortcodes[/button]';
+  $output = '[buttongroup color="blue" size="regular"]Button Shortcodes[/buttongroup]("color" can also be gold, black, gray or white; "size" can be also small or large)';
   return $output;
 }
 
@@ -434,16 +434,14 @@ function cu_shortcodes_callout_tips($format, $long) {
  * Implements hook_filter_info_alter().
  */
 function cu_shortcodes_filter_info_alter(&$info) {
-  // Load the wysiwyg text format
+  // Load the wysiwyg text format.
   $format = filter_format_load('wysiwyg');
   // Get the filters on the wysiwyg text format
   $filters = filter_list_format($format->format);
-  // Enable callout shortcode
+  // Enable callout shortcode.
   $filters['shortcode']->settings['callout'] = 1;
-  // Enable close margin shortcode if advanced design bundle is enabled.
-  if (module_exists('cu_advanced_design_bundle')) {
-    $filters['shortcode']->settings['close-margin'] = 1;
-  }
+  // Enable close margin shortcode.
+  $filters['shortcode']->settings['close-margin'] = 1;
 }
 
 /**

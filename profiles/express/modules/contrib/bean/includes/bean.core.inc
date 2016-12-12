@@ -185,7 +185,7 @@ class Bean extends Entity {
   }
 
   public function adminTitle() {
-    return check_plain($this->label);
+    return filter_xss_admin($this->label);
   }
 
   protected function setUp() {
@@ -412,18 +412,28 @@ class Bean extends Entity {
       $this->delta = substr($delta, 0, $max_length);
 
       // Check if delta is unique.
-      if (bean_load_delta($this->delta)) {
+      if ($this->deltaExists($this->delta)) {
         $i = 0;
         $separator = '-';
         $original_delta = $this->delta;
         do {
           $unique_suffix = $separator . $i++;
           $this->delta = substr($original_delta, 0, $max_length - drupal_strlen($unique_suffix)) . $unique_suffix;
-        } while (bean_load_delta($this->delta));
+        } while ($this->deltaExists($this->delta));
       }
     }
 
     return $this;
+  }
+
+  /**
+   * Check against the Database if a specific delta exists.
+   */
+  protected function deltaExists($delta) {
+    return db_select('bean', 'b')
+      ->fields('b', array('bid'))
+      ->condition('delta', $delta)
+      ->execute()->fetchField();
   }
 
   /**

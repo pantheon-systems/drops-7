@@ -108,5 +108,12 @@ function cu_events_bundle_express_help($variables) {
     'url' => '/node/500',
   );
 
-  return $variables;
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_events_bundle';
+      return $a;
+    },
+    $variables);
 }

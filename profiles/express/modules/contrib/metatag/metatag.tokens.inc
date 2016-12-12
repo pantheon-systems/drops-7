@@ -137,7 +137,7 @@ function metatag_token_generate_array($entity, $entity_type, $bundle) {
   if (metatag_entity_supports_metatags($entity_type, $bundle)) {
     $token_type = token_get_entity_mapping('entity', $entity_type);
 
-    $instance = "{$entity_type}:{$bundle}";
+    $instance = metatag_get_entity_metatags_instance($entity, $entity_type, $bundle);
     $options = array();
     $options['token data'][$token_type] = $entity;
     $options['entity'] = $entity;

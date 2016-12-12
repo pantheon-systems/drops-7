@@ -7,9 +7,9 @@ files[] = plugins/BeanCustom.class.php
 configure = admin/structure/block-types
 package = Bean
 
-; Information added by Drupal.org packaging script on 2015-03-04
-version = "7.x-1.9"
+; Information added by Drupal.org packaging script on 2016-08-08
+version = "7.x-1.11"
 core = "7.x"
 project = "bean"
-datestamp = "1425439382"
+datestamp = "1470638340"
 

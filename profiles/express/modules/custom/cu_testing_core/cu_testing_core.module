@@ -39,6 +39,7 @@ function cu_testing_core_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+
 /**
  * Implements hook_modules_enabled().
  * Add shortcut link for context AFTER context_ui is enabled.
@@ -151,3 +152,16 @@ function cu_testing_core_menu_alter(&$items) {
   // Prevent users from adding taxonomies.
   $items['admin/structure/taxonomy/add']['access arguments'] = array('add taxonomy');
 }
+
+
+/**
+ * Implements hook_form_alter().
+ * Mirrors changes cu_ldap makes without the overhead of LDAP
+ */
+function cu_testing_core_form_user_login_alter(&$form, &$form_state) {
+  $form['name']['#title'] = t('CU Login Name');
+  $form['name']['#description'] = '';
+  $form['pass']['#title'] = t('IdentiKey Password');
+  $form['pass']['#description'] = '';
+}
+

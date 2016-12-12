@@ -163,6 +163,7 @@ function metatag_dc_metatag_info() {
   $info['tags']['dcterms.language'] = array(
     'label' => t('Language'),
     'description' => t('A language of the resource. Recommended best practice is to use a controlled vocabulary such as RFC 4646 [RFC4646].'),
+    'is_language' => TRUE,
     'devel_generate' => array(
       'maxlength' => 1,
     ),

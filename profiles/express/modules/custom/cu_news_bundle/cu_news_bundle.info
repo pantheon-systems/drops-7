@@ -5,5 +5,6 @@ package = CU-News and Articles
 project_demo_url = http://www.colorado.edu/webcentral/node/676
 
 dependencies[] = cu_article
+dependencies[] = cu_related_articles
 
 bundle_cache_clear = 1

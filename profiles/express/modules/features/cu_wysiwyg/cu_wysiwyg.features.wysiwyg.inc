@@ -80,6 +80,9 @@ function cu_wysiwyg_wysiwyg_default_profiles() {
         'video_sc_generator' => array(
           'video_sc_generator_button' => 1,
         ),
+        'soundcloud_embed' => array(
+          'soundcloud_embed_button' => 1,
+        ),
         'drupal_path' => array(
           'Link' => 1,
         ),

@@ -1,55 +1,92 @@
 Current API VERSION: 5.
 
+Bean 7.x-1.x-dev, xxxx-xx-xx
+----------------------------
+
+Bean 7.x-1.10, 2016-08-03
+----------------------------
+#2527008 by axel.rutz: Display cache breaks bean display.
+#2465267 by brantwynn: Bean insists we use a tagged release of Entity API and
+  that's simply not happening.
+#2576711 by a.milkovsky: Missing isNewEntity() method caused problems with e.g.
+  entity_extract_ids(), Deploy, etc.
+#2623448 by helmo: Ensure uuid.install is loaded when overloading its schema.
+#1995770 by kris84, Albert Volkman: Use the label as the entity label, not the
+  title. This should resolve a number of issues with other modules.
+#2572517 by JeroenT: Weights of submit buttons on the bean form results in the
+  Entity Translation 'Remove translation' button appearing before the 'save'
+  button.
+#2743457 by dan.munn, max.parker: Bean labels being encoded on admin pages
+#2714693 by fullerja: In watchdog logging, use type rather than typeName()
+#2702495 by plopesc: Get rid of bean_load_delta() in Bean entity class for
+  better compatibility and performance
+#2459041 by jsacksick: Use bean_access as access callback for block/add/(type)
+#2267391 by freality: Bean properties display as improper type in Views
+
 Bean 7.x-1.9, 2015-03-03
--------------------
-#1821136 by stefan.r, delzhand, vflirt, rsmylski, recrit, ultimateboy, kris84: Integration with Inline Entity Form
-#2008252 by diarmy: Error in admin/workbench/create when using Bean with Workbench and Commerce Kickstart
-#2240815 by topsitemakers: Variables not deleted on hook_uninstall()
-#2161535 by acrollet, DamienMcKenna, jwilson3: Panelizer support for Bean
-#2148099 by ultimateboy, pgrond: Access issue on block/add page<
-#1942558 by davidwbarratt: Unable to create beans on install
-#2365597 by gabesullice: More robust entitycache support
-#2427029 by hswong3i: bean_revision.delta is type varchar but its default 0 is PHP type integer
+------------------------
+#1821136 by stefan.r, delzhand, vflirt, rsmylski, recrit, ultimateboy, kris84:
+  Integration with Inline Entity Form.
+#2008252 by diarmy: Error in admin/workbench/create when using Bean with
+  Workbench and Commerce Kickstart.
+#2240815 by topsitemakers: Variables not deleted on hook_uninstall().
+#2161535 by acrollet, DamienMcKenna, jwilson3: Panelizer support for Bean.
+#2148099 by ultimateboy, pgrond: Access issue on block/add page.
+#1942558 by davidwbarratt: Unable to create beans on install.
+#2365597 by gabesullice: More robust entitycache support.
+#2427029 by hswong3i: bean_revision.delta is type varchar but its default 0 is
+  PHP type integer.
 #2442937 by acorso: Add Bean Title and Label Filters for Bean Usage
 #1912354 by stefan.r: Add warninging to bean all module
-2338913 by steve.stotter: Fixed Token should be used instead of bean_type as type property in entityPropertyInfo / BeanMetadataController.
+2338913 by steve.stotter: Fixed Token should be used instead of bean_type as
+  type property in entityPropertyInfo / BeanMetadataController.
 #2324575 by Steven Jones: Fixed Static cache in bean_block_info unclearable.
 #2344929 by jeffam: Fixed Bean Usage doesn't show all usages.
 #2325077 by Deciphered: Fixed Bean entity controller skips Rules integration.
 
+
 Bean 7.x-1.8, 2014-10-02
 ---------------------------
-#2175309 by jeffam: Added Block add/edit pages can still use site theme when an admin theme is enabled.
-#2148923 by codeamatic, nielsdefeyter, lahode: Fixed Unable to translate bean blocks.
-#2201503 by jlyon, sherakama | ibotvinn: Fixed Block cache not flushed after editing a bean.
+#2175309 by jeffam: Added Block add/edit pages can still use site theme when an
+  admin theme is enabled.
+#2148923 by codeamatic, nielsdefeyter, lahode: Fixed Unable to translate bean
+  blocks.
+#2201503 by jlyon, sherakama | ibotvinn: Fixed Block cache not flushed after
+  editing a bean.
 #2337555 by catch: Add static caching to bean_load_delta().
+
 
 Bean 7.x-1.7, 2013-11-29
 ---------------------------
-#2145333 by chris.jichen: Fixed misspelling of entity_access in views plugin
+#2145333 by chris.jichen: Fixed misspelling of entity_access in views plugin.
+
 
 Bean 7.x-1.6, 2013-11-20
 ---------------------------
-#2138651 by indytechcook: Add deploy_managed_ui_form_elements() to edit/create form.
+#2138651 by indytechcook: Add deploy_managed_ui_form_elements() to edit/create
+  form.
 #1941168: Add back in missing setDefault method on bean class.
 #1957986 by sylus: Bean + UUID / Deploy.
 #2112567 by webflo: Make access controller swappable.
 #2115463 by webflo: Page title is escaped twice.
 #1684250 by rimen, foopang: Transliteration module integration fix.
 #2117223 by jrbeeman: Static cache bean_block_info().
-#2123053 by dagmar: Uninstalling Bean when Shortcut module is disabled produces a fatal error.
+#2123053 by dagmar: Uninstalling Bean when Shortcut module is disabled produces
+  a fatal error.
 #2114279 by kingandy: Block cache flush introduces Block module dependency.
+
 
 Bean 7.x-1.5, 2013-10-23
 ---------------------------
 by DamienMcKenna: Fixed arbitrary tag in the bean title input.
 
+
 Bean 7.x-1.4, 2013-10-13
 ---------------------------
-#2080239 by ro0NL: Bean export type is internally translated
-#2061725 by timaholt: support UUID for revisions
-#2076133 by Sylvain Lecoy: Align admin/structure text with drupal standards
-#1359472 by arithmetric: Fix uninstall of bean module plugins
+#2080239 by ro0NL: Bean export type is internally translated.
+#2061725 by timaholt: support UUID for revisions.
+#2076133 by Sylvain Lecoy: Align admin/structure text with drupal standards.
+#1359472 by arithmetric: Fix uninstall of bean module plugins.
 #2053911 by franz: When no Bean type is created, views_handler_filter_bean_type
   return many errors.
 #2095595 by SpadXIII: Fixed Revision stores wrong uid.
@@ -59,24 +96,26 @@ Bean 7.x-1.4, 2013-10-13
   module blocks.
 #2108631 by webflo: Fixed Add access checks to default Bean Admin UI.
 
+
 Bean 7.x-1.3, 2013-07-24
 ----------------------------
 #2036137 by eugene.ilyin: Fixed Numeric delta of the bean block.
  Followup by brantwynn Fix block delta truncation error.
 #1728632 by donutdan4114 | indytechcook: Fixed Can't name a bean type 'bean'.
-#1982468 by 30equals: Cleanup menulink/shortcut after uninstall
+#1982468 by 30equals: Cleanup menulink/shortcut after uninstall.
+
 
 Bean 7.x-1.2, 2013-05-12
 ----------------------------
-#1924126 by DamienMcKenna: Group beans by block type in the CTools/Panels content
-type (sic) plugin
-#1978808 by k.minkov: Assign bean object to form on insert
-#1990112 by rodrigo panchiniak fernandes: Minor Typo at README.txt
+#1924126 by DamienMcKenna: Group beans by block type in the CTools/Panels
+  content type (sic) plugin.
+#1978808 by k.minkov: Assign bean object to form on insert.
+#1990112 by rodrigo panchiniak fernandes: Minor Typo at README.txt.
 #1961464 by jamsilver: Extra fields needed for label, revision and view_mode
 form elements.
 #1973696 by pcambra: Fix bean.api.php to set path and file in the class level.
 #1935770 by rooby: Beans without a title should not fallback to showing the
-admin label but instead show no title at all
+admin label but instead show no title at all.
 #1957260 by DamienMcKenna: There is no $langcode argument for
   field_attach_form_validate().
 #1935466 by jeffam, DamienMcKenna: Improve integration with Admin Menu module.

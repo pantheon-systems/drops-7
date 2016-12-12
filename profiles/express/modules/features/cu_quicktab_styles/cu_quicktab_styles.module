@@ -6,7 +6,7 @@ function cu_quicktab_styles_quicktabs_tabstyles() {
   $tabstyles = array();
   foreach ($files as $file) {
     // Skip RTL files.
-    if (!strpos($file->name, '-rtl')) {      
+    if (!strpos($file->name, '-rtl')) {
       //$tabstyles[$file->uri] = drupal_ucfirst($file->name);
     }
   }
@@ -24,6 +24,11 @@ function cu_quicktab_styles_quicktabs_tabstyles() {
 function cu_quicktab_styles_form_alter(&$form, &$form_state, $form_id) {
 }
 function cu_quicktab_styles_form_quicktabs_form_alter(&$form, &$form_state, $form_id){
+
+  // The quicktab renderer should be returned with the form, but it is not.
+  // Rather than fix in quicktab project, we are adding it here to avoid the module issue queue.
+  $qt_renderer = db_query('SELECT renderer FROM {quicktabs} q WHERE q.machine_name = :name', array( ':name' => $form['machine_name']['#value']))->fetchField();
+
   unset($form['style']['#options']['Arrows']);
   unset($form['style']['#options']['Basic']);
   unset($form['style']['#options']['Bullets']);
@@ -34,8 +39,16 @@ function cu_quicktab_styles_form_quicktabs_form_alter(&$form, &$form_state, $for
   unset($form['style']['#options']['Phylactere']);
   unset($form['style']['#options']['Sky']);
   unset($form['style']['#options']['Zen']);
-  
-  unset($form['renderer']['#options']['ui_tabs']);
+
+  // It easier for end users to understand a "tabs" vs. "ui_tabs" option.
+  $form['renderer']['#options']['ui_tabs'] = 'tabs';
+
+  if ($qt_renderer != 'quicktabs') {
+    unset($form['renderer']['#options']['quicktabs']);
+  }
+  else {
+    drupal_set_message(t('The quicktabs rendering options has been deprecated. If you choose a different render option, you will not be able to switch back to the quicktabs render option.'), 'warning');
+  }
 }
 
 function cu_quicktab_styles_form_quicktabs_tabstyles_styles_alter(&$form, &$form_state, $form_id){

@@ -8,4 +8,12 @@ dependencies[] = search_krumo
 dependencies[] = ds_ui
 dependencies[] = diff
 
+optional-dependencies[] = devel
+optional-dependencies[] = search_krumo
+optional-dependencies[] = ds_ui
+optional-dependencies[] = diff
+optional-dependencies[] = devel_debug_log
+optional-dependencies[] = devel_generate
+optional-dependencies[] = security_review
+
 stylesheets[all][] = cu-debug-admin-bundle.css

@@ -98,11 +98,17 @@ node/*/delete
 user
 user/*
 admin
-admin/*');
+admin/*
+sites/default/files/webform/*');
 
   variable_set('securepages_roles', array($authenticated_user_role->rid => $authenticated_user_role->rid));
   variable_set('securepages_secure', '1');
   variable_set('securepages_switch', TRUE);
+
+  variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
+  variable_set('rave_alerts_check_enable', 1);
+  variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
+  variable_set('rave_alerts_deafult_read_more_url', 'http://alerts.colorado.edu');
 
   variable_set('user_external_invite_roles', array(
     $site_owner_role->rid,
@@ -182,10 +188,12 @@ websupport@colorado.edu');
     '/^Metatag support has been enabled for the .*?$/i',
     '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
     '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+    '/^The block System help was assigned to the invalid region help and has been disabled.$/i',
   ));
   variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
 You can now .+configure the CAPTCHA module.+ for your site.
-Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.');
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.
+The block System help was assigned to the invalid region help and has been disabled.');
 
   variable_set('express_layout_node_type_ignore', array('file'));
 
@@ -202,7 +210,12 @@ Note that the CAPTCHA module disables .+page caching.+ of pages that include a C
   ->execute();
 
   // Disable user 1 & set random name
-  $random_name = 'admin-' . user_password(50);
+  $random_name = 'admin-' . user_password(10);
+
+  // Generate hashed password.
+  $unhashed_pass = user_password(50);
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  $hashed_pass = user_hash_password(trim($unhashed_pass));
 
   variable_set('user_mail_status_activated_notify ', 0);
 
@@ -210,10 +223,13 @@ Note that the CAPTCHA module disables .+page caching.+ of pages that include a C
   $admin_user = user_load(1);
   $admin_user->mail = 'websupport@colorado.edu';
   $admin_user->name = $random_name;
+  $admin_user->pass = $hashed_pass;
   $admin_user->status = 0;
   user_save($admin_user);
 
   watchdog('express', 'attempted to disable uid 1');
+
+  variable_set('profile_module_manager_bundle_ignore', array('cu_newsletter_bundle' => 'cu_newsletter_bundle'));
 }
 
 /**
@@ -320,7 +336,7 @@ function cu_core_update_7003() {
 }
 
 /**
- * Enable CU Redirect module.
+ * Core CU Redirect module.
  * Disable, Uninstall More Menus, CU Shortcuts modules.
  * Remove duplicates in shortcut menu
  * Express 2.1.0
@@ -355,7 +371,7 @@ function cu_core_update_7004() {
 }
 
 /**
- * Express Update 7005.
+ * Core Update 7005.
  * Removing cu_livechat module, enabling responsive_preview, reverting features
  */
 function cu_core_update_7005() {
@@ -390,7 +406,7 @@ function cu_core_update_7005() {
 }
 
 /**
- * Express Update 7006.
+ * Core Update 7006.
  * Enabling dashboards, reverting features.
  */
 function cu_core_update_7006() {
@@ -406,7 +422,7 @@ function cu_core_update_7006() {
 }
 
 /**
- * Express Update 7007.
+ * Core Update 7007.
  * Converting Profile Module Manager variable to an array.
  */
 function cu_core_update_7007() {
@@ -434,7 +450,7 @@ function cu_core_update_7007() {
 }
 
 /**
- * Express Update 7008.
+ * Core Update 7008.
  * Showing SEO dashboard, reverting features.
  */
 function cu_core_update_7008() {
@@ -448,7 +464,7 @@ function cu_core_update_7008() {
 }
 
 /**
- * Express Update 7009.
+ * Core Update 7009.
  * Reverting GA codes for sites.
  */
 function cu_core_update_7009() {
@@ -470,8 +486,8 @@ function cu_core_update_7009() {
 }
 
 /**
- * Express Update 7010.
- * Turn off linkchecker modules for sites without SEO bundle enabled"
+ * Core Update 7010.
+ * Turn off linkchecker modules for sites without SEO bundle enabled
  */
 function cu_core_update_7010() {
 
@@ -501,7 +517,7 @@ function cu_core_update_7010() {
 }
 
 /**
- * Express Update 7011.
+ * Core Update 7011.
  * Revert features.
  */
 function cu_core_update_7011() {
@@ -513,7 +529,7 @@ function cu_core_update_7011() {
 }
 
 /**
- * Express Update 7012.
+ * Core Update 7012.
  * Change user 1 email address.
  * Add noreqnewpass module.
  */
@@ -533,6 +549,114 @@ function cu_core_update_7012() {
 }
 
 /**
+ * Core Update 7013 for Express 2.2.7
+ * Disable and unistall Moulde Missine Message Fixer.
+ * Revert unprotected Features.
+ */
+function cu_core_update_7013() {
+
+  module_disable(array('module_missing_message_fixer'));
+
+  drupal_uninstall_modules(array('module_missing_message_fixer'));
+
+  cu_core_express_update('7013');
+}
+
+/**
+ * Core Update 7014 for Express 2.2.7
+ * Enable rave_alters module.
+ * Revert unprotected Features.
+ */
+function cu_core_update_7014() {
+
+  module_enable(array('rave_alerts'));
+
+  variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
+  variable_set('rave_alerts_deafult_read_more_url', 'http://alerts.colorado.edu');
+  variable_set('rave_alerts_check_enable', 0);
+  variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
+
+  cu_core_revert_features();
+
+  cu_core_express_update('7014');
+}
+
+
+
+/**
+ * Core Update 7015 for Express 2.2.8
+ * Add webform files to securepages paths.
+ */
+function cu_core_update_7015() {
+  $pages = variable_get(securepages_pages);
+  // Need this awkward two line thing to get the var right on the form.
+  $pages = $pages . '
+sites/default/files/webform/*';
+  variable_set('securepages_pages', $pages);
+
+  cu_core_express_update('7015');
+}
+
+/**
+ * Core Update 7016 for Express 2.2.7.
+ *
+ * Rename block_styles to cu_block_theme module.
+ * Enable cu_block_theme, blank out block_styles.
+ * Disable, uninstall grid_size_blocks module, delete related variables.
+ */
+function cu_core_update_7016() {
+  module_enable(array('cu_block_theme'));
+
+  if (module_exists('block_styles')) {
+    module_disable(array('block_styles'));
+    drupal_uninstall_modules(array('block_styles'));
+  }
+  if (module_exists('grid_size_blocks')) {
+    module_disable(array('grid_size_blocks'));
+    drupal_uninstall_modules(array('grid_size_blocks'));
+  }
+  variable_del('grid_size_blocks');
+  variable_del('grid_size_clear');
+  variable_del('grid_size_omega');
+}
+
+/**
+ * Core Update 7017 for Express 2.3.0.
+ *
+ * Hide cu_newsletter from most users.
+ */
+function cu_core_update_7017() {
+  // Set SEO bundle to be hidden in bundle list form.
+  variable_set('profile_module_manager_bundle_ignore', array('cu_newsletter_bundle' => 'cu_newsletter_bundle'));
+
+  cu_core_revert_features();
+
+  cu_core_express_update('7017');
+}
+
+/**
+ * Core Update 7017 for Express 2.3.0.
+ *
+ * Add to disabled messages array to hide message displayed to user after enabling newsletter bundle.
+ */
+function cu_core_update_7018() {
+
+  // It looks like the original string of messages was truncated to one line so
+  // I am adding all disabled messages once again in addition to new message.
+  variable_set('disable_messages_ignore_regex', array(
+    '/^Metatag support has been enabled for the .*?$/i',
+    '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
+    '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+    '/^The block System help was assigned to the invalid region help and has been disabled.$/i'
+  ));
+
+  variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
+You can now .+configure the CAPTCHA module.+ for your site.
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.
+The block System help was assigned to the invalid region help and has been disabled.');
+}
+
+/**
  * Revert features by passing features in an array.
  */
 function cu_core_revert_features($features = NULL) {
@@ -547,12 +671,13 @@ function cu_core_revert_features($features = NULL) {
     }
   }
   // Check against features that currently can't be reverted.
-  $protected_features = array(
+  $express_protected_features = array_merge(array(
     'cu_home_page',
     'cu_sitewide',
-  );
+  ), explode(',', variable_get('express_protected_features', '')));
+
   foreach ($features as $key => $feature) {
-    if (!in_array($key, $protected_features)) {
+    if (!in_array($key, $express_protected_features)) {
       $f = features_get_features($key);
       $components = array_keys($f->info['features']);
       features_revert(array($f->name => $components));
@@ -600,9 +725,8 @@ function cu_core_scramble_admin() {
   else {
     // Save admin user with new user/password.
     $user = user_load(1);
-    $user->name = 'admin-' . user_password(50);
+    $user->name = 'admin-' . user_password(10);
     $user->pass = $hashed_pass;
     user_save($user);
   }
 }
-

@@ -1,0 +1,21 @@
+name = Newsletter Bundle
+description = Create email newsletters from article content on your site. <i>Requires the News and Article Bundle</i>.
+core = 7.x
+package = CU-Newsletter
+dependencies[] = ctools
+dependencies[] = entityreference
+dependencies[] = features
+dependencies[] = field_collection
+dependencies[] = field_group
+dependencies[] = image
+dependencies[] = link
+dependencies[] = list
+dependencies[] = options
+dependencies[] = smart_trim
+dependencies[] = strongarm
+dependencies[] = text
+dependencies[] = cu_newsletter
+dependencies[] = cu_newsletter_list
+dependencies[] = cu_news_bundle
+
+bundle_cache_clear = 1

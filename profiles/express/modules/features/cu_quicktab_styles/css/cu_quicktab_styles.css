@@ -26,8 +26,8 @@ div.quicktabs-style-line .item-list ul.quicktabs-style-line li {
   padding: 0;
 }
 div.quicktabs-style-line .item-list ul.quicktabs-style-line li a {
- 
-  
+
+
   color: #666;
   display: block;
   float: left;
@@ -62,7 +62,7 @@ div.quicktabs-style-line .item-list ul.quicktabs-style-line li.active a {
 div.quicktabs-style-circles .item-list ul.quicktabs-style-circles {
   border-bottom:1px solid #363636;
   margin: 1.5em 0;
-  /* overflow: hidden; */  
+  /* overflow: hidden; */
 }
 div.quicktabs-style-circles .item-list ul.quicktabs-style-circles li {
   display: inline;
@@ -208,7 +208,7 @@ div.quicktabs-style-simple .item-list ul.quicktabs-style-simple {
 div.quicktabs-style-simple .item-list ul.quicktabs-style-simple li {
   margin: 0;
   padding: 0;
-  margin-left: -1px;   
+  margin-left: -1px;
   float: left;
   display: block;
 }
@@ -248,7 +248,7 @@ div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs {
   height: 26px;
   margin: 1.5em 0;
   /* overflow: hidden; */
-  
+
 }
 div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs li {
   display: inline;
@@ -296,7 +296,7 @@ div.quicktabs-style-triangles .item-list  ul.quicktabs-style-triangles {
   border-bottom:1px solid #363636;
   margin: 1.5em 0;
   /* overflow: hidden; */
-  
+
 }
 div.quicktabs-style-triangles .item-list  ul.quicktabs-style-triangles li {
   display: inline;
@@ -408,4 +408,55 @@ div.quicktabs-style-vertical .quicktabs-tabpage  {
 
 
 
+/* UI Tabs */
 
+.quicktabs-ui-wrapper ul.ui-tabs-nav {
+  /* overflow: hidden; */
+  margin: 0;
+  padding: 0;
+  padding-left: 1px;
+  height: 30px;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+  font-size:85%;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li {
+  margin: 0;
+  padding: 0;
+  margin-left: -1px;
+  float: left;
+  display: block;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li a {
+  color: #333;
+  display: block;
+  float: left;
+  line-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  background: #f3f3f3;
+  border: 1px solid #e7e7e7;
+  position: relative;
+   -webkit-transition: none 0.5s ease;
+  -moz-transition: none 0.5s ease;
+  -ms-transition: none 0.5s ease;
+  -o-transition: none 0.5s ease;
+  transition: none 0.5s ease;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li.ui-tabs-active a {
+  background: #fff;
+  border-bottom:1px solid #007BC8;
+  color: #333;
+  height: 30px;
+}
+.quicktabs-ui-wrapper .ui-tabs-panel  {
+  padding:20px 20px 10px 20px;
+  border:1px solid #e7e7e7;
+  background: #fff;
+  color: #333;
+}
+.quicktabs-ui-wrapper .ui-tabs-panel .block {
+  margin-bottom: 0;
+}

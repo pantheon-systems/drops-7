@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * @file
+ * Adds Soundcloud shortcode to WYSIWYG text mode.
+ */
+
+/**
+ * Implements of hook_shortcode_info().
+ *
+ * Using same formatting as hook_filter_info().
+ */
+function cu_soundcloud_embed_shortcode_info() {
+  $shortcodes = array();
+  $shortcodes['soundcloud'] = array(
+    'title' => t('Soundcloud'),
+    'description' => t('Embed content from soundcloud.com'),
+    'process callback' => 'cu_soundcloud_embed_shortcode',
+    'tips callback' => 'cu_soundcloud_embed_tips',
+    'default settings' => array(),
+  );
+
+  return $shortcodes;
+}
+
+/**
+ * Box shortcode.
+ */
+function cu_soundcloud_embed_shortcode($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+    'width' => '100%',
+    'height' => '450',
+    'scrolling' => 'no',
+    'frameborder' => 'no',
+    'src' => '',
+  ), $attrs));
+  // Check to make sure the src is soundcloud.com.
+  if (strpos($src, 'soundcloud.com') !== FALSE) {
+    $output = '<iframe width="' . $width . '" height="' . $height . '" scrolling="' . $scrolling . '" frameborder="' . $frameborder . '" src="' . $src . '"></iframe>';
+    return $output;
+  }
+
+}
+
+/**
+ * Box tips.
+ */
+function cu_soundcloud_embed_tips($format, $long) {
+  $output = '[soundcloud width="100%" height="450" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/ID_GOES_HERE&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true"][/soundcloud]';
+  return $output;
+}
+
+/**
+ * Implementation of hook_wysiwyg_plugin().
+ */
+function cu_soundcloud_embed_wysiwyg_plugin($editor, $version) {
+  if ($editor == 'ckeditor') {
+    return array(
+      'soundcloud_embed' => array(
+        'path' => drupal_get_path('module', 'cu_soundcloud_embed') . '/plugins/soundcloud_wysiwyg',
+        'buttons' => array(
+          'soundcloud_embed_button' => t('Soundcloud Shortcode Generator'),
+        ),
+        'load' => TRUE,
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_filter_info_alter().
+ */
+function cu_soundcloud_embed_filter_info_alter(&$info) {
+  // Load the wysiwyg text format.
+  $format = filter_format_load('wysiwyg');
+  // Get the filters on the wysiwyg text format.
+  $filters = filter_list_format($format->format);
+  // Enable callout shortcode.
+  $filters['shortcode']->settings['soundcloud'] = 1;
+}

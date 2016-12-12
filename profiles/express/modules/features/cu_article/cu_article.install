@@ -38,3 +38,10 @@ function cu_article_update_7001() {
     ->execute();
   }
 }
+
+/**
+ * Enable related articles.
+ */
+function cu_article_update_7002() {
+  module_enable(array('cu_related_articles'));
+}
