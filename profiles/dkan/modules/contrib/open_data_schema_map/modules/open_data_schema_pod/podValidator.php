@@ -46,7 +46,11 @@ class validate {
   public function process($id) {
     $retriever = new UriRetriever;
     $schemaFolder = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod') . '/data/v1.1';
-    $schema = $retriever->retrieve('file://' . $schemaFolder . '/dataset.json');
+    if (module_exists('open_data_federal_extras')) {
+      $schema = $retriever->retrieve('file://' . $schemaFolder . '/dataset.json');
+    } else {
+      $schema = $retriever->retrieve('file://' . $schemaFolder . '/dataset-non-federal.json');
+    }
     $data = $this->getDataset($id);
 
     RefResolver::$maxDepth = 10;

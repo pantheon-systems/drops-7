@@ -246,8 +246,6 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
  * - publisher
  * - contactPoint
  * - accessLevel
- * - bureauCode
- * - programCode
  */
 function odsm_add_data_JSON_defaults(&$dataset) {
   if ((isset($dataset['title']) && !$dataset['title']) || !isset($dataset['title'])) {
@@ -267,12 +265,6 @@ function odsm_add_data_JSON_defaults(&$dataset) {
   }
   if ((isset($dataset['accessLevel']) && !$dataset['accessLevel']) || !isset($dataset['accessLevel'])) {
     $dataset['accessLevel'] = 'public';
-  }
-  if ((isset($dataset['bureauCode']) && !$dataset['bureauCode']) || !isset($dataset['bureauCode'])) {
-    $dataset['bureauCode'] = array('000:00');
-  }
-  if ((isset($dataset['programCode']) && !$dataset['programCode']) || !isset($dataset['programCode'])) {
-    $dataset['programCode'] = array('000:000');
   }
 }
 

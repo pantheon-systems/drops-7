@@ -14,6 +14,16 @@ function media_browser($selected = NULL) {
 
   $params = media_get_browser_params();
 
+  // If we just did a multiple upload, do the multiform file edit. The flag that
+  // tells us that we need to do this is $params['render_multi_edit_form'].
+  if (variable_get('media_bulk_upload_edit', TRUE) && isset($params['render_multi_edit_form']) && isset($params['fid']) && module_exists('media_bulk_upload')) {
+    module_load_include('inc', 'media_bulk_upload', 'includes/media_bulk_upload.pages');
+    $files = file_load_multiple($params['fid']);
+    $multi_edit_form = media_bulk_upload_file_page_edit_multiple($files);
+    $multi_edit_form['buttons']['cancel']['#access'] = FALSE;
+    return $multi_edit_form;
+  }
+
   // If one or more files have been selected, the browser interaction is now
   // complete. Return empty page content to the dialog which now needs to close,
   // but populate Drupal.settings with information about the selected files.

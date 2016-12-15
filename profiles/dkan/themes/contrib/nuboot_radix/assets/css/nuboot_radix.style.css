@@ -5919,8 +5919,7 @@ button.close {
 :root .fa-rotate-270,
 :root .fa-flip-horizontal,
 :root .fa-flip-vertical {
-  -webkit-filter: none;
-          filter: none; }
+  filter: none; }
 
 .fa-stack {
   position: relative;
@@ -9022,6 +9021,9 @@ body.maintenance-page .form-actions .media-widget > a:active:first-child {
 
 .node-dataset .resource-list li {
   padding: 0 260px 0 45px; }
+  @media all and (max-width: 767px) {
+    .node-dataset .resource-list li {
+      padding-right: 0; } }
 
 p.dkan-profile-page-user-name {
   display: inline-block; }

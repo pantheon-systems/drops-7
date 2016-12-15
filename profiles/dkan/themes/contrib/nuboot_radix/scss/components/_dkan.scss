@@ -53,9 +53,12 @@
   height: 34px;
 }
 
-// Move this to dkan_dataset.css.
+// Datasets.
 .node-dataset .resource-list li {
   padding: 0 260px 0 45px;
+  @media all and (max-width:767px) {
+    padding-right: 0;
+  }
 }
 // Move this to dkan_sitewide_profile_page.css.
 p.dkan-profile-page-user-name {

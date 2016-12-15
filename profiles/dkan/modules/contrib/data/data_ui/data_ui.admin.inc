@@ -43,7 +43,7 @@ function data_ui_manage() {
       $status = t('Default');
       $operations[] = l(t('Override'), 'admin/structure/data/edit/' . $table->get('name'));
     }
-    else if ($table->get('export_type') == (EXPORT_IN_CODE | EXPORT_IN_DATABASE)) {
+    elseif ($table->get('export_type') == (EXPORT_IN_CODE | EXPORT_IN_DATABASE)) {
       $status = t('Overridden');
       $operations[] = l(t('Edit'), 'admin/structure/data/edit/' . $table->get('name'));
       $operations[] = l(t('Revert'), 'admin/structure/data/revert/' . $table->get('name'));
@@ -308,13 +308,13 @@ function data_ui_create_form($form, &$form_state) {
     $form['name'] = array(
       '#type' => 'textfield',
       '#title' => t('Table name'),
-      '#description' => t('Machine readable name of the table - e. g. "my_table". Must only contain lower case letters and _.'),
+      '#description' => t('Machine readable name of the table - e.g. "my_table". Must only contain lower case letters and _.'),
       '#required' => TRUE,
     );
     $form['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Table title'),
-      '#description' => t('Natural name of the table - e. g. "My Table".'),
+      '#description' => t('Natural name of the table - e.g. "My Table".'),
       '#required' => TRUE,
     );
     $form['field_num'] = array(
@@ -364,7 +364,7 @@ function data_ui_create_form_validate($form, &$form_state) {
       form_set_error('field_num', t('Enter a number greater than 0.'));
     }
   }
-  // Check for dupes.
+  // Check for duplicates.
   if (isset($form_state['values']['fields'])) {
     $names = array();
     foreach ($form_state['values']['fields'] as $field) {
@@ -682,7 +682,7 @@ function data_ui_edit_form_submit($form, &$form_state) {
                   drupal_set_message(t('Deleted field !field_name', array('!field_name' => check_plain($field_name))));
                 }
                 else {
-                  drupal_set_message('You cannot delete all fields from a table, drop the table instead.', 'error');
+                  drupal_set_message(t('You cannot delete all fields from a table, drop the table instead.'), 'error');
                 }
               }
             }

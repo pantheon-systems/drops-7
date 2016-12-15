@@ -103,6 +103,15 @@
     return (new Date()).getTime();
   };
 
+  var strlen = function(str) {
+    var n = 0, code;
+    for (var i = 0, len = str.length; i < len; i++) {
+      code = str.charCodeAt(i);
+      n += code < 0x80 ? 1 : code < 0x800 || code > 0xD7FF && code < 0xE000 ? 2 : 3;
+    }
+    return n;
+  };
+
   // Drupal behavior.
   Drupal.behaviors.fileResup = {
     attach: function(context, settings) {
@@ -161,7 +170,7 @@
             form_build_id: $('input[name="form_build_id"]', this.form).val()
           },
           fileValidator: function(file) {
-            if (file.name.length <= 240) {
+            if (strlen(file.name) <= 240) {
               return true;
             }
             addError($wrapper, Drupal.t('File name %filename exceeds the 240 characters limit.', {'%filename': file.name}));

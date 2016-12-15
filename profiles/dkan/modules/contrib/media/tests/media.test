@@ -22,7 +22,7 @@ class MediaFileFieldTestCase extends DrupalWebTestCase {
     $modules[] = 'media';
     $modules[] = 'media_module_test';
     parent::setUp($modules);
-    $this->admin_user = $this->drupalCreateUser(array('access content', 'view files', 'view own files', 'access media browser', 'access administration pages', 'administer site configuration', 'administer users', 'administer permissions', 'administer content types', 'administer nodes', 'administer files', 'bypass node access', 'bypass file access'));
+    $this->admin_user = $this->drupalCreateUser(array('access content', 'view files', 'view own files', 'access media browser', 'access administration pages', 'administer site configuration', 'administer users', 'administer permissions', 'administer content types', 'administer nodes', 'administer files', 'bypass node access', 'bypass file access', 'administer fields'));
     $this->drupalLogin($this->admin_user);
   }
 
@@ -182,7 +182,7 @@ class MediaFileFieldTestCase extends DrupalWebTestCase {
     }
 
     // Attach a file to the node.
-    $edit['media[' . $field_name . '_' . $langcode . '_0]'] = $file->fid;
+    $edit[$field_name . '[' . $langcode . '][0][fid]'] = $file->fid;
     $this->drupalPost("node/$nid/edit", $edit, t('Save'));
 
     return $nid;
@@ -911,9 +911,11 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
     $instance = field_info_instance('node', $field_name, $type_name);
 
     $javascript = $this->drupalGet("node/add/$type_name");
+
+    $multiselect = ($field['cardinality'] > 1 || $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED);
     $field_widget = array(
         'elements' => array(
-          '#edit-' . $field_name . '-' . LANGUAGE_NONE . '-0' => array(
+          '#edit-' . $field_name . '-' . LANGUAGE_NONE . '-0-upload' => array(
             'global' => array(
               'types' => array(
                 'image' => 'image',
@@ -926,6 +928,7 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
               'file_extensions' => 'txt',
               'max_filesize' => '',
               'uri_scheme' => 'public',
+              'multiselect' => $multiselect,
             ),
           ),
         ),
@@ -1112,7 +1115,7 @@ class MediaFileFieldValidateTestCase extends MediaFileFieldTestCase {
     $node = node_load($nid, NULL, TRUE);
     $node_file = (object) $node->{$field_name}[LANGUAGE_NONE][0];
     $this->assertFileExists($node_file, 'File exists after attaching to the required multiple value field.');
-    $this->assertFileEntryExists($node_file, 'File entry exists after attaching to the required multipel value field.');
+    $this->assertFileEntryExists($node_file, 'File entry exists after attaching to the required multiple value field.');
 
     // Remove our file field.
     field_delete_field($field_name);

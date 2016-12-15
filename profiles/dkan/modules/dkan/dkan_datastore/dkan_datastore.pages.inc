@@ -5,6 +5,9 @@
  * Callbacks for datastore pages.
  */
 
+// Default to 50MB.
+define('MAX_FILE_REMOTE_PROXY_DEFAULT', 1024 * 1024 * 50);
+
 /**
  * Callback for Data API instructions.
  */
@@ -36,15 +39,28 @@ function dkan_datastore_download($node) {
   $url = $link_type['url'];
   $type = $link_type['type'];
 
-  if($type == 'upload') {
+  if ($type == 'upload') {
     return drupal_goto($url);
-  } else if($type == 'remote') {
-    dkan_datastore_proxy($node);
-  } else if($type == 'link'){
+  }
+  elseif ($type == 'remote') {
+    $size = isset($node_wrapper->field_link_remote_file->value()['filesize']) ? (int) $node_wrapper->field_link_remote_file->value()['filesize'] : 0;
+
+    // dkan_datastore_proxy() loads the file locally which has a big memory footprint.
+    // If the file is too large we don't want to proxy.
+    $max = (int) variable_get('dkan_datastore_max_file_remote_proxy_size', MAX_FILE_REMOTE_PROXY_DEFAULT);
+    if ($size > $max) {
+      drupal_goto($url);
+    }
+    else {
+      dkan_datastore_proxy($node);
+    }
+  }
+  elseif ($type == 'link') {
     return drupal_goto($url);
-  } else {
+  }
+  else {
     drupal_set_message(t('No download available for this resource'));
-    return '';    
+    return '';
   }
 }
 
@@ -64,6 +80,10 @@ function dkan_datastore_proxy($node) {
     drupal_add_http_header('Content-Type', $mime);
     drupal_add_http_header('Content-Disposition', 'attachment; filename=' . $filename);
     print file_get_contents($uri);
+  }
+  else {
+    // Not in allowed types, treat the file URI as a normal url.
+    return drupal_goto($uri);
   }
 }
 

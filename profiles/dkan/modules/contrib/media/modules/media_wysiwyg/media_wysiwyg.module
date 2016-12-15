@@ -14,11 +14,15 @@ require_once dirname(__FILE__) . '/includes/media_wysiwyg.filter.inc';
 // Functions for UUID support to embedded media.
 require_once dirname(__FILE__) . '/includes/media_wysiwyg.uuid.inc';
 
+// Functions for features integration.
+require_once dirname(__FILE__) . '/includes/media_wysiwyg.features.inc';
+
 /**
  * Implements hook_hook_info().
  */
 function media_wysiwyg_hook_info() {
   $hooks = array(
+    'media_wysiwyg_allowed_attributes_alter',
     'media_wysiwyg_token_to_markup_alter',
     'media_wysiwyg_allowed_view_modes_alter',
     'media_wysiwyg_format_form_prepare_alter',
@@ -115,7 +119,26 @@ function media_wysiwyg_pre_render_text_format($element) {
   $element['#attached']['library'][] = array('media', 'media_browser_settings');
 
   // Add wysiwyg-specific settings.
-  $settings = array('wysiwyg_allowed_attributes' => variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default()));
+  $settings = array(
+    'wysiwyg_allowed_attributes' => media_wysiwyg_allowed_attributes(),
+    'img_alt_field' => 'field_file_image_alt_text',
+    'img_title_field' => 'field_file_image_title_text',
+  );
+
+  // The file_entity module lets you specify a string, possibly with tokens, for
+  // the alt and title attributes of images. We need the actual field names instead.
+  // If the variable only contains a token of the format [file:field_file_image_alt_text]
+  // then it's possible to extract it.
+  $alt_token = variable_get('file_entity_alt', '[file:field_file_image_alt_text]');
+  $title_token = variable_get('file_entity_title', '[file:field_file_image_title_text]');
+  $matches = array();
+  if (preg_match('/^\[file:(field_[[:alnum:]_-]+)\]$/', trim($alt_token), $matches)) {
+    $settings['img_alt_field'] = $matches[1];
+  }
+  if (preg_match('/^\[file:(field_[[:alnum:]_-]+)\]$/', trim($title_token), $matches)) {
+    $settings['img_title_field'] = $matches[1];
+  }
+
   $element['#attached']['js'][] = array(
     'data' => array(
       'media' => $settings,
@@ -126,17 +149,27 @@ function media_wysiwyg_pre_render_text_format($element) {
   // Add filter handling.
   $element['#attached']['js'][] = drupal_get_path('module', 'media_wysiwyg') . '/js/media_wysiwyg.filter.js';
 
-  // Add CKEditor-specific JS.
-  if (module_exists('ckeditor')) {
-    $element['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'media_wysiwyg') . '/wysiwyg_plugins/media_ckeditor/library.js',
-      'type' => 'file',
-      'scope' => 'footer',
-      'weight' => -20,
-    );
-  }
-
   return $element;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function media_wysiwyg_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+  // Add a checkbox that marks this field as one that can be
+  // overridden in the WYSIWYG.
+  if ($form['#instance']['entity_type'] == 'file') {
+    $field_type = $form['#field']['type'];
+    $allowed_field_types = variable_get('media_wysiwyg_wysiwyg_override_field_types', array('text', 'text_long'));
+    if (in_array($field_type, $allowed_field_types)) {
+      $form['instance']['settings']['wysiwyg_override'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Override in WYSIWYG'),
+        '#description' => t('If checked, then this field may be overridden in the WYSIWYG editor.'),
+        '#default_value' => isset($form['#instance']['settings']['wysiwyg_override']) ? $form['#instance']['settings']['wysiwyg_override'] : FALSE,
+      );
+    }
+  }
 }
 
 /**
@@ -225,6 +258,26 @@ function media_wysiwyg_form_media_admin_config_browser_alter(&$form, &$form_stat
     '#default_value' => variable_get('media_wysiwyg_wysiwyg_allowed_types', array('audio', 'image', 'video', 'document')),
   );
 
+  $options = array();
+  foreach(field_info_field_types() as $key => $type) {
+    $options[$key] = $type['label'];
+  }
+  asort($options);
+  $form['wysiwyg']['media_wysiwyg_wysiwyg_override_field_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Override field types in WYSIWYG'),
+    '#options' => $options,
+    '#default_value' => variable_get('media_wysiwyg_wysiwyg_override_field_types', array('text', 'text_long')),
+    '#description' => t('If checked, then the field type may be overridden in the WYSIWYG editor. Not all field types (e.g. Term reference) currently support being overridden so the desired result might not be achieved.')
+  );
+
+  $form['wysiwyg']['media_wysiwyg_use_link_text_for_filename'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Use link text for filename"),
+    '#default_value' => variable_get('media_wysiwyg_use_link_text_for_filename', 1),
+    '#description' => t('When formatting inserted media, allow editable link text to be used in place of the filename. Turn this off if your file view modes handle link formatting.'),
+  );
+
   $form['#submit'][] = 'media_wysiwyg_admin_config_browser_pre_submit';
 }
 
@@ -252,6 +305,13 @@ function media_wysiwyg_filter_info() {
     'tips callback' => 'media_filter_tips',
   );
 
+  $filters['media_filter_paragraph_fix'] = array(
+    'title' => t('Ensure that embedded Media tags are not contained in paragraphs'),
+    'description' => t('This filter will strip any paragraph tags surrounding embedded Media tags. This helps to avoid the chopped up markup that can result from unexpectedly closed paragraph tags. This filter should be positioned above (before) the "Convert Media tags to markup" filter.'),
+    'process callback' => 'media_wysiwyg_filter_paragraph_fix',
+    'weight' => 1,
+  );
+
   return $filters;
 }
 
@@ -268,13 +328,14 @@ function media_wysiwyg_wysiwyg_include_directory($type) {
 }
 
 /**
- * Returns the default set of allowed attributes for use with WYSIWYG.
+ * Returns the set of allowed attributes for use with WYSIWYG.
  *
  * @return array
  *   An array of whitelisted attributes.
  */
-function _media_wysiwyg_wysiwyg_allowed_attributes_default() {
-  return array(
+function media_wysiwyg_allowed_attributes() {
+  // Support the legacy variable for this.
+  $allowed_attributes = variable_get('media_wysiwyg_wysiwyg_allowed_attributes', array(
     'alt',
     'title',
     'height',
@@ -290,7 +351,10 @@ function _media_wysiwyg_wysiwyg_allowed_attributes_default() {
     'data-picture-group',
     'data-picture-align',
     'data-picture-mapping',
-  );
+    'data-delta',
+  ));
+  drupal_alter('media_wysiwyg_allowed_attributes', $allowed_attributes);
+  return $allowed_attributes;  
 }
 
 /**
@@ -298,10 +362,46 @@ function _media_wysiwyg_wysiwyg_allowed_attributes_default() {
  *
  * Optional custom settings can override how the file is displayed.
  */
-function media_wysiwyg_get_file_without_label($file, $view_mode, $settings = array()) {
+function media_wysiwyg_get_file_without_label($file, $view_mode, $settings = array(), $langcode = NULL) {
+  // Get the override alt & title from the fields override array. Grab the
+  // "special" field names from the token replacement in file_entity, then see
+  // if an override is provided and needed.
+  $pattern = '/\[(\w+):(\w+)\]/';
+  $alt = variable_get('file_entity_alt', '[file:field_file_image_alt_text]');
+  $title = variable_get('file_entity_title', '[file:field_file_image_title_text]');
+  $overrides = array(
+    'alt' => $alt,
+    'title' => $title,
+  );
+  foreach ($overrides as $field_type => $field_name) {
+    preg_match($pattern, $field_name, $matches);
+    if (!empty($matches[2])) {
+      $field_name = $matches[2];
+      $field_langcode = field_language('file', $file, $field_name);
+      if (isset($settings['fields'][$field_name][$field_langcode]['value'])) {
+        if (empty($settings['attributes'][$field_type])) {
+          $settings['attributes'][$field_type] = $settings['fields'][$field_name][$field_langcode]['value'];
+        }
+      }
+      if (isset($settings['fields'][$field_name][$field_langcode][0]['value'])) {
+        if (empty($settings['attributes'][$field_type])) {
+          $settings['attributes'][$field_type] = $settings['fields'][$field_name][$field_langcode][0]['value'];
+        }
+      }
+    }
+  }
+
   $file->override = $settings;
 
-  $element = file_view_file($file, $view_mode);
+  $element = file_view_file($file, $view_mode, $langcode);
+
+  // Field Translation Support.
+  if (field_has_translation_handler('file')) {
+    if ($field_items = field_get_items('file', $file, 'field_file_image_alt_text', $langcode)) {
+      $value = field_view_value('file', $file, 'field_file_image_alt_text', $field_items[0], array(), $langcode);
+      $element['#alt'] = isset($value['#markup']) ? $value['#markup'] : '';
+    }
+  }
 
   // The formatter invoked by file_view_file() can use $file->override to
   // customize the returned render array to match the requested settings. To
@@ -368,4 +468,196 @@ function media_wysiwyg_filter_fields_with_text_filtering($entity_type, $entity) 
   }
 
   return $fields_with_text_filtering;
+}
+
+/**
+ * Return a list of view modes allowed for a file type.
+ *
+ * @param string $file_type
+ *   A file type machine name.
+ *
+ * @return array
+ *   An array of view modes that can be used on the file type.
+ */
+function media_wysiwyg_get_file_type_view_mode_options($file_type) {
+  $enabled_view_modes = &drupal_static(__FUNCTION__, array());
+
+  // @todo Add more caching for this.
+  if (!isset($enabled_view_modes[$file_type])) {
+    $enabled_view_modes[$file_type] = array();
+
+    // Add the default view mode by default.
+    $enabled_view_modes[$file_type]['default'] = t('Default');
+
+    $entity_info = entity_get_info('file');
+    $view_mode_settings = field_view_mode_settings('file', $file_type);
+    foreach ($entity_info['view modes'] as $view_mode => $view_mode_info) {
+      // Do not show view modes that don't have their own settings and will
+      // only fall back to the default view mode.
+      if (empty($view_mode_settings[$view_mode]['custom_settings'])) {
+        continue;
+      }
+
+      // Don't present the user with an option to choose a view mode in which
+      // the file is hidden.
+      $extra_fields = field_extra_fields_get_display('file', $file_type, $view_mode);
+      if (empty($extra_fields['file']['visible'])) {
+        continue;
+      }
+
+      // Add the view mode to the list of enabled view modes.
+      $enabled_view_modes[$file_type][$view_mode] = $view_mode_info['label'];
+    }
+  }
+
+  return $enabled_view_modes[$file_type];
+}
+
+/**
+ * Return a list of view modes allowed for a file embedded in the WYSIWYG.
+ *
+ * @param object $file
+ *   A file entity.
+ *
+ * @return array
+ *   An array of view modes that can be used on the file when embedded in the
+ *   WYSIWYG.
+ */
+function media_wysiwyg_get_file_view_mode_options($file) {
+  $view_modes = media_wysiwyg_get_file_type_view_mode_options($file->type);
+  drupal_alter('media_wysiwyg_allowed_view_modes', $view_modes, $file);
+  // Invoke the deprecated/misspelled alter hook as well.
+  drupal_alter('media_wysiwyg_wysiwyg_allowed_view_modes', $view_modes, $file);
+  return $view_modes;
+}
+
+/**
+ * Implements hook_file_displays_alter().
+ */
+function media_wysiwyg_file_displays_alter(&$displays, $file, $view_mode) {
+  // Override the fields of the file when requested by the WYSIWYG.
+  if (isset($file->override) && isset($file->override['fields'])) {
+    $instance = field_info_instances('file', $file->type);
+    foreach ($file->override['fields'] as $field_name => $value) {
+      if (!isset($instance[$field_name]['settings']) || !isset($instance[$field_name]['settings']['wysiwyg_override']) || $instance[$field_name]['settings']['wysiwyg_override']) {
+        $file->{$field_name} = $value;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Add a file type named 'WYSIWYG'.
+ */
+function media_wysiwyg_entity_info_alter(&$entity_info) {
+  $entity_info['file']['view modes'] += array(
+    'wysiwyg' => array(
+      'label' => t('WYSIWYG'),
+      'custom settings' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add select when editing file types to set wysiwyg view mode.
+ */
+function media_wysiwyg_form_file_entity_file_type_form_alter(&$form, &$form_state) {
+  // #2609244 Keep media from trying to alter the File add form just edit.
+  if (empty($form_state['build_info']['args'][0])) {
+    return;
+  }
+  
+  $options = array();
+
+  // Add an option allowing users not to use a view mode.
+  $options['none'] = t('None');
+
+  // Add the default view mode by default.
+  $options['default'] = t('Default');
+
+  $entity_info = entity_get_info('file');
+  foreach ($entity_info['view modes'] as $view_mode => $view_mode_info) {
+    $options[$view_mode] = check_plain($view_mode_info['label']);
+  }
+
+  $file_type = $form['#file_type']->type;
+  $view_mode = db_query('SELECT view_mode FROM {media_view_mode_wysiwyg} WHERE type = :type', array(':type' => $file_type))->fetchField();
+  $view_mode = empty($view_mode) ? 'none' : $view_mode;
+
+  $form['file_wysiwyg_view_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('WYSIWYG view mode'),
+    '#options' => $options,
+    '#default_value' => $view_mode,
+    '#description' => t('View mode to be used when displaying files inside of the WYSIWYG editor.'),
+  );
+
+  // Move submit after our select box. There might be a better way to do this.
+  $form['submit']['#weight'] = 1;
+
+  array_unshift($form['#submit'], 'media_wysiwyg_form_file_entity_file_type_form_alter_submit');
+}
+
+/**
+ * Custom submit handler.
+ *
+ * Save wysiwyg view mode.
+ *
+ * @see media_wysiwyg_form_file_entity_file_type_form_alter().
+ */
+function media_wysiwyg_form_file_entity_file_type_form_alter_submit(&$form, &$form_state) {
+  $file_type = $form['#file_type']->type;
+  $view_mode = $form_state['values']['file_wysiwyg_view_mode'];
+  db_delete('media_view_mode_wysiwyg')->condition('type', $file_type)->execute();
+  if ($view_mode != 'none') {
+    $record = array('type' => $file_type, 'view_mode' => $view_mode);
+    drupal_write_record('media_view_mode_wysiwyg', $record);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add checkbox to restrict file type view mode availability in wysiwyg.
+ */
+function media_wysiwyg_form_file_entity_file_display_form_alter(&$form, &$form_state) {
+  $file_type = $form['#file_type'];
+  $view_mode = $form['#view_mode'];
+
+  if ($view_mode != 'none') {
+    $restricted = db_query(
+      'SELECT 1 FROM {media_restrict_wysiwyg} WHERE type = :type and display = :display',
+      array(':type' => $file_type, ':display' => $view_mode)
+    )->fetchField();
+    $form['restrict_wysiwyg'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Restrict in WYSIWYG'),
+      '#description' => t('If checked, then this mode will not be allowed from the WYSIWYG.'),
+      '#default_value' => !empty($restricted),
+    );
+    array_unshift($form['#submit'], 'media_wysiwyg_form_file_entity_file_display_form_alter_submit');
+  }
+
+  return $form;
+}
+
+/**
+ * Custom submit handler.
+ *
+ * Save restricted wysiwyg file types.
+ *
+ * @see media_wysiwyg_form_file_entity_file_display_form_alter().
+ */
+function media_wysiwyg_form_file_entity_file_display_form_alter_submit(&$form, &$form_state) {
+  $file_type = $form['#file_type'];
+  $view_mode = $form['#view_mode'];
+  db_delete('media_restrict_wysiwyg')->condition('type', $file_type)->condition('display', $view_mode)->execute();
+  if (!empty($form_state['values']['restrict_wysiwyg'])) {
+    $record = array('type' => $file_type, 'display' => $view_mode);
+    drupal_write_record('media_restrict_wysiwyg', $record);
+  }
 }

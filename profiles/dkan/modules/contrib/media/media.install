@@ -29,7 +29,7 @@ function media_install() {
  */
 function _media_install_copy_icons() {
   $destination = variable_get('media_icon_base_directory', 'public://media-icons') . '/' . variable_get('media_icon_set', 'default');
-  if (!file_prepare_directory($destination, FILE_CREATE_DIRECTORY)) {
+  if (!file_prepare_directory($destination, FILE_MODIFY_PERMISSIONS || FILE_CREATE_DIRECTORY)) {
     throw new Exception("Unable to create directory $destination.");
   }
   // @todo If we ever add another default icon set, this should copy all images from one directory up.
@@ -65,6 +65,8 @@ function media_uninstall() {
   variable_del('media_zindex');
   variable_del('media_backgroundcolor');
   variable_del('media_opacity');
+  // bulk edit option
+  variable_del('media_bulk_upload_edit');
 }
 
 /**

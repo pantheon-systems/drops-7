@@ -67,9 +67,9 @@ function media_entity_info_alter(&$entity_info) {
       'custom settings' => TRUE,
     );
   }
-
   if (module_exists('entity_translation')) {
     $entity_info['file']['translation']['entity_translation']['class'] = 'MediaEntityTranslationHandler';
+    $entity_info['file']['translation']['entity_translation']['path schemes']['media'] = array('edit path' => 'media/%file/edit/%ctools_js');
   }
 }
 
@@ -266,7 +266,13 @@ function media_ajax_upload() {
   // Get the current element and count the number of files.
   $current_element = $form;
   foreach ($form_parents as $parent) {
-    $current_element = $current_element[$parent];
+    if (isset($current_element[$parent])) {
+      $current_element = $current_element[$parent];
+    }
+    else {
+      $current_element = NULL;
+      break;
+    }
   }
   $current_file_count = isset($current_element['#file_upload_delta']) ? $current_element['#file_upload_delta'] : 0;
 
@@ -346,6 +352,8 @@ function media_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   if ($form['#field']['type'] == 'file' && $form['instance']['widget']['type']['#value'] == 'media_generic') {
     $form['instance']['settings']['file_extensions']['#title'] = t('Allowed file extensions for uploaded files');
     $form['instance']['settings']['file_extensions']['#maxlength'] = 255;
+    $form['instance']['settings']['file_extensions']['#description'] .= '<br />' . t('If empty, the file extensions list will be composed automatically using the allowed file types.');
+    $form['instance']['settings']['file_extensions']['#required'] = FALSE;
   }
 
   // On image fields using the media widget we remove the alt/title fields.
@@ -362,15 +370,6 @@ function media_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   // if any defined by settings.
   if ($form['instance']['widget']['type']['#value'] == 'media_generic' && isset($form['#field']['settings']['uri_scheme'])) {
     $form['#validate'][] = 'media_field_instance_validate';
-  }
-
-  if ($form['#instance']['entity_type'] == 'file') {
-    $form['instance']['settings']['wysiwyg_override'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Override in WYSIWYG'),
-      '#description' => t('If checked, then this field may be overridden in the WYSIWYG editor.'),
-      '#default_value' => isset($form['#instance']['settings']['wysiwyg_override']) ? $form['#instance']['settings']['wysiwyg_override'] : TRUE,
-    );
   }
 }
 
@@ -715,7 +714,7 @@ function media_element_process($element, &$form_state, $form) {
 
   // Append the '-upload' to the #id so the field label's 'for' attribute
   // corresponds with the textfield element.
-  $original_id = $element['#id'];
+  $original_id = $element['#original_id'] = $element['#id'];
   $element['#id'] .= '-upload';
   $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
 
@@ -790,13 +789,24 @@ function media_element_process($element, &$form_state, $form) {
     '#attributes' => array(
       'class' => array(
         // Required for CTools modal to work.
-        'ctools-use-modal', 'use-ajax',
+        'ctools-use-modal',
         'ctools-modal-media-file-edit', 'button', 'edit',
       ),
     ),
     '#weight' => 20,
     '#access' => $element['#file'] ? file_entity_access('update', $element['#file']) : FALSE,
   );
+
+  // If we have parent entity form/source langcodes, pass them in query. They
+  // will be used in
+  /* @see media_file_edit_modal() */
+  if (!empty($element['#media_parent_entity_form_langcode'])) {
+    $element['edit']['#options']['query']['media_parent_entity_form_langcode'] = $element['#media_parent_entity_form_langcode'];
+    if (!empty($element['#media_parent_entity_source_langcode'])) {
+      $element['edit']['#options']['query']['media_parent_entity_source_langcode'] = $element['#media_parent_entity_source_langcode'];
+    }
+  }
+
   $element['remove_button'] = array(
     '#name' => implode('_', $element['#parents']) . '_remove_button',
     '#type' => 'submit',
@@ -822,7 +832,7 @@ function media_element_process($element, &$form_state, $form) {
   $element['browse_button']['#attached']['js'] = array(
     array(
       'type' => 'setting',
-      'data' => array('media' => array('elements' => array('#' . $original_id => $element['#media_options'])))
+      'data' => array('media' => array('elements' => array('#' . $element['#id'] => $element['#media_options'])))
     )
   );
 
@@ -1022,7 +1032,7 @@ function theme_media_element($variables) {
 
   $attributes = array();
   if (isset($element['#id'])) {
-    $attributes['id'] = drupal_substr($element['#id'], 0, -7);
+    $attributes['id'] = $element['#id'];
   }
   if (!empty($element['#attributes']['class'])) {
     $attributes['class'] = (array) $element['#attributes']['class'];
@@ -1141,15 +1151,6 @@ function media_file_displays_alter(&$displays, $file, $view_mode) {
     );
   }
 
-  // Override the fields of the file when requested by the WYSIWYG.
-  if (isset($file->override) && isset($file->override['fields'])) {
-    $instance = field_info_instances('file', $file->type);
-    foreach ($file->override['fields'] as $field_name => $value) {
-      if (!isset($instance[$field_name]['settings']) || !isset($instance[$field_name]['settings']['wysiwyg_override']) || $instance[$field_name]['settings']['wysiwyg_override']) {
-        $file->{$field_name} = $value;}
-    }
-  }
-
   // Alt and title are special.
   // @see file_entity_file_load
   $alt = variable_get('file_entity_alt', '[file:field_file_image_alt_text]');
@@ -1162,10 +1163,10 @@ function media_file_displays_alter(&$displays, $file, $view_mode) {
 
   // Load alt and title text from fields.
   if (!empty($alt)) {
-    $file->alt = token_replace($alt, array('file' => $file), $replace_options);
+    $file->alt = decode_entities(token_replace($alt, array('file' => $file), $replace_options));
   }
   if (!empty($title)) {
-    $file->title = token_replace($title, array('file' => $file), $replace_options);
+    $file->title = decode_entities(token_replace($title, array('file' => $file), $replace_options));
   }
 }
 

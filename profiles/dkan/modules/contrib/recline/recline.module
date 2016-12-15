@@ -95,6 +95,7 @@ function recline_embed($node) {
       $content = field_view_field('node', $node, $field_name);
       if ($content) {
         print theme('recline_embed', array('title' => $node->title, 'content' => render($content)));
+        recline_add_cache_header();
         drupal_exit();
       }
     }
@@ -103,6 +104,38 @@ function recline_embed($node) {
   // If no populated field of type 'recline_field' is found, display 404 page.
   drupal_fast_404();
   drupal_not_found();
+}
+
+/**
+ * Adds cache header for pages and endpoints that require.
+ */
+function recline_add_cache_header() {
+  // Start with default page cache.
+  $max_age = variable_get('page_cache_maximum_age', 0);
+  // Support using APE module.
+  if (module_exists('ape')) {
+    $max_age = ape_cache_set();
+    // Check to see if another module or hook has already set an APE header. This
+    // allows rules or other module integration to take precedent.
+    if (is_null($max_age)) {
+      if (ape_check_path(variable_get('ape_alternatives', ''), $_GET['q'])) {
+        $max_age = variable_get('ape_alternative_lifetime', 0);
+      }
+      else {
+        $max_age = variable_get('page_cache_maximum_age', 0);
+      }
+    }
+    // Allow max_age to be altered by hook_ape_cache_alter().
+    $original_max_age = $max_age;
+    drupal_alter('ape_cache_expiration', $max_age, $original_max_age);
+  }
+  $name = 'Cache-Control';
+  $value = 'no-cache, must-revalidate, post-check=0, pre-check=0';
+  // Set cache header if age dictates.
+  if ($max_age > 0) {
+    $value = 'public, max-age=' . $max_age;
+  }
+  drupal_add_http_header($name, $value);
 }
 
 /**

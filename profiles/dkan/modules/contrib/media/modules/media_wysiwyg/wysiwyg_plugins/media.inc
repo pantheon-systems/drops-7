@@ -12,8 +12,8 @@ function media_wysiwyg_media_plugin() {
   $plugins['media'] = array(
     'title' => variable_get('media_wysiwyg_wysiwyg_title', t('Media browser')),
     'vendor url' => 'http://drupal.org/project/media',
-    'icon path' => drupal_get_path('module', 'media_wysiwyg') . '/wysiwyg_plugins/media_ckeditor/images',
-    'icon file' => 'icon.gif',
+    'icon path' => drupal_get_path('module', 'media_wysiwyg') . '/images',
+    'icon file' => 'wysiwyg-media.gif',
     'icon title' => variable_get('media_wysiwyg_wysiwyg_icon_title', t('Add media')),
     // @todo: move this to the plugin directory for the wysiwyg plugin.
     'js path' => drupal_get_path('module', 'media_wysiwyg') . '/js',
