@@ -33,8 +33,22 @@ Drupal.behaviors.mediaFormatForm = {
 Drupal.media.formatForm.getOptions = function () {
   // Get all the values
   var ret = {};
+  // Keep track of multi-value fields.
+  var fieldDelta = {};
 
   $.each($('#media-wysiwyg-format-form .fieldset-wrapper *').serializeArray(), function (i, field) {
+
+    // Support multi-value select lists, which show up here with [] at the end.
+    if ('[]' == field.name.slice(-2)) {
+      if (typeof fieldDelta[field.name] === 'undefined') {
+        fieldDelta[field.name] = 0;
+      }
+      else {
+        fieldDelta[field.name] += 1;
+      }
+      field.name = field.name.replace('[]', '[' + fieldDelta[field.name] + ']');
+    }
+
     ret[field.name] = field.value;
 
     // When a field uses a WYSIWYG format, the value needs to be extracted.

@@ -29,7 +29,9 @@ Drupal.behaviors.MediaBrowser = {
         $(parent_iframe).attr('current_tab', $('#media-tabs-wrapper > ul > li.ui-state-active').index());
       }
     };
+
     var activeTab = Drupal.media.browser.tabFromHash();
+
     $('#media-browser-tabset').once('MediaBrowser').tabs({
       selected: activeTab, // jquery < 1.9
       active: activeTab, // jquery >= 1.9
@@ -44,6 +46,7 @@ Drupal.behaviors.MediaBrowser = {
 
 Drupal.media.browser.getParentIframe = function (window) {
   var arrFrames = parent.document.getElementsByTagName("IFRAME");
+
   for (var i = 0; i < arrFrames.length; i++) {
     if (arrFrames[i].contentWindow === window) {
       return arrFrames[i];
@@ -58,6 +61,7 @@ Drupal.media.browser.tabFromHash = function () {
   if (parent_iframe = Drupal.media.browser.getParentIframe(window)) {
     return $(parent_iframe).attr('current_tab');
   }
+
   return 0;
 };
 

@@ -4,7 +4,7 @@
  * Data UI tests.
  */
 
-require_once(drupal_get_path('module', 'data') .'/tests/data.test.inc');
+require_once(drupal_get_path('module', 'data') . '/tests/data.test.inc');
 
 /**
  * Test basic Data API functionality.
@@ -43,7 +43,7 @@ class DataTestCaseUI extends DataTestCase {
   public function testCRUDTable() {
     $table_name = $this->createTable(5);
     // @todo: edit table.
-    $this->drupalGet('admin/build/data/export/'. $table_name);
+    $this->drupalGet('admin/build/data/export/' . $table_name);
     $this->dropTable($table_name);
   }
 
@@ -171,11 +171,11 @@ class DataTestCaseUI extends DataTestCase {
     $fields = $this->randomFields($num_fields);
     $edit = $this->formatEditFields($fields);
     $this->drupalPost(NULL, $edit, 'Create');
-    $this->assertText('Created table '. $table_name);
+    $this->assertText('Created table ' . $table_name);
 
     // Test schema in DB.
     // @todo: why do we need to clear the cache here?
-    if ($schema = drupal_get_schema($table_name, true)) {
+    if ($schema = drupal_get_schema($table_name, TRUE)) {
       foreach ($schema['primary key'] as $key) {
         if (is_array($key)) {
           $primary_keys[] = $key[0];
@@ -203,7 +203,7 @@ class DataTestCaseUI extends DataTestCase {
       $this->fail('Could not create schema - invalid schema definition?');
     }
 
-    $this->assertTrue(db_table_exists($table_name), 'Table '. $table_name .' exists in database.');
+    $this->assertTrue(db_table_exists($table_name), 'Table ' . $table_name . ' exists in database.');
 
     return $table_name;
   }
@@ -212,11 +212,11 @@ class DataTestCaseUI extends DataTestCase {
    * Drop a table.
    */
   protected function dropTable($table_name) {
-    $this->drupalPost('admin/build/data/drop/'. $table_name, array(), 'Drop');
+    $this->drupalPost('admin/build/data/drop/' . $table_name, array(), 'Drop');
     $exists = db_result(db_query('SELECT name FROM {data_tables} WHERE name = "%s"', $table_name));
     $this->assertFalse($exists, 'Table removed from data_tables table.');
-    $this->assertFalse(drupal_get_schema($table_name, true), 'Table '. $table_name .' removed from schema API.');
-    $this->assertFalse(db_table_exists($table_name), 'Table '. $table_name .' removed from DB.');
+    $this->assertFalse(drupal_get_schema($table_name, TRUE), 'Table ' . $table_name . ' removed from schema API.');
+    $this->assertFalse(db_table_exists($table_name), 'Table ' . $table_name . ' removed from DB.');
   }
 
   /**

@@ -6,9 +6,9 @@ hidden = TRUE
 
 files[] = includes/MediaModuleTest.inc
 
-; Information added by Drupal.org packaging script on 2015-07-14
-version = "7.x-2.0-beta1"
+; Information added by Drupal.org packaging script on 2016-12-07
+version = "7.x-2.0-beta13"
 core = "7.x"
 project = "media"
-datestamp = "1436895542"
+datestamp = "1481140093"
 

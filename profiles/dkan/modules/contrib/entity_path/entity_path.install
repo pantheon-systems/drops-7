@@ -113,7 +113,6 @@ function entity_path_update_7101() {
  * Updates cid for MySQL 5.7 compatibility.
  */
 function entity_path_update_7102() {
-  db_drop_primary_key('cid');
   $cid = array(
     'type' => 'serial',
     'unsigned' => TRUE,

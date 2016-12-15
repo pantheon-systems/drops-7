@@ -10,23 +10,43 @@
 (function ($) {
 
 /**
- * Attach behaviors to media element browse fields.
+ * Attach behaviors to media element upload fields.
  */
 Drupal.behaviors.mediaElement = {
   attach: function (context, settings) {
+    var $context = $(context);
+    var elements;
+
+    function initMediaBrowser(selector) {
+      $context.find(selector)
+        .once('media-browser-launch')
+        .siblings('.browse').show()
+        .siblings('.upload').hide()
+        .siblings('.attach').hide()
+        .siblings('.browse').bind('click', {configuration: settings.media.elements[selector]}, Drupal.media.openBrowser);
+    }
+
     if (settings.media && settings.media.elements) {
-      $.each(settings.media.elements, function(selector) {
-        $(selector, context).once('media-browser-launch', function () {
-          var configuration = settings.media.elements[selector];
-          // The user has JavaScript enabled, so display the browse field and hide
-          // the upload and attach fields which are only used as a fallback in
-          // case the user is unable to use the media browser.
-          $(selector, context).children('.browse').show();
-          $(selector, context).children('.upload').hide();
-          $(selector, context).children('.attach').hide();
-          $(selector, context).children('.browse').bind('click', {configuration: configuration}, Drupal.media.openBrowser);
-        });
-      });
+      elements = settings.media.elements;
+      Object.keys(elements).forEach(initMediaBrowser);
+    }
+  },
+  detach: function (context, settings, trigger) {
+    var $context = $(context);
+    var elements;
+
+    function removeMediaBrowser(selector) {
+      $context.find(selector)
+        .removeOnce('media-browser-launch')
+        .siblings('.browse').hide()
+        .siblings('.upload').show()
+        .siblings('.attach').show()
+        .siblings('.browse').unbind('click', Drupal.media.openBrowser);
+    }
+
+    if (trigger === 'unload' && settings.media && settings.media.elements) {
+      elements = settings.media.elements;
+      Object.keys(elements).forEach(removeMediaBrowser);
     }
   }
 };
@@ -71,19 +91,31 @@ Drupal.media.openBrowser = function (event) {
       return;
     }
 
-    // Grab the first of the selected media files.
-    var mediaFile = mediaFiles[0];
+    var mediaFileValue;
+    // Process the value based on multiselect.
+    if (mediaFiles.length > 1) {
+      // Reverse array to have files in correct order
+      mediaFiles.reverse();
+      // Concatenate the array into a comma separated string.
+      mediaFileValue = mediaFiles.map(function(file) {
+        return file.fid;
+      }).join(',');
+    }
+    else {
+      // Grab the first of the selected media files.
+      mediaFileValue = mediaFiles[0].fid;
+
+      // Display a preview of the file using the selected media file's display.
+      previewField.html(mediaFileValue.preview);
+    }
 
     // Set the value of the hidden file ID field and trigger a change.
-    uploadField.val(mediaFile.fid);
+    uploadField.val(mediaFileValue);
     uploadField.trigger('change');
 
     // Find the attach button and automatically trigger it.
     var attachButton = uploadField.siblings('.attach');
     attachButton.trigger('mousedown');
-
-    // Display a preview of the file using the selected media file's display.
-    previewField.html(mediaFile.preview);
   }, configuration);
 
   return false;
@@ -122,4 +154,3 @@ Drupal.media.disableFields = function (event) {
 };
 
 })(jQuery);
-

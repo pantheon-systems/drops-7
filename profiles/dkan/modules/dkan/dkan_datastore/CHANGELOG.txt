@@ -1,6 +1,12 @@
+7.x-1.12.x
+----------
+- Add limit to proxy resources.
+
 7.x-1.12 2015-04-01
 --------------------------
 - Add update function enable field_hidden module
+- Better support of downloading remote files from the resource view page
+  "Download" button.
 
 7.x-1.10 2015-11-10
 --------------------------

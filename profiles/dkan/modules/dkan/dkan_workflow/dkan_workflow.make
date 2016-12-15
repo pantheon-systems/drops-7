@@ -5,6 +5,7 @@ projects[workbench][version] = 1.2
 projects[workbench][subdir] = contrib
 
 projects[workbench_moderation][download][type] = git
+projects[workbench_moderation][download][url] = http://git.drupal.org/project/workbench_moderation.git
 projects[workbench_moderation][download][branch] = 7.x-1.x
 projects[workbench_moderation][download][revision] = "2c91211"
 projects[workbench_moderation][subdir] = contrib

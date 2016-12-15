@@ -21,7 +21,7 @@ function data_entity_admin_entity_type_form($form, &$form_state, $table) {
 
   $id_field_options = array();
   foreach ($schema['fields'] as $field_name => $field) {
-    if (in_array($field['type'], array('serial','int'))) {
+    if (in_array($field['type'], array('serial', 'int'))) {
       $id_field_options[$field_name] = $field_name;
     }
   }
@@ -179,7 +179,6 @@ function theme_data_entity_admin_entity_form($variables) {
 }
 
 function data_entity_admin_entity_form_submit($form, &$form_state) {
-  //dsm($form_state['values']);
   $table = $form_state['values']['table'];
 
   // Update meta data.

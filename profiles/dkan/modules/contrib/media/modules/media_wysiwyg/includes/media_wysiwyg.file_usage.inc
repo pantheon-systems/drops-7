@@ -12,7 +12,7 @@
  * is heavy-handed, and should be replaced when Drupal's filter system is
  * context-aware.
  */
-function media_wysiwyg_field_attach_insert($entity_type, $entity) {
+function media_wysiwyg_entity_insert($entity, $entity_type) {
   _media_wysiwyg_filter_add_file_usage_from_fields($entity_type, $entity);
 }
 
@@ -21,7 +21,7 @@ function media_wysiwyg_field_attach_insert($entity_type, $entity) {
  *
  * @see media_field_attach_insert().
  */
-function media_wysiwyg_field_attach_update($entity_type, $entity) {
+function media_wysiwyg_entity_update($entity, $entity_type) {
   _media_wysiwyg_filter_add_file_usage_from_fields($entity_type, $entity);
 }
 
@@ -92,21 +92,23 @@ function media_wysiwyg_filter_parse_from_fields($entity_type, $entity) {
   foreach (media_wysiwyg_filter_fields_with_text_filtering($entity_type, $entity) as $field_name) {
     if ($field_items = field_get_items($entity_type, $entity, $field_name)) {
       foreach ($field_items as $field_item) {
-        preg_match_all(MEDIA_WYSIWYG_TOKEN_REGEX, $field_item['value'], $matches);
-        foreach ($matches[0] as $tag) {
-          $tag = str_replace(array('[[', ']]'), '', $tag);
-          $tag_info = drupal_json_decode($tag);
-          if (isset($tag_info['fid']) && $tag_info['type'] == 'media') {
-            $file_references[] = $tag_info;
+        if (!empty($field_item['value'])) {
+          preg_match_all(MEDIA_WYSIWYG_TOKEN_REGEX, $field_item['value'], $matches);
+          foreach ($matches[0] as $tag) {
+            $tag = str_replace(array('[[', ']]'), '', $tag);
+            $tag_info = drupal_json_decode($tag);
+            if (isset($tag_info['fid']) && $tag_info['type'] == 'media') {
+              $file_references[] = $tag_info;
+            }
           }
-        }
 
-        preg_match_all(MEDIA_WYSIWYG_TOKEN_REGEX, $field_item['value'], $matches_alt);
-        foreach ($matches_alt[0] as $tag) {
-          $tag = urldecode($tag);
-          $tag_info = drupal_json_decode($tag);
-          if (isset($tag_info['fid']) && $tag_info['type'] == 'media') {
-            $file_references[] = $tag_info;
+          preg_match_all(MEDIA_WYSIWYG_TOKEN_REGEX, $field_item['value'], $matches_alt);
+          foreach ($matches_alt[0] as $tag) {
+            $tag = urldecode($tag);
+            $tag_info = drupal_json_decode($tag);
+            if (isset($tag_info['fid']) && $tag_info['type'] == 'media') {
+              $file_references[] = $tag_info;
+            }
           }
         }
       }

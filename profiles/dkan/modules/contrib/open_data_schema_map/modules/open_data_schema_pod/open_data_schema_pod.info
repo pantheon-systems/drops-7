@@ -2,6 +2,5 @@ name = POD Schema
 description = Provides POD Schema for Open Data Schema Map.
 core = 7.x
 package = Open Data
-version = 7.x-1.12.11
 dependencies[] = features
 dependencies[] = open_data_schema_map

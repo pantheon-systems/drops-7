@@ -20,7 +20,7 @@ function data_entity_views_data_alter(&$data) {
     );
 
     // Support for Editable Views module.
-    if ($table->meta['is_entity_type']){
+    if ($table->meta['is_entity_type']) {
       $data[$table_name]['table']['entity type'] = 'data_' . $table_name;
     }
   }

@@ -4,7 +4,7 @@
  * Data module tests.
  */
 
-require_once(drupal_get_path('module', 'data') .'/tests/data.test.inc');
+require_once(drupal_get_path('module', 'data') . '/tests/data.test.inc');
 
 /**
  * Test basic Data API functionality.
@@ -40,7 +40,7 @@ class DataTestCaseAPI extends DataTestCase {
       return;
     }
     else {
-      $this->assertTrue(db_table_exists($table->get('name')), 'Created table '. $table->get('name'));
+      $this->assertTrue(db_table_exists($table->get('name')), 'Created table ' . $table->get('name'));
       $schema = drupal_get_schema($table->get('name'));
       $this->assertTrue(!empty($schema), 'Schema information is available.');
     }
@@ -86,7 +86,7 @@ class DataTestCaseAPI extends DataTestCase {
 
     // Create table and drop it again.
     $table = data_create_table($table_name, $this->testSchema());
-    $this->assertTrue(!empty($table), 'Created table with same name '. $table_name);
+    $this->assertTrue(!empty($table), 'Created table with same name ' . $table_name);
 
     // Delete table.
     $table->drop($table_name);

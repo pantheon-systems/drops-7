@@ -2,9 +2,9 @@
 api: '2'
 core: 7.x
 includes:
-- https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.12.11/dkan_dataset.make
-- https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.12.11/dkan_datastore.make
-- https://raw.githubusercontent.com/NuCivic/dkan_workflow/7.x-1.12.11/dkan_workflow.make
+- https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.12.12/dkan_dataset.make
+- https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.12.12/dkan_datastore.make
+- https://raw.githubusercontent.com/NuCivic/dkan_workflow/7.x-1.12.12/dkan_workflow.make
 - https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.0-beta1/visualization_entity.make
 - modules/dkan/dkan_data_story/dkan_data_story.make
 - modules/dkan/dkan_topics/dkan_topics.make
@@ -24,12 +24,10 @@ projects:
     patch:
       2308737: https://www.drupal.org/files/issues/file_entity-remove-field-status-check-2308737-9509141.patch
   media:
-    version: 2.0-beta1
+    version: 2.0-beta13
     patch:
-      2126697: https://www.drupal.org/files/issues/media_wysiwyg_2126697-53.patch
-      2308487: https://www.drupal.org/files/issues/media-alt-title-double-encoded-2308487-2.patch
-      2084287: http://www.drupal.org/files/issues/media-file-name-focus-2084287-2.patch
-      2534724: https://www.drupal.org/files/issues/media-browser_opens_twice-2534724-53.patch
+      2534724: https://www.drupal.org/files/issues/media-fix_rebuild_bug-2534724-105-d7.patch
+      2272567: https://www.drupal.org/files/issues/media_dialog_appears_2272567-32.patch
   media_youtube:
     version: '3.0'
   media_vimeo:
@@ -41,19 +39,19 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/dkan_dataset.git
-      tag: 7.x-1.12.11
+      tag: 7.x-1.12.12
   dkan_datastore:
     subdir: dkan
     download:
       type: git
       url: https://github.com/NuCivic/dkan_datastore.git
-      tag: 7.x-1.12.11
+      tag: 7.x-1.12.12
   dkan_workflow:
     subdir: dkan
     download:
       type: git
       url: https://github.com/NuCivic/dkan_workflow.git
-      tag: 7.x-1.12.11
+      tag: 7.x-1.12.12
   visualization_entity:
     download:
       type: git
@@ -162,7 +160,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/nuboot_radix.git
-      tag: 7.x-1.12.11
+      tag: 7.x-1.12.12
     type: theme
   radix:
     type: theme

@@ -97,11 +97,45 @@ function media_bulk_upload_browser_form_submit($form, &$form_state) {
     $files = $form_state['files'];
     $url = 'media/browser';
     $parameters = array('query' => array('render' => 'media-popup', 'fid' => array_keys($files)));
+    // Pass in "render_multi_edit_form" as a parameter to signal to the
+    // media_browser() function that we need to edit multiple files.
+    $parameters['query']['render_multi_edit_form'] = TRUE;
   }
 
   // If $url is set, we had some sort of upload, so redirect the form.
   if (!empty($url)) {
     $form_state['redirect'] = array($url, $parameters);
+  }
+}
+
+/**
+ * Implements hook_multiform_get_form_alter().
+ *
+ * Alter the multiform that is used after uploading multiple files.
+ */
+function media_bulk_upload_multiform_get_form_alter($form_state_save, &$redirect, $all_args) {
+
+  // Was this form submitted while in the Media browser?
+  if (isset($redirect['#media_browser']) && !empty($form_state_save['input'])) {
+
+    // The $all_args should be an array of arrays, with the second element of
+    // the inner array being the file. For details on this structure, see
+    // the media_bulk_upload_file_page_edit_multiple() function.
+    $fids = array();
+    foreach ($all_args as $arg) {
+      if (count($arg) == 2) {
+        $file = $arg[1];
+        $fids[] = $file->fid;
+      }
+    }
+
+    // If we found something, instruct the Media browser to close and attach
+    // the files to whatever they need to be attached to.
+    if (!empty($fids)) {
+      $url = 'media/browser';
+      $parameters = array('query' => array('render' => 'media-popup', 'fid' => $fids));
+      $redirect['redirect'] = array($url, $parameters);
+    }
   }
 }
 
@@ -200,4 +234,24 @@ function _media_bulk_upload_file_entity_access_recursive($files, $op) {
  */
 function media_bulk_upload_multi_load($fids) {
   return file_load_multiple(explode(' ', $fids));
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function media_bulk_upload_form_media_admin_config_browser_alter(&$form, &$form_state) {
+
+  $form['bulk_upload'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Bulk Upload'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['bulk_upload']['media_bulk_upload_edit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Bulk upload edit"),
+    '#description' => t("After bulk uploads on entity edit pages, show edit form for all uploaded files in a single popup."),
+    '#default_value' => variable_get('media_bulk_upload_edit', TRUE),
+  );
 }

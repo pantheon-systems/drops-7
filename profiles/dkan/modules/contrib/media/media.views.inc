@@ -78,6 +78,14 @@ function template_preprocess_media_views_view_media_browser(&$vars) {
   $view_mode = isset($params['view_mode']) ? $params['view_mode'] : 'preview';
 
   foreach ($vars['rows'] as $index => $row) {
+
+    // If the view result is cached, then the result may include fids that no
+    // longer exist.
+    if (!isset($files[$row->fid])) {
+      unset($vars['rows'][$index]);
+      continue;
+    }
+
     $file = $files[$row->fid];
     // Add url/preview to the file object.
     media_browser_build_media_item($file, $view_mode);
@@ -121,7 +129,7 @@ function template_preprocess_media_views_view_media_browser(&$vars) {
   // Run theming variables through a standard Views preprocess function.
   template_preprocess_views_view_unformatted($vars);
 
-  // Add media browser javascript and CSS.
+  // Add media browser JavaScript and CSS.
   drupal_add_js(drupal_get_path('module', 'media') . '/js/plugins/media.views.js');
 }
 
