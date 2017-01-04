@@ -53,6 +53,7 @@ my.Map = Backbone.View.extend({
 
   initialize: function(options) {
     var self = this;
+    this.options = options;
     this.visible = this.$el.is(':visible');
     this.mapReady = false;
     // this will be the Leaflet L.Map object (setup below)
@@ -454,16 +455,27 @@ my.Map = Backbone.View.extend({
 
   // Private: Sets up the Leaflet map control and the features layer.
   //
-  // The map uses a base layer from [OpenStreetMap.org](http://openstreetmap.org) based
-  // on [OpenStreetMap data](http://openstreetmap.org).
+  // The map uses a base layer from [Stamen](http://maps.stamen.com) based
+  // on [OpenStreetMap data](http://openstreetmap.org) by default, but it can
+  // be configured passing the `mapTilesURL` and `mapTilesAttribution` options
+  // (`mapTilesSubdomains` is also supported), eg:
+  //
+  //    view = new recline.View.Map({
+  //        model: dataset,
+  //        mapTilesURL: '//{s}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.png?access_token=pk.XXXX',
+  //        mapTilesAttribution: '&copy; MapBox etc..',
+  //        mapTilesSubdomains: 'ab'
+  //    })
+  //
   //
   _setupMap: function(){
     var self = this;
     this.map = new L.Map(this.$map.get(0));
+    var mapUrl = this.options.mapTilesURL || 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png';
+    var attribution = this.options.mapTilesAttribution ||'Map tiles by <a href="http://stamen.com">Stamen Design</a> (<a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>). Data by <a href="http://openstreetmap.org">OpenStreetMap</a> (<a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>)';
+    var subdomains = this.options.mapTilesSubdomains || 'abc';
 
-    var mapUrl = "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    var osmAttribution = '©<a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a> contributors';
-    var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: osmAttribution});
+    var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: attribution, subdomains: subdomains});
     this.map.addLayer(bg);
 
     this.markers = new L.MarkerClusterGroup(this._clusterOptions);
@@ -509,18 +521,18 @@ my.MapMenu = Backbone.View.extend({
               GeoJSON field</label> \
         </div> \
         <div class="editor-field-type-latlon"> \
-          <label>Latitude field</label> \
+          <label for="form-field-lat-field">Latitude field</label> \
           <div class="input editor-lat-field"> \
-            <select class="form-control"> \
+            <select id="form-field-lat-field" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
             {{/fields}} \
             </select> \
           </div> \
-          <label>Longitude field</label> \
+          <label for="form-field-lon-field">Longitude field</label> \
           <div class="input editor-lon-field"> \
-            <select class="form-control"> \
+            <select id="form-field-lon-field" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
@@ -529,9 +541,9 @@ my.MapMenu = Backbone.View.extend({
           </div> \
         </div> \
         <div class="editor-field-type-geom" style="display:none"> \
-          <label>Geometry field (GeoJSON)</label> \
+          <label for="form-field-type-geom">Geometry field (GeoJSON)</label> \
           <div class="input editor-geom-field"> \
-            <select class="form-control"> \
+            <select id="form-field-type-geom" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \

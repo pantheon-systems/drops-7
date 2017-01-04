@@ -31,3 +31,60 @@ NuCivic/dkan#issue_id
 ``` 
 
 to any commit message or comment replacing **issue_id** with the corresponding issue id.
+
+## Recline.js library workflow
+
+There are clear indications on how/what to reference in the makefile itself:
+
+```
+# This should be pointing to the HEAD of the "dkan_integration" branch at the time of
+# each release. The commit should have all the branches for PR's that we send against
+# the okfn repo and the builded version matching the code(use ./make cat to build).
+libraries[recline][download][revision] = "aa5eeac080099584792e70dff839f0e85ae7380a"
+```
+
+### Setup to work on recline.js
+
++ Clone recline.js repo locally
++ Add okfn as a remote
++ Fetch all tags and branches
+
+```
+git clone git@github.com:NuCivic/recline.js.git
+cd recline.js
+git remote add okfn git@github.com:okfn/recline.git 
+git fetch --all
+```
+
+### Build a PR against okfn
+
+All the fixes we provided should be PR's against the okfn repository. Setup for work based on the latest `okfn/master`:
+
+```
+git checkout -b "branch_name_after_fix"
+git reset --hard okfn/master
+```
+
+when you are done build without minifying and push the branch to `NuCivic/recline.js`:
+
+```
+./make cat
+git add .
+git commit -m "Describe your commit"
+git push origin branch_name_after_fix
+```
+
+Create a PR against `okfn/recline:master`
+
+### Update dkan_integration branch to include your fix
+
+```
+git checkout dkan_integration
+git merge origin branch_name_after_fix
+```
+
+### Create a QA site using this repo
+
++ Create a branch for this repo
++ Update the `recline.make` to reference the last commit on `NuCivic/recline.js:dkan_integration`
++ Commit the changes, push and build a QA Site

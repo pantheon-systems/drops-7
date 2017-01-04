@@ -123,7 +123,8 @@ my.Flot = Backbone.View.extend({
           y = item.datapoint[0].toFixed(2);
         }
 
-        var content = _.template('<%= group %> = <%= x %>, <%= series %> = <%= y %>', {
+        var template = _.template('<%= group %> = <%= x %>, <%= series %> = <%= y %>');
+        var content = template({
           group: this.state.attributes.group,
           x: this._xaxisLabel(x),
           series: item.series.label,
@@ -368,9 +369,9 @@ my.FlotControls = Backbone.View.extend({
     <form class="form-stacked"> \
       <div class="clearfix"> \
         <div class="form-group"> \
-          <label>Graph Type</label> \
+          <label for ="form-field-type">Graph Type</label> \
           <div class="input editor-type"> \
-            <select class="form-control"> \
+            <select id="form-field-type" class="form-control"> \
               <option value="lines-and-points">Lines and Points</option> \
               <option value="lines">Lines</option> \
               <option value="points">Points</option> \
@@ -380,9 +381,9 @@ my.FlotControls = Backbone.View.extend({
           </div> \
         </div> \
         <div class="form-group"> \
-          <label>Group Column (Axis 1)</label> \
+          <label for="field-form-group">Group Column (Axis 1)</label> \
           <div class="input editor-group"> \
-            <select class="form-control"> \
+            <select id="field-form-group" class="form-control"> \
               <option value="">Please choose ...</option> \
                 {{#fields}} \
               <option value="{{id}}">{{label}}</option> \
@@ -406,11 +407,11 @@ my.FlotControls = Backbone.View.extend({
   templateSeriesEditor: ' \
     <div class="editor-series js-series-{{seriesIndex}}"> \
       <div class="form-group"> \
-        <label>Series <span>{{seriesName}} (Axis 2)</span> \
+        <label for="form-field-{{seriesName}}">Series <span>{{seriesName}} (Axis 2)</span> \
           [<a href="#remove" class="action-remove-series">Remove</a>] \
         </label> \
         <div class="input"> \
-          <select class="form-control"> \
+          <select id="form-field-{{seriesName}}" class="form-control"> \
           {{#fields}} \
           <option value="{{id}}">{{label}}</option> \
           {{/fields}} \

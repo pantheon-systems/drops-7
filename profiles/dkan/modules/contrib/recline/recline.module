@@ -11,6 +11,13 @@ define('FILE_SIZE_PREVIEW_LIMIT', 3000000);
 module_load_include('inc', 'recline', 'recline.field');
 
 /**
+ * Check if a preview it's embedded or not.
+ */
+function recline_embedded() {
+  return menu_get_item(current_path())['path'] === 'node/%/recline-embed';
+}
+
+/**
  * Implements hook_menu().
  */
 function recline_menu() {

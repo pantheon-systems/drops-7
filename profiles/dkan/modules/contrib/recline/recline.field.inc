@@ -370,6 +370,12 @@ function theme_recline_url_formatter($variables) {
  * @ingroup themeable
  */
 function theme_recline_default_formatter($variables) {
+  if (recline_embedded()) {
+    $recline_path = libraries_get_path('recline');
+    drupal_add_js($recline_path . '/vendor/bootstrap/3.2.0/js/bootstrap.js');
+    drupal_add_css($recline_path . '/vendor/bootstrap/3.2.0/css/bootstrap.css');
+  }
+
   $output = recline_default_formatter_output($variables);
   // We should REALLY think about how we want to architecture this. I don't like
   // the case by case thing going on here. We should provide a way of tying file

@@ -6,7 +6,7 @@ machine:
 
   # Version of ruby to use
   php:
-    version: '5.5.11'
+    version: 5.6.22
 
   # Override /etc/hosts
   #hosts:
@@ -34,16 +34,18 @@ dependencies:
      #- "~/.drush"
      #- "~/backups"
      #- "test/sites/default"
+  pre:
+    - rm /opt/circleci/php/$(phpenv global)/etc/conf.d/xdebug.ini
+    - echo "memory_limit = 256M" > $PHPENV_ROOT/versions/$(phpenv global)/etc/conf.d/memory.ini
+    - echo "always_populate_raw_post_data = -1" > $PHPENV_ROOT/versions/$(phpenv global)/etc/conf.d/deprecated.ini
   override:
     - mkdir $CIRCLE_ARTIFACTS/junit
     - 'bash dkan-module-init.sh --deps --build=$DATABASE_URL'
     - 'ahoy drush --yes runserver :8888':
         background: true
-
     # Setup display for selenium
     #- sh -e /etc/init.d/xvfb start
     #- sleep 3
-
     - wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar
     - java -jar selenium-server-standalone-2.48.2.jar -quiet -p 4444 -log shut_up_selenium :
         background: true
