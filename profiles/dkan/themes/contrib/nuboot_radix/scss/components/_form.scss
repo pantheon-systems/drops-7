@@ -163,6 +163,9 @@ div.horizontal-tabs {
     vertical-align: top;
   }
 }
+.has-error .form-managed-file span.file {
+  border: 2px solid red
+}
 .image-widget-data input.btn {
   //@extend %button-attached;
 }

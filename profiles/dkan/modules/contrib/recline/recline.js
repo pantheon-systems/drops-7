@@ -93,7 +93,10 @@
           id: 'map',
           label: 'Map',
           view: new recline.View.Map({
-            model: dataset
+            model: dataset,
+            options: {
+              mapTilesURL: '//stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png',
+            }
           })
         });
       }

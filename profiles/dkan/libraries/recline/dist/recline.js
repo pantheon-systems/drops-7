@@ -1161,7 +1161,8 @@ my.Flot = Backbone.View.extend({
           y = item.datapoint[0].toFixed(2);
         }
 
-        var content = _.template('<%= group %> = <%= x %>, <%= series %> = <%= y %>', {
+        var template = _.template('<%= group %> = <%= x %>, <%= series %> = <%= y %>');
+        var content = template({
           group: this.state.attributes.group,
           x: this._xaxisLabel(x),
           series: item.series.label,
@@ -1406,9 +1407,9 @@ my.FlotControls = Backbone.View.extend({
     <form class="form-stacked"> \
       <div class="clearfix"> \
         <div class="form-group"> \
-          <label>Graph Type</label> \
+          <label for ="form-field-type">Graph Type</label> \
           <div class="input editor-type"> \
-            <select class="form-control"> \
+            <select id="form-field-type" class="form-control"> \
               <option value="lines-and-points">Lines and Points</option> \
               <option value="lines">Lines</option> \
               <option value="points">Points</option> \
@@ -1418,9 +1419,9 @@ my.FlotControls = Backbone.View.extend({
           </div> \
         </div> \
         <div class="form-group"> \
-          <label>Group Column (Axis 1)</label> \
+          <label for="field-form-group">Group Column (Axis 1)</label> \
           <div class="input editor-group"> \
-            <select class="form-control"> \
+            <select id="field-form-group" class="form-control"> \
               <option value="">Please choose ...</option> \
                 {{#fields}} \
               <option value="{{id}}">{{label}}</option> \
@@ -1444,11 +1445,11 @@ my.FlotControls = Backbone.View.extend({
   templateSeriesEditor: ' \
     <div class="editor-series js-series-{{seriesIndex}}"> \
       <div class="form-group"> \
-        <label>Series <span>{{seriesName}} (Axis 2)</span> \
+        <label for="form-field-{{seriesName}}">Series <span>{{seriesName}} (Axis 2)</span> \
           [<a href="#remove" class="action-remove-series">Remove</a>] \
         </label> \
         <div class="input"> \
-          <select class="form-control"> \
+          <select id="form-field-{{seriesName}}" class="form-control"> \
           {{#fields}} \
           <option value="{{id}}">{{label}}</option> \
           {{/fields}} \
@@ -1881,6 +1882,7 @@ my.Map = Backbone.View.extend({
 
   initialize: function(options) {
     var self = this;
+    this.options = options;
     this.visible = this.$el.is(':visible');
     this.mapReady = false;
     // this will be the Leaflet L.Map object (setup below)
@@ -2282,16 +2284,27 @@ my.Map = Backbone.View.extend({
 
   // Private: Sets up the Leaflet map control and the features layer.
   //
-  // The map uses a base layer from [OpenStreetMap.org](http://openstreetmap.org) based
-  // on [OpenStreetMap data](http://openstreetmap.org).
+  // The map uses a base layer from [Stamen](http://maps.stamen.com) based
+  // on [OpenStreetMap data](http://openstreetmap.org) by default, but it can
+  // be configured passing the `mapTilesURL` and `mapTilesAttribution` options
+  // (`mapTilesSubdomains` is also supported), eg:
+  //
+  //    view = new recline.View.Map({
+  //        model: dataset,
+  //        mapTilesURL: '//{s}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.png?access_token=pk.XXXX',
+  //        mapTilesAttribution: '&copy; MapBox etc..',
+  //        mapTilesSubdomains: 'ab'
+  //    })
+  //
   //
   _setupMap: function(){
     var self = this;
     this.map = new L.Map(this.$map.get(0));
+    var mapUrl = this.options.mapTilesURL || 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png';
+    var attribution = this.options.mapTilesAttribution ||'Map tiles by <a href="http://stamen.com">Stamen Design</a> (<a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>). Data by <a href="http://openstreetmap.org">OpenStreetMap</a> (<a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>)';
+    var subdomains = this.options.mapTilesSubdomains || 'abc';
 
-    var mapUrl = "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    var osmAttribution = '©<a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a> contributors';
-    var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: osmAttribution});
+    var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: attribution, subdomains: subdomains});
     this.map.addLayer(bg);
 
     this.markers = new L.MarkerClusterGroup(this._clusterOptions);
@@ -2337,18 +2350,18 @@ my.MapMenu = Backbone.View.extend({
               GeoJSON field</label> \
         </div> \
         <div class="editor-field-type-latlon"> \
-          <label>Latitude field</label> \
+          <label for="form-field-lat-field">Latitude field</label> \
           <div class="input editor-lat-field"> \
-            <select class="form-control"> \
+            <select id="form-field-lat-field" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
             {{/fields}} \
             </select> \
           </div> \
-          <label>Longitude field</label> \
+          <label for="form-field-lon-field">Longitude field</label> \
           <div class="input editor-lon-field"> \
-            <select class="form-control"> \
+            <select id="form-field-lon-field" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
@@ -2357,9 +2370,9 @@ my.MapMenu = Backbone.View.extend({
           </div> \
         </div> \
         <div class="editor-field-type-geom" style="display:none"> \
-          <label>Geometry field (GeoJSON)</label> \
+          <label for="form-field-type-geom">Geometry field (GeoJSON)</label> \
           <div class="input editor-geom-field"> \
-            <select class="form-control"> \
+            <select id="form-field-type-geom" class="form-control"> \
             <option value=""></option> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
@@ -3227,13 +3240,7 @@ my.SlickGrid = Backbone.View.extend({
     }
 
     function sanitizeFieldName(name) {
-      var sanitized;
-      try{
-        sanitized = $(name).text();
-      } catch(e){
-        sanitized = '';
-      }
-      return (name !== sanitized && sanitized !== '') ? sanitized : name;
+      return $('<div>').text(name).html();
     }
 
     _.each(this.model.fields.toJSON(),function(field){
@@ -4045,16 +4052,16 @@ my.FilterEditor = Backbone.View.extend({
       <a href="#" class="js-add-filter">Add filter</a> \
       <form class="form-stacked js-add" style="display: none;"> \
         <div class="form-group"> \
-          <label>Field</label> \
-          <select class="fields form-control"> \
+          <label for="form-field-add-field">Field</label> \
+          <select id="form-field-add-field" class="fields form-control"> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
             {{/fields}} \
           </select> \
         </div> \
         <div class="form-group"> \
-          <label>Filter type</label> \
-          <select class="filterType form-control"> \
+          <label for="form-field-filter-type">Filter type</label> \
+          <select id="form-field-filter-type" class="filterType form-control"> \
             <option value="term">Value</option> \
             <option value="range">Range</option> \
             <option value="geo_distance">Geo distance</option> \

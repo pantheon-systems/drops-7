@@ -9172,6 +9172,9 @@ div.horizontal-tabs {
   display: inline-block;
   vertical-align: top; }
 
+.has-error .form-managed-file span.file {
+  border: 2px solid red; }
+
 .path-form.panel-default {
   border-color: transparent; }
   .path-form.panel-default .panel-body {
