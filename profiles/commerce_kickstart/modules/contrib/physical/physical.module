@@ -210,7 +210,7 @@ function physical_field_widget_form(&$form, &$form_state, $field, $instance, $la
       '#default_value' => $weight,
       '#size' => 15,
       '#maxlength' => 16,
-      '#required' => $instance['required'] && ($delta == 0 || $field['cardinality'] > 0),
+      '#required' => $instance['required'] && $delta == 0,
     );
 
     // Determine the unit of measurement.
@@ -310,7 +310,7 @@ function physical_field_widget_form(&$form, &$form_state, $field, $instance, $la
         '#default_value' => $value[$key],
         '#size' => 15,
         '#maxlength' => 16,
-        '#required' => $instance['required'] && ($delta == 0 || $field['cardinality'] > 0),
+        '#required' => $instance['required'] && $delta == 0,
         '#field_suffix' => '&times;',
         '#prefix' => '<div class="physical-dimension-form-item">',
         '#suffix' => '</div>',
@@ -323,8 +323,9 @@ function physical_field_widget_form(&$form, &$form_state, $field, $instance, $la
     // If the user cannot select a different unit of measurement and the current
     // unit is the same as the default...
     if (empty($settings['unit_select_list']) && $value['unit'] == $settings['default_unit']) {
-      // Display the unit of measurement after the textfield.
-      $element['height']['#field_suffix'] = physical_dimension_unit_abbreviation($value['unit']);
+      // Display the unit of measurement after the last textfield using the
+      // final $key value from the above foreach loop.
+      $element[$key]['#field_suffix'] = physical_dimension_unit_abbreviation($value['unit']);
 
       // Add a hidden value for the default unit of measurement.
       $element['unit'] = array(
@@ -513,6 +514,14 @@ function physical_weight_format($value) {
  *   target 'unit' type.
  */
 function physical_weight_convert($weight, $unit) {
+  // If the $weight field value is empty for some reason, return a 0 weight in
+  // the target unit type.
+  if (empty($weight) || empty($weight['weight'])) {
+    return array('weight' => 0, 'unit' => $unit);
+  }
+
+  // If the target unit type is the same as the weight field value that was
+  // passed in, simply return it as is.
   if ($weight['unit'] == $unit) {
     return $weight;
   }

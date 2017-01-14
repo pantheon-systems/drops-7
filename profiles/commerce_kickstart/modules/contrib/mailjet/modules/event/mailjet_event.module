@@ -18,9 +18,7 @@ function mailjet_event_menu() {
 
   $items['mailjetevent'] = array(
     'page callback' => 'mailjet_event_callback',
-    'access arguments' => array(
-      'administer mailjet module'
-    ),
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
 
@@ -147,12 +145,6 @@ function mailjet_event_callback() {
 
     case 'unsub' :
       rules_invoke_event('mailjet_unsub', $mailjet_event);
-      break;
-
-    case 'typofix' :
-      $mail_user = user_load_by_mail($event['original_address']);
-      rules_invoke_event('mailjet_typofix', $mailjet_event);
-      drupal_send_headers();
       break;
 
     // No handler

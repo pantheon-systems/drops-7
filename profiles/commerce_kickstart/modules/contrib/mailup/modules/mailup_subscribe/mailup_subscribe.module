@@ -114,7 +114,7 @@ function mailup_subscribe_theme() {
     ),
     'mailup_subscribe_checkbox' => array(
       'render element' => 'element',
-      'template' => 'mailup-subscription-form',
+      'template' => 'mailup-subscribe-checkbox',
     ),
     'mailup_subscribe_status' => array(
       'variables' => array(
@@ -299,7 +299,7 @@ function mailup_subscribe_import_recipient_fields_finished($success, $results, $
  */
 function mailup_subscribe_administer_access() {
   $mailup_username = variable_get('mailup_username', NULL);
-  return user_access('administer mailup lists') && !empty($mailup_username);
+  return user_access('administer mailup') && !empty($mailup_username);
 }
 
 function test() {

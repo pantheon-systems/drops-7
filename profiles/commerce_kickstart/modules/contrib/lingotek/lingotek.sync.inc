@@ -31,7 +31,12 @@ function lingotek_notify_url_update($show_messages = TRUE) {
   $success = LingotekSync::updateNotifyUrl();
   if ($show_messages) {
     if ($success) {
-      drupal_set_message(t("Notification callback URL successfully updated."));
+      if ($success === 'success') {
+        drupal_set_message(t("Notification callback URL successfully updated."));
+      }
+      else if ($success === 'localhost_url') {
+        drupal_set_message(t("Lingotek will not be able to notify Drupal, since the callback URL contains <i>localhost</i>."), 'warning');
+      }
     }
     else {
       drupal_set_message(t("Notification callback URL was not successfully updated."), 'error');
@@ -67,7 +72,7 @@ function lingotek_get_trans_obj($document_id, $document_idx) {
         $document_id = $document_idx;
       }
     }
-    
+
     if ($id) {
       $entity = lingotek_entity_load_single($type, $id);
       $trans_obj = LingotekEntity::load($entity, $type);
@@ -78,7 +83,7 @@ function lingotek_get_trans_obj($document_id, $document_idx) {
       break;
     }
 
-    LingotekLog::info('Did not find doc ID @doc_id yet on attempt #@attempt, retrying...', 
+    LingotekLog::info('Did not find doc ID @doc_id yet on attempt #@attempt, retrying...',
         array('@attempt' => $attempts, '@doc_id' => $document_id));
     sleep(2);
     $attempts++;
@@ -93,15 +98,14 @@ function lingotek_get_trans_obj($document_id, $document_idx) {
  * Registers the site translation notfication callback.
  */
 function lingotek_notifications() {
-
   drupal_page_is_cacheable(FALSE);
-  LingotekLog::trace('Received <pre>@data</pre>', array('@data' => var_export($_GET, TRUE)), 'callback');
+  LingotekLog::trace('Received <pre>@data</pre>', array('@data' => check_plain(var_export($_GET, TRUE))), 'callback');
 
   $document_id = ( isset($_GET['doc_id']) ) ? $_GET['doc_id'] : NULL;// uuid
   $document_idx = ( isset($_GET['doc_idx']) ) ? $_GET['doc_idx'] : NULL;// this is the deprecated document number
   $lingotek_locale = ( isset($_GET['target_code']) ) ? $_GET['target_code'] : NULL;
   $project_id = ( isset($_GET['project_id']) ) ? $_GET['project_id'] : NULL;
-  $completed = ( isset($_GET['completed']) ) ? $_GET['completed'] : 1;
+  $completed = ( isset($_GET['completed']) && $_GET['completed'] === 'true' ) ? 1 : 0;
   $security_token = ( isset($_GET['security_token']) ) ? $_GET['security_token'] : NULL;
 
   $stored_security_token = variable_get('lingotek_notify_security_token', NULL);
@@ -119,14 +123,14 @@ function lingotek_notifications() {
   include_once('lingotek.batch.inc');
 
   $target_drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
-  
+
   $trans_obj = lingotek_get_trans_obj($document_id, $document_idx);
 
   $downloaded = FALSE;
 
   if ($trans_obj) {
     $trans_obj->preDownload($lingotek_locale, $completed);
-    
+
     $replacements = array(
       '@trans_type' => get_class($trans_obj),
       '@document' => $document_id,
@@ -134,7 +138,7 @@ function lingotek_notifications() {
       '@project_id' => $project_id,
       '@id' => $trans_obj->getId(),
     );
-    
+
     if ($downloaded = $trans_obj->downloadTriggered($lingotek_locale)) {
       LingotekLog::trace('Updated local content for <strong>@trans_type</strong> @id based on hit
             from external API for document: @document, language code @language_code, project ID: @project_id', $replacements, 'api');
@@ -143,9 +147,9 @@ function lingotek_notifications() {
       LingotekLog::trace('Unable to update local content for <strong>@trans_type</strong> @id based on hit
             from external API for document: @document, language code @language_code, project ID: @project_id', $replacements, 'api');
     }
-    
+
     $trans_obj->postDownload($lingotek_locale, $completed);
-    
+
   }
   else {
     LingotekLog::error('Lingotek document ID (@doc_id) not found.', array('@doc_id' => $document_id));
@@ -165,11 +169,11 @@ function lingotek_notifications() {
   $found = (isset($trans_obj) && $trans_obj);
 
   $response = array_merge($_GET, array(
-        'target_drupal_language_code' => $target_drupal_language_code,
-        'type' => isset($trans_obj) ? $trans_obj->getEntityType() : '',
-        'id' => isset($trans_obj) ? $trans_obj->getId() : '',
-        'found' => $found,
-        'download' => $downloaded,
+        'target_drupal_language_code' => check_plain($target_drupal_language_code),
+        'type' => isset($trans_obj) ? check_plain($trans_obj->getEntityType()) : '',
+        'id' => isset($trans_obj) ? check_plain($trans_obj->getId()) : '',
+        'found' => check_plain($found),
+        'download' => check_plain($downloaded),
       ));
 
   return drupal_json_output($response);
@@ -189,7 +193,11 @@ function lingotek_sync_endpoint() {
 
   switch ($method) {
     case 'GET':
-      $request['parameters'] = $parameters = $_GET;
+      $temp = array();
+      foreach ($_GET as $key => $value){
+        $temp[$key] = check_plain($value);
+      }
+      $request['parameters'] = $parameters = $temp;
       /* $request['doc_ids'] = $document_ids = isset($parameters['doc_ids']) ? array_map(function($val) {
         return trim($val);
         }, explode(',', $parameters['doc_ids'])) : array(); */
@@ -227,7 +235,6 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
   $progress_report = $api->getProgressReport($project_id, $document_ids);
 
   $targets_count = LingotekSync::getTargetCountByDocumentIds($document_ids);
-  
   if (isset($progress_report) && $progress_report->results == 'success') {
     $delete_nids_maybe = array();
     $entity_values = array();
@@ -238,11 +245,11 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
         list($entity_id, $entity_type) = LingotekSync::getEntityIdFromDocId($doc_id, $entity_type);
         switch ($error->status) {
           case 'IN_QUEUE':
-            lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_PENDING);
+            LingotekSync::setUploadStatus($entity_type, $entity_id, LingotekSync::STATUS_PENDING);
             break;
           case 'NOT_FOUND':
           default:
-            lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_FAILED);
+            LingotekSync::setUploadStatus($entity_type, $entity_id, LingotekSync::STATUS_ERROR);
             lingotek_keystore($entity_type, $entity_id, 'last_sync_error', substr($error, 0, 255));
             LingotekLog::error('Received unexpected error status (@status) from Lingotek for @entity_type #@id: <pre>@error</pre>', array('@status' => $error->status, '@entity_type' => $entity_type, '@id' => $entity_id, '@error' => $error));
         }
@@ -260,6 +267,7 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
       }
       foreach ($completion as $language => $percent) {
         $status = LingotekSync::getTargetStatus($doc_id, $language);
+        $to_status = $status;
         if (isset($progress_report->workflowCompletedByDocumentIdAndTargetLocale->$doc_id->$language)) {
           if ($progress_report->workflowCompletedByDocumentIdAndTargetLocale->$doc_id->$language) { // If the workflow is complete
             if ($status != LingotekSync::STATUS_CURRENT) { // If the status is not current
@@ -270,15 +278,20 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
             }
           }
           else { // If the workflow is not complete
-            $to_status = LingotekSync::STATUS_PENDING; // Set it to pending
+            if ($percent == 0){
+              $to_status = LingotekSync::STATUS_PENDING; // Set it to pending
+            }
+            else{
+              $to_status = $status;
+            }
           }
           $entity_values[] = array($entity_type, $entity_id, 'target_sync_status_' . $language, $to_status);
         }
       }
       // update source status when necessary
       $entity_source_status = lingotek_keystore($entity_type, $entity_id, 'upload_status');
-      if ($entity_source_status == LingotekSync::STATUS_FAILED || $entity_source_status == LingotekSync::STATUS_PENDING) {
-        lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_CURRENT);
+      if ($entity_source_status == LingotekSync::STATUS_ERROR || $entity_source_status == LingotekSync::STATUS_PENDING) {
+        LingotekSync::setUploadStatus($entity_type, $entity_id, LingotekSync::STATUS_CURRENT);
       }
     }
 
@@ -296,6 +309,7 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
             'value' => $value,
           ))
         ->execute();
+      lingotek_cache_clear($entity_type, $entity_id);
     }
     return $progress_report;
   }
@@ -328,8 +342,8 @@ function lingotek_update_config_progress($document_ids) {
   if (!is_array($document_ids)) {
     $document_ids = array($document_ids);
   }
-  $config_profile = lingotek_get_profile_settings(LingotekSync::PROFILE_CONFIG);
-  $project_id = array_key_exists('project_id', $config_profile) ? $config_profile['project_id'] : variable_get('lingotek_project', '');
+  $config_profile = LingotekProfile::loadById(LingotekSync::PROFILE_CONFIG);
+  $project_id = $config_profile->getProjectId();
 
   $progress_report = $api->getProgressReport($project_id, $document_ids);
 
@@ -337,7 +351,7 @@ function lingotek_update_config_progress($document_ids) {
     $cids = array();
     $cfg_values = array();
     $trans_obj = NULL;
-    
+
     if (isset($progress_report->errors)) {
       foreach (get_object_vars($progress_report->errors) as $doc_id => $error) {
         $set = LingotekConfigSet::loadByLingotekDocumentId($doc_id);
@@ -347,19 +361,19 @@ function lingotek_update_config_progress($document_ids) {
             break;
           case 'NOT_FOUND':
           default:
-            $set->setMetadataValue('upload_status', LingotekSync::STATUS_FAILED);
+            $set->setMetadataValue('upload_status', LingotekSync::STATUS_ERROR);
             LingotekLog::error('Received unexpected error status (@status) from Lingotek for config chunk #@id: <pre>@error</pre>', array('@status' => $error->status, '@id' => $chunk, '@error' => $error));
         }
       }
     }
-    
+
     foreach ($progress_report->byDocumentIdAndTargetLocale as $doc_id => $completion) {
       $trans_obj = LingotekConfigSet::loadByLingotekDocumentId($doc_id);
       if (!$trans_obj) {
         LingotekLog::error("Lingotek doc ID '@doc_id' not found", array('@doc_id' => $doc_id));
         continue;
       }
-   
+
       foreach ($completion as $language => $percent) {
         $status = LingotekSync::getTargetStatus($doc_id, $language);
         if (isset($progress_report->workflowCompletedByDocumentIdAndTargetLocale->$doc_id->$language)) {

@@ -85,7 +85,10 @@ class LingotekAccount {
   }
 
   public function setPlanType($type = 'unknown') {
-    variable_set('lingotek_account_plan_type', $type);
+    // Set plan type variable only if it's needed.
+    if ($type != variable_get('lingotek_account_plan_type', 'standard')) {
+      variable_set('lingotek_account_plan_type', $type);
+    }
     $standard_types = array('cosmopolitan_monthly', 'cosmopolitan_yearly'); // if in this list, then set to 'standard'
     $type = in_array($type, $standard_types) ? 'standard' : $type;
     $this->planType = $type;

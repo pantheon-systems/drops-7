@@ -145,7 +145,7 @@ class LingotekDocument {
     $response = $this->api->request('getDocumentImportStatus', array('id' => $this->document_id));
     $status = self::IMPORT_STATUS__UNKNOWN;
     $status_message = $status;
-    if ($response->results == 'success') {
+    if ($response && $response->results == 'success') {
       $status = $response->status;
       if ($status === self::IMPORT_STATUS__PROCESSING) {
         $status_message = $status . " (" . $response->process->percentComplete . "% complete)";
@@ -157,7 +157,7 @@ class LingotekDocument {
         $status_message = $status;
       }
     }
-    elseif ($response->results == 'fail') {
+    elseif ($response && $response->results == 'fail') {
       $status = self::IMPORT_STATUS__ERROR;
       $status_message = $status . " (" . $response->error . ")";
     }

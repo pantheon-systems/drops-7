@@ -9,6 +9,7 @@ lingotek.forms = lingotek.forms || {};
     
     // Page setup for node add/edit forms.
     lingotek.forms.init = function() {
+        $("#edit-language").change(updateProfileSelectorDefault);
         $("#edit-language").change(updateVerticalTabSummary);
         $("#edit-language").change(toggleMenuSelector);
         $('#ltk-enable-from-et').bind('click',lingotek.forms.enableLtkFunc);
@@ -17,6 +18,7 @@ lingotek.forms = lingotek.forms || {};
         $('#edit-lingotek-profile').change(updateVerticalTabSummary);
         $('#edit-lingotek-profile').change(checkForEnablement);
         $('#edit-lingotek-allow-source-overwriting').change(updateVerticalTabSummary);
+        updateProfileSelectorDefault();
         updateVerticalTabSummary();
         checkForEnablement();
         toggleMenuSelector();
@@ -49,6 +51,29 @@ lingotek.forms = lingotek.forms || {};
         }
     }
 
+    var updateProfileSelectorDefault = function() {
+      // if the node already exists, then it must have a profile already: don't change it!
+      if ($('#lingotek-preserve-profile').val() == "1") {
+        return;
+      }
+      if ($('#lingotek-bundle-profiles').length > 0) {
+        // get the language map for the current bundle
+        var profiles_by_langcode = JSON.parse($('#lingotek-bundle-profiles').val());
+        // set the #edit-lingotek-profile select box
+        var langcode = $("#edit-language").val();
+        if ($('#lingotek-language-specific-profiles').val() == '0') {
+          $('#edit-lingotek-profile').val(profiles_by_langcode['DEFAULT']);
+        }
+        else if (langcode in profiles_by_langcode) {
+          $('#edit-lingotek-profile').val(profiles_by_langcode[langcode]);
+        }
+        else {
+          // The language must not be enabled for Lingotek at all.
+          $('#edit-lingotek-profile').val('DISABLED');
+        }
+      }
+    }
+
     var checkForEnablement = function() {
         if ($('#edit-lingotek-profile').val() != 'DISABLED') {
             $('#edit-lingotek-overwrite-warning').show();
@@ -61,8 +86,6 @@ lingotek.forms = lingotek.forms || {};
     var updateVerticalTabSummary = function() {
         var isPushedToLingotek = !isNaN(parseInt($('#edit-lingotek-document-id').val()));
         var isEntityTranslationNode = $('#ltk-entity-translation-node').val();
-        //console.log('pushedToLingotek: '+isPushedToLingotek);
-        //console.log('entityTranslationNode: '+isEntityTranslationNode);
         var summaryMessages = [];
                 
         if(!lingotek.forms.enableLtkFromET && isEntityTranslationNode && !isPushedToLingotek) {
@@ -87,7 +110,6 @@ lingotek.forms = lingotek.forms || {};
             var sourceLanguageSet = language != 'und'; 
             var autoUpload = $('#edit-lingotek-create-lingotek-document').is(":checked");
             var autoDownload = $('#edit-lingotek-sync-method').is(":checked");
-            var custom = $('#edit-lingotek-profile').val() == 'CUSTOM';
             
             // Source language set or not
             if (sourceLanguageSet) {
@@ -107,17 +129,7 @@ lingotek.forms = lingotek.forms || {};
                 $('.form-item-lingotek-profile').hide();
             }
             
-            if($('#edit-lingotek-profile').val() != 'CUSTOM') {
-              $('#edit-lingotek-content').hide();
-              $('#edit-lingotek-advanced').hide();
-            }
-
-            if(custom) {
-              summaryMessages.push( autoUpload ? Drupal.t("auto-upload") : Drupal.t("manual upload"));
-              summaryMessages.push( autoDownload ? Drupal.t("auto-download") : Drupal.t("manual download"));
-            } else {
-              summaryMessages.push($('#edit-lingotek-profile option:selected').text());
-            }
+            summaryMessages.push($('#edit-lingotek-profile option:selected').text());
 
             if($('#edit-lingotek-allow-source-overwriting').is(":visible")) {
                 if($('#edit-lingotek-allow-source-overwriting').is(":checked")) {

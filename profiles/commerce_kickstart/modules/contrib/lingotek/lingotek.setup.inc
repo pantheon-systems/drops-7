@@ -13,7 +13,7 @@ function lingotek_setup() {
 
   // Does the install already have connection credentials?
   if (lingotek_is_config_missing()) {
-    drupal_goto('admin/config/lingotek/new-account'); // If something is missing - Go though the Setup Process
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/new-account'); // If something is missing - Go though the Setup Process
   }
   else {
     drupal_goto('admin/settings/lingotek/settings'); // We already have credentials, goto the Dashboard
@@ -72,7 +72,7 @@ function lingotek_setup_new_account_form() {
     '#type' => 'submit',
     '#value' => t('Next') // Create Account
   );
-  $form['lingotek_back_button'] = lingotek_setup_link('admin/config/lingotek/account-settings', t('Enterprise Customers - Connect Here'));
+  $form['lingotek_back_button'] = lingotek_setup_link_on_right(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings', t('Enterprise Customers - Connect Here'));
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
   return $form;
@@ -214,9 +214,9 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
       variable_set('lingotek_notify_url', $notify_url);
       variable_set('lingotek_cms_tag', $lead['distribution']);
 
-      $_SESSION['lingotek_setup_path'] = array('admin/config/lingotek/new-account');
+      $_SESSION['lingotek_setup_path'] = array(LINGOTEK_MENU_LANG_BASE_URL . '/new-account');
       drupal_set_message(t('Your new Lingotek account has been setup.'));
-      drupal_goto('admin/config/lingotek/setup-language-switcher');
+      drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/setup-language-switcher');
     } // END:  if 200: Success
     else {
 
@@ -225,9 +225,9 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
     } // END:  if error.
   } // END:  Provision new Community
   else { // If the user already has all the required community credentials, just direct them to the next step.
-    $_SESSION['lingotek_setup_path'] = array('admin/config/lingotek/new-account');
+    $_SESSION['lingotek_setup_path'] = array(LINGOTEK_MENU_LANG_BASE_URL . '/new-account');
     drupal_set_message(t('Your Lingotek account settings have been saved.'));
-    drupal_goto('admin/config/lingotek/setup-language-switcher');
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/setup-language-switcher');
   }
 }
 
@@ -273,7 +273,7 @@ function lingotek_setup_account_settings_form() {
     '#type' => 'submit',
     '#value' => t('Next'), // Login
   );
-  $form['lingotek_back_button'] = lingotek_setup_link('admin/config/lingotek/new-account', t('No subscription? Go back and register for free.'));
+  $form['lingotek_back_button'] = lingotek_setup_link_on_right(LINGOTEK_MENU_LANG_BASE_URL . '/new-account', t('No subscription? Go back and register for free.'));
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
   return $form;
@@ -295,11 +295,11 @@ function lingotek_setup_account_settings_form_submit($form, $form_state) {
   }
   else {
     // Login Successful:  Valid Account
-    $_SESSION['lingotek_setup_path'] = array('admin/config/lingotek/account-settings');
+    $_SESSION['lingotek_setup_path'] = array(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings');
     drupal_set_message(t('Your account settings have been saved.'));
     variable_set('lingotek_login_id', $login_id);
     variable_set('lingotek_password', $password);
-    drupal_goto('admin/config/lingotek/community-select');
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/community-select');
   } // END:  Valid Login
 }
 
@@ -319,7 +319,7 @@ function lingotek_community_select_form() {
   if ($success == FALSE) {
 
     drupal_set_message(check_plain($msg), 'error');
-    drupal_goto('admin/config/lingotek/account-settings'); // Shouldnt be here.  So something messed up.  Go back.
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings'); // Shouldnt be here.  So something messed up.  Go back.
   }
   else {
     $community_integrations = $msg;
@@ -330,15 +330,15 @@ function lingotek_community_select_form() {
       variable_set('lingotek_community_identifier', $ci->community_id);
       variable_set('lingotek_oauth_consumer_id', $ci->key);
       variable_set('lingotek_oauth_consumer_secret', $ci->secret);
-      drupal_goto('admin/config/lingotek/project-vault-select'); // Default path, if they belong to one community.
+      drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/project-vault-select'); // Default path, if they belong to one community.
     }
     elseif ($count > 1) { // More than 1 community
       // Stay on this page
     }
     else {
       // 0 Results, we have an error.  Or, we should create a community for them.
-      drupal_set_message(t('Error Accessing Account. Please contact customer service.'), 'error');
-      drupal_goto('admin/config/lingotek/account-settings'); // Shouldnt be here.  So something messed up.  Go back.
+      drupal_set_message(t('Failed to connect to the Lingotek service: Missing integration method.'), 'error');
+      drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings'); // Shouldnt be here.  So something messed up.  Go back.
     }
   } // END:  Community Select Paths
 
@@ -367,7 +367,7 @@ function lingotek_community_select_form() {
   $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
   
   if (is_array($_SESSION['lingotek_setup_path'])) {
-    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/community-select') {
+    if (end($_SESSION['lingotek_setup_path']) == LINGOTEK_MENU_LANG_BASE_URL . '/community-select') {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
@@ -396,10 +396,10 @@ function lingotek_community_select_form_submit($form, $form_state) {
   variable_set('lingotek_oauth_consumer_id', $community->key);
   variable_set('lingotek_oauth_consumer_secret', $community->secret);
 
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/community-select';
+  $_SESSION['lingotek_setup_path'][] = LINGOTEK_MENU_LANG_BASE_URL . '/community-select';
 
   drupal_set_message(t('Your site has been securely connected to your community (@community).', array('@community' => $community_selected)));
-  drupal_goto('admin/config/lingotek/project-vault-select'); // Move to Project Select Step.
+  drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/project-vault-select'); // Move to Project Select Step.
 }
 
 /**
@@ -413,11 +413,11 @@ function lingotek_project_vault_select_form() {
 
   if ($community_settings === FALSE) {
     drupal_set_message(t('Error Retrieving Account Information.'), 'error');
-    drupal_goto('admin/config/lingotek/account-settings'); // Error geting projects.  Go back.
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings'); // Error geting projects.  Go back.
   }
   elseif ($community_settings['project'] === FALSE || $community_settings['workflow'] === FALSE || $community_settings['vault'] === FALSE) {
     drupal_set_message(t('Error Retrieving Account Information.'), 'error');
-    drupal_goto('admin/config/lingotek/account-settings'); // Error geting projects.  Go back.
+    drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings'); // Error geting projects.  Go back.
   }
 
   $form['lingotek_user_directions'] = array('#markup' => '<p>Select or create the default project and vault that you would like to use.</p>');
@@ -445,9 +445,7 @@ function lingotek_project_vault_select_form() {
       '#title' => t('Project'),
       '#default_value' => $project_already_set ? 0 : 1,
       '#options' => $project_options,
-      //'#description' => t('The Lingotek Project that you would like to use for this site.'),
       '#required' => TRUE,
-      //'#attributes' => array('onclick' => "(function(){ console.log($); alert('hi'); })();"),
     );
     
     $form['project_new'] = array(
@@ -539,7 +537,7 @@ function lingotek_project_vault_select_form() {
   // submit, etc.
     
   if (is_array($_SESSION['lingotek_setup_path'])) {
-    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/project-vault-select') {
+    if (end($_SESSION['lingotek_setup_path']) == LINGOTEK_MENU_LANG_BASE_URL . '/project-vault-select') {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
@@ -611,12 +609,13 @@ function lingotek_project_vault_select_form_submit($form, $form_state) {
     }
   }
   
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/project-vault-select';
+  $_SESSION['lingotek_setup_path'][] = LINGOTEK_MENU_LANG_BASE_URL . '/project-vault-select';
   drupal_set_message(t('Your Lingotek project, workflow, and vault selections have been setup and saved.'));
-  drupal_goto('admin/config/lingotek/setup-language-switcher');
+  drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/setup-language-switcher');
 }
 
 function lingotek_setup_language_switcher_form($form, $form_state) {
+  drupal_add_js(drupal_get_path('module', 'lingotek') . '/js/lingotek.admin.js');
   $current_theme = variable_get('theme_default', 'none'); //global $theme_key;
 
   $query = db_select('block', 'b');
@@ -666,7 +665,7 @@ function lingotek_setup_language_switcher_form($form, $form_state) {
   );
 
   if (is_array($_SESSION['lingotek_setup_path'])) {
-    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/setup-language-switcher') {
+    if (end($_SESSION['lingotek_setup_path']) == LINGOTEK_MENU_LANG_BASE_URL . '/setup-language-switcher') {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
@@ -688,8 +687,8 @@ function lingotek_setup_language_switcher_form($form, $form_state) {
 
 function lingotek_setup_language_switcher_form_submit($form, $form_state) {
   lingotek_admin_language_switcher_form_submit($form, $form_state);
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/setup-language-switcher';
-  drupal_goto('admin/config/lingotek/node-translation-settings');
+  $_SESSION['lingotek_setup_path'][] = LINGOTEK_MENU_LANG_BASE_URL . '/setup-language-switcher';
+  drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . '/node-translation-settings');
 }
 
 /**
@@ -910,7 +909,7 @@ function lingotek_setup_node_updates_form($form, $form_state) {
 
   $form['lingotek_middle_spacer'] = array('#markup' => '<div>&nbsp;</div>');
 
-  $form['lingotek_back_button'] = lingotek_setup_link('admin/config/lingotek/new-account', t('Previous Step'));
+  $form['lingotek_back_button'] = lingotek_setup_link(LINGOTEK_MENU_LANG_BASE_URL . '/new-account', t('Previous Step'));
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -923,29 +922,16 @@ function lingotek_setup_node_updates_form($form, $form_state) {
 /**
  * Setup Button
  */
-function lingotek_setup_link($path = 'admin/config/lingotek/new-account', $text = 'Previous Step') {
+function lingotek_setup_link($path, $text = 'Previous Step') {
   return array(
     '#markup' => '<span style="margin-right: 15px;">' . l($text, $path) . '</span>'
   );
 }
-
-/**
- * Future Page - Form Submit
- */
-function lingotek_setup_node_updates_form_submit($form, $form_state) {
-
-  $transition_node_titles = $form_state['values']['transition_node_titles'];
-  $update_node_language = $form_state['values']['update_node_language'];
-
-  if ($transition_node_titles == 1) {
-    // Do the Node Titles
-  }
-
-  if ($update_node_language == 1) {
-    // Update The Node Languages
-  }
-
-  //drupal_goto( 'admin/config/lingotek/setup-complete' );
+//this covers the case of the link being on the right of a non-default theme button
+function lingotek_setup_link_on_right($path, $text = 'Previous Step') {
+  return array(
+    '#markup' => '<span style="margin-left:5px; margin-right: 15px;">' . l($text, $path) . '</span>'
+  );
 }
 
 /*

@@ -48,7 +48,7 @@ elements:
     ruleTypes: [TEXTUNIT]
     idAttributes: [id]
   drupalvar:
-    ruleTypes: [INLINE, EXCLUDE]
+    ruleTypes: [INLINE]
   dt:
     ruleTypes: [TEXTUNIT]
     idAttributes: [id]

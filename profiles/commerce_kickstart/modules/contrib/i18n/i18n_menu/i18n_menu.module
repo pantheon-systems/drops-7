@@ -180,6 +180,7 @@ function i18n_menu_menu_link_alter(&$item) {
   // We just make sure every link has a valid language property.
   if (!i18n_object_langcode($item)) {
     $item['language'] = LANGUAGE_NONE;
+    $item['i18n_tsid'] = 0;
   }
 }
 
@@ -515,9 +516,11 @@ function _i18n_menu_link_description($link, $langcode = NULL) {
  * Check whether this link is to be processed by i18n_menu and start processing.
  */
 function _i18n_menu_link_process(&$link) {
-  // Only visible links that have a language property and haven't been processed
-  // before. We also check that they belong to a menu with language options.
-  if (empty($link['i18n_menu']) && !empty($link['language']) && !empty($link['access']) && empty($link['hidden']) && i18n_menu_mode($link['menu_name'])) {
+  // Only links that have a language property and haven't been processed before.
+  // We also translate links marked as hidden because core breadcrumbs ignore
+  // that flag and excluding them would basically interfere with core behaviour.
+  // We also check that they belong to a menu with language options.
+  if (empty($link['i18n_menu']) && !empty($link['language']) && !empty($link['access']) && i18n_menu_mode($link['menu_name'])) {
     // Mark so it won't be processed twice.
     $link['i18n_menu'] = TRUE;
     // Skip if administering this menu or this menu item.

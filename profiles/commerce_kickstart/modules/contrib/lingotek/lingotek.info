@@ -3,11 +3,10 @@ description = "Extends Drupal's multilingual features by integrating with the Li
 package = Multilingual
 core = "7.x"
 php = "5.3"
-configure = admin/config/lingotek/setup
+configure = admin/config/regional/lingotek/setup
 
 
 dependencies[] = locale
-dependencies[] = field_ui
 dependencies[] = title
 dependencies[] = block
 dependencies[] = menu
@@ -35,6 +34,9 @@ files[] = lib/Drupal/lingotek/LingotekEntity.php
 files[] = lib/Drupal/lingotek/LingotekPhase.php
 files[] = lib/Drupal/lingotek/LingotekSync.php
 files[] = lib/Drupal/lingotek/LingotekTranslatableEntity.php
+files[] = lib/Drupal/lingotek/LingotekXMLElement.php
+files[] = lib/Drupal/lingotek/LingotekException.php
+files[] = lib/Drupal/lingotek/LingotekProfile.php
 
 files[] = tests/lingotek.base.test
 files[] = tests/lingotek.access.test
@@ -44,9 +46,9 @@ files[] = lingotek_views_handler_workbench_link.inc
 
 stylesheets[all][] = style/base.css
 
-; Information added by Drupal.org packaging script on 2015-03-24
-version = "7.x-6.02"
+; Information added by Drupal.org packaging script on 2016-12-15
+version = "7.x-7.17"
 core = "7.x"
 project = "lingotek"
-datestamp = "1427170701"
+datestamp = "1481842388"
 

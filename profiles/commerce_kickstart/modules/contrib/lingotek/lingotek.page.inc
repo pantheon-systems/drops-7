@@ -10,7 +10,7 @@
  */
 function lingotek_download_translations_form($form, $form_state, $node, $document = NULL) {
 
-  module_load_include('lingotek', 'lingotek.bulk_grid', 'inc');
+  module_load_include('inc', 'lingotek', 'lingotek.bulk_grid');
   $form = array();
 
   $document = is_null($document) ? LingotekDocument::load($node->lingotek['document_id']) : $document;
@@ -20,7 +20,8 @@ function lingotek_download_translations_form($form, $form_state, $node, $documen
   $sum_progress = 0;
   if ($document_progress->results == 'success') {
 
-    $rows = array();
+    $lang_rows = array();
+    $phase_rows = array();
     foreach ($document_progress->translationTargets as $target) {
       $current_phase = $document->currentPhase($target->id);
       $marked_complete = FALSE;
@@ -30,25 +31,29 @@ function lingotek_download_translations_form($form, $form_state, $node, $documen
         $phase_complete_percent = 0;
       }
       $language_link = l(lingotek_language_field_lookup('native', $target->language), 'lingotek/workbench/node/' . $node->nid . '/' . $target->language, array('attributes' => array('target' => '_blank')));
-      $language_link .= ' (' . lingotek_language_field_lookup('name', $target->language) . ')';
+      $language_name = lingotek_language_field_lookup('name', $target->language);
+      $language_link .= ' (' . $language_name . ')';
 
-      $row = array(
+      $lang_row = array(
         'column_1' => array('data' => $language_link, 'width' => '40%'),
         'column_2' => array('data' => lingotek_grid_create_progress_bar($target->percentComplete), 'width' => '40%'),
         'column_3' => array('data' => ''),//$target->percentComplete == 100 ? '<i class="fa fa-check-sign ltk-complete-check" title="'.t('Workflow complete').'"></i>' : '<i class="fa fa-check-empty ltk-complete-check"></i>', 'width' => '20%'
         '#attributes' => array('class' => array('bold-row')),
+        'language_name' => $language_name,
       );
 
       LingotekLog::trace("lingotek_pm table row [@locale]", array('@locale' => $target->language));
-      $rows[$target->language] = $row;
+      $lang_rows[$target->language] = $lang_row;
+
       foreach ($target->phases as $phase) {
-        $row = array(
+        $phase_row = array(
           'column_1' => $phase->name,
           'column_2' => lingotek_grid_create_progress_bar($phase->percentComplete),
           'column_3' => $phase->isMarkedComplete ? '<i class="fa fa-check-sign ltk-complete-check" title="' . t('Phase complete') . '"></i>' : '<i class="fa fa-check-empty ltk-complete-check"></i>',
           '#attributes' => array('class' => array('no-checkbox-row')),
+          'language_name' => $language_name,
         );
-        $rows[$target->language . '_' . $phase->name] = $row;
+        $phase_rows[$target->language . '_' . $phase->name] = $phase_row;
         $marked_complete = $phase->isMarkedComplete;
       }
 
@@ -60,6 +65,27 @@ function lingotek_download_translations_form($form, $form_state, $node, $documen
       if ($target_status_local === LingotekSync::STATUS_PENDING) {
         $target_status = ($marked_complete) ? LingotekSync::STATUS_READY : LingotekSync::STATUS_PENDING;
         lingotek_keystore('node', $node->nid, 'target_sync_status_' . $lingotek_locale, $target_status);
+      }
+    }
+
+    // Sort rows by language name
+    $lang_rows_sorted = array();
+    foreach ($lang_rows as $key => $row) {
+      $lang_rows_sorted[$key] = $row['language_name'];
+    }
+
+    array_multisort($lang_rows_sorted, SORT_ASC, $lang_rows);
+
+    // Combine lang_rows and phase_rows in alphabetical order
+    $rows = array();
+    foreach ($lang_rows as $lang_key => $lang_row) {
+      unset($lang_row['language_name']);
+      $rows [$lang_key] = $lang_row;
+      foreach ($phase_rows as $phase_key => $phase_row) {
+        unset($phase_row['language_name']);
+        if (strpos($phase_key, $lang_key) !== false) {
+          $rows [$phase_key] = $phase_row;
+        }
       }
     }
 
@@ -315,8 +341,6 @@ function lingotek_pm($node) {
     ),
   );
 
-  $sync_status = $node->lingotek['upload_status'];
-
   // node translation support
   if ($node->tnid != 0 && $node->tnid != $node->nid) {
     $output[] = array(
@@ -333,21 +357,28 @@ function lingotek_pm($node) {
     return $output;
   }
 
+  if((isset($node->lingotek['upload_status']) && $node->lingotek['upload_status'] == LingotekSync::STATUS_NONE) || !isset($node->lingotek['upload_status'])){
+    $content_push_form = drupal_get_form('lingotek_push_form', $node);
+    $output['content_push'] = array(
+      '#markup' => drupal_render($content_push_form),
+    );
+    return $output;
+  }
   if (lingotek_supported_node($node) && Lingotek::isSupportedLanguage($node->language)) {
 
-    if (($node->lingotek['upload_status'] == LingotekSync::STATUS_EDITED)) {
+    if (isset($node->lingotek['upload_status']) && $node->lingotek['upload_status'] == LingotekSync::STATUS_EDITED) {
       $content_push_form = drupal_get_form('lingotek_push_form', $node);
       $output['content_push'] = array(
         '#markup' => drupal_render($content_push_form),
       );
     }
 
-    if ($node->lingotek['document_id']) {
+    if (!empty($node->lingotek['document_id'])) {
 
       $document = LingotekDocument::load($node->lingotek['document_id']);
       $progress = $document->getProgress();
 
-      if ($progress->results == 'success') {
+      if ($progress && $progress->results == 'success') {
 
         $download_form = drupal_get_form('lingotek_download_translations_form', $node, $document);
         $output[] = array(
@@ -374,7 +405,7 @@ function lingotek_pm($node) {
         $status = $document->getImportStatus();
 
         $message = ' <i>' . check_plain($status) . '</i> ' . l('<i class="fa fa-refresh"></i> ' . t('Refresh'), '', array('html' => TRUE, 'attributes' => array('class' => 'ltk-icon', 'title' => t('Refresh'), 'onclick' => array('location.reload();return false;'))));
-        drupal_set_message(t('Content Import Status:') . ' ' . $message, 'status');
+        drupal_set_message(t('Content Import Status:') . ' ' . $message, 'status');//xss checks not necessary here. Text relies on html, and content is all generated in php
 
         $output['import_status'] = array(
           '#type' => 'fieldset',
@@ -520,8 +551,8 @@ function lingotek_mark_phases_complete($form, $form_state, $node, $document = NU
       foreach ($targets as $target) {
         $language = Lingotek::convertLingotek2Drupal($target->language);
         $current_phase = $document->currentPhase($target->id);
-
-        $phase_complete_percent = empty($current_phase->percentComplete) ? 0 : $current_phase->percentComplete;
+        $curr_percent = $current_phase->percentComplete;
+        $phase_complete_percent = empty($curr_percent) ? 0 : $curr_percent;
 
         if ($current_phase && $current_phase->canBeMarkedComplete()) {
           $phase_link = l($current_phase->name, '', array('attributes' => array(
@@ -645,9 +676,10 @@ function page_sync_comment_translations($comment_id) {
  */
 function lingotek_workbench_redirect($entity_type, $entity_id, $lingotek_locale) {
   $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
+  $entitycache_table = "cache_entity_$entity_type";
 
-  if (module_exists('entitycache')) {
-    cache_clear_all($entity_id, "cache_entity_$entity_type");
+  if (module_exists('entitycache') && db_table_exists($entitycache_table)) {
+    cache_clear_all($entity_id, $entitycache_table);
   }
 
   if ($entity_type == 'config') {
@@ -678,31 +710,35 @@ function lingotek_workbench_redirect($entity_type, $entity_id, $lingotek_locale)
  * This is a function that redirects to the entity specified for a particular lingotek locale (e.g., en_US, de_DE, fr_FR)
  */
 function lingotek_entity_view_redirect($entity_type, $entity_id, $lingotek_locale) {
+  $drupal_languages = language_list();
   $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale, TRUE);
-  $url = drupal_get_normal_path($entity_type . '/' . $entity_id); //assumes url detection
-  $url_language_detection_enabled = TRUE; //TO-DO: detect when it is not enabled, currently it is assumed
+  $language = $drupal_languages[$drupal_language_code];
+  $entity = entity_load_single($entity_type, $entity_id);
+  if(!$entity){
+    drupal_not_found();
+  }
 
-  if ($drupal_language_code) {
-    $default_language = language_default();
-    if ($drupal_language_code !== $default_language->language) {
-      $url = $drupal_language_code . "/" . $url;
+  // check for node-based target translation
+  if(lingotek_uses_node_translation($entity)) {
+    $target_nodes = lingotek_node_get_translations($entity_id);
+    foreach ($target_nodes as $langcode => $node_info) {
+      if($drupal_language_code == $langcode){
+        // re-set entity to the target node instead of the source node
+        $entity_id = $target_nodes[$langcode]->nid;
+        $entity = entity_load_single($entity_type, $entity_id);
+        continue;
+      }
     }
   }
-  else {
-    drupal_set_message(t('The language requested is not available. The default language will be shown instead.'), 'warning');
-  }
-  if (!$url_language_detection_enabled) { //TO-DO: consider extending this functionality to use additional language detection methods
-    $output = array();
-    $message = t('The URL detection method is required for viewing content in a specified language. In order to use this feature an administrator will need to enable the URL detection method in the <a href="@link">Language detection and selection settings</a>', array('@link' => url('admin/config/regional/language/configure')));
-    $output['message'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('This feature requires URL language detection to be enabled'),
-      '#description' => $message,
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    drupal_set_message($message, 'warning');
-    return $output;
-  }
-  drupal_goto($url);
+
+  $entity_uri = entity_uri($entity_type, $entity);
+  $path = $entity_uri['path'];
+  $url_language_detection_enabled = TRUE; //TO-DO: detect when it is not enabled, currently it is assumed
+
+  $options = array(
+    'language' => $language
+  );
+
+  locale_language_url_rewrite_url($path, $options);
+  drupal_goto($path, $options);
 }

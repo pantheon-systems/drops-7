@@ -46,6 +46,7 @@ function lingotek_install() {
   lingotek_migration_2();
   $sandbox = array();
   lingotek_update_7401($sandbox);
+  lingotek_update_7607($sandbox);
 }
 
 /**
@@ -270,7 +271,7 @@ function lingotek_schema_alter(&$schema) {
     'description' => "translation tool mapping",
     'length' => 10,
     'not null' => TRUE,
-    'default' => '1', // unknown
+    'default' => 1, // unknown
   );
 
 
@@ -424,7 +425,8 @@ function lingotek_update_7206(&$sandbox) {
 }
 
 /**
- * Change the value for LINGOTEK_ENABLED to a string to avoid collision.
+ * Change the value for old LINGOTEK_ENABLED define ('lingotek') to a string to
+ * avoid collision.
  */
 function lingotek_update_7207(&$sandbox) {
   $updated = array();
@@ -432,7 +434,7 @@ function lingotek_update_7207(&$sandbox) {
     $name = 'language_content_type_' . $type;
     if (variable_get($name) == 5) {
       $updated[] = $type;
-      variable_set($name, LINGOTEK_ENABLED);
+      variable_set($name, 'lingotek');
     }
   }
 
@@ -582,7 +584,7 @@ function lingotek_update_7403(&$sandbox) {
     foreach ($types as $t) {
       $translation_setting = variable_get('language_content_type_' . $t->type);
       if ($translation_setting == 'lingotek') {
-        variable_set('language_content_type_' . $t->type, "1");
+        variable_set('language_content_type_' . $t->type, '1');
         $fields = field_info_instances("node", $t->type);
         foreach ($fields as $field_name => $instance) {
           $field = field_info_field($field_name);
@@ -711,27 +713,30 @@ function lingotek_update_7502(&$sandbox) {
   variable_del('lingotek_translate_comments_node_types');
   variable_del('lingotek_translate_comments');
 
-  // set assumed status of CURRENT for all comment translations
-  // select all comment entity ids in the lingotek_entity_metadata table
-  $entity_type = 'comment';
-  $query = db_select('lingotek_entity_metadata', 'l');
-  $query->fields('l', array('entity_id'))->condition('entity_type', $entity_type);
-  $query->distinct('entity_id');
-  $result = $query->execute();
-  $entity_ids = $result->fetchCol();
+  if (module_exists('comment')) {
+    // set assumed status of CURRENT for all comment translations
+    // select all comment entity ids in the lingotek_entity_metadata table
+    $entity_type = 'comment';
+    $query = db_select('lingotek_entity_metadata', 'l');
+    $query->fields('l', array('entity_id'))
+      ->condition('entity_type', $entity_type);
+    $query->distinct('entity_id');
+    $result = $query->execute();
+    $entity_ids = $result->fetchCol();
 
-  // foreach entity, set the target statuses
-  if (!empty($entity_ids)) {
-    $entities = entity_load('comment', $entity_ids);
-    foreach ($entities as $entity) {
-      $entity_id = $entity->cid;
-      foreach (array_keys(Lingotek::getLanguages()) as $lingotek_locale) {
-        if (Lingotek::convertDrupal2Lingotek($entity->language) != $lingotek_locale) { // only add status when not the source language
-          LingotekSync::setTargetStatus($entity_type, $entity_id, $lingotek_locale, LingotekSync::STATUS_CURRENT);
-        }
-        else { // remove status when source language equal to target language
-          lingotek_keystore_delete($entity_type, $entity_id, "target_sync_status_$lingotek_locale");
-          lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_CURRENT);
+    // foreach entity, set the target statuses
+    if (!empty($entity_ids)) {
+      $entities = entity_load('comment', $entity_ids);
+      foreach ($entities as $entity) {
+        $entity_id = $entity->cid;
+        foreach (array_keys(Lingotek::getLanguages()) as $lingotek_locale) {
+          if (Lingotek::convertDrupal2Lingotek($entity->language) != $lingotek_locale) { // only add status when not the source language
+            LingotekSync::setTargetStatus($entity_type, $entity_id, $lingotek_locale, LingotekSync::STATUS_CURRENT);
+          }
+          else { // remove status when source language equal to target language
+            lingotek_keystore_delete($entity_type, $entity_id, "target_sync_status_$lingotek_locale");
+            LingotekSync::setUploadStatus($entity_type, $entity_id, LingotekSync::STATUS_CURRENT);
+          }
         }
       }
     }
@@ -993,4 +998,107 @@ function lingotek_update_7606(&$sandbox) {
     variable_set('lingotek_enabled_fields', $enabled_fields);
     return t("Added flag confirming setup complete for comment translation (currently disabled).");
   }
+}
+
+/**
+ * Convert 'create_lingotek_document' and 'sync_method' to 'auto_upload' and
+ * 'auto_download', respectively.
+ */
+function lingotek_update_7607(&$sandbox) {
+  // convert the profile settings
+  $profiles = variable_get('lingotek_profiles', array());
+  foreach ($profiles as &$profile) {
+    if (isset($profile['sync_method'])) {
+      $profile['auto_download'] = $profile['sync_method'];
+      unset($profile['sync_method']);
+    }
+    if (isset($profile['create_lingotek_document'])) {
+      $profile['auto_upload'] = $profile['create_lingotek_document'];
+      unset($profile['create_lingotek_document']);
+    }
+  }
+  variable_set('lingotek_profiles', $profiles);
+  cache_clear_all();
+  // modify the custom lines from the database
+  db_update('lingotek_entity_metadata')
+    ->fields(array('entity_key' => 'auto_download'))
+    ->condition('entity_key', 'sync_method')
+    ->execute();
+  db_update('lingotek_entity_metadata')
+    ->fields(array('entity_key' => 'auto_upload'))
+    ->condition('entity_key', 'create_lingotek_document')
+    ->execute();
+
+  variable_set('lingotek_update_7607', TRUE);
+  return t('Converted profile references of "sync method" to "auto-download" and references of "create lingotek document" to "auto-upload".');
+}
+
+/**
+ * Set all entities using a custom (one-off) profile to be disabled, as custom
+ * profiles are no longer supported.
+ */
+function lingotek_update_7608(&$sandbox) {
+  // change profile from CUSTOM to DISABLED
+  db_update('lingotek_entity_metadata')
+    ->fields(array('value' => LingotekSync::PROFILE_DISABLED))
+    ->condition('entity_key', 'profile')
+    ->condition('value', LingotekSync::PROFILE_CUSTOM)
+    ->execute();
+
+  // remove any custom profile settings (no longer relevant)
+  $deprecated_keys = array('allow_community_translation','auto_download','auto_upload','lingotek_nodes_translation_method','url_alias_translation');
+  foreach ($deprecated_keys as $key) {
+    db_delete('lingotek_entity_metadata')
+      ->condition('entity_key', $key)
+      ->execute();
+  }
+
+  // remove the custom profile option from the variable if profiles exist.
+  $profiles = variable_get('lingotek_profiles', FALSE);
+  if ($profiles !== FALSE) {
+    if (isset($profiles['CUSTOM'])) {
+      unset($profiles['CUSTOM']);
+    }
+    variable_set('lingotek_profiles', $profiles);
+
+    return t('Converted all nodes previously assigned to custom profiles to be disabled, and removed related rows that are no longer used.');
+  }
+}
+
+/**
+ * Rebuild registry to see LingotekProfile class after upgrade to 7.00
+ */
+function lingotek_update_7700(&$sandbox) {
+  registry_rebuild();
+  return t('Rebuilt registry to include LingotekProfile class for module v7.x-7.00+');
+}
+
+/**
+ * Add a language column containing the site's default language to the Bean module's table
+ * to ensure compatibility.
+ */
+function lingotek_update_7701(&$sandbox) {
+  $module = 'bean';
+  $table = 'bean';
+  $output = t('Bean module not installed. No action taken.');
+  if (module_exists('bean')) {
+    if (!db_field_exists('bean', 'language')) {
+      $schema = drupal_get_schema_unprocessed($module, $table);
+      $schema['bean']['fields']['language'] = array(
+        'type' => 'char',
+        'length' => 8,
+        'not null' => TRUE,
+        'default' => language_default()->language,
+        'description' => 'Language used for third party translation',
+      );
+
+      db_add_field('bean', 'language', $schema['bean']['fields']['language']);
+      $output = t('Column @column was created for Bean module support.', array('@column' => 'Language'));
+    }
+    else {
+      $output = t('The @column column already exists. No action taken.', array('@column' => 'Language'));
+    }
+  }
+
+  return $output;
 }

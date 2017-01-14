@@ -35,7 +35,7 @@ function lingotek_dashboard() {
       );
     }
     else { // Show the standard misconfiguration message.
-      drupal_set_message(t('The Lingotek Translation module is not fully configured. To complete setup, run the') . ' ' . l(t('Lingotek Configuration Wizard'), 'admin/config/lingotek/setup'), 'warning');
+      drupal_set_message(t('The Lingotek Translation module is not fully configured. To complete setup, run the') . ' ' . l(t('Lingotek Configuration Wizard'), LINGOTEK_MENU_LANG_BASE_URL . '/setup'), 'warning');
     }
     $output[] = lingotek_support_footer();
     return $output;
@@ -140,11 +140,15 @@ function lingotek_dashboard_command_ajax() {
   switch ($method) {
     case 'POST': // Add/Insert Target Language
       $message = 'POST: Insert a new Target Language';
-      $lingotek_locale = $_POST['code'];
-      $parameters = $_POST;
+      $lingotek_locale = check_plain($_POST['code']);
+      $parameters = array();
+      foreach($_POST as $key => $value){
+        $parameters[$key] = check_plain($value);
+      }
       if (strlen($lingotek_locale) > 1) {
         // Adds the language locale to the local list of languages and to the Lingotek project (via the API).
-        $add = lingotek_add_target_language($lingotek_locale);
+        $include_all_docs_in_project = variable_get('lingotek_enable_language_specific_profiles', FALSE) ? FALSE : TRUE;
+        $add = lingotek_add_target_language($lingotek_locale, $include_all_docs_in_project);
         $response = lingotek_get_language_details($lingotek_locale);
         $response['tms_added'] = $add;
       }
@@ -170,8 +174,13 @@ function lingotek_dashboard_command_ajax() {
     default:
       // Retrieve the Target Languages and Status
       $message = 'GET: retrieve the details of the locale(s)';
+
       $parameters = $_GET;
-      $response = isset($_GET['code']) ? lingotek_get_language_details($_GET['code']) : lingotek_get_language_details();
+      $temp = array();
+      foreach ($_GET as $key => $value){  
+        $temp[$key] = check_plain($value);
+      }
+      $response = isset($temp['code']) ? lingotek_get_language_details($temp['code']) : lingotek_get_language_details();
       break;
   }
   //lingotek_json_output_cors(array('response' => $response, 'message' => $message, 'data' => $data, 'method' => $method  ));

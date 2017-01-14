@@ -7,9 +7,9 @@ files[] = service_links_handler_field_service_links.inc
 configure = admin/config/services/service-links
 
 
-; Information added by drush on 2016-11-18
+; Information added by drush on 2016-12-28
 version = "7.x-2.3+0-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1479484056"
+datestamp = "1482928707"
 

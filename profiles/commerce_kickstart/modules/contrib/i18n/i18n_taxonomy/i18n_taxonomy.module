@@ -213,7 +213,12 @@ function i18n_taxonomy_field_formatter_view($entity_type, $entity, $field, $inst
           );
         }
         else {
-          $term = $item['taxonomy_term'];
+          if (isset($item['taxonomy_term'])) {
+            $term = $item['taxonomy_term'];
+          }
+          else {
+            $term = taxonomy_term_load($item['tid']);
+          }
           $uri = entity_uri('taxonomy_term', $term);
           $element[$delta] = array(
             '#type' => 'link',
@@ -1018,6 +1023,10 @@ function i18n_taxonomy_translate_terms($taxonomy, $langcode, $fullterms = TRUE) 
 function i18n_taxonomy_localize_terms($terms) {
   // If not localizable language just return. Performance optimizations.
   if (!i18n_string_translate_langcode()) {
+    return $terms;
+  }
+  // $terms is not a valid array or term.
+  if (empty($terms)) {
     return $terms;
   }
   $object_info = i18n_object_info('taxonomy_term');

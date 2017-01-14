@@ -24,31 +24,6 @@ Drupal.behaviors.lingotekAdminForm = {
       }
     });
 
-    //when a content type checkbox is clicked
-    $('.form-select', context).change( function() {
-      isEnabled = $(this).val() != 'DISABLED';
-      var totalChecked = $(this).parents('tr').find('.form-checkbox:checked').length;
-
-      $(this).parents('tr').find('.form-checkbox').each( function() {
-        if(isEnabled && totalChecked === 0) {
-          $(this).attr('checked', isEnabled);
-        } else if (!isEnabled) {
-          $(this).removeAttr('checked');
-        }
-      })
-    });
-    
-    // default all fields to be checked when profile is not disabled (and no fields are currently checked)
-    $('.lingotek-content-settings-table').find('tr').each(function() {
-      var val = $(this).find('.form-select').val();
-      var count = 0;
-      if (val != 'DISABLED') {
-        count = $(this).find('.form-checkbox:checked').size();
-        if (count == 0) {
-          $(this).find('.form-checkbox').attr('checked', true);
-        }
-      }
-    });
     //when a field checkbox is clicked
     var exemptions = [
       "lingotek_prepare_config_blocks",
@@ -65,12 +40,12 @@ Drupal.behaviors.lingotekAdminForm = {
       if($(this).attr('checked')) {
         row.find('td:first-child .form-checkbox').each( function() {
           $(this).attr('checked', true);
-        })
+        });
       } else {
         count = 0;
         row.find('.field.form-checkbox').each( function() {
           count += $(this).attr('checked') ? 1 : 0;
-        })
+        });
         if(count == 0) {
           row.find('td:first-child .form-checkbox').attr('checked',false);
           row.find('.form-select').val('DISABLED');
@@ -83,6 +58,12 @@ Drupal.behaviors.lingotekAdminForm = {
     $('.select-all').change( function () {
       if ($(this).children().first().is(':checked')) {
         $('.field.form-checkbox').removeAttr('disabled').attr('checked',true);
+      }
+      else {
+        $('.field.form-checkbox').attr('checked',false);
+        $('#lingotek_prepare_config_blocks').attr('disabled',true);
+        $('#lingotek_prepare_config_menus').attr('disabled',true);
+        $('#lingotek_prepare_config_taxonomies').attr('disabled',true);
       }
     });
 
@@ -99,6 +80,13 @@ Drupal.behaviors.lingotekAdminForm = {
         $('#lingotek_prepare_config_menus').removeAttr('disabled').attr('checked',true);
       } else {
         $('#lingotek_prepare_config_menus').removeAttr('checked').attr('disabled',true);
+      }
+    });
+    $('#edit-config-lingotek-translate-config-taxonomies').change( function () {
+      if ($('#edit-config-lingotek-translate-config-taxonomies').is(':checked')) {
+        $('#lingotek_prepare_config_taxonomies').removeAttr('disabled').attr('checked',true);
+      } else {
+        $('#lingotek_prepare_config_taxonomies').removeAttr('checked').attr('disabled',true);
       }
     });
 
@@ -121,9 +109,11 @@ Drupal.behaviors.lingotekAdminForm = {
       } else {
         $('#lingotek_prepare_config_menus').attr('disabled',true);
       }
-
       if ($('.form-item-config-lingotek-translate-config-views').parent().siblings().last().children().last().val() != 1) {
         $('#edit-config-lingotek-translate-config-views').attr('disabled',true);
+      }
+      if ($('.form-item-config-lingotek-translate-config-fields').parent().siblings().last().children().last().val() != 1) {
+       $('#edit-config-lingotek-translate-config-fields').attr('disabled',true);
       }
     });
 
@@ -143,7 +133,7 @@ Drupal.behaviors.lingotekAdminForm = {
         $(context).find('select').each(function( index ) {
           var $this = $(this);
           var name = $this.attr('name');
-          if(name && name.substring(0, 7) == 'profile') {
+          if(name && name.substring(0, 7) == 'profile' && name.indexOf('__') < 0) {
             if($this.val() != 'DISABLED') {
               $list.push($this.val());
             }
@@ -161,7 +151,7 @@ Drupal.behaviors.lingotekAdminForm = {
       $('.ltk-entity').each(function(index) {
 
         var $entity_utility_options = $(this).find('.js-utility-options');
-        var $entity_profile_selects = $(this).find('select');
+        var $entity_profile_selects = $(this).find('select').filter(function() { return !this.id.match(/__/); });
 
         function turn_on() {
           $entity_utility_options.find('input[type="checkbox"]').attr('checked', true);
@@ -193,7 +183,7 @@ Drupal.behaviors.lingotekAdminForm = {
       // config summary
       $('fieldset#ltk-config', context).drupalSetSummary(function (context) {
         $list = [];
-        max = 7;
+        max = 8;
         extra_text = "";
         
         $(context).find('input').each(function( index ) {
@@ -230,13 +220,22 @@ Drupal.behaviors.lingotekAdminForm = {
   }
 };
 
+$(document).ready(function(){
+  $('.description').css('width','auto');
+  $('.description').css('border','0px');
+  $('.description').css('background','transparent');
+  $('.description').css('position','static');
+  $('.description').css('display','block');
+  $('.description').css('padding-left','0');
+  $('.form-type-checkbox').find('.description').css('margin-left','1.5em');
+});
+
 })(jQuery);
 
-function lingotek_set_all(sel, val) {
+function lingotek_set_all(sel, target) {
   fieldset = jQuery(sel);
-  console.log(jQuery(sel));
   jQuery(sel).find('.form-select').each( function() {
-    jQuery(this).val(val);
+    jQuery(this).val(target.value);
     jQuery(this).trigger('change');
   });
 }

@@ -62,7 +62,7 @@ class LingotekFunctionalTest extends DrupalWebTestCase {
   public function setUp() {
     parent::setUp('lingotek');
 
-    variable_set(LINGOTEK_ENABLED, 'language_content_type_page');
+    variable_set('language_content_type_page', '1' );
 
     $unprivileged_permissions = array_keys(node_permission());
     $this->unprivileged_user = $this->drupalCreateUser($unprivileged_permissions);
@@ -84,7 +84,7 @@ class LingotekFunctionalTest extends DrupalWebTestCase {
       'lingotek_pid' => self::LINGOTEK_PASSWORD,
     );
 
-    $this->drupalPost('admin/config/lingotek/account-settings', $form_values, t('Next'));
+    $this->drupalPost(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings', $form_values, t('Next'));
     $this->drupalLogout();
   }
 }

@@ -5,7 +5,7 @@ api = 2
 defaults[projects][subdir] = contrib
 
 ; Basic contributed modules.
-projects[ctools][version] = 1.11
+projects[ctools][version] = 1.12
 projects[entity][version] = 1.8
 projects[entityreference][version] = 1.1
 projects[entityreference][patch][] = "http://drupal.org/files/1580348-universal-formatters-17.patch"
@@ -70,10 +70,7 @@ projects[commerce_firstdata_gge4][version] = 1.0
 projects[countries][version] = 2.3
 projects[remote_stream_wrapper][version] = 1.0-rc1
 projects[colorbox][version] = 2.12
-; projects[physical][version] = 1.x-dev
-projects[physical][download][type] = git
-projects[physical][download][revision] = 32e1a38
-projects[physical][download][branch] = 7.x-1.x
+projects[physical][version] = 1.0
 projects[crumbs][version] = 1.10
 projects[http_client][version] = 2.4
 projects[oauth][version] = 3.2
@@ -105,8 +102,8 @@ projects[menu_attributes][version] = 1.0
 projects[fences][version] = 1.2
 projects[title][version] = 1.0-alpha8
 projects[kameleoon][version] = 1.1
-projects[mailup][version] = 1.1
-projects[mailjet][version] = 2.5
+projects[mailup][version] = 1.4
+projects[mailjet][version] = 2.7
 
 ; Search related modules.
 projects[search_api][version] = 1.20
@@ -137,8 +134,8 @@ projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5
-projects[i18n][version] = 1.13
-projects[lingotek][version] = 6.02
+projects[i18n][version] = 1.14
+projects[lingotek][version] = 7.17
 
 ; Base theme.
 projects[omega][version] = 3.1

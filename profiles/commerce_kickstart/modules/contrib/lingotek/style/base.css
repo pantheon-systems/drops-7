@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
 
 .lingotek-highlight {
   background-color: #ecf2f9 !important;
@@ -22,10 +23,6 @@
 div.form-item-create-lingotek-document-workbench-moderation, div.form-item-sync-method-workbench-moderation {
   margin-left: 50px;
 }
-
-/*div.form-item-create-lingotek-document-workbench-moderation label, div.form-item-syncMethod-wb label {
-  font-weight: normal !important;
-}*/
 
 div.form-item.form-item-lingotek-create-documents-by-default-workbench-moderation,
 div.form-item.form-item-wb-options {
@@ -118,83 +115,281 @@ input.lingotek-content-settings-table.form-checkbox {
     -moz-columns:100px 2;
 }
 
-a.language-icon {
+#lingotek-bulk-grid-form a.ltk-source-icon {
   background-color:#80a49e;
-  border-radius: 3px;
   margin-right: 3px;
   padding: 1px;
   padding-left: 4px;
   padding-right: 4px;
-  color: #fff !important;
+  color: #fff;
+  white-space: nowrap;
+  border: 1px solid #80a49e;
+  text-decoration: none;
+  font-family: 'Roboto Mono', monospace;
+}
+
+#lingotek-bulk-grid-form span.ltk-source-icon-config-current {
+  background-color: #5FDC64;
+  border: 1px solid #5FDC64;
+  color: #ffffff;
+  margin-right: 3px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: 'Roboto Mono', monospace;
+}
+
+#lingotek-bulk-grid-form span.ltk-source-icon-config-current:hover {
+  background-color: #43A047;
+  border: 1px solid #43A047;
+}
+
+#lingotek-bulk-grid-form a.language-icon {
+  background-color:#80a49e;
+  margin-right: 3px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
+  color: #fff;
   white-space: nowrap;
   border: 1px solid #fff;
+  text-decoration: none;
+  font-family: 'Roboto Mono', monospace;
 }
 
-.language-icon.target-non-lingotek {
+#lingotek-bulk-grid-form span.ltk-target-none {
+  background-color: #FFFFFF;
+  border: 1px solid #999999;
+  color: #999999;
+  margin-right: 3px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: 'Roboto Mono', monospace;
+}
+
+#lingotek-bulk-grid-form span.ltk-target-none:hover {
+  border: 1px solid #8C8C8C;
+  color: #8C8C8C;
+}
+
+#lingotek-bulk-grid-form span.ltk-target-disabled {
+  background-color: #FFFFFF;
+  border: 1px solid #999999;
+  color: #999999;
+  margin-right: 3px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  text-decoration: line-through;
+  font-family: 'Roboto Mono', monospace;
+}
+
+a.tooltips {
+  position: relative;
+  display: inline;
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover.tooltips {
+  text-decoration: none;
+}
+
+a.tooltips span {
+  position: absolute;
+  right: -75px;
+  color: #FFFFFF;
+  background: #333;
+  line-height: 18px;
+  text-align: center;
+  visibility: hidden;
+  border-radius: 6px;
+  text-decoration: none;
+  padding: 5px;
+  font-size: 13px;
+}
+
+a.tooltips span:after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -8px;
+  width: 0; height: 0;
+  border-bottom: 8px solid #333;
+  border-right: 8px solid transparent;
+  border-left: 8px solid transparent;
+  text-decoration: none;
+}
+
+a:hover.tooltips span {
+  visibility: visible;
+  top: 30px;
+  left: 50%;
+  margin-left: -90px;
+  z-index: 999;
+  text-decoration: none;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-none {
+  background-color: #ffffff;
+  border: 1px solid #999999;
+  color: #999999;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-none:hover {
+  border: 1px solid #8C8C8C;
+  color: #8C8C8C;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-edited {
+  background-color: #ffc107;
+  border: 1px solid #ffc107;
+  color: #575757;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-edited:hover {
+  background-color: #FFB300;
+  border: 1px solid #FFB300;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-current {
+  background-color: #5FDC64;
+  border: 1px solid #5FDC64;
+  color: #ffffff;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-current:hover {
+  background-color: #43A047;
+  border: 1px solid #43A047;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-error {
+  background-color: #B71C1C;
+  border: 1px solid #B71C1C;
+  color: #ffffff;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-error:hover {
+  background-color: #9E0303;
+  border: 1px solid #9E0303;
+}
+
+#lingotek-bulk-grid-form .ltk-source-icon.source-disabled {
+  background-color: #FAFAFA;
+  border: 1px solid #999999;
+  color: #999999;
+  text-decoration: line-through;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-pending {
+  background-color: #F37F16;
+  border: 1px solid #F37F16;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-pending:hover {
+  background-color: #E67209;
+  border: 1px solid #E67209;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-current {
+  background-color: #5FDC64;
+  border: 1px solid #5FDC64;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-current:hover {
+  background-color: #43A047;
+  border: 1px solid #43A047;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-ready {
+  background-color: #2196F3;
+  border: 1px solid #2196F3;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-ready:hover {
+  background-color: #1E88E5;
+  border: 1px solid #1E88E5;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-interim {
+  background-color: #FFFFFF;
+  border: 1px solid #4CAF50;
+  color: #4CAF50;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-interim:hover {
+  border: 1px solid #43A047;
+  color: #43A047
+}
+
+#lingotek-bulk-grid-form .language-icon.target-ready_interim {
+  background-color: #FFFFFF;
+  border: 1px solid #2196F3;
+  color: #2196F3;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-ready_interim:hover {
+  border: 1px solid #1E88E5;
+  color: #1E88E5;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-edited {
+  background-color: #5FDC64;
+  border: 1px solid #5FDC64;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-edited:hover {
+  background-color: #43A047;
+  border: 1px solid #43A047;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-untracked {
+  background-color: #999999;
+  border: 1px solid #999999;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-untracked:hover {
+  background-color: #8C8C8C;
+  border: 1px solid #8C8C8C;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-error {
+  background-color: #B71C1C;
+  border: 1px solid #B71C1C;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-error:hover {
+  background-color: #9E0303;
+  border: 1px solid #9E0303;
+}
+
+#lingotek-bulk-grid-form .language-icon.target-non-lingotek {
   background-color: inherit;
   border: 1px solid #ccc;
-  color: #aaa !important;
-}
-
-.language-icon.target-pending {
-  background-color: #CE2029;
-  border: 1px solid #CE2029;
-}
-
-.language-icon.target-current {
-  background-color: rgba(68,135,204,0.9);
-  border: 1px solid rgba(68,135,204,1);
-}
-
-.language-icon.target-ready {
-  background-color: #59ad1a;
-  border: 1px solid #59ad1a;
-}
-
-.language-icon.target-edited {
-  background-color: #585858;
-  border: 1px solid #585858;
-}
-
-.language-icon.target-untracked {
-  background-color: #999;
-  border: 1px solid #999;
-}
-
-.language-icon.target-target_localize {
-  background-color:#999;
-  border: 1px solid #999;
-}
-
-.language-icon.target-target_edited {
-  color: #000 !important;
-  background-color:inherit;
-  border: 1px #000 solid;
-}
-
-.language-icon.target-pending.target-disabled {
-  background-color: inherit;
-  border: 1px solid rgba(206,32,41,0.5);
-  color: #aaa !important;
-}
-
-.language-icon.target-ready.target-disabled {
-  background-color: inherit;
-  border: 1px solid rgba(89,173,26,0.8);
-  color: #aaa !important;
-}
-
-.language-icon.target-current.target-disabled {
-  background-color: inherit;
-  border: 1px solid rgba(68,135,204,0.8);
-  color: #aaa !important;
+  color: #aaa;
 }
 
 .ltk-complete-check {
     color: green;
     font-size: 150%;
 }
-
+.ltk-options {
+  padding-top: 5px;
+  cursor: pointer;
+  margin-left: 15px;
+}
+.ltk-force-down {
+  position:relative;
+  padding-top: 3px;
+  font-size: 100%;
+}
 .ltk-upload {
     color: #444;
 }
@@ -202,18 +397,24 @@ a.language-icon {
     color: #000;
 }
 
-.ltk-download {
-    color: #59ad1a;
+#lingotek-bulk-grid-form .ltk-download {
+    color: #2196F3;
 }
-.ltk-download:hover {
-    color: green;
+#lingotek-bulk-grid-form .ltk-download:hover {
+    color: #1E88E5;
+}
+.ltk-legend {
+    color: #ddd;
+}
+.ltk-legend:hover {
+    color: #3479c0;
 }
 
-.ltk-refresh {
-    color: #CE2029;
+#lingotek-bulk-grid-form .ltk-refresh {
+    color: #F37F16;
 }
-.ltk-refresh:hover {
-    color: darkred;
+#lingotek-bulk-grid-form .ltk-refresh:hover {
+    color: #E67209;
 }
 
 .ltk-muted {
@@ -231,9 +432,20 @@ a.language-icon {
   color: green;
 }
 
+.notify-filtered-action {
+  font-size: 70%;
+  padding-left:30px;
+  position:absolute;
+}
+
+.notify-checked-action {
+  font-size: 70%;
+  padding-left:30px;
+  position:absolute;
+}
+
 .no-localized-title, .no-localized-title a {
   color: #444;
-  /*font-style: italic;*/
 }
 
 .lingotek-node-actions, .lingotek-language-source i {
@@ -250,12 +462,14 @@ a.ltk-action:hover {
     color: #00348D;
 }
 
-.ltk-upload-button {
+.ltk-marked-checkbox {
+  font-size: 150%;
+  white-space: nowrap;
   color: #333;
   cursor: pointer;
 }
 
-.ltk-upload-button:hover {
+.ltk-marked-checkbox:hover {
   color: #000;
 }
 
@@ -310,49 +524,46 @@ a.ltk-action:hover {
   background-color: #CCCCCC
 }
 
-a.tooltips {
-  position: relative;
-  display: inline;
-  text-decoration: none;
-  color: inherit;
-}
+.legend-table td{
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 5px;
+    height: 26px;
 
-a:hover.tooltips {
-  text-decoration: none;
 }
-
-a.tooltips span {
-  position: absolute;
-  right: -75px;
-  color: #FFFFFF;
-  background: #333;
-  line-height: 18px;
-  text-align: center;
-  visibility: hidden;
-  border-radius: 6px;
-  text-decoration: none;
-  padding: 5px;
-  font-size: 13px;
+.legend-table div{
+    text-align: center;
+    margin:auto;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
-
-a.tooltips span:after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -8px;
-  width: 0; height: 0;
-  border-bottom: 8px solid #333;
-  border-right: 8px solid transparent;
-  border-left: 8px solid transparent;
-  text-decoration: none;
+#edit-search-submit {
+  border-radius: 0;
+  border-top: 1px solid #d2d2d2;
+  font-family: 'FontAwesome';
+  padding-top: 3px;
+  padding-bottom: 4px;
+  -moz-transform: scale(-1, 1);
+  -webkit-transform: scale(-1, 1);
+  -o-transform: scale(-1, 1);
+  -ms-transform: scale(-1, 1);
+  transform: scale(-1, 1);
 }
-
-a:hover.tooltips span {
-  visibility: visible;
-  top: 30px;
-  left: 50%;
-  margin-left: -90px;
-  z-index: 999;
-  text-decoration: none;
+#edit-search {
+  margin:0;
+  padding-top:3px;
+  padding-bottom:3px;
+}
+#more-options{
+    transition:.3s;
+}
+.more-options-flip {
+    transform: rotateY(180deg);
+}
+.form-item-search label {
+  padding:0;
+  margin:0;
+}
+#lingotek-admin-additional-translation-settings-form label{
+ white-space: pre-wrap;
 }

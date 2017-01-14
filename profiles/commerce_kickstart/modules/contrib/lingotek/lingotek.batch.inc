@@ -7,7 +7,7 @@
 
 /**
  * Field Language Data Cleanup Utility
- * 
+ *
  * Creates a batch to cleanup nodes with data in an 'und' language field.
  *
  * @param bool $autoset_batch
@@ -144,7 +144,6 @@ function lingotek_sync_batch_finished($success, $results, $operations) {
  * Sync - Upload Batch Elements:  Creates the batch elements for nodes/documents that need to be uploaded.
  */
 function lingotek_get_sync_upload_batch_elements($entity_type, $upload_nids = array()) {
-
   $operations = array();
 
   if (is_array($upload_nids)) {
@@ -157,12 +156,42 @@ function lingotek_get_sync_upload_batch_elements($entity_type, $upload_nids = ar
 }
 
 /**
+ * Update marked entities:  Creates the batch elements for marked entities.
+ */
+function lingotek_get_marked_batch_elements($entity_type, $entity_ids = array()) {
+  $operations = array();
+
+  if (is_array($entity_ids)) {
+    foreach ($entity_ids as $entity_id) {
+      $operations[] = array('lingotek_update_marked_items', array($entity_type, $entity_id));
+    }
+  }
+
+  return $operations;
+}
+
+/**
+ * Update unmarked entities:  Creates the batch elements for unmarked entities.
+ */
+function lingotek_get_unmarked_batch_elements($entity_type, $entity_ids = array()) {
+  $operations = array();
+
+  if (is_array($entity_ids)) {
+    foreach ($entity_ids as $entity_id) {
+      $operations[] = array('lingotek_update_unmarked_items', array($entity_type, $entity_id));
+    }
+  }
+
+  return $operations;
+}
+
+/**
  * Sync - Upload Config Batch Elements:  Creates the batch elements for config (ie. menus, taxonomies,
  * etc.), that need to be uploaded.
  */
 function lingotek_get_sync_upload_config_batch_elements($set_ids = array()) {
-
   $operations = array();
+
   if (is_array($set_ids)) {
     foreach ($set_ids as $sid) {
       $operations[] = array('lingotek_sync_upload_config_set', array($sid));
@@ -172,8 +201,8 @@ function lingotek_get_sync_upload_config_batch_elements($set_ids = array()) {
 }
 /**
  * Sync - Download Batch Elements:  Creates the batch elements for nodes/documents that need to be downloaded.
- * 
- * @param download_targets 
+ *
+ * @param download_targets
  *        list of objects (document_id, lingotek_locale)  //json_decode([ {"document_id": "191", "locale": "fr_FR" }, ... ]);
  */
 function lingotek_get_sync_download_batch_elements($download_targets = NULL, $sync_success_target = LingotekSync::STATUS_CURRENT) {
@@ -229,10 +258,6 @@ function lingotek_get_sync_download_batch_elements($download_targets = NULL, $sy
     }
     $doc_ids = array_unique($doc_ids);
   }
-  if (count($operations)) {
-    $operations[] = array('drupal_flush_all_caches', array());
-  }
-
   return $operations;
 }
 
@@ -293,6 +318,40 @@ function lingotek_sync_upload_config_finished($success, $results, $operations) {
   lingotek_sync_upload_node_finished($success, $results, $operations, TRUE);
 }
 
+function lingotek_update_marked_items_finished($success, $results) {
+  if (isset($results['entity_type']) && $results['entity_type'] === 'config') {
+    $message = format_plural($results['marked'], t('1 config item has been marked.'), t('@num config items have been marked.', array('@num' => (int) $results['marked'])));
+  }
+  else {
+    $message = format_plural($results['marked'], t('1 entity has been marked.'), t('@num entities have been marked.', array('@num' => (int) $results['marked'])));
+  }
+
+  if ($success) {
+    drupal_set_message(filter_xss($message), 'status');
+  }
+  else {
+    $message = format_plural($results['marked'], t('Marking 1 entity has failed.'), t('Marking @num entities has failed.', array('@num' => (int) $results['marked'])));
+    drupal_set_message(filter_xss($message), 'error');
+  }
+}
+
+function lingotek_update_unmarked_items_finished($success, $results) {
+  if (isset($results['entity_type']) && $results['entity_type'] === 'config') {
+    $message = format_plural($results['unmarked'], t('1 config item has been unmarked.'), t('@num config items have been unmarked.', array('@num' => (int) $results['unmarked'])));
+  }
+  else {
+    $message = format_plural($results['unmarked'], t('1 entity has been unmarked.'), t('@num entities have been unmarked.', array('@num' => (int) $results['unmarked'])));
+  }
+
+  if ($success) {
+    drupal_set_message(filter_xss($message), 'status');
+  }
+  else {
+    $message = format_plural($results['unmarked'], t('Unmarking 1 entity has failed.'), t('Unmarking @num entities has failed.', array('@num' => (int) $results['unmarked'])));
+    drupal_set_message(filter_xss($message), 'error');
+  }
+}
+
 /**
  * Upload Batch Worker Function: Upload Config Set for Translation
  */
@@ -302,10 +361,37 @@ function lingotek_sync_upload_config_set($set_id, &$context) {
   }
   $api = LingotekApi::instance();
   $set = LingotekConfigSet::loadById($set_id);
+  $query = db_select('lingotek_config_metadata', 'lcm');
+  $query->addField('lcm', 'value');
+  $query->condition('id', $set_id, '=');
+  $query->condition('config_key', 'workflow_id', '=');
+  $workflow_id = $query->execute()->fetchField();
+  if($workflow_id !== NULL){
+    $set->setWorkflowId($workflow_id);
+  }
+
   module_invoke_all('lingotek_pre_upload', $set);
-  if ($existing_document = $set->hasLingotekDocId()) {
-    LingotekLog::trace('existing document: @existing', array('@existing' => $existing_document));
-    $result = $api->updateContentDocument($set);
+  $existing_document_id = $set->hasLingotekDocId();
+
+  if ($existing_document_id) {
+    $params = array(
+      'id' => $existing_document_id
+    );
+    LingotekLog::trace('existing document: @existing', array('@existing' => $existing_document_id));
+    // There is a race condition here that depends on whether the config document
+    // has been uploaded to the TMS before other members of the config set try
+    // to update the document. This loop waits for up to 30 seconds for the document
+    // to be uploaded before updating.
+    for ($i = 0; $i < 10; $i++) {
+      $import_response = $api->request('getDocumentImportStatus', $params);
+      if ($import_response->status === 'COMPLETE') {
+        $result = $api->updateContentDocument($set);
+        break;
+      }
+      else {
+        sleep(3);
+      }
+    }
   }
   else {
     $result = $api->addContentDocument($set, TRUE);
@@ -379,12 +465,15 @@ function lingotek_source_language_cleanup_batch_worker($entity_type, $entity_id,
 
   $loaded_entity = lingotek_entity_load_single($entity_type, $entity_id);
   $info = entity_get_info($entity_type);
+
   // Default to string 'language' if no language-related entity key is found.
   $language_field = !empty($info['entity keys']['language']) ? $info['entity keys']['language'] : 'language';
+
   if (isset($loaded_entity->$language_field) && $loaded_entity->$language_field != $source_language) {
     $loaded_entity->$language_field = $source_language;
-    $loaded_entity->lingotek_upload_override = FALSE; // Set 0 : Ensure that uploading does not occur. Set 1 : Force uploading to occur
+    $loaded_entity->lingotek_upload_override = FALSE; // Set 0 : Prevent upload. Set 1 : Force upload.
     entity_save($entity_type, $loaded_entity);
+
     if (!isset($context['results']['entity_cleanup'])) {
       $context['results']['entity_cleanup'] = 0;
     }
@@ -438,8 +527,8 @@ function lingotek_field_language_data_cleanup_batch_worker($entity_type, $entity
 
 /**
  * Ensures correct language-specific field data for the specified item.
- * 
- * Logic: Look at each translatable_field (Any field marked for lingotek 
+ *
+ * Logic: Look at each translatable_field (Any field marked for lingotek
  * translation management) for the given node.  If the field has data in the
  * language 'und' area, and is empty in the language area that this node is,
  * copy the data over.  So if this node is marked as English, but there is no
@@ -453,9 +542,7 @@ function lingotek_field_language_data_cleanup_batch_worker($entity_type, $entity
  *   TRUE if specified node's field data was updated. FALSE if no changes made.
  */
 function lingotek_field_language_data_cleanup_update_entity($entity_type, $entity_id, &$context) {
-
   $edited = FALSE;
-
   $entity = lingotek_entity_load_single($entity_type, $entity_id);
 
   if (!$entity) {
@@ -470,9 +557,17 @@ function lingotek_field_language_data_cleanup_update_entity($entity_type, $entit
   if ($entity->$language_field != LANGUAGE_NONE && ($entity_type != 'node' || !lingotek_uses_node_translation($entity))) {
     $translatable_fields = lingotek_translatable_fields();
     foreach ($translatable_fields as $field_name) {
-      if (!empty($entity->{$field_name}[LANGUAGE_NONE]) && empty($entity->{$field_name}[$entity->{$language_field}])) {
-        $entity->{$field_name}[$entity->{$language_field}] = $entity->{$field_name}[LANGUAGE_NONE];
-        $edited = TRUE;
+      if ($entity_type == 'bean' || $entity_type == 'group') {
+        if (!empty($entity->{$field_name}[LANGUAGE_NONE]) && empty($entity->{$field_name}[language_default()->language])) {
+          $entity->{$field_name}[$entity->{$language_field}] = $entity->{$field_name}[LANGUAGE_NONE];
+          $edited = TRUE;
+        }
+      }
+      else {
+        if (!empty($entity->{$field_name}[LANGUAGE_NONE]) && empty($entity->{$field_name}[$entity->{$language_field}])) {
+          $entity->{$field_name}[$entity->{$language_field}] = $entity->{$field_name}[LANGUAGE_NONE];
+          $edited = TRUE;
+        }
       }
     }
   }
@@ -490,21 +585,25 @@ function lingotek_field_language_data_cleanup_update_entity($entity_type, $entit
  */
 function lingotek_field_language_data_cleanup_batch_finished($success, $results, $operations) {
   if ($success) {
+    $did_something = FALSE;
     $def_lang = language_default('name');
     if (isset($results['entity_cleanup'])) {
       $num_nodes = (int) $results['entity_cleanup'];
       drupal_set_message(format_plural($num_nodes, t('Converted @count entities from language neutral to @language', array('@count' => $num_nodes, '@language' => $def_lang)), t('Converted @count entities from language neutral to @language', array('@count' => $num_nodes, '@language' => $def_lang))));
+      $did_something = TRUE;
     }
     if (isset($results['url_alias_cleanup'])) {
       $searched = (int) $results['url_alias_cleanup']['searched'];
       $added = (int) $results['url_alias_cleanup']['added'];
       drupal_set_message(format_plural($searched, t('Searched @search_count entity for url aliases, added @add_count in @language.', array('@search_count' => $searched, '@add_count' => $added, '@language' => $def_lang)), t('Searched @search_count entities for url aliases, added @add_count in @language.', array('@search_count' => $searched, '@add_count' => $added, '@language' => $def_lang))));
+      $did_something = TRUE;
     }
     if (isset($results['field_cleanup'])) {
       $num_nodes = (int) $results['field_cleanup'];
       drupal_set_message(format_plural($num_nodes, t('Added language-specific fields for @count entity with language-neutral fields.', array('@count' => $num_nodes)), t('Added language-specific fields for @count entities with language-neutral fields.', array('@count' => $num_nodes))));
+      $did_something = TRUE;
     }
-    else {
+    if (!$did_something) {
       drupal_set_message(t('No requested entities currently require any preparation.'), 'status', FALSE);
     }
   }
@@ -578,4 +677,138 @@ function lingotek_config_update_selected($lids) {
 
 function lingotek_config_progress_update_finished() {
   drupal_set_message(t('Finished updating statuses. The statuses for all previously selected configuration items are now up to date.'));
+}
+
+function lingotek_batch_update_entity_languages_by_profile($profile_id) {
+
+  // don't make any changes if the new profile is the Disabled profile.
+  if ($profile_id == LingotekSync::PROFILE_DISABLED) {
+    return;
+  }
+
+  $profile = LingotekProfile::loadById($profile_id);
+
+  // get the target languages for the given profile
+  $available_locales = lingotek_get_target_locales();
+  $target_locales_hash = $profile->filterTargetLocales($available_locales);
+  $target_locales = array_keys($target_locales_hash);
+
+  // get the current entities assigned to the given profile
+  $entities = $profile->getEntities();
+
+  $operations = array();
+
+  // for each entity with a document ID:
+  foreach ($entities as $e) {
+    if (!empty($e['document_id'])) {
+      // compare the target languages set with the profile's target languages
+      $entity_locales = lingotek_get_current_locales($e['type'], $e['id']);
+
+      // for each target language in the profile that is not set, add it
+      $locales_to_add = array_diff($target_locales, $entity_locales);
+      $operations[] = array('lingotek_add_target_locales', array($e, $locales_to_add, $profile));
+
+      // for each target language set that is not in the profile anymore, remove it
+      $locales_to_remove = array_diff($entity_locales, $target_locales);
+      $operations[] = array('lingotek_remove_target_locales', array($e, $locales_to_remove));
+    }
+  }
+  // run the batch operation, return the result
+  if (!empty($operations)) {
+    $batch = array(
+      'title' => t('Updating target locales for entities in profile @profile_name', array('@profile_name' => $profile->getName())),
+      'operations' => $operations,
+      'finished' => 'lingotek_batch_update_entity_languages_by_profile_finished',
+      'file' => 'lingotek.batch.inc'
+    );
+    batch_set($batch);
+    batch_process('admin/settings/lingotek/settings');
+  }
+}
+
+function lingotek_batch_update_entity_languages_by_profile_finished($success, $results, $operations) {
+  if ($success) {
+    $added = !empty($results['added']) ? $results['added'] : 0;
+    $removed = !empty($results['removed']) ? $results['removed'] : 0;
+    $added_msg = format_plural($added, 'One target locale added.', '@count target locales added.');
+    $removed_msg = format_plural($removed, 'One target locale removed.', '@count target locales removed.');
+    drupal_set_message(t('Profile update complete'));
+    drupal_set_message($added_msg);
+    drupal_set_message($removed_msg);
+  }
+  else {
+    drupal_set_message(t('Finished with an error.'));
+    $message = t('Finished with an error.');
+    drupal_set_message($message);//xss checks not necessary here. Text only comes from php
+  }
+}
+
+/*
+ * Add a set of target locales for an entity on the TMS and in Drupal
+ */
+function lingotek_add_target_locales($entity_params, $locales, LingotekProfile $profile, &$context) {
+
+  $document_id = $entity_params['document_id'];
+  $entity_type = $entity_params['type'];
+  $entity_id = $entity_params['id'];
+
+  if (empty($context['results'])) {
+    $context['results'] = array();
+  }
+  if (empty($context['results']['added'])) {
+    // initialize the counter of removed targets.
+    $context['results']['added'] = 0;
+  }
+  $api = LingotekApi::instance();
+  $document = $api->getDocument($document_id);
+  foreach ($locales as $l) {
+    // Don't add the target if it's the same as the source.
+    if ($document->sourceLanguage == $l) {
+      continue;
+    }
+    $workflow_id = $profile->getWorkflow($l);
+    $result = $api->addTranslationTarget($document_id, NULL, $l, $workflow_id);
+    if ($result) {
+      LingotekSync::setTargetStatus($entity_type, $entity_id, $l, LingotekSync::STATUS_PENDING);
+      $context['results']['added']++;
+    }
+  }
+}
+
+/*
+ * Remove a set of target locale for an entity on the TMS and in Drupal
+ */
+function lingotek_remove_target_locales($entity_params, $locales, &$context) {
+
+  $document_id = $entity_params['document_id'];
+  $entity_type = $entity_params['type'];
+  $entity_id = $entity_params['id'];
+
+  if (empty($context['results'])) {
+    $context['results'] = array();
+  }
+  if (empty($context['results']['removed'])) {
+    // initialize the counter of removed targets.
+    $context['results']['removed'] = 0;
+  }
+  $api = LingotekApi::instance();
+  $document = $api->getDocument($document_id);
+  if ($document) {
+    $doc_translation_targets = !empty($document->translationTargets) ? $document->translationTargets : array();
+    $doc_current_locales = array_map(function($target) {
+      return $target->language;
+    }, $doc_translation_targets);
+    foreach ($locales as $l) {
+      if (in_array($l, $doc_current_locales)) {
+        $result = $api->removeTranslationTarget($document_id, NULL, $l);
+      }
+      else {
+        $result = TRUE; // get rid of orphaned target locales of the document.
+      }
+      if ($result) {
+        LingotekSync::deleteTargetStatus($entity_type, $entity_id, $l);
+        $context['results']['removed']++;
+      }
+    }
+  }
 }

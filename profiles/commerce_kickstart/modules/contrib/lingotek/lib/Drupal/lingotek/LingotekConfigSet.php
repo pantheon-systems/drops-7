@@ -47,7 +47,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
    * A static flag for content updates.
    */
   protected static $content_update_in_progress = FALSE;
-
+  protected $workflow_id = null;
   /**
    * Constructor.
    *
@@ -62,9 +62,10 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
     $this->source_data = self::getAllSegments($this->sid);
     $this->source_meta = self::getSetMeta($this->sid);
     $this->language = language_default();
-    if (!isset($this->language->lingotek_locale)) { // if Drupal variable 'language_default' does not exist
-      $this->language->lingotek_locale = Lingotek::convertDrupal2Lingotek($this->language->language);
-    }
+    // INT-791 Respecting the i18n_string_source_language setting
+    $i18n_language = variable_get('i18n_string_source_language', language_default()->language);
+    $this->language->language = $i18n_language;
+    $this->language->lingotek_locale = Lingotek::convertDrupal2Lingotek($this->language->language);
     $this->language_targets = Lingotek::getLanguagesWithoutSource($this->language->lingotek_locale);
   }
 
@@ -193,6 +194,43 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
     return $existing_sid;
   }
 
+  public static function bulkGetSetId($lid_map){
+    $set_ids = array();
+    foreach($lid_map as $textgroup => $lids){
+      $open_set_id = self::getOpenSet($textgroup);
+      if ($open_set_id === FALSE) {
+        $open_set_id = self::createSet($textgroup);
+      }
+
+      $query = db_select('lingotek_config_map', 'lcm');
+      $query->addField('lcm', 'set_id');
+      $query->addField('lcm', 'lid');
+      $query->condition('lid', $lids, "IN");
+      $result = $query->execute()->fetchAllAssoc('lid');
+
+      $insert = db_insert('lingotek_config_map');
+      $insert->fields(array('lid','set_id'));
+
+      $count = 0;
+      foreach($lids as $lid){
+        if($count === LINGOTEK_CONFIG_SET_SIZE){
+          $open_set_id = self::createSet($textgroup);
+          $count = 0;
+        }
+        if(!isset($result[$lid])){
+          $insert->values(array('lid'=>$lid,'set_id'=>$open_set_id));
+          $set_ids[$open_set_id] = $open_set_id;
+        }
+        else {
+          $set_ids[$result[$lid]->set_id] = $result[$lid]->set_id;
+        }
+        $count++;
+      }
+      $insert->execute();
+    }
+    return $set_ids;
+  }
+
   protected static function assignSetId($lid) {
     // get the $lid's textgroup
     $textgroup = db_select('locales_source', 'l')
@@ -279,9 +317,9 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   }
 
   protected static function getNextSetId() {
-    $query = db_select('lingotek_config_metadata', 'lcm');
-    $query->addExpression('MAX(id)');
-    $max_set_id = $query->execute()->fetchField();
+    $query = db_query('SELECT max(id) FROM lingotek_config_metadata WHERE id < :max_size', array(':max_size' => LingotekSync::MARKED_OFFSET));
+    $max_set_id = $query->fetchField();
+
     if ($max_set_id) {
       return (int) $max_set_id + 1;
     }
@@ -305,6 +343,25 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
         ->execute()
         ->fetchCol();
     return $doc_ids;
+  }
+
+  public static function getAllUnsetWorkflowConfigDocIds() {
+    $setWorkflowSetIds = db_select('lingotek_config_metadata', 'lcm')
+        ->fields('lcm', array('id'))
+        ->condition('config_key', 'workflow_id');
+    $doc_ids = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('value'))
+        ->condition('config_key', 'document_id')
+        ->condition('id', $setWorkflowSetIds, 'NOT IN')
+        ->execute()
+        ->fetchCol();
+    return $doc_ids;
+  }
+
+  public static function deleteConfigSetWorkflowIds(){
+    db_delete('lingotek_config_metadata')
+        ->condition('config_key', 'workflow_id', '=')
+        ->execute();
   }
 
   public function getSourceLocale() {
@@ -437,7 +494,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
         $response[$r['lid']] = $r['source'];
       }
       else {
-        LingotekLog::warning("Config item @id was not sent to Lingotek for translation because it exceeds the max length of 4096 characters.", array('@id' => $r['lid']));
+        LingotekLog::warning("Config item @id was not sent to Lingotek for translation because it exceeds the max length of @max_length characters.", array('@id' => $r['lid'], '@max_length' => $max_length));
         // Remove it from the set in the config_map table so it doesn't get marked as uploaded or translated.
         self::disassociateSegments($r['lid']);
       }
@@ -480,6 +537,21 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
 
     $lids = self::getLidsFromSets($set_ids);
     return $lids;
+  }
+  
+  public static function getSetIdsByStatus($status, $lids = null) {
+    $query = db_select('lingotek_config_metadata', 'l');
+    if($lids !== null) {
+      $query->join('lingotek_config_map', 'lc', 'l.id = lc.set_id');
+      $query->condition('lc.lid', $lids, 'IN');
+    }
+    $query->fields('l', array('id'));
+    $query->condition('l.config_key', 'target_sync_status_%', 'LIKE');
+    $query->condition('l.value', $status);
+    $query->distinct();
+    $result = $query->execute();
+    $set_ids = $result->fetchCol();
+    return $set_ids;
   }
 
   /**
@@ -530,65 +602,8 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
     if (isset($set_id)) {
       $set = self::loadById($set_id);
     }
-    
+
     return $set;
-  }
-
-  /**
-   * Event handler for updates to the config set's data.
-   */
-  public function contentUpdated() {
-
-    $metadata = $this->metadata();
-    if (empty($metadata['document_id'])) {
-      $this->createLingotekDocument();
-    }
-    else {
-      $update_result = $this->updateLingotekDocument();
-    }
-
-    // Synchronize the local content with the translations from Lingotek.
-    // We instruct the users to configure config set translation with a
-    // single-phase machine translation-only Workflow, so the updated content
-    // should be available right after our create/update document calls from above.
-    // If it isn't, Lingotek will call us back via LINGOTEK_NOTIFICATIONS_URL
-    // when machine translation for the item has finished.
-    if (!self::$content_update_in_progress) {
-      // Only update the local content if the Document is 100% complete
-      // according to Lingotek.
-
-      $document_id = $this->getMetadataValue('document_id');
-      if ($document_id) {
-        $document = $this->api->getDocument($document_id);
-        if (!empty($document->percentComplete) && $document->percentComplete == 100) {
-          $this->updateLocalContent();
-        }
-      }
-      else {
-        LingotekLog::error('Unable to retrieve Lingotek Document ID for config set @id', array('@id' => $this->sid));
-      }
-    }
-  }
-
-  /**
-   * Creates a Lingotek Document for this config set.
-   *
-   * @return bool
-   *   TRUE if the document create operation was successful, FALSE on error.
-   */
-  protected function createLingotekDocument() {
-    return ($this->api->addContentDocumentWithTargets($this)) ? TRUE : FALSE;
-  }
-
-  /**
-   * Updates the existing Lingotek Documemnt for this config set.
-   *
-   * @return bool
-   *   TRUE if the document create operation was successful, FALSE on error.
-   */
-  protected function updateLingotekDocument() {
-    $result = $this->api->updateContentDocument($this);
-    return ($result) ? TRUE : FALSE;
   }
 
   /**
@@ -620,7 +635,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   public function hasLingotekDocId() {
     $has_id = array_key_exists('document_id', $this->source_meta);
     if ($has_id && (strlen($this->source_meta['document_id']) > 0)) {
-      return TRUE;
+      return $this->source_meta['document_id'];
     }
     return FALSE;
   }
@@ -662,7 +677,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   }
 
   /**
-   * Assign the set's last error in the config metadata table
+   * Assign the set's last sync error in the config metadata table
    */
   public function setLastError($errors) {
     $this->setMetadataValue('last_sync_error', substr($errors, 0, 255));
@@ -670,10 +685,39 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   }
 
   /**
+   * Assign the set's last upload_error in the config metadata table
+   */
+  public function setUploadError($errors) {
+    $this->setMetadataValue('upload_error', substr($errors, 0, 255));
+    return $this;
+  }
+
+  /**
+   * Delete the set's last error in the config metadata table
+   */
+  public function deleteLastError() {
+    $this->deleteMetadataValue('last_sync_error');
+    return $this;
+  }
+
+  /**
+   * Delete the set's last upload_error in the config metadata table
+   */
+  public function deleteUploadError() {
+    $this->deleteMetadataValue('upload_error');
+    return $this;
+  }
+
+  /**
    * Assign the set's target status(es) in the config metadata table
    */
-  public function setTargetsStatus($status, $lingotek_locale = 'all') {
-    if ($lingotek_locale != 'all') {
+  public function setTargetsStatus($status, $lingotek_locale = NULL) {
+    if (is_array($lingotek_locale)) {
+      foreach ($lingotek_locale as $ll) {
+        $this->setMetadataValue('target_sync_status_' . $ll, $status);
+      }
+    }
+    elseif (is_string($lingotek_locale) && !empty($lingotek_locale)) {
       $this->setMetadataValue('target_sync_status_' . $lingotek_locale, $status);
     }
     else { // set status for all available targets
@@ -768,10 +812,10 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
           ->execute();
     }
   }
-  
+
   /**
    * Deletes a Lingotek metadata value for this item
-   * 
+   *
    * @param string $key
    *  The key for a name/value pair
    */
@@ -962,6 +1006,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
       $query->condition('lcm.lid', $lids, 'IN');
     }
     $query->join('locales_source', 'ls', "lcm.lid = ls.lid");
+    $query->addField('ls', 'textgroup');
     $query->condition('ls.textgroup', $textgroups, 'IN');
 
     $query->join('locales_target', 'lt', "lcm.lid = lt.lid");
@@ -969,11 +1014,37 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
     $or->condition('lcm.current', $current);
     $or->condition('lt.i18n_status', 1);
     $query->condition($or);
-
-    $lids = $query->execute()->fetchCol();
-    return array_unique($lids);
+    
+    $results = $query->execute();
+    $lids = array();
+    foreach($results as $result){
+      $lids[$result->textgroup][$result->lid] = $result->lid; 
+    }
+    return $lids;
   }
-
+  /**
+   * Check a given list for lids that have never been uploaded
+   * @param type $control_list
+   *  The list of lids to search through
+   * @return type
+   */
+  public static function findNeverUploadedLids($control_list = NULL){
+    if($control_list !== NULL && !empty($control_list)){
+        $query = db_select('locales_source','ls');
+        $query->leftJoin('locales_target','lt','ls.lid = lt.lid');
+        $query->isNull("lt.lid");
+        $query->addField('ls', 'lid');
+        $query->addField('ls',"textgroup");
+        $query->condition('ls.lid',$control_list, 'IN');
+        $never_uploaded_lids = $query->execute();
+        $textgroup_lid = array();
+        foreach($never_uploaded_lids as $lid){
+          $textgroup_lid[$lid->textgroup][$lid->lid] = $lid->lid; 
+        }
+        return $textgroup_lid;
+    }
+    return array();
+  }
   /**
    * Delete all target segments for a given set
    *
@@ -1009,6 +1080,34 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
         ->execute();
   }
 
+  public static function deleteConfigSetMetadataBySetId($set_ids) {
+    db_delete('lingotek_config_metadata')
+      ->condition('id', $set_ids)
+      ->execute();
+  }
+
+  public static function deleteConfigSetMapDataBySetId($set_ids) {
+    db_delete('lingotek_config_map')
+      ->condition('set_id', $set_ids)
+      ->execute();
+  }
+
+  public static function removeEmptyConfigSets($set_ids) {
+    foreach($set_ids as $set_id) {
+      $set_members = db_select('lingotek_config_map', 'lcm')
+        ->fields('lcm', array('lid'))
+        ->condition('set_id', $set_ids, 'IN')
+        ->execute()
+        ->fetchAll();
+
+      if (empty($set_members)) { // The set is empty, so delete it.
+        db_delete('lingotek_config_metadata')
+          ->condition('id', $set_id)
+          ->execute();
+      }
+    }
+  }
+
   /**
    * Get lingotek translation agent ID
    */
@@ -1041,7 +1140,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
    * Save segment target translations for the given language
    *
    * @param obj
-   *    the SimpleXMLElement object containing the translations to be saved
+   *    the LingotekXMLElement object containing the translations to be saved
    * @param string
    *    the language code under which to save the translations
    */
@@ -1097,7 +1196,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   public function getEntityType() {
     return self::DRUPAL_ENTITY_TYPE;
   }
-  
+
   /**
    * Magic get for access to set and set properties.
    */
@@ -1123,12 +1222,19 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   }
 
   public function getWorkflowId() {
-    $profiles = variable_get('lingotek_profiles');
-    $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
-    $workflow_id = array_key_exists('workflow_id', $config_profile) ? $config_profile['workflow_id'] : variable_get('lingotek_translate_config_workflow_id', '');
+    if($this->workflow_id !== null){
+      $workflow_id = $this->workflow_id;
+    }
+    else {
+      $profiles = variable_get('lingotek_profiles');
+      $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
+      $workflow_id = array_key_exists('workflow_id', $config_profile) ? $config_profile['workflow_id'] : variable_get('lingotek_translate_config_workflow_id', '');
+    }
     return $workflow_id;
   }
-
+  public function setWorkflowId($workflow_id) {
+    $this->workflow_id = $workflow_id;
+  }
   public function getProjectId() {
     $profiles = variable_get('lingotek_profiles');
     $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
@@ -1166,12 +1272,15 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
     if (variable_get('lingotek_translate_config_fields', 0)) {
       $textgroups[] = 'field';
     }
+    if (variable_get('lingotek_translate_config_webform', 0)) {
+      $textgroups[] = 'webform';
+    }
     if (variable_get('lingotek_translate_config_misc', 0)) {
       $textgroups[] = 'misc';
     }
     return $textgroups;
   }
-  
+
   public static function getLidBySource($source_string) {
     return db_select('locales_source', 's')
             ->fields('s', array('lid'))
@@ -1200,7 +1309,7 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
   public function getUrl() {
     return '';
   }
-  
+
   public function getNote() {
     return '';
   }

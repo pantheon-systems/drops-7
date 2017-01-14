@@ -73,13 +73,17 @@ try
 	}
 	else {
 		//  STEP 2:  Get an access token
-		$oauthToken = $_GET["oauth_token"];
+		$oauthToken = check_plain($_GET["oauth_token"]);
 		
 		// echo "oauth_verifier = '" . $oauthVerifier . "'<br/>";
-		$tokenResultParams = $_GET;
+		$params = array();
+		foreach($_GET as $key => $value){
+			$params[$key] = filter_xss($value);
+		}
+		$tokenResultParams = $params;
 		
 		try {
-		    LingotekOAuthRequester::requestAccessToken(GOOGLE_CONSUMER_KEY, $oauthToken, 0, 'POST', $_GET);
+		    LingotekOAuthRequester::requestAccessToken(GOOGLE_CONSUMER_KEY, $oauthToken, 0, 'POST', $params);
 		}
 		catch (OAuthException2 $e)
 		{

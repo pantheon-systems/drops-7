@@ -105,45 +105,14 @@ class LingotekOAuthRequest
 		}
 		$headers      = LingotekOAuthRequestLogger::getAllHeaders();
 		$this->method = strtoupper($method);
-		
-		// If this is a post then also check the posted variables
-		if (strcasecmp($method, 'POST') == 0)
-		{
-			// TODO: what to do with 'multipart/form-data'?
-			if ($this->getRequestContentType() == 'multipart/form-data')
-			{
-				// Get the posted body (when available)
-				if (!isset($headers['X-OAuth-Test']))
-				{
-					$parameters .= $this->getRequestBodyOfMultipart();
-				}
-			}
-			if ($this->getRequestContentType() == 'application/x-www-form-urlencoded')
-			{
-				// Get the posted body (when available)
-				if (!isset($headers['X-OAuth-Test']))
-				{
-					$parameters .= $this->getRequestBody();
-				}
-			}
-			else
-			{
-				$body = $this->getRequestBody();
-			}
-		}
-		else if (strcasecmp($method, 'PUT') == 0)
-		{
-			$body = $this->getRequestBody();
-		}
-
+		$body = $this->getRequestBody();
 		$this->method  = strtoupper($method);
 		$this->headers = $headers;
 		// Store the values, prepare for oauth
 		$this->uri     = $uri;
 		$this->body    = $body;
-		$this->parseUri($parameters);
+		$this->parseUri();
 		$this->parseHeaders();
-		$this->transcodeParams();
 	}
 
 
@@ -454,31 +423,6 @@ class LingotekOAuthRequest
 		}
 	}
 
-
-	/**
-	 * Re-encode all parameters so that they are encoded using RFC3986.
-	 * Updates the $this->param attribute.
-	 */
-	protected function transcodeParams ()
-	{
-		$params      = $this->param;
-		$this->param = array();
-		
-		foreach ($params as $name=>$value)
-		{
-			if (is_array($value))
-			{
-				$this->param[$this->urltranscode($name)] = array_map(array($this,'urltranscode'), $value);
-			}
-			else
-			{
-				$this->param[$this->urltranscode($name)] = $this->urltranscode($value);
-			}
-		}
-	}
-
-
-
 	/**
 	 * Return the body of the OAuth request.
 	 * 
@@ -506,7 +450,7 @@ class LingotekOAuthRequest
 	 * 
 	 * @param string $parameters  optional extra parameters (from eg the http post)
 	 */
-	protected function parseUri ( $parameters )
+	protected function parseUri ()
 	{
 		$ps = @parse_url($this->uri);
 
@@ -551,34 +495,6 @@ class LingotekOAuthRequest
 			$ps['fragment'] = '';
 		}
 
-		// Now all is complete - parse all parameters
-		foreach (array($ps['query'], $parameters) as $params)
-		{
-			if (strlen($params) > 0)
-			{
-				$params = explode('&', $params);
-				foreach ($params as $p)
-				{
-					@list($name, $value) = explode('=', $p, 2);
-					if (!strlen($name)) 
-					{
-						continue;
-					}
-
-					if (array_key_exists($name, $this->param)) 
-					{
-						if (is_array($this->param[$name]))
-							$this->param[$name][] = $value;
-						else
-							$this->param[$name] = array($this->param[$name], $value);
-					}
-					else 
-					{
-						$this->param[$name]  = $value;
-					}
-				}
-			}
-		}
 		$this->uri_parts = $ps;
 	}
 
@@ -780,7 +696,7 @@ class LingotekOAuthRequest
 			if (is_array($_POST) && count($_POST) > 1) 
 			{
 				foreach ($_POST AS $k => $v) {
-					$body .= $k . '=' . $this->urlencode($v) . '&';
+					$body .= $k . '=' . url_check($this->urlencode($v)) . '&';
 				} #end foreach
 				if(substr($body,-1) == '&')
 				{

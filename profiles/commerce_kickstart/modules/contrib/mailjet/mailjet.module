@@ -376,7 +376,7 @@ function mailjet_user_trackingupdate($tracking, $current_events)
 {
     $mailjet = mailjet_new();
 
-    $check = array("open", "click", "bounce", "spam", "blocked", "unsub", "typofix");
+    $check = array("open", "click", "bounce", "spam", "blocked", "unsub");
     foreach ($tracking as $key => $value) {
         if (in_array($key, $check)) {
             if ($value == 1 && !array_key_exists($key, $current_events)) {

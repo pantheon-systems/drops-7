@@ -61,10 +61,16 @@ Advanced Theming and other advanced configuration
 
 Both the display of subscription statuses, and the form itself are passed through the theme layer and have templates available for customisation.
 
-These templates are "mailup-subscription-form.tpl.php" and "mailup-subscription.tpl.php"
+These templates are "mailup-subscribe-checkbox.tpl.php" and "mailup-subscription.tpl.php"
 
 Copy these to your active theme to override the default display.
 
 
 Subscription Targets are Entities - This allows you to add any field in the "Manage Fields" sub-tab of the "Lists" page.
 The rendered entity will be displayed alongside the form element in the "Subscription" field widget. This allows you to add further info relating to a list, for example, a link to example email content.
+
+Uninstall
+---------
+To disable and unistall the module you should first delete two fields created by the module on instalation, the fields are:
+- mailup_list_reference (Located in your_site/admin/config/services/mailup/lists/fields
+- mailup_subscriptions  (Located in your_site/admin/config/people/accounts/fields

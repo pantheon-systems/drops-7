@@ -50,6 +50,19 @@ function mailup_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_permission().
+ */
+function mailup_permission() {
+  return array(
+    'administer mailup' => array(
+      'title' => t('Administer MailUp settings'),
+      'description' => t('Allow user to access MailUp settings pages.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
 function _mailup_web_service_was_enabled($ws_name='') {
 
   $services_enabled = variable_get('mailup_services_enabled', array());

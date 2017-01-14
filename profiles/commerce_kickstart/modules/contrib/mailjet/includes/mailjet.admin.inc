@@ -44,7 +44,6 @@ function mailjet_admin_settings_form()
                 "spam" => 0,
                 "blocked" => 0,
                 "unsub" => 0,
-                "typofix" => 0
             );
             $tracking_url = variable_get("mj_callback_url");
             $current_events = array();
@@ -91,12 +90,6 @@ function mailjet_admin_settings_form()
                 '#type' => 'checkbox',
                 '#title' => t(' Unsub events'),
                 '#default_value' => $check['unsub']
-            );
-
-            $form['tracking']['tracking_typofix'] = array(
-                '#type' => 'checkbox',
-                '#title' => t(' Typofix events'),
-                '#default_value' => $check['typofix']
             );
 
             $form['tracking']['tracking_url'] = array(
@@ -303,7 +296,6 @@ function mailjet_admin_settings_tracking($form, &$form_state)
         "spam" => $form_state['values']['tracking_spam'],
         "blocked" => $form_state['values']['tracking_blocked'],
         "unsub" => $form_state['values']['tracking_unsub'],
-        "typofix" => $form_state['values']['tracking_typofix']
     );
     $current_events = unserialize($form_state['values']['current_events']);
     if (mailjet_user_trackingupdate($tracking, $current_events)) {

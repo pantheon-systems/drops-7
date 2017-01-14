@@ -61,7 +61,7 @@ function mailup_subscribe_recipient_field_mapping($form, &$form_state) {
 
   $form['recipient_fields']['token_tree'] = array(
     '#theme' => 'token_tree',
-    '#token_types' => array('user')
+    '#token_types' => array('user', 'commerce-order',  'commerce-customer-profile', 'commerce-line-item', 'commerce-payment-transaction', 'commerce-product')
   );
 
   $recipient_fields = mailup_subscribe_get_imported_recipient_fields();
@@ -152,7 +152,7 @@ function mailup_subscribe_recipient_field_mapping_submit($form, &$form_state) {
       );
     }
   }
-  
+
   variable_set('mailup_subscribe_recipient_field_map', $map);
 }
 
@@ -243,7 +243,7 @@ function mailup_lists_admin_overview_form($form, &$form_state) {
 
   $options = array();
   $imported_lists_remote_ids = array();
-  
+
   foreach ($form_state['#lists'] as $key => $list) {
     $options[$key] = array(
       $list->name,
@@ -252,7 +252,7 @@ function mailup_lists_admin_overview_form($form, &$form_state) {
     );
 
     // And note the mailup ids so we can limit the $form['remote']['lists'] too
-    $imported_lists_remote_ids[$list->id] = $list->id; 
+    $imported_lists_remote_ids[$list->id] = $list->id;
   }
 
   $lists_available = !empty($options);
@@ -385,7 +385,7 @@ function mailup_subscribe_list_admin_overview_submit_refresh_remote($form, &$for
 
 
 function mailup_subscription_admin_overview_form_submit_sync($form, &$form_state) {
-  
+
   $list_entities = $form_state['#lists'];
 
   $selected_lists = array();
@@ -398,7 +398,7 @@ function mailup_subscription_admin_overview_form_submit_sync($form, &$form_state
 }
 
 function mailup_subscription_admin_overview_form_submit_sync_groups($form, &$form_state) {
-  
+
   $list_entities = $form_state['#lists'];
 
   $selected_lists = array();
@@ -441,7 +441,7 @@ function mailup_subscription_admin_overview_form_submit_add($form, &$form_state)
  * @see mailup_list_form_submit()
  */
 function mailup_subscribe_subscription_form($form, &$form_state, $mailup_subscription = NULL, $op = FALSE) {
-  
+
   if (!$mailup_subscription) {
     $mailup_subscription = mailup_subscription_create();
   }
@@ -571,7 +571,7 @@ function mailup_subscribe_webhook_settings() {
   $header = array(
     t('Parameter Name'), t('Parameter Value')
   );
-  
+
   $rows = array(
     array('list', 'ID List'),
     array('email', 'Email'),

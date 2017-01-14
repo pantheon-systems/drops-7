@@ -22,6 +22,11 @@ class LingotekEntity implements LingotekTranslatableEntity {
   protected $entity_type;
 
   /**
+   * The Drupal entity id
+   */
+  protected $entity_id;
+
+  /**
    * The title of the document
    */
   protected $title = NULL;
@@ -46,6 +51,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   private function __construct($entity, $entity_type) {
     $this->entity = $entity;
     $this->entity_type = $entity_type;
+    $this->entity_id = $this->getId();
     $this->info = entity_get_info($this->entity_type);
     if (!empty($entity->language_override)) {
       $this->setLanguage($entity->language_override);
@@ -203,27 +209,29 @@ class LingotekEntity implements LingotekTranslatableEntity {
    */
   public function setMetadataValue($key, $value) {
     $metadata = $this->metadata();
+    $entity_type = $this->getEntityType();
+    $entity_id = $this->getId();
     if (!isset($metadata[$key])) {
       db_insert('lingotek_entity_metadata')
           ->fields(array(
-          'entity_id' => $this->getId(),
-          'entity_type' => $this->getEntityType(),
+          'entity_id' => $entity_id,
+          'entity_type' => $entity_type,
           'entity_key' => $key,
           'value' => $value,
         ))
         ->execute();
-
     }
     else {
       db_update('lingotek_entity_metadata')
           ->fields(array(
           'value' => $value
         ))
-        ->condition('entity_id', $this->getId())
-        ->condition('entity_type', $this->getEntityType())
+        ->condition('entity_id', $entity_id)
+        ->condition('entity_type', $entity_type)
         ->condition('entity_key', $key)
         ->execute();
     }
+    lingotek_cache_clear($entity_type, $entity_id);
   }
 
   /**
@@ -235,11 +243,14 @@ class LingotekEntity implements LingotekTranslatableEntity {
   public function deleteMetadataValue($key) {
     $metadata = $this->metadata();
     if (isset($metadata[$key])) {
+      $entity_type = $this->getEntityType();
+      $entity_id = $this->getId();
       db_delete('lingotek_entity_metadata')
-          ->condition('entity_id', $this->getId())
-        ->condition('entity_type', $this->getEntityType())
-        ->condition('entity_key', $key, 'LIKE')
-        ->execute();
+          ->condition('entity_id', $entity_id)
+          ->condition('entity_type', $entity_type)
+          ->condition('entity_key', $key, 'LIKE')
+          ->execute();
+      lingotek_cache_clear($entity_type, $entity_id);
     }
   }
 
@@ -295,6 +306,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
           array('@entity_type' => $this->entity_type, '@entity_id' => $this->entity_id));
       $this->title = $this->entity_type . " #" . $this->entity_id;
     }
+
     return $this->title;
   }
 
@@ -339,6 +351,18 @@ class LingotekEntity implements LingotekTranslatableEntity {
         return 'en_US';
       }
     }
+    if ($this->entity_type == 'bean') {
+      // Assume all block entities are created in the site's default language.
+      return Lingotek::convertDrupal2Lingotek(language_default()->language);
+    }
+    if ($this->entity_type == 'group') {
+      $group_language = lingotek_get_group_source($this->entity->gid);
+      return Lingotek::convertDrupal2Lingotek($group_language);
+    }
+    if ($this->entity_type == 'paragraphs_item') {
+      $paragraphs_language = lingotek_get_paragraphs_item_source($this->entity->item_id);
+      return Lingotek::convertDrupal2Lingotek($paragraphs_language);
+    }
     return Lingotek::convertDrupal2Lingotek($this->language);
   }
 
@@ -353,16 +377,24 @@ class LingotekEntity implements LingotekTranslatableEntity {
 
   public function getUrl() {
     global $base_url;
-    if ($this->entity_type == 'node' || $this->entity_type == 'comment') {
+    $path = entity_uri($this->entity_type, $this->entity);
+    $url = '';
+
+    if ($path) {
       $hack = (object) array('language' => ''); // this causes the url function to not prefix the url with the current language the user is viewing the site in
-      return $base_url . "/lingotek/view/" . $this->getEntityType() . '/' . $this->getId() . '/{locale}';
+      $url = $base_url . "/lingotek/view/" . $this->getEntityType() . '/' . $this->getId() . '/{locale}';
     }
-    return '';
+
+    drupal_alter('lingotek_source_URL', $url);
+    return $url;
   }
 
   public function preDownload($lingotek_locale, $completed) {
     if ($completed) {
       lingotek_keystore($this->getEntityType(), $this->getId(), 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_READY);
+    }
+    else{
+      lingotek_keystore($this->getEntityType(), $this->getId(), 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_READY_INTERIM);
     }
   }
 
@@ -392,8 +424,16 @@ class LingotekEntity implements LingotekTranslatableEntity {
     return $this;
   }
 
-  public function setTargetsStatus($status, $lingotek_locale = 'all') {
-    if ($lingotek_locale != 'all') {
+  /**
+   * Assign the entity's target status(es) in the config metadata table
+   */
+  public function setTargetsStatus($status, $lingotek_locale = NULL) {
+    if (is_array($lingotek_locale)) {
+      foreach ($lingotek_locale as $ll) {
+        $this->setMetadataValue('target_sync_status_' . $ll, $status);
+      }
+    }
+    elseif (is_string($lingotek_locale) && !empty($lingotek_locale)) {
       $this->setMetadataValue('target_sync_status_' . $lingotek_locale, $status);
     }
     else { // set status for all available targets
@@ -410,12 +450,23 @@ class LingotekEntity implements LingotekTranslatableEntity {
    */
   public function setLanguage($language = NULL) {
     if (empty($language)) {
-      $drupal_locale = Lingotek::convertDrupal2Lingotek($this->entity->language);
-      if (!empty($this->entity->lingotek['allow_source_overwriting']) && !empty($this->entity->lingotek['source_language_' . $drupal_locale])) {
-        $language = $this->entity->lingotek['source_language_' . $drupal_locale];
+      if ($this->entity_type == 'bean') {
+        $language = language_default()->language;
+      }
+      elseif ($this->entity_type == 'group') {
+        $language = lingotek_get_group_source($this->entity->gid);
+      }
+      elseif ($this->entity_type == 'paragraphs_item') {
+        $language = lingotek_get_paragraphs_item_source($this->entity->item_id);
       }
       else {
-        $language = $this->entity->language;
+        $drupal_locale = Lingotek::convertDrupal2Lingotek($this->entity->language);
+        if (!empty($this->entity->lingotek['allow_source_overwriting']) && !empty($this->entity->lingotek['source_language_' . $drupal_locale])) {
+          $language = $this->entity->lingotek['source_language_' . $drupal_locale];
+        }
+        else {
+          $language = $this->entity->language;
+        }
       }
     }
     $this->language = $language;

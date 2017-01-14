@@ -4,6 +4,10 @@
  * PHP Version 5
  * @package PHPMailer
  * @link https://github.com/PHPMailer/PHPMailer/ The PHPMailer GitHub project
+ * @author Marcus Bointon (Synchro/coolbru) <phpmailer@synchromedia.co.uk>
+ * @author Jim Jagielski (jimjag) <jimjag@gmail.com>
+ * @author Andy Prevost (codeworxtech) <codeworxtech@users.sourceforge.net>
+ * @author Brent R. Matzelle (original founder)
  * @copyright 2012 - 2014 Marcus Bointon
  * @copyright 2010 - 2012 Jim Jagielski
  * @copyright 2004 - 2009 Andy Prevost
@@ -16,6 +20,10 @@
 /**
  * PHPMailer - PHP email creation and transport class.
  * @package PHPMailer
+ * @author Marcus Bointon (Synchro/coolbru) <phpmailer@synchromedia.co.uk>
+ * @author Jim Jagielski (jimjag) <jimjag@gmail.com>
+ * @author Andy Prevost (codeworxtech) <codeworxtech@users.sourceforge.net>
+ * @author Brent R. Matzelle (original founder)
  */
 class PHPMailer
 {
@@ -673,7 +681,7 @@ class PHPMailer
     public function isSendmail()
     {
         $ini_sendmail_path = ini_get('sendmail_path');
-
+        
         if (!stristr($ini_sendmail_path, 'sendmail')) {
             $this->Sendmail = '/usr/sbin/sendmail';
         } else {
@@ -689,7 +697,7 @@ class PHPMailer
     public function isQmail()
     {
         $ini_sendmail_path = ini_get('sendmail_path');
-
+        
         if (!stristr($ini_sendmail_path, 'qmail')) {
             $this->Sendmail = '/var/qmail/bin/qmail-inject';
         } else {
@@ -1035,7 +1043,7 @@ class PHPMailer
                     if (method_exists($this, $sendMethod)) {
                         return $this->$sendMethod($this->MIMEHeader, $this->MIMEBody);
                     }
-
+                    
                     return $this->mailSend($this->MIMEHeader, $this->MIMEBody);
             }
         } catch (phpmailerException $exc) {

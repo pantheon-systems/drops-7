@@ -98,7 +98,7 @@ interface LingotekTranslatableEntity {
 
   public function setStatus($status);
 
-  public function setTargetsStatus($status);
+  public function setTargetsStatus($status, $lingotek_locale = NULL);
   /*
    * Returns the source locale for the translatable entity
    */

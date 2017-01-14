@@ -40,7 +40,7 @@ if (isset($_POST['username']) && isset($_POST['password']))
 		$_SESSION['authorized'] = true;
 		if (!empty($_REQUEST['goto']))
 		{
-			header('Location: ' . $_REQUEST['goto']);
+			header('Location: ' . filter_xss($_REQUEST['goto']));
 			die;
 		}
 

@@ -19,7 +19,7 @@ function mailjet_stats_iframe() {
 
     $callbackurl = 'r=commerceguys&t='.$token.'&show_menu=none&sp=display&u=Drupal-3.0&locale='.$locale;
 
-    $default_url = IFRAME_URL."stats/?";
+    $default_url = IFRAME_URL."stats?";
 
     return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }

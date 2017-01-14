@@ -7,9 +7,9 @@ package = MailJet
 dependencies[] = mailjet
 dependencies[] = viewfield
 
-; Information added by Drupal.org packaging script on 2015-10-08
-version = "7.x-2.5"
+; Information added by Drupal.org packaging script on 2016-10-25
+version = "7.x-2.7"
 core = "7.x"
 project = "mailjet"
-datestamp = "1444309146"
+datestamp = "1477396757"
 

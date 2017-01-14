@@ -94,13 +94,13 @@ function mailup_subscribe_configure_fields() {
     'cardinality' => 1,
     'entity_types' => array('mailup_subscription'),
     'translatable' => TRUE,
-    'locked' => TRUE,
+    'locked' => FALSE,
     'indexes' => array(
       'mailup_list' => array(
         0 => 'target_id',
       ),
     ),
-  );  
+  );
 
   $field_bases['mailup_subscriptions'] = array(
     'field_name' => 'mailup_subscriptions',
@@ -108,6 +108,7 @@ function mailup_subscribe_configure_fields() {
     'cardinality' => -1,
     'entity_types' => array('user'),
     'indexes' => array(),
+    'locked' => FALSE,
     'module' => 'mailup_subscribe',
     'settings' => array(
       'entity_translation_sync' => FALSE,
@@ -190,7 +191,7 @@ function mailup_subscribe_configure_fields() {
   // The list reference field
   $list_reference_field = field_info_field('mailup_list_reference');
   $list_reference_instance = field_info_instance('mailup_list', 'mailup_list_reference', 'mailup_list');
-  
+
   if (empty($list_reference_field)) {
     $list_reference_field = field_create_field($field_bases['mailup_list_reference']);
   }
@@ -328,7 +329,7 @@ function mailup_subscribe_field_formatter_view($entity_type, $entity, $field, $i
 
     // Get available subscription targets
     $limit_targets = empty($instance['settings']['limit_lists']) ? NULL : array_filter($instance['settings']['limit_lists']);
-    
+
     $available_targets = mailup_subscription_load_multiple($limit_targets ? $limit_targets : FALSE);
 
     if (empty($available_targets)) {
@@ -346,7 +347,7 @@ function mailup_subscribe_field_formatter_view($entity_type, $entity, $field, $i
     $renderable_subscriptions = $renderable_subscriptions['mailup_subscription'];
 
     $element = array();
-    foreach ($available_targets as $id => $target) {      
+    foreach ($available_targets as $id => $target) {
       $element[$id] = $renderable_subscriptions[$id]['mailup_subscription'][$id];
     }
 
@@ -587,7 +588,7 @@ function mailup_subscribe_field_mailup_list_reference_widget_form(&$form, &$form
       '#limit_validation_errors' => array(),
       '#value' => t('Update list groups from mailup'),
     )
-  ); 
+  );
 
   $element['list'] = array(
     '#type' => 'fieldset',
@@ -609,7 +610,7 @@ function mailup_subscribe_field_mailup_list_reference_widget_form(&$form, &$form
   // Build group optons
   $list_entity = $form_state['#lists'][ $element['list']['target_id']['#default_value'] ];
   $group_options = array();
-  foreach ($list_entity->groups as $group) { 
+  foreach ($list_entity->groups as $group) {
     $group_options[$group['idGroup']] = $group['Name'];
   }
 
@@ -641,7 +642,7 @@ function mailup_subscribe_update_list_groups_submit($form, &$form_state) {
 
   if (!empty($form_state['mailup_update_groups'])) {
     $sync_groups_batch = mailup_subscribe_sync_list_groups_batch($form_state['mailup_update_groups']);
-    batch_set($sync_groups_batch); 
+    batch_set($sync_groups_batch);
   }
 }
 
@@ -683,7 +684,7 @@ function mailup_list_reference_validate($element, &$form_state) {
 function mailup_subscribe_change_list_validate($element, &$form_state, &$form) {
 
   if ($element['#id'] == $form_state['triggering_element']['#id']) {
-    
+
     // Parents of main widget form, as stored by the builder function
     $parents = $form_state['#widget_parents'];
 
@@ -701,7 +702,7 @@ function mailup_subscribe_change_list_validate($element, &$form_state, &$form) {
 
 /**
  * AJAX framework form callback for changing list groups
- * 
+ *
  * @see mailup_subscribe_field_mailup_list_reference_widget_form()
  *
  * @return array
@@ -782,7 +783,7 @@ function _mailup_subscribe_process_mailup_subscription_field_values($entity_type
       }
     }
   }
-  
+
   // Build the requested state
   $requested_state = array();
   foreach ($values as $id => $value) {
@@ -888,7 +889,7 @@ function _mailup_subscribe_process_api_actions($api_actions, $user) {
           mailup_subscribe_subscribe_user($subscribe_to, $user, $coi);
           break;
         case 'unsubscribe':
-          
+
           // By nature we will always have a recipient when unsubscribing
           if ($recipient_meta = mailup_subscribe_load_recipient_metadata(array('uid' => $user->uid))) {
 

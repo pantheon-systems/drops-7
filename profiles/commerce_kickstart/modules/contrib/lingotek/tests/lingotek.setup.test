@@ -32,13 +32,13 @@ class LingotekTestCase extends DrupalWebTestCase {
   }
 
   public function testEnterpriseSetup() {
-    $this->drupalGet('admin/config/lingotek/setup');
+    $this->drupalGet(LINGOTEK_MENU_LANG_BASE_URL . '/setup');
     $this->assertResponse(403, 'Only allow access to users with permissions');
 
     $this->drupalLogin($this->admin_user);
 
-    $this->drupalGet('admin/config/lingotek/setup');
-    $this->assertUrl('admin/config/lingotek/new-account', array(), 'Redirect to first step of start page');
+    $this->drupalGet(LINGOTEK_MENU_LANG_BASE_URL . '/setup');
+    $this->assertUrl(LINGOTEK_MENU_LANG_BASE_URL . '/new-account', array(), 'Redirect to first step of start page');
 
     // 1: Account Settings.
     $settings = array(
@@ -46,7 +46,7 @@ class LingotekTestCase extends DrupalWebTestCase {
       'lingotek_pid' => 'lingotek',
     );
     debug($settings);
-    $this->drupalPost('admin/config/lingotek/account-settings', $settings, 'Next');
+    $this->drupalPost(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings', $settings, 'Next');
     $this->assertText('Your account settings have been saved.', '<b>Step 1: Account Settings - Abililty to login</b>');
 
     // 2: Community.
@@ -154,13 +154,13 @@ class LingotekTestCase extends DrupalWebTestCase {
   public function testProSetup() {
     debug('Beginning Pro Setup');
 
-    $this->drupalGet('admin/config/lingotek/setup');
+    $this->drupalGet(LINGOTEK_MENU_LANG_BASE_URL . '/setup');
     $this->assertResponse(403, 'Only allow access to users with permissions');
 
     $this->drupalLogin($this->admin_user);
 
-    $this->drupalGet('admin/config/lingotek/setup');
-    $this->assertUrl('admin/config/lingotek/new-account', array(), 'Redirect to first step of start page');
+    $this->drupalGet(LINGOTEK_MENU_LANG_BASE_URL . '/setup');
+    $this->assertUrl(LINGOTEK_MENU_LANG_BASE_URL . '/new-account', array(), 'Redirect to first step of start page');
 
     //1: Account Settings
     $settings = array(

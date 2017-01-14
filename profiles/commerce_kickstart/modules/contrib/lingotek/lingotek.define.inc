@@ -33,7 +33,7 @@ if ($use_local_override) {
 if (variable_get('lingotek_use_stage_servers', FALSE)) {
   // Stage Servers
   lingotek_define('LINGOTEK_GMC_SERVER', 'https://gmc.lingotek.com/cms');
-  lingotek_define('LINGOTEK_API_SERVER', 'http://cms.lingotek.com');
+  lingotek_define('LINGOTEK_API_SERVER', 'https://cms.lingotek.com');
   lingotek_define('LINGOTEK_AP_OAUTH_KEY', 'd944c2ae-b66e-4322-b37e-40ba0a495eb7');
   lingotek_define('LINGOTEK_AP_OAUTH_SECRET', 'e4ae98ca-835b-4d9f-8faf-116ce9c69424');
 }
@@ -51,7 +51,7 @@ lingotek_define('LINGOTEK_DEV', variable_get('lingotek_dev', FALSE));
  * Defines the path URLs
  */
 define('LINGOTEK_MENU_LANG_BASE_URL', 'admin/config/regional/lingotek');
-define('LINGOTEK_MENU_MAIN_BASE_URL', 'admin/settings/lingotek'); //admin/config/lingotek
+define('LINGOTEK_MENU_MAIN_BASE_URL', 'admin/settings/lingotek');
 define('LINGOTEK_NOTIFY_URL', 'lingotek/notify'); // notification callback URL
 
 /**

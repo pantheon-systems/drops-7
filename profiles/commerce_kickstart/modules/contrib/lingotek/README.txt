@@ -41,4 +41,4 @@ http://www.drupaltranslation.com/drupal_translation_module_installation.
 CONFIGURATION
 --------------
 
-There is setup wizard that helps you to get started, go to admin/config/lingotek/setup.
+There is setup wizard that helps you to get started, go to admin/config/regional/lingotek/setup.

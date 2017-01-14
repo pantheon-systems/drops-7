@@ -63,6 +63,23 @@ function lingotek_rules_action_info() {
       ),
     ),
   );
+  $actions['lingotek_entity_change_workflow'] = array(
+    'group' => t('Lingotek'),
+    'label' => t('Change Workflow'),
+    'base' => 'lingotek_rules_entity_change_workflow',
+    'parameter' => array(
+      'entity' => array(
+        'type' => 'entity',
+        'label' => t('Entity'),
+      ),
+      'language' => array(
+        'type' => 'text',
+        'label' => t('Workflow'),
+        'options list' => 'lingotek_get_workflow_options',
+      ),
+    ),
+  );
+
   return $actions;
 }
 
@@ -106,6 +123,14 @@ function lingotek_rules_entity_change_profile($wrapper, $profile, $settings, $st
   lingotek_entity_save($entity, $entity_type);
 }
 
+function lingotek_rules_entity_change_workflow($wrapper, $workflow_id, $settings, $state) {
+  $entity_type = $wrapper->type();
+  $entity_id = $wrapper->getIdentifier();
+  $ids = array();
+  $ids[] = $entity_id;
+
+  lingotek_entity_change_workflow($entity_type, $ids, $workflow_id);
+}
 
 /**
  * Implements hook_rules_condition_info().

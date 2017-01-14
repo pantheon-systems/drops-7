@@ -10,22 +10,35 @@
  */
 class LingotekSync {
 
-  const STATUS_CURRENT = 'CURRENT';  // The node or target translation is current
+  const STATUS_NONE = 'NONE';
   const STATUS_EDITED = 'EDITED';    // The node has been edited, but has not been uploaded to Lingotek
-  const STATUS_FAILED = 'FAILED';    // The node or target translation has failed during processing
+  const STATUS_CURRENT = 'CURRENT';  // The node or target translation is current
+  const STATUS_ERROR = 'ERROR';
   const STATUS_PENDING = 'PENDING';  // The target translation is awaiting to receive updated content from Lingotek
   const STATUS_READY = 'READY';      // The target translation is complete and ready for download
+  const STATUS_INTERIM = 'INTERIM'; // Part of the target translation is done and ready for download what has been done
+  const STATUS_READY_INTERIM = 'READY_INTERIM';
   const STATUS_TARGET = 'TARGET';    // A target node is being used to store a translation (ignored for upload by Lingotek)
   const STATUS_UNTRACKED = 'UNTRACKED'; // A translation was discovered that is not currently managed by Lingotek
   const STATUS_TARGET_LOCALIZE = 'TARGET_LOCALIZE'; // A localization must be made of the source before uploading to Lingotek
   const STATUS_TARGET_EDITED = 'TARGET_EDITED'; // A localized version is ready for uploading to Lingotek
   const STATUS_NON_LINGOTEK = 'NON_LINGOTEK'; // Translations exist but the translation_agent_id != 3 (Not owned by Lingotek)
+  const STATUS_DELETED = 'DELETED'; // Entity was translated but was afterward deleted
 
   const PROFILE_CUSTOM = 'CUSTOM';
   const PROFILE_DISABLED = 'DISABLED';
+  const PROFILE_ENABLED = 'ENABLED';
   const PROFILE_CONFIG = 'CONFIG';
   const PROFILE_AUTOMATIC = 0;
   const PROFILE_MANUAL = 1;
+  const PROFILE_INHERIT = 'INHERIT';
+  const MARKED = 1;
+  const NOT_MARKED = 0;
+  const INVALID_XML_PRESENT = 1;
+  const TRANSLATION_AGENT_ID_UNKNOWN = 1;
+  const TRANSLATION_AGENT_ID_DRUPAL = 2;
+  const TRANSLATION_AGENT_ID_LINGOTEK = 3;
+  const MARKED_OFFSET = 1000000000;
 
   public static function getTargetStatus($doc_id, $lingotek_locale) {
     $key = 'target_sync_status_' . $lingotek_locale;
@@ -39,14 +52,39 @@ class LingotekSync {
     LingotekLog::error('Did not find any local info for Lingotek Doc ID "@id"', array('@id' => $doc_id));
     return FALSE;
   }
+  public static function getAllTargetStatusForEntity($entity_type, $entity_id, $lingotek_locale = NULL) {
+    $dbkey = 'target_sync_status_';
+    $query = db_select('lingotek_entity_metadata', 'l')
+      ->fields('l', array('entity_key', 'value'))
+      ->condition('entity_type', $entity_type)
+      ->condition('entity_id', $entity_id);
+    if ($lingotek_locale !== NULL) {
+      $query->condition('entity_key', $dbkey . $lingotek_locale);
+    }
+    else {
+      $query->condition('entity_key', $dbkey . '%', 'LIKE');
+    }
+    $result = $query->execute()->fetchAll();
+    $targets = array();
+    foreach ($result as $r_obj) {
+      // get the locale of each result
+      $locale = substr($r_obj->entity_key, strlen($dbkey));
+      // assign the status for that locale
+      $targets[$locale] = $r_obj->value;
+    }
+    return $targets;
+  }
 
   public static function getTargetStatusOptions() {
     return array(
+      'STATUS_NONE' => self::STATUS_NONE,
       'STATUS_CURRENT' => self::STATUS_CURRENT,
       'STATUS_EDITED' => self::STATUS_EDITED,
-      'STATUS_FAILED' => self::STATUS_FAILED,
+      'STATUS_ERROR' => self::STATUS_ERROR,
       'STATUS_PENDING' => self::STATUS_PENDING,
       'STATUS_READY' => self::STATUS_READY,
+      'STATUS_READY_INTERIM' => self::STATUS_READY_INTERIM,
+      'STATUS_INTERIM' => self::STATUS_INTERIM,
       'STATUS_TARGET' => self::STATUS_TARGET,
       'STATUS_UNTRACKED' => self::STATUS_UNTRACKED,
       'STATUS_TARGET_LOCALIZE' => self::STATUS_TARGET_LOCALIZE,
@@ -69,18 +107,75 @@ class LingotekSync {
     $key = 'target_sync_status_' . $lingotek_locale;
     return lingotek_keystore($entity_type, $entity_id, $key, $status, $update_on_dup);
   }
-  
+
   public static function setAllTargetStatus($entity_type, $entity_id, $status) {
+    if($entity_type === 'config'){
+        $query = db_update('lingotek_config_metadata')
+            ->condition('id', $entity_id, "=")
+            ->condition('config_key', 'target_sync_status%', 'LIKE')
+            ->fields(array('value' => $status, 'modified' => time()))
+            ->execute();
+      return;
+    }
     $query = db_update('lingotek_entity_metadata')
         ->condition('entity_type', $entity_type)
-      ->condition('entity_id', $entity_id)
-      ->condition('entity_key', 'target_sync_status%', 'LIKE')
-      ->fields(array('value' => $status, 'modified' => time()))
+        ->condition('entity_id', $entity_id)
+        ->condition('entity_key', 'target_sync_status%', 'LIKE')
+        ->fields(array('value' => $status, 'modified' => time()))
         ->execute();
+    lingotek_cache_clear($entity_type, $entity_id);
   }
 
-  public static function setNodeStatus($node_id, $status) {
-    return lingotek_keystore('node', $node_id, 'upload_status', $status);
+  public static function bulkSetAllTargetStatus($entity_type, $entity_ids, $status){
+    if($entity_type === 'config'){
+        $query = db_update('lingotek_config_metadata')
+            ->condition('id', $entity_ids, "IN")
+            ->condition('config_key', 'target_sync_status%', 'LIKE')
+            ->fields(array('value' => $status, 'modified' => time()))
+            ->execute();
+      return;
+    }
+    $query = db_update('lingotek_entity_metadata')
+        ->condition('entity_type', $entity_type)
+        ->condition('entity_id', $entity_ids, "IN")
+        ->condition('entity_key', 'target_sync_status%', 'LIKE')
+        ->fields(array('value' => $status, 'modified' => time()))
+        ->execute();
+    foreach ($entity_ids as $eid) {
+      lingotek_cache_clear($entity_type, $eid);
+    }
+  }
+
+  public static function setUploadStatus($entity_type, $entity_id, $status) {
+    return lingotek_keystore($entity_type, $entity_id, 'upload_status', $status);
+  }
+
+  public static function setAllUploadStatuses($entity_type, $entity_ids, $status) {
+    foreach ($entity_ids as $entity_id) {
+      $query = db_update('lingotek_entity_metadata')
+        ->condition('entity_id', $entity_id)
+        ->condition('entity_type', $entity_type)
+        ->condition('entity_key', 'upload_status')
+        ->fields(array('value' => $status, 'modified' => time()))
+        ->execute();
+    }
+  }
+
+  public static function setUploadStatuses($entity_type, $entity_ids, $status) {
+    foreach($entity_ids as $entity_id) {
+      return lingotek_keystore($entity_type, $entity_id, 'upload_status', $status);
+    }
+  }
+
+  public static function getUploadStatus($entity_type, $entity_id) {
+    $query = db_select('lingotek_entity_metadata', 'lem')
+    ->fields('lem', array('value'))
+    ->condition('lem.entity_id', $entity_id)
+    ->condition('lem.entity_type', $entity_type)
+    ->condition('lem.entity_key', 'upload_status');
+    $upload_status = $query->execute()->fetchField();
+
+    return $upload_status;
   }
 
   public static function getSyncProjects() {
@@ -114,15 +209,64 @@ class LingotekSync {
   }
 
   public static function insertTargetEntriesForAllEntities($lingotek_locale) {
+    //this prevents a target from being added to the same source
+    $locale = strtolower(str_replace("_", "-", $lingotek_locale));
+    $node_source_check = db_select('node', 'n');
+    $node_source_check->addField('n', 'nid');
+    $or = db_or()->condition('n.tnid','0')->where('n.tnid = n.nid');
+    $node_source_check->condition($or);
+    $node_source_check->condition('n.language', $locale);
+
+    $taxonomy_source_check = db_select('taxonomy_term_data', 't');
+    $taxonomy_source_check->addField('t', 'tid');
+    $taxonomy_source_check->condition('t.language', $locale);
+
     // insert/update a target language for all entities
     $query = db_select('lingotek_entity_metadata', 'meta')
         ->fields('meta', array('entity_id', 'entity_type'))
-        ->condition('meta.entity_key', 'document_id');
+        ->condition('meta.entity_key', 'document_id')
+        ->condition('entity_id', $node_source_check, "NOT IN")
+        ->condition('entity_id', $taxonomy_source_check, "NOT IN");
+
+    if (module_exists('comment')) {
+      $comment_source_check = db_select('comment', 'c');
+      $comment_source_check->addField('c', 'cid');
+      $comment_source_check->condition('c.language', $locale);
+      $query->condition('entity_id', $comment_source_check, "NOT IN");
+    }
+
+    if (module_exists('bean') && variable_get('lingotek_translate_beans')) {
+      $bean_source_check = db_select('bean', 'b');
+      $bean_source_check->addField('b', 'bid');
+      $bean_source_check->condition('b.language', $locale);
+      $query->condition('entity_id', $bean_source_check, "NOT IN");
+    }
+
+    if (module_exists('group') && variable_get('lingotek_translate_groups')) {
+      $group_source_check = db_select('groups', 'g');
+      $group_source_check->addField('g', 'gid');
+      $group_source_check->condition('g.language', $locale);
+      $query->condition('entity_id', $group_source_check, "NOT IN");
+    }
+
     $entities = $query->execute()->fetchAll();
 
     foreach ($entities as $e) {
       self::setTargetStatus($e->entity_type, $e->entity_id, $lingotek_locale, self::STATUS_PENDING);
     }
+  }
+
+  public static function delete_entity_from_metadata($entity_type, $entity_id) {
+    db_delete('lingotek_entity_metadata')
+        ->condition('entity_type', $entity_type)
+        ->condition('entity_id', $entity_id)
+        ->execute();
+    lingotek_cache_clear($entity_type, $entity_id);
+  }
+
+  public static function deleteTargetStatus($entity_type, $entity_id, $lingotek_locale) {
+    $key = 'target_sync_status_' . $lingotek_locale;
+    return lingotek_keystore_delete($entity_type, $entity_id, $key);
   }
 
   // Remove the node sync target language entries from the lingotek table lingotek_delete_target_sync_status_for_all_nodes
@@ -141,23 +285,28 @@ class LingotekSync {
   public static function deleteTargetEntriesForAllDocs($lingotek_locale) {
     self::deleteTargetEntriesForAllEntities($lingotek_locale);
     self::deleteTargetEntriesForAllChunks($lingotek_locale);
+    lingotek_cache_clear();
   }
-  
-  
+
+
   /**
    * getDocIdTargetsByStatus
-   * 
+   *
    * @param status (e.g., LingotekSync::READY)
-   * 
+   *
    * @return an array of associate arrays.  Each associate array will have a 'nid' (e.g., 5), 'locale' (e.g., 'de_DE'), and optionally 'doc_id' (e.g., 46677222-b5ec-47d5-880e-24632feffaf5)
    */
-  public static function getTargetsByStatus($entity_type, $status, $include_doc_ids = FALSE) {
+  public static function getTargetsByStatuses($entity_type, $statuses=array(), $include_doc_ids = FALSE) {
     $target_language_search = '%';
     $query = db_select('lingotek_entity_metadata', 'l');
     $query->fields('l', array('entity_id', 'entity_key', 'value'));
     $query->condition('entity_type', $entity_type);
     $query->condition('entity_key', 'target_sync_status_' . $target_language_search, 'LIKE');
-    $query->condition('value', $status);
+    $or = db_or();
+    foreach($statuses as $status){
+      $or->condition('value', $status);
+    }
+    $query->condition($or);
     $result = $query->execute();
     $records = $result->fetchAll(); //$result->fetchAllAssoc('nid');
 
@@ -294,8 +443,24 @@ class LingotekSync {
         $query->condition($tnid_query);
       }
 
+      // Exclude translation sets for menu_links
+      if ($entity_base_table == 'menu_links') {
+        $min_query = db_select('menu_links', 'ml')
+          ->condition('ml.i18n_tsid', 0, '!=')
+          ->groupBy('i18n_tsid');
+        $min_query->addExpression('MIN(mlid)', 'minimum');
+
+        $ml_or = db_or();
+        $ml_or->condition('t.i18n_tsid', 0);
+        $ml_or->condition('t.mlid', $min_query, 'IN');
+
+        $query->condition('t.language', LANGUAGE_NONE, '!=');
+        $query->condition($ml_or);
+      }
+
       // exclude disabled entities (including those that have disabled bundles)
-      $disabled_entities = lingotek_get_entities_by_profile_and_entity_type(LingotekSync::PROFILE_DISABLED, $entity_type);
+      $disabled_profile = LingotekProfile::loadById(LingotekSync::PROFILE_DISABLED);
+      $disabled_entities = $disabled_profile->getEntities($entity_type);
       if (count($disabled_entities)) {
         $disabled_entity_ids = array();
         array_walk($disabled_entities, function($a) use (&$disabled_entity_ids) {
@@ -371,7 +536,8 @@ class LingotekSync {
       }
 
       // exclude disabled nodes (including those that have disabled bundles)
-      $disabled_entities = lingotek_get_entities_by_profile_and_entity_type(LingotekSync::PROFILE_DISABLED, $entity_base_table);
+      $disabled_profile = LingotekProfile::loadById(LingotekSync::PROFILE_DISABLED);
+      $disabled_entities = $disabled_profile->getEntities($entity_base_table);
       if (!empty($disabled_entities)) {
         $disabled_entity_ids = array();
         array_walk($disabled_entities, function($a) use (&$disabled_entity_ids) {
@@ -381,6 +547,12 @@ class LingotekSync {
       }
 
       $query->condition('l.value', $status, 'IN');
+
+      // exclude orphaned targets (targets whose source language has been deleted)
+      if (db_field_exists($entity_base_table, 'language')) {
+        $query->condition('t.language', '', '!=');
+      }
+
       $count = $query->countQuery()->execute()->fetchField();
       $total_count += $count;
     }
@@ -476,7 +648,7 @@ class LingotekSync {
   }
 
   public static function getETNodeIds() { // get nids for entity_translation nodes that are not lingotek pushed
-    $types = lingotek_translatable_node_types(); // get all translatable node types 
+    $types = lingotek_translatable_node_types(); // get all translatable node types
     $et_content_types = array();
     foreach ($types as $type) {
       if (lingotek_managed_by_entity_translation($type)) { // test if lingotek_managed_by_entity_translation
@@ -641,12 +813,21 @@ class LingotekSync {
     return $nids;
   }
 
-  public static function getEntityIdsToUpload($entity_type) {
+  public static function getEntityIdsToUpload($entity_type, $entity_ids = null) {
     $info = entity_get_info($entity_type);
     $id_key = $info['entity keys']['id'];
     $query = db_select($info['base table'], 'base');
     $query->addField('base', $id_key);
     $query->leftJoin('lingotek_entity_metadata', 'upload', 'upload.entity_id = base.' . $id_key . ' and upload.entity_type =\'' . $entity_type . '\' and upload.entity_key = \'upload_status\'');
+
+    $query2 = db_select('lingotek_entity_metadata', 'lem');
+    $query2->distinct();
+    $query2->addField('lem', 'entity_id');
+    $query2->condition('entity_key', 'profile');
+    $query2->condition('entity_type', $entity_type);
+    $query2->condition('value', 'DISABLED');
+
+    $query->condition('upload.entity_id', $query2, 'NOT IN');
 
     if ($entity_type == 'node') {
       // Exclude any target nodes created using node-based translation.
@@ -660,7 +841,9 @@ class LingotekSync {
     $or->condition('upload.value', LingotekSync::STATUS_EDITED);
     $or->isNull('upload.value');
     $query->condition($or);
-
+    if($entity_ids !== null){
+      $query->condition('upload.entity_id', $entity_ids, 'IN');
+    }
     $result = $query->execute()->fetchCol();
     return $result;
   }
@@ -682,7 +865,7 @@ class LingotekSync {
    *   a string containing the desired status
    * @param $locales
    *   (optional) an array containing the locales to check
-   * 
+   *
    * @return an array of IDs
    */
   public static function getEntityIdsByTargetStatus($entity_type, $status, $locales = NULL) {
@@ -707,6 +890,33 @@ class LingotekSync {
     return $result;
   }
 
+  public static function getEntityIdsByStatuses($entity_type, $statuses = array(), $locales = NULL) {
+    if ($locales === NULL) {
+      $verb = 'LIKE';
+      $target_locales = 'target_sync_status_%';
+    }
+    else {
+      $verb = 'IN';
+      $target_locales = array();
+      foreach ($locales as $l) {
+        $target_locales[] = 'target_sync_status_' . $l;
+      }
+    }
+    $or = db_or();
+    foreach($statuses as $status){
+      $or->condition('value', $status);
+    }
+    $query = db_select('lingotek_entity_metadata', 'l')
+        ->distinct()
+      ->condition('entity_type', $entity_type)
+      ->condition('entity_key', $target_locales, $verb)
+      ->condition($or)
+      ->condition('value', LingotekSync::PROFILE_DISABLED, '<>');
+    $query->addField('l', 'entity_id', 'nid');
+    $result = $query->execute()->fetchCol();
+    return $result;
+  }
+
   public static function getEntityIdsByProfileStatus($entity_type, $status) {
     $query = db_select('lingotek_entity_metadata', 'l')
         ->distinct()
@@ -716,6 +926,17 @@ class LingotekSync {
     $query->addField('l', 'entity_id', 'nid');
     $result = $query->execute()->fetchCol();
     return $result;
+  }
+
+  public static function getProfileByEntityId($entity_type, $entity_id) {
+    $query = db_select('lingotek_entity_metadata', 'lem')
+      ->fields('lem', array('value'))
+      ->condition('lem.entity_id', $entity_id)
+      ->condition('lem.entity_type', $entity_type)
+      ->condition('lem.entity_key', 'profile');
+    $profile = $query->execute()->fetchField();
+
+    return $profile;
   }
 
   public static function getConfigDocIdsByStatus($status) {
@@ -750,6 +971,9 @@ class LingotekSync {
   }
 
   public static function getConfigDocIdsFromSetIds($sids) {
+    if (empty($sids)) {
+      return $sids;
+    }
     $query = db_select('lingotek_config_metadata', 'l');
     $query->addField('l', 'value');
     $query->condition('id', $sids, 'IN');
@@ -757,6 +981,44 @@ class LingotekSync {
     $doc_ids = $query->execute()->fetchCol();
 
     return $doc_ids;
+  }
+
+  public static function updateConfigSetWorkflow($set_id, $workflow_id){
+    $insertRecord = array(
+        "value" => $workflow_id,
+        "created" => time(),
+        "modified" => time(),
+        "id" => $set_id,
+        "config_key" => 'workflow_id'
+    );
+    $updateRecord = array(
+        "value" => $workflow_id,
+        "modified" => time()
+    );
+    db_merge('lingotek_config_metadata')
+            ->key(array('id' => $set_id, 'config_key' => 'workflow_id'))
+            ->insertFields($insertRecord)
+            ->updateFields($updateRecord)
+            ->execute();
+//    drupal_write_record('lingotek_config_metadata', $record);
+  }
+
+  public static function getWorkflowIdFromConfigSet($sid){
+    $query = db_select('lingotek_config_metadata', 'lcm');
+    $query->addField('lcm', 'value');
+    $query->condition('id', $sid, '=');
+    return $query->execute()->fetchCol();
+  }
+
+  public static function getWorkflowIdFromEntityId($id) {
+    $query = db_select('lingotek_entity_metadata', 'lem');
+    $query->addField('lem', 'value');
+    $query->condition('entity_key', 'workflow_id', '=');
+    $query->condition('entity_id', $id, '=');
+
+    $result = $query->execute()->fetchCol();
+
+    return $result[0];
   }
 
   public static function getChunkIdsByStatus($status) {
@@ -772,6 +1034,7 @@ class LingotekSync {
 
   public static function disassociateAllEntities() {
     db_truncate('lingotek_entity_metadata')->execute();
+    lingotek_cache_clear();
   }
 
   public static function disassociateAllSets() {
@@ -782,8 +1045,9 @@ class LingotekSync {
     $eids = self::getNodeIdsFromDocIds($document_ids);
     db_delete('lingotek_entity_metadata')
         ->condition('entity_type', 'node')
-      ->condition('entity_id', $eids, 'IN')
-      ->execute();
+        ->condition('entity_id', $eids, 'IN')
+        ->execute();
+    lingotek_cache_clear('node');
   }
 
   public static function getAllLocalDocIds() {
@@ -827,10 +1091,10 @@ class LingotekSync {
     $query->condition('entity_key', $key);
     $query->condition('value', $lingotek_document_id);
     $result = $query->execute();
-    
+
     $found = FALSE;
     $type = FALSE;
-    
+
     if ($record = $result->fetchAssoc()) {
       $found = $record['entity_id'];
       $type = $record['entity_type'];
@@ -838,7 +1102,7 @@ class LingotekSync {
 
     return array($found, $type);
   }
-  
+
   public static function getNodeIdFromDocId($lingotek_document_id) {
     list($id, $type) = LingotekSync::getEntityIdFromDocId($lingotek_document_id);
     return array($id, $type);
@@ -858,7 +1122,7 @@ class LingotekSync {
   public static function getDocIdFromNodeId($drupal_node_id) {
     return getDocIdFromEntityId('node', $drupal_node_id);
   }
-  
+
   public static function getDocIdFromEntityId($entity_type, $entity_id) {
     $found = FALSE;
 
@@ -942,10 +1206,108 @@ class LingotekSync {
     if ($success) {
       variable_set('lingotek_notify_url', $new_url);
       variable_set('lingotek_notify_security_token', $security_token);
+      if (strpos($new_url,'localhost') !== false) {
+        $success = 'localhost_url';
+      }
     }
     return $success;
   }
 
-}
+  public static function getMenuLinkTargetStatus($mlid, $lingotek_locale) {
+    $key = 'target_sync_status_' . $lingotek_locale;
+    $status = lingotek_keystore('menu_link', $mlid, $key);
 
-?>
+    if ($status) {
+      return $status;
+    }
+    else {
+      LingotekLog::error('Did not find any targets for menu link "@id"', array('@id' => $mlid));
+      return FALSE;
+    }
+  }
+
+  public static function getDocumentId($entity_type, $entity_id) {
+    $doc_id = db_select('lingotek_entity_metadata', 'lem')
+      ->fields('lem', array('value'))
+      ->condition('lem.entity_type', $entity_type)
+      ->condition('lem.entity_id', $entity_id)
+      ->condition('lem.entity_key', 'document_id')
+      ->execute()
+      ->fetch(PDO::FETCH_ASSOC);
+
+    if ($doc_id) {
+      return $doc_id;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  public static function setLastSyncError($entity_type, $entity_id, $error) {
+    lingotek_keystore($entity_type, $entity_id, 'last_sync_error', $error);
+  }
+
+  public static function getLastSyncError($entity_type, $entity_id) {
+    $error = '';
+    $query = db_select('lingotek_entity_metadata', 'lem')
+    ->fields('lem', array('value'))
+    ->condition('lem.entity_id', $entity_id)
+    ->condition('lem.entity_type', $entity_type)
+    ->condition('lem.entity_key', 'last_sync_error');
+    $last_sync_error = $query->execute()->fetchField();
+
+    return $last_sync_error;
+  }
+
+  public static function deleteLastSyncError($entity_type, $entity_id) {
+    lingotek_keystore_delete($entity_type, $entity_id, 'last_sync_error');
+  }
+
+  public static function updateLingotekTranslationAgentId($lids, $agent_id) {
+    $query = db_update('locales_target')
+      ->condition('lid', $lids, "IN")
+      ->fields(array('translation_agent_id' => $agent_id))
+      ->execute();
+  }
+
+  /**
+   * Sets a Lingotek metadata value for this item.
+   * @param int $lid
+   *   The lid for the config item.
+   * @param int $marked_offset
+   *   Integer space reserved for marked value
+   */
+  public static function setConfigMarkedValue($lid, $marked_offset) {
+    $insertRecord = array(
+      "value" => $lid,
+      "created" => time(),
+      "modified" => time(),
+      "id" => $marked_offset,
+      "config_key" => 'marked'
+    );
+    $updateRecord = array(
+      "value" => $lid,
+      "modified" => time()
+    );
+    db_merge('lingotek_config_metadata')
+      ->key(array('id' => $marked_offset, 'config_key' => 'marked'))
+      ->insertFields($insertRecord)
+      ->updateFields($updateRecord)
+      ->execute();
+  }
+
+  /**
+   * Deletes a Lingotek metadata value for this item.
+   * @param int $lid
+   *   The lid for the config item.
+   * @param string $marked_offset
+   *   Integer space reserved for marked value.
+   */
+  public static function deleteConfigMarkedValue($lid, $marked_offset) {
+    db_delete('lingotek_config_metadata')
+      ->condition('id', $marked_offset)
+      ->condition('config_key', 'marked')
+      ->condition('value', $lid)
+      ->execute();
+  }
+}

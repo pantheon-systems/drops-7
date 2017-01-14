@@ -26,6 +26,7 @@ function lingotek_page_mark_phases_complete($node) {
         $targets = LingotekDocument::load($lingotek_document_id)->translationTargets();
         $api = LingotekApi::instance();
         foreach ($_POST['targets'] as $target) {
+          $target = filter_xss($target);
           if ($remote_target = $api->getTranslationTarget($targets[$target]->id)) {
             $current_phase_id = lingotek_current_phase($remote_target->phases);
             if ($api->markPhaseComplete($current_phase_id)) {

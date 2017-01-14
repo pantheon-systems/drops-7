@@ -10,3 +10,4 @@ $form['groups'] - The groups checkboxes
 <?php print render($form['subscribe']); ?>
 <?php print render($form['groups']); ?>
 <?php print drupal_render_children($form); ?>
+

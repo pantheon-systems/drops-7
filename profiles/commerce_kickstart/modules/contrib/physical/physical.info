@@ -2,10 +2,12 @@ name = Physical Fields
 description = Defines fields (e.g. weight and dimensions) to support describing the physical attributes of entities.
 package = Fields
 core = 7.x
+files[] = includes/migrate/dimensions.inc
+files[] = includes/migrate/weight.inc
 
-
-; Information added by drush on 2016-11-18
-version = ""
+; Information added by Drupal.org packaging script on 2016-11-15
+version = "7.x-1.0"
+core = "7.x"
 project = "physical"
-datestamp = "1479484060"
+datestamp = "1479218413"
 

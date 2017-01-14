@@ -21,7 +21,7 @@ function mailjet_campaign_iframe() {
 
     $callbackurl = urlencode($base_url . '?q=/admin/mailjet/campaign/alter_callback');
 
-    $default_url = IFRAME_URL."campaigns/?f=ams&r=commerceguys&t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
+    $default_url = IFRAME_URL."campaigns?f=ams&r=commerceguys&t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
 
     $runningBJs = variable_get('runningBtachJobs', array());
     $still_running = array();

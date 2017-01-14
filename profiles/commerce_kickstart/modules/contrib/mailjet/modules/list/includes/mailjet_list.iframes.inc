@@ -21,7 +21,7 @@ function mailjet_list_iframe() {
 
     $callbackurl = 'r=commerceguys&t='.$token.'&show_menu=none&sp=display&u=Drupal-3.0&locale='.$locale;
 
-    $default_url = IFRAME_URL."contacts/lists/?";
+    $default_url = IFRAME_URL."contacts?";
 
     return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }

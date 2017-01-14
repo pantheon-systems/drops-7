@@ -15,9 +15,9 @@ dependencies[] = token
 ; Module includes
 files[] = mailup_subscribe.entity.inc
 files[] = mailup_subscribe.translate.inc
-; Information added by Drupal.org packaging script on 2015-01-06
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2016-01-11
+version = "7.x-1.4"
 core = "7.x"
 project = "mailup"
-datestamp = "1420543083"
+datestamp = "1452512340"
 
