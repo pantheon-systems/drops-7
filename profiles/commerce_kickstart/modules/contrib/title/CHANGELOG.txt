@@ -3,6 +3,12 @@ Title 7.x-1.x, xxxx-xx-xx
 -------------------------
 
 
+Title 7.x-1.0-alpha9, 2017-01-13
+--------------------------------
+#2757739 by dewalt, Pol: Token value is not sanitized, when replaced from title field.
+#2813673 by plach, czigor, Stevel: Tests broken since new permission in drupal core.
+
+
 Title 7.x-1.0-alpha8, 2016-03-28
 --------------------------------
 #2465141 by DuaelFr, Matthijs, jfrederick: Used entity_uri() options if given.

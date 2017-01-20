@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Commerce Checkout Progress - Admin functions.
@@ -6,19 +7,23 @@
 
 /**
  * Overriding the default text area and turning it into checkboxes.
+ *
  * The text area is on the block configuration page where a user says what pages
  * should be applied to the visibility settings. (show on, don't show on, etc)
  * We only want to give site admins the ability to enable on checkout/* pages.
  */
 function _commerce_checkout_progress_form_block_admin_configure_alter(&$form, $form_state, $form_id) {
-  // Visibility is the text area where site admins type any path they want the block visible on.
+  // Visibility is the text area where site admins type any path they want the
+  // block visible on.
   $path = &$form['visibility']['path'];
   // Hide and make unalterable.
   $path['visibility']['#type'] = 'value';
   // Show on only the listed pages.
-  $path['visibility']['#value'] = 1; // this gets replaced later
+  // this gets replaced later.
+  $path['visibility']['#value'] = 1;
 
-  // New field of checkboxes that has valid and possible checkout pages to display the block on.
+  // New field of checkboxes that has valid and possible checkout pages to
+  // display the block on.
   $path['pages']['#title'] = t('Show block on specific pages');
   $path['pages']['#description'] = t('Select the pages on which you want to show the checkout
     progress indication. Leaving all checkboxes unselected will show the progress on all checkout
@@ -27,7 +32,8 @@ function _commerce_checkout_progress_form_block_admin_configure_alter(&$form, $f
 
   $path['pages']['#options'] = commerce_checkout_progress_block_pages_options();
   $path['pages']['#default_value'] = variable_get('commerce_checkout_progress_block_pages', array());
-  // Add our custom submit handler so that we can process the 'pages' array into text.
+  // Add our custom submit handler so that we can process the 'pages' array into
+  // text.
   array_unshift($form['#submit'], 'commerce_checkout_progress_form_block_admin_configure_submit');
 }
 

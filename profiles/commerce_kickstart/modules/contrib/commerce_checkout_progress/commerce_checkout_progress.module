@@ -1,12 +1,13 @@
 <?php
+
 /**
  * @file
  * Commerce checkout progress module.
  *
  * This module provides a block that is enabled by default and displayed on
  * checkout pages. The block is a list with each checkout page title as an item.
- * The active checkout page is designated with an "active" class. The purpose is to
- * visually communicate what part of the checkout process a customer is on.
+ * The active checkout page is designated with an "active" class. The purpose is
+ * to visually communicate what part of the checkout process a customer is on.
  */
 
 /**
@@ -17,15 +18,18 @@ function commerce_checkout_progress_block_info() {
     'indication' => array(
       'info' => t('Checkout progress indication'),
       'cache' => DRUPAL_NO_CACHE,
-    )
+    ),
   );
 
   if (module_exists('block')) {
     $block['indication'] += array(
-      'status' => 1, // If you enabled this module, you want the block
+      // If you enabled this module, you want the block.
+      'status' => 1,
       'region' => 'content',
-      'weight' => -10, // on top
-      'visibility' => BLOCK_VISIBILITY_LISTED, // Show on only the listed pages
+      // On top.
+      'weight' => -10,
+      // Show on only the listed pages.
+      'visibility' => BLOCK_VISIBILITY_LISTED,
       'pages' => "checkout/*\ncart",
     );
   }
@@ -46,7 +50,8 @@ function commerce_checkout_progress_ctools_block_info($module, $delta, &$info) {
  */
 function commerce_checkout_progress_block_view($delta = 'indication') {
   if ($delta === 'indication') {
-    // Get the current page that was created/stored earlier by commerce checkout.
+    // Get the current page that was created/stored earlier by commerce
+    // checkout.
     $page_id = commerce_checkout_progress_commerce_checkout_router();
 
     if (is_null($page_id)) {
@@ -54,14 +59,15 @@ function commerce_checkout_progress_block_view($delta = 'indication') {
     }
     $block_pages = variable_get('commerce_checkout_progress_block_pages', array());
 
-    // get the option list that is shown during block configuration, since 'no selection' means 'everything is selected'
+    // Get the option list that is shown during block configuration, since 'no
+    // selection' means 'everything is selected'.
     if (empty($block_pages)) {
       $block_pages_options = commerce_checkout_progress_block_pages_options();
       $block_pages = array_keys($block_pages_options);
     }
 
-    // if current page checkout page ID in configured-pages, the progress bar
-    // is visible
+    // If current page checkout page ID in configured-pages, the progress bar
+    // is visible.
     if (in_array($page_id, $block_pages)) {
       // Get non-empty pages.
       $pages = commerce_checkout_progress_get_items();
@@ -102,16 +108,13 @@ function commerce_checkout_progress_form_block_admin_configure_alter(&$form, $fo
  * checkout page doesn't have an arg(2).
  *
  * @see commerce_checkout_router()
- *  The function performs module_invoke_all('commerce_checkout_router', $order, $checkout_page);
- *
- * @return (text)
- *   Page ID of the current checkout page
+ *   The function performs
+ * module_invoke_all('commerce_checkout_router', $order, $checkout_page);
  */
 function commerce_checkout_progress_commerce_checkout_router($order = NULL, $checkout_page = NULL) {
   // There's still no official way to get the current checkout page ID.
-  // The function is called before block rendering function.
-  // avoid save value to user session, we save it to this function static
-  // variable.
+  // The function is called before block rendering function. Avoid save value to
+  // user session, we save it to this function static variable.
   static $page_id = NULL;
 
   if (isset($checkout_page['page_id'])) {
@@ -130,7 +133,6 @@ function commerce_checkout_progress_theme($existing, $type, $theme, $path) {
       'variables' => array(
         'items'       => NULL,
         'type'        => NULL,
-        'attributes'  => array(),
         'link'        => FALSE,
         'current_page' => NULL,
       ),
@@ -141,20 +143,25 @@ function commerce_checkout_progress_theme($existing, $type, $theme, $path) {
 /**
  * Theming function for checkout progress item list.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
- *   - items: Array of items to be displayed in the list. The key is
- *     the Page ID.  The value is the Page Title.
+ *   - items: Array of items to be displayed in the list. The key is the Page
+ *     ID. The value is the Page Title.
  *   - type: The type of list to return (e.g. "ul", "ol").
- *   - attributes: The attributes applied to the list element.
  *   - link: (bool) List should contain links to previously visited pages.
  *   - current_page: The page ID of the current page.
+ *
+ * @return string
+ *   The HTML string.
  */
 function theme_commerce_checkout_progress_list($variables) {
   $path = drupal_get_path('module', 'commerce_checkout_progress');
   drupal_add_css($path . '/commerce_checkout_progress.css');
 
-  extract($variables);
+  $items = $variables['items'];
+  $type = $variables['type'];
+  $link = $variables['link'];
+  $current_page = $variables['current_page'];
 
   // Option to display back pages as links.
   if ($link) {
@@ -189,14 +196,15 @@ function theme_commerce_checkout_progress_list($variables) {
     $data = t($page['title']);
 
     if ($visited) {
-      $class[] = 'visited'; // Issue #1345942.
+      // Issue #1345942.
+      $class[] = 'visited';
 
       // On checkout complete page, the checkout order is deleted.
       if (isset($order_id) && $order_id) {
-        // If a user is on step 1, clicking a link next steps will be redirect them back.
-        // Only render the link on the pages those user has already been on.
-        // Make sure the loaded order is the same one found in the URL.
-        if (arg(1) == $order_id) {
+        // If a user is on step 1, clicking a link next steps will be redirect
+        // them back. Only render the link on the pages those user has already
+        // been on. Make sure the loaded order is the same one found in the URL.
+        if (arg(1) == $order_id && ($page_id == 'cart' || commerce_checkout_page_access($page, $order))) {
           $href = isset($page['href']) ? $page['href'] : "checkout/{$order_id}/{$page_id}";
           $data = l(filter_xss($data), $href, array('html' => TRUE));
         }
@@ -209,7 +217,7 @@ function theme_commerce_checkout_progress_list($variables) {
     );
     // Only set li title if the page has help text.
     if (isset($page['help'])) {
-      //#1322436 Filter help text to be sure it contains NO html.
+      // #1322436 Filter help text to be sure it contains NO html.
       $help = strip_tags($page['help']);
       // Make sure help has text event after filtering html.
       if (!empty($help)) {
@@ -236,7 +244,7 @@ function theme_commerce_checkout_progress_list($variables) {
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * @see commerce_checkout_progress_get_items().
+ * @see commerce_checkout_progress_get_items()
  */
 function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$form, $form_state, $form_id) {
   $form['commerce_checkout_progress'] = array(
@@ -254,7 +262,7 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$
     'commerce_checkout_progress_link' => array(
       '#type' => 'checkbox',
       '#title' => t('Render list as links'),
-      '#description' => t('If enabled this could cause problems in the checkout process. It\'s <strong>strongly advised</strong> to leave this disabled.'),
+      '#description' => t("If enabled this could cause problems in the checkout process. It's <strong>strongly advised</strong> to leave this disabled."),
       '#default_value' => variable_get('commerce_checkout_progress_link', FALSE),
     ),
     'commerce_checkout_progress_cart' => array(
@@ -270,11 +278,11 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$
 /**
  * Custom submit function to save module settings after form submit.
  *
- * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter().
- * @see commerce_checkout_progress_get_items().
+ * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter()
+ * @see commerce_checkout_progress_get_items()
  */
 function commerce_checkout_progress_form_commerce_checkout_builder_form_submit($form, $form_state) {
-  // save module settings
+  // Save module settings.
   variable_set('commerce_checkout_progress_list_type', $form_state['values']['commerce_checkout_progress_list_type']);
   variable_set('commerce_checkout_progress_link', $form_state['values']['commerce_checkout_progress_link']);
   variable_set('commerce_checkout_progress_cart', $form_state['values']['commerce_checkout_progress_cart']);
@@ -284,11 +292,12 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_submit($
  * Get the list of items that COULD be shown in the indicator.
  *
  * @return array
+ *   Item list.
  */
 function commerce_checkout_progress_block_pages_options() {
   $options = array();
 
-  // Check if the cart module is enabled, and add it as an option if it is
+  // Check if the cart module is enabled, and add it as an option if it is.
   if (module_exists('commerce_cart')) {
     $options['cart'] = t('Cart');
   }
@@ -303,22 +312,23 @@ function commerce_checkout_progress_block_pages_options() {
 
 /**
  * Get checkout pages that have content and do not redirect.
- * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter().
+ *
+ * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter()
  */
 function commerce_checkout_progress_get_items() {
-  // get checkout pages & panes
+  // Get checkout pages & panes.
   $pages = commerce_checkout_pages();
   $panes = commerce_checkout_panes();
 
   foreach ($panes as $id => $pane) {
     // Panes could exist in removed pages (through
     // hook_commerce_checkout_page_info_alter()).
-    if (isset($pages[$pane['page']])) {
+    if (!empty($pane['enabled']) && isset($pages[$pane['page']])) {
       // Pane has page ID, use this value to flag that the page is not empty.
-      $pages[$pane['page']]['has_item'] = isset($pages[$pane['page']]['has_item']) ? $pages[$pane['page']]['has_item']  : TRUE;
+      $pages[$pane['page']]['has_item'] = isset($pages[$pane['page']]['has_item']) ? $pages[$pane['page']]['has_item'] : TRUE;
     }
   }
-  
+
   // Allow other modules to alter the enabled checkout pages.
   drupal_alter('commerce_checkout_progress_get_items', $pages);
 

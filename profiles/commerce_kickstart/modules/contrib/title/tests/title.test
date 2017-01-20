@@ -9,6 +9,7 @@
  * Tests for legacy field replacement.
  */
 class TitleFieldReplacementTestCase extends DrupalWebTestCase {
+
   public static function getInfo() {
     return array(
       'name' => 'Field replacement',
@@ -17,14 +18,17 @@ class TitleFieldReplacementTestCase extends DrupalWebTestCase {
     );
   }
 
-  function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
     parent::setUp('entity', 'field_test', 'title', 'title_test');
   }
 
   /**
    * Test field replacement API and workflow.
    */
-  function testFieldReplacementWorkflow() {
+  public function testFieldReplacementWorkflow() {
     $info = entity_get_info('test_entity');
     $label_key = $info['entity keys']['label'];
     $field_name = $label_key . '_field';
@@ -78,7 +82,7 @@ class TitleFieldReplacementTestCase extends DrupalWebTestCase {
     // and view.
     $entity = title_test_entity_test_load($entity);
     title_test_phase_check('after_load', $entity);
-    $build = entity_view('test_entity', array($entity->ftid => $entity));
+    entity_view('test_entity', array($entity->ftid => $entity));
 
     foreach (title_test_phase_store() as $phase => $value) {
       $this->assertTrue($value, t('Field synchronization is correctly performed on %phase.', array('%phase' => $phase)));
@@ -95,8 +99,16 @@ class TitleFieldReplacementTestCase extends DrupalWebTestCase {
   /**
    * Test field replacement UI.
    */
-  function testFieldReplacementUI() {
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'view the administration theme', 'administer content types', 'administer taxonomy', 'administer comments'));
+  public function testFieldReplacementUI() {
+    $permissions = array(
+      'access administration pages',
+      'view the administration theme',
+      'administer content types',
+      'administer taxonomy',
+      'administer comments',
+      'administer fields',
+    );
+    $admin_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($admin_user);
 
     foreach (entity_get_info() as $entity_type => $entity_info) {
@@ -147,12 +159,14 @@ class TitleFieldReplacementTestCase extends DrupalWebTestCase {
       }
     }
   }
+
 }
 
 /**
  * Tests for legacy field replacement.
  */
 class TitleAdminSettingsTestCase extends DrupalWebTestCase {
+
   public static function getInfo() {
     return array(
       'name' => 'Admin settings',
@@ -161,7 +175,10 @@ class TitleAdminSettingsTestCase extends DrupalWebTestCase {
     );
   }
 
-  function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
     parent::setUp('field_test', 'title', 'title_test');
     $admin_user = $this->drupalCreateUser(array('administer site configuration', 'administer taxonomy'));
     $this->drupalLogin($admin_user);
@@ -170,15 +187,18 @@ class TitleAdminSettingsTestCase extends DrupalWebTestCase {
   /**
    * Check for automated title_field attachment.
    */
-  function testAutomatedFieldAttachement() {
-    $this->assertAutomatedFieldAttachement(TRUE);
-    $this->assertAutomatedFieldAttachement(FALSE);
+  public function testAutomatedFieldAttachment() {
+    $this->doTestAutomatedFieldAttachment(TRUE);
+    $this->doTestAutomatedFieldAttachment(FALSE);
   }
 
   /**
-   * Check that the fields are replaced or skipped depdening on the given value.
+   * Check that the fields are replaced or skipped depending on the given value.
+   *
+   * @param bool $enabled
+   *   Whether replacement is enabled or not.
    */
-  function assertAutomatedFieldAttachement($enabled) {
+  public function doTestAutomatedFieldAttachment($enabled) {
     $edit = array(
       'title_taxonomy_term[auto_attach][name]' => $enabled,
       'title_taxonomy_term[auto_attach][description]' => $enabled,
@@ -198,6 +218,7 @@ class TitleAdminSettingsTestCase extends DrupalWebTestCase {
     $this->assertTrue(title_field_replacement_enabled($entity_type, $bundle, 'name') == $enabled, 'Name field correctly processed.');
     $this->assertTrue(title_field_replacement_enabled($entity_type, $bundle, 'description') == $enabled, 'Description field correctly processed.');
   }
+
 }
 
 /**
@@ -213,11 +234,22 @@ class TitleTranslationTestCase extends DrupalWebTestCase {
     );
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp('locale', 'entity_translation', 'title', 'field_test', 'title_test');
 
     // Create a power user.
-    $admin_user = $this->drupalCreateUser(array('administer modules',  'view the administration theme', 'administer languages', 'administer taxonomy', 'administer entity translation', 'translate any entity'));
+    $permissions = array(
+      'administer modules',
+      'view the administration theme',
+      'administer languages',
+      'administer taxonomy',
+      'administer entity translation',
+      'translate any entity',
+    );
+    $admin_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($admin_user);
 
     // Enable a translation language.
@@ -242,6 +274,7 @@ class TitleTranslationTestCase extends DrupalWebTestCase {
     $edit = array(
       'name' => $this->randomString(),
       'machine_name' => $name,
+      'entity_translation_taxonomy' => 1,
     );
     $this->drupalPost('admin/structure/taxonomy/add', $edit, t('Save'));
     $this->vocabulary = taxonomy_vocabulary_machine_name_load($name);
@@ -406,6 +439,14 @@ class TitleTranslationTestCase extends DrupalWebTestCase {
 
   /**
    * Loads a term using the given language as active language.
+   *
+   * @param int $tid
+   *   The term identifier.
+   * @param string|null $langcode
+   *   (optional) The active language to be set. Defaults to none.
+   *
+   * @return object|bool
+   *   A term object.
    */
   protected function termLoad($tid, $langcode = NULL) {
     drupal_static_reset();

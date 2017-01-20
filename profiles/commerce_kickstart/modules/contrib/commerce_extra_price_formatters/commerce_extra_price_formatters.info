@@ -6,9 +6,9 @@ dependencies[] = commerce_price
 
 package = Commerce (contrib)
 
-; Information added by drush on 2016-12-28
+; Information added by drush on 2017-01-20
 version = "7.x-1.1+7-dev"
 core = "7.x"
 project = "commerce_extra_price_formatters"
-datestamp = "1482928713"
+datestamp = "1484926716"
 

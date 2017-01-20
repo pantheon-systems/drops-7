@@ -51,9 +51,9 @@ features_exclude[field_base][field_image] = field_image
 features_exclude[field_base][title_field] = title_field
 files[] = commerce_kickstart_blog.migrate.inc
 
-; Information added by Drupal.org packaging script on 2016-12-28
-version = "7.x-2.41"
+; Information added by Drupal.org packaging script on 2017-01-20
+version = "7.x-2.42"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1482928690"
+datestamp = "1484926693"
 

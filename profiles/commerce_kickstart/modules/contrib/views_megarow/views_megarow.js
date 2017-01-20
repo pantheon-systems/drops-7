@@ -89,7 +89,7 @@
   Drupal.ViewsMegarow.close = function(entityId, target) {
     // Target the megarow of the triggering element
     // (submit button or close link).
-    var megarow = $(target).parents('.views-megarow-content');
+    var megarow = $(target).parents('.views-megarow-content:first');
     if (Drupal.ViewsMegarow.currentSettings.scrollEnabled) {
       $(megarow).viewsMegarowGoTo(Drupal.ViewsMegarow.currentSettings.scrollPadding);
     }
@@ -110,7 +110,7 @@
 
     // Close and remove the megarow.
     $(megarow).hide()[animation](Drupal.ViewsMegarow.currentSettings.animationSpeed);
-    $(megarow).parents('tr').remove();
+    $(megarow).parents('tr:first').remove();
 
     // Mark the parent row as inactive.
     $('tr.item-' + entityId).removeClass('views-row-active');

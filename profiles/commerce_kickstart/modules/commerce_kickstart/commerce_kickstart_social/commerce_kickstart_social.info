@@ -32,9 +32,9 @@ features[variable][] = service_links_show
 features[variable][] = service_links_style
 features[variable][] = service_links_visibility_for_node
 
-; Information added by Drupal.org packaging script on 2016-12-28
-version = "7.x-2.41"
+; Information added by Drupal.org packaging script on 2017-01-20
+version = "7.x-2.42"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1482928690"
+datestamp = "1484926693"
 

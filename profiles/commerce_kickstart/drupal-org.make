@@ -7,8 +7,7 @@ defaults[projects][subdir] = contrib
 ; Basic contributed modules.
 projects[ctools][version] = 1.12
 projects[entity][version] = 1.8
-projects[entityreference][version] = 1.1
-projects[entityreference][patch][] = "http://drupal.org/files/1580348-universal-formatters-17.patch"
+projects[entityreference][version] = 1.2
 projects[rules][version] = 2.9
 projects[views][version] = 3.14
 projects[views_bulk_operations][version] = 3.3
@@ -20,7 +19,7 @@ projects[features_override][version] = 2.0-rc3
 projects[strongarm][version] = 2.0
 projects[taxonomy_menu][version] = 1.5
 projects[libraries][version] = 2.3
-projects[views_megarow][version] = 1.6
+projects[views_megarow][version] = 1.7
 
 ; Drupal Commerce and Commerce contribs.
 projects[commerce][version] = 1.13
@@ -36,7 +35,7 @@ projects[commerce_autosku][download][branch] = 7.x-1.x
 projects[commerce_migrate][version] = 1.2
 projects[commerce_migrate][patch][2701333] = https://www.drupal.org/files/issues/reference_fields_should-2701333-3.patch
 projects[commerce_discount][version] = 1.0-alpha8
-projects[commerce_checkout_progress][version] = 1.4
+projects[commerce_checkout_progress][version] = 1.5
 projects[commerce_extra_price_formatters][version] = 1.x-dev
 projects[commerce_extra_price_formatters][download][type] = git
 projects[commerce_extra_price_formatters][download][revision] = 1371336
@@ -100,7 +99,7 @@ projects[date][version] = 2.9
 projects[yottaa][version] = 1.2
 projects[menu_attributes][version] = 1.0
 projects[fences][version] = 1.2
-projects[title][version] = 1.0-alpha8
+projects[title][version] = 1.0-alpha9
 projects[kameleoon][version] = 1.1
 projects[mailup][version] = 1.4
 projects[mailjet][version] = 2.7

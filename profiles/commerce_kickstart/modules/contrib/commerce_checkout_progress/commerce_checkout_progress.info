@@ -8,9 +8,9 @@ core = 7.x
 ; Files containing class or interface declarations
 ; files[] =
 
-; Information added by Drupal.org packaging script on 2015-10-16
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2016-12-09
+version = "7.x-1.5"
 core = "7.x"
 project = "commerce_checkout_progress"
-datestamp = "1444964041"
+datestamp = "1481276590"
 
