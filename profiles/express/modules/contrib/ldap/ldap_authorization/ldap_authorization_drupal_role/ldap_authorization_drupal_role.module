@@ -1,0 +1,45 @@
+<?php
+// $Id: ldap_authorization_drupal_role.module,v 1.2 2010/12/13 02:28:51 johnbarclay Exp $
+
+
+
+
+/** @file
+ *
+ *  maps ldap data to drupal roles
+ *
+ */
+
+/**
+ * Implements hook_ldap_authorization_consumer().
+ */
+function ldap_authorization_drupal_role_ldap_authorization_consumer() {
+  $types['drupal_role'] =  array(
+    'consumer_name' => t('drupal role'),
+    'consumer_name_plural' => t('drupal roles'),
+    'consumer_short_name' => t('role'),
+    'consumer_short_name_plural' => t('roles'),
+    'consumer_description' => t('A Drupal Role.'),
+    'consumer_class_name' => 'LdapAuthorizationConsumerDrupalRole',
+    'consumer_class_file' => 'LdapAuthorizationConsumerRole.class.php',
+    'consumer_module' => 'ldap_authorization_drupal_role',
+    'consumer_mapping_directions' => '<p>Mappings should be of form:<br/>
+<code>[raw authorization id]|[group name]</code>
+<br/>such as:<br/>
+<code>Campus Accounts|authenticated user<br/>
+ou=Underlings,dc=myorg,dc=mytld|underlings<br/>
+ou=IT,dc=myorg,dc=mytld,dc=edu|administrator
+</code><br/>',
+  );
+
+  return $types;
+}
+
+/**
+ * implements hook_form_alter()
+ */
+function ldap_authorization_drupal_role_form_ldap_authorization_admin_form_alter(&$form, $form_state) {
+  if ($form['status']['consumer_type']['#value'] == 'drupal_role') {
+
+  }
+}

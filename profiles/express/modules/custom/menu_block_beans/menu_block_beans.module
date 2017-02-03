@@ -1,0 +1,124 @@
+<?php
+
+/**
+ * @file
+ * Code for the Menu Block Beans feature.
+ */
+
+include_once 'menu_block_beans.features.inc';
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Extendes the menu_blocks add/edit page to add a new title field.
+ */
+function menu_block_beans_form_menu_blocks_form_alter(&$form, $form_state) {
+  // Rename "title" to "label" for more consistancy.
+  $form['title']['#title'] = t('Label');
+  $form['title']['#description'] = t('The Menu Block label is only visible within the administration UI. It will not be shown to users.');
+
+  // Add "title" field.
+  $form['menu_block_beans_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#weight' => -8,
+    '#description' => t('The Menu Block title will appear above the menu_blocks. Leave blank for none.'),
+  );
+
+  // Populate our new "title" field with a default_value from the bean title.
+  $bean = bean_load_delta($form['machine_name']['#default_value']);
+  if (!empty($bean->title)) {
+    $form['menu_block_beans_title']['#default_value'] = $bean->title;
+  }
+
+  // Add a form submit to update the bean title with the 'menu_block_beans_title' value.
+  $form['#submit'][] = 'menu_block_beans_form_menu_blocks_submit';
+}
+
+/**
+ * Submit handler for menu_blocks_form.
+ *
+ * Processes our new 'menu_block_beans_title' field and saves it to the bean.
+ */
+function menu_block_beans_form_menu_blocks_submit($form, $form_state) {
+  $bean = bean_load_delta($form_state['values']['machine_name']);
+  if (!empty($bean)) {
+    $bean->title = $form_state['values']['menu_block_beans_title'];
+    bean_save($bean);
+  }
+}
+
+/**
+ * Implements hook_menu_blocks_insert().
+ *
+ * Create a bean each time a menu_block is created.
+ */
+function menu_block_beans_menu_blocks_insert($menu_block) {
+  _menu_block_beans_create_bean($menu_block);
+}
+
+
+/**
+ * Implements hook_menu_blocks_update().
+ *
+ * Create a bean if there isn't one already.
+ */
+function menu_block_beans_menu_blocks_update($menu_block) {
+  $bean = bean_load_delta($menu_block->machine_name);
+  if (!is_object($bean)) {
+   _menu_block_beans_create_bean($menu_block);
+  }
+}
+
+/**
+ * Implements hook_menu_blocks_delete().
+ *
+ * Removes the associated bean when deleting a menu_block.
+ */
+function menu_block_beans_menu_blocks_delete($machine_name) {
+  $bean = bean_load_delta($machine_name);
+  if (is_object($bean)) {
+    bean_delete($bean);
+  }
+}
+
+/**
+ * Creates a bean of type 'menu_block' from a given menu_block instance.
+ */
+function _menu_block_beans_create_bean($machinename, $title) {
+  $bean = bean_create(array('type' => 'menu_block'));
+  $bean->label = 'Menu Block: ' . $machinename;
+  $bean->title = $title;
+  $bean->delta = $machinename;
+  $bean->save();
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ *
+ * Renders a menu_block within a menu_block bean type.
+ */
+function menu_block_beans_entity_view_alter(&$build, $type) {
+  if ($type == 'bean' && $build['#bundle'] == 'menu_block') {
+    $build['menu_block'] = menu_block_block_view($build['#entity']->delta);
+  }
+}
+
+/**
+ * Implements hook_FORM_ID_form_alter().
+ *
+ * Disables auto-populated bean label/title fields on bean configuration form
+ * for menu_block beans.
+ */
+function menu_block_beans_form_bean_form_alter(&$form, &$form_state) {
+  if ($form['#bundle'] == 'menu_block') {
+    $form['mb_beans_help'] = array(
+      '#markup' => t('These fields are automatically populated from the menu_block instance: !link', array(
+        '!link' => l($form['bean']['#value']->delta, 'admin/structure/menu_blocks/manage/' . $form['bean']['#value']->delta . '/edit'))
+      ),
+      '#weight' => -99,
+    );
+    $form['label']['#disabled'] = TRUE;
+    $form['title']['#disabled'] = TRUE;
+  }
+}

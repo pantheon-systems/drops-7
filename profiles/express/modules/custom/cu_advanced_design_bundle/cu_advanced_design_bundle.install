@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_advanced_design_bundle_enable() {
+
+}
+

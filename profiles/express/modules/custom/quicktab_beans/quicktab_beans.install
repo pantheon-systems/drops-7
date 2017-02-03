@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function quicktab_beans_install() {
+  // Create a bean for each quicktab already on the site.
+  $quicktabs = quicktabs_load_multiple();
+  foreach ($quicktabs as $quicktab) {
+    _quicktab_beans_create_bean($quicktab);
+  }
+}

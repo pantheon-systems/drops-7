@@ -1,0 +1,154 @@
+@import "zen";
+@import "../modules/_colors.scss";
+@import "../modules/_global.scss";
+$zen-column-count:  12;
+$zen-gutter-width:  40px;
+#search {
+  display: none;
+}
+img#logo {
+  position:absolute;
+  top:0;
+  left:20px;
+  width:30px;
+  height: auto;
+}
+#name-and-slogan {
+  margin-left:55px;
+  margin-right: 55px;
+  padding-top: 7px;
+}
+.two-line-title #name-and-slogan {
+    padding-top: 0;
+  }
+h1#site-name,
+h2#site-name {
+  font-size: 18px;
+  margin:0;
+  padding:0;
+  line-height: 110%;
+  font-weight: 200 !important;
+  font-family:$base_font !important;
+}
+.two-line-title h1#site-name,
+.two-line-title h2#site-name {
+  font-size: 16px;
+  margin-top:0;
+}
+.banner-white h1#site-name a,
+.banner-white h2#site-name a,
+.banner-light h1#site-name a,
+.banner-light h2#site-name a {
+  color:#363636;
+}
+.banner-black h1#site-name a,
+.banner-black h2#site-name a,
+.banner-dark h1#site-name a,
+.banner-dark h2#site-name a {
+  color:#fff;
+}
+#site-slogan {
+  margin:0px 0 0 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 400;
+  strong {
+    font-weight: 600;
+  }
+}
+.mobile-menu-toggle {
+  display: block;
+}
+
+@media all and (min-width: 480px) and (max-width: 959px) {
+  img#logo {
+    position:absolute;
+    top:0;
+    left:20px;
+    width:48px;
+    height: auto;
+  }
+  #name-and-slogan {
+    margin-left:75px;
+    margin-right: 0;
+    padding-top: 10px;
+  }
+  .two-line-title #name-and-slogan {
+    padding-top: 0;
+  }
+  h1#site-name,
+  h2#site-name {
+    font-size: 21px;
+    margin:0;
+    padding:0;
+    line-height: 110%;
+  }
+  .two-line-title h1#site-name,
+  .two-line-title h2#site-name {
+    font-size: 18px;
+  }
+
+  #site-slogan {
+    margin:0px 0 0 0;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+}
+@media all and (min-width: 960px) {
+  .mobile-menu-toggle {
+    display: none;
+  }
+  #header-wrapper {
+    padding: 20px 0;
+  }
+  $zen-column-count: 12;
+  #branding {
+    @include zen-grid-item(8, 1);
+  }
+  #search {
+    @include zen-grid-item(4, 9);
+    padding-top: 13px;
+    display: block;
+  }
+  img#logo {
+    position:absolute;
+    top:0;
+    left:20px;
+    width:65px;
+    height: auto;
+  }
+  #name-and-slogan {
+    margin-left:85px;
+    margin-right: 0;
+    padding-top: 13px;
+  }
+  .two-line-title #name-and-slogan {
+    padding-top: 0;
+  }
+  h1#site-name,
+  h2#site-name {
+    font-size: 28px;
+    margin:0;
+    padding:0;
+    line-height: 110%;
+  }
+  .two-line-title h1#site-name,
+  .two-line-title h2#site-name {
+    font-size: 25px;
+  }
+
+  #site-slogan {
+    margin:3px 0 0 0;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+#mobile-navigation {
+  .cu-search input.form-text {
+    width:100%;
+  }
+  #google-appliance-block-form .culinks {
+    text-align: left;
+  }
+}

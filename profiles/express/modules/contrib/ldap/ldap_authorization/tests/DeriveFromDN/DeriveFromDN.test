@@ -1,0 +1,102 @@
+<?php
+// $Id$
+/**
+ * @file
+ * see getInfo() for test summary
+ */
+
+require_once(drupal_get_path('module', 'ldap_authorization') . '/tests/LdapAuthorizationTestCase.class.php');
+
+class LdapAuthorizationDeriveEntry  extends LdapAuthorizationTestCase {
+
+  public static function getInfo() {
+    return array(
+      'group' => 'LDAP Authorization',
+      'name' => 'LDAP Authorization: Derivations from DN',
+      'description' => 'Test ldap authorization logic for derivation of roles from user DN.  ',
+
+    );
+  }
+
+  function testDeriveFromDN() {
+
+    $this->ldapTestId = 'DeriveFromDN';
+    $this->serversData = 'DeriveFromDN/ldap_servers.inc';
+    $this->authorizationData = 'DeriveFromDN/ldap_authorization.inc';
+    $this->authenticationData = 'DeriveFromDN/ldap_authentication.inc';
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+
+    /**
+     * test:  DeriveFromDN.nomatch no matches on dn attribute.
+     *
+     * cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu
+     *
+     * should not match any mappings
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $unkool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'unkool', 'mail' =>  'unkool@nowhere.myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($unkool, 'query');  // just see if the correct ones are derived.
+    debug("new_authorizations, notifications"); debug(array($new_authorizations, $notifications));
+    $this->assertTrue(count($new_authorizations[$this->consumerType]) == 0, 'user account unkool tested for granting no drupal roles ', $this->ldapTestId . '.nomatch');
+
+
+
+    /**
+     * test:  DeriveFromDN.onematch  matches on one dn attribute.
+     *
+     * cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu
+     *
+     * should match on 'guest accounts' which maps to 'guests'
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $jkool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'jkool', 'mail' =>  'jkool@guests.myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'query');  // just see if the correct ones are derived.
+    $correct_roles = (bool)(isset($new_authorizations['drupal_role']) && in_array('guests', $new_authorizations['drupal_role']));
+    $this->assertTrue($correct_roles, 'user account jkool tested for granting drupal_role "guests"', $this->ldapTestId . '.onematch');
+
+    /**
+     * test:  DeriveFromDN.manymatch many matches on dn attribute.
+     *
+     * cn=verykool,ou=special guests,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu
+     *
+     * should match on 'special guests' and 'guest account' which map to 'special guests' and 'guests' drupal roles
+     *
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $verykool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'verykool', 'mail' =>  'verykool@myuniversity.edu'), TRUE, $user);
+
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($verykool, 'query');  // just see if the correct ones are derived.
+    $correct_roles = (bool)(isset($new_authorizations['drupal_role']) &&
+      in_array('guests', $new_authorizations[$this->consumerType]) &&
+      in_array('special guests', $new_authorizations[$this->consumerType])
+      );
+
+    $this->assertTrue($correct_roles, 'user account verykool tested for granting "guests" and "special guests" drupal roles ', $this->ldapTestId . '.manymatch');
+    $this->assertTrue($correct_roles, 'user account verykool tested for case insensitivity ', $this->ldapTestId . '.caseinsensitive');
+
+
+    /**
+     * test that authorizations are applied when logging (and account created)
+     * that is, don't just call ldap_authorizations_user_authorizations() in query mode as in previous tests
+     */
+
+    $edit = array(
+      'name' => 'newkool',
+      'pass' => 'goodpwd',
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'));
+
+    $newkool = user_load_by_name('newkool');
+    $granted_roles = array_values($newkool->roles);
+    $this->assertTrue(in_array('guests', $granted_roles) && in_array('special guests', $granted_roles), 'Proper roles granted to newkool on actual logon');
+    $this->drupalLogout();
+
+  }
+
+}

@@ -1,0 +1,53 @@
+.article-view-mode-grid { margin-bottom: 20px; }
+.article-view-mode-grid img { width: 100%; height: auto; max-width: 100%; display: block; margin-bottom: 10px; }
+
+@media screen and (min-width: 480px) and (max-width: 719px) { .article-grid .article-view-mode-grid { float: left; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 50%; padding-left: 0; padding-right: 20px; margin-right: 20px; }
+  .article-grid .article-view-mode-grid:nth-child(2n+2) { padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 50%; padding-left: 0; padding-right: 20px; margin-right: -20px; }
+  .article-grid .article-view-mode-grid:nth-child(2n+1) { clear: left; } }
+@media screen and (min-width: 720px) { .article-grid .article-view-mode-grid { float: left; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 33.33333%; padding-left: 0; padding-right: 26.66667px; margin-right: 13.33333px; }
+  .article-grid .article-view-mode-grid:nth-child(3n+3) { padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 33.33333%; padding-left: 0; padding-right: 26.66667px; margin-right: -26.66667px; }
+  .article-grid .article-view-mode-grid:nth-child(3n+1) { clear: left; } }
+.article-grid-summary-display .article-grid-article-title { font-weight: 600; }
+
+.article-view-mode-grid h3 { margin: 5px 0; padding: 0; font-size: 100%; }
+
+.article-grid-summary-hide .article-view-mode-grid h3 { font-weight: normal; }
+
+.article-grid-summary { font-size: 85%; }
+
+.article-grid-summary-hide .article-grid-summary { display: none; }
+
+/* Article Feature Bean */
+.article-feature { margin-right: -20px; margin-left: -20px; }
+.article-feature:before, .article-feature:after { content: ""; display: table; }
+.article-feature:after { clear: both; }
+.article-feature .date { display: none; }
+
+.article-feature .article-view-mode-sidebar img { width: 50px; }
+
+.article-feature-top { float: left; width: 100%; margin-left: 0%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
+
+.article-feature-remaining { float: left; width: 100%; margin-left: 0%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
+
+@media all and (min-width: 720px) and (max-width: 959px) { .article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-inline-3 .article-view-mode-sidebar img { width: 65px; } }
+@media (min-width: 960px) { .article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-inline-3 .article-view-mode-sidebar img { width: 80px; height: auto; } }
+
+@media (min-width: 720px) { .article-feature-inline-2 .article-feature-top { float: left; width: 50%; margin-left: 0%; margin-right: -50%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
+  .article-feature-inline-2 .article-feature-remaining { float: left; width: 50%; margin-left: 50%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: none; }
+  .article-feature-inline-2 .article-view-mode-feature { border-bottom: none; } }
+
+@media (min-width: 720px) { .article-feature-inline-3 .article-feature-top { float: left; width: 66.66667%; margin-left: 0%; margin-right: -66.66667%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: both; }
+  .article-feature-inline-3 .article-feature-remaining { float: left; width: 33.33333%; margin-left: 66.66667%; margin-right: -100%; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; clear: none; }
+  .article-feature-inline-3 .article-view-mode-feature { border-bottom: none; } }
+
+@media all and (min-width: 720px) { .article-feature-stacked .article-feature-remaining { border-top: 1px solid #e7e7e7; padding-top: 20px; }
+  .article-feature-stacked .article-feature-remaining:before, .article-feature-stacked .article-feature-remaining:after { content: ""; display: table; }
+  .article-feature-stacked .article-feature-remaining:after { clear: both; }
+  .article-feature-stacked .field-name-field-article-link { border-top: 1px solid #e7e7e7; clear: both; padding-top: 10px; }
+  .article-feature-stacked .article-view-mode-sidebar { float: left; padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 33.33333%; padding-left: 0; padding-right: 26.66667px; margin-right: 13.33333px; }
+  .article-feature-stacked .article-view-mode-sidebar:nth-child(3n+3) { padding-left: 20px; padding-right: 20px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box; word-wrap: break-word; width: 33.33333%; padding-left: 0; padding-right: 26.66667px; margin-right: -26.66667px; }
+  .article-feature-stacked .article-view-mode-sidebar:nth-child(3n+1) { clear: left; }
+  .article-feature-stacked .article-view-mode-feature, .article-feature-stacked .article-view-mode-sidebar { border-bottom: none; } }
+@media all and (min-width: 960px) { .article-feature-stacked .article-view-mode-sidebar img { width: 75px; } }
+
+.article-feature-top img { max-width: 100%; width: 100%; height: auto; display: block; margin-bottom: 10px; }

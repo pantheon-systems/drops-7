@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Files undo remove install file.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function files_undo_remove() {
+  // Make sure we are really low in weight.
+  db_update('system')
+    ->fields(array('weight' => 20))
+    ->condition('name', 'files_undo_remove')
+    ->execute();
+}

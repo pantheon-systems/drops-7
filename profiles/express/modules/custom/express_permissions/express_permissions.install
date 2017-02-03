@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Secure permissions for CU-Boulder.
+ */
+
+
+/**
+ * Implements hook_install().
+ *
+ * Creates a set of default users with specified roles.
+ */
+function express_permissions_install() {
+
+  // Configure secure_permissions module.
+  variable_set('secure_permissions_active', 1);
+  variable_set('secure_permissions_disable_forms', 1);
+  variable_set('secure_permissions_show_permissions_page', 1);
+  variable_set('secure_permissions_show_roles_page', 0);
+  variable_set('secure_permissions_use_default', 0);
+  variable_set('secure_permissions_verbose', 0);
+  variable_set('secure_permissions_ignore_in_export', 'access devel information');
+
+  // Load our roles and permissions.
+  secure_permissions_rebuild();
+
+}
+
+

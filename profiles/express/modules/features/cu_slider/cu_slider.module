@@ -1,0 +1,179 @@
+<?php
+/**
+ * @file
+ * Code for the CU_Slider feature.
+ */
+
+include_once 'cu_slider.features.inc';
+
+
+
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_slider_page_alter(&$page) {
+  // Add cu slider css
+  drupal_add_css(drupal_get_path('module', 'cu_slider') . '/css/cu_slider.css');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--cu-slider.tpl.php in our module directory.
+ */
+function cu_slider_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_slider');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Show examples of what the slider styles look like.
+ */
+function cu_slider_form_bean_form_alter(&$form, &$form_state, &$form_id) {
+  if ($form['#bundle'] == 'slider') {
+    $items = $form['field_slider_slide'][LANGUAGE_NONE];
+    $children = array_intersect_key($items, element_children($items));
+    if (!empty($form['redirect'])) {
+      $form['redirect']['#access'] = FALSE;
+    }
+    if (!empty($children)) {
+      foreach ($children as $key => $value) {
+        $form['field_slider_slide'][LANGUAGE_NONE][$key]['redirect']['#access'] = FALSE;
+      }
+    }
+    if ($form['bean']['#value']->type == 'slider') {
+      if (array_key_exists('field_slider_style', $form)) {
+        unset($form['field_slider_style']);
+      }
+
+      // Hide old url field because we need to migrate date to new link field
+      foreach ($form['field_slider_slide'][LANGUAGE_NONE] as $delta => $field) {
+        if (is_numeric($delta)) {
+          $form['field_slider_slide'][LANGUAGE_NONE][$delta]['field_slider_url']['#access'] = FALSE;
+        }
+      }
+
+      //$form['field_slider_style']['examples']['#markup'] = _cu_slider_examples();
+    }
+  }
+}
+
+/**
+ * Constructs the examples so it's easier to maintain
+ */
+function _cu_slider_examples() {
+  $path = base_path() . drupal_get_path('module', 'cu_slider') . '/examples/';
+  $output = '<table cellspacing="0" cellpadding="10" border="0">
+    <thead>
+      <td colspan="2"><strong>' . t('Slider Style Examples') . '</strong></td>
+    </thead>
+    <tr>
+      <th>Wide</th>
+      <th>Wide with Teaser</th>
+    </tr>
+    <tr>
+      <td><img src="' . $path . 'wide.jpg" alt="' . t('Wide') . '" /></td>
+      <td><img src="' . $path . 'wideteaser.jpg" alt="' . t('Wide with Teaser') . '"  /></td>
+    </tr>
+    <tr>
+      <th>Medium</th>
+      <th>Small</th>
+    </tr>
+    <tr>
+      <td><img src="' . $path . 'medium.jpg" alt="' . t('Medium') . '"  /></td>
+      <td><img src="' . $path . 'small.jpg" alt="' . t('Small') . '"  /></td>
+    </tr>
+    </table><br />';
+  return $output;
+}
+
+function cu_slider_update_7000() {
+  module_enable('flexslider');
+  module_enable('flexslider_views');
+  module_enable('flexslider_views_slideshow');
+}
+
+function cu_slider_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess social_link beans.
+  if ($entity_type == 'bean' && $bundle == 'slider') {
+    global $cu_slider_image_size;
+    $cu_slider_image_size = $vars['content']['field_slider_size'][0]['#markup'];
+  }
+}
+
+function cu_slider_preprocess_field(&$vars) {
+  global $cu_slider_image_size;
+  if ($vars['element']['#field_name'] == 'field_slider_slide') {
+    $cu_slider_image_size = $vars['element']['#object']->field_slider_size['und'][0]['value'];
+  }
+}
+
+/**
+ * Implements hook_image_default_styles().
+ */
+function cu_slider_image_default_styles() {
+  $styles = array();
+
+  // Exported image style: slider.
+  $styles['slider'] = array(
+    'label' => 'slider',
+    'effects' => array(
+      12 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 1500,
+          'height' => 563,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  // Exported image style: slider-large.
+  $styles['slider-large'] = array(
+    'label' => 'slider-large',
+    'effects' => array(
+      15 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 1500,
+          'height' => 1000,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  return $styles;
+}

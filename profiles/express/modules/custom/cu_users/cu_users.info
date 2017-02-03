@@ -1,0 +1,7 @@
+name = CU Users
+description = "Define CU staff users"
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0
+dependencies[] = secure_permissions
+

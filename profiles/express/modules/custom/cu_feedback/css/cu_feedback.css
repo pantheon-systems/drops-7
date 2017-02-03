@@ -1,0 +1,54 @@
+#cu-feedback {
+  position: fixed;
+  right:15px;
+  bottom:0;
+  z-index: 1;
+  width:240px;
+  font-size: 12px;
+  background: rgb(255,255,255);
+  background: rgba(255,255,255,.10);
+  padding: 5px 5px 0 5px;
+}
+#cu-feedback a.cu-feedback-link:link,
+#cu-feedback a.cu-feedback-link:visited {
+  
+  padding:10px;
+  font-size: 12px;
+  display: block;
+  font-weight: bold;
+}
+#cu-feedback a.cu-feedback-link-blue {
+  background-color:#007BC8;
+  color:#fff;
+}
+#cu-feedback a.cu-feedback-link-gold {
+  background-color:#cfb87c;
+  color:#000;
+  
+}
+#cu-feedback a.cu-feedback-link:hover {
+  background: #000;
+  color:#fff
+}
+#cu-feedback a.cu-feedback-link i.fa {
+  float: right;
+  margin-left: 10px;
+}
+#cu-feedback-content {
+  background: #fff;
+  padding: 10px;
+  color:#363636;
+  display: none;
+  border:1px solid #ddd;
+}
+#cu-feedback h2.node-title {
+  display: none;
+}
+
+
+body.has-feedback-form {
+  padding-bottom: 40px;
+}
+body.has-feedback-form #cu_back_to_top {
+  bottom: 50px;
+}

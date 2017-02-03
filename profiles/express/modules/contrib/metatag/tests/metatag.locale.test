@@ -1,0 +1,125 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module to ensure Locale integration doesn't break.
+ */
+
+class MetatagCoreLocaleTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for Locale',
+      'description' => 'Test Metatag integration with the locale module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need Locale for the multiple languages.
+    $modules[] = 'locale';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Test that the node form meta tag fields are translated correctly.
+   */
+  function testNodeFormTranslations() {
+    $content_type = 'metatag_test';
+    $content_type_path = str_replace('_', '-', $content_type);
+    $label = 'Test';
+
+    // Create a content type.
+    $this->createContentType($content_type, $label);
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'create ' . $content_type . ' content',
+      'delete any ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+
+      // Locale items.
+      'administer languages',
+      'translate interface',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->drupalLogin($this->adminUser);
+
+    // Prep the locales.
+    $this->setupLocales();
+
+    // Load the node form in each locale, confirm it has the fields. This also
+    // preloads the field labels into the locale system.
+    foreach (array('French' => 'fr', 'English' => '') as $lang => $langcode) {
+      $path = 'node/add/' . $content_type_path;
+      if (!empty($langcode)) {
+        $path = $langcode . '/' . $path;
+      }
+
+      // Load the node form in French to prep the translation strings.
+      $this->drupalGet($path);
+      $this->assertResponse(200);
+
+      // Verify the page loaded correctly.
+      // @todo Update this to extract the page title.
+      $this->assertText(strip_tags(t('Create @name', array('@name' => $label))));
+
+      // Confirm the Metatag fields are present.
+      $this->assertField('edit-metatags-und-title-value', 'Found the page title meta tag');
+      $xpath = $this->xpath("//label[@for='edit-metatags-und-title-value']");
+      $this->assertEqual(count($xpath), 1, 'Exactly one page title field found.');
+      // Need to trim() the xpath results because Field API adds a space after
+      // every field's label.
+      $this->assertEqual(trim((string)$xpath[0]), 'Page title');
+
+      $this->assertField('edit-metatags-und-description-value', 'Found the description meta tag');
+      $xpath = $this->xpath("//label[@for='edit-metatags-und-description-value']");
+      $this->assertEqual(count($xpath), 1, 'Exactly one description field found.');
+      // Need to trim() the xpath results because Field API adds a space after
+      // every field's label.
+      $this->assertEqual(trim((string)$xpath[0]), 'Description');
+    }
+
+    // Translate the page title and description fields.
+    $textgroup = 'default';
+    $context = '';
+    $langcode = 'fr';
+    $title_source = 'Page title';
+    $title_target = 'Le page title';
+    $lid = $this->getTranslationLidBySource($title_source, $textgroup);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the page title tag.');
+    $this->saveTranslationString($lid, $context, $langcode, $title_source, $title_target);
+    $desc_source= 'Description';
+    $desc_target = 'Le description';
+    $lid = $this->getTranslationLidBySource($desc_source, $textgroup);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the description tag.');
+    $this->saveTranslationString($lid, $context, $langcode, $desc_source, $desc_target);
+
+    // Load the French node form again.
+    $this->drupalGet('fr/node/add/' . $content_type_path);
+    $this->assertResponse(200);
+
+    // Verify the title field's label was translated.
+    $xpath = $this->xpath("//label[@for='edit-metatags-und-title-value']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one page title field found.');
+    // Need to trim() the xpath results because Field API adds a space after
+    // every field's label.
+    $this->assertEqual(trim((string)$xpath[0]), $title_target);
+
+    // Verify the description field's label was translated.
+    $xpath = $this->xpath("//label[@for='edit-metatags-und-description-value']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description field found.');
+    // Need to trim() the xpath results because Field API adds a space after
+    // every field's label.
+    $this->assertEqual(trim((string)$xpath[0]), $desc_target);
+  }
+
+  // @todo Make sure the meta tag fields are displayed in the correct locale.
+  // @todo Make sure the node records are stored with the correct language.
+}

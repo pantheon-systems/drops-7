@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * enable disable cropping modules.
+ */
+function cu_slider_update_7010() {
+  module_disable('manualcrop');
+  module_enable('smartcrop');
+}
+/**
+ * migrate old url field to new link field.
+ */
+function cu_slider_update_7011() {
+  // migrate old url field to new link field.
+  $results = db_query('SELECT * FROM {field_data_field_slider_url}');
+  foreach ($results as $result) {
+    $result->field_slider_link_url = $result->field_slider_url_value;
+    unset($result->field_slider_url_value);
+    unset($result->field_slider_url_format);
+    drupal_write_record ('field_data_field_slider_link', $result);
+  }
+  // Revisions too.
+  $results = db_query('SELECT * FROM {field_revision_field_slider_url}');
+  foreach ($results as $result) {
+    $result->field_slider_link_url = $result->field_slider_url_value;
+    unset($result->field_slider_url_value);
+    unset($result->field_slider_url_format);
+    drupal_write_record ('field_revision_field_slider_link', $result);
+  }
+}
+
+/**
+ * Flush slider image caches.
+ */
+function cu_slider_update_7012() {
+  image_style_flush('slider');
+}

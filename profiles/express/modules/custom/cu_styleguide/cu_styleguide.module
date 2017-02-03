@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Style guide module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function cu_styleguide_menu() {
+  $items['custyleguide'] = array(
+    'title' => 'CU Style Guide',
+    'page callback' => 'cu_styleguide_content',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  return $items;
+}
+
+/**
+ * Get contents from file.
+ */
+function cu_styleguide_content() {
+  // Get HTML Markup.
+  $html = file_get_contents('cu_styleguide.html', TRUE);
+  // Get Form.
+  $form = drupal_get_form('cu_styleguide_form_elements_form');
+  // Get Images Markup.
+  global $base_url;
+  $image = $base_url . '/sites/default/files/styles/large_wide_thumbnail/public/testimage.jpg';
+  $images = _cu_styleguide_image_styles();
+  $output['html']['#markup'] = $html;
+
+  $output['forms'] = $form;
+  $output['forms']['#prefix'] = '<h2>Form Elements</h2>';
+  $output['images']['#markup'] = $images;
+  return $output;
+}
+
+/**
+ * Get styles.
+ */
+function _cu_styleguide_image_styles() {
+  global $base_url;
+  $styles = array(
+    'large',
+    'medium',
+    'small',
+    'thumbnail',
+    'square_thumbnail',
+    'large_wide_thumbnail',);
+  $output = '<h2>Images</h2>';
+  foreach ($styles as $style) {
+    $output .= '<p>' . $style . '<br /><img src="' . $base_url . '/sites/default/files/styles/' . $style . '/public/testimage.jpg" /></p>';
+  }
+  return $output;
+}
+
+/**
+ * Get form elements.
+ */
+function cu_styleguide_form_elements_form() {
+  $form = array();
+  $form['drupal_form_elements'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Drupal Form Elements'),
+  );
+
+  $form['drupal_form_elements']['textfield'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Textfield'),
+    '#default_value' => t('Default textfield value'),
+  );
+  $form['drupal_form_elements']['textarea'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Textarea'),
+    '#default_value' => t('Default textfield value'),
+  );
+
+  $form['drupal_form_elements']['radios'] = array(
+    '#type' => 'radios',
+    '#title' => t('Radio'),
+    '#default_value' => '1',
+    '#options' => array(
+      '1' => t('Option 1'),
+      '2' => t('Option 2'),
+      '3' => t('Option 3'),
+    ),
+  );
+  $form['drupal_form_elements']['checkboxes'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Checkboxes'),
+    '#default_value' => array('1'),
+    '#options' => array(
+      '1' => t('Option 1'),
+      '2' => t('Option 2'),
+      '3' => t('Option 3'),
+    ),
+  );
+  $form['drupal_form_elements']['select'] = array(
+    '#type' => 'select',
+    '#title' => t('Select'),
+    '#default_value' => '1',
+    '#options' => array(
+      '1' => t('Option 1'),
+      '2' => t('Option 2'),
+      '3' => t('Option 3'),
+    ),
+  );
+
+  $form['drupal_form_elements']['submit'] = array('#type' => 'submit', '#value' => t('Submit'));
+
+  return $form;
+}

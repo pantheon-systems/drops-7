@@ -1,0 +1,44 @@
+<?php
+/**
+ * @file
+ * Code for the CU Search feature.
+ */
+
+include_once 'cu_search.features.inc';
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_search_page_alter(&$page) {
+  // Add JS and CSS to every page to style the search box.
+  drupal_add_css(drupal_get_path('module', 'cu_search') . '/cu_search.css');
+  drupal_add_js(drupal_get_path('module', 'cu_search') . '/cu_search.js', array('scope' => 'footer'));
+}
+
+/**
+ * Implements hook_FORM_ID_form_alter().
+ */
+function cu_search_form_google_appliance_block_form_alter(&$form, &$form_state, $form_id) {
+  $form['search_keys']['#weight'] = 0;
+  $form['actions']['#weight'] = 1;
+
+  $form['search_keys']['#prefix'] = '<div class="cu-search clearfix">';
+  $form['actions']['#suffix'] = '</div>';
+
+  $form['cu_links'] = array(
+    '#markup' => '<div class="culinks"><strong>CU:</strong> <a href="/">Home</a> &bull; <a href="/atoz">A to Z</a> &bull; <a href="/campusmap">Campus Map</a></div>',
+    '#weight' => 99,
+  );
+}
+
+
+/**
+ * Implements hook_theme_registry_alter
+ *
+ * Provide our own template for google_appliance_block_form
+ */
+function cu_search_theme_registry_alter(&$theme_registry) {
+  $theme_registry['google_appliance_block_form']['template'] = 'google-appliance-block-form';
+  $theme_registry['google_appliance_block_form']['path'] = drupal_get_path('module', 'cu_search') . '/templates';
+  $theme_registry['google_appliance_block_form']['theme path'] = drupal_get_path('module', 'cu_search');
+}

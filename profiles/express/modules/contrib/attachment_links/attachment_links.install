@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file attachment_links.install
+ * Provides install, uninstall, and update hooks.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function attachment_links_uninstall() {
+  // Remove variables used by this module.
+  db_delete('variable')
+    ->condition('name', 'attachment_links%', 'LIKE')
+    ->execute();
+}
+
+/**
+ * Update numeric field id in {variable} to field name.
+ */
+function attachment_links_update_7001() {
+  $result = db_select('variable', 'v')
+    ->fields('v', array('name', 'value'))
+    ->condition('name', 'attachment_links_selection%', 'LIKE')
+    ->execute();
+  while ($record = $result->fetchAssoc()) {
+    $value = unserialize($record['value']);
+    if (is_numeric($value)) {
+      $field_info = field_info_field_by_id($value);
+      variable_set($record['name'], $field_info['field_name']);
+    }
+  }
+}

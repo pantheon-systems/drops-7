@@ -1,0 +1,13 @@
+; $Id: jquery_plugin.info,v 1.1.4.4.2.1 2009/09/24 00:39:19 mfb Exp $
+name = jQuery plugins
+description = An API and home for miscellaneous jQuery plugins.
+package = User interface
+core = 7.x
+files[] = jquery_plugin.module
+
+; Information added by drupal.org packaging script on 2011-01-06
+version = "7.x-1.0"
+core = "7.x"
+project = "jquery_plugin"
+datestamp = "1294280182"
+

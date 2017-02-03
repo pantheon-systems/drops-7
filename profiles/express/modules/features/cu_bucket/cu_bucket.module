@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Code for the cu_bucket feature.
+ */
+
+include_once('cu_bucket.features.inc');
+
+function cu_bucket_form_alter(&$form, &$form_state, $form_id) {
+  switch($form_id) {
+    case 'block_admin_configure':
+    case 'bean_form':
+    case 'quicktabs_form':
+      $form['#submit'][] = '_cu_bucket_clear_cache';
+      break;
+    }
+}
+/**
+ * Caleld from cu_bucket_form_alter
+ */
+function _cu_bucket_clear_cache() {
+  block_flush_caches();
+  cache_clear_all('*', 'cache_block', TRUE);
+}

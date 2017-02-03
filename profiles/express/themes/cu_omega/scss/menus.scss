@@ -1,0 +1,122 @@
+@import "modules/_colors.scss";
+
+.region-background-dark {
+  .block-menu ul.menu a {
+    border-bottom: 1px solid #444;
+  }
+}
+.region-background-light {
+  .block-menu ul.menu a {
+    border-bottom: 1px solid $border_color;
+  }
+}
+
+
+.block-menu {
+  ul.menu,
+  ul.menu li {
+    list-style: none;
+    list-style-image: none;
+    margin:0;
+    padding:0;
+  }
+  ul.menu li {
+  }
+  ul.menu a {
+    display: block;
+    padding: 5px 0;
+  }
+  ul.menu ul.menu a {
+    padding-left: 10px;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: 20px;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 30px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 40px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 50px;
+  }
+  ul.menu li.expanded > a:before {
+    //content: '\f107';
+    //font-family: 'FontAwesome';
+    //margin-right:5px;
+  }
+  ul.menu li.collapsed > a:before {
+    //content: '\f105';
+    //font-family: 'FontAwesome';
+    //margin-right:5px;
+  }
+}
+
+#footer-links-wrapper {
+  font-size: 90%;
+  padding: 10px 0;
+  font-weight: bold;
+}
+.footer-menu-gray {
+  background-color: #333;
+}
+.footer-menu-gray ul#footer-menu-links {
+  a,
+  a.active,
+  a.active-trail {
+    color:#fff;
+    margin-right: 20px;
+    &:hover,
+    &:focus {
+      color:$cugold;
+    }
+  }
+}
+.footer-menu-gold {
+  background-color: $cugold;
+}
+.footer-menu-gold ul#footer-menu-links {
+  a,
+  a.active,
+  a.active-trail {
+    color:#333;
+    margin-right: 20px;
+    &:hover,
+    &:focus {
+      color:#000;
+    }
+  }
+}
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+  ul.menu,
+  ul.menu li {
+    list-style: none;
+    list-style-image: none;
+    margin: 0;
+    padding: 0;
+    
+    a {
+      display: block;
+    }
+  }
+  ul.menu ul.menu a {
+    padding-left: 15px;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: 30px;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 45px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 60px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 75px;
+  }
+}

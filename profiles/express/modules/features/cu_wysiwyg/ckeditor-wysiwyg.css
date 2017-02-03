@@ -1,0 +1,149 @@
+.cke_contents_ltr a.button {
+  display: inline-block;
+  padding: 2px 5px;
+  color:#fff;
+  background-color: #333;
+}
+.cke_contents_ltr .lead {
+  font-size: 130%;
+  line-height: 125%;
+}
+.cke_contents_ltr .hero {
+  font-size: 200%;
+  line-height: 125%;
+}
+.cke_contents_ltr .supersize {
+  font-size: 250%;
+  line-height: 125%;
+}
+.cke_contents_ltr h1,
+.cke_contents_ltr h2,
+.cke_contents_ltr h3,
+.cke_contents_ltr h4,
+.cke_contents_ltr h5,
+.cke_contents_ltr h6 {
+  font-weight: bold;
+}
+
+/*
+Copyright © 2003-2013, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.html or http://ckeditor.com/license
+*/
+
+body
+{
+	/* Font */
+	font-family: sans-serif, Arial, Verdana, "Trebuchet MS";
+	font-size: 12px;
+
+	/* Text color */
+	color: #333;
+
+	/* Remove the background color to make it transparent */
+	background-color: #fff;
+
+	margin: 20px;
+}
+
+.cke_editable
+{
+	font-size: 15px;
+	line-height: 1.6em;
+}
+
+blockquote
+{
+	font-style: italic;
+	font-family: Georgia, Times, "Times New Roman", serif;
+	padding: 2px 0;
+	border-style: solid;
+	border-color: #ccc;
+	border-width: 0;
+}
+
+.cke_contents_ltr blockquote
+{
+	padding-left: 20px;
+	padding-right: 8px;
+	border-left-width: 5px;
+}
+
+.cke_contents_rtl blockquote
+{
+	padding-left: 8px;
+	padding-right: 20px;
+	border-right-width: 5px;
+}
+
+a
+{
+	color: #0782C1;
+}
+
+ol,ul,dl
+{
+	/* IE7: reset rtl list margin. (#7334) */
+	*margin-right: 0px;
+	/* preserved spaces for list items with text direction other than the list. (#6249,#8049)*/
+	padding: 0 40px;
+}
+
+h1,h2,h3,h4,h5,h6
+{
+	font-weight: normal;
+	line-height: 1.2em;
+}
+
+hr
+{
+	border: 0px;
+	border-top: 1px solid #ccc;
+}
+
+img.right {
+    float: right;
+    margin-left: 15px;
+    padding: 5px;
+}
+
+img.left {
+    float: left;
+    margin-right: 15px;
+    padding: 5px;
+}
+
+img:hover {
+	opacity: .9;
+	filter: alpha(opacity = 90);
+}
+
+pre
+{
+	white-space: pre-wrap; /* CSS 2.1 */
+	word-wrap: break-word; /* IE7 */
+}
+
+.marker {
+    background-color: Yellow;
+}
+
+
+table { border-collapse: collapse; border: none; border: 1px solid #ccc; }
+table tbody { border: none; }
+table tr.even td { background: #f9f9f9; }
+table td { padding: 8px; vertical-align: top; border: 1px solid #ccc; }
+table th { background: #ccc; border: 1px solid #ccc; border: none; padding: 8px; font-weight: bold; }
+table th a:link, table th a:visited { color: #0082c3; }
+table caption { text-align: left; font-size: 180%; font-weight: normal; padding: 4px 0; }
+
+table.zebra tr:nth-child(even) td { background: #f3f3f3; }
+table.zebra tr:hover td { background: #e9f8ff; }
+
+table.table-condensed td, table.table-condensed th, div.table-condensed table td, div.table-condensed table th { padding: 4px; }
+
+table.table-small, div.table-small table { font-size: 80%; }
+table.table-small td, table.table-small th, div.table-small table td, div.table-small table th { padding: 4px; }
+
+table.table-horizontal td, div.table-horizontal table td { border-left: none; border-right: none; }
+
+table.table-vertical td, div.table-vertical table td { border-top: none; border-bottom: none; }

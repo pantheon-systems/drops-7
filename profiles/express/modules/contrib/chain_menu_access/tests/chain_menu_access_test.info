@@ -1,0 +1,12 @@
+name = "Chain Menu Access API tests"
+description = "Support module for testing the Chain Menu Access API."
+package = Testing
+core = 7.x
+hidden = TRUE
+
+; Information added by drupal.org packaging script on 2012-08-30
+version = "7.x-2.0"
+core = "7.x"
+project = "chain_menu_access"
+datestamp = "1346338604"
+

@@ -1,0 +1,477 @@
+<?php
+/**
+ * @file
+ * All module hooks implementation can be found in this file.
+ */
+
+define('VIDEO_RENDERING_PENDING', 1);
+define('VIDEO_RENDERING_INQUEUE', 2);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
+
+// include the field element
+module_load_include('inc', 'video', 'video.field');
+module_load_include('inc', 'video', 'video.features');
+module_load_include('inc', 'video', 'video.filters');
+
+/**
+ * Implements hook_init().
+ */
+function video_init() {
+  drupal_add_css(drupal_get_path('module', 'video') . '/css/video.css');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/video.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function video_menu() {
+  $items = array();
+  $items['postback/jobs'] = array(
+    'page callback' => 'video_transcoder_postback_jobs',
+    'file' => 'video.pages.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['video/browser'] = array(
+    'page callback' => 'video_file_browser',
+    'file' => 'video.pages.inc',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['video/embed/%node/%/%'] = array(
+    'page callback' => 'video_file_embed',
+    'file' => 'video.pages.inc',
+    'page arguments' => array(2, 3, 4),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function video_permission() {
+  return array(
+    'bypass conversion video' => array(
+      'title' => t('Bypass video conversion'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
+    ),
+    'convert on submission' => array(
+      'title' => t('Convert video on submit'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
+    ),
+    'override player dimensions' => array(
+      'title' => t('Change default player dimensions'),
+      'description' => t('Warning: Give to trusted roles only; this permission has usability implications.'),
+    ),
+    'use default thumb' => array(
+      'title' => t('Use default thumbnail'),
+      'description' => t('Use the default video thumbnail as the thumbnail for the video.'),
+    ),
+    're convert video' => array(
+      'title' => t('Re queue video'),
+      'description' => t('Convert videos back again if failed or not.'),
+    ),
+    'administer video presets' => array(
+      'title' => t('Administer video presets'),
+      'description' => t('Perform administration tasks for the video presets.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function video_theme() {
+  $theme = array();
+  $theme['video_formatter_player'] = array(
+    'variables' => array('item' => NULL, 'entity' => NULL, 'entity_type' => NULL, 'field' => NULL, 'instance' => NULL, 'player_dimensions' => NULL, 'poster_image_style' => NULL),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_formatter_thumbnail'] = array(
+    'variables' => array('item' => NULL, 'path' => NULL, 'image_style' => NULL, 'entity' => NULL, 'entity_type' => NULL, 'field' => NULL, 'instance' => NULL),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_widget'] = array(
+    'render element' => 'element',
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_conversion_failed'] = array(
+    'variables' => array(),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_inprogress'] = array(
+    'variables' => array(),
+    'file' => 'video.theme.inc',
+  );
+
+  $path = drupal_get_path('module', 'video') . '/theme';
+  // Lets setup our themes for our players
+  // We include video.utility.inc here, because when upgrading the autoload cache is not updated yet.
+  module_load_include('utility.inc', 'video');
+  $players = array_keys(video_utility::getVideoPlayers());
+  $players[] = 'video_play_html5_audio';
+  foreach ($players as $tpl) {
+    $theme[$tpl] = array(
+      'variables' => array('item' => NULL, 'width' => NULL, 'height' => NULL),
+      'template' => str_replace('_', '-', $tpl),
+      'path' => $path,
+    );
+  }
+  // We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
+  // calling our flv template file.
+  $theme['video_flv'] = array(
+    'variables' => array('item' => NULL, 'themed_output' => NULL),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_html5'] = array(
+    'variables' => array('item' => NULL, 'width' => NULL, 'height' => NULL),
+    'file' => 'video.theme.inc',
+  );
+  // Dialog page.
+  $theme['video_dialog_page'] = array(
+    'render element' => 'page',
+    'template' => 'templates/video-dialog-page',
+    'file' => 'video.theme.inc',
+  );
+  return $theme;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Add a generic preprocess function to all video theme methods.
+ */
+function video_theme_registry_alter(&$registry) {
+  // After upgrades, this class may not yet be in the class registry,
+  // so load the include explicitly.
+  if (!class_exists('video_utility', TRUE)) {
+    module_load_include('utility.inc', 'video');
+  }
+  $players = video_utility::getVideoPlayers();
+  $templates = array_keys($players);
+  $templates[] = 'video_flv';
+  $templates[] = 'video_html5';
+
+  foreach ($templates as $template) {
+    if (!isset($registry[$template])) {
+      continue;
+    }
+
+    if (!isset($registry[$template]['preprocess functions'])) {
+      $registry[$template]['preprocess functions'] = array();
+    }
+
+    $registry[$template]['preprocess functions'][] = 'video_preprocess_video_formatter_player';
+  }
+}
+
+/**
+ * Implements hook_preprocess_video_formatter_player().
+ *
+ * Generic preprocess function for all video theme functions to load some
+ * variables.
+ */
+function video_preprocess_video_formatter_player(array &$variables) {
+  if (!isset($variables['autoplay'])) {
+    $variables['autoplay'] = (bool)variable_get('video_autoplay', FALSE);
+  }
+  if (!isset($variables['autobuffering'])) {
+    $variables['autobuffering'] = (bool)variable_get('video_autobuffering', TRUE);
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function video_cron() {
+  if (!variable_get('video_cron', TRUE)) {
+    return;
+  }
+
+  // Append up to video_ffmpeg_instances videos to the video queue.
+  $videos = video_jobs::loadQueue();
+  if (!empty($videos)) {
+    $queue = DrupalQueue::get('video_queue');
+    foreach ($videos as $video) {
+      $queue->createItem($video);
+    }
+  }
+
+  // Mark items as FAILED that have been ACTIVE for more than video_transcode_timeout minutes and log this.
+  $transcodetimeout = variable_get('video_transcode_timeout', 5);
+  if (!empty($transcodetimeout)) {
+    $limit = time() - $transcodetimeout * 60;
+    $videos = db_query('SELECT f.fid FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_ACTIVE))->fetchAllKeyed(0, 0);
+    if (!empty($videos)) {
+      $list = array();
+      foreach ($videos as $fid) {
+        $video = video_jobs::load($fid);
+        video_jobs::setFailed($video);
+        $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
+        $uri = entity_uri($video->entity_type, $entity);
+        $list[] = l($video->filename, $uri['path'], $uri['options']) . ' (' . t('@status since @datetime', array('@status' => t('active'), '@datetime' => format_date($video->statusupdated))) . ')';
+      }
+
+      watchdog('video', 'The following videos were marked as %newstate because they have been in %oldstate state for more than @timeout minutes. To increase this limit, update the Video module scheduling @setting-name setting. !list', array('%newstate' => 'failed', '%oldstate' => 'rendering active', '@timeout' => $transcodetimeout, '@setting-name' => t('Video transcode timeout'), '!list' => theme('item_list', array('items' => $list))), WATCHDOG_WARNING, l(t('configure'), 'admin/config/media/video/scheduling'));
+    }
+  }
+
+  // Mark items as PENDING that have been QUEUED for more than video_queue_timeout minutes and log this.
+  $queuetimeout = variable_get('video_queue_timeout', 60);
+  if (!empty($queuetimeout)) {
+    $limit = time() - $queuetimeout * 60;
+    $videos = db_query('SELECT f.fid, f.filename, q.entity_type, q.entity_id, q.statusupdated FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_INQUEUE))->fetchAllAssoc('fid');
+    if (!empty($videos)) {
+      db_update('video_queue')
+        ->condition('fid', array_keys($videos), 'IN')
+        ->fields(array('status' => VIDEO_RENDERING_PENDING, 'statusupdated' => time()))
+        ->execute();
+
+      $list = array();
+      foreach ($videos as $video) {
+        $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
+        $uri = entity_uri($video->entity_type, $entity);
+        $list[] = l($video->filename, $uri['path'], $uri['options']) . ' (' . t('@status since @datetime', array('@status' => t('queued'), '@datetime' => format_date($video->statusupdated))) . ')';
+      }
+
+      watchdog('video', 'The following videos were marked as %newstate because they have been in %oldstate state for more than @timeout minutes. To increase this limit, update the Video module scheduling @setting-name setting. !list', array('%newstate' => 'rendering pending', '%oldstate' => 'queued', '@timeout' => $queuetimeout, '@setting-name' => t('Video queue timeout'), '!list' => theme('item_list', array('items' => $list))), WATCHDOG_NOTICE, l(t('configure'), 'admin/config/media/video/scheduling'));
+    }
+  }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ *
+ * The queue timeout is the value for the entire cron run, not just one
+ * item, so the timeout is set to the timeout of one video times the maximum
+ * number items in the queue.
+ */
+function video_cron_queue_info() {
+  return array(
+    'video_queue' => array(
+      'worker callback' => 'video_queue_process',
+      'time' => 60 * variable_get('video_transcode_timeout', 5) * variable_get('video_ffmpeg_instances', 5),
+    ),
+  );
+}
+
+/**
+ * Process video transcoding queue
+ */
+function video_queue_process(stdClass $video) {
+  $video_conversion = new Transcoder();
+  $video_conversion->executeConversion($video);
+}
+
+/**
+ * Implements hook_file_delete().
+ *
+ * @todo: delete more
+ */
+function video_file_delete(stdClass $file) {
+  // Deregister the file in video_queue
+  db_delete('video_queue')->condition('fid', $file->fid)->execute();
+
+  // Deregister the thumbnails in video_thumbnails
+  db_delete('video_thumbnails')->condition('thumbnailfid', $file->fid)->execute();
+  db_delete('video_thumbnails')->condition('videofid', $file->fid)->execute();
+
+  // Deregister the converted files in video_output
+  db_delete('video_output')->condition('output_fid', $file->fid)->execute();
+  db_delete('video_output')->condition('original_fid', $file->fid)->execute();
+}
+
+/**
+ * Implements hook_features_api().
+ */
+function video_features_api() {
+  return array(
+    'video' => array(
+      'name' => t('Video presets'),
+      'default_hook' => 'video_default_presets',
+      'file' => drupal_get_path('module', 'video') . '/video.features.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function video_views_api() {
+  return array(
+    'api' => 3.0,
+    'path' => drupal_get_path('module', 'video') . '/views',
+  );
+}
+
+/**
+ * Implements hook_views_handlers().
+ */
+function video_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'video') . '/views',
+    ),
+    'handlers' => array(
+      'video_handler_field_video_duration' => array(
+        'parent' => 'views_handler_field',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_file_download().
+ *
+ * Control the access to files underneath the styles directory.
+ */
+function video_file_download($uri) {
+  // Check if the file is a transcoded or thumbnail file and determine access by evaluating access to the original file
+  $fileinfo = FALSE;
+  $extension = video_utility::getExtension($uri);
+  $isimage = $extension == 'png' || $extension == 'jpg';
+
+  // Check for transcoded files
+  // @todo only execute the query if the file name seems to be a video
+  if (!$isimage) {
+    $fileinfo = db_query('SELECT video.uri videouri, converted.* FROM {file_managed} video JOIN {video_output} op ON video.fid = op.original_fid JOIN {file_managed} converted ON converted.fid = op.output_fid WHERE converted.uri = :uri', array(':uri' => $uri))->fetchObject();
+  }
+
+  // Check for thumbnails (new style, files uploaded after upgrade to 2.6)
+  if ($fileinfo === FALSE && $isimage) {
+    $fileinfo = db_query('SELECT video.uri videouri, thumb.* FROM {file_managed} video JOIN {video_thumbnails} tn ON video.fid = tn.videofid JOIN {file_managed} thumb ON thumb.fid = tn.thumbnailfid WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
+  }
+
+  // Check for thumbnails (old style, only works for selected thumbnail)
+  if ($fileinfo === FALSE && strpos($uri, '/thumbnails/') !== FALSE) {
+    $thumbfile = db_query('SELECT thumb.* FROM {file_managed} thumb WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
+    if ($thumbfile != NULL && strncmp($thumbfile->filemime, 'image/', 6) === 0) {
+      // The following code is derived from file_file_download() and tries to find the original video URI for this thumbnail
+      $fields = field_info_fields();
+      foreach ($fields as $field_name => $file_field) {
+        if ($file_field['type'] != 'video') continue;
+
+        $query = new EntityFieldQuery();
+        $references = $query->fieldCondition($file_field, 'thumbnail', $thumbfile->fid)->age(FIELD_LOAD_CURRENT)->execute();
+
+        foreach ($references as $entity_type => $type_references) {
+          foreach ($type_references as $id => $reference) {
+            $entity = video_utility::loadEntity($entity_type, $id);
+            if ($entity) {
+              // Load all field items for that entity.
+              $field_items = field_get_items($entity_type, $entity, $field_name);
+
+              // Find the field item with the matching URI.
+              foreach ($field_items as $item) {
+                if ($item['thumbnail'] == $thumbfile->fid) {
+                  $thumbfile->videouri = $item['uri'];
+                  break 4;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (isset($thumbfile->videouri)) {
+        $fileinfo = $thumbfile;
+      }
+    }
+  }
+
+  // If $uri is a converted file or thumbnail, $fileinfo contains the file object for that file and the URI of the original video
+  if ($fileinfo != NULL) {
+    $original_headers = file_file_download($fileinfo->videouri, 'video');
+    if ($original_headers === -1 || $original_headers === NULL) {
+      return drupal_access_denied();
+    }
+
+    // Get the headers of the converted file of thumbnail and return
+    return file_get_content_headers($fileinfo);
+  }
+
+  // Next code derived from function image_file_download()
+  $path = file_uri_target($uri);
+
+  // Private file access for image style derivatives.
+  if (strpos($path, 'styles/') === 0) {
+    $args = explode('/', $path);
+    // Discard the first part of the path (styles).
+    array_shift($args);
+    // Get the style name from the second part.
+    $style_name = array_shift($args);
+    // Remove the scheme from the path.
+    array_shift($args);
+
+    // Then the remaining parts are the path to the image.
+    $original_uri = file_uri_scheme($uri) . '://' . implode('/', $args);
+
+    // Check that the file exists and is an image.
+    if ($info = image_get_info($uri)) {
+      // Check the permissions of the original to grant access to this image.
+      $headers = module_invoke_all('file_download', $original_uri);
+      if (!in_array(-1, $headers)) {
+        return array(
+          // Send headers describing the image's size, and MIME-type...
+          'Content-Type' => $info['mime_type'],
+          'Content-Length' => $info['file_size'],
+          // ...and allow the file to be cached for two weeks (matching the
+          // value we/ use for the mod_expires settings in .htaccess) and
+          // ensure that caching proxies do not share the image with other
+          // users.
+          'Expires' => gmdate(DATE_RFC1123, REQUEST_TIME + 1209600),
+          'Cache-Control' => 'max-age=1209600, private, must-revalidate',
+        );
+      }
+    }
+    return -1;
+  }
+
+  // Private file access for the original files. Note that we only
+  // check access for non-temporary images, since file.module will
+  // grant access for all temporary files.
+  $files = file_load_multiple(array(), array('uri' => $uri));
+  if (count($files)) {
+    $file = reset($files);
+    if ($file->status) {
+      return file_file_download($uri, 'video');
+    }
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * This is used to use our alternate template when ?render=media-popup is passed
+ * in the URL.
+ */
+function video_page_alter(&$page) {
+  if (isset($_GET['render']) && $_GET['render'] == 'video-popup') {
+    $page['#theme'] = 'video_dialog_page';
+    // temporary fix while awaiting fix for 914786
+    if (module_exists('admin_menu')) {
+      admin_menu_suppress();
+    }
+    foreach (element_children($page) as $key) {
+      if ($key != 'content') {
+        unset($page[$key]);
+      }
+    }
+  }
+  if (arg(1) == 'embed' && arg(0) == 'video') {
+    $page['#theme'] = 'video_dialog_page';
+    // temporary fix while awaiting fix for 914786
+    if (module_exists('admin_menu')) {
+      admin_menu_suppress();
+    }
+    foreach (element_children($page) as $key) {
+      if ($key != 'content') {
+        unset($page[$key]);
+      }
+    }
+  }
+}

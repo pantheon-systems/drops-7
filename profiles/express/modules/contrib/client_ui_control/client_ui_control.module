@@ -1,0 +1,209 @@
+<?php
+// $Id: client_ui_control.module,v 1.4 2010/11/17 23:44:03 himerus Exp $
+/**
+ * Implements hook_menu()
+ * 
+ * @see http://api.drupal.org/hook_menu
+ */
+function client_ui_control_menu() {
+	$items = array();
+  $items['admin/config/user-interface/client_ui_control'] =
+  $items['admin/config/user-interface/client_ui_control/settings'] = array(
+    'title' => 'Client UI Control',
+    'description' => 'Settings for Client UI Control module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('client_ui_control_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+function client_ui_control_settings_form($form, &$form_state) {
+	global $conf;
+	$form = array();
+	$form['client_ui_control'] = array(
+	  '#type' => 'vertical_tabs',
+	  '#description' => t('Sections in this form will allow you to hide various elements of the UI from a client, preventing any potential items from accidentially being enabled/disabled.'),
+	  '#collapsible' => TRUE,
+	  '#collapsed' => TRUE,
+	  '#weight' => 10,
+	);
+	
+	// MASTER
+  $form['client_ui_control']['master'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('CUIC Config'),
+    '#description' => t('<p>Global Configurations</p>'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+	$form['client_ui_control']['master']['master_switch'] = array(
+	  '#type' => 'checkbox',
+	  '#title' => t('Disable Client UI Control on modules page.'),
+	  '#default_value' => variable_get('client_ui_control_master_switch', 0),
+	  '#description' => t('<p>With this setting, you will disable the ability on the modules page to disable Client UI Control. This is a separate setting to ensure that it can be enabled/disabled by an administrator.</p>'),
+	);
+  
+  
+	// THEMES
+	$form['client_ui_control']['themes'] = array(
+	  '#type' => 'fieldset',
+	  '#title' => t('Themes'),
+	  '#description' => t('<p>Any themes selected here will be hidden from the theme selection interface on /admin/appearance.</p><p>This will ONLY hide themes that are currently disabled. Themes that were set to enabled, regardless of the status of this form will still be displayed.</p>'),
+	  '#collapsible' => TRUE,
+	  '#collapsed' => TRUE,
+	);
+
+  $conf_hidden_themes = isset($conf['client_ui_control']['themes']) ? $conf['client_ui_control']['themes'] : FALSE;
+  if($conf_hidden_themes) {
+    // the conf file takes priority over any database settings
+    $options = $default_values = _cuc_convert($conf_hidden_themes); 
+  }
+  else {
+	  $options = array();
+	  $themes = list_themes();
+	  //krumo($themes);
+	  foreach ($themes as $theme) {
+	    if(!isset($theme->info['hidden'])) {
+	      $options[$theme->name] = $theme->info['name'];
+	    }
+	  }
+	  $default_values = variable_get('client_ui_control_themes', array());
+  }
+  $form['client_ui_control']['themes']['hidden_themes'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Hidden Themes'),
+    '#options' => $options,
+    '#default_value' => $default_values,
+    '#disabled' => $conf_hidden_themes ? TRUE : FALSE,
+  );
+  if($conf_hidden_themes) {
+    $form['client_ui_control']['themes']['conf_settings'] = array(
+      '#type' => 'markup',
+      '#markup' => t('These settings are disabled, as the themes to disable are hard coded in the settings.php file.'),
+    );
+  }
+  
+  // modules
+  $form['client_ui_control']['modules'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Modules'),
+    '#description' => t('<p>Any modules selected here will be hidden from the theme selection interface on /admin/modules.</p>'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $conf_hidden_modules = isset($conf['client_ui_control']['modules']) ? $conf['client_ui_control']['modules'] : FALSE;
+  if($conf_hidden_modules) {
+    // the conf file takes priority over any database settings
+    $options = $default_values = _cuc_convert($conf_hidden_modules); 
+  }
+  else {
+    $options = array();
+    $modules = module_list();
+    //dsm($modules);
+    //krumo($themes);
+    foreach ($modules as $module) { 
+      $options[$module] = $module;
+    }
+    $default_values = variable_get('client_ui_control_modules', array());
+  }
+  $form['client_ui_control']['modules']['hidden_modules'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Hidden Modules'),
+    '#options' => $options,
+    '#default_value' => $default_values,
+    '#disabled' => $conf_hidden_modules ? TRUE : FALSE,
+  );
+  if($conf_hidden_modules) {
+    $form['client_ui_control']['modules']['conf_settings'] = array(
+      '#type' => 'markup',
+      '#markup' => t('These settings are disabled, as the modules to disable are hard coded in the settings.php file.'),
+    );
+  }
+  // defaults
+  $form['#submit'] = array('client_ui_control_settings_form_submit');
+  $form = system_settings_form($form);
+  return $form;
+}
+
+function client_ui_control_settings_form_submit($form, &$form_state) {
+  variable_set('client_ui_control_themes', $form_state['values']['hidden_themes']);
+  variable_set('client_ui_control_modules', $form_state['values']['hidden_modules']);
+  variable_set('client_ui_control_master_switch', $form_state['values']['master_switch']);
+}
+
+/**
+ * client_ui_control_system_themes_page_alter() removes all disabled themes from the 
+ * system_themes_page (/appearance, /appearance/list).
+ * 
+ * This is intended for production sites to prevent a client from accidentially 
+ * enabling a theme that would break functionality. I also personally don't like
+ * seeing Garland, Bartik, Stark, etc. in my themes list page...
+ * 
+ * @todo add a settings page to physically select which themes to hide, and also
+ *       to toggle the ability to show all themes again quickly
+ * 
+ * @see http://api.drupal.org/hook_system_themes_page_alter
+ */
+function client_ui_control_system_themes_page_alter(&$theme_groups) {
+	global $conf;
+	$conf_hidden = isset($conf['client_ui_control']['themes']) ? $conf['client_ui_control']['themes'] : FALSE;
+	if($conf_hidden) {
+		// the conf file takes priority over any database settings
+		$hidden = _cuc_convert($conf_hidden);
+	}
+	else {
+		// we will use the database settings.
+    // get the settings of the client_ui_control_themes var to determine which to hide
+    $hidden = variable_get('client_ui_control_themes', array());	
+	}
+	foreach ($theme_groups as $state => &$group) {
+		if ($state == 'disabled') {
+	    foreach ($theme_groups[$state] as $id => &$theme) {
+	    	if(isset($hidden[$theme->name])) {
+	        unset($theme_groups[$state][$id]);
+	    	}
+	    }
+	  }
+	}
+}
+
+
+function client_ui_control_system_info_alter(&$info, $file, $type) {
+	switch($type) {
+		case 'module':
+			global $conf;
+	    $conf_hidden = isset($conf['client_ui_control']['modules']) ? $conf['client_ui_control']['modules'] : FALSE;
+      if($conf_hidden) {
+        // the conf file takes priority over any database settings
+        $hidden = _cuc_convert($conf_hidden);
+      }
+      else {
+        // we will use the database settings.
+        // get the settings of the client_ui_control_themes var to determine which to hide
+        $hidden = variable_get('client_ui_control_modules', array());  
+      }
+			if(isset($hidden[$file->name]) && $hidden[$file->name]) {
+				$info['required'] = TRUE;
+			}
+	    if($file->name == 'client_ui_control') {
+	    	$info['required'] = variable_get('client_ui_control_master_switch', 0) ? variable_get('client_ui_control_master_switch', 0) : FALSE; 
+      }
+			break;
+	}
+}
+
+/**
+ * Helper function to convert $conf settings for this module to the format 
+ * expected when running the filtration on items in the UI.
+ */
+function _cuc_convert($c) {
+	$conf = array();
+	foreach($c as $theme) {
+		$conf[$theme] = $theme;
+	}
+	return $conf;
+}

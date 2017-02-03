@@ -1,0 +1,10 @@
+@import "../../cu_omega/scss/modules/_colors.scss";
+
+#section-footer a:hover {  
+  color:#fff;
+}
+#zone-menu-wrapper a.active,
+#zone-menu-wrapper a.active-trail,
+.more-link a {
+  background-color: $cugold;
+}

@@ -1,0 +1,46 @@
+/* BOXES */
+.box-black { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; margin-bottom: 1.5em; overflow: hidden; background-color: black; }
+
+.box-black.box-style-filled a, .box-darkgray.box-style-filled a { color: #cfb87c; }
+
+.box-darkgray { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; margin-bottom: 1.5em; overflow: hidden; background-color: #454545; }
+
+.box-lightgray { background-color: #f4f4f4; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; margin-bottom: 1.5em; overflow: hidden; }
+
+.box-white { background-color: white; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; margin-bottom: 1.5em; overflow: hidden; border: 1px solid #e0e0e0; }
+
+.box-style-border { background-color: transparent; }
+
+.box-black.box-style-border { border: 1px solid black; color: #202020; }
+
+.box-darkgray.box-style-border { border: 1px solid #464646; }
+
+.box-lightgray.box-style-border { border: 1px solid #f4f4f4; color: #202020; }
+
+.box-black.box-style-filled, .box-darkgray.box-style-filled { color: #fff; }
+
+.box-title { font-weight: bold; padding: 20px; }
+
+.box-style-filled .box-title { color: #fff; }
+
+.box-black.box-style-filled .box-title { background-color: #1a1a1a; }
+
+.box-darkgray.box-style-filled .box-title { background-color: #2d2d2d; }
+
+.box-white.box-style-filled .box-title { background-color: #dedede; color: #202020; }
+
+.box-lightgray.box-style-filled .box-title { background-color: #dbdbdb; color: #202020; }
+
+.box-black.box-style-border .box-title { border-bottom: 1px solid black; }
+
+.box-darkgray.box-style-border .box-title { border-bottom: 1px solid #464646; }
+
+.box-white.box-style-border .box-title { border-bottom: 1px solid #e0e0e0; }
+
+.box-lightgray.box-style-border .box-title { border-bottom: 1px solid #f4f4f4; }
+
+.box-content { padding: 20px; }
+
+.cu-box.float-right { width: 40%; margin: 0 0 20px 20px; float: right; }
+
+.cu-box.float-left { width: 40%; margin: 0 20px 20px 0; float: left; }

@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_advanced_content_bundle_enable() {
+
+}
+
+
+

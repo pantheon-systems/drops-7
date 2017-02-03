@@ -1,0 +1,62 @@
+<?php
+
+// Removed the install, enable, and disable functions from cu_apihooks.
+// Install and Disable had early 'return' exits. Enable reported users,
+// which we really don't know at install/enable.
+
+
+/**
+ * Implements hook_requirements().
+ */
+function cu_inventory_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    // SITE ID
+    if ($cu_sid = variable_get('cu_sid', FALSE)) {
+      $requirements['cu_inventory_sid'] = array(
+        'title' => $t('CU Inventory Site ID'),
+        'value' => $t('This site reports an site id of !cu_sid.', array('!cu_sid' => $cu_sid)),
+        'severity' => REQUIREMENT_OK,
+      );
+      // Link to the logging in the Elasticsearch, Logstash, Kibana stack.
+      $logging_url = "https://wlogstash.colorado.edu/kibana-4/#/dashboard/Drupal-Syslog-Site?_g=(refreshInterval:(display:'1%20minute',pause:!t,section:2,value:60000),time:(from:now-24h,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Drupal-Syslog-Top-15-event-categories,row:1,size_x:6,size_y:4,type:visualization),(col:7,columns:!(_source),id:'*-Drupal-Syslog',row:1,size_x:6,size_y:7,sort:!('@timestamp',desc),type:search),(col:1,id:Drupal-Syslog-Messages-Top-5,row:5,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'cu_sid:%22" . $cu_sid . "%22')),title:'Drupal%20Syslog%20-%20Site')";
+      $requirements['cu_log_link'] = array(
+        'title' => $t('CU Inventory Syslog'),
+        'value' => $t('Available.'),
+        'description' => $t('See <a href="@url" target="_blank">logs on wlogstash.colorado.edu</a>. <em>Requires authorized Identikey</em>.', array('@url' => $logging_url)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['cu_inventory_sid'] = array(
+        'title' => $t('CU Inventory Site ID'),
+        'value' => $t('This has no site id'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+      $requirements['cu_log_link'] = array(
+        'title' => $t('CU Inventory Syslog'),
+        'value' => $t('Site id is required to link to logs'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    // API IS UP
+    if (cu_inventory_is_up()) {
+      $inventory_env = cu_inventory_connected_env();
+      $requirements['cu_inventory_is_up'] = array(
+        'title' => $t('CU Inventory Status'),
+        'value' => $t('Is up and running.  Currently configured to use !inventory_env', array('!inventory_env' => $inventory_env)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['cu_inventory_is_up'] = array(
+        'title' => $t('CU Inventory Status'),
+        'value' => $t('is down.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+  return $requirements;
+}

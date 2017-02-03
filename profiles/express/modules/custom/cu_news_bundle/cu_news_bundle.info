@@ -1,0 +1,7 @@
+name = News and Articles
+description = This bundle adds blog-type functionality to your site to be used for timely and changing information. Content can be cross-referenced and categorized by tags, and is sorted by newest appearing on top. You can display articles via article list page, or can be placed in an article grid, slider or list blocks.
+core = 7.x
+package = CU-News and Articles
+project_demo_url = http://www.colorado.edu/webcentral/node/676
+
+dependencies[] = cu_article

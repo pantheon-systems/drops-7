@@ -1,0 +1,16 @@
+name = Express Admin
+description = A simple one-column, tableless, fluid width administration theme.
+package = Core
+version = 7.x-1.0
+core = 7.x
+
+stylesheets[screen][] = css/reset.css
+stylesheets[screen][] = css/btn.css
+stylesheets[screen][] = css/styles.css
+stylesheets[screen][] = css/expressadmin-grid.css
+
+settings[shortcut_module_link] = 1
+regions[content] = Content
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom

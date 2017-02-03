@@ -1,0 +1,7 @@
+name = Events
+description = This bundle allows simple integration of your campus events calendar feed. Your events feed can be placed anywhere throughout your site.
+
+core = 7.x
+package = CU-Events
+project_demo_url = http://www.colorado.edu/webcentral/node/672
+dependencies[] = cu_events_calendar_block

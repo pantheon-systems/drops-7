@@ -1,0 +1,82 @@
+<?php
+/**
+ * @file
+ * Primary hook implementations for Metatag:hreflang.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_hreflang_ctools_plugin_api($owner, $api) {
+  if ($owner == 'metatag' && $api == 'metatag') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function metatag_hreflang_theme() {
+  $info['metatag_link_hreflang'] = array(
+    'render element' => 'element',
+  );
+  return $info;
+}
+
+/**
+ * Theme callback for a rel link tag with the hreflang.
+ *
+ * The format is:
+ * <link rel="[name]" hreflang="[langcode]" href="[value]" />
+ */
+function theme_metatag_link_hreflang($variables) {
+  $element = &$variables['element'];
+  $element['#name'] = 'alternative';
+  $args = array(
+    '#name' => 'rel',
+    '#value' => 'href',
+    '#hreflang' => 'hreflang',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter for metatag_admin_settings_form().
+ */
+function metatag_hreflang_form_metatag_admin_settings_form_alter(&$form, &$form_state, $form_id) {
+  $form['advanced']['metatag_hreflang_allow_dupe'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow hreflang tag that matches the x-default tag'),
+    '#description' => t('It is recommended to not have hreflang="x-default" and hreflang="SOMELANGCODE" meta tags pointing at the same URL. By default if there is a hreflang="SOMELANGCODE" meta tag with the same URL as the hreflang="x-default" meta tag then the hreflang="SOMELANGCODE" tag will be removed. Checking '),
+    '#default_value' => variable_get('metatag_hreflang_allow_dupe', FALSE),
+  );
+}
+
+/**
+ * Implements hook_html_head_alter().
+ *
+ * Remove any hreflang="LANGCODE" values that match hreflang="x-default".
+ */
+function metatag_hreflang_html_head_alter(&$elements) {
+  // This behaviour may be disabled from the Metatag settings page.
+  if (!variable_get('metatag_hreflang_allow_dupe', FALSE)) {
+    if (!empty($elements['metatag_hreflang_xdefault']['#value'])) {
+      $default = $elements['metatag_hreflang_xdefault']['#value'];
+
+      // Look for other hreflang meta tags.
+      foreach ($elements as $tag_name => &$element) {
+        // Skip the x-default tag.
+        if ($tag_name == 'metatag_hreflang_xdefault') {
+          continue;
+        }
+        if (strpos($tag_name, 'metatag_hreflang_') === 0) {
+          if ($element['#value'] == $default) {
+            $element['#access'] = FALSE;
+          }
+        }
+      }
+    }
+  }
+}

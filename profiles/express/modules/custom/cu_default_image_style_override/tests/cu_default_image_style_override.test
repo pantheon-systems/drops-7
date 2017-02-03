@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * Contains tests for the Image Style Overrides module.
+ */
+
+/**
+ * Test case.
+ */
+class CUdefaultImageStyleOverrideTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Image Style Overrides tests'),
+      'description' => t('TODO: write me.'),
+      'group' => t('Image Style Overrides'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('cu_default_image_style_override'));
+
+    // TODO: perform additional setup tasks here if required.
+  }
+
+  /**
+   * Test the module's functionality.
+   */
+  function testTodoChangeThisName() {
+    // TODO: write test!
+  }
+
+}

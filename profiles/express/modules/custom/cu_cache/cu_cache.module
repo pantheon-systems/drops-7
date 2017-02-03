@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Controls memchace and varnish.
+ */
+
+/**
+ * Perform setup tasks for non-cached page requests.
+ *
+ * This hook is run at the beginning of the page request. It is typically
+ * used to set up global parameters that are needed later in the request.
+ * When this hook is called, all modules are already loaded in memory.
+ *
+ * This hook is not run on cached pages.
+ *
+ * To add CSS or JS that should be present on all pages, modules should not
+ * implement this hook, but declare these files in their .info file.
+ *
+ * @see hook_boot()
+ */
+function cu_cache_init() {
+  // In the rare instances that we deploy CU-FIT to pantheon, we'll use
+  // different cache settings. For now, we don't set any of these vars.
+  if (!defined('PANTHEON_ENVIRONMENT')) {
+    global $conf;
+    // Get status of varnish servers, and only add varnish cache_backend
+    // if at least varnish server is accessible.
+    $status = varnish_get_status();
+    $varns = 0;
+    foreach ($status as $stat) {
+      $varns += $stat;
+    }
+
+    // Enable caching.
+    $conf['cache'] = 1;
+    // @todo Solve js inclusion issues to re-enable block cache.
+    // @see #attached.
+    $conf['block_cache'] = 0;
+
+    // Set cache lifetimes. 5 minutes * 60s = 300s
+    $conf['cache_lifetime'] = 0;
+    $conf['page_cache_maximum_age'] = 300;
+
+    // Aggregate css and js.
+    $conf['preprocess_css'] = TRUE;
+    $conf['preprocess_js'] = TRUE;
+
+    // Drupal doesn’t cache if we invoke hooks during bootstrap.
+    $conf['page_cache_invoke_hooks'] = FALSE;
+
+    // Set up Varnish and Memcache cache backends.
+    $varnish_path  = drupal_get_path('module', 'varnish');
+    $memcache_path = drupal_get_path('module', 'memcache');
+    if (!empty($varnish_path) && class_exists('VarnishCache') && $varns > 0) {
+      $varnish_path .= '/varnish.cache.inc';
+      $conf['cache_backends'][] = $varnish_path;
+      $conf['cache_class_cache_page'] = 'VarnishCache';
+      $conf['varnish_version'] = 3;
+    }
+    include_once($memcache_path . '/memcache.inc');
+    if (!empty($memcache_path) && class_exists('MemCacheDrupal')) {
+      $conf['lock_inc'] = $memcache_path . '/memcache-lock.inc';
+      $memcache_path .= '/memcache.inc';
+      $conf['cache_backends'][] = $memcache_path;
+      $conf['cache_default_class'] = 'MemCacheDrupal';
+      $conf['memcache_bins'] = array('cache' => 'default');
+    }
+
+    // Always keep cache_form going to database.
+    $conf['cache_class_cache_form'] = 'DrupalDatabaseCache';
+  }
+}

@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * View reference install file.
+ */
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function viewreference_update_last_removed() {
+  // Removed update 6300 because code relied on CCK tables.
+  return 6300;
+}

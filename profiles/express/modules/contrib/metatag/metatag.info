@@ -1,0 +1,59 @@
+name = Metatag
+description = "Adds support and an API to implement meta tags."
+package = SEO
+core = 7.x
+
+; This requires Drupal 7.28 or newer as it fixes the [node:summary] token that
+; was previously broken.
+dependencies[] = system (>= 7.28)
+
+; CTools is required.
+dependencies[] = ctools
+
+; Must have this release of Token to avoid a bug with tokens that contain the
+; colon symbol, as used in OG meta tags.
+dependencies[] = token (>= 1.6)
+
+configure = admin/config/search/metatags
+
+files[] = metatag.inc
+files[] = metatag.migrate.inc
+
+; Tests.
+files[] = tests/metatag.helper.test
+files[] = tests/metatag.unit.test
+files[] = tests/metatag.node.test
+files[] = tests/metatag.term.test
+files[] = tests/metatag.user.test
+; String handling
+files[] = tests/metatag.string_handling.test
+files[] = tests/metatag.string_handling_with_i18n.test
+; Internationalization & translation.
+files[] = tests/metatag.locale.test
+files[] = tests/metatag.with_i18n_output.test
+files[] = tests/metatag.with_i18n_config.test
+files[] = tests/metatag.with_i18n_node.test
+; Basic integration with Panels.
+files[] = tests/metatag.with_panels.test
+; Basic integration with Views.
+files[] = tests/metatag.with_views.test
+
+; This is required for testing image handling.
+test_dependencies[] = devel
+test_dependencies[] = imagecache_token
+
+; These are required for the internationalization & translation functionality.
+test_dependencies[] = entity_translation
+test_dependencies[] = i18n
+
+; These are required for the submodules.
+test_dependencies[] = context
+test_dependencies[] = panels
+test_dependencies[] = views
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
+core = "7.x"
+project = "metatag"
+datestamp = "1452804845"
+

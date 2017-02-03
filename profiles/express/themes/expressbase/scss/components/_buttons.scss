@@ -1,0 +1,237 @@
+@import "../modules/_colors.scss";
+@import "../modules/_global.scss";
+
+@mixin buttons($color) {
+  background-color: $color;
+  &:hover,
+  &:focus {
+    background-color:darken($color, 3%);
+    @include rgbashadow(0, 2px, 5px, #000000, .30);
+  }
+  &:active {
+    @include rgbashadow(0, 3px, 15px, #000000, .35);
+  }
+
+}
+
+/* BUTTON */
+a.button,
+.button {
+  color: #fff !important;
+  display: inline-block;
+  padding:5px 10px;
+  font-weight:500;
+  font-family: $base_font;
+  @include rounded($radius: $radius_small);
+  transition: background-color 0.5s ease;
+  @include shadowtransition;
+  @include rgbashadow(0, 1px, 2px, #000000, .20);
+  margin-bottom: 5px;
+}
+a.button-blue,
+.button-blue {
+  @extend .button;
+  @include buttons($color: $blue);
+}
+
+a.button-white,
+.button-white {
+  @extend .button;
+  color:#363636 !important;
+  border:1px solid #e7e7e7;
+  @include buttons($color: #fff);
+}
+
+a.button-gray,
+.button-gray {
+  @extend .button;
+  @include buttons($color: $gray);
+}
+
+a.button-black,
+.button-black {
+  @extend .button;
+  @include buttons($color: #202020);
+}
+a.button-gold,
+.button-gold {
+  @extend .button;
+  @include buttons($color: $cugold);
+  color:#000 !important;
+}
+a.button-full {
+  display: block;
+  text-align: center;
+}
+a.button:active,
+a.button-blue:active,
+a.button-orange:active,
+a.button-red:active,
+a.button-green:active,
+a.button-white:active,
+a.button-gray:active,
+a.button-black:active {
+  //position: relative;
+  //top:1px;
+}
+a.simple-button:link,
+a.button-simple:link,
+a.simple-button:visited,
+a.button-simple:visited  {
+  color:#666;
+  display: inline-block;
+  padding: 1px 5px;
+  font-size:75%;
+  transition: background-color 0.5s ease;
+  @include rounded($radius: $radius_small);
+  @include buttons($color: $light_gray);
+  @include shadowtransition;
+  @include rgbashadow(0, 0px, 3px, #000000, .24);
+
+
+}
+a.button-large {
+  font-size: 125%;
+  padding:10px;
+}
+a.button-small {
+  font-size: 90%;
+  padding: 1px 6px;
+}
+
+
+/* Hero Unit Buttons SASS */
+.hero-link-blue a:link,
+.hero-link-blue a:visited {
+  @extend .button;
+  @include buttons($color: $blue);
+  color: #fff;
+}
+.hero-link-gold a:link,
+.hero-link-gold a:visited {
+  @extend .button;
+  @include buttons($color: $cugold);
+  color:#000 !important;
+}
+.hero-link-white a:link,
+.hero-link-white a:visited {
+  @extend .button;
+  @include buttons($color: #fff);
+  color:#363636 !important;
+}
+.hero-link-black a:link,
+.hero-link-black a:visited {
+  @extend .button;
+  @include buttons($color: #111);
+  color: #fff;
+}
+.hero-link-gray a:link,
+.hero-link-gray a:visited {
+  @extend .button;
+  @include buttons($color: $light_gray);
+  color:#363636 !important;
+}
+.hero-link-dark_gray a:link,
+.hero-link-dark_gray a:visited {
+  @extend .button;
+  @include buttons($color: $dark_gray);
+  color: #fff;
+}
+
+.buttongroup {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 1px;
+  layout: fixed;
+  @include rounded($radius: $radius_small);
+  a.button {
+    display: table-cell;
+    @include rounded($radius: 0px);
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 500;
+  }
+}
+.buttongroup-size-small {
+  font-size: 85%;
+  a.button {
+    padding:2px 5px;
+  }
+}
+.buttongroup-size-large {
+  font-size: 115%;
+}
+.buttongroup-color-blue {
+  border:1px solid $blue;
+  a.button {
+    @include buttons($color: $blue);
+  }
+}
+.buttongroup-color-gold {
+  border:1px solid $cugold;
+  a.button {
+    @include buttons($color: $cugold);
+    color:#363636 !important;
+  }
+}
+.buttongroup-color-black {
+  border:1px solid $black;
+  a.button {
+    @include buttons($color: $black);
+  }
+}
+.buttongroup-color-gray {
+  border:1px solid $gray;
+  a.button {
+    @include buttons($color: $gray);
+  }
+}
+.buttongroup-color-white {
+  border:1px solid #e0e0e0;
+  a.button {
+    @include buttons($color: $white);
+    color:#363636 !important;
+    border:1px solid #e0e0e0;
+  }
+}
+
+/* GIVE BUTTONS from cu_give_buttons module */
+
+a.cu-give-button-dark {
+  @extend .button;
+  @include buttons($color: #222);
+}
+
+a.cu-give-button-light {
+  @extend .button;
+  color:#363636 !important;
+  border:1px solid #e7e7e7;
+  @include buttons($color: #fff);
+}
+
+a.cu-give-button-gold {
+  @extend .button;
+  color:#000 !important;
+  @include buttons($color: $cugold);
+}
+
+/* Ghost Buttons */
+a.button-ghost {
+  display: inline-block;
+  padding:5px 10px;
+  font-weight:500;
+  font-family: $base_font;
+  color:$blue;
+  border:1px solid $blue;
+  margin-bottom: 5px;
+  @include rgbashadow(0, 2px, 5px, #000000, .0);
+}
+a.button-ghost:hover,
+a.button-ghost:focus {
+  color:#fff;
+  background-color: $blue;
+  @include rgbashadow(0, 2px, 5px, #000000, .30);
+}
+a.button-ghost:active {
+  @include rgbashadow(0, 3px, 15px, #000000, .35);
+}

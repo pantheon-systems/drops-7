@@ -1,0 +1,6 @@
+name = Photo Gallery
+description = This bundle allows you to create exciting photo galleries and slideshows to showcase events, people, research projects, you name it!
+core = 7.x
+package = CU-Photo Gallery
+project_demo_url = http://www.colorado.edu/webcentral/node/680
+dependencies[] = photo_gallery

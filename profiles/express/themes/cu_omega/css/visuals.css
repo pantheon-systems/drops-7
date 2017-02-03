@@ -1,0 +1,118 @@
+/* Pagers Positioning */
+.item-list .pager { overflow: visible; margin: 0; padding: 0; font-size: 90%; }
+.item-list .pager li { display: block; float: left; margin: 0; margin-right: -1px; padding: 0; text-align: center; border: 1px solid #e0e0e0; white-space: nowrap; }
+.item-list .pager li a { display: inline-block; text-align: center; padding: 4px 8px; color: #007bc8; }
+.item-list .pager li a:hover, .item-list .pager li a:focus { background-color: #f4f4f4; color: #006db1; }
+.item-list .pager li.pager-ellipsis, .item-list .pager li.pager-current { padding: 4px 8px; }
+.item-list .pager li.pager-current { background-color: #007bc8; border: 1px solid #007bc8; color: #fff; }
+.item-list .pager li.first { -webkit-border-radius: 3px 0 0 3px; -moz-border-radius: 3px 0 0 3px; border-radius: 3px 0 0 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+.item-list .pager li.last { -webkit-border-radius: 0 3px 3px 0; -moz-border-radius: 0 3px 3px 0; border-radius: 0 3px 3px 0; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+
+table { border: 1px solid #CCC; }
+table thead th, table th { background: #f7f7f7; border-bottom: 1px solid #ccc; color: #333; }
+table thead th a, table th a { text-decoration: none; display: block; }
+table thead th a img, table th a img { margin: 0 0 0 5px; }
+table td, table th { padding: 4px 8px; vertical-align: middle; }
+table th.active { background: #DDD; border-left: 1px solid #CCC; border-right: 1px solid #CCC; }
+table tr.even td { background: #F1F5FA; }
+table tr.even td.active { background: #e5e9ed; }
+table tr.odd td { background: #fff; }
+table tr.odd tr.odd td.active { background: #f2f2f2; }
+table td ul.links { margin-bottom: 0; }
+
+.comment { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; }
+
+.comment-links { margin-bottom: 0px; }
+
+.node-links ul li, .comment-links ul li { margin: 0; padding: 0; }
+
+.node-links ul li a, .comment-links ul li a { text-transform: lowercase; display: inline-block; background-color: #f7f7f7; color: #555; padding: 3px; line-height: 100%; font-size: 85%; margin: 0 5px 0 0; border: 1px solid #e0e0e0; }
+
+.tips, .description { font-size: 100%; }
+
+/* ACCORDION & Expand shortcode*/
+.ui-accordion h3.ui-accordion-header, .ui-accordion .ui-accordion-header, .expand-set { background-image: none; background-color: transparent; border-bottom: 1px solid #e5e5e5; }
+
+.expand-set { margin-bottom: 20px; overflow: auto; }
+
+.ui-accordion h3.ui-accordion-header.ui-state-active, .ui-accordion .ui-accordion-header.ui-state-active { border: none; }
+
+.ui-accordion .ui-accordion-header .ui-icon { display: none; }
+
+.ui-accordion .ui-accordion-header .ui-icon:before { content: "\f002 "; /* this is the Unicode for the icon */ font-family: FontAwesome; /* font family is included in Canvas Framework */ margin-right: .5em; }
+
+.ui-accordion h3.ui-accordion-header a, .ui-accordion .ui-accordion-header a, .expand-set a.expand-title { display: block; background-image: none; background-color: transparent; padding: 10px 10px 10px 30px; background-image: url(../images/plus-blue.png); background-repeat: no-repeat; background-position: left center; border: none; }
+
+.expand-set a.expand-title { color: #363636; font-size: 110%; }
+
+.ui-accordion h3.ui-accordion-header.ui-state-active a, .ui-accordion .ui-accordion-header.ui-state-active a, .expand-set a.expand-active { background-image: url(../images/minus-blue.png); background-repeat: no-repeat; background-position: left center; }
+
+.expand-set a.expand-active { font-weight: bold; }
+
+.ui-accordion .ui-accordion-content, .expand-set .expand-content { border: 1px solid #e5e5e5; padding: 10px 10px 10px 25px; }
+
+.expand-set .expand-content { border-bottom: none; }
+
+.anchors { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; background-color: #f4f4f4; overflow: hidden; }
+.anchors .anchors-label { font-weight: bold; background-color: #464646; color: #fff; padding: 10px; }
+.anchors .anchors-links { padding: 0 10px 10px 10px; }
+
+.anchors-color-blue .anchors-label { background-color: #007bc8; }
+
+.anchors-color-green .anchors-label { background-color: #a8bd6f; }
+
+.anchors-color-orange .anchors-label { background-color: #deb159; }
+
+.anchors-color-red .anchors-label { background-color: #e51c23; }
+
+.anchors-color-black .anchors-label { background-color: #202020; }
+
+.anchors-color-darkgray .anchors-label { background-color: #464646; }
+
+.anchors-color-lightgray .anchors-label { background-color: #dbdbdb; color: #202020; }
+
+/* Hero Unit SASS for Color Variables */
+.hero-background-gold { background-color: #cfb87c; }
+
+.hero-background-white { background-color: #f7f7f7; border: 1px solid #e0e0e0; }
+
+.hero-background-black { background-color: #000; }
+
+.hero-background-gray { background-color: #f4f4f4; }
+
+.hero-background-dark_gray { background-color: #464646; }
+
+.more-link a { font-size: 85%; }
+
+.zone-after-content-text-white, .zone-after-content-2-text-white { color: #fff; }
+.zone-after-content-text-white a:link, .zone-after-content-text-white a:visited, .zone-after-content-2-text-white a:link, .zone-after-content-2-text-white a:visited { color: #fff; text-decoration: underline; }
+
+#zone-after-content-wrapper.section-background, #zone-after-content-2-wrapper.section-background, .section-background { padding: 80px 0 40px; background-position: center center; background-repeat: no-repeat; background-size: cover; border: none; }
+
+.zone-after-content-image-fixed, .zone-after-content-2-image-fixed { background-attachment: fixed; overflow: hidden; }
+
+.block-icons-gray i.blockicon { color: #858585; }
+
+.block-icons-gold i.blockicon { color: #cfb87c; }
+
+.block-icons-blue i.blockicon { color: #007bc8; }
+
+.icon-color-blue, a .icon-color-blue { color: #007bc8; }
+
+.icon-color-green, a .icon-color-green { color: #a8bd6f; }
+
+.icon-color-orange, a .icon-color-orange { color: #deb159; }
+
+.icon-color-yellow, a .icon-color-yellow { color: #e3dc6f; }
+
+.icon-color-red, a .icon-color-red { color: #e51c23; }
+
+.icon-color-purple, a .icon-color-purple { color: #735b90; }
+
+.icon-color-white, a .icon-color-white { color: #fff; }
+
+.icon-color-black, a .icon-color-black { color: #000; }
+
+.icon-color-gold, a .icon-color-gold { color: #cfb87c; }
+
+.icon-color-gray, a .icon-color-gray { color: #757575; }

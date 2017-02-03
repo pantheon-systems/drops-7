@@ -1,0 +1,86 @@
+<?php
+/**
+ * @file
+ * Tests for the PHPVideoToolkit class
+ */
+
+/**
+ * Tests for PHPVideoToolkit
+ */
+class PHPVideoToolkitTestCase extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'PHP Video Toolkit tests',
+      'description' => 'Tests for the PHPVideoToolkit class',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    require_once dirname(__FILE__) . '/../libraries/phpvideotoolkit/phpvideotoolkit.php5.php';
+    parent::setUp();
+  }
+
+  /**
+   * Tests for the parseFileInfo method
+   */
+  public function testParseFileInfo() {
+    $tk = new PHPVideoToolkit();
+
+    // Very old FFmpeg version, see issue #1699062
+    $raw = <<<EOT
+FFmpeg version SVN-r14473, Copyright (c) 2000-2008 Fabrice Bellard, et al.
+  configuration: --prefix=/usr/local/cpffmpeg --enable-shared --enable-nonfree --enable-gpl --enable-pthreads --enable-liba52 --enable-libamr-nb --enable-libamr-wb --enable-libfaac --enable-libfaad --enable-libmp3lame --enable-libtheora --enable-libvorbis --enable-libx264 --enable-libxvid --extra-cflags=-I/usr/local/cpffmpeg/include/ --extra-ldflags=-L/usr/local/cpffmpeg/lib --enable-cross-compile
+  libavutil version: 49.7.0
+  libavcodec version: 51.62.0
+  libavformat version: 52.18.0
+  libavdevice version: 52.0.0
+  built on Mar 13 2012 16:27:48, gcc: 4.1.2 20080704 (Red Hat 4.1.2-52)
+
+Seems stream 0 codec frame rate differs from container frame rate: 1000.00 (1000/1) -> 29.97 (30000/1001)
+Input #0, flv, from 'sites/default/files/test.flv':
+  Duration: 00:00:05.01, start: 0.000000, bitrate: N/A
+    Stream #0.0: Video: vp6f, yuv420p, 312x240, 29.97 tb(r)
+    Stream #0.1: Audio: libfaad, 44100 Hz, stereo
+Must supply at least one output file
+EOT;
+
+    $info = $tk->parseFileInfo($raw);
+
+    $this->assertTrue(isset($info['duration']['seconds']), '$info[\'duration\'][\'seconds\'] must be set');
+    $this->assertEqual(5.01, $info['duration']['seconds'], '$info[\'duration\'][\'seconds\'] must be 5.01, got ' . $info['duration']['seconds']);
+    $this->assertEqual(312.0, $info['video']['dimensions']['width'], '$info[\'video\'][\'dimensions\'][\'width\'] must be 312, got ' . $info['video']['dimensions']['width']);
+    $this->assertEqual(240.0, $info['video']['dimensions']['height'], '$info[\'video\'][\'dimensions\'][\'height\'] must be 240, got ' . $info['video']['dimensions']['height']);
+
+    // More recent FFmpeg version
+    $raw = <<<EOT
+ffmpeg version 0.8.3-4:0.8.3-0ubuntu0.12.04.1, Copyright (c) 2000-2012 the Libav developers
+  built on Jun 12 2012 16:52:09 with gcc 4.6.3
+*** THIS PROGRAM IS DEPRECATED ***
+This program is only provided for compatibility and will be removed in a future release. Please use avconv instead.
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'sites/default/files/test.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    creation_time   : 1970-01-01 00:00:00
+    encoder         : Lavf52.64.2
+  Duration: 00:04:56.40, start: 0.000000, bitrate: 248 kb/s
+    Stream #0.0(eng): Video: h264 (High), yuv420p, 640x480, 180 kb/s, 25 fps, 25 tbr, 25 tbn, 50 tbc
+    Metadata:
+      creation_time   : 1970-01-01 00:00:00
+    Stream #0.1(eng): Audio: aac, 48000 Hz, stereo, s16, 62 kb/s
+    Metadata:
+      creation_time   : 1970-01-01 00:00:00
+At least one output file must be specified
+EOT;
+
+    $info = $tk->parseFileInfo($raw);
+
+    $this->assertTrue(isset($info['duration']['seconds']), '$info[\'duration\'][\'seconds\'] must be set');
+    $this->assertEqual(296.4, $info['duration']['seconds'], '$info[\'duration\'][\'seconds\'] must be 296.4, got ' . $info['duration']['seconds']);
+    $this->assertEqual(640, $info['video']['dimensions']['width'], '$info[\'video\'][\'dimensions\'][\'width\'] must be 312, got ' . $info['video']['dimensions']['width']);
+    $this->assertEqual(480, $info['video']['dimensions']['height'], '$info[\'video\'][\'dimensions\'][\'height\'] must be 240, got ' . $info['video']['dimensions']['height']);
+  }
+}
+

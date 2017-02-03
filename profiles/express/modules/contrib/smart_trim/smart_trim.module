@@ -1,0 +1,283 @@
+<?php
+/**
+ * @file
+ * Module functionality.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function smart_trim_field_formatter_info() {
+  return array(
+    'smart_trim_format' => array(
+      'label' => t('Smart trimmed'),
+      'field types' => array('text', 'text_long', 'text_with_summary'),
+      'settings' => array(
+        'trim_length' => 300,
+        'trim_type' => 'chars',
+        'trim_suffix' => '...',
+        'trim_link' => FALSE,
+        'more_link' => FALSE,
+        'more_text' => 'Read more',
+        'summary_handler' => 'full',
+        'trim_options' => array(),
+        'trim_preserve_tags' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ * Need a better way to handle doing count by words instead of characeters (see views_trim_text() ?
+ */
+function smart_trim_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  $settings = $display['settings'];
+  switch ($display['type']) {
+    case 'smart_trim_format':
+      foreach ($items as $delta => $item) {
+        // Check if the formatter involves a link.
+        if ($display['settings']['trim_link'] == 1) {
+          $uri = entity_uri($entity_type, $entity);
+        }
+        // The default behaviour is to use the main body field, but the summary
+        // option allows users to use the summary field IFF it is not empty.
+        $output = '';
+        if (!empty($settings['summary_handler']) && $settings['summary_handler'] != 'ignore' && !empty($item['summary'])) {
+          $output = _text_sanitize($instance, $langcode, $item, 'summary');
+        }
+        else {
+          $output = _text_sanitize($instance, $langcode, $item, 'value');
+        }
+
+        // Process additional options (currently only HTML on/off)
+        if (!empty($settings['trim_options'])) {
+          if (!empty($settings['trim_options']['text'])) {
+            // Strip tags
+            $preserve_tags = !empty($settings['trim_preserve_tags']) ? $settings['trim_preserve_tags'] : '';
+            $output = strip_tags(str_replace('<', ' <', $output), $preserve_tags);
+
+            // Strip out line breaks
+            $output = preg_replace('/\n|\r|\t/m', ' ', $output);
+
+            // Strip out non-breaking spaces
+            $output = str_replace('&nbsp;', ' ', $output);
+            $output = str_replace("\xc2\xa0", ' ', $output);
+
+            // Strip out extra spaces
+            $output = trim(preg_replace('/\s\s+/', ' ', $output));
+          }
+        }
+
+        // Make the trim, provided we're not showing a full summary
+        $shortened = FALSE;
+        if ($settings['summary_handler'] != 'full' || empty($item['summary'])) {
+          if ($settings['trim_type'] == 'words') {
+            //only bother with this is we have to
+            if ($settings['trim_length'] < str_word_count($output)) {
+              //use \s or use PREG_CLASS_UNICODE_WORD_BOUNDARY?
+              $words = preg_split('/\s/', $output, NULL, PREG_SPLIT_NO_EMPTY);
+              $output2 = implode(" ", array_slice($words, 0,  $settings['trim_length']));
+              $output2 = _filter_htmlcorrector($output2);
+            }
+            //field contained fewer words than we're trimming at, so do nothing
+            else {
+              $output2 = $output;
+            }
+          }
+          else {
+            // Use views_trim_text() if available.
+            if (module_exists('views')) {
+              $output2 = views_trim_text(array(
+                'max_length' => $settings['trim_length'],
+                'word_boundary' => TRUE,
+                'ellipsis' => FALSE,
+                'html' => TRUE,
+              ), $output);
+            }
+            else {
+              //See http://api.drupal.org/api/drupal/modules%21field%21modules%21text%21text.module/function/text_summary/7
+              //text_summary is smart about looking for paragraphs, sentences,
+              //etc, not strictly just length. Uses truncate_utf8 as well
+              $output2 = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $settings['trim_length']);
+            }
+          }
+
+          //verify if we actually performed any shortening
+          if (drupal_strlen($output) != drupal_strlen($output2)) {
+            $shortened = TRUE;
+          }
+          $output = $output2;
+        }
+
+        // Only include the extension if the text was truncated
+        $extension = '';
+        if ($shortened) {
+          $extension = filter_xss($settings['trim_suffix']);
+        }
+        // Don't duplicate period at end of text and beginning of extension
+        if (substr($output, -1, 1) == '.' && substr($extension, 0, 1) == '.') {
+          $extension = substr($extension, 1);
+        }
+
+        // Add the link, if there is one!
+        $uri = entity_uri($entity_type, $entity);
+        // But wait! Don't add a more link if the field ends in <!--break-->
+        if ($uri && $settings['more_link'] && strpos(strrev($output), strrev('<!--break-->')) !== 0) {
+          $extension .= l(t('@more_text', array('@more_text' => $settings['more_text'])), $uri['path'], array('html' => TRUE, 'attributes' => array('class' => array('more-link'))));
+        }
+
+        $output_appended = preg_replace('#^(.*)(\s?)(</[^>]+>)$#Us', '$1' . $extension . '$3', $output);
+
+        //check if the regex did anything. if not, append manually
+        if ($output_appended == $output) $output_appended = $output . $extension;
+
+        // If linking to content is selected the trimmed text will have tags
+        // removed from the trimmed text. Need to find a more elegant way of
+        // doing this without conflicting the other settings.
+        if ($settings['trim_link'] != 0 && !empty($uri['path'])) {
+          $output_appended = strip_tags($output_appended);
+          $output = l($output_appended, $uri['path']);
+          $element[$delta] = array(
+            '#markup' => $output,
+          );
+          return $element;
+        }
+        $element[$delta] = array(
+          '#markup' => $output_appended,
+        );
+      }
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function smart_trim_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+
+  $settings = $instance['display'][$view_mode]['settings'];
+
+  $element = array();
+
+  $element['trim_link'] = array(
+    '#title' => t('Link text to'),
+    '#type' => 'select',
+    '#default_value' => $settings['trim_link'],
+    '#description' => t('Linking text to content will strip tags entirely from the trimmed text.'),
+    '#options' => array(
+      0 => t('Nothing'),
+      1 => t('Content'),
+    ),
+  );
+
+  $element['trim_length'] = array(
+    '#title' => t('Trim length'),
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#default_value' => $settings['trim_length'],
+    // Needs form.inc?
+    '#element_validate' => array('_element_validate_integer_positive'),
+    '#required' => TRUE,
+  );
+
+  $element['trim_type'] = array(
+    '#title' => t('Trim units'),
+    '#type' => 'select',
+    '#options' => array(
+      'chars' => t("Characters"),
+      'words' => t("Words"),
+    ),
+    '#default_value' => $settings['trim_type'],
+  );
+
+  $element['trim_suffix'] = array(
+    '#title' => t('Suffix'),
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#default_value' => $settings['trim_suffix'],
+  );
+
+  $element['more_link'] = array(
+    '#title' => t('Display more link?'),
+    '#type' => 'select',
+    '#options' => array(
+      0 => t("No"),
+      1 => t("Yes"),
+    ),
+    '#default_value' => $settings['more_link'],
+    '#description' => t('Displays a link to the entity (if one exists)'),
+  );
+
+  $element['more_text'] = array(
+    '#title' => t('More link text'),
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#default_value' => $settings['more_text'],
+    '#description' => t('If displaying more link, enter the text for the link.'),
+  );
+
+  if ($field['type'] == 'text_with_summary') {
+    $element['summary_handler'] = array(
+      '#title' => t('Summary'),
+      '#type' => 'select',
+      '#options' => array(
+        'full' => t("Use summary if present, and do not trim"),
+        'trim' => t("Use summary if present, honor trim settings"),
+        'ignore' => t("Do not use summary"),
+      ),
+      '#default_value' => $settings['summary_handler'],
+    );
+  }
+
+  $element['trim_options'] = array(
+    '#title' => t('Additional options'),
+    '#type' => 'checkboxes',
+    '#options' => array(
+      'text' => t('Strip HTML'),
+    ),
+    '#default_value' => empty($settings['trim_options']) ? array() : $settings['trim_options'],
+  );
+
+  $element['trim_preserve_tags'] = array(
+    '#title' => t('Tags to preserve'),
+    '#description' => t('Which tags to preserve if "Strip HTML" is chosen above. Format as "&lt;p&gt;&lt;a&gt;" to preserve p and a tags.'),
+    '#type' => 'textfield',
+    '#default_value' => $settings['trim_preserve_tags'],
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function smart_trim_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = intval($settings['trim_length']) . ' ' . (($settings['trim_type'] == 'chars') ? t('characters') : t('words'));
+  if (drupal_strlen(trim($settings['trim_suffix']))) {
+    $summary .= " " . t("with suffix");
+  }
+  if ($settings['more_link']) {
+    $summary .= ", " . t("with more link");
+  }
+
+  // Trim options summary.
+  if (isset($settings['trim_link'])) {
+    $summary .= ($settings['trim_link'] == 1) ? ' ' . t('linked to content') : '';
+  }
+  return $summary;
+}
+
+/**
+ * Implements hook_help().
+ */
+function smart_trim_help($path, $arg) {
+  if ($path == 'admin/help#smart_trim') {
+    return '<p>' . t('This module creates a new text field formatter. There are no global configuration options.') . '</p>';
+  }
+}

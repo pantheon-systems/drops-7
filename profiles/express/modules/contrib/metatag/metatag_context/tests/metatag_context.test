@@ -1,0 +1,109 @@
+<?php
+/**
+ * @file
+ * Functional tests for the Metatag:Context module.
+ */
+
+/**
+ * This extends the basic Metatag test class to reduce code duplication.
+ */
+class MetatagContextTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag:Context tests',
+      'description' => 'Test basic Metatag:Context functionality.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp(array $modules = array()) {
+    $modules[] = 'context';
+    $modules[] = 'metatag_context';
+
+    // Enable the hidden submodule to manage some default configs.
+    $modules[] = 'metatag_context_tests';
+
+    parent::setUp($modules);
+
+    // Create user.
+    $perms = array(
+      'bypass node access',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->drupalLogin($this->adminUser);
+
+    // Create a content type, with underscores.
+    $type_name = strtolower($this->randomName(8)) . '_test';
+    $type = $this->createContentType($type_name, $type_name);
+    $this->type = $type->type;
+
+    // Store a valid URL name, with hyphens instead of underscores.
+    $this->hyphen_type = str_replace('_', '-', $this->type);
+  }
+
+  /**
+   * Test handling a node.
+   */
+  public function testNode() {
+    // Create a node.
+    $this->drupalPost('node/add/' . $this->hyphen_type, array('title' => $this->randomName(8)), t('Save'));
+    $this->assertResponse(200);
+
+    // Generate metatags and check content.
+    $test_object = $this->createTestObject('node_metatags', 'node/1');
+    $this->generateByPathConfig($test_object);
+    $this->editByPathConfig($test_object);
+    $this->checkByPathConfig($test_object);
+
+    // Edit metatag and check content.
+    $test_object->title = 'New title';
+    $test_object->description = '';
+    $this->editByPathConfig($test_object);
+    $this->checkByPathConfig($test_object);
+  }
+
+  /**
+   * Test handling the front page.
+   */
+  public function testFrontPage() {
+    // Generate metatags and check content.
+    $test_object = $this->createTestObject('frontpage_metatags', '<front>');
+    $this->generateByPathConfig($test_object);
+    $this->editByPathConfig($test_object);
+    $this->checkByPathConfig($test_object);
+
+    // Edit metatag and check content.
+    $test_object->title = 'A different title';
+    $test_object->description = '';
+    $this->editByPathConfig($test_object);
+    $this->checkByPathConfig($test_object);
+  }
+
+  /**
+   * Test the Context integration.
+   */
+  public function testExportedPage() {
+    $this->drupalGet('metatag-context-test');
+    $this->assertResponse(200);
+
+    // Test the page title.
+    $this->assertTitle('Metatag:Context test page title tag');
+
+    // Test the description meta tag.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Metatag:Context test description tag.');
+
+    // Test the keywords meta tag.
+    $xpath = $this->xpath("//meta[@name='keywords']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one keywords meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Test, page, keywords');
+  }
+
+}

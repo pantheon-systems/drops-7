@@ -1,0 +1,318 @@
+<?php
+
+/**
+ * @file
+ * Secure permissions for CU-Boulder.
+ */
+
+
+/**
+ * Implements hook_install().
+ *
+ * Creates a set of default users with specified roles.
+ */
+function cu_users_install() {
+  // High module weight in order to come after every module that we declare
+  // permissions for.
+  db_query("UPDATE {system} SET weight = 98 WHERE name = 'cu_users'");
+
+  $developer_role = user_role_load_by_name('developer');
+  $content_admin_role = user_role_load_by_name('content_admin');
+  $administrator_role = user_role_load_by_name('administrator');
+
+  // Create default users keyed by role id.
+  $default_users = array(
+    $developer_role->rid => cu_users_get_users('developer'),
+    $administrator_role->rid => cu_users_get_users('administrator'),
+  );
+
+  // Final sanity check.
+  _cu_users_grant_all_perms($developer_role->rid);
+
+  foreach ($default_users as $rid => $users) {
+    foreach ($users as $name => $mail) {
+      // Create the account.
+      $account = new stdClass();
+      $account->name = $name;
+      $account->mail = $mail;
+      $account->status = 1;
+      $account = user_save($account);
+
+      // Grant user the role.
+      $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+      $query->values(array('uid' => $account->uid, 'rid' => $rid));
+      $query->execute();
+    }
+  }
+
+  // force roles to be wieghted by increasing permissions
+  $role = user_role_load_by_name('edit_my_content');
+  $role->weight = 2;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('content_editor');
+  $role->weight = 3;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('site_owner');
+  $role->weight = 4;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('administrator');
+  $role->weight = 5;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('developer');
+  $role->weight = 6;
+  user_role_save($role);
+
+}
+
+
+/**
+ * Grants all perms to specified role ID.
+ *
+ * This is sort of a "last check" just in case we haven't
+ * exported *every* permission.
+ */
+function _cu_users_grant_all_perms($rid) {
+  // Grant every permission to role.
+  $module_info = system_get_info('module');
+  foreach (module_implements('permission') as $module) {
+    $modules[$module] = $module_info[$module]['name'];
+  }
+  $permissions = array();
+  foreach ($modules as $module => $display_name) {
+    $perms = array();
+    $perms = module_invoke($module, 'permission');
+    $permissions += $perms;
+  }
+  if ($rid > 2) {
+    user_role_grant_permissions($rid, array_keys($permissions));
+    return TRUE;
+  }
+  else {
+    // We wont grant perms to anon or auth.. only a new role (>2).
+    return FALSE;
+  }
+}
+
+/**
+ * Set module weight for pre-1.0 sites.
+ */
+function cu_users_update_7010() {
+  db_query("UPDATE {system} SET weight = 99 WHERE name = 'cu_users'");
+  return TRUE;
+}
+
+/**
+ * Create administrator drupalcs user and change sniderc's role to developer.
+ */
+function cu_users_update_7011() {
+  // If druaplcs user does not exist.
+  $drupalcs_account = user_load_by_name('drupalcs');
+  if (!isset($drupalcs_account->uid)) {
+    // Create new drupalcs user.
+    $account = new stdClass();
+    $account->name = 'drupalcs';
+    $account->mail = 'drupalcs@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    // Grant administrator role to drupalcs.
+    $administrator_role = user_role_load_by_name('administrator');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $administrator_role->rid));
+    $query->execute();
+  }
+
+  // Remove administrator role from sniderc.
+  $sniderc_account = user_load_by_name('sniderc');
+  $query = db_delete('users_roles')
+    ->condition('uid', $sniderc_account->uid)
+    ->condition('rid', $administrator_role->rid)
+    ->execute();
+
+  // To avoid an Integrity constraint violation if sniderc happens to already
+  // have developer role, query first.
+  $developer_role = user_role_load_by_name('developer');
+  $result = db_select('users_roles', 'ur')
+    ->fields('ur', array('uid'))
+    ->condition('uid', $sniderc_account->uid, '=')
+    ->condition('rid', $developer_role->rid, '=')
+    ->execute()
+    ->fetchAssoc();
+
+  // If no developer role, grant developer role to sniderc's account.
+  if (empty($result)) {
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $sniderc_account->uid, 'rid' => $developer_role->rid));
+    $query->execute();
+  }
+}
+
+/**
+ * Create table for user invites.
+ */
+function cu_users_update_7012() {
+  drupal_install_schema('cu_users');
+}
+
+/**
+ * Add Erin Corson as a developer.
+ */
+function cu_users_update_7013() {
+  // No longer adding erco7194
+}
+
+/**
+ * Add Kevin Reynen as a developer.
+ */
+function cu_users_update_7016() {
+  // If kere7580 user does not exist.
+  $new_account = user_load_by_name('kere7580');
+  if (!isset($new_account->uid)) {
+    // Create new drupalcs user.
+    $account = new stdClass();
+    $account->name = 'kere7580';
+    $account->mail = 'Kevin.Reynen@Colorado.EDU';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $developer_role = user_role_load_by_name('developer');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
+    $query->execute();
+  }
+}
+
+/**
+ * Add James Fuller as a developer.
+ */
+function cu_users_update_7017() {
+  // If jafu6031 user does not exist.
+  $new_account = user_load_by_name('jafu6031');
+  if (!isset($new_account->uid)) {
+    // Create new drupalcs user.
+    $account = new stdClass();
+    $account->name = 'jafu6031';
+    $account->mail = 'James.W.Fuller@Colorado.EDU';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $developer_role = user_role_load_by_name('developer');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
+    $query->execute();
+  }
+}
+
+/**
+ * Set role weight by increasing permissions so site_owner and admin are easier to compare
+ */
+function cu_users_update_7018() {
+
+  $role = user_role_load_by_name('content_editor');
+  $role->weight = 2;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('site_owner');
+  $role->weight = 3;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('administrator');
+  $role->weight = 4;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('developer');
+  $role->weight = 5;
+  user_role_save($role);
+
+}
+
+/**
+ * Breaking module up into 3; renaming cu_users_invite table to user_external_invite
+ */
+function cu_users_update_7019() {
+  if (db_table_exists('cu_users_invite')) {
+    db_rename_table('cu_users_invite', 'user_external_invite');
+  }
+  // Enable new modules
+  module_enable(array(
+    'user_external_invite',
+    'cu_permissions',
+  ));
+}
+
+/**
+ * Add Emily as an administrator.
+ */
+function cu_users_update_7020() {
+  // If new user does not exist.
+  $new_account = user_load_by_name('mortone');
+  if (!isset($new_account->uid)) {
+    // Create new drupalcs user.
+    $account = new stdClass();
+    $account->name = 'mortone';
+    $account->mail = 'Emily.Kellagher@Colorado.EDU';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $admin_role = user_role_load_by_name('administrator');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $admin_role->rid));
+    $query->execute();
+  }
+}
+
+/**
+ * Remove Erin Corson and Matt Tucker as a users
+ */
+ function cu_users_update_7021() {
+   $erin = user_load_by_name('erco7194');
+   user_cancel(array(), $erin->uid, 'user_cancel_reassign');
+   $matt = user_load_by_name('matu4291');
+   user_cancel(array(), $matt->uid, 'user_cancel_reassign');
+ }
+
+/**
+ * Add Alex Finnarn as a developer.
+ */
+function cu_users_update_7022() {
+  // If alfi2595 user does not exist.
+  $new_account = user_load_by_name('alfi2595');
+  if (!isset($new_account->uid)) {
+    // Create new drupalcs user.
+    $account = new stdClass();
+    $account->name = 'alfi2595';
+    $account->mail = 'alexander.finnarn@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $developer_role = user_role_load_by_name('developer');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
+    $query->execute();
+  }
+
+  // force roles to be wieghted by increasing permissions
+  $role = user_role_load_by_name('edit_my_content');
+  $role->weight = 2;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('content_editor');
+  $role->weight = 3;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('site_owner');
+  $role->weight = 4;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('administrator');
+  $role->weight = 5;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('developer');
+  $role->weight = 6;
+  user_role_save($role);
+}

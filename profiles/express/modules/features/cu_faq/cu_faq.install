@@ -1,0 +1,14 @@
+<?php
+
+/**
+* Implements hook_install().
+*/
+function cu_faq_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'cu_faq')
+    ->execute();
+}
+

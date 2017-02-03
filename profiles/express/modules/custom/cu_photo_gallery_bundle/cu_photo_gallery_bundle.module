@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_photo_gallery_bundle_secure_permissions($role) {
+   $permissions = array(
+    'administrator' => array(
+      'create photo_gallery content',
+      'delete any photo_gallery content',
+      'delete own photo_gallery content',
+      'edit any photo_gallery content',
+      'edit own photo_gallery content',
+    ),
+    'anonymous user' => array(),
+    'authenticated user' => array(),
+    'content_editor' => array(
+      'create photo_gallery content',
+      'delete any photo_gallery content',
+      'delete own photo_gallery content',
+      'edit any photo_gallery content',
+      'edit own photo_gallery content',
+    ),
+    'developer' => array(
+      'create photo_gallery content',
+      'delete any photo_gallery content',
+      'delete own photo_gallery content',
+      'edit any photo_gallery content',
+      'edit own photo_gallery content',
+    ),
+    'edit_my_content' => array(),
+    'site_owner' => array(
+      'create photo_gallery content',
+      'delete any photo_gallery content',
+      'delete own photo_gallery content',
+      'edit any photo_gallery content',
+      'edit own photo_gallery content',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help().
+ */
+function cu_photo_gallery_express_help($variables) {
+  $variables['/node/add/photo-gallery'][] = array(
+    'title' => 'Photo Gallery Help',
+    'short_title' => 'Photo Gallery Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/700',
+  );
+  return $variables;
+}

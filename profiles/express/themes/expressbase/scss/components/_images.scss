@@ -1,0 +1,126 @@
+.field-type-text-with-summary img,
+.field-type-text-long img,
+img.image-large,
+img.image-medium,
+img.image-small,
+img.image-large_square_thumbnail,
+img.image-large_wide_thumbnail,
+img.image-square_thumbnail,
+img.image-square,
+img.image-small_square,
+img.image-thumbnail,
+img.image-grid-9,
+img.image-grid-12,
+img.image-grid-6,
+img.image-grid-4,
+img.image-grid-3,
+img.image-slider {
+  max-width:100%;
+  height: auto;
+  min-width: 50px;
+}
+.region-intro,
+.region-wide-2 {
+  img.image-large,
+  img.image-hero,
+  img.image-slider,
+  img[class=""] {
+    width: 100%;
+    height: auto;
+    max-width: none;
+    display: block;
+  }
+  img.image-medium,
+  img.image-small,
+  img.image-large_square_thumbnail,
+  img.image-large_wide_thumbnail,
+  img.image-square_thumbnail,
+  img.image-square,
+  img.image-small_square,
+  img.image-thumbnail {
+    max-width: 100%;
+  }
+  .field-type-text-long p:last-child {
+    margin-bottom: 0;
+  }
+  .block {
+    margin-bottom: 0;
+  }
+}
+
+.field-type-text-with-summary img[style*="float:right"],
+.field-type-text-long img[style*="float:right"] {
+  float: right !important;
+  margin: 0 0 20px 20px;
+  max-width: 100%;
+}
+.field-type-text-with-summary img[style*="float:left"],
+.field-type-text-long img[style*="float:left"] {
+  float: left !important;
+  margin: 0 20px 20px 0;
+  max-width: 100%;
+}
+img.image-medium[style*="float:right"],
+img.image-medium[style*="float:left"] {
+    max-width:50%;
+}
+img.image-small[style*="float:right"],
+img.image-small[style*="float:left"] {
+    max-width:50%;
+}
+
+.image-square,
+.image-square_thumbnail {
+  float:left;
+  width:50px;
+  height: 50px;
+  margin:0 10px 10px 0;
+}
+
+
+.sidebars {
+  .image-square,
+  .image-square_thumbnail  {
+    width:50px;
+    height: 50px;
+  }
+}
+@media all and (min-width: 960px) {
+  .image-square,
+  .image-square_thumbnail {
+    float:left;
+    width:100px;
+    height: 100px;
+    margin:0 10px 10px 0;
+  }
+  .sidebars {
+    .image-square,
+    .image-square_thumbnail  {
+      width:65px;
+      height: 65px;
+    }
+  }
+}
+
+.image-small-square-thumbnail {
+  float:left;
+  width:70px;
+  height: 70px;
+  margin:0 10px 10px 0;
+}
+.feature-layout-callout {
+  .image-square,
+  .image-small-thumbnail {
+    width:110px;
+  }
+}
+
+.square-image-circles {
+  img.image-large_square_thumbnail,
+  img.image-square_thumbnail,
+  img.image-square,
+  img.image-small_square,
+  .soc li .socicon {
+    @include rounded($radius: 50%);
+  }
+}

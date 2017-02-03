@@ -1,0 +1,349 @@
+<?php
+
+/**
+ * @file
+ * This module provides the LDAP package the ability populate drupal profile fields with ldap entry data
+ *   such as last name, first name, etc.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ldap_profile_menu() {
+  $items = array();
+
+  $items['admin/config/people/ldap/profile'] = array(
+    'title' => 'Profile Mapping',
+    'description' => 'Configure LDAP Profile Mapping',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_profile_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+    'file' => 'ldap_profile.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_help().
+ */
+
+function ldap_profile_help($path, $arg) {
+  $url = url('admin/config/people/accounts/fields', array('absolute' => TRUE));
+  $link = '<a id="profileFieldEdit" href="' . $url . '" rel="' . $url . '">' .
+            t('edit profile fields') . '</a>';
+  $profile_help = t('LDAP Profile Mapping is used to automatically populate user profile fields ( !link ) such as last name based on their LDAP Entry.', array('!link' => $link)) .
+    t('This is done each time the user logons to Drupal.') . '<br/><br/>' .
+    t('To add attributes that are contained in an LDAP entry to a profile field, you can use tokens ' .
+        'such as "[sn].[givenname]@myorg.com" or use the LDAP attribute name, such as "givenname" (all without ' .
+        'quotes).') . '<br/><br/>' .
+        t('The <em>LDAP field to derive from</em> allows you to perform a search ' .
+        'from a given LDAP attribute that contains a DN, and then get ' .
+        'attribute data based off that search, rather than the current ' .
+        'user\'s attributes (i.e. - If you wanted to get a user\'s ' .
+        'manager information, you can set the <em>LDAP Field to Derive ' .
+        'from</em> textbox to "manager" and put a check-mark next ' .
+        'to <em>Derive from DN Search</em>, and then put in the ' .
+        'subsequent field to gather from there.).');
+
+  switch ($path) {
+    case 'admin/config/people/ldap/profile':
+      $output = '<p>' . $profile_help . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_info().
+ */
+function ldap_profile_info($field = 0) {
+  $info['name']= 'ldap_profile';
+  $info['protocol'] = 'LDAP';
+
+  if ($field) {
+    return $info[$field];
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function ldap_profile_user_login(&$edit, $account) {
+  $servers = ldap_servers_get_servers(NULL, 'enabled');
+  $server = 0;
+  $changes = array();
+  $authuser = user_is_logged_in();
+  $ldapuser = FALSE;
+  $dn = "";
+
+  module_load_include('functions.inc', 'ldap_servers');
+
+  if (!empty($account)) {
+    $ldapuser = ldap_servers_get_user_ldap_data($account);
+    if (!empty($ldapuser) && !empty($ldapuser['dn'])) {
+      $dn = $ldapuser['dn'];
+    }
+  }
+  
+  if (is_array($account->data) && array_key_exists("ldap_authentication", $account->data)) {
+    $authdata = $account->data["ldap_authentication"];
+    if (array_key_exists('init', $authdata)) {
+      $authinit = $authdata['init'];
+      if (isset($servers[$authinit['sid']])) {
+        $server = $servers[$authinit['sid']];
+      }
+    }
+  }
+
+  if (!$authuser || !$ldapuser || $dn == "") {
+    return;
+  }
+
+  $ldapfields = array();
+  $dnLookups = array();
+  $mapping = ldap_profile_get_mapping();
+  $derivedMapping = ldap_profile_get_derived_mapping();
+
+  // Put all our mappings into the ldapfields array
+  if ($mapping != NULL) {
+    foreach (array_keys($mapping) as $field) {
+      if (strpos($field, "field_") !== FALSE) {
+        //We have a custom field
+        if (strpos($mapping[$field], "[") !== FALSE) {
+          $token_keys = ldap_server_tokens_needed_for_template($mapping[$field]);
+          foreach ($token_keys as $token_key) {
+            if (!in_array($token_key, $ldapfields)) {
+               array_push($ldapfields, $token_key);
+            }
+          }
+        }
+        else {
+           array_push($ldapfields, $mapping[$field]);
+        }
+        // If we want to derive this field from a DN search..
+        if ($derivedMapping[$field]['derive']) {
+          if (!in_array($derivedMapping[$field]['derive_value'], $dnLookups)) {
+            array_push($dnLookups, $derivedMapping[$field]['derive_value']);
+            array_push($ldapfields, $derivedMapping[$field]['derive_value']);
+          }
+        }
+      }
+    }
+  }
+
+  array_push($ldapfields, 'uid');
+
+  // Acquire all fields from user's LDAP attributes
+  $ldapdata = $server->search($dn, "(objectClass=*)", $ldapfields);
+  if ($ldapdata === FALSE) {
+    $ldapdata = array();
+  }
+  $ldapdata = $ldapdata[0];
+  $dnLdapdata = array();
+
+  // Perform searches for all DNs set to derive information from
+  foreach ($dnLookups as $curDnLookup) {
+    $curDnLookupResult = $server->search($ldapdata[$curDnLookup][0], "(objectClass=*)", $ldapfields);
+    if ($curDnLookupResult && array_key_exists(0, $curDnLookupResult)) {
+      $dnLdapdata[$curDnLookup] = $curDnLookupResult[0];
+    }
+  }
+
+  // Set/Update profile field information
+  if (is_array($mapping)) {
+    foreach (array_keys($mapping) as $field) {
+      if (strpos($field, "field_") !== FALSE) {
+        $add = FALSE;
+        $toAdd = '';
+        $ldapEntry = ($derivedMapping[$field]['derive']) ? $dnLdapdata[$derivedMapping[$field]['derive_value']] : $ldapdata;
+
+        // If we havea tokenized mapping
+        if (strpos($mapping[$field], "[") !== FALSE) {
+          $toAdd = ldap_server_token_replace($ldapEntry, $mapping[$field]);
+          $add = _ldap_profile_add_change($account, $field, $toAdd);
+        }
+        elseif (array_key_exists($mapping[$field], $ldapEntry)) {
+          if (array_key_exists(0, $ldapEntry[$mapping[$field]])) {
+            $toAdd = $ldapEntry[$mapping[$field]][0];
+            $add = _ldap_profile_add_change($account, $field, $toAdd);
+          }
+        }
+        if ($add) {
+          $changes[$field] = array('und' => array(
+            0 => array(
+              'value' => $toAdd
+            )
+          ));
+        }
+      }
+    }
+  }
+  if (count($changes) > 0) {
+    // preload the previously created account as the original
+    // this is to prevent a cycling condition with entitycache.module 
+    // which will continue until memory is exhausted
+    // the new field changes are treated as updates in this case
+    // (Do not reset the cache until after the changes are saved)
+    $account->original = user_load($account->uid, FALSE);
+    user_save($account, $changes);
+  }
+
+}
+
+/**
+ * Implements hook_form_user_profile_form_alter().
+ **/
+function ldap_profile_form_user_profile_form_alter(&$form, $form_state) {
+
+  $not_changeable = t('This username is automatically set and may not be changed.');
+  global $user;
+  if ($user->uid > 1 && is_array($form_state['user']->data) && isset($form_state['user']->data['ldap_authentication'])) {
+    $mapping = ldap_profile_get_mapping();
+    if ($mapping != NULL) {
+      foreach (array_keys($mapping) as $field) {
+        if (strpos($field, "field_") !== FALSE) {
+          if (array_key_exists($field, $form)) {
+            $form[$field]['#disabled'] = TRUE;
+            $form[$field]['#description'] = $not_changeable;
+            if (isset($form[$field]['und'][0])) {
+              $form[$field]['und'][0]['#description'] = $not_changeable;
+            }
+          }
+        }
+      }
+    }
+    $form['account']['name']['#disabled'] = TRUE;
+    $form['account']['name']['#description'] = $not_changeable;
+  }
+  if ($user->uid < 2) {
+    if ($form['#user']->uid > 1) {
+      $form['account']['name']['#disabled'] = TRUE;
+      $form['account']['name']['#description'] = $not_changeable;
+    }
+  }
+}
+
+/**
+ * Provides a valid LdapProfile configuration object.
+ */
+function ldap_profile_get_valid_conf() {
+  static $ldap_profile_conf;
+  if (is_object($ldap_profile_conf)) {
+    return $ldap_profile_conf;
+  }
+  require_once('LdapProfileConf.class.php');
+  $ldap_profile_conf = new LdapProfileConf();
+  return ($ldap_profile_conf->inDatabase) ? $ldap_profile_conf : FALSE;
+
+}
+
+/**
+ * Provides a custom tranlation for ldap to drupal information
+ * example - ldap stores has a field that specfies supervior = supervisor
+ *           in drupal you might want to store this a single on/off checkbox
+ *           this will allow you write a data translation for that field
+ * @params - field - indicates which ldap field is being translated
+ * @params - value - indicates the value from ldap that was pulled
+ */
+function ldap_profile_translate($field, $value) {
+  require_once('ldap_profile_data_translate.inc');
+  $value = ldap_profile_custom_translate($field, $value);
+  drupal_alter('ldap_profile_field', $value, $field);
+  return $value;
+}
+
+
+/**
+ * Provides an array of all the current profile fields mappings with ldap fields
+ */
+function ldap_profile_get_mapping($profile_field = '') {
+   $ldap_profile_conf = ldap_profile_get_valid_conf();
+   $result = array();
+   if ($ldap_profile_conf == NULL) {
+      return NULL;
+   }
+   $mapping = $ldap_profile_conf->mapping;
+
+   if ($profile_field != '') {
+      if (array_key_exists($profile_field, $mapping)) {
+         $result = array($mapping[$profile_field]);
+      }
+   }
+   else {
+      $result = $mapping;
+   }
+   return $result;
+}
+
+/**
+ * Provides an array of all the current derived profile field mappings with ldap fields
+ */
+function ldap_profile_get_derived_mapping($profile_field = '') {
+   $ldap_profile_conf = ldap_profile_get_valid_conf();
+   $result = array();
+   if ($ldap_profile_conf == NULL) {
+      return NULL;
+   }
+   $mapping = $ldap_profile_conf->derivedMapping;
+
+   if ($profile_field != '') {
+      if (array_key_exists($profile_field, $mapping)) {
+         $result = array($mapping[$profile_field]);
+      }
+   }
+   else {
+      $result = $mapping;
+   }
+   return $result;
+}
+
+/*****************************************
+ * HELPER METHODS
+ *****************************************/
+
+/**
+ * Helper method to check whether or not we should add the
+ * text to our changes array
+ *
+ * @param  $account  The user's account object
+ * @param  $field    The field for which we want to set/update
+ * @param  $change   String containing the value we want to
+ *                   change to (if nothing has changed)
+ *
+ * @return Boolean - True if we should add this change,
+ *         false otherwise
+ **/
+function _ldap_profile_add_change($account, $field, $change) {
+   $add = FALSE;
+
+   if (!property_exists($account, $field)) {
+      $add = TRUE;
+   }
+   else {
+      $f = $account->$field;
+      if (array_key_exists("und", $f)) {
+         if (array_key_exists("0", $f["und"])) {
+            if (array_key_exists("value", $f["und"][0])) {
+               if ($f["und"][0]["value"] != $change) {
+                  $add = TRUE;
+               }
+               elseif (empty($f)) {
+                  $add = TRUE;
+               }
+            }
+         }
+      }
+      elseif(is_array($f)) {
+         if (count($f) == 0) {
+            $add = TRUE;
+         }
+      }
+   }
+
+   return $add;
+}

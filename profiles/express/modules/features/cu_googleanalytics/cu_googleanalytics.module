@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * @file
+ * Code for the cu_googleanalytics feature.
+ */
+
+include_once('cu_googleanalytics.features.inc');

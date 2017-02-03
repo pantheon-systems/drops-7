@@ -1,0 +1,146 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_people_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'anonymous user' => array(
+      'view any people_list_block bean',
+    ),
+    'authenticated user' => array(
+      'view any people_list_block bean',
+    ),
+    'content_editor' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'developer' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'edit_my_content' => array(
+      'view any people_list_block bean',
+    ),
+    'site_owner' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Article content type.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_people_bundle_express_help($variables) {
+  $variables['admin/settings/people/settings'][] = array(
+    'title' => 'People Filter Labels Help',
+    'short_title' => 'People Filter Labels Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/556',
+  );
+  $variables['block/add/people-list-block'][] = array(
+    'title' => 'People List Block Help',
+    'short_title' => 'People List Block Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/586',
+  );
+  $variables['node/add/person'][] = array(
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/620',
+  );
+  $variables['node/add/people-list-page'][] = array(
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/620',
+  );
+
+  return $variables;
+}

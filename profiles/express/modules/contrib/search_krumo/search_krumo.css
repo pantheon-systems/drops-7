@@ -1,0 +1,39 @@
+.krumo-element.krumo-query-result {
+  background: #625c43;
+  color: #b2b2b2;
+}
+
+.krumo-element.krumo-query-result:hover {
+  background: #576f6d;
+}
+
+.krumo-element.krumo-query-result a.krumo-name {
+  color: #fff;
+}
+
+.krumo-element.krumo-query-result em.krumo-type {
+  color: #b2b2b2;
+}
+
+.krumo-element.krumo-query-result strong {
+  color: #fff;
+}
+
+.krumo-get-path a {
+  display: none;
+  background: #428484;
+  border-radius: 4px 4px 4px 4px;
+  color: #ffffff;
+  padding: 3px;
+  margin-left: 10px;
+}
+
+.krumo-element:hover .krumo-get-path a {
+  display: inline;
+  color: white;
+}
+
+#trail-input {
+  padding: 0px;
+  width: 400px;
+}

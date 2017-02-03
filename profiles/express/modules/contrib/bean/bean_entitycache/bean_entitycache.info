@@ -1,0 +1,17 @@
+name = "Bean - Entitycache"
+description = "Integrates the Bean module with the Entitycache module"
+
+core = 7.x
+package = Performance and scalability
+
+files[] = includes/bean_entitycache.core.inc
+
+dependencies[] = bean
+dependencies[] = entitycache
+
+; Information added by Drupal.org packaging script on 2015-03-04
+version = "7.x-1.9"
+core = "7.x"
+project = "bean"
+datestamp = "1425439382"
+

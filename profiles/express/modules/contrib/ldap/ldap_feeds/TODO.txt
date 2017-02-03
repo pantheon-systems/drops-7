@@ -1,0 +1,11 @@
+
+- add ldap token evaluation to feeds such that multiple attributes can be parsed
+- add functionality to populate user->data['ldap_authentication'] and other user populating data
+- simpletests
+- documenation of use cases
+- inclusion of sample feeds as exportables
+- deal with multivalued attributes.  this is already built into tokenization and should be resolved from there by
+    using token nameing structure there.  see ldap_server_tokenize_entry() function and http://drupal.org/node/1245736
+-  create mapper for feeds user processor for user->data array
+-  add mapper/processor hook for creating ldap authmapping option on importing.  does this need to extend user processor?
+-  figure out how to programmatically call importer on user logon so importer can execute post logon

@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * @file
+ * Install file for jQuery Update.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function jquery_update_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $jquery = drupal_get_library('system', 'jquery');
+    $ui = drupal_get_library('system', 'ui');
+    $requirements['jquery_update'] = array(
+      'title' => $t('jQuery Update'),
+      'severity' => REQUIREMENT_OK,
+      'value' => t('jQuery %jquery (<a href="@link">configure</a>) and jQuery UI %ui', array('%jquery' => $jquery['version'], '%ui' => $ui['version'], '@link' => url('admin/config/development/jquery_update'))),
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Helper function for setting a theme jQuery version during install or update.
+ *
+ * @param string $theme_key
+ *   The machine name of the theme to set.
+ * @param string $version
+ *   The MAJOR.MINOR jQuery version to set.
+ */
+function _jquery_update_set_theme_version($theme_key, $version) {
+  // Retrieve the cached theme settings.
+  theme_get_setting('jquery_update_jquery_version', $theme_key);
+  $theme_settings = drupal_static('theme_get_setting', array());
+
+  // Set the jQuery version.
+  $theme_settings[$theme_key]['jquery_update_jquery_version'] = $version;
+  variable_set('theme_' . $theme_key . '_settings', $theme_settings[$theme_key]);
+}
+
+/**
+ * Implements hook_install().
+ */
+function jquery_update_install() {
+  // Use core's default jQuery version for the "seven" admin theme.
+  _jquery_update_set_theme_version('seven', 'default');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function jquery_update_uninstall() {
+  variable_del('jquery_update_compression_type');
+  variable_del('jquery_update_jquery_version');
+  variable_del('jquery_update_jquery_cdn');
+}
+
+/**
+ * Update from Drupal 6.
+ */
+function jquery_update_update_7000() {
+  if (variable_get('jquery_update_compression_type', 'min') == 'pack') {
+    variable_set('jquery_update_compression_type', 'min');
+  }
+  variable_del('jquery_update_replace');
+
+  // Restore the default version of jQuery.
+  variable_del('jquery_update_jquery_version');
+}
+
+/**
+ * Convert jquery_update_jquery_admin_version to an admin theme setting.
+ */
+function jquery_update_update_7001() {
+  // Detect if the previous feature of the "admin version" variable is set.
+  // @see https://www.drupal.org/node/1969244
+  $admin_theme = variable_get('admin_theme', FALSE);
+  $admin_version = variable_get('jquery_update_jquery_admin_version', 'default');
+
+  // Ensure that if "seven" is set as the admin theme and no "admin version"
+  // is present, the version used on the admin theme is the "default" core
+  // provides to ensure major compatibility with contrib modules.
+  if (!$admin_version && $admin_theme === 'seven') {
+    $admin_version = 'default';
+  }
+  // Skip this update if the "admin version" was never set and the admin theme
+  // is not set as "seven".
+  elseif (!$admin_version) {
+    return;
+  }
+
+  // Continue setting the admin theme jQuery version.
+  _jquery_update_set_theme_version($admin_theme, $admin_version);
+
+  // Remove the admin version variable.
+  variable_del('jquery_update_jquery_admin_version');
+}

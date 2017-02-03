@@ -1,0 +1,44 @@
+#cu-theme-picker-settings-form img {
+  width:160px;
+  height: auto;
+  border:1px solid #ddd;
+}
+img.theme-screenshot {
+  border: 1px solid #ddd;
+  max-width: 100%;
+  height: auto;
+}
+.theme-list {
+  padding: 20px 0;
+}
+.theme-single {
+  margin-bottom: 20px;
+  border:1px solid #fff;
+  padding:20px;
+  text-align: center;
+  font-size: 85%;
+}
+.theme-single .theme-info {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.theme-single h3 {
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+.theme-single img {
+  width:100%;
+  height: auto;
+  border:1px solid #e7e7e7;
+}
+.theme-action-links {
+  text-align: center;
+}
+.theme-action-links .active-theme {
+  font-weight: bold;
+}
+.theme-active .theme-single {
+  background-color: #e7e7e7;
+  border: 1px solid #aaa;
+}

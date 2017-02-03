@@ -1,0 +1,137 @@
+<?php
+// $Id: jquery_plugin.module,v 1.1.4.8.2.8 2010/09/30 19:09:58 mfb Exp $
+
+/**
+ * Implement hook_library().
+ */
+function jquery_plugin_library() {
+  $path = drupal_get_path('module', 'jquery_plugin') . '/';
+  return array(
+    'cycle' => array(
+      'title' => 'Cycle',
+      'version' => '2.88',
+      'website' => 'http://plugins.jquery.com/project/cycle',
+      'js' => array($path . 'jquery.cycle.all.min.js' => NULL),
+    ),
+    'dateinput' => array(
+      'title' => 'Date input',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/dateinput',
+      'js' => array($path . 'dateinput.min.js' => NULL),
+    ),
+    'expose' => array(
+      'title' => 'Expose',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/expose',
+      'js' => array($path . 'toolbox.expose.min.js' => NULL),
+    ),
+    'flashembed' => array(
+      'title' => 'Flash embed',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/flashembed',
+      'js' => array($path . 'toolbox.flashembed.min.js' => NULL),
+    ),
+    'history' => array(
+      'title' => 'History',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tabs',
+      'js' => array($path . 'toolbox.history.min.js' => NULL),
+    ),
+    'metadata' => array(
+      'title' => 'Metadata',
+      'version' => '2.1',
+      'website' => 'http://plugins.jquery.com/project/metadata',
+      'js' => array($path . 'jquery.metadata.min.js' => NULL),
+    ),
+    'mousewheel' => array(
+      'title' => 'Mousewheel',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/scrollable',
+      'js' => array($path . 'toolbox.mousewheel.min.js' => NULL),
+    ),
+    'overlay' => array(
+      'title' => 'Overlay',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/overlay',
+      'js' => array($path . 'overlay.min.js' => NULL),
+    ),
+    'overlay.apple' => array(
+      'title' => 'Overlay Apple effect',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/overlay',
+      'js' => array($path . 'overlay.apple.min.js' => NULL),
+      'dependencies' => array(array('jquery_plugin', 'overlay')),
+    ),
+    'rangeinput' => array(
+      'title' => 'Range input',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/rangeinput',
+      'js' => array($path . 'rangeinput.min.js' => NULL),
+    ),
+    'scrollable' => array(
+      'title' => 'Scrollable',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/scrollable',
+      'js' => array($path . 'scrollable.min.js' => NULL),
+    ),
+    'scrollable.autoscroll' => array(
+      'title' => 'Scrollable autoscroll plugin',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/scrollable',
+      'js' => array($path . 'scrollable.autoscroll.min.js' => NULL),
+      'dependencies' => array(array('jquery_plugin', 'scrollable')),
+    ),
+    'scrollable.navigator' => array(
+      'title' => 'Scrollable navigator plugin',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/scrollable',
+      'js' => array($path . 'scrollable.navigator.min.js' => NULL),
+      'dependencies' => array(array('jquery_plugin', 'scrollable')),
+    ),
+    'tabs' => array(
+      'title' => 'Tabs',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tabs',
+      'js' => array($path . 'tabs.min.js' => NULL),
+    ),
+    'tabs.slideshow' => array(
+      'title' => 'Tabs slideshow plugin',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tabs',
+      'js' => array($path . 'tabs.slideshow.min.js' => NULL),
+      'dependencies' => array(array('jquery_plugin', 'tabs')),
+    ),
+    'tooltip' => array(
+      'title' => 'Tooltip',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tooltips',
+      'js' => array($path . 'tooltip.min.js' => NULL),
+    ),
+    'tooltip.dynamic' => array(
+      'title' => 'Tooltip dynamic positioning plugin',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tooltips',
+      'js' => array($path . 'tooltip.dynamic.min.js' => NULL),
+      'dependencies' => array(array('jquery_plugin', 'tooltip')),
+    ),
+    'tooltip.slide' => array(
+      'title' => 'Tooltip slide effect',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/tooltips',
+      'js' => array($path . 'tooltip.slide.min.js' => NULL),      
+      'dependencies' => array(array('jquery_plugin', 'tooltip')),
+    ),
+    'validate' => array(
+      'title' => 'Validate',
+      'version' => '1.7',
+      'website' => 'http://plugins.jquery.com/project/validate',
+      'js' => array($path . 'jquery.validate.min.js' => NULL),
+    ),
+    'validator' => array(
+      'title' => 'Validator',
+      'version' => '1.2.5',
+      'website' => 'http://plugins.jquery.com/project/html5validator',
+      'js' => array($path . 'validator.min.js' => NULL),
+    ),
+  );
+}

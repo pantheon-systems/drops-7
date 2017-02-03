@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file menu_firstchild.module
+ * Main file for the menu_firstchild module.
+ *
+ * By default, Drupal 6 requires that you enter a path for each menu link you add/edit from the Menu administration page.
+ * There are cases you may want to create a parent item, without any path, that simply links to its first viewable child item.
+ * Menu Firstchild provides this functionality.
+ * Developped by Henri MEDOT <henri.medot[AT]absyx[DOT]fr>
+ * http://www.absyx.fr
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function menu_firstchild_menu() {
+  $items['<firstchild>'] = array(
+    'page callback' => '_menu_firstchild_menu',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function _menu_firstchild_menu() {
+  return drupal_not_found();
+}
+
+/**
+ * Implementation of hook_menu_link_alter().
+ */
+function menu_firstchild_menu_link_alter(&$item, $menu) {
+  if (@$item['module'] == 'menu') {
+    if ($item['link_path'] == '<firstchild>') {
+      $item['options']['alter'] = TRUE;
+      $item['options']['unaltered_hidden'] = $item['hidden'];
+    }
+    else {
+      unset($item['options']['unaltered_hidden']);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_translated_menu_link_alter().
+ */
+function menu_firstchild_translated_menu_link_alter(&$item, $map) {
+  if (($item['module'] == 'menu') && ($item['link_path'] == '<firstchild>')) {
+    $href = _menu_firstchild_get_firstchild_href($item['mlid']);
+    if ($href != NULL) {
+      $item['href'] = $href;
+    }
+    else {
+      $item['hidden'] = TRUE;
+    }
+  }
+}
+
+function _menu_firstchild_get_firstchild_href($mlid) {
+  global $language;
+  $result = db_query('SELECT mlid, link_path FROM {menu_links} WHERE plid = :plid ORDER BY weight, link_title', array(':plid' => $mlid));
+  foreach ($result as $m) {
+    if ($m->link_path != '<firstchild>') {
+      $child = menu_link_load($m->mlid);
+      if (!empty($child['access']) && empty($child['hidden'])
+       && (!isset($child['localized_options']['langcode']) || ($child['localized_options']['langcode'] == $language->language))) {
+        return $m->link_path;
+      }
+    }
+    else {
+      $href = _menu_firstchild_get_firstchild_href($m->mlid);
+      if ($href != NULL) {
+        return $href;
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function menu_firstchild_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'menu_overview_form') {
+    foreach ($form as $key => $value) {
+      if (isset($value['#item']['href']) && ($value['#item']['href'] == '<firstchild>')) {
+        $item = $value['#item'];
+        $unaltered_hidden = $item['options']['unaltered_hidden'];
+        $form[$key]['#item']['hidden'] = $unaltered_hidden;
+        $form[$key]['hidden']['#default_value'] = !$unaltered_hidden;
+        $form[$key]['#attributes']['class'] = $unaltered_hidden ? array('menu-disabled') : array('menu-enabled');
+        $form[$key]['title']['#markup'] = check_plain($item['title']) . ($unaltered_hidden ? ' ('. t('disabled') .')' : '');
+      }
+    }
+  }
+  elseif (($form_id == 'menu_edit_item') && isset($form['link_path']['#description'])) {
+    $form['link_path']['#description'] .= t(' Enter %firstchild to link to the item\'s first accessible child.', array('%firstchild' => '<firstchild>'));
+    if (isset($form['options']['#value']['unaltered_hidden'])) {
+      $form['enabled']['#default_value'] = !$form['options']['#value']['unaltered_hidden'];
+    }
+  }
+}

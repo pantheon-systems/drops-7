@@ -1,0 +1,46 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * see getInfo() for test summary
+ */
+
+require_once(drupal_get_path('module', 'ldap_authorization') . '/tests/LdapAuthorizationTestCase.class.php');
+
+class LdapAuthorizationTestCase1197636 extends LdapAuthorizationTestCase {
+
+  public static function getInfo() {
+    return array(
+      'group' => 'LDAP Authorization',
+      'name' => 'Issue #1197636',
+      'description' => 'ldap authorization. Issue #1197636.  User cannot logon with ldap authorization enabled.',
+    );
+  }
+
+  function testLogon() {
+
+    $this->ldapTestId = 'Issue #1197636';
+    $this->serversData = '1197636/1197636.ldap_servers.test_data.inc';
+    $this->authorizationData = '1197636/1197636.ldap_authorization.test_data.inc';
+    $this->authenticationData = '1197636/1197636.ldap_authentication.test_data.inc';
+    $this->prepTestData();
+
+    $edit = array(
+      'name' => 'verykool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.', $this->ldapTestId);
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('verykool'), 'Ldap user properly authmapped.', $this->ldapTestId);
+
+    $verykool = user_load_by_name('verykool');
+    $this->assertTrue((is_object($verykool) && @(int)$verykool->uid > 1), 'Ldap user exists with uid > 1.', $this->ldapTestId);
+
+    $correct_roles = in_array('netadmins', array_values($verykool->roles));
+    $this->assertTrue($correct_roles, 'verykool granted  roles on actual logon "netadmins" drupal roles ', $this->ldapTestId);
+
+    $this->drupalGet('user/logout');
+  }
+
+}

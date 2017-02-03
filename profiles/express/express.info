@@ -1,0 +1,218 @@
+; Packaging information for express
+name = "express"
+description = "University of Colorado Boulder"
+exclusive = "1"
+core = "7.x"
+version = 2.0
+
+; ----------
+; Dependencies
+; ----------
+dependencies[] = express_field_bases
+dependencies[] = express_add_content
+dependencies[] = express_help
+dependencies[] = express_theme_picker
+dependencies[] = express_layout
+dependencies[] = express_settings
+dependencies[] = cu_colorbox
+;dependencies[] = express_permissions
+
+;dependencies[] = cu_settings
+;dependencies[] = cu_permissions
+
+; Core
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = field
+dependencies[] = field_sql_storage
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = shortcut
+dependencies[] = syslog
+dependencies[] = system
+dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = user
+
+; Layout Contib Dependencies
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = entitycache
+dependencies[] = inline_entity_form
+dependencies[] = bean
+dependencies[] = bean_admin_ui
+dependencies[] = context
+
+; Express Core Contrib Dependencies
+dependencies[] = ctools
+dependencies[] = cck
+dependencies[] = email
+dependencies[] = fences
+dependencies[] = field_collection
+dependencies[] = field_group
+dependencies[] = link
+dependencies[] = linkit
+dependencies[] = features
+dependencies[] = ldap_authentication
+dependencies[] = ldap_servers
+dependencies[] = user_external_invite
+dependencies[] = libraries
+dependencies[] = views
+dependencies[] = view_unpublished
+dependencies[] = disable_messages
+
+; Path management
+dependencies[] = globalredirect
+dependencies[] = pathologic
+dependencies[] = pathauto
+dependencies[] = redirect
+dependencies[] = securepages
+dependencies[] = auto_entitylabel
+
+; Admin UI Improvements
+dependencies[] = navbar
+dependencies[] = module_filter
+dependencies[] = escape_admin
+
+; Site Structure
+dependencies[] = cu_site_info
+dependencies[] = cu_view_modes
+dependencies[] = site_navigation_menus
+
+; Express Core Dependencies We'd Like to Remove
+dependencies[] = strongarm
+dependencies[] = cu_jquery
+dependencies[] = jquery_update
+dependencies[] = cu_accessibility
+
+dependencies[] = profile_module_manager
+
+; ============ CU AUTHENTICATION AND PERMISSIONS ============
+dependencies[] = cu_ldap
+dependencies[] = administerusersbyrole
+dependencies[] = role_delegation
+dependencies[] = chain_menu_access
+; Enabled after everything else to speed up install
+; dependencies[] = cu_users
+; dependencies[] = secure_permissions
+; dependencies[] = cu_permissions
+
+; ============ WYSIWYG ============
+dependencies[] = cu_wysiwyg
+dependencies[] = cu_shortcodes
+dependencies[] = cu_shortcodes_wysiwyg
+dependencies[] = wysiwyg
+dependencies[] = wysiwyg_filter
+dependencies[] = shortcode
+dependencies[] = ckeditor_link
+
+; ============ CU CONTENT TYPES ============
+dependencies[] = cu_home_page
+dependencies[] = cu_page
+dependencies[] = cu_alerts
+dependencies[] = cu_search
+dependencies[] = cu_sitewide
+dependencies[] = cu_slider
+dependencies[] = cu_faq
+dependencies[] = cu_hero_unit
+
+; ============ FILES ============
+dependencies[] = files
+dependencies[] = file_entity
+dependencies[] = files_undo_remove
+
+; ============ IMAGES ============
+dependencies[] = focal_point
+dependencies[] = cu_image_styles
+dependencies[] = cu_default_image_style_override
+dependencies[] = image_url_formatter
+
+; ============ DATE ============
+dependencies[] = cu_date_formats
+dependencies[] = date
+dependencies[] = date_api
+dependencies[] = date_popup
+dependencies[] = date_views
+
+; ============ VIEWS ============
+dependencies[] = views_accordion
+dependencies[] = views_slideshow
+dependencies[] = views_bulk_operations
+dependencies[] = actions_permissions
+dependencies[] = views_slideshow_cycle
+
+; ============ VIDEO ============
+dependencies[] = fitvids
+dependencies[] = video_embed_field
+dependencies[] = video_filter
+
+; ============ SEARCH AND ANALYTICS ============
+dependencies[] = cu_googleanalytics
+dependencies[] = googleanalytics
+dependencies[] = google_appliance
+
+; ============ MENU ============
+dependencies[] = menu_block
+dependencies[] = disable_node_menu_item
+dependencies[] = bigmenu
+dependencies[] = menu_firstchild
+dependencies[] = more_menus
+
+; ============ BLOCK ============
+dependencies[] = blocktheme
+dependencies[] = block_styles
+dependencies[] = cu_block
+dependencies[] = block_title_icons
+
+; ============ FLEXSLIDER ============
+dependencies[] = flexslider
+dependencies[] = flexslider_views
+dependencies[] = flexslider_views_slideshow
+
+; ============ OTHER ============
+dependencies[] = context_accordion
+dependencies[] = navigation404
+dependencies[] = attachment_links
+dependencies[] = colorbox
+dependencies[] = entity_token
+dependencies[] = insert
+dependencies[] = taxonomy_formatter
+dependencies[] = token
+dependencies[] = ds
+dependencies[] = modernizr
+dependencies[] = smartcrop
+dependencies[] = honeypot
+dependencies[] = metatag
+dependencies[] = transliteration
+dependencies[] = advanced_link
+dependencies[] = vppr
+dependencies[] = content_menu
+dependencies[] = grid_images
+dependencies[] = cu_back_to_top
+dependencies[] = cu_give_buttons
+dependencies[] = cu_font_awesome
+dependencies[] = eva
+dependencies[] = smart_trim
+dependencies[] = stringoverrides
+
+; ============ FEATURE EXPORTS ============
+dependencies[] = express_linkit_profiles
+
+; REMOVE IN FUTURE
+dependencies[] = grid_size_blocks
+dependencies[] = cu_livechat
+
+; STILL NEEDS WORK?
+; dependencies[] = cu_extended_content_search
+dependencies[] = cu_bean_override_view
+dependencies[] = cu_people_administration_override
+dependencies[] = cu_content_administration_override
+dependencies[] = cu_bucket

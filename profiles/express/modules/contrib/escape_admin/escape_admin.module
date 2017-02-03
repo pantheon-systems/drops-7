@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * Implements hook_page_alter().
+ */
+function escape_admin_page_alter(&$page) {
+  if (module_exists('toolbar')) {
+    $page['page_top']['toolbar']['#pre_render'][] = 'escape_admin_toolbar_pre_render';
+  }
+
+  $current_path = current_path();
+  $current_path_is_admin = FALSE;
+  // The function path_is_admin() is not available on update.php pages.
+  if (!defined('MAINTENANCE_MODE')) {
+    $current_path_is_admin = path_is_admin($current_path);
+  }
+  //if (drupal_is_front_page()) {
+  //$current_path = '';
+  //}
+  drupal_add_js(array('currentPath' => $current_path, 'currentPathIsAdmin' => $current_path_is_admin), 'setting');
+}
+
+function escape_admin_toolbar_pre_render($element) {
+  $element['toolbar_home']['#links']['home'] = array(
+    'title' => t('Back to site'),
+    'href' => '<front>',
+    'attributes' => array(
+      'title' => t('Return to site content'),
+      'class' => array('toolbar-icon-escape-admin', 'element-hidden'),
+      'data-toolbar-escape-admin' => NULL,
+    ),
+  );
+  $element['#attached']['library'][] = array('escape_admin', 'toolbar');
+  return $element;
+}
+
+/**
+ * Implements hook_navbar_alter().
+ */
+function escape_admin_navbar_alter(array &$items) {
+  $items['home']['tab']['#title'] = t('Back to site');
+  $items['home']['tab']['#options']['attributes']['title'] = t('Return to site content');
+  $items['home']['tab']['#options']['attributes']['class'] = array_diff($items['home']['tab']['#options']['attributes']['class'], array('navbar-icon-home'));
+  $items['home']['tab']['#options']['attributes']['class'][] = 'toolbar-icon-escape-admin';
+  $items['home']['tab']['#options']['attributes']['class'][] = 'element-hidden';
+  $items['home']['tab']['#options']['attributes']['data-toolbar-escape-admin'] = NULL;
+  $items['home']['#attached']['library'][] = array('escape_admin', 'navbar');
+}
+
+/**
+ * Implements hook_library().
+ */
+function escape_admin_library() {
+  $path = drupal_get_path('module', 'escape_admin');
+
+  $libraries['toolbar'] = array(
+    'title' => 'Provides a button to escape the administration area.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/escapeAdmin.modernizer.js' => array(),
+      $path . '/js/escapeAdmin.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/escapeAdmin.toolbar.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  $libraries['navbar'] = array(
+    'title' => 'Provides a button to escape the administration area.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/escapeAdmin.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/escapeAdmin.navbar.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('navbar', 'navbar'),
+    ),
+  );
+
+  return $libraries;
+}

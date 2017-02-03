@@ -1,0 +1,73 @@
+<?php
+/**
+ * @file cu_inventory_stats.module
+ * Provides data about the site and it's content to the CU Inventory.
+ */
+
+function cu_inventory_stats_cron() {
+  $cron_last = variable_get('cron_last', NULL);
+  // Run once a day
+  if (date('ymd', $cron_last) != date('ymd', time())) {
+    if (variable_get('cu_inventory_stats_site_cron', TRUE)) {
+      module_load_include('inc', 'cu_inventory_stats');
+      cu_inventory_stats_process_site_stats();
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter(&$form, &$form_state, $form_id)
+ */
+function cu_inventory_stats_form_cu_inventory_admin_settings_alter(&$form, &$form_state, $form_id) {
+  // Check and see if the Inventory is up. If it is not, let cu_inventory give the bad news.
+  if (!cu_inventory_is_up()) {
+    return;
+  }
+
+  $form['statistics'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Inventory Statistics'),
+    '#weight' => -10,
+  );
+
+  $form['statistics']['data_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Statistics Array'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  module_load_include('inc', 'cu_inventory_stats');
+  $cu_inventory_stats_statistics =  cu_inventory_stats_process_site_stats(false);
+
+  $form['statistics']['data_fieldset']['cu_inventory_stats_statistics'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<pre>',
+    '#markup' => print_r($cu_inventory_stats_statistics, TRUE),
+    '#suffix' => '</pre>',
+  );
+
+  $form['statistics']['update_statistics'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send statistics'),
+    '#submit' => array('cu_inventory_stats_update_statistics_submit'),
+  );
+
+  $form['statistics']['empty_statistics'] = array(
+    '#type' => 'submit',
+    '#value' => t('Empty Statistics'),
+    '#submit' => array('cu_inventory_stats_empty_statistics_submit'),
+  );
+}
+
+function cu_inventory_stats_update_statistics_submit(&$form, &$form_state) {
+  module_load_include('inc', 'cu_inventory_stats');
+  cu_inventory_stats_process_site_stats();
+  drupal_set_message(t('Updated Statistics sent.'));
+}
+
+function cu_inventory_stats_empty_statistics_submit(&$form, &$form_state) {
+  module_load_include('inc', 'cu_inventory_stats');
+  cu_inventory_stats_empty_site_stats();
+  drupal_set_message(t('Reqeust to empty Statistics sent.'));
+}

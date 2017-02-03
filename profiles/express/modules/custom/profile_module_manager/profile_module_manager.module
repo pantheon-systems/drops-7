@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * @file
+ * Alters grouping in admin/modules using hook_system_info_alter
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function profile_module_manager_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'profile_module_manager'). '/css/profile-module-manager.css');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function profile_module_manager_menu() {
+  // admin/settings ui provided by express_admin or custom solution
+  $items['admin/settings/site-configuration/bundles'] = array(
+      'title' => 'Enable Bundles',
+      'description' => 'Enable Add-on Bundles for additional functionality',
+      'page callback' => 'drupal_goto',
+      'page arguments' => array('admin/settings/bundles/list'),
+      'access arguments' => array('enable module bundles'),
+      'weight' => 50,
+  );
+
+  if (variable_get('profile_module_manager_disable_enabling', 1) == 1) {
+    $items['admin/settings/bundles/list'] = array(
+      'title' => 'Configure Bundles',
+      'description' => 'List of bundles.',
+      'page callback' => 'profile_module_manager_bundle_list',
+      'file' => 'profile_module_manager.admin.inc',
+      'access arguments' => array('enable module bundles'),
+    );
+
+    $items['admin/settings/bundles/list/enable/%'] = array(
+      'title' => 'Enable Bundle',
+      'description' => 'Enable a bundle.',
+      'page callback' => 'profile_module_manager_bundle_enable',
+      'page arguments' => array(5),
+      'file' => 'profile_module_manager.admin.inc',
+      'access arguments' => array('enable module bundles'),
+    );
+
+    $items['admin/settings/bundles/list/confirm/%'] = array(
+      'title' => 'Confirm Enabling Bundle',
+      'description' => 'Enable a bundle.',
+      'page callback' => 'profile_module_manager_bundle_confirm',
+      'page arguments' => array(5),
+      'file' => 'profile_module_manager.admin.inc',
+      'access arguments' => array('enable module bundles'),
+    );
+  }
+  $items['admin/config/system/module-manager'] = array(
+    'title' => 'Profile Module Manager',
+    'description' =>  'Configure Module Manager',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_admin_settings'),
+    'file' => 'profile_module_manager.admin.inc',
+    'access arguments' => array('administer modules'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function profile_module_manager_permission() {
+  return array(
+    'enable module bundles' => array(
+      'title' => t('Enable Module Bundles'),
+      'description' => t('Enable modules in bundles without administer modules permission.'),
+    ),
+    'enable admin bundles' => array(
+      'title' => t('Enable Admin Bundles'),
+      'description' => t('Enable modules in admin bundles without administer modules permission.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_system_info_alter().
+ */
+function profile_module_manager_system_info_alter(&$info, $file, $type) {
+
+  if (!variable_get('profile_module_manager_disable_ui_lock', 0)) {
+    module_load_include('inc', 'content', 'includes/install');
+    $profile = install_profile_info(drupal_get_profile());
+
+    if($type == 'module' && in_array($file->name, $profile['dependencies'])) {
+      $info['required'] = TRUE;
+    }
+  }
+
+}
+
+function profile_module_manager_is_config_ideal(){
+  $reality = module_list();
+  $ideal = profile_module_manager_build_ideal();
+
+  // remove any items configured to be ignored
+  // @TDOD: make this a variable that is set by cu_debug_admin_bundle
+  $ignore = explode(',', variable_get('profile_module_manager_ignore'));
+
+  foreach ($ignore as $name) {
+    $name = trim($name);
+    if (isset($reality[$name])) {
+      unset($reality[$name]);
+    }
+    if (isset($ideal[$name])) {
+      unset($ideal[$name]);
+    }
+  }
+
+
+  //does the reality match the ideal?
+  $diff1 = array_diff_assoc($reality, $ideal);
+  $diff2 = array_diff_assoc($ideal, $reality);
+  $diff = array_merge($diff1, $diff2);
+
+  return $diff;
+}
+
+
+/**
+ * Retuns an array of bundles.
+ */
+function profile_module_manager_get_bundles($status = 'all') {
+  if ($status == 'all') {
+    $bundles = db_query("SELECT name, filename FROM {system} WHERE type = 'module' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
+  }
+  if ($status == 'enabled') {
+    $bundles = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
+  }
+
+  // check for _bundle in the machine name, but also look for something in the .info
+  // to avoid false positives from contrib?
+  foreach ($bundles as $key => $bundle) {
+    if (!strpos($bundle->name, '_bundle')) {
+      unset($bundles[$key]);
+    }
+
+    if (!user_access('enable admin bundles') && strpos($bundle->name, '_admin_bundle')) {
+      unset($bundles[$key]);
+    }
+  }
+  return $bundles;
+}
+
+/**
+ * Retuns an array of modules that should be enabled
+ */
+function profile_module_manager_build_ideal() {
+  $new_ideal = array();
+  module_load_include('inc', 'content', 'includes/install');
+  $profile_name = drupal_get_profile();
+  $profile = install_profile_info($profile_name);
+
+  $ideal = $profile['dependencies'];
+  // if no hooks, just compare with dependencies
+  // in active profiles .info
+  //$ideal = cu_module_manager_should_be_enabled();
+
+  // add dependencies from any bundle to ideal
+  $bundles = profile_module_manager_get_bundles('enabled');
+
+  foreach($bundles as $bundle) {
+    // could just replace .module w/ .info from $bundle->filename
+    // which is faster?
+    $path = drupal_get_path('module', $bundle->name) . '/' . $bundle->name . '.info';
+    $info = drupal_parse_info_file($path);
+    if (isset($info['dependencies'])) {
+      $ideal = array_merge($ideal, $info['dependencies']);
+    }
+
+    // and the bundle itself
+    $ideal[] = $bundle->name;
+  }
+
+  // rebuild ideal so keys = value
+  foreach ($ideal as $item) {
+    $new_ideal[$item] = $item;
+  }
+
+  // add the profile itself to the list
+  $new_ideal[$profile_name] = $profile_name;
+
+  return $new_ideal;
+}
+
+function profile_module_manager_process_batch($modules, &$context) {
+
+  // Enable modules.
+  module_enable($modules);
+
+  // Pass bundle name to batch finished function.
+  foreach ($modules as $module) {
+    if (strpos($module, '_bundle')) {
+      $context['results']['bundle'] = $module;
+    }
+  }
+}
+
+function profile_module_manager_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Get bundle name from $results and print message.
+    $bundle_name = $results['bundle'];
+    $bundle_path = drupal_get_path('module', $bundle_name);
+    $bundle = drupal_parse_info_file($bundle_path . '/' . $bundle_name . '.info');
+    drupal_set_message('The ' . $bundle['name'] . ' Bundle has been successfully enabled on your site. You may now begin using this functionality and go back to editing your site.');
+
+    // Log bundle enable time.
+    $start_time = variable_get('profile_module_manager_enable_timer', 0);
+    $end_time = microtime(TRUE);
+    $total_time = $end_time - $start_time;
+    watchdog('profile_module_manager', '!bundle enable time: !time seconds.', array('!bundle' => $bundle['name'], '!time' => $total_time));
+  } else {
+    _revert_bundle_on_error();
+  }
+}
+
+/**
+ * Function to handle bundle enabling errors.
+ */
+function _revert_bundle_on_error() {
+
+}
+
+/**
+ * Implements hook_modules_installed().
+ * Run functions after bundles are enabled.
+ */
+function profile_module_manager_modules_installed($modules) {
+  foreach ($modules as $module) {
+    // Only run these functions if module name includes _bundle
+    if (strpos($module, '_bundle') !== false) {
+      // Get the info file
+      $path = drupal_get_path('module', $module) . '/' . $module . '.info';
+      $info = drupal_parse_info_file($path);
+      // Clear caches
+      if ($info['bundle_cache_clear']) {
+        drupal_flush_all_caches();
+      }
+      if ($info['bundle_context_clear']) {
+        drupal_flush_all_caches();
+      }
+    }
+  }
+}

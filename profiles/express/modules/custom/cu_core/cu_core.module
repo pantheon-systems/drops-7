@@ -1,0 +1,59 @@
+<?php
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function cu_core_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['cu_core'])) {
+    $group = $implementations['cu_core'];
+    unset($implementations['cu_core']);
+    $implementations['cu_core'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ *
+ * Disable syslog form fields.
+ *
+ * @param  $form
+ * @param  $form_state
+ */
+function cu_core_form_system_logging_settings_alter(&$form, &$form_state) {
+  $form['syslog_identity']['#disabled'] = TRUE;
+  $form['syslog_facility']['#disabled'] = TRUE;
+  $form['syslog_format']['#disabled'] = TRUE;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_core_form_alter(&$form, $form_state, $form_id) {
+  // Remove "Promote to front page."
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    unset($form['options']['promote']);
+  }
+}
+
+/**
+ * Implements hook_modules_enabled().
+ * Add shortcut link for context AFTER context_ui is enabled.
+ */
+function cu_core_modules_installed($modules) {
+  if (in_array('context_ui', $modules)) {
+    menu_rebuild();
+    // Add context shortcut to shortcuts set.
+    $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
+    $shortcut_set->links[] =
+    array(
+      'link_path' => 'admin/structure/context',
+      'link_title' => t('Context'),
+      'weight' => -14,
+    );
+    shortcut_set_save($shortcut_set);
+  }
+}

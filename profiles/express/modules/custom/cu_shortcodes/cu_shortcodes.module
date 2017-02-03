@@ -1,0 +1,790 @@
+<?php
+
+/**
+ * @file
+ * Our shortcodes.
+ *
+ * TODO: This code should use some refactoring as there is a lot of duplication
+ * of functionality.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function cu_shortcodes_menu() {
+  $items['shortcodes'] = array(
+    'title' => 'Shortcodes',
+    'page callback' => 'cu_shortcodes_demo',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  $items['admin/config/content/shortcode/generator/button'] = array(
+    'title' => 'Button Shortcode Generator',
+    'description' => 'Generate shortcodes for buttons',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_shortcodes_button_generator_form'),
+    'file' => 'inc/cu_shortcodes_button_generator.inc',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  $items['admin/config/content/shortcode/generator/icon'] = array(
+    'title' => 'Icon Shortcode Generator',
+    'description' => 'Generate shortcodes for icons',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_shortcodes_icon_generator_form'),
+    'file' => 'inc/cu_shortcodes_icon_generator.inc',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  return $items;
+}
+
+/**
+ * Shortcode demo.
+ *
+ * @return string
+ *   Returns html output.
+ */
+function cu_shortcodes_demo() {
+  $codes = shortcode_list_all_enabled('wysiwyg');
+  ksort($codes);
+  foreach ($codes as $code) {
+    $output .= '<div class="block shortcode-help"><h2>' . $code['title'] . '</h2>';
+    $output .= '<p class="shortcode-desc">' . $code['description'] . '</p>';
+    $output .= '<div class="shortcode-tip"><p class="shortcode-intro">Use this shortcode:</p>' . call_user_func($code['tips callback']) . '</div>';
+    if (isset($code['demo callback'])) {
+      $output .= '<p class="shortcode-intro">Get this result:</p>' . call_user_func($code['demo callback']);
+    }
+    if (!empty($code['page callback'])) {
+      $output .= '<p class="shortcode-page"><a href="' . $code['page callback'][1] . '" class="button button-blue">' . $code['page callback'][0] . '</a></p>';
+    }
+    $output .= '</div>';
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_shortcodes_page_alter(&$page) {
+  // Add shortcode css.
+  drupal_add_css(drupal_get_path('module', 'cu_shortcodes') . '/css/cu_shortcodes.css');
+  drupal_add_css(drupal_get_path('module', 'cu_shortcodes') . '/css/cu-shortcodes-columns.css');
+  // Add shortcode js.
+  drupal_add_js(drupal_get_path('module', 'cu_shortcodes') . '/js/cu_shortcodes.js');
+}
+
+
+/**
+ * Implements of hook_shortcode_info().
+ *
+ * Using same formatting as hook_filter_info()
+ */
+function cu_shortcodes_shortcode_info() {
+  $shortcodes = array();
+  $shortcodes['anchors'] = array(
+    'title' => t('Anchors'),
+    'description' => t('Creates anchor links to content on the page'),
+    'process callback' => 'cu_shortcodes_anchors',
+    'tips callback' => 'cu_shortcodes_anchors_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['backtotop'] = array(
+    'title' => t('Back to Top'),
+    'description' => t('Creates a link that takes the user back to the top of the page'),
+    'process callback' => 'cu_shortcodes_backtotop',
+    'tips callback' => 'cu_shortcodes_backtotop_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['blockquote'] = array(
+    'title' => t('Blockquote'),
+    'description' => t('Callout your content'),
+    'process callback' => 'cu_shortcodes_blockquote',
+    'tips callback' => 'cu_shortcodes_blockquote_tips',
+    'default settings' => array(),
+    'demo callback' => 'cu_shortcodes_blockquote_demo',
+  );
+  $shortcodes['box'] = array(
+    'title' => t('Box'),
+    'description' => t('Puts content in a box'),
+    'process callback' => 'cu_shortcodes_box',
+    'tips callback' => 'cu_shortcodes_box_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['button'] = array(
+    'title' => t('Button'),
+    'description' => t('Make links into buttons'),
+    'process callback' => 'cu_shortcodes_button',
+    'tips callback' => 'cu_shortcodes_button_tips',
+    'default settings' => array(),
+    'page callback' => array('Button Shortcode Generator', 'admin/config/content/shortcode/generator/button'),
+  );
+  $shortcodes['buttongroup'] = array(
+    'title' => t('Button Group'),
+    'description' => t('Group Buttons'),
+    'process callback' => 'cu_shortcodes_buttongroup',
+    'tips callback' => 'cu_shortcodes_buttongroup_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['callout'] = array(
+    'title' => t('Callout'),
+    'description' => t('Callout content from the main content'),
+    'process callback' => 'cu_shortcodes_callout',
+    'tips callback' => 'cu_shortcodes_callout_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['clear'] = array(
+    'title' => t('Clear'),
+    'description' => t('Clear floated elements'),
+    'process callback' => 'cu_shortcodes_clear',
+    'tips callback' => 'cu_shortcodes_clear_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['column'] = array(
+    'title' => t('Column'),
+    'description' => t('Divide content into columns'),
+    'process callback' => 'cu_shortcodes_column',
+    'tips callback' => 'cu_shortcodes_column_tips',
+    'default settings' => array(),
+    'demo callback' => 'cu_shortcodes_column_demo',
+  );
+  $shortcodes['columnlist'] = array(
+    'title' => t('Column List'),
+    'description' => t('Divide list content into columns'),
+    'process callback' => 'cu_shortcodes_columnlist',
+    'tips callback' => 'cu_shortcodes_columnlist_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['expand'] = array(
+    'title' => t('Expand'),
+    'description' => t('Hide content in expandable/collapsable areas'),
+    'process callback' => 'cu_shortcodes_expand',
+    'tips callback' => 'cu_shortcodes_expand_tips',
+    'default settings' => array(),
+    'demo callback' => 'cu_shortcodes_expand_demo',
+  );
+    $shortcodes['googlecalendar'] = array(
+    'title' => t('Google Calendar'),
+    'description' => t('Insert a Google Calendar'),
+    'process callback' => 'cu_shortcodes_googlecalendar',
+    'tips callback' => 'cu_shortcodes_googlecalendar_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['icon'] = array(
+    'title' => t('Icon'),
+    'description' => t('Include icons in content'),
+    'process callback' => 'cu_shortcodes_icon',
+    'tips callback' => 'cu_shortcodes_icon_tips',
+    'default settings' => array(),
+    'demo callback' => 'cu_shortcodes_icon_demo',
+    'page callback' => array('Icon Shortcode Generator', 'admin/config/content/shortcode/generator/icon'),
+  );
+  $shortcodes['imagecaption'] = array(
+    'title' => t('Image Caption'),
+    'description' => t('Add a caption to an image'),
+    'process callback' => 'cu_shortcodes_imagecaption',
+    'default settings' => array(),
+  );
+  $shortcodes['map'] = array(
+    'title' => t('Map'),
+    'description' => t('Insert a Google Map'),
+    'process callback' => 'cu_shortcodes_map',
+    'tips callback' => 'cu_shortcodes_map_tips',
+    'default settings' => array(),
+    'demo callback' => 'cu_shortcodes_map_demo',
+  );
+  $shortcodes['masonry-images'] = array(
+    'title' => t('Masonry Images'),
+    'description' => t('Display images in a masonry layout'),
+    'process callback' => 'cu_shortcodes_masonry_images',
+    'tips callback' => 'cu_shortcodes_masonry_images_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['print'] = array(
+    'title' => t('Print'),
+    'description' => t('Print page button'),
+    'process callback' => 'cu_shortcodes_print',
+    'tips callback' => 'cu_shortcodes_sidebar_print',
+    'default settings' => array(),
+  );
+  $shortcodes['sidebar'] = array(
+    'title' => t('Sidebar'),
+    'description' => t('Offset, or callout content'),
+    'process callback' => 'cu_shortcodes_sidebar',
+    'tips callback' => 'cu_shortcodes_sidebar_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['tooltip'] = array(
+    'title' => t('Tool Tip'),
+    'description' => t('Display some short text on hover'),
+    'process callback' => 'cu_shortcodes_tooltip',
+    'tips callback' => 'cu_shortcodes_tooltip_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['tweet'] = array(
+    'title' => t('Tweet'),
+    'description' => t('Display a tweet'),
+    'process callback' => 'cu_shortcodes_tweet',
+    'tips callback' => 'cu_shortcodes_tweet_tips',
+    'default settings' => array(),
+  );
+
+  return $shortcodes;
+}
+
+/**
+ * Anchors Shortcode.
+ */
+function cu_shortcodes_anchors($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'selector' => '#region-content .content h2',
+        'title' => 'On this page:',
+        'color' => 'darkgray',
+      ), $attrs));
+  return '<div class="anchors block anchors-color-' . $color . '"><div class="anchors-label">' . $title . '</div><div class="anchors-links"></div></div>
+  <script type="text/javascript">jQuery(document).ready(function(){cu_shortcodes_achors_js("' . $selector . '"); });</script>
+  ';
+}
+
+/**
+ * Anchors tips.
+ */
+function cu_shortcodes_anchors_tips($format, $long) {
+  $output = '[anchors selector=".content h2" title="On this page:" /]';
+  return $output;
+}
+
+/**
+ * Backtotop Shortcode.
+ */
+function cu_shortcodes_backtotop($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'type'       => 1,
+      ), $attrs));
+  $tag = 'div';
+  return '<div class="backtotop"><a href="#main-content" class="backtotop-link"><i class="icon-arrow-up"></i> Back to Top</a></div>';
+}
+
+/**
+ * Backtotop Tips.
+ */
+function cu_shortcodes_backtotop_tips($format, $long) {
+  $output = '[backtotop /]';
+  return $output;
+}
+
+/**
+ * Blockquote Shortcode.
+ */
+function cu_shortcodes_blockquote($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'float' => '',
+        'icon' => NULL,
+        'style' => 'sans-serif',
+      ), $attrs));
+  $icon_classes = array();
+  $blockquote_icon = '';
+  if (isset($icon)) {
+    $icon_classes[] = 'fa';
+    $icon_classes[] = 'fa-fw';
+    $icon_classes[] = $icon;
+    $icon_classes[] = 'blockquote-icon';
+    $classes[] = 'blockquote-icon';
+    $icon_classes = trim(implode(' ', $icon_classes));
+    $blockquote_icon = "<i class=\"$icon_classes\"></i>";
+  } else {
+    $classes[] = 'blockquote-default';
+  }
+  $classes[] = $float ? 'blockquote-' . $float : '';
+  $classes[] = 'blockquote-' . $style;
+  $classes = trim(implode(' ', $classes));
+  return '<blockquote class="' . $classes . '">' . $blockquote_icon . $content . '</blockquote>';
+}
+
+/**
+ * Blockquote tips.
+ */
+function cu_shortcodes_blockquote_tips($format, $long) {
+  $output = '[blockquote icon="fa-quote-left , or any font awesome icon class" style="serif/sans-serif"]your content here[/blockquote]';
+  return $output;
+}
+
+/**
+ * Blockquote demo.
+ */
+function cu_shortcodes_blockquote_demo() {
+  $output = '<blockquote>your content here</blockquote>';
+  return $output;
+}
+
+/**
+ * Box shortcode.
+ */
+function cu_shortcodes_box($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'color' => '',
+        'title' => '',
+        'float' => '',
+        'style' => '',
+      ), $attrs));
+  $box_title = $title ? '<div class="box-title">' . $title . '</div>' : '';
+  $classes = array();
+  $tag = 'div';
+  $classes[] = 'cu-box';
+  $classes[] = $color ? 'box-' . $color : 'box-white';
+  $classes[] = $float ? 'float-' . $float : '';
+  $classes[] = $style ? 'box-style-' . $style : 'box-style-filled';
+  $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+  $classes = trim(implode(' ', $classes));
+  $content = $box_title . '<div class="box-content clearfix">' . $content . '</div>';
+  return '<' . $tag . ' class="' . $classes . '">' . $content . '</' . $tag . '>';
+}
+
+/**
+ * Box tips.
+ */
+function cu_shortcodes_box_tips($format, $long) {
+  $output = '[box color=black,darkgray,lightgray,white float=right/left style=filled/border title="Optional Box Title"]your content here[/box]';
+  return $output;
+}
+
+/**
+ * Button shortcode.
+ */
+function cu_shortcodes_button($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'url'        => '',
+        'style'       => '',
+        'color' => '',
+        'icon' => '',
+        'size' => '',
+      ), $attrs));
+  $classes = array();
+  $classes[] = 'button';
+  $classes[] = $size ? 'button-' . $size : '';
+  if ($style == 'full') {
+    $classes[] = 'button-full';
+  }
+
+  $classes[] = $color ? 'button-' . $color : 'button-white';
+
+  $content = $icon ? '<i class="fa ' . $icon . '"></i> ' . $content : $content;
+  return l($content, $url, array(
+      'attributes' => array(
+        'class' => $classes,
+      ),
+      'html' => TRUE,
+    )
+  );
+}
+
+/**
+ * Button tips.
+ */
+function cu_shortcodes_button_tips($format, $long) {
+  $output = '[button url="http://www.colorado.edu" icon=fa-iconname color=blue,gold,black,gray,white style=regular,full size=small,large]Button Text[/button]';
+  return $output;
+}
+
+/**
+ * Buttongroup shortcode.
+ */
+function cu_shortcodes_buttongroup($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+    'color' => 'blue',
+    'size' => 'regular',
+  ), $attrs));
+  $content = str_replace(array('<p>&nbsp;</p>','<p>', '</p>'), array('','',''), $content);
+  $output = '<div class="buttongroup buttongroup-color-' . $color . ' buttongroup-size-' . $size . '">' . $content . '</div>';
+  return $output;
+}
+
+/**
+ * Buttongroup tips.
+ */
+function cu_shortcodes_buttongroup_tips($format, $long) {
+  $output = '[buttongroup color=blue,gold,black,gray,white size=regular,small,large]Button Shortcodes[/button]';
+  return $output;
+}
+
+/**
+ * callout shortcode function.
+ */
+function cu_shortcodes_callout($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+    'size' => 'small',
+  ), $attrs));
+  $output = '<div class="feature-layout-callout feature-layout-callout-' . $size . ' clearfix">' . $content . '</div>';
+  return $output;
+}
+/**
+ * callout shortcode tips.
+ */
+function cu_shortcodes_callout_tips($format, $long) {
+  $output = '[callout]Content[/callout]';
+  return $output;
+}
+
+/**
+ * Implements hook_filter_info_alter().
+ */
+function cu_shortcodes_filter_info_alter(&$info) {
+  // Load the wysiwyg text format
+  $format = filter_format_load('wysiwyg');
+  // Get the filters on the wysiwyg text format
+  $filters = filter_list_format($format->format);
+  // Enable countdown shortcode
+  $filters['shortcode']->settings['callout'] = 1;
+}
+
+/**
+ * Clear shortcode.
+ */
+function cu_shortcodes_clear($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+  $output = '<div class="clear"></div>';
+  return $output;
+}
+
+/**
+ * Clear tips.
+ */
+function cu_shortcodes_clear_tips($format, $long) {
+  $output = '[clear/]';
+  return $output;
+}
+
+/**
+ * Column shortcode.
+ */
+function cu_shortcodes_column($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'size' => '',
+        'order' => '',
+      ), $attrs));
+  $classes[] = 'content-column';
+  $classes[] = $size ? 'column-' . $size : '';
+  $classes[] = $order ? $order : '';
+  $clear_markup = '<div class="clear"></div>';
+  $clear = ($order == 'last') ? $clear_markup : '';
+  $classes = trim(implode(' ', $classes));
+  $output = '<div class="' . $classes . '">' . $content . '</div>' . $clear;
+  return $output;
+}
+
+/**
+ * Column tips.
+ */
+function cu_shortcodes_column_tips($format, $long) {
+  $output = '<p>[column size=one-half]</p><p>your content here</p><p>[/column]</p><p>[column size=one-half order=last]</p><p>your content here</p><p>[/column]</p>';
+  return $output;
+}
+
+/**
+ * Columnlist shortcode.
+ */
+function cu_shortcodes_columnlist($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'columns' => '2',
+      ), $attrs));
+  $classes[] = 'column-list';
+  $classes[] = 'column-list-' . $columns;
+  $classes[] = 'clearfix';
+  $classes = trim(implode(' ', $classes));
+  $output = '<div class="' . $classes . '">' . $content . '</div>';
+  return $output;
+}
+
+/**
+ * Columnlist tips.
+ */
+function cu_shortcodes_columnlist_tips($format, $long) {
+  $output = '<p>[columnlist columns="2"]</p><ul><li>List Item</li><li>List Item</li></ul><p>[/columnlist]</p>';
+  return $output;
+}
+
+/**
+ * Column demo.
+ */
+function cu_shortcodes_column_demo() {
+  $output = '<div class="content-column column-one-half">your content here</div><div class"content-column column-one-half last">your content here</div><div class="clear"></div>';
+  return $output;
+}
+
+/**
+ * Expand shortcodes.
+ */
+function cu_shortcodes_expand($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'type'       => 1,
+        'title' => '',
+        'style' => 'large',
+      ), $attrs));
+  $id = 'expand-' . drupal_html_id(rand(1000, 100000));
+  if ($style == 'small') {
+    $expand_title = $title ? '<a href="#' . $id . '" class="small-expand-title" aria-expanded="false">' . $title . '&nbsp;<i class="fa fa-plus-square"></i></a>' : '';
+    $classes = array();
+    $tag = 'div';
+    $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+    $classes = trim(implode(' ', $classes));
+    $content = $expand_title . '<div id="' . $id . '" class="small-expand-content">' . $content . '</div>';
+    return '<' . $tag . ' class="small-expand-set">' . $content . "</$tag>";
+  } elseif ($style == 'tooltip') {
+    $expand_title = $title ? '<a href="#' . $id . '" class="tooltip-expand-title tipid-' . $id . '" aria-expanded="false">' . $title . '&nbsp;<i class="fa fa-plus-square"></i></a>' : '';
+    $classes = array();
+    $tag = 'span';
+    $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+    $classes = trim(implode(' ', $classes));
+    $content = $expand_title . '<span id="' . $id . '" class="tooltip-expand-content"><span class="tooltip-inner">' . $content . '<br /><a href="#' . $id . '" class="close-tip" rel="tipid-' . $id . '"><i class="fa fa-times"></i></a></span></span>';
+    return '<' . $tag . ' class="tooltip-expand-set">' . $content . "</$tag>";
+  } else {
+    $expand_title = $title ? '<a href="#' . $id . '" class="expand-title" aria-expanded="false" ><span>' . $title . '</span></a>' : '';
+    $classes = array();
+    $tag = 'div';
+    $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+    $classes = trim(implode(' ', $classes));
+    $content = $expand_title . '<div id="' . $id . '" class="expand-content">' . $content . '</div>';
+    return '<' . $tag . ' class="expand-set">' . $content . "</$tag>";
+  }
+}
+
+/**
+ * Expand tips.
+ */
+function cu_shortcodes_expand_tips($format, $long) {
+  $output = '[expand title="Title goes here"]your content here[/expand]';
+  return $output;
+}
+
+/**
+ * Expand demos.
+ */
+function cu_shortcodes_expand_demo() {
+  $output = '<div class="expand-set"><a href="#expand-3409" class="expand-title"><span>Title goes here</span></a><div id="expand-3409" class="expand-content">your content here</div></div>';
+  return $output;
+}
+
+/* ============================================================================================ */
+/* Google Calendar Shortcode
+/* ============================================================================================ */
+function cu_shortcodes_googlecalendar($attrs, $content = NULL ) {
+  extract(shortcode_attrs(array(
+  'type'       => 1,
+  ), $attrs));
+  if (strpos($content, 'google.com/calendar') !== FALSE) {
+    $calurl = $content;
+    $calendar =  '<iframe width="100%" height="600" src="' . $calurl . '"></iframe>';
+  }
+  else {
+    $calendar = '';
+  }
+  return $calendar;
+}
+
+function cu_shortcodes_googlecalendar_tips($format, $long) {
+  $output = '[calendar]https://www.google.com/calendar/embed?title=Faculty%20Planning%20Calendar&height=600&wkst=1&bgcolor=%23FFFFFF&src=fqd9tj22sodte3oosui2h5e13o%40group.calendar.google.com&color=%23875509&src=270ehpc2jeu16j00p4st3nvb2c%40group.calendar.google.com&color=%2342104A&src=jm056q7sfv17ngqj3e4ph60iuk%40group.calendar.google.com&color=%232952A3&src=jazzmountainclimber%40gmail.com&color=%23711616&src=hgk9ielvps4qkv7uehs6q8rc18%40group.calendar.google.com&color=%232F6309&src=625jneetmcajuamdvv3as9tft8%40group.calendar.google.com&color=%236B3304&src=en.usa%23holiday%40group.v.calendar.google.com&color=%23125A12&ctz=America%2FDenver[/calendar]';
+  return $output;
+}
+
+/**
+ * Icon shortcode.
+ */
+function cu_shortcodes_icon($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'type'       => 1,
+        'shape' => '',
+        'size' => '',
+        'pull' => '',
+        'border' => '',
+        'color' => '',
+        'wrapper' => '',
+      ), $attrs));
+  $classes = array();
+  $tag = 'i';
+
+  $classes[] = 'fa';
+  $classes[] = $shape;
+  $classes[] = $size;
+  $classes[] = ($border == 'yes') ? 'fa-border' : '';
+  $classes[] = (($pull == 'left') || ($pull == 'right')) ? 'pull-' . $pull : '';
+  $classes[] = $color ? 'icon-color-' . $color : '';
+  $classes[] = $wrapper ? 'icon-wrapper-' . $wrapper : '';
+  $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+  $classes = trim(implode(' ', $classes));
+  return '<' . $tag . ' class="' . $classes . '"></' . $tag . '>';
+}
+
+/**
+ * Icon tips.
+ */
+function cu_shortcodes_icon_tips($format, $long) {
+  $output = '[icon shape="fa-camera-retro" size=regular,lg,2x,3x,4x,5x /]';
+  return $output;
+}
+
+/**
+ * Icon demo.
+ */
+function cu_shortcodes_icon_demo() {
+  $output = '<i class="fa fa-camera-retro"></i>';
+  return $output;
+}
+
+/**
+ * Image Caption shortcode.
+ */
+function cu_shortcodes_imagecaption($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'align'       => 'none',
+
+      ), $attrs));
+  $output = '<div class="image-caption image-caption-' . $align . '">' . $content . '</div>';
+  return $output;
+}
+
+/**
+ * Map shortcode.
+ */
+function cu_shortcodes_map($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'type'       => 1,
+      ), $attrs));
+  if ((strpos($content, 'maps.google.com') !== FALSE) || (strpos($content, 'google.com/map') !== FALSE) || (strpos($content, 'mapsengine.google.com') !== FALSE)){
+    $mapurl = $content . "&amp;ie=UTF8&amp;output=embed";
+    $map = '<iframe width="100%" height="325" src="' . $mapurl . '"></iframe>';
+  }
+  elseif (strpos($content, 'colorado.edu/map') !== FALSE) {
+    $mapurl = str_replace('map/?', 'map/?embed=true&', $content);
+    $map = '<iframe width="100%" height="325" src="' . $mapurl . '"></iframe><br /><a href="' . $mapurl . '">View Larger Map</a>';
+  }
+  elseif (strpos($content, 'google.com/fusiontables') !== FALSE) {
+    $map = '<iframe width="100%" height="480" src="' . $content . '"></iframe>';
+  }
+  else {
+    $map = '';
+  }
+  return $map;
+}
+
+/**
+ * Map tips.
+ */
+function cu_shortcodes_map_tips($format, $long) {
+  $output = '[map]https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3054.215386660962!2d-105.26572850973943!3d40.04829405429418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876beef682730725%3A0xc7604d66a96a0f1e!2sNorth+Boulder!5e0!3m2!1sen!2sus!4v1400010841644[/map]';
+  return $output;
+}
+
+/**
+ * Map demo.
+ */
+function cu_shortcodes_map_demo() {
+  $output = '<iframe width="100%" height="325" src="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed"></iframe><br /><a href="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed">View Larger Map</a>';
+  return $output;
+}
+/**
+ * Masonry Images shortcode.
+ */
+function cu_shortcodes_masonry_images($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'columns'       => 2,
+      ), $attrs));
+  $output = '<div class="masonry-images masonry-columns-' . $columns . '">' . $content . '</div>';
+  return $output;
+}
+
+/**
+ * Print shortcode.
+ */
+function cu_shortcodes_print($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+  $output = '<a href="javascript:window.print();" class="print-link button button-blue"><i class="fa fa-print"></i> ' . $content . '</a>';
+  return $output;
+}
+
+/**
+ * Print tips.
+ */
+function cu_shortcodes_print_tips($format, $long) {
+  $output = '[print]Print this page[/print]';
+  return $output;
+}
+
+
+/**
+ * Sidebar shortcode.
+ */
+function cu_shortcodes_sidebar($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'type'       => 1,
+        'float'      => 'right',
+        'style'      => 'border',
+      ), $attrs));
+  $classes = array();
+  $classes[] = 'mini-sidebar';
+  $classes[] = 'mini-sidebar-' . $float;
+  $classes[] = 'mini-sidebar-' . $style;
+  $classes[] = 'mini-sidebar-' . $style . '-' . $float;
+  $classes[] = !empty($class) ? explode(' ', $class) : NULL;
+  $classes = trim(implode(' ', $classes));
+  $sidebar = '<div class="' . $classes . '">' . $content . '</div>';
+  return $sidebar;
+}
+
+/**
+ * Sidebar tips.
+ */
+function cu_shortcodes_sidebar_tips($format, $long) {
+  $output = '[sidebar float=right/left style=plain,border]Here is some text for a sidebar callout[/sidebar]';
+  return $output;
+}
+
+/**
+ * Tooltip Shortcode.
+ */
+function cu_shortcodes_tooltip($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'tip'      => '',
+      ), $attrs));
+  $tooltip = '<a href="#" class="tooltip" title="' . $tip . '">' . $content . '</a>';
+  return $tooltip;
+}
+
+/**
+ * Tooltip tips.
+ */
+function cu_shortcodes_tooltip_tips($format, $long) {
+  $output = '[tooltip tip="Here is the tool tip content"]Here is the context to hover over to see the tool tip[/tooltip]';
+  return $output;
+}
+
+/**
+ * Tweet shortcode.
+ */
+function cu_shortcodes_tweet($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+  $tweet = '';
+  if ($cache = cache_get('tweet_embed_' . urlencode($content))) {
+    // Get cached data.
+    $data = $cache->data;
+    $tweet = $data['html'];
+  }
+  else {
+    $response = drupal_http_request('https://api.twitter.com/1/statuses/oembed.json?url=' . urlencode($content) . '&minwidth=200');
+    if ($response->code == '200') {
+      $data = json_decode($response->data, TRUE);
+      if (isset($data['html'])) {
+        cache_set('tweet_embed_' . urlencode($content), $data['html'], 'cache', time() + 60 * 30);
+        $tweet = $data['html'];
+      }
+    }
+  }
+  return $tweet;
+}
+
+/**
+ * Get tweet tips.
+ *
+ * @return string
+ *   Returns output.
+ */
+function cu_shortcodes_tweet_tips() {
+  $output = '[tweet]https://twitter.com/cubouldernews/status/391253532722360320[/tweet]';
+  return $output;
+}

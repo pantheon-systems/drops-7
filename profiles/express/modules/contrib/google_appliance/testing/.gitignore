@@ -1,0 +1,2 @@
+# ignore settings file -> site-specific testing
+test-settings.inc

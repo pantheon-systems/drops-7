@@ -1,0 +1,106 @@
+/* $Id: $ */
+
+/* full search form */
+.google-appliance-search-form {
+  margin-bottom: 1em;
+}
+.google-appliance-search-form input {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+.google-appliance-results,
+.google-appliance-keymatch-results {
+  list-style: none;  
+}
+
+/* result entries */
+.search-gooogle-appliance-results p {
+  margin-top: 0;
+}
+.google-appliance-result .title {
+  margin-bottom: 0px;
+  font-size: 1.2em;
+}
+.google-appliance-result .google-appliance-snippet {
+  margin-bottom: 0px;
+}
+.google-appliance-result li {
+  margin-bottom: 1em;
+}
+.google-appliance-results .google-appliance-snippet-info {
+  padding-left:0; 
+}
+.google-appliance-results .google-appliance-info,
+.google-appliance-keymatch-results {
+  font-size: 0.85em;
+  color: #888;
+}
+
+/* key match results */
+.google-appliance-keymatch-results {
+  padding-left:0;
+}
+.google-appliance-keymatch-results li {
+  background:#f1f1ed;
+  border-bottom:1px solid #e7e7e3;
+  padding:10px 10px;
+  border-radius: 6px;
+  -webkit-border-radius:6px;
+  -moz-border-radius:6px;
+  margin-bottom:10px;
+}
+.google-appliance-keymatch-results h3 {
+  margin: 0;
+}
+.google-appliance-keymatch-results p {
+  margin:0;
+}
+
+/* synonyms */
+/* allow synonyms on search results page to be snug under the search box */
+form.search-google-appliance-search-form {
+  margin-bottom: 2px;
+}
+
+/* add back the margin that formerly separated the search box from the "Search Results" heading */
+#search-results-heading {
+  margin-top: 1em;
+}
+
+.google-appliance-synonyms ul, .google-appliance-synonyms li {
+  display: inline;
+  list-style-type: none;
+}
+
+/* results listings "control" bar */
+.google-appliance-results-control-bar {
+  border: 1px solid #ddd;
+  background-color: #F6F6F2;
+  border-color: #eee;
+  border-radius: 6px;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  padding: 4px 6px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+.google-appliance-results-control-bar .google-appliance-search-stats {
+  float: left;
+}
+.google-appliance-results-control-bar .google-appliance-sort-headers {
+  float: right;
+}
+.google-appliance-sort-headers .google-appliance-sorter {
+  padding-right: 14px;
+  display: block;
+  float: left;
+}
+.google-appliance-sort-headers .google-appliance-sorter:last-child {
+  padding-right: 4px;
+}
+.google-appliance-sorter .active-sort {
+  font-weight: bold;
+}
+.google-appliance-level2 {
+  /*margin-left: 1.5em;*/
+}

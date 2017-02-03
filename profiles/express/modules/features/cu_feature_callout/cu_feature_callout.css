@@ -1,0 +1,173 @@
+.item-list ul.feature-callout,
+.item-list ul.feature-callout > li {
+  list-style: none !important;
+  margin: 0;
+  padding: 0;
+}
+.item-list ul.feature-callout li.feature-callout-item {
+  margin-bottom: 0;
+}
+.item-list ul.feature-callout li .feature-callout-item-content {
+  margin-bottom: 0px;
+}
+.item-list ul.feature-callout li.alpha1 .feature-callout-item-content {
+  margin-left:0;
+}
+.item-list ul.feature-callout li.omega1 .feature-callout-item-content {
+  margin-right:0;
+}
+.feature-callout-text {
+  overflow:hidden;
+}
+.item-list ul.feature-callout .first {
+  clear: both;
+}
+.item-list ul.feature-callout .last {
+  margin-right: 0;
+}
+/* 1 Column */
+
+ul.feature-callout-columns-1 li {
+  
+}
+.item-list ul.feature-callout-columns-1 li:nth-child(2n+1) {
+  clear:both;
+}
+.item-list ul.feature-callout-columns-1 li img.image-large_square_thumbnail,
+.item-list ul.feature-callout-columns-1 li img.image-large_wide_thumbnail {
+
+  width:100px;
+  height: auto;
+  float:left;
+  margin: 0 10px 0 0;
+}
+.item-list ul.feature-callout-columns-1 li .feature-callout-item-content {
+  margin-right:0;
+  margin-bottom: 20px;
+}
+/* 2 Columns */
+
+.item-list ul.feature-callout-columns-2 > li {
+  width: 48%;
+  margin-right: 4%;
+  float: left;
+}
+.item-list ul.feature-callout-columns-2 > li:nth-child(2n+1) {
+  clear:both;
+}
+.item-list ul.feature-callout-columns-2 li img.image-large_square_thumbnail,
+.item-list ul.feature-callout-columns-2 li img.image-large_wide_thumbnail {
+  margin-bottom: 10px;
+  width:100%;
+  height: auto;
+  float:none;
+}
+
+/* 3 Columns */
+
+.item-list ul.feature-callout-columns-3 > li {
+  width: 30.66%;
+  float:left;
+  margin-right:4%;
+}
+
+.item-list ul.feature-callout-columns-3 > li:nth-child(3n+1) {
+  clear:both;
+}
+.item-list ul.feature-callout-columns-3 > li img.image-large_square_thumbnail,
+.item-list ul.feature-callout-columns-3 > li img.image-large_wide_thumbnail {
+  margin-bottom: 10px;
+  width:100%;
+  height: auto;
+  float:none;
+}
+
+/* 4 Columns */
+
+.item-list ul.feature-callout-columns-4 > li {
+  width: 22%;
+  float:left;
+  margin-right: 4%;
+}
+
+.item-list ul.feature-callout-columns-4 li:nth-child(4n+1) {
+  clear:both;
+}
+ul.feature-callout-columns-4 > li img.image-large_square_thumbnail,
+ul.feature-callout-columns-4 > li img.image-large_wide_thumbnail {
+  margin-bottom: 10px;
+  width:100%;
+  height: auto;
+  float:none;
+}
+
+/* 5 Columns */
+
+.item-list ul.feature-callout-columns-5 > li {
+  width: 16.8%;
+  float:left;
+  margin-right: 4%;
+}
+
+.item-list ul.feature-callout-columns-5 > li:nth-child(5n+1) {
+  clear:both;
+}
+.item-list ul.feature-callout-columns-5 > li img.image-large_square_thumbnail,
+.item-list ul.feature-callout-columns-5 > li img.image-large_wide_thumbnail {
+  width:100%;
+  height: auto;
+}
+
+@media screen and (max-width:740px) {
+  .item-list ul.feature-callout > li {
+    width:100%;
+    float: none;
+  }
+  #zone-intro ul.feature-callout > li img.image-large_square_thumbnail,
+  #zone-intro ul.feature-callout > li img.image-large_wide_thumbnail,
+  .item-list ul.feature-callout > li img.image-large_square_thumbnail,
+  .item-list ul.feature-callout > li img.image-large_wide_thumbnail {
+    width:80px;
+    height: auto;
+    float: left;
+    margin: 0 10px 10px 0;
+  }
+}
+
+.item-list .feature-callout-item-content ul li,
+.item-list .feature-callout-item-content ul ul ul li {
+  list-style:disc;
+}
+.item-list .feature-callout-item-content ul ul li,
+.item-list .feature-callout-item-content ul ul ul ul li {
+  list-style:circle;
+}
+
+.item-list .feature-callout-item-content ul.list-style-nobullet {
+  list-style: none;
+  list-style-image: none;
+}
+.item-list .feature-callout-item-content ul.list-style-underline > li {
+  list-style: none;
+}
+
+.item-list .feature-callout-item-content ul.list-style-underline {
+  list-style: none;
+  list-style-image: none;
+}
+.item-list .feature-callout-item-content ul.list-style-underline > li {
+  list-style: none;
+}
+.item-list .feature-callout-item-content ul.list-style-border {
+  list-style: none;
+  list-style-image: none;
+}
+.item-list .feature-callout-item-content ul.list-style-border > li {
+  list-style: none;
+}
+
+/* TYPOGRAPHY */
+
+h3.feature-callout-title {
+  font-size: 110%;
+}

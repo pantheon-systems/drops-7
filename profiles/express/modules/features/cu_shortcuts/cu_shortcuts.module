@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * @file
+ * Code for the cu_shortcuts feature.
+ */
+
+include_once('cu_shortcuts.features.inc');
+

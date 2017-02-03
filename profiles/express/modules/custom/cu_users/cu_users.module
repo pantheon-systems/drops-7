@@ -1,0 +1,126 @@
+<?php
+
+/**
+ * @file
+ * CU Users Module Module containing users/roles and permissions for CU-FIT
+ * CU-FIT clones.
+ *
+ */
+
+/**
+ * Returns an array of that type of user
+ */
+function cu_users_get_users($type = 'all') {
+
+  $user_array['developer'] = array(
+    'crafts' => 'Kevin.Crafts@Colorado.EDU',
+    'sniderc' => 'Catherine.Snider@Colorado.EDU',
+    'kere7580' => 'Kevin.Reynen@Coloardo.EDU',
+    'jafu6031' => 'James.W.Fuller@Colorado.EDU',
+    'alfi2595' => 'alexander.finnarn@colorado.edu'
+  );
+
+  $user_array['administrator'] = array(
+    'brokaw' => 'Annie.Brokaw@Colorado.EDU',
+    'leslie' => 'jon.leslie@Colorado.EDU',
+    'linebarg' => 'joanna.bertrand@Colorado.EDU',
+    'wetu1300' => 'wendy.turnbull@Colorado.EDU',
+    'drupalcs' => 'drupalcs@colorado.edu',
+    'mortone' => 'Emily.Kellagher@Colorado.EDU',
+  );
+
+  $user_array['all'] = array_merge($user_array['developer'], $user_array['administrator']);
+
+  return $user_array[$type];
+}
+
+
+/**
+ * Checks to see if a specific user is a developer or admin
+ */
+function cu_users_check_user($username){
+  $users = cu_users_get_users('all');
+  if (array_key_exists($username, $users)) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_help().
+ */
+function cu_users_help($path, $arg) {
+  switch ($path) {
+    case 'admin/people/invite':
+      return '<p>' . t("Any CU-Boulder employee, student, or sponsored vendor with an IdentiKey can be granted acess to the website administration area. To add new users, select a role and add the users' colorado.edu email address. You can send multiple invites by separating email addresses with a comma (i.e. jane.doe@colorado.edu, joe.smith@colorado.edu). Once submitted an email will be sent inviting the users.") . '</p><p>' . t("<strong>Content Editors</strong> can create content, create and place blocks, and administer menus.") . '</p><p>' . t('<strong>Edit My Content</strong> users can only edit content they have authored.') . '</p><p>' . t("<strong>Site Owners</strong> can do everything a content editor can do plus add new site users, edit the site name, set the site homepage, configure the site theme, and create contexts.") . '</p><br/>';
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function cu_users_menu_alter(&$items) {
+  $items['admin/config']['access callback'] = 'user_access';
+  $items['admin/config']['access arguments'] = array('access configuration administration');
+  $items['admin/structure/block']['access callback'] = 'user_access';
+  $items['admin/structure/block']['access arguments'] = array('access configuration administration');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_users_permission() {
+  return array(
+    'access configuration administration' => array(
+      'title' => 'Access Configuration Administration',
+      'restrict access' => TRUE,
+      'description' => 'Access admin/configuration',
+    ),
+  );
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Expire user sessions nightly between 2AM and 3AM.
+ */
+function cu_users_cron() {
+
+  $time_zone = date_default_timezone_get();
+
+  // Set timezone to Denver if not set already.
+  if ($time_zone != 'America/Denver') {
+    date_default_timezone_set('America/Denver');
+  }
+
+  // Get hour of the day in 0 to 23 format.
+  $hours = date("H");
+
+  // If hour is 2 meaning between 2AM and 3AM delete user sessions
+  // This assumes cron runs every 20 minutes or at least a couple times and hour.
+  if ($hours == 02) {
+    $deleted_rows = db_delete('sessions')->execute();
+
+    // Write to the watchdog just in case this becomes a stat in the future.
+    watchdog('cron', 'Number of sessions deleted: '. $deleted_rows);
+  }
+}
+
+/**
+ * Check if user has role name
+ *
+ * @param $role_name
+ * @param null $user
+ * @return bool
+ */
+function cu_users_user_has_role($role_name, $user = NULL) {
+  if ($user == NULL) {
+    global $user;
+  }
+  if (is_array($user->roles) && in_array($role_name, array_values($user->roles))) {
+    return TRUE;
+  }
+  return FALSE;
+}

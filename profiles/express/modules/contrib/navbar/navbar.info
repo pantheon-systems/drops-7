@@ -1,0 +1,13 @@
+name = Navbar
+description = A very simple mobile friendly navigation toolbar that lets you switch between frontend and backend.
+core = 7.x
+package = Administration
+
+dependencies[] = libraries (>=2.0)
+
+; Information added by Drupal.org packaging script on 2015-02-23
+version = "7.x-1.6"
+core = "7.x"
+project = "navbar"
+datestamp = "1424653389"
+

@@ -1,0 +1,72 @@
+@import "../../../../themes/cu_omega/scss/modules/_global.scss";
+@import "../../../../themes/cu_omega/scss/modules/_colors.scss";
+
+@mixin block($color) {
+
+  @include rounded($radius: $radius_small);
+  padding:10px;
+  @media screen and (min-width:960px) {
+    padding:20px;
+  }
+  background-color: $color;
+  //color:#fff;
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+@mixin blocklink {
+  .content a:link,
+  .content a:visited {
+    color: $cugold;
+  }
+  .content a:hover,
+  .content a:focus {
+    color:$light_link_blue;
+  }
+}
+
+
+.blockgray .block-inner,
+.blockgray-example {
+  @include block($color: $bg_light);
+  //color:$text_black;
+  a:link, a:visited {
+    color:$dark_link_blue;
+  }
+  a:hover, a:focus {
+    color: $red;
+  }
+}
+.blockdarkgray .block-inner,
+.blockdarkgray-example {
+  @include block($color: $bg_dark1);
+  color:#fff;
+  @include blocklink;
+}
+.blockoutline .block-inner,
+.blockoutline-example {
+  @include block($color: transparent);
+  border:1px solid $border_color;
+  //color:$text_black;
+}
+.blockunderline > .block-inner,
+.blockunderline-example {
+  border-bottom:1px solid $border_color;
+  padding:0 0 20px 0;
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+.block.block-bean-type-block-row.blockunderline {
+  margin-bottom: 20px;
+}
+
+/* Examples css */
+
+table.block-style-examples td {
+  width:25%;
+  ul {
+    margin: 0;
+    padding: 0;
+  }
+}

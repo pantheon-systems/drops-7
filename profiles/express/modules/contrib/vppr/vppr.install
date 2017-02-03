@@ -1,0 +1,23 @@
+<?php
+/**
+ * @file
+ * Vocabulary Permissions Per Role - uninstallation routines.
+ */
+
+/**
+ * Turns old-school VPPR permission variable into proper permissions.
+ */
+function vppr_update_7000() {
+  $vocabs = taxonomy_get_vocabularies();
+  $roles = user_roles(TRUE);
+  $perms = variable_get('vppr_perms', array(array()));
+  foreach ($vocabs as $vocab) {
+    foreach ($roles as $rid => $role_name) {
+      $perm = isset($perms[$vocab->vid]) && isset($perms[$vocab->vid][$rid]) ? $perms[$vocab->vid][$rid] : 0;
+      if ($perm) {
+        user_role_grant_permissions($rid, array('administer ' . $vocab->machine_name . ' vocabulary terms'));
+      }
+    }
+  }
+  variable_del('vppr_perms');
+}

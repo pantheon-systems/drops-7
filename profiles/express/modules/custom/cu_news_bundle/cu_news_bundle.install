@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_news_bundle_enable() {
+
+}
+
+
+

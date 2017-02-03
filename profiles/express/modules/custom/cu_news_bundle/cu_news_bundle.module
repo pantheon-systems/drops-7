@@ -1,0 +1,262 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_news_bundle_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'authenticated user' => array(
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'administrator' => array(
+      'administer category vocabulary terms',
+      'administer byline vocabulary terms',
+      'administer tags vocabulary terms',
+      'create any articles bean',
+      'create any article_feature bean',
+      'create any article_grid bean',
+      'create any article_slider bean',
+      'create article content',
+      'create article_list_page content',
+      'delete any article content',
+      'delete any articles bean',
+      'delete any article_feature bean',
+      'delete any article_grid bean',
+      'delete any article_list_page content',
+      'delete any article_slider bean',
+      'delete own article content',
+      'delete own article_list_page content',
+      'edit any article content',
+      'edit any articles bean',
+      'edit any article_feature bean',
+      'edit any article_grid bean',
+      'edit any article_list_page content',
+      'edit any article_slider bean',
+      'edit own article content',
+      'edit own article_list_page content',
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'content_editor' => array(
+      'administer category vocabulary terms',
+      'administer byline vocabulary terms',
+      'administer tags vocabulary terms',
+      'create any articles bean',
+      'create any article_feature bean',
+      'create any article_grid bean',
+      'create any article_slider bean',
+      'create article content',
+      'create article_list_page content',
+      'delete any article content',
+      'delete any articles bean',
+      'delete any article_feature bean',
+      'delete any article_grid bean',
+      'delete any article_list_page content',
+      'delete any article_slider bean',
+      'delete own article content',
+      'delete own article_list_page content',
+      'edit any article content',
+      'edit any articles bean',
+      'edit any article_feature bean',
+      'edit any article_grid bean',
+      'edit any article_list_page content',
+      'edit any article_slider bean',
+      'edit own article content',
+      'edit own article_list_page content',
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'developer' => array(
+      'administer category vocabulary terms',
+      'administer byline vocabulary terms',
+      'administer tags vocabulary terms',
+      'create any articles bean',
+      'create any article_feature bean',
+      'create any article_grid bean',
+      'create any article_slider bean',
+      'create article content',
+      'create article_list_page content',
+      'delete any article content',
+      'delete any articles bean',
+      'delete any article_feature bean',
+      'delete any article_grid bean',
+      'delete any article_list_page content',
+      'delete any article_slider bean',
+      'delete own article content',
+      'delete own article_list_page content',
+      'edit any article content',
+      'edit any articles bean',
+      'edit any article_feature bean',
+      'edit any article_grid bean',
+      'edit any article_list_page content',
+      'edit any article_slider bean',
+      'edit own article content',
+      'edit own article_list_page content',
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'edit_my_content' => array(
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+    'site_owner' => array(
+      'administer category vocabulary terms',
+      'administer byline vocabulary terms',
+      'administer tags vocabulary terms',
+      'create any articles bean',
+      'create any article_feature bean',
+      'create any article_grid bean',
+      'create any article_slider bean',
+      'create article content',
+      'create article_list_page content',
+      'delete any article content',
+      'delete any articles bean',
+      'delete any article_feature bean',
+      'delete any article_grid bean',
+      'delete any article_list_page content',
+      'delete any article_slider bean',
+      'delete own article content',
+      'delete own article_list_page content',
+      'edit any article content',
+      'edit any articles bean',
+      'edit any article_feature bean',
+      'edit any article_grid bean',
+      'edit any article_list_page content',
+      'edit any article_slider bean',
+      'edit own article content',
+      'edit own article_list_page content',
+      'view any articles bean',
+      'view any article_feature bean',
+      'view any article_grid bean',
+      'view any article_slider bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for news functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_news_bundle_express_help($variables) {
+
+  $variables['node/add/article'][] = array(
+    'title' => 'Article help',
+    'short_title' => 'Article help',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-article',
+  );
+  $variables['node/add/article-list-page'][] = array(
+    'title' => 'Article list page help',
+    'short_title' => 'Article List Page',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-article-list-page',
+  );
+  $variables['block/add/article-grid'][] = array(
+    'title' => 'Article grid block help',
+    'short_title' => 'Article grid block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/470',
+  );
+  $variables['block/edit/article-grid'][] = array(
+    'title' => 'Article grid block help',
+    'short_title' => 'Article grid block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/470',
+  );
+  $variables['block/add/articles'][] = array(
+    'title' => 'Article list block help',
+    'short_title' => 'Article list block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/464',
+  );
+  $variables['block/edit/articles'][] = array(
+    'title' => 'Article list block help',
+    'short_title' => 'Article list block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/464',
+  );
+  $variables['block/add/article-slider'][] = array(
+    'title' => 'Article slider block help',
+    'short_title' => 'Article slider block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/474',
+  );
+  $variables['block/edit/article-slider'][] = array(
+    'title' => 'Article slider block help',
+    'short_title' => 'Article slider block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/474',
+  );
+  $variables['block/add/article-feature'][] = array(
+    'title' => 'Article feature block help',
+    'short_title' => 'Article feature block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/742',
+  );
+  $variables['block/edit/article-feature'][] = array(
+    'title' => 'Article feature block help',
+    'short_title' => 'Article feature block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/742',
+  );
+
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help_fields().
+ *  * Add contextual help for the news functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_news_bundle_express_help_fields($variables) {
+
+  $variables['article_node_form']['fields'] = array(
+    'field_image' => array(
+      'title' => 'Adding Images Help',
+      'short_title' => 'Images',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-images',
+    ),
+    'author' => array(
+      'title' => 'Change Article Order',
+      'short_title' => 'Article Order',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/change-article-order',
+    ),
+    'field_article_external_url' => array(
+      'title' => 'Including External Articles',
+      'short_title' => 'External Articles',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/including-external-articles-your-news-feed',
+    ),
+  );
+
+  return $variables;
+}

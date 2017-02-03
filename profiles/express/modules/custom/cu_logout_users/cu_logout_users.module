@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * cu_logout_users.module
+ */
+
+/**
+ * Implements hook_form_user_login_alter().
+ */
+function cu_logout_users_form_user_login_alter(&$form, &$form_state) {
+
+ if (!array_key_exists('fit_is_a_car', $_GET)) {
+  $form['name']['#disabled'] = 'disabled';
+  $form['pass']['#disabled'] = 'disabled';
+  unset($form['#validate']);
+  unset($form['#submit']);
+  unset($form['actions']);
+
+  $message = variable_get('cu_logout_users_text', t('Logging into your CU website has been temporarily disabled for an update. It will be re-enabled shortly. For issues related to this update, please <a href="@link">follow this link</a>.', array('@link' => 'http://www.colorado.edu/webcentral/node/704')));
+  drupal_set_message(t($message), 'warning', FALSE);
+ }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_logout_users_menu() {
+  $items = array();
+
+  $items['admin/config/people/cu-logout-users'] = array(
+   'title' => 'CU Logout Users Configuration',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('cu_logout_users_admin_form'),
+   'access arguments' => array('administer site configuration'),
+   //'type' => MENU_LOCAL_TASK,
+   'weight' => 0,
+   'file' => 'cu_logout_users.admin.inc',
+  );
+
+  return $items;
+}

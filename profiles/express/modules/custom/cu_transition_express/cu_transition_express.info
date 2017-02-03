@@ -1,0 +1,8 @@
+name = CU Transition Express
+description = Functions for enabling and disabling modules for transition to 2.0
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+
+dependencies[] = cu_transition_fit
+

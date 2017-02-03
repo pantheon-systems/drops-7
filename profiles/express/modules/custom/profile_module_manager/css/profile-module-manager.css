@@ -1,0 +1,51 @@
+/* Bundle List Description */
+.modules-bundle-description {
+  margin-bottom: 20px;
+}
+/* Wrapper for all bundles */
+.module-bundles-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+/* Single bundle wrapper */
+.module-bundle-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  float: none !important;
+}
+/* Single bundle */
+.module-bundle {
+  margin-bottom: 20px;
+  width:100%;
+}
+@media screen and (min-width:768px) {
+  .module-bundle {
+    margin-bottom: 40px;
+  }
+}
+.bundle-enabled .module-bundle {
+  background-color: #f2f2f2;
+  padding: 10px;
+}
+.bundle-disabled .module-bundle {
+  border:1px solid #e7e7e7;
+  padding: 10px;
+}
+/* Bundle description */
+.module-bundle-description {
+  line-height: 150%;
+}
+/* Bundle actions */
+.bundle-actions {
+  padding-top: 10px;
+  font-size: 75%;
+}
+.admin-bundle-separator {
+  padding-left: 20px;
+  padding-bottom: 20px;
+}

@@ -1,0 +1,167 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_social_media_bundle_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'create any facebook_activity bean',
+      'create any facebook_like_button bean',
+      'create any social_links bean',
+      'create any twitter_block bean',
+      'delete any facebook_activity bean',
+      'delete any facebook_like_button bean',
+      'delete any social_links bean',
+      'delete any twitter_block bean',
+      'edit any facebook_activity bean',
+      'edit any facebook_like_button bean',
+      'edit any social_links bean',
+      'edit any twitter_block bean',
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'anonymous user' => array(
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'authenticated user' => array(
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'content_editor' => array(
+      'create any facebook_activity bean',
+      'create any facebook_like_button bean',
+      'create any social_links bean',
+      'create any twitter_block bean',
+      'delete any facebook_activity bean',
+      'delete any facebook_like_button bean',
+      'delete any social_links bean',
+      'delete any twitter_block bean',
+      'edit any facebook_activity bean',
+      'edit any facebook_like_button bean',
+      'edit any social_links bean',
+      'edit any twitter_block bean',
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'developer' => array(
+      'create any facebook_activity bean',
+      'create any facebook_like_button bean',
+      'create any social_links bean',
+      'create any twitter_block bean',
+      'delete any facebook_activity bean',
+      'delete any facebook_like_button bean',
+      'delete any social_links bean',
+      'delete any twitter_block bean',
+      'edit any facebook_activity bean',
+      'edit any facebook_like_button bean',
+      'edit any social_links bean',
+      'edit any twitter_block bean',
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'edit_my_content' => array(
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+    'site_owner' => array(
+      'create any facebook_activity bean',
+      'create any facebook_like_button bean',
+      'create any social_links bean',
+      'create any twitter_block bean',
+      'delete any facebook_activity bean',
+      'delete any facebook_like_button bean',
+      'delete any social_links bean',
+      'delete any twitter_block bean',
+      'edit any facebook_activity bean',
+      'edit any facebook_like_button bean',
+      'edit any social_links bean',
+      'edit any twitter_block bean',
+      'view any facebook_activity bean',
+      'view any facebook_like_button bean',
+      'view any social_links bean',
+      'view any twitter_block bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for social media functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_social_media_bundle_express_help($variables) {
+  $variables['block/add/facebook-activity'][] = array(
+    'title' => 'Facebook activity block help',
+    'short_title' => 'Facebook activity block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/488',
+  );
+  $variables['block/edit/facebook-activity'][] = array(
+    'title' => 'Facebook activity block help',
+    'short_title' => 'Facebook activity block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/488',
+  );
+  $variables['block/add/facebook-like-button'][] = array(
+    'title' => 'Facebook like button help',
+    'short_title' => 'Facebook like button help',
+    'url' => 'http://www.colorado.edu/webcentral/node/490',
+  );
+  $variables['block/edit/facebook-like-button'][] = array(
+    'title' => 'Facebook like button help',
+    'short_title' => 'Facebook like button help',
+    'url' => 'http://www.colorado.edu/webcentral/node/490',
+  );
+  $variables['block/add/social-links'][] = array(
+    'title' => 'Social links block help',
+    'short_title' => 'Social Links Block Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/492',
+  );
+  $variables['block/edit/social-links'][] = array(
+    'title' => 'Social links block help',
+    'short_title' => 'Social Links Block Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/492',
+  );
+  $variables['block/add/twitter-block'][] = array(
+    'title' => 'Twitter block help',
+    'short_title' => 'Twitter block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/494',
+  );
+  $variables['block/edit/twitter-block'][] = array(
+    'title' => 'Twitter block help',
+    'short_title' => 'Twitter block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/494',
+  );
+
+  return $variables;
+}

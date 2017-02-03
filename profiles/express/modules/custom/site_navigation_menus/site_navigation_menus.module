@@ -1,0 +1,180 @@
+<?php
+/**
+ * @file
+ * Code for the Site Navigation Menus feature.
+ */
+
+include_once 'site_navigation_menus.features.inc';
+
+/**
+ * @file
+ * Programmatically create VCR content. Oh Yeah!
+ *
+ * Will create pages, menus and menu items, beans and more.
+ * More power!
+ */
+
+/**
+ * Implements hook_menu_block_blocks().
+ */
+function site_navigation_menus_menu_block_blocks() {
+  // The array key is the block delta used by menu block.
+  return array(
+    'site_navigation_menus-1' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Subnavigation',
+      'level'       => 2,
+      'follow'      => 0,
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+      'title'       => '<none>',
+    ),
+    'site_navigation_menus-2' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Expandable Main Menu',
+      'level'       => 1,
+      'follow'      => 0,
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+      'title'       => '<none>',
+    ),
+    'site_navigation_menus-3' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 1,
+      'admin_title' => 'Single Level Sub Navigation',
+      'level'       => 2,
+      'follow'      => 'child',
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+    ),
+    'site_navigation_menus-4' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Toggle Subnavigation',
+      'level'       => 2,
+      'follow'      => 'child',
+      'depth'       => 2,
+      'expanded'    => 0,
+      'sort'        => 0,
+    ),
+  );
+}
+
+/**
+ * TODO: Write fucntion doco.
+ */
+function site_navigation_menus_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'site_navigation_menus');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * TODO: Write fucntion doco.
+ */
+function site_navigation_menus_preprocess_menu_block_wrapper(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'menu_block_wrapper__' . $vars['delta'];
+}
+
+/**
+ * Implements hook_menu_item_target_types_alter().
+ *
+ * Removing targets from menu item creation.
+ */
+function site_navigation_menus_menu_item_target_types_alter(&$target_types, &$context) {
+
+  unset($target_types['node_video']);
+  unset($target_types['existing_view']);
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function site_navigation_menus_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'menu_item_target_types_alter') {
+    $group = $implementations['site_navigation_menus'];
+    unset($implementations['site_navigation_menus']);
+    $implementations['site_navigation_menus'] = $group;
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Hide admin/index tab from admin page.
+ */
+function site_navigation_menus_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'admin') {
+    unset($data['tabs'][0]['output'][1]);
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Hacky way of removing features menu if user doesn't have access to edit it.
+ *
+ * @param $page
+ *   The page render array
+ */
+function site_navigation_menus_page_alter(&$page) {
+  if($_GET['q'] == 'admin/structure/menu' && strpos($page['content']['system_main']['main']['#markup'], '<td>Features') && !user_access('manage features')) {
+    $var = '';
+    $markup = str_replace('<tr class="odd"><td>Features', '<tr class="odd" style="display:none;"><td>Features', $page['content']['system_main']['main']['#markup']);
+    $page['content']['system_main']['main']['#markup'] = $markup;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove menu sources that don't make sense for main or secondary links.
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function site_navigation_menus_form_menu_configure_alter(&$form, &$form_state, $form_id) {
+  unset($form['menu_main_links_source']['#options']['features']);
+  unset($form['menu_main_links_source']['#options']['management']);
+  unset($form['menu_main_links_source']['#options']['navigation']);
+  unset($form['menu_main_links_source']['#options']['user-menu']);
+
+  unset($form['menu_secondary_links_source']['#options']['features']);
+  unset($form['menu_secondary_links_source']['#options']['management']);
+  unset($form['menu_secondary_links_source']['#options']['navigation']);
+  unset($form['menu_secondary_links_source']['#options']['user-menu']);
+
+  unset($form['menu_mobile_links_source']['#options']['features']);
+  unset($form['menu_mobile_links_source']['#options']['management']);
+  unset($form['menu_mobile_links_source']['#options']['navigation']);
+  unset($form['menu_mobile_links_source']['#options']['user-menu']);
+
+  unset($form['menu_footer_links_source']['#options']['features']);
+  unset($form['menu_footer_links_source']['#options']['management']);
+  unset($form['menu_footer_links_source']['#options']['navigation']);
+  unset($form['menu_footer_links_source']['#options']['user-menu']);
+}
+

@@ -1,0 +1,2 @@
+Simply drop this module's directory into your contrib modules directory and
+install via admin/modules/list.

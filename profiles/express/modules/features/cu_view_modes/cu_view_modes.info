@@ -1,0 +1,14 @@
+name = CU View Modes
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = ctools
+dependencies[] = ds
+features[ctools][] = ds:ds:1
+features[ds_view_modes][] = embed
+features[ds_view_modes][] = feature
+features[ds_view_modes][] = promo
+features[ds_view_modes][] = sidebar
+features[ds_view_modes][] = table
+features[ds_view_modes][] = title
+features[features_api][] = api:2

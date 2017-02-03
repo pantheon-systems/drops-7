@@ -1,0 +1,25 @@
+name = LDAP Query
+description = "LDAP Query Builder and Storage for queries used by other ldap modules such as ldap feeds, ldap provision, etc"
+package = "Lightweight Directory Access Protocol"
+dependencies[] = ldap_servers
+
+core = 7.x
+
+files[] = LdapQuery.class.php
+files[] = LdapQueryAdmin.class.php
+files[] = ldap_query.admin.inc
+files[] = ldap_query.inc
+files[] = ldap_query.install
+files[] = ldap_query.module
+files[] = ldap_query.settings.inc
+files[] = ldap_servers.theme.inc
+files[] = tests/ldap_query.test
+
+configure = admin/config/people/ldap/query
+
+; Information added by drupal.org packaging script on 2012-08-20
+version = "7.x-1.0-beta12"
+core = "7.x"
+project = "ldap"
+datestamp = "1345503423"
+

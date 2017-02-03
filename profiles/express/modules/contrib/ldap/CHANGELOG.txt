@@ -1,0 +1,276 @@
+Fixed fake ldap server in simpltests to never filter on dn=*.  See http://drupal.org/node/1066608
+Issue #1647950 by BobA.  Patch by BobA.  Ldap Profile issue.
+Issue #1650718 by alanrussian.  Patch by alanrussian.
+Issue #1661644 by thesaunterer.  Patch by by thesaunterer. Bad error message code throws warning.
+Issue #1623584 by alanrussian.  Patch by alanrussian.
+Issue #1634930 by boran.  Added hook alter to allow intervention in ldap authentication->allowUser method.
+Changes in ldap_authorization.inc to make logic clearer and set array keys in authorization lowercase.
+Fix for ldap servers caching issue when ctools enabled.  noticed the bug when building simpletests.  There is no issue for this.
+Issue #1371452.  Simpletest coverage for ldap servers add, update, delete and class property population.
+Fixed bug where ldap server could not be deleted even if disabled in ldap authentication.
+Issues #1588854, #1601270.  The gist of this patch was to fix exportables, fix setting of numeric id property on ldap authorization class load and rework simpltests to be able to test if the admin interface works with and without ctools
+Issue #1617696 by thomas.borrmann.  Fix for case sensitivity of mail attribute.
+Issue 1599632#comment-6076358 by jzornig. Finished applying patch.
+Issue #1599632 by jzornig. Patch by jzornig. Support $account->name being different to the users login id thru use of Persistent and Unique User Attribute.
+Issue #1612378 by Gisle Aas.  Fix for empty user logon help text.
+Add drupal user object and entity to ldap server test form, when devel enabled.
+Finished getting simpletests working and dealing with case sensitivity and escaping issues.
+Issue #1589148 by miscul.  Fix for login impossible with bind_method = 4.
+Issue #1066608#comment-6009682 by jdickmann.  fix for deriveFromEntryAttrMatchingUserAttr field implementation.
+Issue #1588068 by jzornig.  Patch to correct role saving in ldap authorization drupal role.
+Issue #1559388 by jzornig.  Patch to query group bundle instead of content bundle.
+added ldap_pear_unescape_filter_value() function
+A number of small fixes, including:
+-- changing of LdapAuthorizationConsumerConfAdmin->save() method to only save explicitly listed properties
+-- LdapAuthorizationConsumerConfAdmin->save() method to force 0 or 1 for status.
+-- call in ldap_authorization.inc to ldap_authorization_get_consumers() to flush cache.
+-- function ldap_authorizations_user_authorizations() changed to support multiple consumer types
+-- removal of test cases for case sensitivity and escaping.  These need to be tested on acutal ldap installs.
+Issue #1559088 by NimbyDagda.  LDAP SSO "noisily" checks the remote users headers for mod_auth_kerb.
+Issue #1548102 by MJCO.  Mixed case Drupal role names failed.
+Issue #1477540. Added more debug code to ldap authorization og and addl error checking.
+Issue #1535538 by snickl.  fix testing username property
+Issue #1532084 by lucuhb.  Remove ldap_profile's dependeny on ldap_authentication
+Issue #1468990 by superhenne.  Duplicate entry in db after updating configuration
+Issue #1512562 by jasondranedesigns and patch by figureone.  Issue still may not be resolved because binary files need to be addressed.
+Issue #1272190 by jrm402.  Fix ability to apply mapping to authorization without filtering.
+Issue #1446758 for pagination and size limit of ldap queries.
+fix for case sensitivity in ldap authorization mappings
+added deriveFromEntryEntriesAttr for strategy IIC in ldap authorization to deal with admin specified attributes so groups can contain cn, dns, etc
+renamed property deriveFromEntryAttr to deriveFromEntryMembershipAttr
+Fixed bug in basic authorization unit test (had wrong server configuration values)
+General commit of ldap authorization code which is still broken, but need feedback on authorization IIC and nested groups.
+removed description from authorization consumer class
+improvements to ldap authorization interface
+fix in ldap authorization test form and ldap_authorization_get_consumers (which was broken)
+added deriveFromEntryAttrMatchingUserAttr and deriveFromEntryUseFirstAttr properties to ldap authorization consumer conf
+General commit of ldap authorization code with support for nested groups and improved, but broken, IIC derive from entry setup.
+Issue #1491244 by smsearcy.  Adjustment to work with IIS for strip domain name.
+Issue #1498616 by johnbarclay.  LDAP Authorization OG was hiding filter checkbox on ldap authorization drupal roles form.
+LDAP Query: added more theming and info to ldap query test query interface
+Issue #1485118 by paulpaul.  SSO redirect issue corrected with drupal get destination call.
+Issue #1484418. Missing ldap_servers.bind_method field for some unstable upgrades in update hook.
+Issue #1016728. Moved deriveFromAttrGroups and deriveFromEntryGroups functions out of ldap authorization and into ldap servers to help implement nested groups.
+Issue #1016728. Added interface and db for nested groups config.
+Issue #1412076 by srinivas.kakde.  Allow specification of "Strategy 3: groups as entries" attribute
+johnbarclay added display of unfiltered authorizations to authorization debug/test interface
+Issue #1480236 by paulpaul.  foreach getting non array in ldap authorization include file.
+Issue #1481778 by dams_26.  includes without drupal root fixed.
+Issue #1412030 by srinivas.kakde.  corrected problem where authentication binding by user was preserverd in authorization, etc.
+Issue #1441694 by haydeniv. fixed some needed include in ldap sso.
+Issue #1450932 by hotspoons. untested kerberos for ldap sso.
+Issue #1451778 by paulpaul.  bad variable used in dev verison.
+Issue #1452116 by paulpaul.  fixed db fields too short for ldap authorization
+Issue #1446768 by johnbarclay.  refined ldap server ->search() method error handling
+Reworked LDAP Authorization OG to improve user interface and to support mapping to more OG roles than "member".
+Reworked User Interface for LDAP Authorization.
+Issue #1416738 by fearlsgroove.  disable editing on ldap profile fields synched from ldap
+Issue #1328750#comment-5540222 by heydeniv.  misc ldap sso issues.
+Issue #1328750#comment-5540318 by haydeniv. Fix for ldap authentication validation function return.
+Issue #1430428 by resplin.  Added patch to with hook_ldap_server_in_use() so servers cannot be deleted or disabled when in use.
+Issue #1421980 by clifmo.  Patch by chris.leversuch to fix ldap_feeds.info file
+Issue #1341340 by marleythedod.  Views fix.
+Fixed some error messaging in the test ldap server form.
+Issue #1398204 by froeser.  Add try catch to check_plain on token array.
+Issue #1396786 by thesaunterer.  patch to fix undefined token attributes.
+Issue #1393196 by mattyohe. fixed stripping of quotes in return attributes.
+Issue #1393188 by mattyohe.  lengthened size of ldap query filter field.
+Issue #1357412 by nathangervais with patch.  ldap name transform php needed to be executed when binding with user ldap credentials.
+Issue #1328750 by Gribnif, catch by memfis.  ldap_sso problems related to moving to own module.
+Issue #1362480 by ybizeul to fix ldap profile warning/error.
+Some quick fixes to menus, debug statements and ldap_sso.
+Issue #1359222 by SangersDrupalDude.  theme_ldap_authorization_admin_index was sending empty array.
+Issue #1359574 by heatherwoz.  spelling error.
+Issue #1328750 by Gribnif. I forgot to remove hook_boot and hook_user_logout from ldap authentication.module
+Issue #1359600 by heatherwoz.  Fixed code that set all fields with not null in schema to required.  Made exception for checkboxes.
+Issue #1358174 by SangersDrupalDude.  Changed '0' to 0 to avoid schema errors.
+Issue #1328750 by Gribnif.  Moved LDAP SSO to a separate module.  Details on issue queue item.
+11/22/2011 Coder Review formatting and tweaks.
+Issue #1328750. Not finished with issue, but added check for command line in hook_boot.  was breaking drush and other command line scripts.
+Issue #1317816 by johnbarclay.  LDAP Authorization simpletest was broken.  Improved authorization form directions.
+Issue #1329254 by Simon Georges: bad t() function call.
+Issue #1284632 by iKevin and heatherwoz: fixed link to external url in logon help url.
+Issue #1333714 by cmurph: LDAP Authentication: Add the ability to change user login description.
+Added LDAP Profile to 7.x-1.x branch and did quite a bit of code cleanup.  Also added display of mapping
+  example data on mapping page.  Limited servers being looked at for profile data to the servers user
+  is authenticating to.
+Issue #1334138 by benys: LDAP Authentication: Strip REMOTE_USER domain name
+Issue #1322786 by heatherwoz: Feeds: Return only users of a certain role in LDAP Drupal User LDAP Entry Fetcher
+Issue #1332410 by David Reid: improved usability of ldap_help and ldap server debug pages
+Issue #1332350 by David Reid: mess from last commits removal of validation and switch to ldap type classes.
+Issue #1308854 by trprinty patch by joericapens: fixed check of uid as numeric, not integer
+Issue #1322180 by cmurph. logout error thrown.
+Issue #1310318 by heatherwoz. array_merge() was making numeric ldap attributes fail for authorization
+Issue #1316090 by geeve.  fixed ldap options call that was broke in previous change.
+added classes for specific ldap implementations: http://drupal.org/node/1115704#comment-5103276
+
+==================
+7.x-1.0-beta5
+==================
+Updated documentation page http://drupal.org/node/997082
+Fix token in ldap_authorization config page
+Fixed ldap_help uninstall of straggling variable
+Moved readme to http://drupal.org/node/1300810
+Fixed bug with ldap_feeds users. Added documentation for one use case at http://drupal.org/node/1300812
+Fixed a number of ldap_feeds issues. Both feed fetchers work and parser now. But not heavily tested and no simpletest coverage.
+Update 7100 for ldap_query to add scope field to ldap_query table
+Issue #1296994 by johnbarclay.  case sensitivity issue in ldap query.
+Issue #1296984 by johnbarclay.  ldap_query.  when no attributes specified, all should be returned.
+Issue #1290832 by slerby. space issue in attributes property
+Issue #1290826 by slerby. unused parameters in getLdapQueryObjects
+Issue #1290816 by slerby. failed saving of attribute to table
+Issue #1296154 by mrryanjohnston fixed with patch from same author.
+"final" release candidate plan of action. See http://drupal.org/node/1115704#comment-5045030
+Added ldap_query module into 7.1 branch.
+Issue #1202744 by slerby.  ldap_views integration module to 7.1 branch
+Issue #1267552 by stred.  object issue in sso hook_boot.
+Issue #1259628 by justintime, missing include in test form
+Issue #1256658 by matir, fix install time requirements for profiles.  also fixed feeds bug (see diff).
+Issue #1248116 by justintime, Allow users on one LDAP server to be assigned roles defined on a different server
+Issue #1240782 by justintime, fixes flatten returned array in ldap servers
+Issue #1240782 by justintime, fixes _ldap_servers_get_user_ldap_data when sid is passed in.
+Issue #1236532, #986806 by johnbarclay, begin to deal with a number of username, email, and unique id issues.
+Issue #1224808#21 by mfulz, need to remove quotes from filter.
+
+==================
+7.x-1.0-beta4
+==================
+Issue #1227088 by hotspoons. Allow SSO for authentication http://drupal.org/project/ldap_sso
+Issue #1240966 by sunil.  Fix multiple consumer loads and display on authorizations test page.
+Issue #1235430 by kbnielsen.  Improve message of disabled password reset form.
+Issue #1238818 by showmanlkz.  Made sid required on server form.
+Backed out of quoting filter values.  Though valid syntax, doesn't seem to work.
+Issue #1232332 by zeezhao:  cut length of file so .tar packaging would work
+Issue #1224808 by cpierce:  A number of escaping and quoting issues were resolved via quoting filters on ldap queries and using ldap_explode_dn() function instead of splitting on ",".  Also added a detialed logging entry for the ldap server class search() method to aid in future debugging
+Issue #1206500 by justintime: Added Make bind passwords exportable
+
+==================
+7.x-1.0-beta3
+==================
+Issue #1209576 thekevinday: install shows error of undefined constant fixed
+Added simpletests for drupal authentication and ldap authorization, and the following 2 issues (#1206146, #1213228)
+filtered on array_unique for drupal role mapping to avoid redundant role names
+Issue #1206146 danharper (and likely several other issues): allow mapping of cn or other first attribute instead of dn in ldap authorization and check for long drupal role names.
+Issue #1213228 johnbarclay: drupal user name to ldap php never implemented in ldap authorization. php format has changed.
+
+==================
+7.x-1.0-beta2
+==================
+Issue #1206500 by justintime: applied patch to allow exporting bind password if encryption enabled
+Issue #1201414 by justintime: applied very big exportables patch http://drupal.org/node/1201414#comment-4672616 successfully
+Added warnings when drupal 6 ldapauth table is found warning of manual upgrade process.
+Issue #1201414 by justintime: to improve exportables, renamed ldap_servers.type to ldap_server.ldap_type for older versions of ctools.  Also added export type string.
+Issue #1174332 by endiku: error thrown when trying to add the same drupal role twice.  Added simpletest and applied array_unique().
+Issue #1192356 by bfroehle: ldap_servers_get_servers returning null instead of empty array. 1192356-Fix-warnings-when-iterating-through-en.patch
+Issue #1030404 by ankur:  Fixed issue with ldap authentication with multiple servers.  1030404 comment #6
+Simpletests by johnbarclay: fixed fake ldap server arrays for simpletests to work with #1030404 patch.
+Issue #1170034 by pumpkinkid:  Added functionality for limiting who can authenticate based on whether ldap authorizations exist.  U.I. was already in, just not functionality.
+Fixed whitelist php eval code by johnbarclay.  Did not check for php.module enabled, documentation showed wrong variables and return values.
+Additonal Ldap Authentication whitelist section simpletests added by johnbarclay: LDAP_authen.WL.php.php disabled, LDAP_authen.WL.php.true, LDAP_authen.WL.php.false, LDAP_authen.WL.exclude.miss, LDAP_authen.WL.exclude.match, LDAP_authen.WL.allow.miss, LDAP_authen.WL.allow.match
+
+==================
+7.x-1.0-beta1
+==================
+Ldap Authentication by johnbarclay:  simpletest coverage covers common user logon scenarios. moved notes into ldap_authentication.test code rather than text file.
+Ldap Authorization by johnbarclay:  simpletest coverage complete for now.  Additional tests added as bugs arise and functionality changes. moved notes into ldap_authorization.test code rather than text file.
+Issue #1167010 ldap authentication: fix watchdog message.
+Ldap Authorization:  remove "synch manually option".  Not implemented.
+Ldap Authorization:  jbarclay, fixed bug where disabling authorization settings did not disable their use
+Issue #1162904 by byrond: fixed broken watchdog message in ldap_authentication.
+Issue #1023366 by johnbarclay: change password encryption when changing encryption types.
+Issue #1062994 simpltest.  Much progress made on this in ldap_authorization.
+Issue #1066608 Ldap authorization: IIC Derive Drupal Roles not implemented.  Implemented correctly now.
+Issue #1155196 SQL Syntax error slerby
+Issue #1149942 by jzornig: support LDAP directories which restrict attributes available to anonymous searches
+Issue #1150044  by jdelaune: fixed call to wrong ldap error function
+Issue #1119774  by micahw156, weboide:  fixed issues with storing and removing service account password
+Issue #1126600  by micahw156: fixed logging errors from detailed logging option that caused WSOD fixed.
+Issue #1119330  by alvmarveg: fixed untrapped error when bad basedn is used"
+Ldap Authorization:  fix role saving bug introduced in 7.x-1.0-unstable6
+Ldap Authorization:  fix $user->data['ldap_authorizations'] saving bug introduced in 7.x-1.0-unstable6
+Ldap Authoirzation:  removed option to remove non ldap granted authorizations since it wasn't implemented
+Ldap Authorization and Ldap Authorization Drupal Roles:  made distinct functionality in each as far
+ as storing $user->data['ldap_authorizations'] data.  Only gave drupal role class access to
+ $user->data['ldap_authorizations'][$consumer->consumerType] array; not entire user data array
+ and made saving of $user->data in ldap_authorization.inc
+Ldap Authorization: simplified case sensitivity in drupal role names in  LdapAuthorizationConsumerDrupalRole::createConsumers method
+
+==================
+7.x-1.0-unstable6
+==================
+
+Ldap Authentication and Ldap Servers are feature complete.  Testing and bug
+fixes are needed to move it toward a relase candidate.
+
+Ldap Authorization got a good cleanup and restructuring, but
+is wholly untested.  I would not use this version of ldap authorization or expect it to work;
+but I am ready for bug reports and patches as the rewrite is done.
+
+Issue [#1050944] by [dennisz]: allowing for more than one authorization configuration per consumer type (e.g. drupal roles)
+was never implemented. Realized this and changed the architecture so only support 1. This allowed alot of code to be removed
+as well as made the instructions better.
+Issue [#1119774] by [micahw156]: fixed broken password validation on service account
+Issue [#1034712] by [wernercd]: way to short of db field length for some ldap fields.
+Issue [#1034734] by [wernercd]: made changes to encourage filtering and mapping in ldap authorization
+Issue [#1026078] by [wernercd], [micahw156]: menus, tabs, and breadcrumbs are better now.  I think they still could be improved.
+Issue [#989090] by
+Issues ([#1101422], [#1104366], [#1064692], [#1067158]) arise from the anonymous and user binding to ldap
+  part on ldap authentication not being implemented yet. [cezaryrk] code took care of the binding side and more options were
+  added to the sever configuration.
+Issue [#1110854] by [rbp]: fixed parsing of lines into arrays.  was not accounting for both unix and windows line endings.  this could have created
+any number of issues with configurations that involved text areas with multiple lines such as: [#1110854].   Thanks rbp for pointing
+this out.
+Issue [#1111000] by [ankurs]: added some of ankurs functions for password reset into ldap_servers/ldap_servers.functions.inc.  [#1111000]
+Issue [#1101422]:  bug with account creation flag fixed,
+Issue [#1089854] better ldap error messages shown in watchdog for server binding, connection, etc.
+
+
+==================
+7.x-1.0-unstable5
+==================
+- install instructions:  disable and uninstall previous ldap modules. make sure tables are removed.
+------------------
+- main focus of unstable 5 is ldap_authentication including  finishing out features, improving usability,
+fixing bugs, documentation and setting up tests. ldap_authorization still needs features to be
+finished out, documentation and usability improvements, and a set of tests.
+- ldap_authentication: reordered authentication validation related to issue #1022362
+- ldap_authentication: added test grid for ldap_authentication testing:  http://drupal.org/node/1053818
+- ldap_authentication: added typical authentication configurations: http://drupal.org/node/1053748
+- ldap_help:  added "status" and "issue reporting" tabs to improve testing and bug reporting
+- ldap_authentication: removed option to allow ldap users to change, have separate drupal email.  this feature needs more work if desired at all.
+- ldap_authentication: added configurable help link for ldap password resetting.
+- ldap_authentication: made more content themeable, especially where localized ldap user help may be a factor
+- ldap_authentication: #807416  finished and tested white lists
+- ldap_authentication: clarified and tested rules for existing drupal account conflicts.  Desired behavior is in
+tests (ldap_authentication.tests.txt).
+- ldap_authentication: #968574, #256226, #258974 added "Account Creation for LDAP Authenticated Users" section for account creation.  Desired behavior is in
+tests (ldap_authentication.tests.txt).  Pushed some configuration over to user settings page.
+- ldap_servers: #1050590 added check for existance of https in $_SERVER array per
+- ldap_authorization: #1050944 fixed array work ldap to role mapping.
+- ldap_servers: improved wording on required https message and made themeable
+- ldap_authentication: #1023510 several tweaks for ldap authentication settings related to location and visibility of password,
+password reset links, account creation links, etc. Many of the combinations made no sense and the form was overly complex.  The logic is
+articulated in the ldap authentication settings form and ldap_authentication.tests.txt
+- ldap_authentication: moved request account and password reset link hide/show logic from theming layer to menu/permission layer.
+makes more sense and reduced code alot.
+- another trip through drupal code module\
+- ldap_authorization: #1026138 bug that didn't remove past ldap applied roles #1026138
+- ldap_authorization: fixed 1 case insensitivity issue; may be more.  target role mappings are case sensitive in php, but not in mysql.
+
+
+==================
+7.x-1.0-unstable4
+==================
+- fixed schema issue in ldap authorization #1021478
+- fixed issue when ldap authentication was before drupal authentication and created false error messsage.  #1021612, #1009990
+- fixed undefined $name_attr warning.  #1021636
+
+==================
+7.x-1.0-unstable3
+==================
+- #1018968, #1016284 "ldap_authorization_example" text fixed
+- added check for uid==1 in ldap to make sure that uid=1 is not using ldap authentication
+- #1017578, #1005358  mixed mode authentication failed for user 1 fixed.
+- #1017282 uninitialized array gives warning.  I'd like to get rid of all these types of warnings.
+- #807420 initial exportables/features code added.  needs testing.  not sure if ldap_servers_encrypt_key variable should be exportable
+- starter working with coder module cleanup (spacing, translation, etc)

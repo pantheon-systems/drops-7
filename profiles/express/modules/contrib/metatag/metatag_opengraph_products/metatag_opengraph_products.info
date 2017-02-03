@@ -1,0 +1,13 @@
+name = Metatag:OpenGraph Products
+description = Provides additional Open Graph Protocol meta tags for describing products.
+package = SEO
+core = 7.x
+dependencies[] = metatag
+dependencies[] = metatag_opengraph
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
+core = "7.x"
+project = "metatag"
+datestamp = "1452804845"
+

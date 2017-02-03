@@ -1,0 +1,9 @@
+name = Social Media
+description = This bundle allows you to stay connected with your visitors beyond your website. You can link directly to your social media channels via Icon links or display your social activity streams directly your website.
+core = 7.x
+package = CU-Social Media
+project_demo_url = http://www.colorado.edu/webcentral/node/682
+dependencies[] = cu_twitter_feed
+dependencies[] = cu_facebook_activity
+dependencies[] = cu_facebook_like_button
+dependencies[] = cu_social_links

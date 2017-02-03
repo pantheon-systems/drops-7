@@ -1,0 +1,14 @@
+name = Metatag Importer
+description = Import data from other modules into Metatag.
+core = 7.x
+package = SEO
+
+; Need Metatag.
+dependencies[] = metatag
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
+core = "7.x"
+project = "metatag"
+datestamp = "1452804845"
+

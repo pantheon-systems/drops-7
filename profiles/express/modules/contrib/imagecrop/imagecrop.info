@@ -1,0 +1,16 @@
+name = Image javascript crop
+description = Provides a javascript crop toolbox via the image effects.
+dependencies[] = image
+core = 7.x
+version = VERSION
+files[] = includes/imagecrop.module
+files[] = includes/imagecrop.admin.inc
+files[] = includes/imagecrop.theme.inc
+files[] = includes/imagecrop.class.inc
+configure = admin/config/media/imagecrop
+; Information added by drupal.org packaging script on 2011-08-31
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "imagecrop"
+datestamp = "1314822417"
+

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the CU JQuery feature.
+ */
+
+include_once 'cu_jquery.features.inc';

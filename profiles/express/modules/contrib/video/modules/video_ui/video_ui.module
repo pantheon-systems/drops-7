@@ -1,0 +1,220 @@
+<?php
+/**
+ * @file
+ * Administrative interface to the Video module.
+ * @author : Heshan (heshan@heidisoft.com)
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function video_ui_menu() {
+  $items = array();
+  // General settings
+  $items['admin/config/media/video'] = array(
+    'title' => 'Video',
+    'description' => 'Configure different aspects of the video module and its plugins',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_general_admin_settings'),
+    'file' => 'video.admin.inc',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/config/media/video/general'] = array(
+    'title' => 'General',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+
+  // Player settings
+  $items['admin/config/media/video/players'] = array(
+    'title' => 'Players',
+    'description' => 'Configure your player settings for each video extension.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_players_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  // Transcoder settings
+  $items['admin/config/media/video/transcoders'] = array(
+    'title' => 'Transcoders',
+    'description' => 'Configure your transcoder to convert your videos or extra thumbnails.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_transcoder_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+
+  // Preset settings
+  $items['admin/config/media/video/presets'] = array(
+    'title' => 'Presets',
+    'description' => 'Manage and configure the presets for Video.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_admin_settings'),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  $items['admin/config/media/video/presets/add'] = array(
+    'title' => 'Add preset',
+    'description' => 'Add a new video conversion preset.',
+    'file' => 'video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_form'),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['admin/config/media/video/presets/import'] = array(
+    'title' => 'Import preset',
+    'description' => 'Import a video conversion preset.',
+    'file' => 'video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_import_form'),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  $items['admin/config/media/video/presets/preset/%video_preset'] = array(
+    'title' => 'Edit video preset',
+    'description' => 'Edit a video conversion preset.',
+    'title callback' => 'video_preset_page_title',
+    'title arguments' => array(6),
+    'file' => 'video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_form', 6),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets')
+  );
+  $items['admin/config/media/video/presets/preset/%video_preset/edit'] = array(
+    'title' => 'Edit',
+    'description' => 'Edit a video conversion preset.',
+    'file' => 'video.preset.inc',
+    'page arguments' => array(6),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/config/media/video/presets/preset/%video_preset_database/delete'] = array(
+    'title' => 'Delete',
+    'description' => 'Delete a video conversion preset.',
+    'file' => 'video.preset.inc',
+    'page arguments' => array('video_preset_delete_confirm', 6),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/media/video/presets/preset/%video_preset_overridden/revert'] = array(
+    'title' => 'Revert',
+    'description' => 'Revert a video conversion preset to its default settings.',
+    'file' => 'video.preset.inc',
+    'page arguments' => array('video_preset_revert_confirm', 6),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/media/video/presets/preset/%video_preset/export'] = array(
+    'title' => 'Export',
+    'description' => 'Export a video conversion preset.',
+    'file' => 'video.preset.inc',
+    'title callback' => 'video_preset_page_title',
+    'title arguments' => array(6),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_export_form', 6),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Scheduling
+  $items['admin/config/media/video/scheduling'] = array(
+    'title' => 'Scheduling',
+    'description' => 'Configure your Video transcoding scheduling settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_scheduling_admin_settings'),
+    'access callback' => 'video_admin_access_withtranscoder',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+  );
+
+  // FFmpeg debugging
+  $items['admin/config/media/video/ffmpeg-info'] = array(
+    'title' => 'FFmpeg debug information',
+    'description' => 'Displays information about your FFmpeg installation.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_admin_ffmpeg_info'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementing the special "auto-loader" for menu %video_preset.
+ */
+function video_preset_load($preset_name) {
+  return Preset::getPreset($preset_name);
+}
+
+/**
+ * Implementing the special "auto-loader" for menu %video_preset.
+ *
+ * Limits the returned presets to database presets.
+ */
+function video_preset_database_load($preset_name) {
+  $preset = video_preset_load($preset_name);
+  if (!$preset || $preset['module'] != NULL) {
+    return FALSE;
+  }
+
+  return $preset;
+}
+
+/**
+ * Implementing the special "auto-loader" for menu %video_preset.
+ *
+ * Limits the returned presets to overridden module-provided presets.
+ */
+function video_preset_overridden_load($preset_name) {
+  $preset = video_preset_load($preset_name);
+  if (!$preset || $preset['module'] == NULL || !$preset['overridden']) {
+    return FALSE;
+  }
+
+  return $preset;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function video_ui_theme() {
+  return array(
+    'video_preset_admin_settings' => array(
+      'render element' => 'form',
+      'file' => 'video.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Access callback that returns false when no transcoder is selected.
+ */
+function video_admin_access_withtranscoder($permissions) {
+  if (variable_get('video_convertor') === '') {
+    return FALSE;
+  }
+
+  return user_access($permissions);
+}

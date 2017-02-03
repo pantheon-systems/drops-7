@@ -1,0 +1,141 @@
+<?php
+// $Id$
+/**
+ * @file
+ * see getInfo() for test summary
+ */
+
+require_once(drupal_get_path('module', 'ldap_authorization') . '/tests/LdapAuthorizationTestCase.class.php');
+
+class LdapAuthorizationDerivationsTests  extends LdapAuthorizationTestCase {
+
+  public static function getInfo() {
+    return array(
+      'group' => 'LDAP Authorization',
+      'name' => 'LDAP Authorization: Derive From Entry',
+      'description' => 'Tests are in absence of logons to isolate mapping logic.',
+
+    );
+  }
+
+  function testDeriveFromEntry() {
+
+    $this->ldapTestId = 'DeriveFromEntry.not_nested';
+    $this->serversData = 'DeriveFromEntry/ldap_servers.inc';
+    $this->authorizationData = 'DeriveFromEntry/ldap_authorization.inc';
+    $this->authenticationData = 'DeriveFromEntry/ldap_authentication.inc';
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+
+    /**
+     * test:  DeriveFromEntry.nomatch no matches on dn attribute.
+     *
+     * should not match any mappings
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $unkool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'unkool', 'mail' =>  'unkool@nowhere.myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($unkool, 'query');  // just see if the correct ones are derived.
+    $this->assertTrue(count($new_authorizations[$this->consumerType]) == 0, 'user account unkool tested for granting no drupal roles ', $this->ldapTestId . '.nomatch');
+
+
+    /**
+     * test:  DeriveFromEntry.not_nested.one_match where group has childgroups
+     *
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $joeprojectmanager = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'joeprojectmanager', 'mail' =>  'joeprojectmanager@myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($joeprojectmanager, 'query');  // just see if the correct ones are derived.
+    $correct_roles = (bool)(isset($new_authorizations[$this->consumerType]) && in_array('it', $new_authorizations[$this->consumerType]));
+    $this->assertTrue($correct_roles, 'user account joeprojectmanager tested for granting drupal_role "it"', $this->ldapTestId . '.onematch');
+
+
+    /**
+     * test:  DeriveFromEntry.not_nested.one_match2 where group has no child groups
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $jdoe = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'jdoe', 'mail' =>  'jdoe@myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jdoe, 'query');  // just see if the correct ones are derived.
+    $correct_roles = (bool)(isset($new_authorizations[$this->consumerType]) &&
+      in_array('students', $new_authorizations[$this->consumerType]));
+    $this->assertTrue($correct_roles, 'user account jdoe tested for granting "students" drupal roles ', $this->ldapTestId . '.one_match2');
+    if (!$correct_roles) {
+      debug('new_authorizations'); debug($new_authorizations);
+    }
+
+  }
+
+
+  function testDeriveFromEntryNested() {
+
+    $this->ldapTestId =  'DeriveFromEnty.nested';
+    $this->serversData = 'DeriveFromEntry/ldap_servers.inc';
+    $this->authorizationData = 'DeriveFromEntry/ldap_authorization.nested.inc';
+    $this->authenticationData = 'DeriveFromEntry/ldap_authentication.inc';
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+
+
+    /**
+     * test:  DeriveFromEntry.nested.nomatch no matches on dn attribute.
+     *
+     * should not match any mappings
+     */
+
+    // even though unkool is in staff, only students and it groups are considered
+    $user = $this->drupalCreateUser(array());
+    $unkool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'unkool', 'mail' =>  'unkool@nowhere.myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($unkool, 'query');  // just see if the correct ones are derived.
+    $this->assertTrue(count($new_authorizations[$this->consumerType]) == 0, 'user account unkool tested for granting no drupal roles ', $this->ldapTestId . '.nomatch');
+
+
+    /**
+     * test:  DeriveFromEntry.not_nested.one_match
+     * joeprojectmanager belongs to it,staff,people
+     */
+
+    $user = $this->drupalCreateUser(array());
+    $joeprojectmanager = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'joeprojectmanager', 'mail' =>  'joeprojectmanager@myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($joeprojectmanager, 'query');  // just see if the correct ones are derived.
+    $correct_roles = (bool)(isset($new_authorizations[$this->consumerType]) && in_array('it', $new_authorizations[$this->consumerType]));
+    $this->assertTrue($correct_roles, 'user account joeprojectmanager tested for granting drupal_role "it"', $this->ldapTestId . '.onematch');
+    if (!$correct_roles) {
+      debug('new_authorizations'); debug($new_authorizations);
+    }
+
+
+
+    /**
+     * test:  DeriveFromEnty.nested.parents1
+     *  joeprogrammer belongs to it,sysadmins,developers,staff,people
+     */
+    $user = $this->drupalCreateUser(array());
+    $joeprogrammer = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'joeprogrammer', 'mail' =>  'joeprogrammer@myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($joeprogrammer, 'query');  // just see if the correct ones are derived.
+    $this->assertTrue(count($new_authorizations[$this->consumerType]) == 1, 'user account joeprogrammer tested for granting it roles ', $this->ldapTestId . '.nomatch');
+    $correct_roles = (bool)(isset($new_authorizations[$this->consumerType]) && in_array('it', $new_authorizations[$this->consumerType]));
+    $this->assertTrue($correct_roles, 'user account joeprogrammer tested for granting correct drupal role it', $this->ldapTestId . '.parents1');
+    if (!$correct_roles) {
+      debug('new_authorizations'); debug($new_authorizations);
+    }
+
+
+    /**
+     * test:  DeriveFromEnty.nested.parents2  (results are 4 nested groups)
+     * jdoe: meber of students, people
+     */
+    $user = $this->drupalCreateUser(array());
+    $jdoe = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'jdoe', 'mail' =>  'jdoe@myuniversity.edu'), TRUE, $user);
+    list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jdoe, 'query');  // just see if the correct ones are derived.
+    $this->assertTrue(count($new_authorizations[$this->consumerType]) == 1, 'user account jdoe tested for granting student drupal role ', $this->ldapTestId . '.nomatch');
+    $correct_roles = (bool)(isset($new_authorizations[$this->consumerType]) && in_array('students', $new_authorizations[$this->consumerType]));
+    $this->assertTrue($correct_roles, 'user jdoe tested for granting correct drupal role student', $this->ldapTestId . '.parents2');
+    if (!$correct_roles) {
+      debug('new_authorizations'); debug($new_authorizations);
+    }
+
+  }
+
+}

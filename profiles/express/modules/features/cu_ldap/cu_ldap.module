@@ -1,0 +1,36 @@
+<?php
+/**
+ * @file
+ * Code for the cu_ldap feature.
+ */
+
+include_once('cu_ldap.features.inc');
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_ldap_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_login':
+      drupal_set_title(t('Log in'));
+    case 'user_login_block':
+      $form['name']['#title'] = t('CU Login Name');
+      $form['name']['#description'] = '';
+      $form['pass']['#title'] = t('IdentiKey Password');
+      $form['pass']['#description'] = '';
+      break;
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function cu_ldap_user_insert(&$edit, $account, $category) {
+  /**
+   * Logs user account creation.
+   * Currently, core only logs when users are created through the
+   * registration form. When ldap, however creates the account, we need
+   * a log entry.  @see http://drupal.org/node/1382274
+   */
+  watchdog('user', 'New user: %name (%email).', array('%name' => $account->name, '%email' => $account->mail), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
+}

@@ -1,0 +1,99 @@
+<?php
+/**
+ * @file
+ * Tests for the PHPVideoToolkit class
+ */
+
+/**
+ * Tests for the Video module scheduling options
+ */
+class VideoSchedulingTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Video module scheduling tests',
+      'description' => 'Tests for the Video module scheduling options',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('video', 'node', 'locale'));
+  }
+
+  /**
+   * Tests for the transcode timeout setting
+   */
+  public function testTranscodeTimeout() {
+    // Create a file with state ACTIVE.
+    $node = new stdClass();
+    $node->uid = 1;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    node_save($node);
+    $node = node_load($node->nid);
+    $fid = db_insert('file_managed')->fields(array(
+      'filemime' => 'video/mp4',
+      'uri' => 'public://test.mp4',
+      'filename' => 'test.mp4',
+      'filesize' => 1234,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    $vid = db_insert('video_queue')->fields(array(
+      'status' => VIDEO_RENDERING_ACTIVE,
+      'started' => time() - 11 * 60,
+      'statusupdated' => time() - 10.5 * 60,
+      'completed' => 0,
+      'fid' => $fid,
+      'entity_type' => 'node',
+      'entity_id' => $node->nid,
+    ))->execute();
+
+    // Run cron
+    video_cron();
+
+    // Check if the status was updated to failed
+    $queue = db_query('SELECT status FROM {video_queue} WHERE vid = ?', array($vid))->fetch();
+    $this->assertEqual(VIDEO_RENDERING_FAILED, $queue->status, 'The status of the video must be changed to FAILED.');
+  }
+
+  /**
+   * Tests for the queue timeout setting
+   */
+  public function testQueueTimeout() {
+    // Create a file with state INQUEUE.
+    $node = new stdClass();
+    $node->uid = 1;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    node_save($node);
+    $node = node_load($node->nid);
+    $fid = db_insert('file_managed')->fields(array(
+      'filemime' => 'video/mp4',
+      'uri' => 'public://test.mp4',
+      'filename' => 'test.mp4',
+      'filesize' => 1234,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    $vid = db_insert('video_queue')->fields(array(
+      'status' => VIDEO_RENDERING_INQUEUE,
+      'started' => time() - 70 * 60,
+      'statusupdated' => time() - 65 * 60,
+      'completed' => 0,
+      'fid' => $fid,
+      'entity_type' => 'node',
+      'entity_id' => $node->nid,
+    ))->execute();
+
+    // Run cron
+    video_cron();
+
+    // Check if the status was updated to failed
+    $queue = db_query('SELECT status FROM {video_queue} WHERE vid = ?', array($vid))->fetch();
+    $this->assertEqual(VIDEO_RENDERING_PENDING, $queue->status, 'The status of the video must be changed to PENDING.');
+  }
+}
+

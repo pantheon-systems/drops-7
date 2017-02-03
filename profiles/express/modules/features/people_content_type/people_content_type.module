@@ -1,0 +1,580 @@
+<?php
+
+/**
+ * @file
+ * Programmatically import people. Oh Yeah!
+ */
+
+include_once 'people_content_type.features.inc';
+include_once 'people_content_type_admin.inc';
+include_once 'people_content_type_listing.inc';
+
+/**
+ * Implements hook_page_alter().
+ */
+function people_content_type_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'people_content_type') . '/css/people_content_type.css');
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function people_content_type_menu() {
+  $items = array();
+  $items['admin/settings/people'] = array(
+    'title' => 'People',
+    'description' => 'Menu Options Related to Feedback',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  $items['admin/settings/people/settings'] = array(
+	'title' => 'People Filter Labels',
+	'description' => 'Create text labels for People filters',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('people_content_type_admin_settings_form'),
+	'access arguments' => array('administer express settings'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function people_content_type_permission() {
+  return array(
+    'administer people settings' => array(
+      'title' => 'administer people settings',
+      'description' => 'Access admin/settings to configure settings for people',
+    ),
+  );
+}
+
+
+/**
+ * Provide a form-specific alteration for shared ('base') forms.
+ *
+ * By default, when drupal_get_form() is called, Drupal looks for a function
+ * with the same name as the form ID, and uses that function to build the form.
+ * In contrast, base forms allow multiple form IDs to be mapped to a single base
+ * (also called 'factory') form function.
+ *
+ * Modules can implement hook_form_BASE_FORM_ID_alter() to modify a specific
+ * base form, rather than implementing hook_form_alter() and checking for
+ * conditions that would identify the shared form constructor.
+ *
+ * To identify the base form ID for a particular form (or to determine whether
+ * one exists) check the $form_state. The base form ID is stored under
+ * $form_state['build_info']['base_form_id'].
+ *
+ * See hook_forms() for more information on how to implement base forms in
+ * Drupal.
+ *
+ * Form alter hooks are called in the following order: hook_form_alter(),
+ * hook_form_BASE_FORM_ID_alter(), hook_form_FORM_ID_alter(). See
+ * hook_form_alter() for more details.
+ *
+ * hide old fields we need for migration.
+ *
+ * @param array $form
+ *   Nested array of form elements that comprise the form.
+ * @param array $form_state
+ *   A keyed array containing the current state of the form.
+ * @param string $form_id
+ *   String representing the name of the form itself. Typically this is the
+ *   name of the function that generated the form.
+ *
+ * @see hook_form_alter()
+ * @see hook_form_FORM_ID_alter()
+ * @see drupal_prepare_form()
+ * @see hook_forms()
+ */
+function people_content_type_form_person_node_form_alter(&$form, &$form_state, $form_id) {
+  // Hide legacy fields.
+  $form['field_extra']['#access'] = FALSE;
+  $form['field_person_interests']['#access'] = FALSE;
+  $form['field_person_bio']['#access'] = FALSE;
+
+  // Get filter field custom labels and apply them to form fields.
+  $settings = variable_get('people_content_type_label_settings');
+  if (isset($settings['person_department'])) {
+    $form['field_person_department'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+  }
+  if (isset($settings['person_type'])) {
+    $form['field_person_job_type'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
+  }
+  if (isset($settings['person_filter_one'])) {
+    $form['field_person_filter_1'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_one'];
+  }
+  if (isset($settings['person_filter_two'])) {
+    $form['field_person_filter_2'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_two'];
+  }
+  if (isset($settings['person_filter_three'])) {
+    $form['field_person_filter_3'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_three'];
+  }
+  drupal_add_js(drupal_get_path('module','people_content_type') .'/js/people-content-type.js');
+}
+
+/**
+ * TODO: DOCO.
+ */
+function people_content_type_form_people_list_page_node_form_alter(&$form, &$form_state, $form_id) {
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
+
+  // Get filter field custom labels and apply them to form fields.
+  $settings = variable_get('people_content_type_label_settings');
+  if (isset($settings['person_department'])) {
+    $form['field_people_list_department'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+    $form['field_people_dept_filter_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['department'] .= '/' . $settings['person_department'];
+  }
+  if (isset($settings['person_type'])) {
+    $form['field_people_list_person_type'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
+    $form['field_people_pos_filter_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['person_type'] .= '/' . $settings['person_type'];
+  }
+  if (isset($settings['person_filter_one'])) {
+    $form['field_people_filter_1'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_one'];
+    $form['field_people_filter1_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_one'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['people_filter_1'] .= '/' . $settings['person_filter_one'];
+  }
+  if (isset($settings['person_filter_two'])) {
+    $form['field_people_filter_2'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_two'];
+    $form['field_people_filter2_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_two'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['people_filter_2'] .= '/' . $settings['person_filter_two'];
+  }
+  if (isset($settings['person_filter_three'])) {
+    $form['field_people_filter_3'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_three'];
+    $form['field_people_filter3_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_filter_three'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['people_filter_3'] .= '/' . $settings['person_filter_three'];
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got node--person.tpl.php in our module directory.
+ */
+function people_content_type_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'people_content_type');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $vars
+ *   The variables array (modify in place).
+ */
+function people_content_type_preprocess_node(&$vars) {
+  switch ($vars['type']) {
+
+    case 'person':
+      // prepare job titles for output
+      $job_titles = array();
+      foreach ($vars['field_person_title'] as $key => $value) {
+        $job_titles[] = $vars['field_person_title'][$key]['value'];
+      }
+      $vars['content']['job_titles'] = join(' &bull; ', $job_titles);
+      // prepare job titles for output
+      $departments = array();
+      foreach ($vars['field_person_department'] as $key => $value) {
+        $departments[] = $vars['field_person_department'][$key]['taxonomy_term']->name;
+      }
+      $vars['content']['departments'] = join(' &bull; ', $departments);
+      if (isset($vars['content']['attributes']['classes'])) {
+        $vars['content']['grid_classes'] = join(' ', $vars['content']['attributes']['classes']);
+      }
+      break;
+
+    case 'people_list_page':
+
+      // Build filter arguments that are set on each node
+
+      // Build department argument
+      if (isset($vars['node']->field_people_list_department[LANGUAGE_NONE])) {
+        $department = array();
+        foreach ($vars['node']->field_people_list_department[LANGUAGE_NONE] as $key=>$value) {
+          $department[$key] = $value['tid'];
+        }
+      } elseif (isset($_GET['department'])) {
+        $department = array(check_plain($_GET['department']));
+      } else {
+        $department = NULL;
+      }
+
+      // Build type argument
+      if (isset($vars['node']->field_people_list_person_type[LANGUAGE_NONE])) {
+        $type = array();
+        foreach ($vars['node']->field_people_list_person_type[LANGUAGE_NONE] as $key=>$value) {
+          $type[$key] = $value['tid'];
+        }
+      } elseif (isset($_GET['type'])) {
+        $type = array(check_plain($_GET['type']));
+      } else {
+        $type = NULL;
+      }
+
+      // Build filter 1 argument
+      if (isset($vars['node']->field_people_filter_1[LANGUAGE_NONE])) {
+        $filter_1 = array();
+        foreach ($vars['node']->field_people_filter_1[LANGUAGE_NONE] as $key=>$value) {
+          $filter_1[$key] = $value['tid'];
+        }
+      } elseif (isset($_GET['filter1'])) {
+        $filter_1 = array(check_plain($_GET['filter1']));
+      } else {
+        $filter_1 = NULL;
+      }
+
+      // Build filter 2 argument
+      if (isset($vars['node']->field_people_filter_2[LANGUAGE_NONE])) {
+        $filter_2 = array();
+        foreach ($vars['node']->field_people_filter_2[LANGUAGE_NONE] as $key=>$value) {
+          $filter_2[$key] = $value['tid'];
+        }
+      } elseif (isset($_GET['filter2'])) {
+        $filter_2 = array(check_plain($_GET['filter2']));
+      } else {
+        $filter_2 = NULL;
+      }
+
+      // Build filter 3 argument
+      if (isset($vars['node']->field_people_filter_3[LANGUAGE_NONE])) {
+        $filter_3 = array();
+        foreach ($vars['node']->field_people_filter_3[LANGUAGE_NONE] as $key=>$value) {
+          $filter_3[$key] = $value['tid'];
+        }
+      } elseif (isset($_GET['filter3'])) {
+        $filter_3 = array(check_plain($_GET['filter3']));
+      } else {
+        $filter_3 = NULL;
+      }
+
+      if (isset($vars['node']->field_people_group_by[LANGUAGE_NONE][0]['value']) && ($vars['node']->field_people_group_by[LANGUAGE_NONE][0]['value'] != 'none')) {
+        $group = $vars['node']->field_people_group_by[LANGUAGE_NONE][0]['value'];
+      } else {
+        $group = NULL;
+      }
+
+      if (isset($vars['node']->field_people_order_by[LANGUAGE_NONE][0]['value']) && ($vars['node']->field_people_order_by[LANGUAGE_NONE][0]['value'] != 'none')) {
+        $order = $vars['node']->field_people_order_by[LANGUAGE_NONE][0]['value'];
+      } else {
+        $order = NULL;
+      }
+
+      // Get the display/format value so we know which view mode to use
+      $view_mode = $vars['node']->field_people_list_display[LANGUAGE_NONE][0]['value'];
+      $view_mode = ($view_mode == 'list' ? 'teaser' : $view_mode);
+
+      // If grouping is used we need to get multiple lists
+      if ($group) {
+
+        // Get the vid of the group to get associated terms
+        $vocabulary = taxonomy_vocabulary_machine_name_load($group);
+        $terms = taxonomy_get_tree($vocabulary->vid);
+
+        // Put term ids from group into new array so we can compare with filter arrays
+        $tids = array();
+        foreach ($terms as $key => $term) {
+          $tids[] = $term->tid;
+        }
+
+        // Compare and get common term ids if a group and filter are set
+        switch($group) {
+          case 'person_type':
+            if($type) {
+              $tids = array_intersect($tids, $type);
+            }
+            break;
+          case 'department':
+            if($department) {
+              $tids = array_intersect($tids, $department);
+            }
+            break;
+          case 'people_filter_1':
+            if ($filter_1) {
+              $tids = array_intersect($tids, $filter_1);
+            }
+            break;
+          case 'people_filter_2':
+            if ($filter_2) {
+              $tids = array_intersect($tids, $filter_2);
+            }
+            break;
+          case 'people_filter_3':
+            if ($filter_3) {
+              $tids = array_intersect($tids, $filter_3);
+            }
+            break;
+        }
+
+        // Loop through all term ids
+        foreach ($tids as $tid) {
+          // Reset filter parameters if grouping is used
+          $type = ($group == 'person_type') ? array($tid) : $type;
+          $department = ($group == 'department') ? array($tid) : $department;
+          $filter_1 = ($group == 'people_filter_1') ? array($tid) : $filter_1;
+          $filter_2 = ($group == 'people_filter_2') ? array($tid) : $filter_2;
+          $filter_3 = ($group == 'people_filter_3') ? array($tid) : $filter_3;
+
+          // Get the listing for this group
+          $listing = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
+          // If there are results, add to render array and add a heading with the term name
+          if ($listing) {
+            $term = taxonomy_term_load($tid);
+            $name = $term->name;
+            $vars['content']['people_groups'][$tid] = $listing;
+            $vars['content']['people_groups'][$tid]['#prefix'] = '<h2 class="people-list-group-title people-list-' . $view_mode . '-group-title">' . $name . '</h2>';
+          }
+        }
+      } else {
+        // If no grouping, just get a single list
+        $vars['content']['people'] = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
+      }
+      // Put all list displays at the bottom
+      $vars['content']['people']['#weight'] = 100;
+      $vars['content']['people_groups']['#weight'] = 100;
+
+      // Add filter form right above list display
+      $vars['content']['exposed_filter'] = drupal_get_form('people_content_type_list_filter_form');
+      $vars['content']['exposed_filter']['#weight'] = 99;
+      break;
+  }
+}
+
+
+/*
+ * Provide a list of grouping options
+ * allowed_values_function for field_people_group_by
+ */
+function _people_content_type_allowed_grouping() {
+  return array(
+    'none' => 'None',
+    'person_type' => 'Type',
+    'department' => 'Department',
+    'people_filter_1' => 'Filter 1',
+    'people_filter_2' => 'Filter 2',
+    'people_filter_3' => 'Filter 3',
+  );
+}
+
+/*
+ * Provide a list of sorting options
+ * allowed_values_function for field_people_group_by
+ */
+function _people_content_type_allowed_sorting() {
+  return array(
+    'name' => 'Last Name',
+    'type' => 'Type + Last Name',
+  );
+}
+
+/*
+ * Provide a set of filters for people list pages that vistors can use to further filter list
+ */
+function people_content_type_list_filter_form($form, &$form_state) {
+  $form = array();
+
+  // Get saved filter settings
+  $settings = variable_get('people_content_type_label_settings', '');
+
+  // Create array of filter types
+  $filters = array();
+  $filters['person_type']['name'] = 'person_type';
+  $filters['person_type']['machine_name'] = 'type';
+  $filters['person_type']['label'] = isset($settings['person_type']) ? $settings['person_type'] : 'Type';
+
+  $filters['department']['name'] = 'department';
+  $filters['department']['machine_name'] = 'department';
+  $filters['department']['label'] = isset($settings['person_department']) ? $settings['person_department'] : 'Department';
+
+  $filters['people_filter_1']['name'] = 'people_filter_1';
+  $filters['people_filter_1']['machine_name'] = 'filter1';
+  $filters['people_filter_1']['label'] = isset($settings['person_filter_one']) ? $settings['person_filter_one'] : '';
+
+  $filters['people_filter_2']['name'] = 'people_filter_2';
+  $filters['people_filter_2']['machine_name'] = 'filter2';
+  $filters['people_filter_2']['label'] = isset($settings['person_filter_two']) ? $settings['person_filter_two'] : '';
+
+  $filters['people_filter_3']['name'] = 'people_filter_3';
+  $filters['people_filter_3']['machine_name'] = 'filter3';
+  $filters['people_filter_3']['label'] = isset($settings['person_filter_three']) ? $settings['person_filter_three'] : '';
+
+  $filter_count = 5;
+
+  // Load people list page node
+  $node = menu_get_object();
+
+  // If filters are already set on node, remove them from filter array so they are not built/don't display
+  if (!empty($node->field_people_list_person_type) || ($node->field_people_pos_filter_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
+    unset($filters['person_type']);
+    $filter_count--;
+  }
+  if (!empty($node->field_people_list_department) || ($node->field_people_dept_filter_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
+    unset($filters['department']);
+    $filter_count--;
+  }
+  if (!empty($node->field_people_filter_1) || ($node->field_people_filter1_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
+    unset($filters['people_filter_1']);
+    $filter_count--;
+  }
+  if (!empty($node->field_people_filter_2) || ($node->field_people_filter2_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
+    unset($filters['people_filter_2']);
+    $filter_count--;
+  }
+  if (!empty($node->field_people_filter_3) || ($node->field_people_filter3_show[LANGUAGE_NONE][0]['value'] == 'FALSE')) {
+    unset($filters['people_filter_3']);
+    $filter_count--;
+  }
+
+  // Loop through the filters array to build the filter fields
+  foreach ($filters as $key => $filter) {
+    // Load vocabulary for filter
+    $vocabulary = taxonomy_vocabulary_machine_name_load($filter['name']);
+    // Get terms for vocabulary
+    $terms = taxonomy_get_tree($vocabulary->vid);
+    $options = array();
+    // Add 'all' option
+    $options[] = 'All';
+    // Add all terms to options array
+    foreach ($terms as $key => $term) {
+      $options[$term->tid] = $term->name;
+    }
+    // If there are more than 2 options ('All" + 1), build form field
+    if (count($options) > 2) {
+      $form['people_list_filter'][$filter['machine_name']] = array(
+       '#type' => 'select',
+       '#title' => t($filter['label']),
+       '#options' => $options,
+       '#default_value' => $_GET[$filter['machine_name']],
+      );
+    }
+  }
+  // If filters are added, also add submit button and set method
+  if (!empty($form)) {
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Filter',
+    );
+    // Set form method to get because this is only filtering values
+    if ($filter_count > 0) {
+      $form['#prefix'] = '<div class="people-list-filter">';
+      $form['#suffix'] = '</div>';
+    }
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for people list filter form.
+ */
+function people_content_type_list_filter_form_submit($form, &$form_state) {
+
+  // Get current node
+  $node = menu_get_object();
+  // Get the nid
+  $nid = $node->nid;
+
+  // Get filters if they were submitted
+  foreach (array('type', 'department', 'filter1', 'filter2', 'filter3') as $name) {
+    if (!empty($form_state['values'][$name])) {
+      $keys[$name] = $form_state['values'][$name];
+    }
+  }
+
+  // Build new url with filter parameters
+  $options = array();
+  if (isset($keys)) {
+    $options['query'] = $keys;
+  }
+  $form_state['redirect'] = array('node/' . $nid, $options);
+  return;
+}
+/**
+ * Implments hook_preprocess_entity
+ *
+ * builds people list for people_list_block
+ */
+function people_content_type_preprocess_entity(&$vars) {
+  if ($vars['elements']['#bundle'] == 'people_list_block') {
+    // Build filter arguments that are set on each bean
+
+      // Build department argument
+      if (isset($vars['bean']->field_people_list_department[LANGUAGE_NONE])) {
+        $department = array();
+        foreach ($vars['bean']->field_people_list_department[LANGUAGE_NONE] as $key=>$value) {
+          $department[$key] = $value['tid'];
+        }
+      } else {
+        $department = NULL;
+      }
+
+      // Build type argument
+      if (isset($vars['bean']->field_people_list_person_type[LANGUAGE_NONE])) {
+        $type = array();
+        foreach ($vars['bean']->field_people_list_person_type[LANGUAGE_NONE] as $key=>$value) {
+          $type[$key] = $value['tid'];
+        }
+      } else {
+        $type = NULL;
+      }
+
+      // Build filter 1 argument
+      if (isset($vars['bean']->field_people_filter_1[LANGUAGE_NONE])) {
+        $filter_1 = array();
+        foreach ($vars['bean']->field_people_filter_1[LANGUAGE_NONE] as $key=>$value) {
+          $filter_1[$key] = $value['tid'];
+        }
+      } else {
+        $filter_1 = NULL;
+      }
+
+      // Build filter 2 argument
+      if (isset($vars['bean']->field_people_filter_2[LANGUAGE_NONE])) {
+        $filter_2 = array();
+        foreach ($vars['bean']->field_people_filter_2[LANGUAGE_NONE] as $key=>$value) {
+          $filter_2[$key] = $value['tid'];
+        }
+      } else {
+        $filter_2 = NULL;
+      }
+
+      // Build filter 3 argument
+      if (isset($vars['bean']->field_people_filter_3[LANGUAGE_NONE])) {
+        $filter_3 = array();
+        foreach ($vars['bean']->field_people_filter_3[LANGUAGE_NONE] as $key=>$value) {
+          $filter_3[$key] = $value['tid'];
+        }
+      } else {
+        $filter_3 = NULL;
+      }
+      $view_mode = $vars['bean']->field_people_block_thumbnail[LANGUAGE_NONE][0]['value'];
+      $order = NULL;
+      $vars['content']['people'] = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
+  }
+}

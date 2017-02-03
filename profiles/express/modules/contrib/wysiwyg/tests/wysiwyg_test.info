@@ -1,0 +1,14 @@
+name = Wysiwyg testing
+description = Tests Wysiwyg module functionality. Do not enable.
+core = 7.x
+package = Testing
+hidden = TRUE
+dependencies[] = wysiwyg
+files[] = wysiwyg_test.module
+
+; Information added by drupal.org packaging script on 2013-10-26
+version = "7.x-2.2+23-dev"
+core = "7.x"
+project = "wysiwyg"
+datestamp = "1382797351"
+

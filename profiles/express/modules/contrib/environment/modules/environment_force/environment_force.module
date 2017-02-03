@@ -1,0 +1,19 @@
+<?php
+/**
+ * @file
+ * The Environment Force module resets the site environment to the one
+ * set in settings.php.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function environment_force_init() {
+  $env_override = variable_get('environment_override', NULL);
+  if ($env_override) {
+    $current_env = environment_current();
+    if ($current_env != $env_override) {
+      environment_switch($env_override, TRUE);
+    }
+  }
+}

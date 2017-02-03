@@ -1,0 +1,19 @@
+name = Metatag: hreflang
+description = Provides support for the hreflang meta tag with some extra logic to simplify it.
+package = SEO
+core = 7.x
+
+dependencies[] = metatag
+
+; The locale module is required in order to have multiple languages/locales.
+dependencies[] = locale
+
+; Tests.
+files[] = metatag_hreflang.test
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
+core = "7.x"
+project = "metatag"
+datestamp = "1452804845"
+

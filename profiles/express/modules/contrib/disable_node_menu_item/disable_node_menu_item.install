@@ -1,0 +1,21 @@
+<?php
+/**
+ * @file
+ * This is the install file for the disable_node_menu_item module
+ */
+
+/**
+ * Implements hook_install().
+ */
+function disable_node_menu_item_install() {
+  // We need our module to execute after Drupal cores menu module so we set our modules weight to be heavier than the menu module
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'menu', '=')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $weight +1))
+    ->condition('name', 'disable_node_menu_item', '=')
+    ->execute();
+}

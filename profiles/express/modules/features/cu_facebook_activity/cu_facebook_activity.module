@@ -1,0 +1,35 @@
+<?php
+/**
+ * @file
+ * Code for the CU Facebook Like Button feature.
+ */
+
+include_once 'cu_facebook_activity.features.inc';
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--facebook-like-button.tpl.php in our module directory.
+ */
+function cu_facebook_activity_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_facebook_activity');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_facebook_activity_page_alter(&$page) {
+  // Add cu facebook activity css
+  drupal_add_css(drupal_get_path('module', 'cu_facebook_activity') . '/cu_facebook_activity.css');
+}
+
