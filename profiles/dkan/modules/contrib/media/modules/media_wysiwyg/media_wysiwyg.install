@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Media WYSIWYG module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function media_wysiwyg_uninstall() {
+  // Remove variables.
+  variable_del('media_wysiwyg_wysiwyg_title');
+  variable_del('media_wysiwyg_wysiwyg_icon_title');
+  variable_del('media_wysiwyg_wysiwyg_default_view_mode');
+  variable_del('media_wysiwyg_wysiwyg_upload_directory');
+  variable_del('media_wysiwyg_wysiwyg_allowed_types');
+  variable_del('media_wysiwyg_wysiwyg_allowed_attributes');
+  variable_del('media_wysiwyg_wysiwyg_browser_plugins');
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function media_wysiwyg_update_dependencies() {
+  // Ensure the "access media browser" permission is granted to users before
+  // using it to grant the "use media wysiwyg" permission.
+  $dependencies['media_wysiwyg'][7201] = array(
+    'media' => 7226,
+  );
+}
+
+/**
+ * Grant existing user access to new media wysiwyg permission.
+ */
+function media_wysiwyg_update_7201() {
+  $roles = user_roles(TRUE, 'access media browser');
+  foreach ($roles as $rid => $role) {
+    user_role_grant_permissions($rid, array('use media wysiwyg'));
+  }
+
+  return t('Use Media WYSIWYG permission was granted to: @roles.', array(
+    '@roles' => check_plain(implode(', ', $roles)),
+  ));
+}
+
+/**
+ * Use the legacy file entity rendering method for existing sites.
+ *
+ * Existing sites can change this setting at admin/config/media/browser.
+ */
+function media_wysiwyg_update_7202() {
+  variable_set('media_wysiwyg_default_render', 'field_attach');
+}

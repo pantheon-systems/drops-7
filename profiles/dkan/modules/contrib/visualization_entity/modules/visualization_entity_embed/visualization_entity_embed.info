@@ -1,0 +1,5 @@
+name = Visualization Entity Embed
+description = Allow users embed visualizations using panels and ctools content types
+core = 7.x
+
+dependencies[] = visualization_entity

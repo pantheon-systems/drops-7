@@ -1,0 +1,11 @@
+name = "Entity RDF module tests"
+description = "Support module for Entity RDF module testing."
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+; Information added by drush on 2012-08-20
+version = "7d91983"
+project = "entity_rdf"
+datestamp = "1345498142"

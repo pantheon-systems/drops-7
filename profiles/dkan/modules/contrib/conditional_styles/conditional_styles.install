@@ -1,0 +1,19 @@
+<?php
+/**
+ * @file
+ * Provides upgrade function for conditional_styles.
+ */
+
+/**
+ * Removes the variables used by 6.x-1.x.
+ */
+function conditional_styles_update_7201() {
+  // Delete no-longer-needed conditional stylesheets variables.
+  $themes = list_themes();
+  foreach (array_keys($themes) AS $theme) {
+    variable_del('conditional_styles_' . $theme);
+    variable_del('conditional_styles_' . $theme . '_rtl');
+  }
+  // Clear the page cache.
+  cache_clear_all();
+}

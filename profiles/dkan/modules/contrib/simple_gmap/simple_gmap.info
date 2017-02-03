@@ -1,0 +1,12 @@
+name = Simple Google Maps
+description = Provides a Google Maps link/map formatter for simple Text fields
+core = 7.x
+
+files[] = simple_gmap.module
+
+; Information added by Drupal.org packaging script on 2014-01-03
+version = "7.x-1.2"
+core = "7.x"
+project = "simple_gmap"
+datestamp = "1388781572"
+

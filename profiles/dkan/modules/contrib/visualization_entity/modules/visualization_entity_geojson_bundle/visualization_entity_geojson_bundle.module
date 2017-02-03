@@ -1,0 +1,85 @@
+<?php
+/**
+ * @file
+ * Code for the Visualization Entity Geojson Bundle feature.
+ */
+
+include_once 'visualization_entity_geojson_bundle.features.inc';
+
+/**
+ * Implements hook_theme().
+ */
+function visualization_entity_geojson_bundle_theme($existing, $type, $theme, $path) {
+  $tpls_path = drupal_get_path('module', 'visualization_entity_geojson_bundle') . '/theme';
+  return array(
+    'visualization__geojson_visualization' => array(
+      'render element' => 'elements',
+      'template' => 'visualization--geojson-visualization',
+      'path' => $tpls_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function visualization_entity_geojson_bundle_entity_view_alter(&$build, $type) {
+  if ($type === 'visualization' && $build['#entity']->type === 'geojson_visualization') {
+    // Load libraries.
+    libraries_load('recline');
+    libraries_load('leaflet_zoomtogeometries');
+
+    // Build settings.
+    $settings = array();
+
+    // Build resource.
+    $resources = visualization_entity_recline_field_reference_load_resources($build['field_uuid_resource']['#items']);
+    $keys = array_keys($resources);
+    $resource = $resources[$keys[0]];
+
+    // Build label column and geojson file.
+    $geojson = $resource->recline_file_field[LANGUAGE_NONE][0]['uri'];
+    $geojson = drupal_realpath($geojson);
+    $geojson = json_decode(file_get_contents($geojson));
+
+    $settings['geojson'] = $geojson;
+
+    $settings = array(
+      'visualization_entity_geojson_bundle' => $settings,
+    );
+
+    // Add settings.
+    drupal_add_js($settings, 'setting');
+
+    // Add js controller and stylesheets.
+    $module_path = drupal_get_path('module', 'visualization_entity_geojson_bundle');
+    drupal_add_js($module_path . '/visualization_entity_geojson_bundle.js');
+    drupal_add_css($module_path . '/visualization_entity_geojson_bundle.css');
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function visualization_entity_geojson_bundle_form_alter(&$form, &$form_state, $form_id) {
+  $form_ids = array(
+    'eck__entity__form_add_visualization_geojson_visualization',
+    'eck__entity__form_edit_visualization_geojson_visualization',
+  );
+  if (in_array($form_id, $form_ids)) {
+    if (isset($form['field_uuid_resource'][LANGUAGE_NONE]['#options'])) {
+      $options_uuid_resources = &$form['field_uuid_resource'][LANGUAGE_NONE];
+    }
+    else {
+      $options_uuid_resources = &$form['field_uuid_resource'][LANGUAGE_NONE][0]['target_uuid'];
+    }
+
+    $field = field_read_field('field_uuid_resource');
+    $target_type = $field['settings']['target_type'];
+    $options_uuid_resources['#options'] = visualization_entity_recline_field_reference_filter_compatible_instances(
+      $options_uuid_resources['#options'],
+      $target_type,
+      'visualization_entity_is_geojson'
+    );
+  }
+}

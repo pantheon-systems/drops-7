@@ -1,0 +1,193 @@
+<?php
+
+/**
+ * @file
+ * Provides a remote stream wrapper and filefield source integration.
+ */
+
+define('REMOTE_FILE_SOURCE_HINT_TEXT', 'http://example.com/files/file.zip');
+
+/**
+ * Implements hook_filefield_sources_info().
+ */
+function remote_file_source_filefield_sources_info() {
+  $source = array();
+  $source['remotefile'] = array(
+    'name' => t('Remote File'),
+    'label' => t('Remote File'),
+    'description' => t('Link to a file located on a remote server.'),
+    'process' => 'filefield_source_remotefile_process',
+    'value' => 'filefield_source_remotefile_value',
+    'weight' => 3,
+  );
+  return $source;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function remote_file_source_theme() {
+  return array(
+    'filefield_source_remotefile_element' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ * Theme the output of the autocomplete field.
+ */
+function theme_filefield_source_remotefile_element($variables) {
+  $element = $variables['element'];
+
+  $element['url']['#field_suffix'] = drupal_render($element['select']);
+  return '<div class="filefield-source filefield-source-remotefile clear-block">' . drupal_render($element['url']) . '</div>';
+
+}
+
+/**
+ * A #process callback to extend the filefield_widget element type.
+ */
+function filefield_source_remotefile_process($element, &$form_state, $form) {
+
+  $element['filefield_remotefile'] = array(
+    '#weight' => 100.5,
+    '#theme' => 'filefield_source_remotefile_element',
+    '#filefield_source' => TRUE, // Required for proper theming.
+    '#filefield_sources_hint_text' => REMOTE_FILE_SOURCE_HINT_TEXT,
+  );
+
+  $element['filefield_remotefile']['url'] = array(
+    '#type' => 'textfield',
+    '#maxlength' => NULL,
+  );
+
+  $element['filefield_remotefile']['select'] = array(
+    '#name' => implode('_', $element['#array_parents']) . '_select',
+    '#type' => 'submit',
+    '#value' => t('Select'),
+    '#validate' => array(),
+    '#submit' => array('filefield_sources_field_submit'),
+    '#limit_validation_errors' => array($element['#parents']),
+    '#ajax' => array(
+      'path' => 'file/ajax/' . implode('/', $element['#array_parents']) . '/' . $form['form_build_id']['#value'],
+      'wrapper' => $element['#id'] . '-ajax-wrapper',
+      'effect' => 'fade',
+      'method' => 'replace',
+    ),
+    '#suffix' => '<div class="description">' . t('This field will ignore the file size limitation') . '</div>',
+  );
+
+  return $element;
+}
+
+/**
+ * A #filefield_value_callback function.
+ */
+function filefield_source_remotefile_value($element, &$item) {
+  // A remote url has been entered.
+  if (isset($item['filefield_remotefile']['url'])
+    && drupal_strlen($item['filefield_remotefile']['url']) > 0
+    && $item['filefield_remotefile']['url'] != REMOTE_FILE_SOURCE_HINT_TEXT) {
+
+    $value = $item['filefield_remotefile']['url'];
+
+    if (!valid_url($value, TRUE)) {
+      form_error($element, t('Invalid Remote File URL.'));
+      return;
+    }
+    elseif (!file_stream_wrapper_valid_scheme(file_uri_scheme($value))) {
+      // Check that the scheme is supported.
+      form_error($element, t('Remote File URLs with the %scheme scheme are not supported.', array('%scheme' => $scheme)));
+      return;
+    }
+    else {
+      // Check that the file exists.
+      $request = drupal_http_request($value, array('method' => 'HEAD'));
+      if (!empty($request->error)) {
+        form_error($element, t('Unable to fetch file from Remote File URL %url (error @code: %error).', array('%url' => $value, '@code' => $request->code, '%error' => $request->error)));
+        return;
+      }
+    }
+
+    try {
+      $file = remote_stream_wrapper_file_load_by_uri($value);
+      if (!$file) {
+        // Check if it has a Location and treat that as the location.
+        $file = remote_stream_wrapper_file_create_by_uri($value);
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_HEADER => TRUE,
+        CURLOPT_NOBODY => TRUE,
+        CURLOPT_RETURNTRANSFER => TRUE,
+        CURLOPT_URL => $value));
+        $headers = explode("\n", curl_exec($curl));
+        curl_close($curl);
+
+        foreach ($headers as $header) {
+          if (preg_match('/Location: (.+)/', $header, $matches)) {
+            $exploded = explode('/', $matches[1]);
+            if ($exploded && count($exploded) > 1) {
+              $file->filename = $exploded[count($exploded) - 1];
+            }
+          }
+          // Content-Disposition: attachment; filename="FILE NAME HERE"
+          elseif (preg_match('/Content-Disposition:.*?filename="(.+?)"/', $header, $matches)) {
+            $file->filename = trim($matches[1]);
+          }
+          // Content-Disposition: attachment; filename=file.ext
+          elseif (preg_match('/Content-Disposition:.*?filename=([^; ]+)/', $header, $matches)) {
+            $file->filename = trim($matches[1]);
+          }
+          elseif (preg_match('/Content-Type:[ ]*([a-z0-9_\-]+\/[a-z0-9_\-]+)/i', $header, $matches)) {
+            $mime_type = $matches[1];
+            $file->filemime = _remote_file_source_mime_extension($mime_type);
+          }
+        }
+        $file->status = FALSE;
+        $file = file_save($file);
+      }
+    }
+    catch (Exception $e) {
+      form_set_error('url', $e->getMessage());
+      return;
+    }
+
+    if (empty($file->fid)) {
+      form_set_error($element, t('Unable to add file from URL %file.', array('%file' => $value)));
+      return;
+    }
+
+    // Run all the normal validations, minus file size restrictions.
+    if (isset($element['#upload_validators']['file_validate_size'])) {
+      unset($element['#upload_validators']['file_validate_size']);
+    }
+
+    if (filefield_sources_element_validate($element, (object) $file)) {
+      $item = array_merge($item, (array) $file);
+    }
+  }
+}
+
+/**
+ * Get/set the remote file extension in a static variable.
+ */
+function _remote_file_source_mime_extension($curl_mime_type = NULL) {
+  static $extension = NULL;
+  if (isset($curl_mime_type)) {
+    include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+    $curl_mime_type = drupal_strtolower($curl_mime_type);
+    $mapping = file_mimetype_mapping();
+    // See if this matches a known MIME type.
+    $map_id = array_search($curl_mime_type, $mapping['mimetypes']);
+    if ($map_id !== FALSE) {
+      // If we have a match, get this list of likely extensions. For some reason
+      // Drupal lists the "most common" extension last for most file types
+      // including php, jpg, and doc.
+      if ($extensions = array_keys($mapping['extensions'], $map_id)) {
+        $extension = end($extensions);
+      }
+    }
+  }
+  return $extension;
+}

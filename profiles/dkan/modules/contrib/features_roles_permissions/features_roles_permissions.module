@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * Implements hook_hook_info().
+ */
+function features_roles_permissions_info() {
+  $hooks = array(
+    'features_api',
+  );
+  return array_fill_keys($hooks, array('group' => 'features'));
+}
+
+/**
+ * Implements hook_features_api().
+ */
+function features_roles_permissions_features_api() {
+  return array(
+    'roles_permissions' => array(
+      'name' => t('Roles and permissions'),
+      'feature_source' => TRUE,
+      'default_hook' => 'default_roles_permissions',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'features_roles_permissions') . '/includes/features.roles_permissions.inc',
+    ),
+  );
+}

@@ -1,0 +1,20 @@
+/**
+ * @file
+ * Styles for the format form.
+ *
+ * The display and layout of the Media browser assumes Drupal's Seven theme as
+ * the theme active when this is displayed.
+ */
+
+#media-wysiwyg-format-form {
+  margin: 20px;
+}
+
+#media-wysiwyg-format-form .media-item {
+  float: left;
+  margin-right: 10px;
+}
+
+#media-wysiwyg-format-form .form-item-format label {
+  display: inline;
+}

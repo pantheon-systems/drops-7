@@ -1,0 +1,13 @@
+name = Conditional stylesheets test base theme
+description = Test theme which acts as a base theme for other test subthemes.
+
+hidden = TRUE
+
+stylesheets-conditional[gte IE 1]['all'][] = base-style.css
+
+; Information added by drupal.org packaging script on 2013-07-11
+version = "7.x-2.2"
+core = "7.x"
+project = "conditional_styles"
+datestamp = "1373559072"
+

@@ -1,0 +1,12 @@
+name = Evoc Test
+description = Provides vocabularies for import testing.
+core = 7.x
+package = RDF
+
+files[] = evoc_test.module
+hidden = TRUE
+
+; Information added by drush on 2014-02-18
+version = "7.x-2.0-alpha4+9-dev"
+project = "rdfx"
+datestamp = "1392730212"

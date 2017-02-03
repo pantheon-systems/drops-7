@@ -1,0 +1,24 @@
+/**
+ * @file
+ * CSS for Colorizer.
+ */
+.navbar {
+  background: @navbar;
+}
+a {
+  color: @link;
+}
+a:hover {
+  color: @linkhover;
+}
+.nav li a.active, 
+.nav li a.active:hover {
+  background-color: @primary;
+}
+.progress-bar {
+  background-color: @primary;
+}
+.btn-primary,
+.btn-primary:hover {
+  background-color: @primary; 
+}

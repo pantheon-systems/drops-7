@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ *
+ * Supply additional plugins/funtionality for facetapi
+ */
+
+// Integration with Page Title module.
+module_load_include('inc', 'facetapi_bonus', 'facetapi_bonus.page_title');
+
+/**
+ * Implements hook_facetapi_facet_info_alter().
+ */
+function facetapi_bonus_facetapi_facet_info_alter(&$facet_info, $searcher_info) {
+  foreach ($facet_info as &$facet) {
+    $facet['dependency plugins'][] = 'facet';
+  }
+}
+
+
+/**
+ * Implements hook_facetapi_dependencies().
+ */
+function facetapi_bonus_facetapi_dependencies() {
+  return array(
+    'facet' => array(
+      'handler' => array(
+        'label' => t('Another facet'),
+        'class' => 'FacetapiDependencyFacet',
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_facetapi_filters().
+ */
+function facetapi_bonus_facetapi_filters() {
+  return array(
+    'exclude_items' => array(
+      'handler' => array(
+        'label' => t('Exclude specified items'),
+        'class' => 'FacetapiFilterExcludeItems',
+      ),
+    ),
+    'rewrite_items' => array(
+      'handler' => array(
+        'label' => t('Rewrite facet items via callback function'),
+        'class' => 'FacetapiFilterRewriteItems',
+      ),
+    ),
+    'narrow_results' => array(
+      'handler' => array(
+        'label' => t('Do not display items that do not narrow results'),
+        'class' => 'FacetapiFilterNarrowResults',
+      ),
+    ),
+    'show_if_minimum_items' => array(
+      'handler' => array(
+        'label' => t('Do not show facet with only X items'),
+        'class' => 'FacetapiFilterShowIfMinimumItems',
+      ),
+    ),
+    'deepest_level_items' => array(
+      'handler' => array(
+        'label' => t('Show only deepest level items'),
+        'class' => 'FacetapiFilterShowDeepestLevelItems',
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_facetapi_sort_info().
+ */
+function facetapi_bonus_facetapi_sort_info() {
+  $sorts['natural'] = array(
+    'label' => t('Display value (natural)'),
+    'callback' => 'facetapi_sort_natural',
+    'description' => t('Sort by the value displayed to the user in natural order.'),
+  );
+
+  return $sorts;
+}
+
+/**
+ * Implements hook_current_search_items().
+ */
+function facetapi_bonus_current_search_items() {
+  return array(
+    'reset_filters' => array(
+      'handler' => array(
+        'label' => t('Reset filters link'),
+        'class' => 'FacetapibonusCurrentSearchResetFiltersLink',
+      ),
+    ),
+  );
+}
+
+/**
+ * Sorts by display value in natural order.
+ */
+function facetapi_sort_natural(array $a, array $b) {
+  $a_value = (isset($a['#markup'])) ? $a['#markup'] : '';
+  $b_value = (isset($b['#markup'])) ? $b['#markup'] : '';
+  return strnatcmp($a_value, $b_value);
+}

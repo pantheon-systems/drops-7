@@ -1,0 +1,165 @@
+array (
+  'buttons' =>
+  array (
+    0 =>
+    array (
+      'title' => 'Make selected text into a header',
+      'content' => 'js:  markdownEditor.header();',
+      'icon' => 'md-make-header@2x.png',
+      'accesskey' => 'H',
+      'weight' => '0',
+    ),
+    1 =>
+    array (
+      'title' => 'Italics: Make selected text emphasized',
+      'content' => 'js: markdownEditor.emphasis();',
+      'icon' => 'md-make-em@2x.png',
+      'accesskey' => 'I',
+      'weight' => '1',
+    ),
+    2 =>
+    array (
+      'title' => 'Bold: Make selected text strong',
+      'content' => 'js: markdownEditor.strongEmphasis();',
+      'icon' => 'md-make-strong@2x.png',
+      'accesskey' => 'B',
+      'weight' => '2',
+    ),
+    3 =>
+    array (
+      'title' => 'Format selected text as code',
+      'content' => 'js: markdownEditor.codeInline();',
+      'icon' => 'md-make-code@2x.png',
+      'accesskey' => '',
+      'weight' => '3',
+    ),
+    4 =>
+    array (
+      'title' => 'Format selected text as a code block',
+      'content' => 'js: markdownEditor.codeBlock();',
+      'icon' => 'md-make-code-block@2x.png',
+      'accesskey' => '',
+      'weight' => '4',
+    ),
+    5 =>
+    array (
+      'title' => 'Make selected text into a block quote',
+      'content' => 'js: markdownEditor.blockQuote();',
+      'icon' => 'md-make-quote@2x.png',
+      'accesskey' => 'Q',
+      'weight' => '5',
+    ),
+    6 =>
+    array (
+      'title' => 'Make selected text into an ordered list (numbered)',
+      'content' => 'js: markdownEditor.orderedList();',
+      'icon' => 'md-make-ol@2x.png',
+      'accesskey' => 'O',
+      'weight' => '6',
+    ),
+    7 =>
+    array (
+      'title' => 'Make selected text into an unordered list (bullets)',
+      'content' => 'js: markdownEditor.unorderedList();',
+      'icon' => 'md-make-ul@2x.png',
+      'accesskey' => 'N',
+      'weight' => '7',
+    ),
+    8 =>
+    array (
+      'title' => 'Insert a definition list',
+      'content' => 'js:  new markdownEditor.DefinitionList();',
+      'icon' => 'md-add-dl@2x.png',
+      'accesskey' => '',
+      'weight' => '8',
+    ),
+    9 =>
+    array (
+      'title' => 'Insert a table',
+      'content' => 'js:  new markdownEditor.Table();',
+      'icon' => 'md-add-table@2x.png',
+      'accesskey' => 'T',
+      'weight' => '9',
+    ),
+    10 =>
+    array (
+      'title' => 'Insert an abbreviation (word or acronym with definition)',
+      'content' => 'js:  markdownEditor.abbreviation();',
+      'icon' => 'md-add-abbreviation@2x.png',
+      'accesskey' => '',
+      'weight' => '10',
+    ),
+    11 =>
+    array (
+      'title' => 'Insert a footnote',
+      'content' => 'js:  markdownEditor.footnote();',
+      'icon' => 'md-add-footnote@2x.png',
+      'accesskey' => 'F',
+      'weight' => '11',
+    ),
+    12 =>
+    array (
+      'title' => 'Make text into an autolink (turns URLs in links, turns words into section identifiers for navigating the document)',
+      'content' => 'js:  markdownEditor.autoLink();',
+      'icon' => 'md-add-autolink@2x.png',
+      'accesskey' => 'A',
+      'weight' => '12',
+    ),
+    13 =>
+    array (
+      'title' => 'Make text into a link (turns text into a link with more options)',
+      'content' => 'js:  markdownEditor.link();',
+      'icon' => 'md-make-link@2x.png',
+      'accesskey' => 'L',
+      'weight' => '13',
+    ),
+    14 =>
+    array (
+      'title' => 'Insert an image',
+      'content' => 'js:  markdownEditor.image();',
+      'icon' => 'md-add-picture@2x.png',
+      'accesskey' => 'M',
+      'weight' => '14',
+    ),
+    15 =>
+    array (
+      'title' => 'Insert a line break',
+      'content' => 'js: markdownEditor.lineBreak();',
+      'icon' => 'md-add-line@2x.png',
+      'accesskey' => 'R',
+      'weight' => '15',
+    ),
+    16 =>
+    array (
+      'title' => 'Insert a horizontal ruler (horizontal line)',
+      'content' => 'js: markdownEditor.horizontalRuler();',
+      'icon' => 'md-add-hr@2x.png',
+      'accesskey' => '',
+      'weight' => '16',
+    ),
+    17 =>
+    array (
+      'title' => 'Teaser break',
+      'content' => '<!--break-->',
+      'icon' => 'teaserbr@2x.png',
+      'accesskey' => '',
+      'weight' => '17',
+    ),
+    18 =>
+    array (
+      'title' => 'Preview',
+      'content' => 'js: E.prvAjax();',
+      'icon' => 'preview@2x.png',
+      'accesskey' => 'P',
+      'weight' => '18',
+    ),
+    19 =>
+    array (
+      'title' => 'Help',
+      'content' => 'js: E.help(\'fadeIn\');',
+      'icon' => 'md-help@2x.png',
+      'accesskey' => '',
+      'weight' => '19',
+    ),
+  ),
+)

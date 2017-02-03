@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ *   The ECK Entity cache module.
+ */
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function eck_entitycache_entity_info_alter(&$info){
+ 
+  foreach(EntityType::loadAll() as $entity_type){
+    // Enable Entity Cache for this entity.
+    $info[$entity_type->name]['entity cache'] = TRUE;
+    // But disable the field cache.
+    $info[$entity_type->name]['field cache'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_eck_entity_type_insert().
+ */
+function eck_entitycache_eck_entity_type_insert(EntityType $entity_type) {
+  // Create the new entity cache table for this entity.
+  $schema = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['description'] = "Cache table used to store {$entity_type->name} entity records.";
+  db_create_table("cache_entity_{$entity_type->name}", $schema);
+}
+
+/**
+ * Implements hook_eck_entity_type_delete().
+ */
+function eck_entitycache_eck_entity_type_delete(EntityType $entity_type) {
+  // Delete the entity cache table for this entity.
+  db_drop_table("cache_entity_{$entity_type->name}");
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function eck_entitycache_flush_caches() {
+  $bins = array();
+  foreach (EntityType::loadAll() as $entity_type) {
+    $bins[] = "cache_entity_{$entity_type->name}";
+  }
+  return $bins;
+}

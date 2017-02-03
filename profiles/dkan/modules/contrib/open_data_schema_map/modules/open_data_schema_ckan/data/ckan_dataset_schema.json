@@ -1,0 +1,341 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://project-open-data.github.io/schema/1_0_final/single_entry.json#",
+  "title": "CKAN Dataset Schema",
+  "description": "The metadata format for all federal open data. Validates a single JSON object entry (as opposed to entire Data.json catalog).",
+  "type": "object",
+  "properties": {
+    "id": {
+      "title": "UUID",
+      "type": "string"
+    },
+    "revision_id": {
+      "title": "Revision ID",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "author": {
+      "title": "Author",
+      "type": "string"
+    },
+    "author_email": {
+      "title": "Author Email",
+      "type": "string"
+    },
+    "maintainer": {
+      "title": "Maintainer",
+      "description": "",
+      "type": "string"
+    },
+    "maintainer_email": {
+      "title": "Maintainer Email",
+      "description": "",
+      "type": "string"
+    },
+    "license_title": {
+      "title": "License Title",
+      "description": "",
+      "type": "string"
+    },
+    "license_id": {
+      "title": "License ID",
+      "description": "",
+      "type": "string"
+    },
+    "notes": {
+      "title": "Notes",
+      "description": "",
+      "type": "string"
+    },
+    "url": {
+      "title": "URL",
+      "description": "",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "description": "",
+      "type": "string"
+    },
+    "state": {
+      "title": "state",
+      "description": "",
+      "type": "string",
+      "enum": ["uncomplete", "complete", "active"]
+    },
+    "owner_org": {
+      "title": "Owner Organization",
+      "description": "",
+      "type": "string"
+    },
+    "log_message": {
+      "title": "Log Message",
+      "description": "",
+      "type": "string"
+    },
+    "private": {
+      "title": "Private",
+      "description": "",
+      "type": "boolean"
+    },
+    "relationships_as_object": {
+      "title": "Relationships",
+      "type": "object"
+    },
+    "private": {
+      "title": "Private",
+      "type": "boolean"
+    },
+    "revision_timestamp": {
+      "title": "Revision Date",
+      "type": "string"
+    },
+    "metadata_created": {
+      "title": "Created",
+      "type": "string"
+    },
+    "metadata_modified": {
+      "title": "Modified",
+      "type": "string"
+    },
+    "state": {
+      "title": "State",
+      "type": "string",
+      "description": "Active or not"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "creator_user_id": {
+      "title": "Creator User ID",
+      "type": "string"
+    },
+    "type": {
+      "title": "Type",
+      "type": "string",
+      "default": "Dataset"
+    },
+    "resources": {
+      "title":"Resources",
+      "description":"",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "title": "UUID",
+                "type": "string"
+              },
+              "revision_id": {
+                "title": "Revision ID",
+                "type": "string"
+              },
+              "url": {
+                "title": "URL",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "format": {
+                "title": "Format",
+                "type": "string"
+              },
+              "hash": {
+                "title": "hash",
+                "type": "string"
+              },
+              "state": {
+                "title": "state",
+                "type": "string"
+              },
+              "Position": {
+                "title": "position",
+                "type": "string"
+              },
+              "revision_timestamp": {
+                "title": "Revision Timestamp",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "resource_type": {
+                "title": "Resource Type",
+                "type": "string"
+              },
+              "url_type": {
+                "title": "URL Type",
+                "type": "string"
+              },
+              "mimetype": {
+                "title": "MIME Type",
+                "type": "string"
+              },
+              "webstore_url": {
+                "title": "Web Store URL",
+                "type": "string"
+              },
+              "size": {
+                "title": "Size",
+                "type": "string"
+              },
+              "created": {
+                "title": "Created",
+                "type": "string"
+              },
+              "resource_group_id": {
+                "title": "Resource Group UUID",
+                "type": "string"
+              },
+              "cache_last_updated": {
+                "title": "Cache Last Updated",
+                "type": "string"
+              },
+              "webstore_last_updated": {
+                "title": "Web Store Last Updated",
+                "type": "string"
+              },
+              "datastore_active": {
+                "title": "Datastore Active",
+                "type": "string"
+              },
+              "last_modified": {
+                "title": "Last Modified",
+                "type": "string"
+              }
+            }
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        {
+            "type": "null"
+        }
+      ]
+    },
+    "tags": {
+      "title":"Tags",
+      "description":"",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "title": "UUID",
+                "type": "string"
+              },
+              "vocabulary_id": {
+                "title": "Vocaulary ID",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "revision_timestamp": {
+                "title": "Revision Timestamp",
+                "type": "string"
+              },
+              "state": {
+                "title": "state",
+                "description": "",
+                "type": "string",
+                "enum": ["uncomplete", "complete", "active"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "groups": {
+      "title":"Groups",
+      "description":"",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "display_name": {
+                "title": "Display NAme",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "id": {
+                "title": "UUID",
+                "type": "string"
+              },
+              "image_display_url": {
+                "title": "Image URL",
+                "type": "string"
+              },
+              "title": {
+                "title": "Title",
+                "description": "",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "extras": {
+      "title":"Extras",
+      "description":"",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "title": "UUID",
+                "type": "string"
+              },
+              "key": {
+                "title": "Key",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "string"
+              },
+              "state": {
+                "title": "state",
+                "description": "",
+                "type": "string",
+                "enum": ["uncomplete", "complete", "active"]
+              },
+              "revision_timestamp": {
+                "title": "Revision Timestamp",
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Adds a panel pane style for collapsible regions and panes.
+ */
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function panels_style_collapsible_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'panels' || $module == 'ctools') && $plugin == 'styles') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_theme()
+ */
+function panels_style_collapsible_theme() {
+  return array(
+    'panels_style_collapsible' => array(
+      'variables' => array(
+        'handle' => NULL,
+        'content' => NULL,
+        'collapsed' => FALSE,
+      ),
+      'file' => 'plugins/styles/collapsible.inc',
+    ),
+  );
+}

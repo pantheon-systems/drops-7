@@ -1,0 +1,116 @@
+/**
+ * @file
+ * CSS for Markdown editor.
+ */
+
+
+/* Editor */
+.bue-ui {
+  margin: 0;
+  padding: 6px 8px;
+  -moz-box-shadow: 0 1px 0 #fff inset;
+  -webkit-box-shadow: 0 1px 0 #fff inset;
+  box-shadow: 0 1px 0 #fff inset;
+  background: #cfd1cf;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f5f5f5), to(#cfd1cf));
+  background-image: -moz-linear-gradient(top, #f5f5f5, #cfd1cf);
+  background-image: -webkit-linear-gradient(top, #f5f5f5, #cfd1cf);
+  background-image: -o-linear-gradient(top, #f5f5f5, #cfd1cf);
+  background-image: -ms-linear-gradient(top, #f5f5f5, #cfd1cf);
+  background-image: linear-gradient(top, #f5f5f5, #cfd1cf);
+}
+
+.bue-button {
+  padding: 2px;
+  margin: 0 4px 0 0;
+  height: 20px;
+  border: 1px solid #a6a6a6;
+  border-bottom-color: #979797;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, .5), 0 0 2px rgba(255, 255, 255, .15) inset, 0 1px 0 rgba(255, 255, 255, .15) inset;
+  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, .5), 0 0 2px rgba(255, 255, 255, .15) inset, 0 1px 0 rgba(255, 255, 255, .15) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .5), 0 0 2px rgba(255, 255, 255, .15) inset, 0 1px 0 rgba(255, 255, 255, .15) inset;
+  background: #e4e4e4;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e4e4e4));
+  background-image: -moz-linear-gradient(top, #fff, #e4e4e4);
+  background-image: -webkit-linear-gradient(top, #fff, #e4e4e4);
+  background-image: -o-linear-gradient(top, #fff, #e4e4e4);
+  background-image: -ms-linear-gradient(top, #fff, #e4e4e4);
+  background-image: linear-gradient(top, #fff, #e4e4e4);
+}
+
+
+/* Scrollbars to allow content that overflows dialog */
+.bue-popup-body {
+  padding-bottom: 10px;
+}
+
+#markdowneditor-dialog-form fieldset {
+  border: none;
+}
+
+#markdowneditor-dialog-form .form-text,
+#markdowneditor-dialog-form .form-textarea {
+  min-width: 200px;
+}
+#markdowneditor-dialog-table .form-text {
+  min-width: 100px;
+}
+
+#markdowneditor-dialog-form th {
+  text-transform: none;
+  background: transparent;
+  border: none;
+}
+
+#markdowneditor-dialog-form .markdowneditor-dialog-submit,
+#markdowneditor-dialog-form .markdowneditor-dialog-cancel {
+  float: right;
+  margin-bottom: 0;
+}
+
+/* Fix for Seven admin theme. */
+#markdowneditor-dialog-form td:last-child {
+  border-right: none;
+}
+
+
+/* Definition List */
+
+#markdowneditor-dialog-definition-list .prepend-row-button {
+  visibility: hidden;
+}
+
+#markdowneditor-dialog-definition-list .first .prepend-row-button {
+  visibility: visible;
+}
+
+#markdowneditor-dialog-definition-list td {
+  padding: 0 10px;
+  vertical-align: top;
+}
+
+#markdowneditor-dialog-definition-list .modification {
+  white-space: nowrap;
+}
+
+
+/* Table */
+
+#markdowneditor-dialog-table .header-row .remove-row-button {
+  visibility: hidden;
+}
+
+#markdowneditor-dialog-table .column-modification-cell .prepend-column-button {
+  visibility: hidden;
+}
+
+#markdowneditor-dialog-table .column-modification-cell.first .prepend-column-button {
+  visibility: visible;
+}
+
+#markdowneditor-dialog-table .row-modification-cell {
+  white-space: nowrap;
+}

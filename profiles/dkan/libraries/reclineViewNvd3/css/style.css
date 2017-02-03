@@ -1,0 +1,58 @@
+#grid {
+  height: 404px;
+}
+
+#grid .slick-viewport {
+    overflow-x: auto;
+}
+
+.slick-header-column {
+  height: 25px !important;
+}
+
+.recline-slickgrid *{
+  box-sizing: content-box;
+}
+
+/* NVD3 Overrides */
+.nvtooltip h3 {
+  font-size: 13px;
+  font-weight: bold !important;
+}
+
+.pagination ul > li {
+  display: inline;
+}
+
+.recline-pager .pagination a {
+  line-height: 26px;
+  padding: 0 6px;
+  text-decoration: none;
+}
+
+.pagination ul > li:first-child > a, .pagination ul > li:first-child > span {
+  border-left-width: 1px;
+  -webkit-border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  -webkit-border-top-left-radius: 4px;
+  border-top-left-radius: 4px;
+  -moz-border-radius-bottomleft: 4px;
+  -moz-border-radius-topleft: 4px;
+}
+
+.pagination label {
+  display: none;
+}
+
+.pagination input {
+  width: 40px;
+  color: #666;
+  text-align: center;
+}
+
+/* Line charts with visible data points */
+.recline-show-datapoints .nvd3.nv-line .nvd3.nv-scatter .nv-groups .nv-point {
+  fill-opacity: 1;
+  stroke-opacity: 1;
+  r: 4;
+}

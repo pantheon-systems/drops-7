@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Schemas odsm xml output.
+ */
+
+
+function open_data_schema_map_xml_output_update_7001() {
+
+  $column = array(
+    'type' => 'varchar',
+    'description' => "XML Root",
+    'length' => 60,
+    'not null' => False,
+    'default' => 'records',
+  );
+
+  $data_table_name = 'open_data_schema_map';
+  if (!db_field_exists('open_data_schema_map', 'xml_root')) {
+    db_add_field($data_table_name, 'xml_root', $column);
+  }
+
+  $column = array(
+    'type' => 'varchar',
+    'description' => "XML Default Tag",
+    'length' => 60,
+    'not null' => False,
+    'default' => 'record',
+  );
+
+  $data_table_name = 'open_data_schema_map';
+  if (!db_field_exists('open_data_schema_map', 'xml_defaulttag')) {
+    db_add_field($data_table_name, 'xml_defaulttag', $column);
+  }
+}
+

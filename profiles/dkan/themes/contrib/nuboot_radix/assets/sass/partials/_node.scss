@@ -1,0 +1,230 @@
+//
+// Styles for Nodes
+// --------------------------------------------------
+
+// Taxonomy.
+.field-name-field-tags .field-item {
+  display:inline-block;
+}
+.field-type-taxonomy-term-reference {
+  label {
+    display: block;
+  }
+  input.form-control {
+    height: auto;
+  }
+  .field-item {
+    a {
+      display: inline-block;
+      padding:2px 10px 2px;
+      font-size:12px;
+      line-height: 20px;
+      @include border-radius(0 5px 5px 0);
+      @include background-image(linear-gradient($shade, $gray-lighter));
+      margin:3px 5px 3px 20px;
+      position:relative;
+      color:$gray-dark;
+      border:1px solid $gray-light;
+      border-left:0;
+      z-index:2;
+      &:after {
+        content:"";
+        width: 20px;
+        height: 20px;
+        @include background-image(linear-gradient(left top, $shade 0%, $gray-lighter 100%));
+        @include rotate(45deg);
+        @include border-radius(2px);
+        position:absolute;
+        top:2px;
+        left:-9px;
+        z-index:-1;
+        border:1px solid $gray-light;
+        border-top:none;
+        border-right:none;
+      }
+      &:before {
+        content:"";
+        width:2px;
+        height:2px;
+        background:$gray-light;
+        position:absolute;
+        top:11px;
+        left:-5px;
+        @include border-radius(0);
+      }
+    }
+    a:hover:after,
+    a:hover {
+      background: #fff;
+      color:#000;
+      text-decoration:none;
+    }
+  }
+}
+// Dataset field labels.
+.field-name-field-tags,
+.field-name-field-topic,
+.field-name-field-preview-thumbail {
+  .field-label {
+    @include h4;
+  }
+}
+
+/** UI Tabs **/
+.node-resource-form .horizontal-tabs {
+  border:none;
+  ul.horizontal-tabs-list {
+    background-color: transparent;
+    border: 0;
+    padding-top: 10px;
+    li,
+    li.selected {
+      border: 0;
+      background-color: transparent;
+      min-width: 10em;
+      a:hover {
+        background:transparent;
+      }
+      #active-horizontal-tab {
+        background: url(../images/sprite-ckan-icons.png) no-repeat -193px 2px;
+        display: block;
+        text-indent: -9999px;
+        width: 16px;
+        height: 16px;
+        margin: 0 0 0 28px;
+        clip: auto;
+      }
+      &.horizontal-tab-button-1 .summary,
+      &.horizontal-tab-button-2 .summary {
+        background: url(../images/sprite-ckan-icons.png) no-repeat -160px 0;
+      }
+      .summary{
+        background: url(../images/sprite-ckan-icons.png) no-repeat -144px 0;
+        width: 16px;
+        height: 16px;
+        position: absolute;
+        top:5px;
+        left:10px;
+      }
+      a {
+        font-size: 1.1em;
+        position: relative;
+        padding: 5px 15px 5px 30px;
+      }
+    }
+  }
+  .horizontal-tabs-panes {
+    @include border-radius($border-radius-base);
+    border:1px solid $border;
+    padding: 8px;
+    fieldset.htab_link_upload,
+    fieldset.htab_link_api,
+    fieldset.htab_link_file {
+      legend.panel-heading {
+        display: none;
+      }
+      .field-widget-recline-widget legend.panel-heading {
+        border:none;
+        border-bottom: 1px solid $border;
+        display: block;
+        background:transparent;
+        color: $gray;
+        padding: 5px 0;
+        //margin-top:10px;
+      }
+    }
+    .form-type-checkbox label,
+    .form-type-select label {
+      display: block;
+      padding-top:2px;
+    }
+    .filefield-source-remotefile {
+      input {
+        margin-right: 0;
+      }
+      input.btn {
+        @include border-radius(0 $border-radius-base $border-radius-base 0);
+        margin-left: -1px;
+      }
+    }
+    .form-item-field-upload-und-0-embed {
+      clear: both;
+    }
+  }
+}
+.page-node-add-resource {
+  .field-group-htabs.group-data div.horizontal-tabs {
+    border: 0;
+  }
+  .form-item {
+    margin: 0;
+  }
+}
+
+#action-info {
+  color: $brand-danger;
+  margin: 1em 0;
+  &:before {
+    color: $brand-danger;
+    content: "\f071";
+    font-family: "FontAwesome";
+    font-size: 1.5em;
+    font-style: normal;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+}
+.resource-list a,
+.field-name-body a {
+  overflow-wrap: break-word;
+}
+.field-name-body {
+  ul {
+    list-style-type:disc;
+    margin:10px 20px;
+    li {
+      margin:6px 10px;
+    }
+  }
+}
+.field-group-table-description {
+  color:$gray;
+  display:block;
+  padding:8px 10px 8px 40px;
+  position:relative;
+  .icon-info-sign:before {
+    color:$gray-light;
+    content:"\f05a";
+    font-family:$icon-fa;
+    font-size:2.5em;
+    font-style: normal;
+    height:30px;
+    left:0;
+    margin:10px 15px 0 0;
+    padding:6px 0;
+    position:absolute;
+    top:-6px;
+    width:30px;
+  }
+}
+
+.node-type-group {
+  .horizontal-tabs {
+    margin: 0;
+    #edit-field-image-und-0-remove-button {
+      @include border-radius($border-radius-base);
+      margin-left: 5px;
+    }
+  }
+}
+
+.group-owner-message {
+  margin-bottom:20px;
+}
+
+.field-type-text-with-summary {
+  padding: 0;
+}
+.field-name-field-additional-info {
+  margin-top: 2em;
+}
