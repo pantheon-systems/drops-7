@@ -1,0 +1,15 @@
+name = "Conditional Stylesheets"
+description = "Allows themes to add conditional stylesheets."
+
+core = 7.x
+
+files[] = conditional_styles.install
+files[] = conditional_styles.module
+files[] = tests/conditional_styles.test
+
+; Information added by drupal.org packaging script on 2013-07-11
+version = "7.x-2.2"
+core = "7.x"
+project = "conditional_styles"
+datestamp = "1373559072"
+

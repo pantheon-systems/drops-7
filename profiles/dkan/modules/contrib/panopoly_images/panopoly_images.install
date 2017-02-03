@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * Implementation of hook_install
+ */
+function panopoly_images_install() {
+
+  // Remove initial display settings.
+  module_load_include('inc', 'file_entity', 'file_entity.file_api');
+  ctools_include('export');
+
+  $default_image_styles = array(
+    'preview' => 'square_thumbnail',
+    'teaser' => 'medium',
+    'full' => 'large',
+  );
+
+  foreach ($default_image_styles as $view_mode => $image_style) {
+    $display_name = 'image__' . $view_mode . '__file_image';
+    $display = array(
+      'api_version' => 1,
+      'name' => $display_name,
+      'status' => 1,
+      'weight' => 5,
+      'settings' => array('image_style' => $image_style),
+      'export_type' => NULL,
+    );
+    ctools_export_crud_delete('file_display', (object) $display);
+  }
+
+  file_info_cache_clear();
+}
+
+/**
+ * Enable the 'manualcrop' module.
+ */
+function panopoly_images_update_7101() {
+  module_enable(array('manualcrop'));
+}
+
+/**
+ * Setup default config for 'manualcrop' on the Media browser.
+ */
+function panopoly_images_update_7102() {
+  $focal_point_enabled = module_exists("focal_point") && in_array("media", array_filter(variable_get("focal_point_enabled_for", array("media"))));
+  variable_set('manualcrop_file_entity_settings_image', array(
+    'manualcrop_enable' => $focal_point_enabled ? 0 : 1,
+    'manualcrop_keyboard' => 1,
+    'manualcrop_thumblist' => 0,
+    'manualcrop_inline_crop' => 0,
+    'manualcrop_crop_info' => 1,
+    'manualcrop_instant_preview' => 1,
+    'manualcrop_instant_crop' => 0,
+    'manualcrop_default_crop_area' => 0,
+    'manualcrop_maximize_default_crop_area' => 0,
+    'manualcrop_styles_mode' => 'include',
+    'manualcrop_styles_list' => array(
+      'panopoly_image_full' => 'panopoly_image_full',
+    ),
+    'manualcrop_require_cropping' => array(),
+  ));
+}
+
+/**
+ * Change the image style labels.
+ */
+function panopoly_images_update_7103() {
+  $image_styles = panopoly_images_image_default_styles();
+
+  $overridden_styles = db_select('image_styles', 'i')
+    ->fields('i', array('name'))
+    ->condition('name', array_keys($image_styles), 'IN')
+    ->execute()
+    ->fetchCol();
+
+  foreach ($overridden_styles as $name) {
+    $style = image_style_load($name);
+    $style['label'] = $image_styles[$name]['label'];
+    image_style_save($style);
+  }
+
+  cache_clear_all('image_styles', 'cache');
+}

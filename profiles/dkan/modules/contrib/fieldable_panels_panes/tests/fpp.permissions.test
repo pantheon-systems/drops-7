@@ -1,0 +1,282 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module to ensure the permissions work.
+ */
+
+class FppPermissionsTest extends FppTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for permissions',
+      'description' => 'Confirm that the different permissions work correctly.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+    $this->title = t('Test');
+  }
+
+  /**
+   * Confirm that the 'admin' permission works correctly.
+   */
+  function testAdminPermission() {
+    // Create a user with the admin permission.
+    $permissions = array(
+      'administer fieldable panels panes',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the admin page, just to have a point of reference.
+    $this->drupalGet('admin/structure/fieldable-panels-panes');
+    $this->assertResponse(200, 'Loaded the main FPP admin page.');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/add');
+    $this->assertResponse(200, 'Loaded the Add FPP admin page.');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/import');
+    $this->assertResponse(403, 'Unable to load the Import FPP page, by default only user 1 can do that.');
+
+    // Test the default FPP type.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/list');
+    $this->assertResponse(200, 'Loaded the List page for the default FPP type.');
+    $this->assertText(t('There are currently no entities of this type.'));
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/edit');
+    $this->assertResponse(200, 'Loaded the Edit page for the default FPP type.');
+    $this->assertFieldByName('title');
+    $this->assertFieldByName('description');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200, 'Loaded the Add page for the default FPP type.');
+    $this->assertFieldByName('title');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/delete');
+    $this->assertResponse(200, 'Loaded the Delete page for the default FPP type.');
+    $this->assertText(t('This action will permanently remove this item from your database..'));
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/export');
+    $this->assertResponse(200, 'Loaded the Export page for the default FPP type.');
+    $this->assertFieldByName('code');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/fields');
+    $this->assertResponse(200, 'Loaded the Manage Fields page for the default FPP type.');
+    $this->assertText(t('The displayed title of the entity.'));
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/display');
+    $this->assertResponse(200, 'Loaded the Manage Display page for the default FPP type.');
+    $this->assertText(t('Use custom display settings for the following view modes'));
+
+    // These two paths don't exist.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/manage/' . $this->bundle . '/fields');
+    $this->assertResponse(200);
+    $this->assertText(t('There are currently no entities of this type.'), 'The old(?) FPP manage fields URL no longer works.');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/manage/' . $this->bundle . '/display');
+    $this->assertResponse(200);
+    $this->assertText(t('There are currently no entities of this type.'), 'The old(?) FPP manage display URL no longer works.');
+  }
+
+  /**
+   * Confirm that the 'list' permission works correctly.
+   */
+  function testListPermission() {
+    // Create a user with the admin permission.
+    $permissions = array(
+      'access fieldable panels panes master list',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the 'list' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/list');
+    $this->assertResponse(200, 'Loaded the List page for the default FPP type.');
+    $this->assertText(t('There are currently no entities of this type'));
+  }
+
+  /**
+   * Confirm that the 'create bundle' permission works correctly.
+   */
+  function testCreateBundlePermission() {
+    // Create a user with the admin permission.
+    $permissions = array(
+      'create fieldable ' . $this->bundle,
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the 'add' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200, 'Loaded the Add page for the default FPP type.');
+
+    // Save the record.
+    $args = array(
+      'title' => t('Test'),
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('The entity has been saved.'));
+
+    // Confirm the record was saved.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertNoText(t('There are currently no entities of this type.'));
+
+    // Try loading it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1');
+    $this->assertResponse(200, 'Loaded the FPP object.');
+    // Not using the page title or the H1 to confirm the string because both
+    // end up with HTML around them, so checking for the H2 tag as the pane's
+    // title will be repeated.
+    $this->assertRaw('<h2>' . $this->title . '</h2>');
+
+    // Try editing it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1/edit');
+    $this->assertResponse(403, 'Unable to edit the FPP object.');
+  }
+
+  /**
+   * Confirm that the 'edit bundle' permission doesn't allow FPP creation.
+   */
+  function testEditBundlePermission() {
+    // Create a user with edit permission.
+    $permissions = array(
+      'edit fieldable ' . $this->bundle,
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the 'add' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(403, 'Cannot add a new FPP object.');
+  }
+
+  /**
+   * Confirm that the 'edit bundle' permission works correctly.
+   */
+  function testCreateEditBundlePermission() {
+    // Create a user with create & edit permission.
+    $permissions = array(
+      'create fieldable ' . $this->bundle,
+      'edit fieldable ' . $this->bundle,
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the 'add' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200, 'Loaded the Add page for the default FPP type.');
+
+    // Save the record.
+    $args = array(
+      'title' => $this->title,
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    $this->assertResponse(200, 'The form was submitted.');
+    $this->assertText(t('The entity has been saved.'));
+
+    // Confirm the record was saved.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertNoText(t('There are currently no entities of this type.'));
+
+    // Try editing it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1/edit');
+    $this->assertResponse(200, 'Loaded the edit page');
+    $this->assertField('title', $this->title);
+  }
+
+  /**
+   * Confirm that the 'delete bundle' permission works correctly.
+   */
+  function testDeleteBundlePermission() {
+    // Create a user with the admin permission.
+    $permissions = array(
+      'create fieldable ' . $this->bundle,
+      'delete fieldable ' . $this->bundle,
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    $this->adminUser = $this->drupalCreateUser($permissions);
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the 'add' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200, 'Loaded the Add page for the default FPP type.');
+
+    // Save the record.
+    $args = array(
+      'title' => $this->title,
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    $this->assertResponse(200, 'The form was submitted.');
+    $this->assertText(t('The entity has been saved.'));
+
+    // Confirm the record was saved.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertNoText(t('There are currently no entities of this type.'));
+
+    // Try editing it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1/edit');
+    $this->assertResponse(403, 'Cannot add a new FPP object.');
+
+    // Try deleting it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1/delete');
+    $this->assertResponse(200, 'Loaded the FPP delete page.');
+    $this->assertRaw(t('Are you sure you want to delete %title?', array('%title' => $this->title)));
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertResponse(200, 'The form was submitted.');
+    $this->assertRaw(t('@type %title has been deleted.', array('@type' => fieldable_panels_panes_get_bundle_label($this->bundle), '%title' => $this->title)));
+  }
+
+}

@@ -1,0 +1,377 @@
+<?php
+
+/**
+ * @file
+ * An installation file for Panopoly Widgets
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function panopoly_widgets_install() {
+
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function panopoly_widgets_uninstall() {
+
+  // Retrieve the file IDs for default files
+  $fids = array(
+    'panopoly_widgets_default_spotlight_fid' => variable_get('panopoly_widgets_default_spotlight_fid', NULL), 
+    'panopoly_widgets_default_image_fid' => variable_get('panopoly_widgets_default_image_fid', NULL), 
+    'panopoly_widgets_default_video_fid' => variable_get('panopoly_widgets_default_video_fid', NULL)
+  );
+
+  foreach($fids as $variable_name => $fid) {
+
+    // Deletes the file
+    if (!empty($fid) && $file = file_load($fid)) {
+      file_delete($file);
+    }
+
+    // Deletes the variable
+    variable_del($variable_name);
+  }
+
+  variable_del('panopoly_widgets_spotlight_pause_play_buttons');
+  variable_del('panopoly_widgets_spotlight_rotation_time');
+}
+
+/**
+ * Implementation of hook_field_schema().
+ */
+function panopoly_widgets_field_schema($field) {
+  if ($field['type'] == 'panopoly_spotlight') {
+    $schema['columns']['title'] = array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    );
+
+    $schema['columns']['description'] = array(
+      'type' => 'text',
+      'size' => 'big',
+      'not null' => FALSE,
+    );
+
+    $schema['columns']['fid'] = array(
+      'type' => 'int', 
+      'not null' => FALSE,
+      'unsigned' => TRUE,
+    );
+
+    $schema['columns']['link'] = array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    );
+
+    $schema['columns']['alt'] = array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    );
+
+    $schema['indexes'] = array(
+      'fid' => array('fid'),
+    );
+
+    $schema['foreign keys'] = array(
+      'fid' => array(
+        'table' => 'file_managed',
+        'columns' => array('fid' => 'fid'),
+      ),
+    );
+
+    return $schema;
+  }
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function panopoly_widgets_update_dependencies() {
+  $deps = array();
+  $deps['panopoly_widgets'][7005] = array(
+    // I think that file_load() in our panopoly_widgets_update_7005() will
+    // attempt to use pathauto, which means it's a dependency.
+    'panopoly_core' => 7002,
+  );
+  return $deps;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Adding the default files for images, spotlights, and files to the database
+ */
+function panopoly_widgets_update_7001(&$sandbox) {
+  // This section has been removed
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Revert panopoly_widget fields to avoid data loss in update 7003.
+ */
+function panopoly_widgets_update_7002(&$sandbox) {
+  module_load_include('inc', 'features', 'features.export');
+  features_include();
+  // Need to give both the old Features 1.0 'field' component, and the new
+  // Features 2.0 'field_base' and 'field_instance' because we can't be sure of
+  // the version the user is upgrading to.
+  features_revert(array('panopoly_widgets' => array('field', 'field_base', 'field_instance')));
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Move video mediafield data into a file field.
+ */
+function panopoly_widgets_update_7003(&$sandbox) {
+  // Move data from 'field_video_video' to 'field_video_file' directly in the
+  // database, so don't have to worry about APIs changing over time.
+  $tables = array(
+    'field_data_field_video_video' => 'field_data_field_video_file',
+    'field_revision_field_video_video' => 'field_revision_field_video_file',
+  );
+  $fields = array(
+    'entity_type',
+    'bundle',
+    'deleted',
+    'entity_id',
+    'revision_id',
+    'language',
+    'delta',
+    'field_video_video_fid',
+  );
+  foreach ($tables as $old_table => $new_table) {
+    $result = db_select($old_table, 'f')
+      ->fields('f', $fields)
+      ->execute();
+    foreach ($result as $data) {
+      $data = (array)$data;
+      $data['field_video_file_display'] = 1;
+      $data['field_video_file_fid'] = $data['field_video_video_fid'];
+      unset($data['field_video_video_fid']);
+
+      db_insert($new_table)
+        ->fields($data)
+        ->execute();
+    }
+  }
+
+  // Finally, delete the field.
+  field_delete_field('field_video_video');
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Convert panel panes with "uuid" style subtypes into "fpid" style subtypes.
+ */
+function panopoly_widgets_update_7004(&$sandbox) {
+  $results = db_select('panels_pane', 'p')
+    ->fields('p', array('pid', 'subtype'))
+    ->execute()
+    ->fetchAll();
+  foreach ($results as $result) {
+    if (substr($result->subtype, 0, 5) == 'uuid:') {
+      $uuid = substr($result->subtype, 5);
+      $fpid = db_select('fieldable_panels_panes', 'fpp')
+        ->fields('fpp', array('fpid'))
+        ->condition('uuid', $uuid)
+        ->execute()
+        ->fetchField();
+      if (!empty($fpid)) {
+        $subtype = "fpid:" . $fpid;
+        db_update('panels_pane')
+        ->fields(array('subtype' => $subtype))
+        ->condition('pid', $result->pid)
+        ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Removes the default content from the database and file system
+ */
+function panopoly_widgets_update_7005(&$sandbox) {
+
+  // Retrieve the file IDs for default files
+  $fids = array(
+    'panopoly_widgets_default_spotlight_fid' => variable_get('panopoly_widgets_default_spotlight_fid', NULL),
+    'panopoly_widgets_default_image_fid' => variable_get('panopoly_widgets_default_image_fid', NULL),
+    'panopoly_widgets_default_video_fid' => variable_get('panopoly_widgets_default_video_fid', NULL)
+  );
+
+  foreach($fids as $variable_name => $fid) {
+
+    // Deletes the file
+    if (!empty($fid) && $file = file_load($fid)) {
+      file_delete($file);
+    }
+
+    // Deletes the variable
+    variable_del($variable_name);
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Revert the 'file_display' so YouTube works in WYSIWYG with newer Media.
+ */
+function panopoly_widgets_update_7006(&$sandbox) {
+  features_revert(array('panopoly_widgets' => array('file_display')));
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add an "alt" field for spotlight items.
+ */
+function panopoly_widgets_update_7007(&$sandbox) {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  $data_table_name = 'field_data_field_basic_spotlight_items';
+  $revision_table_name = 'field_revision_field_basic_spotlight_items';
+  $field_name = 'field_basic_spotlight_items_alt';
+  if (!db_field_exists($data_table_name, $field_name)) {
+    db_add_field($data_table_name, $field_name, $spec);
+  }
+  if (!db_field_exists($revision_table_name, $field_name)) {
+    db_add_field($revision_table_name, $field_name, $spec);
+  }
+}
+
+/**
+ * Setup the default for 'access media browser' permission.
+ */
+function panopoly_widgets_update_7008() {
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access media browser'));
+}
+
+/**
+ * Make sure the new 'field_basic_spotlight_duration' gets created.
+ */
+function panopoly_widgets_update_7009() {
+  features_revert(array('panopoly_widgets' => array('field_base', 'field_instance')));
+}
+
+/**
+ * Make sure the new 'field_basic_spotlight_pager' field gets created.
+ */
+function panopoly_widgets_update_7010() {
+  features_revert(array('panopoly_widgets' => array('field_base', 'field_instance')));
+}
+
+/**
+ * Update the allowed file extensions in File widgets.
+ */
+function panopoly_widgets_update_7011() {
+  if ($file_instance = field_info_instance('fieldable_panels_pane', 'field_basic_file_file', 'basic_file')) {
+    // If the file extensions match the old default, then we set them to the new default.
+    if ($file_instance['settings']['file_extensions'] == 'pdf txt') {
+      $file_instance['settings']['file_extensions'] = PANOPOLY_WIDGETS_FILE_EXTENSIONS_DEFAULT;
+      field_update_instance($file_instance);
+    }
+  }
+}
+
+/**
+ * Update 'Content item' widgets to reference NID rather than title.
+ */
+function panopoly_widgets_update_7012() {
+  // Make sure the View for the 'Content item' widget gets updated.
+  features_revert(array('panopoly_widgets' => array('views_view')));
+  views_invalidate_cache();
+
+  // Go through existing panes and update configuration.
+  // We're going to load the panes directly from the 'panels_pane' table and
+  // replace them with the new pane, reusing the same IDs and everything.
+  // Don't try this at home, kids!
+  $result = db_query("SELECT * FROM {panels_pane} WHERE type = 'views_panes' AND subtype = 'panopoly_widgets_general_content-piece_of_content'");
+  $serialized_fields = array('access', 'configuration', 'cache', 'style', 'css', 'extras', 'locks');
+  foreach ($result as $pane) {
+    // Unserialize all the serialized fields.
+    foreach ($serialized_fields as $field) {
+      $pane->$field = unserialize($pane->$field);
+    }
+
+    // Load the node using the View, set the NID and clear out the title.
+    $exposed =& $pane->configuration['exposed'];
+    $view = views_get_view('panopoly_widgets_general_content');
+    $view->set_display('piece_of_content');
+    $view->set_exposed_input($exposed);
+    $view->pre_execute();
+    $view->execute($view->current_display);
+    $view->post_execute();
+    if (count($view->result) > 0) {
+      $exposed['nid'] = $view->result[0]->nid;
+      $exposed['title'] = '';
+
+      // Write back to the database.
+      drupal_write_record('panels_pane', $pane, array('pid'));
+    }
+  }
+}
+
+/**
+ * Update the tablefield formatter to the new name.
+ */
+function panopoly_widgets_update_7013() {
+  if ($tablefield_instance = field_info_instance('fieldable_panels_pane', 'field_basic_table_table', 'table')) {
+    // If the formatter matches the old default, then we set it to the new default.
+    if ($tablefield_instance['display']['default']['type'] == 'default') {
+      $tablefield_instance['display']['default']['type'] = 'tablefield_default';
+      field_update_instance($tablefield_instance);
+      field_info_cache_clear();
+    }
+  }
+}
+
+/**
+ * Rebuild theme registry so that spotlight theme functions are available.
+ */
+function panopoly_widgets_update_7014() {
+  drupal_theme_rebuild();
+}
+
+/**
+ * Unset the default image for the image widget.
+ */
+function panopoly_widgets_update_7015() {
+  if ($image_field = field_info_field('field_basic_image_image')) {
+    $image_field['settings']['default_image'] = 0;
+    field_update_field($image_field);
+    field_info_cache_clear();
+  }
+}
+
+/**
+ * Make sure that users can insert into the WYSIWYG.
+ */
+function panopoly_widgets_update_7016() {
+  // Panopoly 1.29 was released without granting this permission by default, so
+  // new sites launched on that version won't have it set. To avoid granting it
+  // in situations where it was explicity removed on other sites, we only grant
+  // it to roles that have the 'access media browser' permission (just like in
+  // the media_wysiwyg_update_7201() when the permission was added by Media).
+
+  if (module_exists('media_wysiwyg')) {
+    $roles = user_roles(TRUE, 'access media browser');
+    foreach ($roles as $rid => $role) {
+      user_role_grant_permissions($rid, array('use media wysiwyg'));
+    }
+  }
+}

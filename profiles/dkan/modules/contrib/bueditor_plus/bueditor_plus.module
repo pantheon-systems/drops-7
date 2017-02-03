@@ -1,0 +1,303 @@
+<?php
+
+/**
+ * @file
+ * Overrides default BUEditor textarea settling and implements controls based
+ * upon text formats.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function bueditor_plus_theme() {
+  $theme['bueditor_plus_profile_table'] = array(
+    'file' => 'bueditor_plus.admin.inc',
+    'render element' => 'form',
+  );
+
+  return $theme;
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function bueditor_plus_element_info_alter(&$elements) {
+
+  // We are going to drop bueditor's processing of textareas since that
+  // will now occur on a field basis.
+  foreach ($elements['textarea']['#process'] as $key => $callback) {
+    if ($callback == 'bueditor_textarea') {
+      unset($elements['textarea']['#process'][$key]);
+    }
+  }
+
+  // Add a new process callback for text_format. Must be added after
+  // filter_process_format() to function properly.
+  $elements['text_format']['#process'][] = 'bueditor_plus_process_format';
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function bueditor_plus_menu_alter(&$items) {
+
+  // Override the original bueditor admin screen with bueditor_plus'
+  // admin screen.
+  $items['admin/config/content/bueditor']['file'] = 'bueditor_plus.admin.inc';
+  $items['admin/config/content/bueditor']['module'] = 'bueditor_plus';
+  $items['admin/config/content/bueditor']['page callback'] = 'bueditor_plus_admin';
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bueditor_plus_menu() {
+  $items = array();
+  $path = 'admin/config/content/bueditor';
+
+  $items[$path . '/profile/new'] = array(
+    'title' => 'Add New BUEditor Profile',
+    'description' => 'Create a profile to assign to field instances.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_form'),
+    'access arguments' => array('administer bueditor'),
+    'file' => 'bueditor_plus.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  $items[$path . '/profile/edit/%bueditor_plus_profile'] = array(
+    'title' => 'Edit BUEditor Profile',
+    'description' => 'Create a profile to assign to field instances.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_form', 6),
+    'access arguments' => array('administer bueditor'),
+    'file' => 'bueditor_plus.admin.inc',
+  );
+
+  $items[$path . '/profile/delete/%bueditor_plus_profile'] = array(
+    'title' => 'Delete BUEditor Profile',
+    'description' => 'Delete a BUEditor profile.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_delete_form', 6),
+    'access arguments' => array('administer bueditor'),
+    'file' => 'bueditor_plus.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for field_ui_field_edit_form().
+ */
+function bueditor_plus_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+  $allowed_fields = bueditor_plus_allowed_fields();
+  if (in_array($form['#instance']['widget']['type'], $allowed_fields)) {
+    // We want the BUEditor options to appear right after the text_processing
+    // radios.
+    $pr = bueditor_plus_profiles();
+
+    // We don't need our special "global" profile to appear in the options,
+    // so we go ahead and unset it.
+    unset($pr['global']);
+
+    // Add in our special profiles and then our custom profiles.
+    $profiles = array(0 => 'None', '-1' => 'Global Profile');
+    foreach ($pr as $profile) {
+      $profiles[$profile->pid] = $profile->name;
+    }
+
+    // Insert our new profile select field in the ui_field_edit_form.
+    $form['instance']['bueditor_profile'] = array(
+      '#type' => 'select',
+      '#title' => t('BUEditor Profile'),
+      '#description' => t('Select the BUEditor profile to enable on this field'),
+      '#options' => $profiles,
+      '#default_value' => isset($form['#instance']['bueditor_profile']) ? $form['#instance']['bueditor_profile'] : -1,
+    );
+  }
+}
+
+/**
+ * The field types that can have profiles attached.
+ *
+ * @return array
+ *   An array containing the allowed field types.
+ */
+function bueditor_plus_allowed_fields() {
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if (!$cache) {
+    $cache = array('text_textarea_with_summary', 'text_textarea');
+    // Allow other modules to add in allowed fields to enable bueditor on.
+    drupal_alter('bueditor_plus_allowed_fields', $cache);
+  }
+  return $cache;
+}
+
+/**
+ * Helper function to retrieve the assigned BUEditor for the profile.
+ *
+ * @param array $eids
+ *   An array containing the editors to loop through.
+ * @param int $tid
+ *   The ID of the element the editor is to be attached to.
+ *
+ * @return int
+ *   Either the editor ID or FALSE if no editors are found.
+ */
+function _bueditor_plus_get_editor($eids, $tid) {
+  bueditor_inc();
+
+  // We look through all our editor IDs and do a check against bueditor's
+  // matching rules to make sure the editor should be rendered.
+  foreach ($eids as $eid) {
+    $editors[$eid] = bueditor_editors($eid);
+    if ($editors[$eid] && $editors[$eid]->pages && drupal_match_path($_GET['q'], $editors[$eid]->pages)) {
+      if ($editors[$eid] && !bueditor_check_match($editors[$eid]->excludes, $tid)) {
+        return $editors[$eid];
+      }
+    }
+  }
+}
+
+/**
+ * Checks for any bueditor_plus profiles that should be attached and adds the
+ * JavaScript settings to implement the format profile.
+ *
+ * @param array $element
+ *   The form element to process.
+ *
+ * @return array
+ *   The expanded element.
+ */
+function bueditor_plus_process_format($element) {
+
+  $profile = NULL;
+  $allowed_fields = bueditor_plus_allowed_fields();
+
+  if (!isset($element['#entity_type'])) {
+    //This is a standard field, not in an entity.
+
+    $profile = bueditor_plus_profiles('global');
+  } else {
+    // Field is attached to an entity.
+    // We need to load in the field information for this instance and bundle.
+    $instances = field_info_instances($element['#entity_type'], $element['#bundle']);
+
+    // Check to make sure that this field is actually part of this
+    // bundle instance.
+    if (isset($instances[$element['#field_name']])) {
+      $instance = $instances[$element['#field_name']];
+
+      // We check against standard bueditor appearence rules to make sure
+      // this field is allowed to have bueditor appear on it.
+      if (isset($instance['widget']['type']) && in_array($instance['widget']['type'], $allowed_fields)) {
+
+        // We check to see if this instance has a profile. If not then we go
+        // for a global one.
+        if (isset($instance['bueditor_profile']) && $instance['bueditor_profile'] > 0) {
+          $profile = bueditor_plus_profiles($instance['bueditor_profile']);
+        } else {
+          if (!isset($instance['bueditor_profile']) || $instance['bueditor_profile'] == -1) {
+            $profile = bueditor_plus_profiles('global');
+          }
+        }
+      }
+    }
+  }
+
+  if (!$profile) {
+    // No profile was found for the formats so we stop processing.
+    return $element;
+  }
+
+  $element['#attributes']['class'][] = 'bueditor-plus';
+  $formats = $element['format']['format']['#options'];
+  $settings = array();
+  $tid = $element['#id'];
+
+  // Loop through our profile formats and assign the editor to the
+  // corresponding input format if it exists.
+  foreach ($profile->data as $format => $editors) {
+    $editor[$format] = _bueditor_plus_get_editor($editors, $tid);
+
+    if ($editor[$format] && isset($formats[$format])) {
+      _bueditor_settle($editor[$format]);
+      $settings['BUEPlus']['preset'][$tid][$format] = 'e' . $editor[$format]->eid;
+    }
+  }
+  // If there is only one format available (no dropdown) then we need to set
+  // that in our settings to prevent doing an object loop in JavaScript.
+  if (!empty($settings['BUEPlus']['preset'][$tid]) && count($settings['BUEPlus']['preset'][$tid]) == 1) {
+    if (!empty($element['format']['format']['#default_value'])) {
+      // Look for altered formats by modules such as better formats.
+      $settings['BUEPlus']['defaults'][$tid] = $element['format']['format']['#default_value'];
+    } else {
+      $settings['BUEPlus']['defaults'][$tid] = $format;
+    }
+  }
+
+  // If we have found any editors we add in the needed JavaScript file
+  // and profile settings.
+  if (isset($settings['BUEPlus'])) {
+    $element['#attached']['js'][] = array('type' => 'setting', 'data' => $settings);
+    $element['#attached']['js'][] = drupal_get_path('module', 'bueditor_plus') . '/js/bueditor-plus.js';
+  }
+
+
+  return $element;
+}
+
+/**
+ * Loads a specific profile. Used in menu %bueditor_plus_profile
+ *
+ * @param int $pid
+ *   The profile id to load
+ *
+ * @return object
+ *   The $pid profile object if found, otherwise false.
+ */
+function bueditor_plus_profile_load($pid) {
+
+  // We don't want to return the global pid on menu callbacks.
+  if ($pid == 'global') {
+    return FALSE;
+  }
+  return bueditor_plus_profiles($pid);
+}
+
+/**
+ * Loads the editor profiles.
+ *
+ * @param int $pid
+ *   The profile ID of the profile to load. Null will return all profiles.
+ *    global will return the global profile if set.
+ *
+ * @return array
+ *   Either a keyed array of all profiles or a single profile.
+ */
+function bueditor_plus_profiles($pid = NULL) {
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if (!$cache) {
+    $cache = array('global' => NULL);
+    $results = db_select('bueditor_plus_profiles')
+      ->fields('bueditor_plus_profiles')
+      ->execute();
+
+    foreach ($results as $result) {
+      $result->data = unserialize($result->data);
+      $cache[$result->pid] = $result;
+
+      // If this profile has the global flag set to 1 then we create our special
+      // "global" pid and store it in the cache.
+      if ($result->global) {
+        $cache['global'] = $result;
+      }
+    }
+  }
+
+  if ($pid) {
+    return isset($cache[$pid]) ? $cache[$pid] : FALSE;
+  }
+
+  return $cache;
+}

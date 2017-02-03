@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function schema_test_schema() {
+  $schema['schema_test_1'] = array(
+    'fields' => array(
+      'fid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'destid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_schema_alter().
+ */
+function schema_test_schema_alter(&$schema) {
+  $alter = variable_get('schema_test_schema_alter', array());
+  $schema = drupal_array_merge_deep($schema, $alter);
+}

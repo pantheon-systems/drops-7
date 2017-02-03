@@ -1,0 +1,21 @@
+<?php
+/**
+ * @file
+ * Install functions for the ECK Entity cache module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function eck_entitycache_schema() {
+  $schema = array();
+
+  $cache_schema = drupal_get_schema_unprocessed('system', 'cache');
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    $schema["cache_entity_{$entity_type->name}"] = $cache_schema;
+    $schema["cache_entity_{$entity_type->name}"]['description'] = "Cache table used to store {$entity_type->name} entity records.";
+  }
+
+  return $schema;
+}

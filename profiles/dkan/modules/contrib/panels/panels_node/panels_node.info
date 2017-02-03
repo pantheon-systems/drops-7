@@ -1,0 +1,15 @@
+name = Panel nodes
+description = Create nodes that are divided into areas with selectable content.
+package = "Panels"
+version = PANELS_VERSION
+dependencies[] = panels
+configure = admin/structure/panels
+core = 7.x
+files[] = panels_node.module
+
+; Information added by Drupal.org packaging script on 2016-08-17
+version = "7.x-3.6"
+core = "7.x"
+project = "panels"
+datestamp = "1471447743"
+

@@ -1,0 +1,26 @@
+name = Workbench Moderation
+description = Provides content moderation services
+package = Workbench
+core = 7.x
+
+configure = admin/config/workbench/moderation
+
+files[] = workbench_moderation.module
+files[] = includes/workbench_moderation_handler_field_history_link.inc
+files[] = includes/workbench_moderation_handler_field_links.inc
+files[] = includes/workbench_moderation_handler_field_state.inc
+files[] = includes/workbench_moderation_handler_filter_state.inc
+files[] = includes/workbench_moderation_handler_filter_moderated_type.inc
+files[] = includes/workbench_moderation_handler_filter_user_can_moderate.inc
+files[] = workbench_moderation.migrate.inc
+files[] = tests/external_node_update.test
+files[] = tests/workbench_moderation.test
+files[] = tests/workbench_moderation.files.test
+
+; Dependencies that are only required for the testbot.
+test_dependencies[] = drafty
+
+; Information added by drush on 2016-03-16
+version = "7.x-1.4+9-dev"
+project = "workbench_moderation"
+datestamp = "1458161940"

@@ -1,0 +1,719 @@
+<?php
+/**
+ * @file
+ * fieldable panel panes install file
+ */
+
+/**
+ * Implements hook_install().
+ */
+function fieldable_panels_panes_install() {
+  // The included FPP type can be skipped.
+  if (!variable_get('fieldable_panels_panes_skip_default_type', FALSE)) {
+    ctools_include('export');
+
+    $item = ctools_export_crud_new('fieldable_panels_pane_type');
+    $item->name = 'fieldable_panels_pane';
+    $item->title = t('Panels Pane');
+    ctools_export_crud_save('fieldable_panels_pane_type', $item);
+  }
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function fieldable_panels_panes_uninstall() {
+  $results = db_query('SELECT name FROM {fieldable_panels_pane_type}');
+  foreach ($results as $type) {
+    field_attach_delete_bundle('fieldable_panels_pane', $type->name);
+  }
+
+  // Variables.
+  variable_del('fieldable_panels_panes_skip_default_type');
+  variable_del('fpp_blocks_expose');
+  variable_del('fpp_hide_contextual_links');
+  variable_del('fpp_revision_locking');
+
+  // Delete any variables that begin with 'fpp_expose_'.
+  $results = db_query('SELECT name FROM {variable} WHERE name LIKE :var', array(':var' => 'fpp_expose_%'))->fetchCol();
+  foreach ($results as $var) {
+    variable_del($var);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function fieldable_panels_panes_schema() {
+  $schema = array();
+
+  $schema['fieldable_panels_panes'] = array(
+    'description' => 'Entity table for panel pane content with fields.',
+    'fields' => array(
+      'fpid' => array(
+        'description' => 'The primary identifier for the entity.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => 'The current version in use for this entity.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bundle' => array(
+        'description' => 'The bundle of the entity.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'title' => array(
+        'description' => 'The title of the entity.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'link' => array(
+        'description' => 'Whether or not this entity title will link to another page.',
+        'type' => 'int',
+        'size' => 'tiny',
+      ),
+      'path' => array(
+        'description' => 'The path the title should link to.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'reusable' => array(
+        'description' => 'Whether or not this entity will appear in the Add Content dialog.',
+        'type' => 'int',
+        'size' => 'tiny',
+      ),
+      'admin_title' => array(
+        'description' => 'The title as it will appear in the Add Content dialog.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'admin_description' => array(
+        'description' => 'The description it will appear in the Add Content dialog with.',
+        'type' => 'text',
+      ),
+      'category' => array(
+        'description' => 'The category under which it will appear in the Add Content dialog.',
+        'type' => 'text',
+      ),
+      'view_access' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Access rules to describe if the user has view access to this entity.',
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+      'edit_access' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Access rules to describe if the user has view access to this entity.',
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the entity was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the entity was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uuid' => array(
+        'type' => 'char',
+        'length' => 36,
+        'default' => '',
+        'description' => 'The Universally Unique Identifier.',
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this entity.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('fpid'),
+    'indexes' => array(
+      'reusable' => array('reusable'),
+    ),
+  );
+
+  $schema['fieldable_panels_panes_revision'] = array(
+    'description' => 'Entity revision table for panel pane content with fields.',
+    'fields' => array(
+      'fpid' => array(
+        'description' => 'The id this revision belongs to',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'vid' => array(
+        'description' => 'The primary identifier for this version.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'description' => 'The Unix timestamp when the revision was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => 'The author of the revision.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'The title of the entity.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'log' => array(
+        'description' => t('A log message associated with the revision.'),
+        'type' => 'text',
+        'size' => 'big',
+      ),
+      'vuuid' => array(
+        'type' => 'char',
+        'length' => 36,
+        'default' => '',
+        'description' => 'The Universally Unique Identifier.',
+      ),
+    ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'fpid' => array('fpid', 'vid'),
+    ),
+  );
+
+  $schema['fieldable_panels_pane_type'] = array(
+    'description' => 'Entity bundle table for panel pane content.',
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'export' => array(
+      'admin_title' => 'title',
+      'admin_description' => 'description',
+      'api' => array(
+        'owner' => 'fieldable_panels_panes',
+        'api' => 'fieldable_panels_pane_type',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+
+
+  // Optional cache table for entitycache support.
+  $schema['cache_entity_fieldable_panels_pane'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_fieldable_panels_pane']['description'] = 'Cache table used to store fieldable_panels_pane entity records.';
+
+  return $schema;
+}
+
+/**
+ * Add UUID support.
+ */
+function fieldable_panels_panes_update_7101(&$sandbox) {
+
+  // Make sure to add UUID field
+  if (!db_field_exists('fieldable_panels_panes', 'uuid')) {
+    db_add_field('fieldable_panels_panes', 'uuid', array('type' => 'char', 'length' => 36, 'default' => '', 'description' => 'The Universally Unique Identifier.'));
+  }
+
+  // Make sure to add VUUID field
+  if (!db_field_exists('fieldable_panels_panes_revision', 'vuuid')) {
+    db_add_field('fieldable_panels_panes_revision', 'vuuid', array('type' => 'char', 'length' => 36, 'default' => '', 'description' => 'The Universally Unique Identifier.'));
+  }
+}
+
+/**
+ * Delete stale revisions.
+ */
+function fieldable_panels_panes_update_7102(&$sandbox) {
+  $existing = db_select('fieldable_panels_panes', 'f');
+  $existing->fields('f', array('fpid'));
+
+  db_delete('fieldable_panels_panes_revision')
+    ->condition('fpid', $existing, 'NOT IN')
+    ->execute();
+}
+
+/**
+ * Reset the theme registry.
+ */
+function fieldable_panels_panes_update_7103(&$sandbox) {
+  // All caches are flushed during the update process, so we do nothing.
+  return t('Theme registry cache has been cleared.');
+}
+
+/*
+ * Update menu paths.
+ */
+function fieldable_panels_panes_update_7104(&$sandbox) {
+  // We don't have to flush caches manually since the update process will flush
+  // all caches anyway.
+  return t('Menu cache has been flushed.');
+}
+
+/**
+ * Add support to link pane titles to paths.
+ */
+function fieldable_panels_panes_update_7105() {
+  db_add_field('fieldable_panels_panes', 'link', array('type' => 'int', 'size' => 'tiny', 'description' => 'Whether or not this entity title will link to another page.'));
+  db_add_field('fieldable_panels_panes', 'path', array('type' => 'varchar', 'length' => 255, 'description' => 'The path the title should link to.'));
+}
+
+/**
+ * Add language column.
+ */
+function fieldable_panels_panes_update_7106() {
+  // Make sure to add language field
+  if (!db_field_exists('fieldable_panels_panes', 'language')) {
+    db_add_field('fieldable_panels_panes', 'language', array(
+      'description' => 'The {languages}.language of this entity.',
+      'type' => 'varchar',
+      'length' => 12,
+      'not null' => TRUE,
+      'default' => '',
+    ));
+  }
+}
+
+/**
+ * Add cache table for optional entitycache support.
+ */
+function fieldable_panels_panes_update_7107() {
+  if (!db_table_exists('cache_entity_fieldable_panels_pane')) {
+    $schema = drupal_get_schema_unprocessed('system', 'cache');
+    $schema['description'] = 'Cache table used to store fieldable_panel_pane entity records.';
+    db_create_table('cache_entity_fieldable_panels_pane', $schema);
+  }
+}
+
+/**
+ * Adding Fieldable Panels Panes Type table and saving existing bundles to
+ * database.
+ */
+function fieldable_panels_panes_update_7108() {
+  ctools_include('export');
+  $messages = array();
+
+  // Copied from fieldable_panels_panes_schema() because the schema should not
+  // be directly used during hook_update_N.
+  $schema['fieldable_panels_pane_type'] = array(
+    'description' => 'Entity bundle table for panel pane content.',
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'export' => array(
+      'admin_title' => 'title',
+      'admin_description' => 'description',
+      'api' => array(
+        'owner' => 'fieldable_panels_panes',
+        'api' => 'fieldable_panels_pane_type',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+
+
+  // Add the new table for storing bundles.
+  db_create_table('fieldable_panels_pane_type', $schema['fieldable_panels_pane_type']);
+
+  // Store possible existing bundles provided by other modules.
+  $bundles = array();
+  $entity_info = entity_get_info('fieldable_panels_pane');
+
+  // The default bundle is not defined. This could happen if the module was
+  // updated and cache cleared before update was run as entity info's cache
+  // will no longer contain the old default.
+  if (empty($entity_info['bundles']['fieldable_panels_pane'])) {
+    $t = get_t();
+    $entity_info['bundles']['fieldable_panels_pane'] = array(
+      'label' => $t('Panels pane'),
+    );
+  }
+
+  foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+    $bundles[] = $bundle_info['label'];
+
+    $item = ctools_export_crud_new('fieldable_panels_pane_type');
+    $item->name = $bundle_name;
+    $item->title = $bundle_info['label'];
+    ctools_export_crud_save('fieldable_panels_pane_type', $item);
+  }
+
+  if (!empty($bundles)) {
+    $messages[] = format_plural(count($bundles), 'Added existing bundle %bundle_names to database.', 'Added existing bundles %bundle_names to database.', array('%bundle_names' => implode(', ', $bundles)));
+  }
+
+  return implode('<br />', $messages);
+}
+
+/**
+ * Update the length of the 'name' field in {fieldable_panels_pane}.
+ */
+function fieldable_panels_panes_update_7109() {
+  db_change_field('fieldable_panels_pane_type', 'name', 'name', array(
+    'description' => 'The machine-readable name of this type.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+}
+
+/**
+ * Clear the menu cache to pick up the new settings page.
+ */
+function fieldable_panels_panes_update_7110() {
+  variable_set('menu_rebuild_needed', TRUE);
+}
+
+/**
+ * Existing sites will disable locking.
+ */
+function fieldable_panels_panes_update_7111() {
+  $old = variable_get('fpp_revision_locking');
+  if (empty($old)) {
+    variable_set('fpp_revision_locking', 'legacy');
+    return t('The FPP locking option has been disabled to avoid problems for existing sites. Should this need to be changed, see the comments in fieldable_panels_panes_update_7112 for instructions.');
+  }
+  else {
+    return t('The FPP locking option was set already, so it has not been touched.');
+  }
+}
+
+/**
+ * Update all Panelizer displays to point non-reusable FPPs to the vid instead
+ * of the fpid.
+ */
+function fieldable_panels_panes_update_7112(&$sandbox) {
+  if (!module_exists('panelizer')) {
+    return t('Panelizer is not installed, so nothing to do.');
+  }
+
+  // This won't as-is work for many sites because the 'fpp_revision_locking'
+  // variable won't be defined before it's checked for. The simplest approach
+  // is to manually rerun the updates.
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  // /**
+  //  * Rerun Fieldable Panels Panes update 7112.
+  //  */
+  // function MYMODULE_update_7101(&$sandbox) {
+  //   return fieldable_panels_panes_update_7112($sandbox);
+  // }
+  //
+  //
+  // A more correct approach is to use hook_update_dependencies to ensure that
+  // the updates happen in the correct order. This may not work because if the
+  // hook implementation is newly added to the module it won't be recognized
+  // until the caches are cleared, which may not happen until after the updates
+  // are ran, thus the updates not running in the correct order.
+  //
+  // /**
+  //  * Implements hook_update_dependencies().
+  //  */
+  // function MYMODULE_update_dependencies() {
+  //   // Make sure that update 7100 below runs *after* Fieldable Panels Pane
+  //   // update 7111 and *before* Fieldable Panels Pane update 7112, that way
+  //   // the FPP 'lock' option will be enabled when the Panelizer updates are
+  //   // started.
+  //   $dependencies['MYMODULE'][7100] = array(
+  //     'fieldable_panels_panes' => 7111,
+  //   );
+  //   $dependencies['fieldable_panels_panes'][7112] = array(
+  //     'MYMODULE' => 7100,
+  //   );
+  //   return $dependencies;
+  // }
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  //
+  // An alternative solution would be to rerun the updates.
+
+  if (variable_get('fpp_revision_locking', 'lock') != 'lock') {
+    return t('Pane locking is not enabled, so nothing to do.');
+  }
+
+  // Update all Panelizer displays.
+
+  // The first time through, work out how many records need to be updated.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+
+    // Total records that must be processed.
+    $sandbox['max'] = db_query("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
+      FROM {fieldable_panels_panes} fpp
+      INNER JOIN {panels_pane} pp
+        ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+      INNER JOIN {panelizer_entity} pe
+        ON pe.did = pp.did
+      WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
+        AND fpp.reusable != 1
+      ORDER BY fpp.fpid")->rowCount();
+
+    // If there's nothing to do, bail early.
+    if (empty($sandbox['max'])) {
+      return t('No panels needed to be updated.');
+    }
+  }
+
+  // Do the updates in small batches.
+  $limit = 10;
+
+  // Get a list of all FPIDs for Panelizer displays.
+  $results = db_query_range("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
+    FROM {fieldable_panels_panes} fpp
+    INNER JOIN {panels_pane} pp
+      ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+    INNER JOIN {panelizer_entity} pe
+      ON pe.did = pp.did
+    WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
+      AND fpp.reusable != 1
+    ORDER BY fpp.fpid", 0, $limit);
+
+  // Loop through the FPPs.
+  foreach ($results as $record) {
+    // Update the 'fpid:' and 'current:' records to use 'vid:'; don't bother
+    // checking if the record exists first because there's no down side to
+    // running this query immediately.
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vid:' . $record->vid))
+      ->condition('subtype', 'fpid:' . $record->fpid)
+      ->execute();
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vid:' . $record->vid))
+      ->condition('subtype', 'current:' . $record->fpid)
+      ->execute();
+
+    // Increment the progress counter.
+    $sandbox['progress']++;
+  }
+
+  // Done yet?
+  $sandbox['#finished'] = empty($sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished'] === TRUE) {
+    return t('Updated @count record(s) to use the new locking system.', array('@count' => $sandbox['max']));
+  }
+}
+
+/**
+ * Update all Panel Nodes displays to point non-reusable FPPs to the vid instead
+ * of the fpid.
+ */
+function fieldable_panels_panes_update_7113() {
+  if (!module_exists('panels_node')) {
+    return t('Panel Nodes is not installed, so nothing to do.');
+  }
+
+  // This won't as-is work for many sites because the 'fpp_revision_locking'
+  // variable won't be defined before it's checked for. The simplest approach
+  // is to manually rerun the updates.
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  // /**
+  //  * Rerun Fieldable Panels Panes update 7113.
+  //  */
+  // function MYMODULE_update_7101(&$sandbox) {
+  //   return fieldable_panels_panes_update_7113($sandbox);
+  // }
+  //
+  //
+  // A more correct approach is to use hook_update_dependencies to ensure that
+  // the updates happen in the correct order. This may not work because if the
+  // hook implementation is newly added to the module it won't be recognized
+  // until the caches are cleared, which may not happen until after the updates
+  // are ran, thus the updates not running in the correct order.
+  //
+  // /**
+  //  * Implements hook_update_dependencies().
+  //  */
+  // function MYMODULE_update_dependencies() {
+  //   // Make sure that update 7100 below runs *after* Fieldable Panels Pane
+  //   // update 7111 and *before* Fieldable Panels Pane update 7113, that way
+  //   // the FPP 'lock' option will be enabled when the Panelizer updates are
+  //   // started.
+  //   $dependencies['MYMODULE'][7100] = array(
+  //     'fieldable_panels_panes' => 7111,
+  //   );
+  //   $dependencies['fieldable_panels_panes'][7113] = array(
+  //     'MYMODULE' => 7100,
+  //   );
+  //   return $dependencies;
+  // }
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  //
+  // An alternative solution would be to rerun the updates.
+
+  if (variable_get('fpp_revision_locking', 'lock') != 'lock') {
+    return t('Pane locking is not enabled, so nothing to do.');
+  }
+
+  // The first time through, work out how many records need to be updated.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+
+    // Total records that must be processed.
+    $sandbox['max'] = db_query("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
+      FROM {fieldable_panels_panes} fpp
+      INNER JOIN {panels_pane} pp
+        ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+      INNER JOIN {panels_node} pn
+        ON pn.did = pp.did
+      WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
+        AND fpp.reusable != 1
+      ORDER BY fpp.fpid")->rowCount();
+
+    // If there's nothing to do, bail early.
+    if (empty($sandbox['max'])) {
+      return t('No panels needed to be updated.');
+    }
+  }
+
+  // Do the updates in small batches.
+  $limit = 10;
+
+  // Get a list of all FPIDs for Panel Nodes displays.
+  $results = db_query_range("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
+    FROM {fieldable_panels_panes} fpp
+    INNER JOIN {panels_pane} pp
+      ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+    INNER JOIN {panels_node} pn
+      ON pn.did = pp.did
+    WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
+      AND fpp.reusable != 1
+    ORDER BY fpp.fpid", 0, $limit);
+
+  // Loop through the FPPs.
+  foreach ($results as $record) {
+    // Update the 'fpid:' and 'current:' records to use 'vid:'; don't bother
+    // checking if the record exists first because there's no down side to
+    // running this query immediately.
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vid:' . $record->vid))
+      ->condition('subtype', 'fpid:' . $record->fpid)
+      ->execute();
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vid:' . $record->vid))
+      ->condition('subtype', 'current:' . $record->fpid)
+      ->execute();
+
+    // Increment the progress counter.
+    $sandbox['progress']++;
+  }
+
+  // Done yet?
+  $sandbox['#finished'] = empty($sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished'] === TRUE) {
+    return t('Updated @count record(s) to use the new locking system.', array('@count' => $sandbox['max']));
+  }
+}
+
+/**
+ * Restore the default FPP bundle that may have been purged in update 7108.
+ */
+function incae_custom_panes_update_7114() {
+  if (!variable_get('fieldable_panels_panes_skip_default_type', FALSE)) {
+    // Check if the FPP type exists.
+    $found = db_select('fieldable_panels_pane_type', 'fppt')
+      ->fields('fppt', 'name')
+      ->condition('name', 'fieldable_panels_pane')
+      ->execute()
+      ->fetchField();
+    if (empty($found)) {
+      ctools_include('export');
+      $item = ctools_export_crud_new('fieldable_panels_pane_type');
+      $item->name = 'fieldable_panels_pane';
+      $item->title = t('Panels Pane');
+      ctools_export_crud_save('fieldable_panels_pane_type', $item);
+      return t('The default Fieldable Panels Pane entity type has been recovered.');
+    }
+  }
+}

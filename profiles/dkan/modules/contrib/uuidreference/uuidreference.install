@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implements hook_field_schema().
+ */
+function uuidreference_field_schema($field) {
+  if ($field['type'] == 'uuidreference') {
+    return array(
+      'columns' => array(
+        'target_uuid' => array(
+          'description' => 'The UUID of the target entity',
+          'type' => 'varchar',
+          'length' => 36,
+          'not null' => FALSE,
+        ),
+        'target_type' => array(
+          'description' => 'The type of the target entity',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+      ),
+      'indexes' => array(
+        'target_entity' => array('target_type', 'target_uuid'),
+      ),
+      'foreign keys' => array(),
+    );
+  }
+}

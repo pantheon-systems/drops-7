@@ -1,0 +1,64 @@
+name = Panelizer
+description = Allow any node type to have custom panel displays, similar to the panel node type.
+package = "Panels"
+dependencies[] = panels (>= 3.6)
+dependencies[] = ctools
+dependencies[] = page_manager
+core = 7.x
+configure = admin/structure/panelizer
+
+; Master class for handling entities.
+files[] = plugins/entity/PanelizerEntityDefault.class.php
+
+; SearchAPI integration.
+files[] = plugins/search_api/PanelizerSearchApiAlterCallback.class.php
+
+; Views integration.
+files[] = plugins/views/panelizer_handler_field_link.inc
+files[] = plugins/views/panelizer_handler_panelizer_status.inc
+files[] = plugins/views/panelizer_handler_filter_panelizer_status.inc
+files[] = plugins/views/panelizer_plugin_row_panelizer_node_view.inc
+
+; Tests: Basic functionality using core.
+files[] = tests/panelizer.helper.test
+files[] = tests/panelizer.admin_settings.test
+
+; Tests: Standard core entities.
+files[] = tests/panelizer.node.test
+files[] = tests/panelizer.term.test
+files[] = tests/panelizer.user.test
+
+; Tests: Node workflows.
+files[] = tests/panelizer.node_revisions.test
+
+; Tests: Standard node translations.
+files[] = tests/panelizer.node_content_translation.test
+
+; Tests: Exportables.
+files[] = tests/panelizer.exportables.test
+
+; Tests: Panels IPE.
+files[] = tests/panelizer.with_panels_ipe.test
+
+; Todo: Tests: Pathauto integration.
+test_dependencies[] = pathauto
+files[] = tests/panelizer.with_pathauto.test
+
+; Todo: Tests: Revisioning integration.
+test_dependencies[] = revisioning
+files[] = tests/panelizer.with_revisioning.test
+
+; Todo: Tests: Views integration.
+test_dependencies[] = views
+files[] = tests/panelizer.with_views.test
+
+; Todo: Tests: Workbench Moderation integration.
+test_dependencies[] = workbench_moderation (>= 3.x)
+files[] = tests/panelizer.with_workbench_moderation.test
+
+; Information added by Drupal.org packaging script on 2016-08-19
+version = "7.x-3.4"
+core = "7.x"
+project = "panelizer"
+datestamp = "1471635552"
+

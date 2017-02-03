@@ -1,0 +1,68 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions.
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * Defines the database schema of the field, using the format used by the
+ * Schema API.
+ *
+ * The data we will store here is just one 7-character element.
+ */
+function color_field_field_schema($field) {
+  $columns = array(
+    'rgb' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
+  );
+  $indexes = array(
+    'rgb' => array('rgb'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}
+
+
+/**
+ * Implements hook_requirements().
+ */
+function color_field_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $libraries = libraries_get_libraries();
+
+    if (isset($libraries['jquery-simple-color']) || isset($libraries['bgrins-spectrum'])) {
+      if (isset($libraries['jquery-simple-color'])) {
+        $library = 'jquery-simple-color';
+      }
+      elseif (isset($libraries['bgrins-spectrum'])) {
+        $library = 'bgrins-spectrum';
+      }
+      $requirements['color_field'] = array(
+        'severity' => REQUIREMENT_OK,
+        'title' => $t('Color Field'),
+        'value' => $t('Installed'),
+        'description' => $t($library . ' library installed'),
+      );
+    }
+    else {
+      $color_field_library = drupal_get_library('color_field', 'jquery-simple-color');
+      $requirements['jquery-simple-color'] = array(
+        'severity' => REQUIREMENT_WARNING,
+        'title' => $t('Color Field (jquery simple color)'),
+        'value' => $t('Missing'),
+        'description' => $t('The jquery simple color library isn\'t available so this Color Field Module will not support the jQuery Simple Color widget. Please download the plugin (%version) from !website.', array(
+          '!website' => l($color_field_library['website'], $color_field_library['website']),
+          '%version' => $color_field_library['version'],
+          )
+        ),
+      );
+    }
+  }
+
+  return $requirements;
+}

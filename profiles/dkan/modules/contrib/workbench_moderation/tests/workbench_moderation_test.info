@@ -1,0 +1,10 @@
+name = Workbench Moderation Test
+description = Test module for Workbench Moderation.
+package = Workbench
+core = 7.x
+hidden = TRUE
+
+; Information added by drush on 2016-03-16
+version = "7.x-1.4+9-dev"
+project = "workbench_moderation"
+datestamp = "1458161940"

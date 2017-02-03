@@ -1,0 +1,10 @@
+7.x-1.13 2016-10-07
+------------------
+- Sync up versioning to DKAN
+- Stop trying to determine the media type for resources in POD when format is set to "data". This was causing errors and we should trust the "format" field.
+- Add DCAT support
+
+7.x-1.0 2016-08-24
+------------------
+
+- Initial official release after years of building from "master"

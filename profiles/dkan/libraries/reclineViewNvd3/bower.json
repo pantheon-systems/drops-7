@@ -1,0 +1,39 @@
+{
+  "name": "recline.views.nvd3.js",
+  "version": "0.3.0",
+  "keywords": [
+    "recline",
+    "nvd3"
+  ],
+  "main": ["dist/recline.view.nvd3.min.js"],
+  "ignore": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "vendor",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "lodash.data": "https://github.com/NuCivic/lodash.data.git",
+    "backbone": "1.0.0",
+    "jquery": "2.0.3",
+    "json": "*",
+    "moment": "2.0.0",
+    "mustache": "0.5.2",
+    "showdown": "~0.3.1",
+    "slickgrid": "2.0.1",
+    "timeline": "2.29.1",
+    "underscore.deferred": "*",
+    "bootstrap-css": "2.3.2",
+    "nvd3": "https://github.com/novus/nvd3.git",
+    "chosen-bootstrap": "*",
+    "lodash": "*",
+    "recline.backend.gdocs": "https://github.com/okfn/recline.backend.gdocs.git#e81bb237759353932834a38a0ec810441e0ada10",
+    "csv.js": "https://github.com/okfn/csv.js.git#976b61384a1808eb464aca5876e5ea46c98deaee",
+    "spectrum": "~1.8.0",
+    "recline.backend.cartodb": "https://raw.githubusercontent.com/starsinmypockets/recline-cartodb-backend-public/es6-1/bundle.js",
+    "es2sql": "~1.0.9"
+  }
+}

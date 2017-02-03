@@ -1,0 +1,15 @@
+Facet API Bonus 7.x-1.2, 2012-10-22
+-----------------------------------
+- Fixed Current search reset filter should put html to TRUE in the options array.
+- Added Reverse dependency : hide if dependency is met.
+- Theme function for select option in the selecbox widget.
+- Fixed The 'Show if minimum items' filter is not working.
+- Fixed Undefined index: f in FacetapiBonusCurrentSearchResetFiltersLink->execute() .
+- Fixed Current search block "Reset filter" not working?.
+- Selectbox facet display widget.
+
+Facet API Bonus 7.x-1.1, 2012-05-26
+-----------------------------------
+- Merge with facetapi_extra module.
+- Updated info in README.
+- Changed project url in README.

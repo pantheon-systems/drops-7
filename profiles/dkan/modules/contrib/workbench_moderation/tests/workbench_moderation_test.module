@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Test module for Workbench Moderation.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function workbench_moderation_test_menu() {
+  return array(
+    'workbench_moderation_test/%node' => array(
+      'title' => 'Publish a node',
+      'page callback' => 'workbench_moderation_test_update_node',
+      'page arguments' => array(1),
+      'access arguments' => array('bypass workbench moderation'),
+    ),
+  );
+}
+
+/**
+ * Page callback. Publishes, unpublishes or resaves the given node.
+ *
+ * @param object $node
+ *   The node to publish, unpublish or resave.
+ * @param string $action
+ *   Optionally the action to take, either 'publish' or 'unpublish'. If omitted
+ *   the node will be resaved.
+ */
+function workbench_moderation_test_update_node($node, $action = NULL) {
+  if (!empty($action)) {
+    $node->status = $action == 'publish' ? NODE_PUBLISHED : NODE_NOT_PUBLISHED;
+  }
+  node_save($node);
+  return array('#markup' => t('Node status: @status', array('@status' => $node->status ? t('published') : t('unpublished'))));
+}

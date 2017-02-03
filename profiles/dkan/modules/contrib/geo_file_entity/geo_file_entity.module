@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Code for the Nudata Geo Entity feature.
+ */
+
+include_once 'geo_file_entity.features.inc';
+
+/**
+ * Implements hook_libraries_info().
+ */
+function geo_file_entity_libraries_info() {
+  $libraries = array();
+  $libraries['leaflet_zoomtogeometries'] = array(
+    'name' => 'Leaflet Map zoomToGeometries',
+    'vendor url' => 'http://github.com/NuCivic/',
+    'download url' => 'https://github.com/NuCivic/leaflet.map.zoomToGeometries.js/archive/master.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'bower.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/leaflet.map.zoomToGeometries.min.js',
+      ),
+    ),
+  );
+  return $libraries;
+}

@@ -1,0 +1,32 @@
+Upgrading from Panels-6.x-3.x to Panels-7.x-3.x
+
+  - Style and layout plugins may no longer be registered by a central hook.
+    Only the plugin directories method may be used.
+
+  - Layout 'panels function' is now 'regions function'.
+
+  - Layout 'panels' key is now 'regions'.
+
+  - panels_get_pane_title() deprecated.
+
+  - panels_plugin_get_function() deprecated.
+
+  - panels_required_context removed. These were deprecated long ago and
+    existed only to prevent crashes.
+
+  - panels_optional_context removed.
+
+  - $renderer->plugins['layout']['panels'] changed to $renderer->plugin['layout']['regions']
+
+  - display_renderer class is now in 'renderer', not 'handler'.
+
+Upgrading task handlers from Panels 7.x-3.5 or older to Panels 7.x-3.6 and newer:
+
+  - You must specify a storage type for any panels display using your custom task handler.
+    For examples, see panels_update_7306.
+
+  - When creating whatever stores the panel, a storage id and storage type must be defined.
+    See panels_mini.module for examples inside panels_mini_save and panels_mini_panels_cache_get.
+
+  - A display access plugin must be defined.
+    See panels_mini/plugins/panels_storage/panels_mini.inc for an example plugin.

@@ -1,0 +1,39 @@
+language: php
+
+php:
+  - 5.4
+
+mysql:
+  database: dkan_drops_test
+  username: root
+  encoding: utf8
+
+before_script:
+  # Install drush
+  - cd ..
+  - git clone --branch 6.x https://github.com/drush-ops/drush.git
+  - export PATH="`pwd`/drush:$PATH"
+  - cd dkan-drops-7
+  # install php packages required for running a web server from drush on php 5.3
+  - sudo apt-get update > /dev/null
+  - sudo apt-get install -y --force-yes php5-cgi php5-mysql
+
+  # disable sendmail
+  - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database dkan_drops_test'
+  - drush --yes si dkan --db-url=mysql://root:@127.0.0.1/dkan_drops_test
+  - drush --yes en simpletest
+  # start a web server on port 8080, run in the background; wait for initialization
+  - drush runserver 127.0.0.1:8080 &
+  - until netstat -an 2>/dev/null | grep '8080.*LISTEN'; do true; done
+
+script:
+  - drush test-run --uri=http://127.0.0.1:8080
+
+notifications:
+  slack:
+    rooms:
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-devops
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-dkan

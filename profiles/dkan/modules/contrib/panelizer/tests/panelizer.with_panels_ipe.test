@@ -1,0 +1,323 @@
+<?php
+/**
+ * @file
+ * Tests for Panels IPE.
+ */
+
+class PanelizerWithPanelsIPE extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer IPE',
+      'description' => 'Tests for IPE.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'panels_ipe';
+    parent::setUp($modules);
+
+    // Enable Panelizer for the 'page' content type.
+    $this->togglePanelizer();
+    // Enable the Panels view mode too.
+    $this->simpleEnablePage('node_view');
+
+    // Reset the static variable used to identify permissions, otherwise the
+    // permissions check in drupalCreateUser will fail because of the new perms
+    // added for the newly Panelizered entity display.
+    $this->checkPermissions(array(), TRUE);
+  }
+
+  /**
+   * Test whether the IPE 'content' permissions work correctly.
+   */
+  function testIpeContentAccess() {
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      'access administration pages',
+
+      // Panels IPE.
+      'use panels in place editing',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Just 'cause.
+    drupal_flush_all_caches();
+    // Create a test node.
+    $node = $this->createNode();
+
+    // Enable IPE for this node.
+    $this->drupalGet('node/' . $node->nid . '/panelizer/page_manager/settings');
+    $this->assertResponse(200);
+    $this->assertFieldByName('pipeline');
+    $edit = array(
+      'pipeline' => 'ipe',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText(t('The settings have been updated.'));
+
+    // Load the node view page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Confirm the IPE link is on the form.
+    $this->assertLink(t('Customize this page'));
+    $path = 'panels/ajax/ipe/save_form/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid;
+    $query_string = array('destination' => 'node/' . $node->nid);
+    $full_path = url($path, array('query' => array('destination' => $query_string['destination'])));
+    $this->assertLinkByHref($full_path);
+    // Confirm the link via xpath.
+    $xpath = $this->xpath("//a[@id='panels-ipe-customize-page']");
+    $this->assertEqual(count($xpath), 1, 'Found the "Customize this page" link.');
+    $this->assertEqual($xpath[0]['href'], $full_path);//, 'The "Customize this Page" link is what was expected.');
+
+    // Load the API path when logged in. This should give an AJAX response with
+    // two commands - the first should be "settings" and the second one should
+    // be "initIPE".
+    $json = $this->drupalGetAJAX($path, array('query' => $query_string));
+    $this->assertResponse(200);
+    $this->verbose('<pre>' . print_r($json, TRUE) . '</pre>');
+    // @todo What permission does this need to get a proper response?
+    $this->assertEqual(count($json), 2);
+    $this->assertTrue(isset($json[0]['command']));
+    $this->assertEqual($json[0]['command'], 'settings');
+    $this->assertTrue(isset($json[0]['settings']));
+    $this->assertTrue(isset($json[0]['merge']));
+    $this->assertEqual($json[0]['merge'], 'TRUE');
+    $this->assertTrue(isset($json[1]['command']));
+    $this->assertEqual($json[1]['command'], 'initIPE');
+    $this->assertTrue(isset($json[1]['key']));
+    $this->assertEqual($json[1]['key'], 'panelizer-node-' . $node->nid . '-page-manager-' . $node->vid);
+    $this->assertTrue(isset($json[1]['data']));
+    $this->assertTrue(isset($json[1]['lockPath']));
+
+    // Log out.
+    $this->drupalLogout();
+
+    // Load the API path when logged out. This should give a 404-by-AJAX
+    // response.
+    $json = $this->drupalGetAJAX($path, array('query' => $query_string));
+    $this->assertResponse(200);
+    $this->verbose('<pre>' . print_r($json, TRUE) . '</pre>');
+    $this->assertEqual(count($json), 2);
+    $this->assertTrue(isset($json[1]['command']));
+    $this->assertEqual($json[1]['command'], 'alert');
+    $this->assertTrue(isset($json[1]['text']));
+    $this->assertEqual($json[1]['text'], t('You are not authorized to access this page.'));
+    $this->assertFalse(isset($json[1]['key']));
+    $this->assertFalse(isset($json[1]['data']));
+    $this->assertFalse(isset($json[1]['lockPath']));
+  }
+
+  /**
+   * Test whether the IPE 'layout' permissions work correctly.
+   */
+  function testIpeLayoutAccess() {
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Panels IPE.
+      'use panels in place editing',
+      // Adds the "Change layout" functionality to IPE.
+      'change layouts in place editing',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to modify the layout.
+      'administer panelizer node page layout',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Just 'cause.
+    drupal_flush_all_caches();
+
+    // Create a test node.
+    $node = $this->createNode();
+
+    // Enable IPE for this node.
+    $this->drupalGet('node/' . $node->nid . '/panelizer/page_manager/settings');
+    $this->assertResponse(200);
+    $this->assertFieldByName('pipeline');
+    $edit = array(
+      'pipeline' => 'ipe',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText(t('The settings have been updated.'));
+
+    // Load the node view page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Confirm the IPE link is on the form.
+    $this->assertLink(t('Change layout'));
+    $path = 'panels/ajax/ipe/change_layout/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid;
+    $query_string = array('destination' => 'node/' . $node->nid);
+    $full_path = url($path, array('query' => array('destination' => $query_string['destination'])));
+    $this->assertLinkByHref($full_path);
+    // Confirm the link via xpath.
+    $xpath = $this->xpath("//a[@id='ajax-link']");
+    $this->assertEqual(count($xpath), 1, 'Found the "Change layout" link.');
+    $this->assertEqual($xpath[0]['href'], $full_path);//, 'The "Change layout" link is what was expected.');
+
+    // Load the API path when logged in. This should give an AJAX response with
+    // three commands - the first should be "settings", the second one should be
+    // "modal_display" and the third "IPEsetLockState".
+    $json = $this->drupalGetAJAX($path, array('query' => $query_string));
+    $this->assertResponse(200);
+    $this->verbose('<pre>' . print_r($json, TRUE) . '</pre>');
+    // @todo What permission does this need to get a proper response?
+    $this->assertEqual(count($json), 3);
+    $this->assertTrue(isset($json[0]['command']));
+    $this->assertEqual($json[0]['command'], 'settings');
+    $this->assertTrue(isset($json[0]['settings']));
+    $this->assertTrue(isset($json[0]['merge']));
+    $this->assertEqual($json[0]['merge'], 'TRUE');
+    $this->assertTrue(isset($json[1]['command']));
+    $this->assertEqual($json[1]['command'], 'modal_display');
+    $this->assertTrue(isset($json[1]['title']));
+    $this->assertEqual($json[1]['title'], t('Change layout'));
+    $this->assertTrue(isset($json[2]['command']));
+    $this->assertEqual($json[2]['command'], 'IPEsetLockState');
+    $this->assertTrue(isset($json[2]['key']));
+    $this->assertEqual($json[2]['key'], 'panelizer-node-' . $node->nid . '-page-manager-' . $node->vid);
+    $this->assertTrue(isset($json[2]['lockPath']));
+
+    // Log out.
+    $this->drupalLogout();
+
+    // Load the API path when logged out. This should give a 404-by-AJAX
+    // response.
+    $json = $this->drupalGetAJAX($path, array('query' => $query_string));
+    $this->assertResponse(200);
+    $this->verbose('<pre>' . print_r($json, TRUE) . '</pre>');
+    $this->assertEqual(count($json), 2);
+    $this->assertTrue(isset($json[1]['command']));
+    $this->assertEqual($json[1]['command'], 'alert');
+    $this->assertTrue(isset($json[1]['text']));
+    $this->assertEqual($json[1]['text'], t('You are not authorized to access this page.'));
+    $this->assertFalse(isset($json[1]['key']));
+    $this->assertFalse(isset($json[1]['data']));
+    $this->assertFalse(isset($json[1]['lockPath']));
+  }
+
+  /**
+   * Test whether the IPE 'content' permissions work correctly w entity perms.
+   */
+  function testIpeContentEntityAccess() {
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Panels IPE.
+      'use panels in place editing',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Just 'cause.
+    drupal_flush_all_caches();
+    // Create a test node.
+    $node = $this->createNode();
+
+    // Enable IPE for this node.
+    $this->drupalGet('node/' . $node->nid . '/panelizer/page_manager/settings');
+    $this->assertResponse(200);
+    $this->assertFieldByName('pipeline');
+    $edit = array(
+      'pipeline' => 'ipe',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText(t('The settings have been updated.'));
+
+    // Load the node view page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Confirm the IPE link is on the form.
+    $this->assertLink(t('Customize this page'));
+    $path = 'panels/ajax/ipe/save_form/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid;
+    $query_string = array('destination' => 'node/' . $node->nid);
+    $full_path = url($path, array('query' => array('destination' => $query_string['destination'])));
+    $this->assertLinkByHref($full_path);
+    // Confirm the link via xpath.
+    $xpath = $this->xpath("//a[@id='panels-ipe-customize-page']");
+    $this->assertEqual(count($xpath), 1, 'Found the "Customize this page" link.');
+    $this->assertEqual($xpath[0]['href'], $full_path);//, 'The "Customize this Page" link is what was expected.');
+
+    // Log out.
+    $this->drupalLogout();
+
+    $perms = array(
+      // Need to be able to access the node.
+      'access content',
+
+      // Panels IPE.
+      'use panels in place editing',
+
+      // Adds the "Change layout" functionality to IPE.
+      'change layouts in place editing',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+      'administer panelizer node page layout',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Load the node view page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Confirm the IPE link is not on the form.
+    $this->assertNoLink(t('Customize this page'));
+    $path = 'panels/ajax/ipe/save_form/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid;
+    $query_string = array('destination' => 'node/' . $node->nid);
+    $full_path = url($path, array('query' => array('destination' => $query_string['destination'])));
+    $this->assertNoLinkByHref($full_path);
+
+    // Confirm the IPE link is not on the form.
+    $this->assertNoLink(t('Change layout'));
+    $path = 'panels/ajax/ipe/change_layout/panelizer:node:' . $node->nid . ':Apage_manager:' . $node->vid;
+    $query_string = array('destination' => 'node/' . $node->nid);
+    $full_path = url($path, array('query' => array('destination' => $query_string['destination'])));
+    $this->assertNoLinkByHref($full_path);
+  }
+
+}

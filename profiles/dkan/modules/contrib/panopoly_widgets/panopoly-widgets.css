@@ -1,0 +1,68 @@
+/**
+ * @file
+ * CSS styles for the simple widgets.
+ */
+
+/* Media Browser */
+body.page-media-browser {
+  height: auto;
+}
+
+/* Map Widget */
+div.pane-bundle-map .pane-content {
+  overflow: hidden;
+}
+
+div.field-name-field-map-address img {
+  max-width: auto;
+}
+
+/* File Widget */
+img.file-icon,
+div.file-widget img {
+  vertical-align: middle;
+}
+
+/* Video Widget */
+div.pane-bundle-video .media-youtube-video
+div.pane-bundle-video .media-vimeo-video {
+  max-width: 100%;
+}
+
+div.pane-bundle-video .media-vimeo-video,
+div.pane-bundle-video .media-youtube-video {
+  position: relative;
+  padding-bottom: 56.25%;
+  padding-top: 30px;
+  height: 0;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+div.pane-bundle-video .media-vimeo-video iframe,
+div.pane-bundle-video .media-vimeo-video object,
+div.pane-bundle-video .media-vimeo-video embed,
+div.pane-bundle-video .media-youtube-video iframe,
+div.pane-bundle-video .media-youtube-video object,
+div.pane-bundle-video .media-youtube-video embed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Table Widget */
+#modalContent .tablefield-row-0 {
+  background-color: rgba(0, 0, 0, 0.51);
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/**
+ * Hide the Media 'Edit' button when on a CTools dialog, because it will
+ * close the current CTools dialog. Remove once #2264187 is fixed.
+ */
+.ctools-modal-content .media-widget a.edit {
+  display: none;
+}

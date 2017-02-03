@@ -1,0 +1,13 @@
+name = Radix Layouts
+description = Responsive panels layouts set to work with Panopoly and the Radix theme
+core = 7.x
+
+dependencies[] = panels
+stylesheets[all][] = radix_layouts.css
+
+; Information added by Drupal.org packaging script on 2015-06-10
+version = "7.x-3.4"
+core = "7.x"
+project = "radix_layouts"
+datestamp = "1433951891"
+

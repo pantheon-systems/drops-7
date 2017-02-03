@@ -1,0 +1,299 @@
+<?php
+
+/**
+ * @file
+ * Code for the Visualization Entity Charts feature.
+ */
+
+include_once 'visualization_entity_charts.features.inc';
+
+/**
+ * Implements hook_form_alter().
+ */
+function visualization_entity_charts_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'eck__entity__form_add_visualization_ve_chart':
+    case 'eck__entity__form_edit_visualization_ve_chart':
+      visualization_entity_charts_attach_libraries($form);
+      break;
+  }
+}
+
+/**
+ * Attach needed libraries to an element.
+ */
+function visualization_entity_charts_attach_libraries(&$element) {
+  $libraries = array(
+    'lodash',
+    'chosen',
+    'backbone',
+    'recline',
+    'd3',
+    'nvd3',
+    'bgrins-spectrum',
+    'reclineViewNvd3',
+    'gdocs',
+    'csv',
+    'mustache',
+    'lodash_data',
+    'moment',
+    'slickgrid',
+  );
+
+  foreach ($libraries as $library) {
+    $element['#attached']['libraries_load'][] = array($library);
+  }
+
+  $module_path = drupal_get_path('module', 'visualization_entity_charts');
+  $element['#attached']['css'][] = $module_path . '/css/ve_chart.css';
+  drupal_add_js($module_path . '/js/visualization_entity_charts_steps.js', array('weight' => 100));
+  drupal_add_js($module_path . '/js/visualization_entity_charts_editors.js', array('weight' => 101));
+  drupal_add_js($module_path . '/js/visualization_entity_charts.js', array('weight' => 102));
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function visualization_entity_charts_entity_view($entity, $type, $view_mode, $langcode) {
+  if ($type == 'visualization' && $entity->type == 've_chart') {
+    $entity->content['#suffix'] = '<div id="graph"></div>';
+    visualization_entity_charts_attach_libraries($entity->content);
+    $entity->content['#attached']['css'][] = drupal_get_path('module', 'visualization_entity_charts') . '/css/ve_chart.css';
+    drupal_add_js(drupal_get_path('module', 'visualization_entity_charts') . '/js/visualization_entity_charts_view.js', array('weight' => 101));
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function visualization_entity_charts_theme($existing, $type, $theme, $path) {
+  return array(
+    'eck__entity__form_add_visualization_ve_chart' => array(
+      'render element' => 'form',
+      'template' => 've-chart-form',
+      'path' => drupal_get_path('module', 'visualization_entity_charts'),
+    ),
+    'eck__entity__form_edit_visualization_ve_chart' => array(
+      'render element' => 'form',
+      'template' => 've-chart-form',
+      'path' => drupal_get_path('module', 'visualization_entity_charts'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function visualization_entity_charts_libraries_info() {
+  $libraries = array();
+  $libraries['nvd3'] = array(
+    'name' => 'NVD3',
+    'vendor url' => 'https://github.com/novus/nvd3',
+    'download url' => 'https://github.com/novus/nvd3/archive/master.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'dependencies' => array('d3'),
+    'files' => array(
+      'js' => array(
+        'nv.d3.min.js',
+      ),
+      'css' => array(
+        'nv.d3.min.css',
+      ),
+    ),
+  );
+
+  $libraries['chosen'] = array(
+    'name' => 'chosen',
+    'vendor url' => 'https://github.com/harvesthq/chosen',
+    'download url' => 'https://github.com/harvesthq/chosen/releases/download/v1.3.0/chosen_v1.3.0.zip',
+    'version arguments' => array(
+      'file' => 'chosen.jquery.min.js',
+      'pattern' => '/Chosen v(\d+\.\d+\.\d+)/',
+    ),
+    'files' => array(
+      'js' => array(
+        'chosen.jquery.min.js',
+      ),
+      'css' => array(
+        'chosen.css',
+      ),
+    ),
+  );
+
+  $libraries['d3'] = array(
+    'name' => 'D3',
+    'vendor url' => 'https://github.com/mbostock/d3',
+    'download url' => 'https://github.com/mbostock/d3/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'd3.min.js',
+      ),
+    ),
+  );
+
+  $libraries['reclineViewNvd3'] = array(
+    'name' => 'recline.view.nvd3.js',
+    'vendor url' => 'https://github.com/NuCivic/recline.view.nvd3.js',
+    'download url' => 'https://github.com/NuCivic/recline.view.nvd3.js/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/recline.view.nvd3.min.js',
+        'dist/recline.view.nvd3.controls.min.js',
+      ),
+      'css' => array(
+        'css/style.css',
+      ),
+    ),
+  );
+
+  $libraries['lodash_data'] = array(
+    'name' => 'lodashdata',
+    'vendor url' => 'https://github.com/NuCivic/lodash.data',
+    'download url' => 'https://github.com/NuCivic/lodash.data/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/lodash.data.min.js',
+      ),
+    ),
+  );
+
+  $libraries['moment'] = array(
+    'name' => 'moment',
+    'vendor url' => 'https://github.com/moment/moment',
+    'download url' => 'https://github.com/moment/moment/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'min/moment.min.js',
+      ),
+    ),
+  );
+
+  $libraries['gdocs'] = array(
+    'name' => 'gdocs',
+    'vendor url' => 'https://github.com/okfn/recline.backend.gdocs',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'backend.gdocs.js',
+      ),
+    ),
+  );
+
+  $libraries['bgrins-spectrum'] = array(
+    'name' => 'bgrins-spectrum',
+    'vendor url' => 'https://github.com/bgrins/spectrum',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'spectrum.js'
+      ),
+      'css' => array(
+        'spectrum.css'
+      )
+    )
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function visualization_entity_charts_block_info() {
+  $blocks = array();
+  $blocks['ve_chart_button'] = array(
+    'info' => t('Viz Entity Chart Button'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_libraries_info_alter().
+ */
+function visualization_entity_charts_libraries_info_alter(&$libraries) {
+  if (isset($libraries['recline']['files']['js'])) {
+    $recline = $libraries['recline']['files']['js'];
+
+    // This file breaks the javascript site.
+    $index = array_search('vendor/timeline/js/timeline.js', $recline);
+    if($index !== FALSE) {
+      unset($libraries['recline']['files']['js'][$index]);
+    }
+  }
+}
+
+/**
+ * Preprocess for chart add form.
+ */
+function template_preprocess_eck__entity__form_add_visualization_ve_chart(&$vars) {
+  template_preprocess_eck__entity__form_edit_visualization_ve_chart($vars);
+}
+
+/**
+ * Preprocess for chart edit form.
+ */
+function template_preprocess_eck__entity__form_edit_visualization_ve_chart(&$vars) {
+  $form = $vars['form'];
+  $form = visualization_entity_charts_attach_libraries($form);
+  unset($vars['form']['actions']);
+  unset($vars['form']['submit']);
+}
+
+/**
+ * Load all required libraries to render a chart.
+ */
+function visualization_entity_load_required_libraries(){
+  libraries_load('lodash');
+  libraries_load('backbone');
+  libraries_load('recline');
+  libraries_load('d3');
+  libraries_load('nvd3');
+  libraries_load('spectrum');
+  libraries_load('reclineViewNvd3');
+  libraries_load('gdocs');
+  libraries_load('csv');
+  libraries_load('mustache');
+  libraries_load('lodash_data');
+}
+
+/**
+ * Implements hook_charts_visualization_entity_embed_render_alter().
+ */
+function visualization_entity_charts_visualization_entity_embed_render_alter($vars) {
+  $visualization = $vars['visualization'];
+
+  if (!empty($visualization) && $visualization->type === 've_chart' && $vars['conf']['local_source']) {
+
+    // Load required libraries.
+    visualization_entity_load_required_libraries();
+
+    // Add specific sources for embed.
+    $module_path = drupal_get_path('module', 'visualization_entity_charts');
+    drupal_add_js($module_path . '/js/visualization_entity_charts_view_multiple.js');
+    drupal_add_css($module_path . '/css/ve_chart_embedded.css');
+
+    // We need to override the default block content.
+    $vars['block']->content = '<div class="chart"><div class="chart-source">' . $visualization->field_ve_settings['und'][0]['value'] . '</div><div class="chart-container" style="height:' . $vars['height'] . 'px; width:' . $vars['width'] . 'px "></div></div>';
+  }
+}

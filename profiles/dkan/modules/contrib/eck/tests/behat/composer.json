@@ -1,0 +1,13 @@
+{
+  "name": "fmizzell/eck-tests",
+  "description": "Tests for Drupal's Entity Construction Kit module",
+  "license": "GPLv2",
+  "authors": [
+    {
+        "name": "Gerardo Gonzalez"
+    }
+  ],
+   "require": {
+    "drupal/drupal-extension": "1.0.*@dev"
+  }
+}

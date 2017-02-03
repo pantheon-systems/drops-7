@@ -1,0 +1,202 @@
+<?php
+
+include_once('panopoly_images.features.inc');
+
+/**
+ * Implementation of hook_init()
+ */
+function panopoly_images_init() {
+
+  // Adding the panopoly images file to the theme so it will show up in the WYSIWYG
+  drupal_add_css(drupal_get_path('module', 'panopoly_images') . '/panopoly-images.css', array('group' => CSS_THEME));
+
+  $images_loaded = libraries_load('jquery.imagesloaded');
+  if(empty($images_loaded['loaded'])) {
+    watchdog('panopoly-images', 'Panopoly Images could not find the jquery.imagesloaded library. This should get loaded by the Manual Crop module', array(), WATCHDOG_ERROR);
+  }
+  else {
+    drupal_add_js(drupal_get_path('module', 'panopoly_images') . '/panopoly-images.js', array('type' => 'file', 'group' => JS_DEFAULT, 'every_page' => TRUE));
+  }
+}
+
+/**
+ * Implements hook_media_wysiwyg_wysiwyg_allowed_view_modes_alter().
+ */
+function panopoly_images_media_wysiwyg_wysiwyg_allowed_view_modes_alter(&$options, $context) {
+  if ($context->type == 'image') {
+    // Relabel some options
+    $labels = array(
+      'default' => t('Original Size'),
+      'teaser' => t('Quarter Size'),
+      'preview' => t('Thumbnail'),
+    );
+    foreach ($labels as $name => $label) {
+      if (isset($options[$name])) {
+        $options[$name]['label'] = $label;
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_jorm_alter()
+ */
+function panopoly_images_form_alter(&$form, &$form_state, $form_id) {
+
+  // Remove some necessary image styles
+  if ($form_id == 'ctools_entity_field_content_type_formatter_styles') {
+    if (!empty($form['image_style']['#options'])) {
+      $styles_to_remove = array(
+        'apps_logo',
+        'apps_logo_small',
+        'apps_screenshot',
+        'apps_featured_screenshot',
+        'linkit_thumb',
+        'thumbnail',
+        'medium',
+        'large',
+        'media_thumbnail',
+      );
+      foreach($styles_to_remove as $style_name) {
+        if (!empty($form['image_style']['#options'][$style_name])) {
+          unset($form['image_style']['#options'][$style_name]);
+        }
+      }
+    }
+  }
+
+  // Improve the media upload form
+  if (!empty($form['upload'])) {
+    $form['upload']['#size'] = 30;
+  }
+
+  // Warm the image style cache by preloading some images. This is needed when the images are
+  // added in the WYSIWYG so they will be fully rendered and can be sized on insert.
+  if ($form_id == 'media_format_form') {
+    $form['preload'] = array(
+      '#prefix' => '<div style="display: none">',
+      '#suffix' => '</div>',
+    );
+    $image_path = $form['#media']->uri;
+    $image_formats = array('panopoly_image_full', 'panopoly_image_half', 'panopoly_image_quarter');
+    foreach ($image_formats as $format) {
+      $form['preload'][$format] = array(
+        '#markup' => theme('image', array('path' => image_style_url($format, $image_path))),
+      );
+    }
+  }
+
+  // Set the default media style to be default
+  if ($form_id == 'media_format_form' && !empty($form['options']['format'])) {
+    $form['options']['format']['#default_value'] = 'default';
+  }
+}
+
+/**
+ * Implementation of hook_file_displays_alter()
+ *
+ * This function is designed to readjust the width and height properties in the WYSIWYG.
+ * See this issue for more background - http://drupal.org/node/1801308.
+ */
+function panopoly_images_file_displays_alter(&$displays, &$file, &$view_mode) {
+  if (!empty($file->override['attributes']['width'])) {
+    $file->image_dimensions['width'] = $file->override['attributes']['width'];
+  }
+  if (!empty($file->override['attributes']['height'])) {
+    $file->image_dimensions['height'] = $file->override['attributes']['height'];
+  }
+}
+
+/**
+ * Implements hook_file_default_displays_alter().
+ */
+function panopoly_images_file_default_displays_alter(&$file_displays) {
+  // Disable some displays that are enabled by Media and File Entity by default.
+  $disable_displays = array(
+    'image__default__file_field_file_default',
+    'image__teaser__file_field_file_default',
+    'image__preview__file_field_file_default',
+    'image__preview__file_field_media_large_icon',
+  );
+  foreach ($disable_displays as $name) {
+    if (isset($file_displays[$name])) {
+      $file_displays[$name]->status = FALSE;
+    }
+  }
+
+  // Modify some displays that are configured by Media and File Entity.
+  if (isset($file_displays['image__default__file_field_image'])) {
+    $file_displays['image__default__file_field_image']->settings['image_style'] = 'panopoly_image_original';
+  }
+  if (isset($file_displays['image__preview__file_field_image'])) {
+    $file_displays['image__preview__file_field_image']->settings['image_style'] = 'panopoly_image_thumbnail';
+  }
+  if (isset($file_displays['image__teaser__file_field_image'])) {
+    $file_displays['image__teaser__file_field_image']->settings['image_style'] = 'panopoly_image_quarter';
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_image_style()
+ */
+function panopoly_images_preprocess_image_style(&$variables) {
+  // Some modules are misusing the class attributes as string
+  // instead of array so make sure the format is correct.
+  // See #2181263.
+  if (isset($variables['attributes']['class']) && !is_array($variables['attributes']['class'])) {
+    $variables['attributes']['class'] = explode(' ', $variables['attributes']['class']);
+  }
+
+  if (!empty($variables['attributes']['class'])) {
+    $img_style_names = array_keys(image_styles());
+    $classes = array();
+    foreach ($variables['attributes']['class'] as $class) {
+      if (!in_array(str_replace('-', '_', $class), $img_style_names)) {
+        $classes[] = $class;
+      }
+    }
+    $variables['attributes']['class'] = $classes;
+  }
+
+  $variables['attributes']['class'][] = str_replace('_', '-', $variables['style_name']);
+}
+
+/**
+  * Implements hook_entity_info_alter().
+  */
+function panopoly_images_entity_info_alter(&$entity_info) {
+  $entity_info['file']['view modes']['link'] = array(
+    'label' => t('Link'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implementation of hook_field_widget_form_alter().
+ *
+ * This a minor hack to improve compatiblity with sites that use the
+ * the focal_point module, by disabling focal_point on fields that have
+ * manualcrop enabled. If users want to use focal_point, they simply have
+ * to disable manualcrop for that field.
+ */
+function panopoly_images_field_widget_form_alter(&$element, &$form_state, $context) {
+  $widget = $context['instance']['widget'];
+  if (module_exists('focal_point') && in_array('image', array_filter(variable_get("focal_point_enabled_for", array('image'))))) {
+    if (manualcrop_supported_widgets($widget['type']) && !empty($widget['settings']['manualcrop_enable'])) {
+      foreach (element_children($element) as $delta) {
+        foreach ($element[$delta]['#process'] as $index => $function) {
+          // If this element was processed by focal_point, then we remove all
+          // of it's customizations, so this module can use manualcrop.
+          if (substr($function, 0, 11) == 'focal_point') {
+            unset($element[$delta]['#process'][$index]);
+            unset($element[$delta]['#widget_delta']);
+            if (($class_index = array_search('focal_point', $element[$delta]['#attributes']['class'])) !== FALSE) {
+              unset($element[$delta]['#attributes']['class'][$class_index]);
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+}

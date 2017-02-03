@@ -1,0 +1,17 @@
+name = FPP-with-Panels Tests
+description = Helper module for testing the Panels integration for FPP.
+core = 7.x
+
+; Don't show this on the modules admin page.
+hidden = TRUE
+
+dependencies[] = ctools
+dependencies[] = page_manager
+dependencies[] = fieldable_panels_panes
+
+; Information added by Drupal.org packaging script on 2016-05-04
+version = "7.x-1.10"
+core = "7.x"
+project = "fieldable_panels_panes"
+datestamp = "1462374853"
+

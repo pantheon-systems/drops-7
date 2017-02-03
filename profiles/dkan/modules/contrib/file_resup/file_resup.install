@@ -1,0 +1,85 @@
+<?php
+
+/**
+ * @file
+ * Written by Henri MEDOT <henri.medot[AT]absyx[DOT]fr>
+ * http://www.absyx.fr
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function file_resup_schema() {
+  $schema['file_resup'] = array(
+    'fields' => array(
+      'upload_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'filename' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'filesize' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uploaded_chunks' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'scheme' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fid' => array(
+        'description' => 'File ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('upload_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function file_resup_install() {
+  variable_set('file_resup_chunksize', min(FILE_RESUP_DEFAULT_CHUNKSIZE, file_upload_max_size()));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function file_resup_uninstall() {
+  // Delete the file_resup_temporary directories.
+  drupal_load('module', 'file_resup');
+  $schemes = array_keys(file_get_stream_wrappers(STREAM_WRAPPERS_WRITE_VISIBLE));
+  foreach ($schemes as $scheme) {
+    file_unmanaged_delete_recursive($scheme . '://' . FILE_RESUP_TEMPORARY);
+  }
+
+  // Delete variables.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'file_resup_%'");
+}

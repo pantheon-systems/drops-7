@@ -1,0 +1,37 @@
+name = Visualization Entity Choropleth Bundle
+description = Create choropleth map visualizations using leaflet
+core = 7.x
+package = Data Visualization
+version = 7.x-1.0-beta1
+
+dependencies[] = list
+dependencies[] = text
+dependencies[] = options
+dependencies[] = libraries
+dependencies[] = geo_file_entity_geojson_bundle
+dependencies[] = visualization_entity
+dependencies[] = visualization_entity_recline_field_reference
+
+features[eck_bundle][] = visualization_choropleth_visualization
+features[features_api][] = api:2
+features[field_base][] = field_average_multiple_rows
+features[field_base][] = field_color_scale
+features[field_base][] = field_data_breakpoints
+features[field_base][] = field_data_column
+features[field_base][] = field_data_units
+features[field_base][] = field_geojson
+features[field_base][] = field_ve_geojson_key
+features[field_base][] = field_ve_geojson_label
+features[field_base][] = field_ve_map_column
+features[field_instance][] = visualization-choropleth_visualization-field_average_multiple_rows
+features[field_instance][] = visualization-choropleth_visualization-field_color_scale
+features[field_instance][] = visualization-choropleth_visualization-field_data_breakpoints
+features[field_instance][] = visualization-choropleth_visualization-field_data_column
+features[field_instance][] = visualization-choropleth_visualization-field_data_units
+features[field_instance][] = visualization-choropleth_visualization-field_geojson
+features[field_instance][] = visualization-choropleth_visualization-field_uuid_resource
+features[field_instance][] = visualization-choropleth_visualization-field_ve_geojson_key
+features[field_instance][] = visualization-choropleth_visualization-field_ve_geojson_label
+features[field_instance][] = visualization-choropleth_visualization-field_ve_map_column
+mtime = 1420866437
+project path = sites/all/modules/nucivic/visualization_entity/modules

@@ -1,0 +1,494 @@
+Panelizer 7.x-3.4, 2016-08-19
+-----------------------------
+#2785821 by DamienMcKenna: Resolve issues with tests running on drupalci.
+#2785793 by attiks: Fix errors in panelizer_update_7115().
+#2785883 by DamienMcKenna, pbuyle, attiks, FeyP, smaz: Fixes for
+  panelizer_update_7303() to avoid infinite loops.
+#2193221 by michel.g: 'Undefined index' errors because the 'help' variable is
+  not always present.
+#2785945 by dsnopek, DamienMcKenna, mpotter, czigor: Fixed access-denied problem
+  caused by needing to add the new Panels Storage API attributes to exported
+  defaults.
+#2786471 by mpotter, dsnopek: Fixed multilingual issue with the Search API
+  integration.
+By DamienMcKenna: Require Panels 7.x-3.6.
+
+
+Panelizer 7.x-3.3, 2016-08-17
+-----------------------------
+#2762351 by DamienMcKenna: Skip update 7300 if there are no records to process.
+By dsnopek, japerry, mpotter, DamienMcKenna: Add support for the new Panels
+  Storage API.
+By dsnopek, japerry, mpotter, DamienMcKenna: Add support for the new Panels IPE
+  access hook.
+By DamienMcKenna: Moved panelizer_update_dependencies() to in front of the
+  update scripts.
+
+
+Panelizer 7.x-3.2, 2016-06-30
+-----------------------------
+#2416977 by Andrew M Riley: Confirm Navigation: Leave this Page (IPE w/
+  Revisions).
+#2419311 by naxoc: Update 7115 caused double-serialized values to saved.
+#2311453 by DamienMcKenna, drupalninja: Redirect IPE to normal 'revert' page to
+  revert the display.
+#2366209 by DamienMcKenna: Option for one view mode to use another view mode's
+   display.
+#2375563 by DamienMcKenna: Clone attached FPPs when a node is cloned.
+#2361425 by hctom: Support for taxonomy revisions.
+#2416505 by dsnopek: Allow indexing content from 'Full page override' with
+  Search API.
+#1982654 by hefox, DamienMcKenna, mglaman: Repeatedly asked to confirm when
+  trying to save a default for a node type.
+#2192863 by niko-, mrjmd, mglaman, DamienMcKenna: Don't load displays for
+  disabled view modes.
+#2416405 by cmonnow, DamienMcKenna: Improved logic in hook_entity_insert().
+#2266393 by DamienMcKenna: Give a warning message if update 7106 fails due to
+  multiple records for the same entity view mode.
+#2435003 by EclipseGc, DamienMcKenna: Add hook_panelizer_access() to allow each
+  operation's permissions to be extended.
+#2283769 by frankcarey, guillaumev, DamienMcKenna: Use standard permissions to
+  control IPE access.
+#2445769 by DamienMcKenna: Unable to clone displays.
+#2451643 by DamienMcKenna: Reworked logic controlling when warning messages are
+  displayed about page_manager needing to be enabled.
+#2457711 by DamienMcKenna: 'content' local tasks should have been default.
+#2465333 by EclipseGc: Add hook_panelizer_access_alter() for the new
+  hook_panelizer_access().
+#2462315 by DamienMcKenna: Fix update 7115 and regressions caused by it.
+#2469411 by DamienMcKenna: Added Book Navigation pane to the default display if
+  the Book module is enabled.
+#2421321 by DamienMcKenna: Fixed logic that resulted in access-denied errors
+  when loading settings pages.
+#2467725 by DamienMcKenna: Additional fixes to update 7115.
+#2450271 by mpotter: Nested Panels displays caused title to be displayed for
+  wrong node.
+#2469593 by DamienMcKenna: Added submission pane to the default display if
+  the Webform module is enabled.
+#2422667 by Devin Carlson, DamienMcKenna: Add basic test coverage.
+#2460537 by DamienMcKenna: Fixed "Notice: Undefined offset: 3 in
+  _menu_translate" error.
+#2470257 by DamienMcKenna: Incorrect destination URLs in some forms resulted in
+  "missing" links; removed references to the /list pages.
+#2470257 by gmclelland: Fixed 'list' paths on main Panelizer admin page.
+#2193221 by DamienMcKenna: New 'help' text field for site builders to add
+  editorial guidelines for the display seletor on entity forms.
+#2483133 by DamienMcKenna: Properly identify whether term_view is enabled in
+  Page Manager.
+#2480999 by drclaw: Machine name didn't autocomplete when cloning a display.
+#2481015 by drclaw: Machine names of new displays must be unique.
+#2408691 by ruloweb: Invalid pane id when revisioning is enabled.
+By DamienMcKenna: Updated comments around entity_allows_revisions().
+#1963124 by micnap, mgifford, DamienMcKenna: Resolve WCAG2 accessibility errors
+  on main settings page.
+#2237943 by knobo, DamienMcKenna: Entity display as "Panelizer" in Views should
+  allow selectable view mode.
+#2429561 by stevector, DamienMcKenna: Indicate on Field UI display settings
+  pages and in hook_requirements when Panelizer is being used and field output
+  is redundant.
+By DamienMcKenna: Ensure all ksort() calls only happen on arrays.
+#1963124 by DamienMcKenna: Require CTools 1.9 so that it has show.js.
+#2533402 by badjava: Incorrect usage of the 'clone' keyword.
+#2151837 by DamienMcKenna, muschpusch: Improved the README.txt file.
+#2514068 by mpotter, hefox, DamienMcKenna: entity_extract_ids() may return a
+  NULL for revision_id.
+#2512342 by sonfordangeles, DamienMcKenna: panelizer_add_revision_info_form()
+  was not handling the entity object correctly, so the revision functionality
+  was not going to work correctly.
+#2524258 by kovacsaba, DamienMcKenna: hook_views_plugins_alter() needs to know
+  what module the plugin comes from.
+#2565449 by benjy, DamienMcKenna: CTools export-ui library not always loaded.
+#2382879 by mglaman: Allow layout selection to be assigned as the default via
+  the IPE interface.
+#2579983 by DamienMcKenna: Split up the test file into separate pieces.
+#2589773 by akalam: Revision log field shows when it shouldn't.
+#2579447 by LCM, DamienMcKenna: Added lots of tests for standard node workflows.
+#2579449 by mglaman, DamienMcKenna: Tests for term workflows.
+#2579451 by DamienMcKenna: Added tests for user workflows.
+#2690267 by greenSkin: Rewrote update 7106 to work around API limitations.
+#2537328 by B-Prod: Context changes weren't clearing the correct caches.
+By DamienMcKenna: Properly formatted all comments in the main module file.
+#2659820 by msti, DamienMcKenna, dgtlmoon, lotyrin: Refactored hook_schema to be
+  more normal, fixed MySQL 5.7 compatibility problems.
+#2136205 by Scott Robertson, DamienMcKenna: When using Content Translation to
+  translate a panelized node, clone the Panelizer configuration.
+#2742601 by DamienMcKenna: Preparation for adding more tests.
+#2742609 by DamienMcKenna: Added tests for core node revision handling.
+#2715573 by DamienMcKenna: Tests to confirm reverting a revision works as
+  intended.
+#2546906 by DamienMcKenna: If a default display is not available for certain
+  Panelizer admin paths, display an appropriate error message instead of
+  throwing a 404 page.
+By DamienMcKenna: Minor refactoring to node revision tests.
+#2748373 by DamienMcKenna: Tests to confirm defaults can be cloned.
+#2577031 by DamienMcKenna, denisz: Tests to confirm what happens when a default
+  display is overridden per node, leaving UUID fixes to Panels to handle.
+#2404999 by DamienMcKenna, joegraduate: Don't save {panelizer_entity} records if
+  the display is using a default.
+#2756435 by DamienMcKenna: Test cleanups.
+#2713191 by DamienMcKenna: Added tests to verify Pathauto-set aliases do not
+  disappear after a Panelizer display is modified.
+#1637304 by japerry, Steven Jones, DamienMcKenna: Simplified the main query in
+  hook_entity_load(), added an index on {panelizer_entity}.revision_id.
+By DamienMcKenna: Updated the README.txt note about Pathauto.
+#2675766 by gustavderdrache: Don't save records in hook_entity_insert or
+  hook_entity_update() if $entity->panelizer[$view_mode] is empty.
+#1710586 by e.bogatyrev: Problem with contextual links and context definitions
+  on node display.
+#2630446 by mikedotexe, DamienMcKenna: Documentation updates for
+  panelizer-view-mode.tpl.php.
+#2709487 by DamienMcKenna: Fixed link paths in contextual menus.
+#2600178 by joelstein: Some $cache_key values may only have two parts.
+#2472519 by joelstein, DamienMcKenna: View mode substitution wasn't working
+  correctly.
+#2757277 by DamienMcKenna: Resetting a display didn't work correctly.
+#2282605 by joelstein: Support for the core search system's custom view modes.
+#2757995 by mathieuhelie, Calystod: Support for Search API's alternative content
+  language.
+#2758569 by DamienMcKenna: When changing a node from a non-default, non-custom
+  display to the entity's default display, the old {panelizer_entity} record
+  was not being removed so the change never took effect.
+
+
+Panelizer 7.x-3.2-beta1, 2015-02-02
+-----------------------------------
+#2203629 by DamienMcKenna: Require the latest releases of CTools and Panels.
+#2408903 by Andrew M Riley: IPE not saving correctly.
+#2410363 by mrjmd: Add ability to edit machine names.
+#2408811 by DamienMcKenna: Improved warning when Page Manager is disabled for an
+  entity view mode but is required in order for the view mode to work correctly.
+#2190839 by DamienMcKenna, annya: Improved panelizer_uninstall() to remove all
+  variables.
+#1929000 by arnested, mglaman, DamienMcKenna: Added a new hook that is
+  triggered before a default Panelizer object is removed:
+  hook_panelizer_delete_default()
+#1493296 by DamienMcKenna, mglaman, lpalgarvio: Moved the main config page.
+#2408691 by DamienMcKenna: Don't assume that a revision ID is submitted to the
+  panelizer_panels_cache_get function, when viewing a published node it will
+  only contain the entity ID.
+#2408301 by DamienMcKenna: Displays not saving for entities without an existing
+  {panelizer_entity} record.
+#2246175 by das-peter, DamienMcKenna: Add contextual links to node templates.
+#2337767 by devendra.yadav, mglaman: Fixed some db_queries that didn't use
+  arguments correctly.
+#2157701 by DamienMcKenna: UX: Use of word 'panel' is confusing when referring
+  to each Panelizer display.
+#1812658 by DamienMcKenna: Renamed 'Panelizer' tab to 'Customize display'.
+#1798294 by DamienMcKenna, michielnugter: Follow-up to resolve issues creating
+  new revisions.
+#2362651 by DamienMcKenna, drupalninja99: Add revision support to IPE
+  integration.
+#1798294 by DamienMcKenna, michielnugter, azinck, recidive, partdigital,
+  frakke: Couldn't edit non-current node revisions.
+#2370457 by AndreyMaximov: Removed excessive array exploding/concatenation in
+  the cache functions.
+#2229033 by uzlov: Fixed problem due to CTools API change which caused initial
+  display creation to fail.
+#2147795 by DamienMcKenna, jamestamr: UI improvements to make it more clear what
+  different view modes are for, especially 'Full page override' and 'Default'.
+#2212873 by mglaman: Panelizer links were not always added to entity settings
+  pages.
+#2209083 by DamienMcKenna: Added an option to create a new revision when
+  resetting an overridden entity display.
+#1513946 by gilgabar, das-peter, mglaman: Pass Page Manager contexts through to
+  Panelizer.
+#2287353 by tom friedhof, DamienMcKenna, mglaman: Use drupal_html_class() to
+  convert the body class string, not ctools_cleanstring() as it causes problems
+  with CSS coding standards such as SMACSS.
+#2247605 by IRuslan: Fix display of fake tabs.
+#2354437 by DamienMcKenna: Always save a new display record when a new revision
+  is being saved.
+#2215521 by DamienMcKenna: Warn when entity page_manager is not enabled but the
+  'full page override' view mode is.
+#2289537 by ndewhurst: hook_panelizer_overview_links_alter() had incorrect args.
+#2328615 by mglaman: get_default_panelizer_object() gives wrong value for
+  exported displays due to incorrect usage of ctools_export_load_object().
+#2325457 by DamienMcKenna: Minor fixes to JS via JSHint.
+#2344335 by DamienMcKenna: Page arguments were incorrect on actions for certain
+  entities.
+#2337213 by DamienMcKenna: Some drupal_set_message strings were not translated.
+#2332997 by DamienMcKenna: Option to update entities when changing defaults.
+#2336989 by DamienMcKenna: Error saving content type form.
+#2302867 by DamienMcKenna: Resolve problems in hook_entity_load().
+#2291537 by DamienMcKenna: Removed the unused and empty CSS file.
+#2302867 by DamienMcKenna, Andrew M Riley: has_default_panel() did not check if
+  a default display existed, and related regressions.
+#2303079 by DamienMcKenna: Tidied up the entity bundle configuration variable.
+#2288683 by dstol: Ensure PanelizerEntityDefault class is always available.
+#2295091 by DamienMcKenna: Added a warning about Pathauto loosing entity URL
+  aliases.
+#2248781 by DamienMcKenna: hook_entity_load was not resetting $revision_id for
+  each entity, leading to errors upon hook_entity_update.
+#2280467 by DamienMcKenna: Clean up hook_menu().
+#2275421 by maximpodorov: Undefined variable in
+  panelizer_handler_filter_panelizer_status().
+#2267601 by Wim Leers, DamienMcKenna: Added a new variable (panelizer_view_mode)
+  so hook_preprocess_field() can know what view mode is being used to display
+  the entity the field is attached to.
+#2218275 by DamienMcKenna: 'Reset' action should reset to the default, not
+  delete all {panelizer_entity} records.
+#2155715 by DamienMcKenna: Don't show the "Allow" selector if there's only one
+  item.
+#2248275 by DamienMcKenna: Ensure there's always a 'did' value prior to saving.
+#1623536 by Artem Dotsenko: Avoid errors when updating object via entity APIs.
+#2246871 by DamienMcKenna: Body classes not output when using Panels Everywhere.
+#1822136 by tim.plunkett: 'Use the same allowed layouts as standard Panels
+  pages' option is ignored.
+#1989100 by akamustang, DamienMcKenna: Always include the entity_id when
+  updating records.
+#2237937 by DamienMcKenna: The "Overview" local task should be the left-most.
+#2156359 by DamienMcKenna: Follow-up to fix bugs when creating an entity bundle.
+By DamienMcKenna: Added a CHANGELOG.txt file.
+#2156359 by DamienMcKenna: UX improvements on the entity bundle form.
+#2024831 by jhedstrom: Permission fix on node access check when using IPE.
+#2198363 by jamestamr: Correct queries in hook_uninstall().
+#1751426 by guillaumev, DamienMcKenna: Extra permissions for use with Organic
+  Groups.
+#1960902 by samhassell: Verify existing variables exist before using them.
+#1988250 by merlinofchaos: Strict warning message in hook_field_attach_submit.
+#2235537 by DamienMcKenna: Don't try to delete Panels displays that don't exist.
+#2232877 by solotandem: Avoid processing menu items multiple times.
+#2223479 by DamienMcKenna: Expanded entity_allows_revisions() to separate
+  whether revisions are supported and whether they're enabled by default.
+#2199859 by lorique, jhedstrom: Only show 'save as default' option in IPE if
+  user has permission.
+#2227637 by DamienMcKenna: Unable to update existing records.
+#2223493 by DamienMcKenna: Don't attempt to load a Panelizer display if it
+  doesn't exist.
+#2206155 by DamienMcKenna, Chris Burge: Comments don't/can't use the admin_paths
+  functionality.
+#2221557 by DamienMcKenna: hook_entity_update wasn't creating new records when
+  needed.
+#2147303 by DamienMcKenna: Make {panelizer_entity}.view_mode NOT NULL.
+#2012270 by DamienMcKenna: Allow the default display to be selected per view
+  mode.
+#2178069 by fago: Flush entity caches when deleting displays or importing new
+  defaults.
+#2006288: Fixed problems with saving entities with newly disabled view modes and
+  customized displays.
+#1965148 by DamienMcKenna: Add placeholder for update 7111 that was removed.
+#1965148 by fago, DamienMcKenna: Load the full default object, not just specific
+  values.
+By DamienMcKenna: Minor comment tweak in PanelizerEntityNode.class.php.
+#2212873 by DamienMcKenna: Slightly improve code in hook_page_alter() to make
+  fixing theme integration easier.
+Revert "#1965148 by DamienMcKenna, fago, das-peter: Don't save records for
+  default panelizer selections."
+#2206155 by Chris Burge, DamienMcKenna: Comment entity admin path was incorrect,
+  broke other entities.
+#2210365 by abarban, Luxian: Fix comment entity display.
+#1965148 by DamienMcKenna, fago, das-peter: Don't save records for default
+  panelizer selections.
+#1841262 by DamienMcKenna: Load settings from the default configuration.
+#2154453 by DamienMcKenna: Update the exported CSS file when the entity is
+  updated.
+#1989100 by korgik: The entity['panelizer'] values may be arrays in some cases.
+#2204483 by fubhy: Don't load Comment entity support if module disabled.
+#1623536 by DamienMcKenna, Sergii, mukhsim: UUID changes how the entity object
+  is saved.
+#1820442 by dixon_: Panelized comments.
+#2181799 by indytechcook: Allow multiple Panelizer settings to be saved at once
+  for a given entity.
+#2190813 by DamienMckenna: Add IDs to each field in add_bundle_setting_form.
+#2103265 by gmclelland: Fixed permission check on Panelizer Link field in Views
+  integration.
+#2150859 by DamienMcKenna: Added hook_hook_info(),
+  hook_panelizer_defaults_override_alter() and
+  hook_panelizer_entity_plugin_process_alter() to the api file
+#2150859: Rename the docs.php file to the more standard panelizer.api.php.
+#1992106 by hefox, DamienMcKenna: Fixed Features integration to auto-select
+  appropriate variables.
+#1973166: Make changes to admin/structure/types dynamic to avoid conflicts with
+  other modules.
+#2147759 by DamienMcKenna: Vertical tabs integration for entity bundle edit
+  form.
+#2141649 by zhuber: Minor code formatting fixes per Coder module.
+#2022541 by hefox: Add standard body classes based on node status, matching
+  normal templates.
+#1968876: Permission to select Panelizer default on entity edit form.
+#1931422: swap_cache_key sometimes using wrong name for default object leading
+  to potential crashes when that object does not exist.
+By merlinofchaos: View mode being left off of new panelizer default names.
+
+
+Panelizer 7.x-3.1, 2013-02-13
+-----------------------------
+#1912162 by mpotter and DamienMcKenna: Improve the features integration and
+  allow features override to work.
+#1909820 by r2integrated: Remove no longer needed hook requirements
+  implementation.
+#1812658: Need another is panelized check in entity view mode.
+#1777264: Save as default not working.
+
+
+Panelizer 7.x-3.0, 2013-01-30
+-----------------------------
+#1839812: Page manager warnings on panelizer admin page not updated for view
+  modes.
+#1774350: Provide more description to the overview permission.
+#1653352: Remove duplicate, useless subtabs on certain panelizer admin pages.
+#1902112: Delete page not working after yesterday fixes.
+Missing css and js from IPE integration patch.
+#1777264: Deeper integation with IPE to allow editing the default bundle
+  panelizer and revert directly from IPE.
+#1790896: Fix Panelizer "full page override" does not go away just by disabling
+  it on panelizer admin page.
+#1806566 by elliotttf: Allow page manager view mode to add to the body class.
+Fix bug introduced by allowing custom view modes.
+#1515428: Move the reset button to its own page with a proper confirmation.
+Fix annoying notice regarding features defined variable not being defined.
+#1787398 by SocialNicheGuru, Matt V: Fix whitescreen with entity cache module.
+#1892246 by rlmumford: Better check for default entity object in hook entity
+  alter.
+#1833826 by andrewbelcher: Need to respect the field api "custom settings"
+  setting for bundle view modes so that they can be panelized.
+#1843574: From entity bundle maint page, view mode was not getting through to
+  add/import operations.
+#1843574: Missing arguments for get_default_display()
+#1412022 by rbp: Use empty() instead of isset() to check view_mode.
+#1772844: Only allow IPE on Panelized entities if the user has edit panelizer
+  access to the entity.
+#1790434 by das-peter, populist: Panel choice select does not appear when "no
+  panel" is selected.
+#1789000 by Ciraxis: entity_type at 255 chars caused key too long errors on
+  InnoDB.
+#1768746 by Lowkey: Cloning panelized entities does not work due to broken
+  drupal_write_record().
+Clean up a couple of errors from earlier commits.
+#1545544 by acrollet: prevent panelizer notice when using panelizer form widget.
+#1655296: Add hooks to make it easier for other modules to add panelizer
+  operations, in particular so that panels_breadcrumbs can.
+#1839296: Better way of determinging where the entity is located during
+  entity_view theming.
+#1412022 by jrbeeman: Older exported panelizer definitions missing data can
+  cause errors.
+#1836704 by peacog: Panelizer link title to entity not saved.
+#1795834 by avr: Classes in theme_links should be an array.
+#1669730: Make sure the row style plugin has a "name" to avoid notices.
+#1659614 by jherencia: Fixed views row style plugin.
+Issue [#1645716] by jherencia: Notices when taxonomy module is not enabled.
+#1530370 by jenlampton, jucallme: Allow Panelizer to control page title.
+#1824566 by populist: Allow Panelizer to use the default "panel pages" allowed
+  content and layout.
+#1804156 by DamienMcKenna: New revisions should only be created when requested.
+#1822136 by populist: Panelizer fails to respect allowed layout settings.
+Make the view-mode specific allowed content pages inaccessible since they do not
+  work.
+Add a safety because _ctools_features_get_info is not always available.
+#1719372: Remove extraneous non-functional "Allowed content" tab in Panelizer
+  administration.
+Fix random whitespace error.
+#1572202 by merlinofchaos, populist | pontus_nilsson: Fixed Panelizer default
+  content and IPE, without page refresh panel is emptied on second save.
+Recursion prevention in view modes in case a view mode tries to render inside a
+  view mode.
+
+
+Panelizer 7.x-3.0-rc1, 2012-10-18
+---------------------------------
+#1620116 by DamienMcKenna: Fixed Only export variables if they exist.
+#1717512 by bangpound: Fixed panelizer_node() task handler doesn't respect Page
+  Manager selection criteria for variant.
+#1387634 by pirog, populist | dhina: Added Proper Features Support for
+  Panelizer.
+#1733796: Panelizer settings form on bundle settings pages did not work due to
+  move to "view modes" section of settings.
+#1675136 by howto: Fixed Panelizer get error with taxonomy term.
+#1616692 by jhedstrom: Fixed Fatal error: Call to undefined function
+  ctools_export_crud_new().
+README.txt contained occurrences of 'panelizer' instead of 'Panelizer'.
+README.txt still referred to itself as 7.x-2.x rather than 7.x-3.x.
+README.txt typos.
+#1648040 by populist: Fix notices in upgrade path.
+#1637304 by John Morahan: Loading entities by just revision ID cannot use full
+  index.
+Update the views integration for view modes.
+#1566090 by Dave Reid: Missing value in hook_action_info().
+Translate view mode if non-existant so that "full" uses "default" as it does in
+  reality.
+#1361530: Implement support for view modes.
+Add an action to allow setting the panelizer default via VBO.
+Add views filter to filter on panelizer status.
+#1546138 by muhleder: Update from 1.x setting revision id on nodes incorrectly.
+Create a views field to show panelizer status for an entity.
+Forgot to add this file in last commit.
+Genericize the views implementation as much as is currently feasible.
+hook_views_handlers is unneeded in D7.
+#1424124 by andypost: Fix strict warning with panel choice but no default and no
+  choice selected.
+Add an "access" field to panelizer defaults to restrict the ability to edit
+  them. This will not affect the ability to choose them.
+Add a new permission to allow administering panelizer only for particular
+  bundles, and add new shortcuts to administration with bundle (node type/tax
+  vocab) editing.
+#1514044: Fix notice for when panelizer default should not be used.
+#1421690 followup by andypost: Ensure strongarm module exists before testing it
+  for feature export information.
+Prevent features from exporting already exported panelizer variables.
+#1508836 by smerrill: Improve addressible content by returning either the pane
+  or the rendered pane depending upon which is requested.
+#1504866 by markusbroman: Use hook_panelizer_defaults_alter so that if something
+  else provides our default we will leave it alone.
+by awebb: Reorder the Panelizer subtabs to focus on the content subtab more than
+  the settings subtab.
+#1508376 by smerrill: Addressible content broken due to wrong panelizer
+  variable.
+
+
+Panelizer 7.x-2.0, 2012-03-17
+-----------------------------
+Minor code style cleanup.
+#1426858: Primary keys should have NOT NULL set in schema.
+#1483766 by eaton: Missed a couple of flags that make the task handler/variant
+  available.
+#1427782: remove errant dsm().
+#1412022: Field API loses data on submit, causing panelizer to try to insert
+  records it already has.
+Fix broken features integration attempt.
+#1414740 by twistor: Failure to include taxonomy term task leads to 500 error
+  with term panelizer.
+Generalize the panelizer task handler so that it can be added to custom pages
+  as a handler. This can be used to create path trees to display panelized
+  entities that are related via references or other relationships.
+#1406836: Using panelize with no default/choice caused Panelizer tab to not
+  appear despite having permission.
+
+
+Panelizer 7.x-2.0-rc1, 2012-01-15
+---------------------------------
+#1370924: Fix default settings for panelizer tab.
+#1387634: Allow features to be able to see the default panelizer panel after it
+  has been modified by the user.
+Better contextual links. Requires recent CTools to see changes.
+Adding a Panelizer default selector node form content type plugin.
+#1373246: Entity save broken on entities without revision support.
+"Layout" page has wrong path if editing a layout with a panel choice.
+
+
+Panelizer 7.x-2.0-beta2, 2011-12-05
+-----------------------------------
+#1361648 by OnkelTem: Ensure comment module exists before adding comment panes
+  to the default node panelizer panel.
+#1361644 by OnkelTem: Check for task disable using array notation, not object
+  notation.
+#1361634 by OnkelTem: Add contextual link for panelizer to all entities that
+  support it.
+#1361620: Saving a panelized panel that was using a default panel could modify
+  the default panel display.
+#1360948: Has no default, no choice should not show tabs for default panel
+  configuration in admin pages.
+#1343480: custom CSS on a panelizer page should be added as part of the theme
+  layer to have highest priority.
+#1360550 by OnkelTem: hook_entity_load should skip not panelized bundles.
+#1360810 by andypost: Clean up .info file.
+#1329280: Add an "object default" to the css so that ctools export gives it a
+  default properly.
+entity insert was really broken
+Fix yet another typo
+Update the addressable function for 2.x
+Fix merge conflicts in addressable content
+
+
+Panelizer 7.x-2.0-beta1, 2011-12-01
+-----------------------------------
+First release for Drupal 7.

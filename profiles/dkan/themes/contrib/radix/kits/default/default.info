@@ -1,0 +1,34 @@
+name        = {{Name}}
+description = {{Description}}
+screenshot  = screenshot.png
+core        = 7.x
+
+; Base - Radix
+base theme  = radix
+hidden = true
+
+; Regions
+regions[content] = Content
+
+; Breakpoints
+breakpoints[xs] = (max-width: 767px)
+breakpoints[sm] = (min-width: 768px) and (max-width: 991px)
+breakpoints[md] = (min-width: 992px) and (max-width: 1199px)
+breakpoints[lg] = (min-width: 1200px)
+
+; Panels
+plugins[panels][layouts] = panels/layouts
+plugins[panels][styles] = panels/styles
+
+; CSS - General
+stylesheets[all][]     = assets/css/{{machine_name}}.style.css
+
+; Javascript
+scripts[] = assets/js/{{machine_name}}.script.js
+
+; Information added by Drupal.org packaging script on 2016-02-01
+version = "7.x-3.3"
+core = "7.x"
+project = "radix"
+datestamp = "1454337570"
+

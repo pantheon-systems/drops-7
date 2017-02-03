@@ -1,0 +1,300 @@
+<?php
+
+/**
+ * @file
+ * Draggableviews defines a new database schema
+ * for saving the order.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function draggableviews_schema() {
+  $schema['draggableviews_structure'] = array(
+    'description' => 'The table saves the order settings of an draggableview.',
+    'fields' => array(
+      'dvid' => array(
+        'description' => 'The primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'view_name' => array(
+        'description' => 'Makes the order unique for each view.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'view_display' => array(
+        'description' => 'Makes the order unique for each view display.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'args' => array(
+        'description' => 'Makes the order unique for a given set of arguments',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'entity_id' => array(
+        'description' => 'Id of the entity that we are sorting (node, user, etc.).',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight' => array(
+        'description' => 'The order weight.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'parent' => array(
+        'description' => 'The order parent.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'view' => array('view_name', 'view_display', 'args', 'entity_id'),
+      'weight' => array('weight'),
+      'entity_id' => array('entity_id'),
+    ),
+    'primary key' => array('dvid'),
+  );
+  return $schema;
+}
+
+
+/**
+ * Upgrades the draggableviews_structure table from 1.x to 2.x (schema_version 7200).
+ * This will run if you have 7.x-1.x installed and are upgrading to 7.x-2.x. Otherwise
+ * this will be skipped. All of your views will need to be manually updated using the
+ * Views UI. Backup your data before you run this!
+ */
+function draggableviews_update_7101() {
+  if (!db_field_exists('draggableviews_structure', 'dvid')) {
+    drupal_set_message(t("Draggableviews 1.x to 2.x upgrade script started."));
+
+    // New schema for draggableviews 2.x (schema version 7200).
+    $schema['draggableviews_structure_new'] = array(
+      'description' => 'The table saves the order settings of an draggableview.',
+      'fields' => array(
+        'dvid' => array(
+          'description' => 'The primary identifier.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'view_name' => array(
+          'description' => 'Makes the order unique for each view.',
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'view_display' => array(
+          'description' => 'Makes the order unique for each view display.',
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'args' => array(
+          'description' => 'Makes the order unique for a given set of arguments',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+          'default' => '',
+        ),
+        'entity_id' => array(
+          'description' => 'Id of the entity that we are sorting (node, user, etc.).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'weight' => array(
+          'description' => 'The order weight.',
+          'type' => 'int',
+          'unsigned' => FALSE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'parent' => array(
+          'description' => 'The order parent.',
+          'type' => 'int',
+          'unsigned' => FALSE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'unique keys' => array(
+        'dvid' => array('dvid'),
+      ),
+      'primary key' => array('dvid'),
+    );
+
+    // Get the name of the views displays.
+    $query_views = db_select('draggableviews_structure', 'dv')
+      ->fields('dv', (array('view_name')))
+      ->distinct()
+      ->execute()
+      ->fetchCol();
+
+    for ($i = 0; $i < count($query_views); $i++ ) {
+      $view = views_get_view($query_views[$i]);
+      foreach ($view->display as $view_display => $display) {
+        // Condition: before upgrade to draggableviews 2.x and new views added.
+        if (isset($display->display_options['style_plugin']) && $display->display_options['style_plugin'] == 'draggabletable') {
+          // Can grab handler from $display->display_options['tabledrag_order'] (if its native or fieldAPI).
+          $view_name = $query_views[$i];
+          $draggableviews_info[$view_name][$view_display] = $view_display;
+
+        }
+        // Condition: upgrading data after new views using draggableviews 2.x code.
+        elseif (isset($display->display_options['fields']['draggableviews']) ) {
+          $view_name = $query_views[$i];
+          $draggableviews_info[$view_name][$view_display] = $view_display;
+        }
+      }
+    }
+
+   // get the old data out
+   $query_get_old = db_select('draggableviews_structure', 'dvs');
+   $query_get_old->join('draggableviews_structure', 'dvsd1', 'dvs.view_name = dvsd1.view_name and dvs.nid = dvsd1.nid');
+
+   $query_get_old->fields('dvs', array('view_name', 'nid', 'args', 'value'))
+   ->fields('dvsd1', array('value'));
+
+   $query_get_old->condition('dvs.delta', 0)
+   ->condition('dvsd1.delta', 1);
+
+   $query_get_old = $query_get_old->execute();
+
+    $query_set_new = db_insert('draggableviews_structure')
+      ->fields(array('view_name', 'view_display', 'args', 'entity_id', 'weight', 'parent'));
+
+    foreach ($query_get_old->fetchAll() as $record) {
+
+     // $query_set_save_old->values(get_object_vars($record));
+      foreach ($draggableviews_info[$record->view_name] as $name => $display) {
+        $new_record = array(
+          'view_name' => $record->view_name,
+          'view_display' => $display,
+          'args' => '[]',
+          'entity_id' => $record->nid,
+          'weight' => $record->value,
+          'parent' => $record->dvsd1_value,
+        );
+        $query_set_new->values($new_record);
+      }
+    }
+
+    // Drop the tables.
+    db_drop_table('draggableviews_structure');
+    db_drop_table('draggableviews_collapsed');
+
+    // Create the table.
+    db_create_table('draggableviews_structure', $schema['draggableviews_structure_new']);
+
+    // Save the new formatted information.
+    $query_set_new->execute();
+
+    drupal_set_message(t("Draggableviews 1.x to 2.x upgrade script finished."));
+  }
+  else {
+    drupal_set_message(t("draggableviews_update_7101 skipped.  Database looks like its already been updated."));
+  }
+}
+
+/**
+ * Increase sizes of view_name and view_display fields of
+ * draggableviews_structure table.
+ */
+function draggableviews_update_7201() {
+  $new_field = array(
+    'description' => 'Makes the order unique for each view.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  );
+  db_change_field('draggableviews_structure', 'view_name', 'view_name', $new_field);
+
+  $new_field = array(
+    'description' => 'Makes the order unique for each view display.',
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => TRUE,
+    'default' => '',
+  );
+  db_change_field('draggableviews_structure', 'view_display', 'view_display', $new_field);
+}
+
+/**
+ * Add "parent" field to draggableviews_structure table.
+ */
+function draggableviews_update_7202() {
+  // Commit 0fd7c9f create this as 7002().  This got rename to 7202().  Check if field exist.
+  if (!db_field_exists('draggableviews_structure', 'parent')) {
+    $spec = array(
+        'description' => 'The order parent.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+    );
+    db_add_field('draggableviews_structure', 'parent', $spec);
+  }
+}
+
+/**
+ * Add indexes to the draggableviews_structure table.
+ */
+function draggableviews_update_7203() {
+  if (!db_index_exists('draggableviews_structure', 'view')) {
+    db_add_index('draggableviews_structure', 'view', array('view_name', 'view_display', 'args', 'entity_id'));
+  }
+  if (!db_index_exists('draggableviews_structure', 'weight')) {
+    db_add_index('draggableviews_structure', 'weight', array('weight'));
+  }
+}
+
+/**
+ * Add indexes to the draggableviews_structure table.
+ */
+function draggableviews_update_7204() {
+  if (!db_index_exists('draggableviews_structure', 'entity_id')) {
+    db_add_index('draggableviews_structure', 'entity_id', array('entity_id'));
+  }
+}
+
+/**
+ * Remove unique key on the draggableviews_structure table.
+ */
+function draggableviews_update_7205() {
+  // Table has both primary and unique index.  Only need one.
+  $table = 'draggableviews_structure';
+  $name = 'dvid';
+
+  try {
+    if (db_drop_unique_key($table, $name)) {
+      // Constraint was found and removed.
+      return t('Unique key DVID successfully removed.');
+    }
+    else {
+      // Constraint was not found, nothing was altered.
+      return t('No unique key DVID was found.');
+    }
+  }
+  catch (PDOException $e) {
+    // Constraint was found, but something went wrong, see $e->getMessage() for more info.
+    throw new DrupalUpdateException($e->getMessage);
+  }
+}

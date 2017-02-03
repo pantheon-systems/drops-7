@@ -1,0 +1,16 @@
+name = Media: YouTube
+description = Adds YouTube as a supported media provider.
+package = Media
+core = 7.x
+
+dependencies[] = media_internet
+
+files[] = includes/MediaYouTubeStreamWrapper.inc
+files[] = includes/MediaInternetYouTubeHandler.inc
+
+; Information added by Drupal.org packaging script on 2015-05-28
+version = "7.x-3.0"
+core = "7.x"
+project = "media_youtube"
+datestamp = "1432800182"
+

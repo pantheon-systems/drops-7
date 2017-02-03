@@ -1,0 +1,253 @@
+<?php
+/**
+ * @file
+ * Code for the Nudata Visualization Entity feature.
+ */
+
+include_once 'visualization_entity.features.inc';
+include_once drupal_get_path('module', 'visualization_entity') . '/includes/utils.inc';
+
+
+/**
+ * Load callback for %visualization_entity.
+ */
+function visualization_entity_load($entity_id) {
+  try {
+
+    // Grab entity type from the url.
+    $entity_type = arg(0);
+
+    // To achieve the same behavior with other
+    // entity types we should use:
+    // $eck_types = array_keys(EntityType::loadAll());
+    // However at that point we should also move
+    // this code to another module since this module
+    // it's only related with visualizations.
+    $eck_types = array('visualization');
+
+    if(in_array($entity_type, $eck_types)) {
+
+      // Load entity by etid as usual.
+      if(is_numeric($entity_id)) {
+        return entity_load_single(
+          $entity_type,
+          $entity_id
+        );
+
+      // Load entity by uuid.
+      } else if (uuid_is_valid($entity_id) && function_exists('entity_uuid_load')) {
+        $entity = entity_uuid_load($entity_type, array($entity_id));
+        return ($entity) ? reset($entity) : FALSE;
+      }
+    }
+  } catch (Exception $e) {
+
+    // Entity not found.
+    drupal_not_found();
+    exit();
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function visualization_entity_menu() {
+  return array(
+    'visualization/%/%visualization_entity/iframe' => array(
+      'title' => 'Visualization',
+      'page callback' => 'visualization_entity_iframe',
+      'page arguments' => array(2),
+      'access arguments' => array('access content'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function visualization_entity_menu_alter(&$items){
+
+  // Override routing to use our custom loader instead of
+  // eckentity loader.
+  foreach ($items as $key => $value) {
+    if(strpos($key, '%eckentity') !== FALSE && strpos($key, 'visualization') !== FALSE) {
+      $new_key = str_replace('%eckentity', '%visualization_entity', $key);
+      $items[$new_key] = $items[$key];
+      unset($items[$key]);
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function visualization_entity_theme($existing, $type, $theme, $path) {
+  $tpls_path = drupal_get_path('module', 'visualization_entity') . '/theme';
+  return array(
+    'visualization-iframe' => array(
+      'variables' => array(
+        'content' => t('HTML for Visualization.'),
+      ),
+      'template' => 'visualization-iframe',
+      'path' => $tpls_path,
+    ),
+    'visualization-embed-button' => array(
+      'variables' => array('embed_url' => NULL),
+      'template' => 'visualization-embed-button',
+      'path' => $tpls_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function visualization_entity_entity_view_alter(&$build, $type) {
+  if ($type === 'visualization' && $build['#view_mode'] === 'full') {
+    $build['#post_render'][] = 'visualization_entity_attach_embed_widget';
+  }
+}
+
+/**
+ * Markup for embed widget.
+ */
+function visualization_entity_attach_embed_widget($markup, $element) {
+  $id = ($element['#entity']->uuid) ? $element['#entity']->uuid : $element['#entity']->id;
+  $module_path = drupal_get_path('module', 'visualization_entity');
+  $embed_url = current_path();
+  if (!is_numeric(strpos($embed_url, '/iframe'))) {
+    $embed_url = '/' . $element['#entity_type'] . '/' . $element['#bundle'] . '/' . $id . '/iframe';
+    $embed_url = url($embed_url, array('absolute' => TRUE));
+    $embed_button = theme('visualization-embed-button', array('embed_url' => $embed_url));
+    $markup .= $embed_button;
+    drupal_add_js($module_path . '/visualization_entity.js');
+  }
+  return $markup;
+}
+
+/**
+ * Renders iframe view for visualization.
+ *
+ * @param int $entity_id
+ *   The Entity id to load.
+ *
+ * @return string
+ *   A rendered entity or MENU_NOT_FOUND constant
+ */
+function visualization_entity_iframe($entity) {
+  if (!empty($entity)) {
+    $entity_view = entity_view('visualization', array($entity), 'full');
+    $visualization = drupal_render($entity_view);
+    return $visualization;
+  }
+  else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function visualization_entity_entity_info_alter(&$entity_info) {
+  // Override the default eck__entity__uri to allow uuids in the url.
+  $entity_info['visualization']['uri callback'] = 'visualization_entity_uri';
+}
+
+/**
+ * Entity URI callback.
+ *
+ * @param object $entity
+ *   an object as returned by entity_load().
+ */
+function visualization_entity_uri($entity) {
+  module_load_include('inc', 'eck', 'eck.entity');
+  $crud_info = get_bundle_crud_info($entity->entityType(), $entity->bundle());
+  $view_path = '';
+  // Override visualization uri by uuid.
+  if(property_exists($entity, 'uuid') && uuid_is_valid(arg(2))) {
+    $view_path = str_replace('%eckentity', $entity->uuid, $crud_info['view']['path']);
+  } else {
+    $ids = entity_extract_ids($entity->entityType(), $entity);
+    $view_path = str_replace('%eckentity', $ids[0], $crud_info['view']['path']);
+  }
+  return array('path' => $view_path);
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function visualization_entity_preprocess_page(&$vars) {
+  if (in_array_match('/page__visualization__([a-zA-Z0-9_.-]+)__iframe/', $vars['theme_hook_suggestions'])) {
+    $vars['theme_hook_suggestions'][] = 'visualization-iframe';
+  }
+}
+
+/**
+ * Check regex against elements in an array.
+ */
+function in_array_match($regex, $array) {
+  if (!is_array($array)) {
+    trigger_error('Argument 2 must be array');
+  }
+  foreach ($array as $v) {
+    $match = preg_match($regex, $v);
+    if ($match >= 1) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Given and id checks if a resource is accesible.
+ * This only works if the user creates the visualization
+ * using a uuid_resource field.
+ * This doesn't work if the user paste the url straight
+ * into the source input field bypassing the uuid resource
+ * field.
+ */
+function visualization_entity_resource_accessible($entity, $resource_uuid_field) {
+  $field = property_exists($entity, $resource_uuid_field);
+
+  if($field) {
+    $uid = NULL;
+    if (isset($entity->{$resource_uuid_field}[LANGUAGE_NONE])) {
+      $uid = $entity->{$resource_uuid_field}[LANGUAGE_NONE][0]['target_uuid'];
+    }
+    if(is_numeric($uid)){
+      $node = node_load($uid);
+    } elseif ($uid) {
+      $nid = current(entity_get_id_by_uuid('node', array($uid)));
+      $node = node_load($nid);
+    }
+  } else {
+    // If this field is not set then
+    // we allow people to use external
+    // resources.
+    return TRUE;
+  }
+  if(!empty($node)){
+    return node_access('view', $node);
+  }
+
+  return TRUE;
+}
+
+/**
+ * Deprecated function for backwards compatibility
+ *
+ * This function only exists for backwards compatibility.
+ * The visualization_entity_charts, visualization_entity_maps and
+ * visualization_entity_tables modules also reference this misspelled
+ * version of the visualization_entity_resource_accessible function.
+ * Until those modules are updated, the function below serves as a
+ * passthrough to the correctly spelled function.
+ *
+ * @param [type] $entity
+ * @param [type] $resource_uuid_field
+ *
+ * @return [type]
+ */
+function visualization_entity_resource_accesible($entity, $resource_uuid_field) {
+  return visualization_entity_resource_accessible($entity, $resource_uuid_field);
+}

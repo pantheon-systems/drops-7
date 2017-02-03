@@ -1,0 +1,27 @@
+name = Visualization Entity Charts
+description = Create charts using nvd3
+core = 7.x
+package = Data Visualization
+version = 7.x-1.0-beta1
+
+dependencies[] = chosen
+dependencies[] = eck
+dependencies[] = features
+dependencies[] = file
+dependencies[] = jquery_update
+dependencies[] = recline
+dependencies[] = text
+dependencies[] = uuidreference
+dependencies[] = visualization_entity
+features[eck_bundle][] = visualization_ve_chart
+features[features_api][] = api:2
+features[field_base][] = field_description
+features[field_base][] = field_file
+features[field_base][] = field_ve_settings
+features[field_instance][] = visualization-ve_chart-field_description
+features[field_instance][] = visualization-ve_chart-field_file
+features[field_instance][] = visualization-ve_chart-field_ve_settings
+features_exclude[dependencies][geo_file_entity_geojson_bundle] = geo_file_entity_geojson_bundle
+features_exclude[dependencies][visualization_entity_recline_field_reference] = visualization_entity_recline_field_reference
+features_exclude[field_instance][visualization-ve_chart-field_uuid_resource] = visualization-ve_chart-field_uuid_resource
+project path = profiles/dkan/modules/contrib

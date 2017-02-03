@@ -1,0 +1,55 @@
+.file-resup-wrapper,
+.file-resup-wrapper .drop,
+.file-resup-wrapper .progress {
+  margin: 0.6em 0;
+}
+
+.file-resup-wrapper .messages {
+  margin: 0.6em 1em;
+}
+
+.file-resup-wrapper .drop {
+  display: table;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px dashed #ccc;
+  height: 4em;
+}
+
+.file-resup-wrapper .item-list ul {
+  padding: 0 1em;
+}
+
+.file-resup-wrapper .item-list ul li {
+  list-style: none outside none;
+  margin: 0.2em 0;
+  padding: 0;
+}
+
+.file-resup-wrapper a.remove {
+  margin-right: 0.3em;
+  text-decoration: none !important;
+}
+
+.file-resup-wrapper .drop-message {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  padding: 0 1em;
+  color: #bbb;
+  cursor: default;
+}
+
+.file-resup-wrapper .file-list + .drop-message {
+  display: none;
+}
+
+.file-resup-wrapper a.button {
+  display: inline-block;
+  margin: 0 0.6em 0.6em 0;
+}
+
+.file-resup-wrapper a.button.disabled {
+  color: #ccc;
+  cursor: default;
+}

@@ -1,0 +1,278 @@
+<?php
+/**
+ * @file
+ * Install file for the Workbench Email module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function workbench_email_schema() {
+  $schema = array();
+  $schema['workbench_emails'] = array(
+    'description' => 'Custom table to hold moderation emails',
+    'fields' => array(
+      'wid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'An auto increment id',
+      ),
+      'from_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The from state that the email exists',
+      ),
+      'to_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The to state that this email exists',
+      ),
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The role id',
+      ),
+      'subject' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The subject of the email',
+      ),
+      'message' => array(
+        'description' => 'The message of the email',
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'translatable' => TRUE,
+      ),
+      'author' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The author setting',
+      ),
+      'automatic' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The automatic setting',
+      ),
+    ),
+    'indexes' => array(
+      'rid' => array('rid'),
+    ),
+    'primary key' => array('wid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function workbench_email_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  if ($phase == 'runtime') {
+    $description = array();
+    if (!module_exists('token')) {
+      $url = l($t('Token'), 'http://drupal.org/project/token');
+      $description[] = $t('!token is not installed on the site.
+      Please download the module to fully support email capabilities.',
+        array('!token' => $url));
+    }
+
+    if (!module_exists('workbench_moderation')) {
+      $url = l($t('Workbench Moderation'), 'http://drupal.org/project/workbench_moderation');
+      $description[] = $t('!workbench_moderation is not installed on the site.
+      Please download the module to begin using Workbench Email.',
+        array('!workbench_moderation' => $url));
+    }
+
+    if (!empty($description)) {
+      $requirements['workbench_email'] = array(
+        'title' => $t('Workbench Email'),
+        'value' => $t('Not configured'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => theme('item_list', array('items' => $description)),
+      );
+    }
+    else {
+      $requirements['workbench_email'] = array(
+        'title' => $t('Workbench Email'),
+        'value' => $t('Configured'),
+        'severity' => REQUIREMENT_OK,
+        'description' => $t('Workbench Email is configured properly.'),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function workbench_email_install() {
+  drupal_load('module', 'workbench_email');
+  workbench_email_get_queue()->createQueue();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function workbench_email_uninstall() {
+  variable_del('workbench_email_queue_mail');
+  drupal_load('module', 'workbench_email');
+  workbench_email_get_queue()->deleteQueue();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Removes string indexes from the 'workbench_emails' and
+ * 'workbench_email_transitions' tables. Also adds the 'rid' index
+ * to the 'workbench_email_transitions' table.
+ */
+function workbench_email_update_7001() {
+  // Remove the transition index from the 'workbench_emails' table.
+  db_drop_index('workbench_emails', 'transition');
+
+  // Remove the set index from the 'workbench_emails' table.
+  db_drop_index('workbench_emails', 'set');
+
+  // Remove old primary key on 'workbench_emails' table.
+  db_drop_primary_key('workbench_emails');
+
+  // Add the wid field to the 'workbench_emails' table.
+  $field_definition = array(
+    'type' => 'serial',
+    'not null' => TRUE,
+    'description' => 'An auto increment id',
+  );
+  db_add_field('workbench_emails', 'wid', $field_definition, array('primary key' => array('wid')));
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Removes the not null constraint from the fields
+ * subject and message within workbench_emails. Also,
+ * removes the workbench_email_transitions table from
+ * the schema.
+ */
+function workbench_email_update_7002() {
+  db_change_field('workbench_emails', 'subject', 'subject',
+    array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+      'description' => 'The subject of the email',
+    )
+  );
+
+  db_change_field('workbench_emails', 'message', 'message',
+    array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+      'description' => 'The message of the email',
+    )
+  );
+
+  db_drop_table('workbench_email_transitions');
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Adds the wid field properly.
+ */
+function workbench_email_update_7003() {
+  if (!db_field_exists('workbench_emails', 'wid')) {
+    // Add the wid field to the 'workbench_emails' table.
+    $field_definition = array(
+      'type' => 'serial',
+      'not null' => TRUE,
+      'description' => 'An auto increment id',
+    );
+    db_add_field('workbench_emails', 'wid', $field_definition, array('primary key' => array('wid')));
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Fixes issue with NULL constraint on subject / message
+ * fields.
+ */
+function workbench_email_update_7004() {
+  db_change_field('workbench_emails', 'subject', 'subject',
+    array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+      'description' => 'The subject of the email',
+    )
+  );
+
+  db_change_field('workbench_emails', 'message', 'message',
+    array(
+      'description' => 'The message of the email',
+      'type' => 'text',
+      'not null' => FALSE,
+      'size' => 'big',
+      'translatable' => TRUE,
+    )
+  );
+
+  db_drop_table('workbench_email_transitions');
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add author flag to table.
+ */
+function workbench_email_update_7005() {
+  $field = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The author setting',
+  );
+  db_add_field('workbench_emails', 'author', $field);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add automatic flag to table.
+ */
+function workbench_email_update_7006() {
+  $field = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The automatic setting',
+  );
+  db_add_field('workbench_emails', 'automatic', $field);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Adds the workbench email queue
+ */
+function workbench_email_update_7007() {
+  drupal_load('module', 'workbench_email');
+  workbench_email_get_queue()->createQueue();
+}

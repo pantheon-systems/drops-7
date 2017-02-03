@@ -1,0 +1,80 @@
+<?php
+/**
+ * @file
+ * Code for the Geo File Entity Geojson Bundle feature.
+ */
+
+include_once 'geo_file_entity_geojson_bundle.features.inc';
+
+/**
+ * Implements hook_theme().
+ */
+function geo_file_entity_geojson_bundle_theme($existing, $type, $theme, $path) {
+  $tpls_path = drupal_get_path('module', 'geo_file_entity_geojson_bundle') . '/theme';
+  return array(
+    'geo_file__geojson' => array(
+      'render element' => 'elements',
+      'template' => 'geofile--geojson',
+      'path' => $tpls_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function geo_file_entity_geojson_bundle_entity_view_alter(&$build, $type) {
+  if ($type === 'geo_file' && $build['#entity']->type === 'geojson') {
+    // Load libraries.
+    libraries_load('leaflet');
+    libraries_load('leaflet_zoomtogeometries');
+    
+    // Build settings.
+    $settings = array();
+
+    // Build label column and geojson file.
+    $geojson = $build['field_file']['#items'][0]['uri'];
+    $geojson = drupal_realpath($geojson);
+    $geojson = json_decode(file_get_contents($geojson));
+
+    $settings['geojson'] = $geojson;
+
+    $settings = array(
+      'geo_file_entity_geojson_bundle' => $settings,
+    );
+
+    // Add settings.
+    drupal_add_js($settings, 'setting');
+
+    // Add js controller and stylesheets.
+    $module_path = drupal_get_path('module', 'geo_file_entity_geojson_bundle');
+    libraries_load('leaflet_zoomtogeometries');
+    drupal_add_js($module_path . '/geo_file_entity_geojson_bundle.js');
+    drupal_add_css($module_path . '/geo_file_entity_geojson_bundle.css');
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function geo_file_entity_geojson_bundle_form_alter(&$form, &$form_state, $form_id) {
+  $geojson_forms = array('eck__entity__form_add_geo_file_geojson', 'eck__entity__form_edit_geo_file_geojson');
+  if (in_array($form_id, $geojson_forms)) {
+    $lang = $form['field_file']['#language'];
+    $form['field_file'][$lang][0]['#upload_validators']['geo_file_entity_geojson_bundle_validate_mime_type'] = array();
+  }
+}
+
+/**
+ *  Mime type upload validator
+ */
+function geo_file_entity_geojson_bundle_validate_mime_type($file) {
+  $geojson_file = file_get_contents($file->uri);
+  $path_parts = pathinfo($file->uri);
+  $geojson = json_decode($geojson_file);
+  $errors = array();
+  if (!$geojson) {
+    $errors[] = 'File must be a valid geojson file.';
+  }
+  return $errors;
+}

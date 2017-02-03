@@ -1,0 +1,284 @@
+<?php
+
+/**
+ * @file
+ * Custom sitewide elements.
+ */
+
+include_once 'dkan_sitewide.features.inc';
+include_once 'dkan_sitewide.blocks.inc';
+
+
+/**
+ * Implements hook_menu().
+ */
+function dkan_sitewide_menu() {
+  $items = array();
+
+  $items['dataset'] = array(
+    'title' => 'Dataset',
+    'description' => t('Redirects to search page'),
+    'page callback' => 'dkan_sitewide_redirect_to_search',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Callback to make change search path backward compatible.
+ */
+function dkan_sitewide_redirect_to_search(){
+  $params = drupal_get_query_parameters();
+  drupal_goto('/search/type/dataset', array('query' => $params), 301);
+}
+
+/**
+ * Adds group block to dataset node.
+ */
+function dkan_sitewide_user_menu_block() {
+  global $user;
+  $output = '';
+  if ($user->uid) {
+    if (module_exists('gravatar')) {
+      $account = _gravatar_load_account($user);
+      $uri = _gravatar_get_account_user_picture($account);
+      $file = _gravatar_get_account_user_picture($account) ? file_create_url(_gravatar_get_account_user_picture($account)) . '" width="25" height="25' : gravatar_get_gravatar($user->mail, array('size' => '25'));
+      $output = l('<img alt="my user picture" src="' . $file . '">', 'user', array('html' => TRUE));
+    }
+    $output .= '<span class="links">' . l($user->name, 'user') . l(t('Log out'), 'user/logout', array('attributes' => array('class' => array('sub')))) . '</span>';
+  }
+  else {
+    $output .= '<span class="links">' . l(t('Log in'), 'user/login');
+    if (variable_get('user_register', TRUE)) {
+      $output .= l(t('Register'), 'user/register', array('attributes' => array('class' => array('sub'))));
+    }
+    $output .= '</span>';
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function dkan_sitewide_page_alter(&$page) {
+  // Adding page title to breadcrumb.
+  // Context module does this in hook_page_alter() so we need to as well if
+  // we want to add this.
+  $breadcrumbs = drupal_get_breadcrumb();
+  $node = menu_get_object();
+  if ($node && $node->type == 'resource') {
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+    $dataset = $node_wrapper->field_dataset_ref->value();
+    if ($dataset) {
+      $breadcrumbs[] = l($dataset[0]->title, 'node/' . $dataset[0]->nid);
+      if (arg(2) == 'datastore') {
+        $breadcrumbs[] = l(dkan_dataset_text_trim($node->title), 'node/' . $node->nid);
+      }
+    }
+  }
+  elseif (arg(0) == 'node' && arg(1) == 'add' && arg(2) == 'resource' && $query = drupal_get_query_parameters()) {
+    if (isset($query['dataset'])) {
+      $nid = $query['dataset'];
+      $breadcrumbs[] = l(dkan_dataset_text_trim(dkan_dataset_get_title($nid)), 'node/' . $nid);
+    }
+  }
+  $breadcrumbs[] = drupal_get_title();
+  drupal_set_breadcrumb($breadcrumbs);
+}
+
+/**
+ * Implements theme_preprocess_views_views_json_style_simple().
+ */
+function dkan_sitewide_preprocess_views_views_json_style_simple(&$vars) {
+  // Adds node values to list of resources.
+  if ($vars['view']->name == 'dkan_sitewide_resources_json') {
+    $view = views_get_view('dkan_sitewide_json');
+    $view->preview(4);
+    $renderer = $view->style_plugin->row_plugin;
+    foreach ($view->field as $field) {
+      $vars['rows'][check_plain($field->options['label'])] = filter_xss($field->original_value);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function dkan_sitewide_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'views_exposed_form' && $form['#id'] == 'views-exposed-form-dataset-page' ||
+    $form['#id'] == 'views-exposed-form-user-profile-search-entity-view-1' ||
+    $form['#id'] == 'views-exposed-form-groups-search-entity-view-1' ||
+    $form['#id'] == 'dkan-sitewide-dataset-search-form--2' ||
+    $form['#id'] == 'views-exposed-form-dkan-datasets-panel-pane-1') {
+    $form['#info']['filter-search_api_views_fulltext']['description'] = '';
+    $form['submit']['#title'] = '';
+    $form['query']['#title'] = 'Search';
+    $form['query']['#attributes'] = array('placeholder' => t('Search'));
+    $form['query']['#size'] = 60;
+  }
+
+  if ($form_id == 'colorizer_admin_settings') {
+    //Add clear cache for anonymous after any change.
+    $form['#submit'][] = 'dkan_sitewide_form_colorize_clear_cache';
+  }
+}
+
+/**
+ * Clear cache on a form submit.
+ */
+function dkan_sitewide_form_colorize_clear_cache($form, &$form_state) {
+  cache_clear_all();
+}
+
+/**
+ * Implements hook_restws_resource_info().
+ */
+function dkan_sitewide_restws_resource_info_alter(&$info) {
+  // We aren't exposing anything other than node info, restws exposes all
+  // entities by default.
+  foreach ($info as $key => $value) {
+    if ($key != 'node') {
+      unset($info[$key]);
+    }
+  }
+}
+
+/**
+ * Implements hook_update_status_alter().
+ *
+ * Drupal looks toward drupal.org for udpates. DKAN is blacklisted on d.o so we
+ * are checking github.
+ */
+function dkan_sitewide_update_status_alter(&$projects) {
+
+  // Remove update notices.
+  $up_to_date_projects = array('gravatar', 'beautytips', 'entity_rdf', 'feeds_field_fetcher', 'multistep', 'link_iframe_formatter', 'rdfx');
+  foreach ( $up_to_date_projects as $up_to_date_project ) {
+
+    if ( isset($projects[$up_to_date_project]) ) {
+
+      $projects[$up_to_date_project]['status'] = UPDATE_CURRENT;
+
+      if ( isset($projects[$up_to_date_project]['title']) &&
+           isset($projects[$up_to_date_project]['existing_version']) ) {
+
+        $project_name = $projects[$up_to_date_project]['title'];
+        $project_revision = $projects[$up_to_date_project]['existing_version'];
+
+        if (current_path() == 'admin/reports/updates') {
+          drupal_set_message( $project_name . ' is up to date. We are using ' . $project_revision . ' revision.' );
+        }
+      }
+    }
+  }
+
+  $project = 'dkan';
+  $org = 'nucivic';
+
+  $tags = drupal_http_request('https://api.github.com/repos/NuCivic/' . $project . '/tags');
+  $tags = json_decode($tags->data);
+  if (isset($tags->message)) {
+    drupal_set_message("Could not get an update from Github on DKAN since github rate limit exceeded.");
+    unset($projects[$project]);
+    return;
+  }
+  $dkan_tag = $tags[0]->name;
+
+  $tag_commit_url = $tags[0]->commit->url;
+  $tag_commit = drupal_http_request($tag_commit_url);
+  $tag_commit = json_decode($tag_commit->data);
+  $tag_date = date("U", strtotime($tag_commit->commit->author->date));
+
+  $current_version = $projects[$project]['existing_version'];
+  if ($current_version == $dkan_tag) {
+    $projects[$project]['status'] = UPDATE_CURRENT;
+  }
+  else {
+    $projects[$project]['status'] = UPDATE_NOT_CHECKED;
+  }
+  $minor = str_replace('7.x-1.', '', $dkan_tag);
+    foreach (array($current_version, $dkan_tag) as $version) {
+    $projects[$project]['releases'][$version]['name'] = $project . ' ' . $version;
+    $projects[$project]['releases'][$version]['version'] = $version;
+    $projects[$project]['releases'][$version]['tag'] = $version;
+    $projects[$project]['releases'][$version]['date'] = time();
+    $projects[$project]['releases'][$version]['tag'] = $version;
+    $projects[$project]['releases'][$version]['reason'] = $version . ' Release';
+    $projects[$project]['releases'][$version]['version_major'] = $projects[$project]['existing_major'];
+    $projects[$project]['releases'][$version]['version_extra'] = str_replace('7.x-', '', $version);
+    $projects[$project]['releases'][$version]['status'] = 'published';
+    if ($minor != 'x') {
+      $projects[$project]['releases'][$version]['download_link'] = str_replace('7.x-1.', '', $dkan_tag);
+    }
+    else {
+      $projects[$project]['releases'][$version]['download_link'] = '';
+    }
+  }
+  $projects[$project]['releases'][$dkan_tag]['date'] = $tag_date;
+
+  $projects[$project]['datestamp'] = $tag_date;
+  $projects[$project]['link'] = 'http://github.com/nucivic/' . $project;
+  $projects[$project]['reason'] = 'Development Release';
+  $projects[$project]['releases']['latest_version'] = $dkan_tag;
+  $projects[$project]['releases']['7.x-1.x-dev']['release_link'] = 'http://github.com/nucivic/' . $project;
+  $projects[$project]['releases']['7.x-1.x-dev']['reason'] = 'Development Release';
+  $projects[$project]['releases']['7.x-1.x-dev']['download_link'] = 'https://api.github.com/repos/NuCivic/' . $project .  '/zipball/7.x-1.x';
+
+  $projects[$project]['releases']['7.x-1.x-dev']['date'] = time();
+
+  $projects[$project]['releases'][$dkan_tag]['release_link'] = 'https://api.github.com/repos/NuCivic/' . $project .  '/zipball/' . $dkan_tag;
+
+  // Checks to see if last digit is number which means it is on a tag.
+  if (preg_match("/.*?(\d+)$/", $projects[$project]['existing_version'])) {
+    $projects[$project]['recommended'] = $dkan_tag;
+  }
+}
+
+/**
+ * Implements template_preprocess_page().
+ */
+function dkan_sitewide_preprocess_page(&$variables) {
+  // Add colorizer instructions if not using default theme for admin pages.
+  global $base_url;
+  $admin_theme = variable_get('admin_theme');
+  $default_theme = variable_get('theme_default');
+  if (arg(0) == 'admin' && arg(1) == 'appearance' && $admin_theme !== '0' && $default_theme !== $admin_theme) {
+    drupal_set_message(t('For Colorizer to work you must set the Administration theme to match your <em>Default theme</em> at the bottom of the <a href="' . $base_url . '/admin/appearance">appearance list</a> page.'), 'warning');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * We need to alter the user form because we need to allow the user to check or
+ * uncheck the checkboxes for gravatar whenever he wants and because we need to
+ * show the user photo.
+ */
+function dkan_sitewide_form_user_profile_form_alter(&$form, $form_state) {
+  if ($form['#user_category'] == 'account' && isset($form['picture']) && variable_get('user_pictures', 0) && ($account = $form['#user']) && user_access('use gravatar', $account)) {
+    if (isset($form['picture']['picture_current']) && module_exists('gravatar')) {
+      $form['picture']['picture_current'] = array(
+        '#markup' => theme('image_style', array('style_name' => 'medium', 'path' => _gravatar_get_account_user_picture(_gravatar_load_account($account)))),
+      );
+    }
+    if (user_access('disable own gravatar', $account)) {
+      unset($form['picture']['gravatar']['#disabled']);
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * We need to add this hook to make the hook_form_alter from dkan_sitewide to be
+ * run at the end of hook_form_alter's.
+ */
+function dkan_sitewide_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['dkan_sitewide'])) {
+    $group = $implementations['dkan_sitewide'];
+    unset($implementations['dkan_sitewide']);
+    $implementations['dkan_sitewide'] = $group;
+  }
+}

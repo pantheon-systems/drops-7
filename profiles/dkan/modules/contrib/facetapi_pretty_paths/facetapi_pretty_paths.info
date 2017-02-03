@@ -1,0 +1,21 @@
+name = Facet API Pretty Paths
+core = 7.x
+description = "Enables pretty paths for searches with Facet API."
+
+dependencies[] = facetapi
+package = Search Toolkit
+
+files[] = plugins/facetapi/url_processor_pretty_paths.inc
+files[] = plugins/base_path_provider/facetapi_pretty_paths_base_path_provider.inc
+files[] = plugins/base_path_provider/facetapi_pretty_paths_adapter_base_path_provider.inc
+files[] = plugins/base_path_provider/facetapi_pretty_paths_default_base_path_provider.inc
+files[] = plugins/coders/facetapi_pretty_paths_coder_default.inc
+files[] = plugins/coders/facetapi_pretty_paths_coder_taxonomy.inc
+files[] = plugins/coders/facetapi_pretty_paths_coder_taxonomy_pathauto.inc
+
+; Information added by Drupal.org packaging script on 2015-03-28
+version = "7.x-1.4"
+core = "7.x"
+project = "facetapi_pretty_paths"
+datestamp = "1427560985"
+

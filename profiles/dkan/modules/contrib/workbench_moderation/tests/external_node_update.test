@@ -1,0 +1,189 @@
+<?php
+
+/**
+ * @file
+ * Tests moderation states when nodes are (un)published by other modules.
+ */
+class WorkbenchModerationExternalNodeUpdateTestCase extends WorkbenchModerationTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $profile = 'testing';
+
+  /**
+   * A test node.
+   *
+   * @var object
+   */
+  protected $node;
+
+  /**
+   * Returns test case metadata.
+   *
+   * @return array
+   *   The metadata.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'External node update',
+      'description' => 'Test if nodes are correctly moderated when updated by third party modules.',
+      'group' => 'Workbench Moderation',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp($modules = array()) {
+    // Enable a test module that will publish and unpublish nodes for us.
+    parent::setUp(array_merge($modules, array('workbench_moderation_test')));
+
+    $this->drupalLogin($this->moderator_user);
+  }
+
+  /**
+   * Tests if nodes can be moderated by third party modules.
+   */
+  public function testNodeSave() {
+    // Create a brand new unpublished node programmatically.
+    $settings = array(
+      'title' => $this->randomName(),
+      'type' => $this->content_type,
+      'status' => NODE_NOT_PUBLISHED,
+    );
+    $this->node = $this->drupalCreateNode($settings);
+
+    // Assert that the node is initially in state draft and not published.
+    $expected = array('state' => 'draft');
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation status is correct for a newly created node.');
+    $this->assertNoPublishedRecord('A newly created node does not have a published entry in the node history table.');
+    $this->assertPublicationState(FALSE, 'A newly created node is not published.');
+
+    // Resave the node and check that the status doesn't change.
+    $this->resaveNode();
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation status is correct for a newly created node.');
+    $this->assertNoPublishedRecord('A newly created node does not have a published entry in the node history table.');
+    $this->assertPublicationState(FALSE, 'A newly created node is not published.');
+
+    // Publish the node in an external module and check that the moderation
+    // state changes accordingly.
+    $this->drupalGet('workbench_moderation_test/' . $this->node->nid . '/publish');
+    $this->refreshNode();
+    $expected = array('state' => 'published');
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation state changed to "published" if the node is published externally.');
+    $this->assertModerationStatus($expected, 'published', 'A published moderation state record is created when the node is published externally.');
+    $this->assertPublicationState(TRUE, 'A node which is published externally is actually published.');
+
+    // Resave the node and check that the status doesn't change.
+    $this->resaveNode();
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation state changed to "published" if the node is published externally.');
+    $this->assertModerationStatus($expected, 'published', 'A published moderation state record is created when the node is published externally.');
+    $this->assertPublicationState(TRUE, 'A node which is published externally is actually published.');
+
+    // Unpublish the node in an external module and check that the moderation
+    // state changes accordingly.
+    $this->drupalGet('workbench_moderation_test/' . $this->node->nid . '/unpublish');
+    $this->refreshNode();
+    $expected = array('state' => 'draft');
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation state changed to "draft" if the node is unpublished externally.');
+    $this->assertNoPublishedRecord('The published moderation state record is removed when the node is unpublished externally.');
+    $this->assertPublicationState(FALSE, 'A node which is unpublished externally is actually unpublished.');
+
+    // Resave the node and check that the status doesn't change.
+    $this->resaveNode();
+    $this->assertModerationStatus($expected, 'is_current', 'The moderation state changed to "draft" if the node is unpublished externally.');
+    $this->assertNoPublishedRecord('The published moderation state record is removed when the node is unpublished externally.');
+    $this->assertPublicationState(FALSE, 'A node which is unpublished externally is actually unpublished.');
+  }
+
+  /**
+   * Resave the node in an external module.
+   */
+  public function resaveNode() {
+    $this->drupalGet('workbench_moderation_test/' . $this->node->nid);
+    $this->refreshNode();
+  }
+
+  /**
+   * Checks if the node history table matches the expected values.
+   *
+   * @param array $expected
+   *   An associative array containing expected moderation status values.
+   * @param string $status
+   *   Which status to assert. Can be either 'current' or 'published'.
+   * @param string $message
+   *   The message to display along with the assertion.
+   *
+   * @return bool
+   *   TRUE if the assertion succeeded, FALSE otherwise.
+   */
+  public function assertModerationStatus(array $expected, $status = 'is_current', $message = '') {
+    $record = $this->getModerationRecord($status);
+    $success = TRUE;
+    foreach ($expected as $key => $value) {
+      $success |= $this->assertEqual($value, $record[$key], format_string('Found value %value for %key, expected %expected.', array(
+        '%key' => $key,
+        '%value' => $record[$key],
+        '%expected' => $value,
+      )));
+    }
+
+    return $this->assertTrue($success, $message);
+  }
+
+  /**
+   * Checks if the node is not marked as 'published' in the node history table.
+   *
+   * @param string $message
+   *   The message to display along with the assertion.
+   *
+   * @return bool
+   *   TRUE if the assertion succeeded, FALSE otherwise.
+   */
+  public function assertNoPublishedRecord($message = '') {
+    $record = $this->getModerationRecord('published');
+    return $this->assertFalse($record, $message);
+  }
+
+  /**
+   * Checks that the test node has the expected publication state.
+   *
+   * @param bool $expected
+   *   TRUE if the the node should be published, FALSE otherwise.
+   * @param string $message
+   *   The message to display along with the assertion.
+   *
+   * @return bool
+   *   TRUE if the assertion succeeded, FALSE otherwise.
+   */
+  public function assertPublicationState($expected, $message = '') {
+    return $this->assertEqual($expected, $this->node->status, $message);
+  }
+
+  /**
+   * Refreshes the test node so it matches the actual state in the database.
+   */
+  public function refreshNode() {
+    $this->node = node_load($this->node->nid, NULL, TRUE);
+  }
+
+  /**
+   * Returns a moderation status record of the tested node.
+   *
+   * @param string $status
+   *   Which status to return. Can be either 'current' or 'published'.
+   *
+   * @return array
+   *   The node's record(s) from the {workbench_moderation_node_history} table.
+   */
+  protected function getModerationRecord($status = 'is_current') {
+    return db_select('workbench_moderation_node_history', 'nh')
+      ->fields('nh', array('from_state', 'state', 'published', 'is_current'))
+      ->condition('nid', $this->node->nid, '=')
+      ->condition($status, 1)
+      ->execute()
+      ->fetchAssoc();
+  }
+
+}

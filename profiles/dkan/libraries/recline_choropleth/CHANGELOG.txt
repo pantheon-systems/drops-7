@@ -1,0 +1,4 @@
+v0.1 2014-10-27
+---------------
+
++ Moving js libraries from from drupal module to this separate repository

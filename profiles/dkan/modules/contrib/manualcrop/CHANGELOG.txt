@@ -1,0 +1,75 @@
+Manual Crop 7.x-1.5, 2015-04-11
+-------------------------------
+- Added a permission to crop images.
+- Added auto reuse effect (thanks to OnkelTem).
+- Added a hook to expose supporting widgets (thanks to dreamlabs).
+- Added Views integration (thanks to OnkelTem and merlinofchaos).
+- Added option to maximize the default crop area.
+- Added support for the image style labels.
+- Added support for the Link Image widget
+- Added support for the MultiUpload widget (thanks to havran).
+- Added support for the Image URL Formatter module (thanks to papadak).
+- Added an example Drush make file.
+- Removed the third-party jQuery plugins and added the Libraries module as dependency.
+- Removed faulty width and height attributes.
+- Disabled crop after upload on mobile devices.
+- Fixed and improved Media integration (there are a lot of people to thank for this).
+- Fixed compatibility jQuery 1.9 and up.
+- Fixed issues with the admin bar (thanks to anou and candelas).
+- And much more fixes and features, see the git log for more details.
+
+Manual Crop 7.x-1.4, 2012-10-19
+-------------------------------
+- Switched from the custom widget to the default image widget (thanks to Alan D. for improving the upgrade path).
+- Added Media 2.x support for most Manual Crop settings (thanks to mrfelton).
+- Added a selection maximize button (thanks to esbenvb).
+- Added an option to exclude none Manual Crop styles from Insert.
+- Added the HTTP cache-controller to images with the crop reuse effect.
+- Changed the text on some buttons.
+- Changed the admin multi-selects to checkboxes and added support for the Multi-column checkboxes radios module.
+- Fixed empty span issue with crop after upload (thanks to phreestilr).
+- Fixed IE 8 and 9 compatibility (lazy loading CSS and JavaScript issues).
+- Other various improvements and bug fixes.
+
+Manual Crop 7.x-1.3, 2012-04-22
+-------------------------------
+- Added inline cropping as alternative to the overlay.
+- Added an instant preview option.
+- Added a thumbnail list option, to show a list of thumbnails instead of the default selection list.
+- Added a crop after upload option.
+- Added an option to show a default crop area.
+- Added basic Media 2.x and Insert integration.
+- Added a crop reuse effect.
+- Added support for image dimensions callbacks (thanks to atlea).
+- Added an option to skip resize if the image was not cropped.
+- Added a "maintain proportions" option for crop without scale.
+- Added support for string overrides.
+- Changed button labels.
+- Fixed enforcing of required fields (thanks to atlea).
+- Various other fixes.
+
+Manual Crop 7.x-1.2, 2011-10-10
+-------------------------------
+- Fixed the crop selection validation, removed images should be skipped during validation.
+- Added support for the FileField Sources module (thanks to Fidelix).
+- Show a crop button instead of a selection list when only one selection can be cropped.
+- Present the user a cleaner image style name.
+- Added the "enter" shortcut and changed the "esc" shortcut effect.
+- Added an option, at the performance page, to enable an HTTP cache controller variable that will force image reloading after re-cropping (thanks to mstrelan, who improved this with additional caching).
+- Fixed support for images in a field collection (thanks to mstrelan).
+- Updated the preview image to show the latest crop selection if one was made.
+
+Manual Crop 7.x-1.1, 2011-06-29
+-------------------------------
+- Added the ability to exclude or include items in the image style list.
+- Added support for other entity types than nodes.
+- Improved Webkit and IE support, thanks to j0rd.
+- Added the ability to require styles to be cropped.
+- Changed the button labels and hide the restore button if restoring isn't possible.
+- Improved visual feedback when styles are cropped or need to be cropped.
+- Fixed the ratio-respecting crop selection for images that are to width.
+- Changed from using style id's to style names.
+
+Manual Crop 7.x-1.0, 2011-04-15
+-------------------------------
+- Initial release.

@@ -1,0 +1,4 @@
+name = UUID Reference Select
+core = 7.x
+
+dependencies[] = uuidreference

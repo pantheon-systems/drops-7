@@ -1,0 +1,18 @@
+TAXONOMY MENU
+=============
+
+Upgrading from 6.1 => 6.2
+=========================
+1. Copy new version to sites/all/modules/taxonomy_menu
+2. Run update.php
+
+If that doesn't work then follow:
+1. Disable the module at admin/build/modules
+2. Uninstall the module at admin/build/modules/uninstall
+3. Copy new version to sites/all/modules/taxonomy_menu
+4. Enable the new version at admin/build/modules
+
+See README.TXT for configuration options.
+
+The best method is to treat this upgrade as a new module.
+The setting of the previous version will not be upgraded.

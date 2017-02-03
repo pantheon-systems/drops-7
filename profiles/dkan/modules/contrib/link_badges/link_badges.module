@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Link Badges module file.
+ */
+
+
+/**
+ * Implements of hook_preprocess_link 
+ * @param array $variables
+ */
+function link_badges_preprocess_link(&$variables) {
+  if (!empty($variables['options']['link_badge']) ) {
+    $badge_value = NULL;
+    // First set any static value that is passed to the link.
+    if (!empty($variables['options']['link_badge']['value'])) {
+      $badge_value = $variables['options']['link_badge']['value'];
+      $badge_class = '';
+    }
+    
+    // Next check for a callback function, and allow that to override a static value if both exist.
+    if (!empty($variables['options']['link_badge']['callback']) && function_exists($variables['options']['link_badge']['callback'])) {
+      $args = array('path' => $variables['path']);
+      if (!empty($variables['options']['link_badge']['arguments'])) {
+        $args += $variables['options']['link_badge']['arguments'];
+      }
+      $badge_value = call_user_func($variables['options']['link_badge']['callback'], $args);
+      $badge_class = 'link-badge-' . $variables['options']['link_badge']['callback'];
+    }
+    if (!is_null($badge_value)) {
+      drupal_add_css(drupal_get_path('module', 'link_badges') . '/link_badges.css');
+      if (empty($variables['options']['html'])) {
+        $variables['text'] = check_plain($variables['text']);
+      }
+      $variables['options']['html'] = TRUE;
+      $variables['text'] = '<span class="link-badge-text">' . $variables['text'] . '</span>' .
+                           '<span class="link-badge-badge-wrapper"><span class="link-badge ' . $badge_class . '">' . $badge_value . '</span></span>';
+      $variables['options']['attributes']['class'][] = 'link-badge-wrapper';
+    }
+  }
+}

@@ -1,0 +1,12 @@
+name = Visualization Entity Charts DKAN
+description = Add charts to dkan
+core = 7.x
+package = Other
+dependencies[] = dkan_dataset
+dependencies[] = dkan_datastore
+dependencies[] = features
+dependencies[] = visualization_entity_recline_field_reference
+features[features_api][] = api:2
+features[field_instance][] = visualization-ve_chart-field_uuid_resource
+features_exclude[dependencies][uuidreference] = uuidreference
+project path = profiles/dkan/modules/contrib/visualization_entity_charts/modules

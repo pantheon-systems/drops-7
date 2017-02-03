@@ -1,0 +1,356 @@
+<?php
+
+/**
+ * @file
+ * Provides Schema mapping for Project Open Data.
+ */
+
+require_once('podValidator.php');
+
+/**
+ * Implements hook_open_data_schema_map_validation().
+ */
+function open_data_schema_pod_open_data_schema_map_validation() {
+  return array(
+    'title' => 'Project Open Data validation',
+    'name' => 'pod',
+    'page callback' => 'open_data_schema_pod_validation_page',
+    'file' => 'open_data_schema_pod.pages.inc',
+    'file path' => drupal_get_path('module', 'open_data_schema_pod'),
+  );
+}
+
+/**
+ * Implements hook_open_data_schema().
+ */
+function open_data_schema_pod_open_data_schema() {
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod');
+  return array(
+    array(
+      'short_name' => 'pod',
+      'title' => 'Project Open Data v1.0',
+      'schema_file' => $module_path . '/data/v1.0/single_entry.json',
+      'description' => t('Project Open Data v1.0 schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
+    ),
+    array(
+      'short_name' => 'pod_v1_1',
+      'title' => 'Project Open Data v1.1',
+      'schema_file' => $module_path . '/data/v1.1/dataset.json',
+      'description' => t('Project Open Data v1.1 schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function open_data_schema_pod_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'open_data_schema_map_manage') {
+    if (isset($form_state['build_info']['args'][0]->api_schema)) {
+      switch ($form_state['build_info']['args'][0]->api_schema) {
+        case 'pod':
+          $form['pod_catalog'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Data catalog (data.json) settings'),
+            '#description' => t("Configuration for site's public data catalog. See !link for more information.", array('!link' => l(t('Project Open Data'), 'http://project-open-data.github.io/catalog/'))),
+            '#weight' => 2,
+          );
+          $form['pod_catalog']['desc'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Description'),
+            '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+            '#default_value' => variable_get('pod_catalog_desc', 'Data Catalog'),
+          );
+          $form['pod_catalog']['publisher'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Publisher'),
+            '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+            '#default_value' => variable_get('pod_catalog_publisher', variable_get('site_name')),
+          );
+          $form['pod_catalog']['contact'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Contact Point'),
+            '#description' => t('The name of the main contact point for the data catalog. Usually an individual person.'),
+            '#default_value' => variable_get('pod_catalog_contact', NULL),
+          );
+          $form['pod_catalog']['mbox'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Contact Email'),
+            '#description' => t('The main contact email for inquiries regarding the data catalog.'),
+            '#default_value' => variable_get('pod_catalog_mbox', variable_get('site_mail')),
+          );
+
+          $form['#submit'] = array_merge(array('open_data_schema_pod_extra_settings_submit'), $form['#submit']);
+          break;
+
+        case 'pod_v1_1':
+          break;
+      }
+    }
+  }
+}
+
+/**
+ * Callback for api settings form.
+ */
+function open_data_schema_pod_extra_settings_submit(&$form, $form_state) {
+  if ($form_state['values']['pod_catalog']) {
+    variable_set('pod_catalog_desc', $form_state['values']['pod_catalog']['desc']);
+    variable_set('pod_catalog_contact', $form_state['values']['pod_catalog']['contact']);
+    variable_set('pod_catalog_mbox', $form_state['values']['pod_catalog']['mbox']);
+    variable_set('pod_catalog_publisher', $form_state['values']['pod_catalog']['publisher']);
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_results_alter().
+ */
+function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $machine_name, $api_schema) {
+  switch ($api_schema) {
+    case 'pod':
+      // Adds additional catalog entry.
+      $catalog_dist = array();
+      $catalog_dist['accessURL'] = url('data.json', array('absolute' => TRUE));
+      $catalog_dist['format'] = 'application/json';
+      $catalog_row = array();
+      $catalog_row['title'] = variable_get('pod_catalog_desc', 'Data Catalog');
+      $version = 'Version 1.0';
+      $catalog_row['description'] = variable_get('pod_catalog_desc', $version);
+      $catalog_row['keyword'] = array('catalog');
+      $catalog_row['modified'] = NULL;
+      $catalog_row['publisher'] = variable_get('pod_catalog_publisher');
+      $catalog_row['contactPoint'] = variable_get('pod_catalog_contact', $catalog_row['publisher']);
+      $catalog_row['mbox'] = variable_get('pod_catalog_mbox', variable_get('site_mail'));
+      $catalog_row['identifier'] = "1";
+      $catalog_row['accessLevel'] = 'public';
+      $catalog_row['distribution'] = array($catalog_dist);
+      // Puts catalog at top of results list.
+      array_unshift($result, $catalog_row);
+      break;
+
+    case 'pod_v1_1':
+      // See: https://project-open-data.cio.gov/v1.1/schema.
+      $dataset_row = array();
+      foreach ($result as $key => $dataset) {
+        if (isset($dataset['accessLevel'])) {
+          $dataset['accessLevel'] = strtolower($dataset['accessLevel']);
+          if ($dataset['accessLevel'] == 'restricted') {
+            $dataset['accessLevel'] = 'restricted public';
+          }
+        }
+        if (isset($dataset['temporal']) && $dataset['temporal'] == "/") {
+          unset($dataset['temporal']);
+        }
+        // License must be a URL.
+        if (isset($dataset['license']) && !filter_var($dataset['license'], FILTER_VALIDATE_URL)) {
+          // This function was introduced within the last year.
+          if (function_exists('dkan_dataset_content_types_license_allowed_values')) {
+            $values = dkan_dataset_content_types_license_subscribed_values();
+            if (isset($values[$dataset['license']]['uri'])) {
+              $dataset['license'] = $values[$dataset['license']]['uri'];
+            }
+          }
+          else {
+            unset($dataset['license']);
+          }
+        }
+        if (isset($dataset['dataQuality'])) {
+          if ($dataset['dataQuality'] == 'TRUE') {
+            $dataset['dataQuality'] = (bool) TRUE;
+          }
+          elseif ($dataset['dataQuality'] == 'FALSE') {
+            $dataset['dataQuality'] = (bool) FALSE;
+          }
+        }
+        if (isset($dataset['distribution'])) {
+          foreach ($dataset['distribution'] as $num => $dist) {
+            if ($dist['format'] && $dist['format'] != 'data' && !$dist['mediaType']) {
+              include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+              $map = file_mimetype_mapping();
+              $dataset['distribution'][$num]['mediaType'] = isset($map['mimetypes'][$map['extensions'][$dist['format']]]) ? $map['mimetypes'][$map['extensions'][$dist['format']]] : 'text/html';
+            }
+            if ($dist['downloadURL'] && !$dist['mediaType']) {
+              if ($dist['format']) {
+                $media_type = recline_get_data_type($dist['format']);
+                $dist['mediaType'] = $media_type ? $media_type : t('unknown');
+              }
+              else {
+                $dist['mediaType'] = t('unknown');
+              }
+            }
+            // Remove empty items.
+            foreach ($dist as $i => $v) {
+              if (!$v) {
+                unset($dataset['distribution'][$num][$i]);
+              }
+            }
+          }
+        }
+        if (isset($dataset['bureauCode']) && module_exists('open_data_federal_extras')) {
+          foreach ($dataset['bureauCode'] as $num => $code) {
+            $code = str_replace("-", ":", substr($code, 0, 6));
+            $dataset['bureauCode'][$num] = $code;
+          }
+        }
+        if (isset($dataset['issued']) && strpos($dataset['issued'], ' - ')) {
+          $dataset['issued'] = date("Y-m-d", strtotime(substr($dataset['issued'], 0, strpos($dataset['issued'], ' - '))));
+        }
+        if (variable_get('odsm_data_json_defaults', TRUE)) {
+          odsm_add_data_JSON_defaults($dataset);
+        }
+        // Remove mailto: if included so we can validate the email address.
+        if (isset($dataset['contactPoint']['hasEmail']) && substr($dataset['contactPoint']['hasEmail'], 0, 7) === "mailto:") {
+          $dataset['contactPoint']['hasEmail'] = substr($dataset['contactPoint']['hasEmail'], 7);
+        }
+        if (isset($dataset['contactPoint']['hasEmail'])) {
+          // Add required mailto: if email address is valid.
+          if (filter_var($dataset['contactPoint']['hasEmail'], FILTER_VALIDATE_EMAIL)) {
+            $dataset['contactPoint']['hasEmail'] = 'mailto:' . $dataset['contactPoint']['hasEmail'];
+          }
+          // Remove completely if invalid. An empy hasEmail validates while a poorly formed or invalid email does not.
+          else {
+            watchdog('open_data_schema_map_od', 'Dataset %dataset contact point email: %email is not valid. Added default value for empty emails.', array('%dataset' => $dataset['title'], '%email' => $dataset['contactPoint']['hasEmail']), WATCHDOG_NOTICE, $link = NULL);
+            $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('pod_default_email', 'noemailprovided@usa.gov');
+          }
+        }
+        if (isset($dataset['publisher']) && !isset($dataset['publisher']['name'])) {
+          global $base_url;
+          $name = parse_url($base_url, PHP_URL_HOST);
+          if (!is_null($name)) {
+            $dataset['publisher']['name'] = $name;
+          }
+          else {
+            $dataset['publisher']['name'] = variable_get('site_name', FALSE);
+          }
+        }
+        array_push($dataset_row, $dataset);
+        unset($result[$key]);
+      }
+      $result['@context'] = 'https://project-open-data.cio.gov/v1.1/schema/catalog.jsonld';
+      $result['@id'] = url('data.json', array('absolute' => TRUE));
+      $result['@type'] = 'dcat:Catalog';
+      $result['conformsTo'] = 'https://project-open-data.cio.gov/v1.1/schema';
+      $result['describedBy'] = 'https://project-open-data.cio.gov/v1.1/schema/catalog.json';
+      $result['dataset'] = $dataset_row;
+      break;
+  }
+}
+
+/**
+ * Adds POD required fields.
+ *
+ * The following fields are required by POD.
+ * - title
+ * - description
+ * - keyword
+ * - publisher
+ * - contactPoint
+ * - accessLevel
+ * - bureauCode
+ * - programCode
+ */
+function odsm_add_data_JSON_defaults(&$dataset) {
+  if ((isset($dataset['title']) && !$dataset['title']) || !isset($dataset['title'])) {
+    $dataset['title'] = t("No title provided");
+  }
+  if ((isset($dataset['description']) && !$dataset['description']) || !isset($dataset['description'])) {
+    $dataset['description'] = t("No description provided");
+  }
+  if ((isset($dataset['keyword']) && !$dataset['keyword']) || !isset($dataset['keyword'])) {
+    $dataset['keyword'] = array(t("No keyword provided"));
+  }
+  if ((isset($dataset['contactPoint']['hasEmail']) && !$dataset['contactPoint']['hasEmail']) || !isset($dataset['contactPoint']['hasEmail'])) {
+    $dataset['contactPoint']['hasEmail'] = variable_get('pod_default_email', 'noemailprovided@usa.gov');
+  }
+  if ((isset($dataset['contactPoint']['fn']) && !$dataset['contactPoint']['fn']) || !isset($dataset['contactPoint']['fn'])) {
+    $dataset['contactPoint']['fn'] = t('unknown');
+  }
+  if ((isset($dataset['accessLevel']) && !$dataset['accessLevel']) || !isset($dataset['accessLevel'])) {
+    $dataset['accessLevel'] = 'public';
+  }
+  if ((isset($dataset['bureauCode']) && !$dataset['bureauCode']) || !isset($dataset['bureauCode'])) {
+    $dataset['bureauCode'] = array('000:00');
+  }
+  if ((isset($dataset['programCode']) && !$dataset['programCode']) || !isset($dataset['programCode'])) {
+    $dataset['programCode'] = array('000:000');
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_fill_references().
+ */
+function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$schema) {
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod');
+  switch ($schema_name) {
+    case 'pod_v1_1':
+      $references = array(
+        'distribution',
+        'publisher',
+        'contactPoint',
+      );
+      $files = array();
+      // Process $ref keys to include referenced json file.
+      foreach ($references as $key) {
+        $json = $module_path . '/data/v1.1/';
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          $json = $json . $schema['properties'][$key]['anyOf'][0]['items']['$ref'];
+        }
+        elseif(isset($schema['properties'][$key]['$ref'])) {
+          $json = $json . $schema['properties'][$key]['$ref'];
+        }
+        $json = file_get_contents($json);
+        $json = drupal_json_decode($json);
+        unset($json['$schema']);
+        unset($json['id']);
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          unset($json['title']);
+          unset($schema['properties'][$key]['anyOf'][0]['items']['$ref']);
+          if (isset($schema['properties'][$key]['anyOf'][0]['items']['minItems'])) {
+            $schema['properties'][$key]['anyOf'][0]['minItems'] = $schema['properties'][$key]['anyOf'][0]['items']['minItems'];
+          }
+          if ($schema['properties'][$key]['anyOf'][0]['items']['uniqueItems']) {
+            $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          }
+          $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          $schema['properties'][$key]['anyOf'][0]['items'] = $json;
+        }
+        else {
+          $schema['properties'][$key] = $json;
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Validates individual datasets.
+ */
+function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
+  if (!$clear_cache && $cache = cache_get('pod_validate_result')) {
+    $results = $cache->data;
+    $results['cache_date'] = $cache->created;
+  }
+  else {
+    $podValidator = new podValidator\validate($url);
+    $podValidator->processAll();
+    $count = $podValidator->datasetCount();
+    $ids = array();
+    $error_datasets = array();
+    $total_errors = 0;
+    if ($errors = $podValidator->getErrors()) {
+      $total_errors = count($errors);
+      foreach ($errors as $error) {
+        $error_datasets[$error['id']] = 1;
+      }
+      $errors = open_data_schema_validation_process_errors($errors);
+    }
+    $results = array(
+      'errors' => $errors,
+      'count' => $count,
+      'total_errors' => $total_errors,
+      'error_datasets' => $error_datasets,
+    );
+    $cache = cache_set('pod_validate_result', $results, 'cache');
+  }
+  return $results;
+}

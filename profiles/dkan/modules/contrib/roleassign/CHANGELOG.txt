@@ -1,0 +1,46 @@
+
+CHANGELOG for RoleAssign for Drupal 7
+
+
+roleassign 7.x-1.x-dev:
+
+
+roleassign 7.x-1.1 (2016-06-04):
+
+  #1954332: Add test to check for the loss of unassignable roles.
+  #2050711: Update README.txt to clarify the risk posed by the 'administer users' permission.
+
+
+roleassign 7.x-1.0 (2012-11-04):
+
+roleassign 7.x-1.0-rc2 (2012-10-17):
+  #1402408: Ensure that hook_user_presave() is always registered.
+  #1431338: Clarify the configuration instructions.
+  #1386064: Fix a notice in the bulk user administration hook.
+  Tune the module-uninstall protection.
+
+roleassign 7.x-1.0-rc1 (2011-11-26):
+  Clean up type hints, docblocks, comments and some minor code issues.
+
+roleassign 7.x-1.0-beta2 (2011-09-05):
+  Protect more-privileged users as well as RoleAssign itself.
+  #1258808: Fix a warning in _roleassign_form_alter().
+
+roleassign 7.x-1.0-beta1 (2011-08-11):
+  Port to D7 and extract roleassign.admin.inc to reduce the footprint.
+
+
+roleassign 6.x-1.0 (2011-08-11):
+
+roleassign 6.x-1.0-rc1 (2011-07-20):
+  Remove unnecessary quotes from the .info file.
+  Avoid two 'undefined index' notices.
+  #599440 by shark: Keep permission names in help text visible for light-on-dark themes.
+  Minor coding style and porting clean-up.
+  'administer access control' is called 'administer permissions' in D6.
+  Maintainership passed to salvis.
+  Minor code cleanup, by TBarregren.
+
+roleassign 6.x-1.0-beta3 (2010-10-09):
+  Last release by TBarregren.
+

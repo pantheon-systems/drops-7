@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Recline NVD3</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Recline Library CSS components -->
+  <link rel="stylesheet" href="../vendor/bootstrap-css/css/bootstrap.css" />
+  <link rel="stylesheet" href="../vendor/slickgrid/slick.grid.css">
+
+  <!-- Recline CSS components -->
+  <link rel="stylesheet" href="../css/slickgrid.css">
+
+  <!-- 3rd party JS libraries -->
+  <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-1.7.min.js"></script>
+
+  <script type="text/javascript" src="../vendor/underscore/underscore.js"></script>
+  <script type="text/javascript" src="../vendor/backbone/backbone.js"></script>
+  <script type="text/javascript" src="../vendor/mustache/mustache.js"></script>
+  <script type="text/javascript" src="../vendor/bootstrap-css/js/bootstrap.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drag-2.0.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drop-2.0.min.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.core.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.formatters.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.editors.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.grid.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowselectionmodel.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowmovemanager.js"></script>
+  <script type="text/javascript" src="../vendor/moment/moment.js"></script>
+
+  <!--[if lte IE 7]>
+  <script language="javascript" type="text/javascript" src="../vendor/json/json2.js"></script>
+  <![endif]-->
+
+  <!--
+    ## Just use the all in one library version rather than individual files
+  <script type="text/javascript" src="dist/recline.js"></script>
+  -->
+
+  <script src="http://okfnlabs.org/recline/dist/recline.js"></script>
+
+  <!-- D3 JS libraries -->
+  <script type="text/javascript" src="../vendor/d3/d3.js"></script>
+
+  <!-- NVD3 JS libraries -->
+  <script type="text/javascript" src="../vendor/nvd3/nv.d3.js"></script>
+
+  <link rel="stylesheet" href="../vendor/nvd3/nv.d3.css">
+
+</head>
+
+
+<body style="padding: 10px;">
+
+
+
+<h2>Data</h2>
+<div id="grid" style="height:250px;"></div>
+<h2>Charts</h2>
+<table>
+<tr><td>
+<h3>Multi Bar</h3>
+<div id="graph1" style="float: left;"></div>
+</td><td>
+<h3>Pie </h3>
+<div id="pieChart"  style="float: left;"></div>
+</td></tr>
+
+<tr><td>
+<h3>Discrete Bar</h3>
+<div id="discreteBarChart" style="float: left;"></div>
+</td><td>
+<h3>Multi Bar Horizontal</h3>
+<div id="multiBarHorizontalChart" style="float: left;"></div>
+</td></tr>
+
+<tr><td>
+<h3>Line</h3>
+<div id="lineChart1" style="float: left;"></div>
+</td><td>
+<h3>Bar with Focus</h3>
+<div id="lineChart2" style="float: left;"></div>
+</td></tr>
+
+<tr><td>
+<h3>Stacked Area</h3>
+<div id="stackedAreaChart" style="float: left;"></div>
+</td>
+<td>
+<h3>Scatter</h3>
+<div id="scatterChart" style="float: left;"></div>
+<td>
+</td></tr>
+</table>
+
+<script type="text/javascript" src="app.js"></script>
+<script type="text/javascript" src="../src/recline.view.nvd3.js"></script>
+
+</script>
+
+
+</body>
+</html>
+  
