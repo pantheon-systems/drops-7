@@ -1,0 +1,32 @@
+name = Media
+description = Provides the core Media API
+package = Media
+core = 7.x
+
+dependencies[] = file_entity
+dependencies[] = image
+dependencies[] = views
+
+test_dependencies[] = token
+
+files[] = includes/MediaReadOnlyStreamWrapper.inc
+files[] = includes/MediaBrowserPluginInterface.inc
+files[] = includes/MediaBrowserPlugin.inc
+files[] = includes/MediaBrowserUpload.inc
+files[] = includes/MediaBrowserView.inc
+files[] = includes/MediaEntityTranslationHandler.inc
+files[] = includes/media_views_plugin_display_media_browser.inc
+files[] = includes/media_views_plugin_style_media_browser.inc
+files[] = tests/media.test
+
+configure = admin/config/media/browser
+
+; We have to add a fake version so Git checkouts do not fail Media dependencies
+version = 7.x-2.x-dev
+
+; Information added by Drupal.org packaging script on 2015-07-14
+version = "7.x-2.0-beta1"
+core = "7.x"
+project = "media"
+datestamp = "1436895542"
+

@@ -1,0 +1,67 @@
+/**
+ * @file
+ * Stylesheet for the administration pages of the Color module.
+ * Copied from Color module
+ */
+
+/* Farbtastic placement */
+.colorizer-form {
+  max-width: 50em;
+  position: relative;
+}
+#placeholder {
+  position: absolute;
+  top: 0;
+  right: 0; /* LTR */
+}
+
+/* Palette */
+.colorizer-form .form-item {
+  height: 2em;
+  line-height: 2em;
+  padding-left: 1em; /* LTR */
+  margin: 0.5em 0;
+}
+.colorizer-form label {
+  float: left; /* LTR */
+  clear: left; /* LTR */
+  width: 40%;
+  line-height: 120%;
+}
+.colorizer-form .form-text,
+.colorizer-form .form-select {
+  float: left; /* LTR */
+  width: 40%;
+  margin-left: 1em;
+}
+.colorizer-form .form-text {
+  text-align: center;
+  margin-right: 5px; /* LTR */
+  cursor: pointer;
+}
+
+#palette .lock {
+  float: left; /* LTR */
+  position: relative;
+  top: 0.4em;
+  left: 0; /* LTR */
+  width: 20px;
+  height: 25px;
+  background: url(../images/lock.png) no-repeat 50% 2px;
+  cursor: pointer;
+}
+#palette .unlocked {
+  background-position: 50% -22px;
+}
+#palette .form-item {
+  width: 50%;
+}
+#palette .item-selected {
+  background: #eee;
+}
+
+/* Preview */
+#colorizer-preview {
+  float: right;
+  width: 200px;
+}

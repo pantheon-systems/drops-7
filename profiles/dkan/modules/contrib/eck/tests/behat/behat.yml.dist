@@ -1,0 +1,30 @@
+default:
+  paths:
+    features: 'features'
+  extensions:
+    Behat\MinkExtension\Extension:
+      default_session: goutte
+      javascript_session: selenium2
+      goutte:
+        guzzle_parameters:
+          redirect.disable: true
+          ssl.certificate_authority: system
+          curl.options:
+            CURLOPT_SSL_VERIFYPEER: false
+            CURLOPT_SSL_VERIFYHOST: false
+            CURLOPT_CERTINFO: false
+            CURLOPT_TIMEOUT: 120
+      # The base url for your local site. ex. http://my-site.local      
+      base_url: http://127.0.0.1:8080 
+      # show_cmd is OS specific, for Ubuntu use xdg-open
+      show_cmd: "xdg-open %s"
+      selenium2:
+        wd_host: http://127.0.0.1:4444/wd/hub
+    Drupal\DrupalExtension\Extension:
+      blackbox: ~
+      api_driver: "drupal"
+      drupal:
+        # This must be an absolute path.
+        drupal_root: /home/travis/build/fmizzell/drupal-7/drupal 
+      drush:
+        alias: "self"

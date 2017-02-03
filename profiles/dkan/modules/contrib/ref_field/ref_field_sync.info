@@ -1,0 +1,6 @@
+name = Reference Field Synchronization (for entityreference)
+description = "Keep Entity Reference Fields synchronized."
+core = 7.x
+package = Fields
+dependencies[] = entityreference
+dependencies[] = entity

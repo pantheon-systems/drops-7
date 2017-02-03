@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Backbone Test Suite</title>
+		<link rel="stylesheet" href="../vendor/qunit/qunit/qunit.css">
+		<style>
+			body > #qunit-header {
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="qunit"></div>
+		<h1 id="qunit-header"></h1>
+		<div id="qunit-fixture">
+			<div id='testElement'>
+				<h1>Test</h1>
+			</div>
+		</div>
+		<script src="../vendor/qunit/qunit/qunit.js"></script>
+		<script src="../vendor/qunit-extras/qunit-extras.js"></script>
+		<script src="../vendor/json-js/json2.js"></script>
+		<script src="../vendor/jquery/jquery.js"></script>
+		<script src="../vendor/platform.js/platform.js"></script>
+		<script src="./asset/test-ui.js"></script>
+		<script src="../lodash.js"></script>
+		<script>
+			var lodash = _.noConflict();
+
+			QUnit.config.asyncRetries = 5;
+			QUnit.config.hidepassed = true;
+
+			// excuse tests we intentionally fail or those with problems
+			QUnit.config.excused = {
+				'Backbone.Collection': {
+					'set with many models does not overflow the stack': true
+				},
+				'Backbone.Router': {
+					'#2656 - No trailing slash on root.': true,
+					'#2765 - Fragment matching sans query/hash.': true
+				}
+			};
+
+			// only excuse `Backbone.Router` tests in IE < 8
+			if (!(document.attachEvent && (document.documentMode || 0) < 8)) {
+				delete QUnit.config.excused['Backbone.Router'];
+			}
+
+			// assign results to `global_test_results` for Sauce Labs
+			var global_test_results;
+			QUnit.done(function(results) {
+				global_test_results = results;
+			});
+
+			// load the build of Lo-Dash
+			document.write('<script src="' + ui.buildPath + '"><\/script>');
+		</script>
+		<script>
+			_.mixin({
+				'debounce': _.debounce || lodash.debounce,
+				'defer': _.defer || lodash.defer,
+				'pluck': _.pluck || lodash.pluck
+			});
+		</script>
+		<script src="../vendor/backbone/backbone.js"></script>
+		<script src="../vendor/backbone/test/environment.js"></script>
+		<script src="../vendor/backbone/test/noconflict.js"></script>
+		<script src="../vendor/backbone/test/events.js"></script>
+		<script src="../vendor/backbone/test/model.js"></script>
+		<script src="../vendor/backbone/test/collection.js"></script>
+		<script src="../vendor/backbone/test/router.js"></script>
+		<script src="../vendor/backbone/test/view.js"></script>
+		<script src="../vendor/backbone/test/sync.js"></script>
+	</body>
+</html>

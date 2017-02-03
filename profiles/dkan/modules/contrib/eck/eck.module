@@ -1,0 +1,937 @@
+<?php
+
+/**
+ * @file
+ * Useful functions and hook implementations for ECK.
+ */
+
+ctools_include('plugins');
+module_load_include('inc', 'eck', 'eck.classes');
+module_load_include('inc', 'eck', 'eck.entity_type');
+module_load_include('inc', 'eck', 'eck.bundle');
+module_load_include('inc', 'eck', 'eck.entity');
+module_load_include('inc', 'eck', 'eck.default_properties');
+module_load_include('inc', 'eck', 'eck.properties');
+module_load_include('inc', 'eck', 'eck.property_behavior');
+
+// Integration with references dialog.
+module_load_include('inc', 'eck', 'includes/eck.references_dialog');
+
+/**
+ * Load callback for %eckentity.
+ */
+function eckentity_load($id, $type) {
+  try{
+    $entity = entity_load_single($type, $id);
+  }
+  catch (Exception $ex) {
+    drupal_not_found();
+    exit();
+  }
+  return $entity;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function eck_views_api() {
+  return array(
+    'api' => '3',
+    'path' => drupal_get_path('module', 'eck') . '/views',
+  );
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function eck_flush_caches() {
+  // Reload all ECK entity types.
+  EntityType::loadAll(TRUE);
+  // Reload all Bundles.
+  Bundle::loadAll(TRUE);
+}
+
+/**
+ * Implements hook_eck_default_properties().
+ */
+function eck_eck_default_properties() {
+  $default_properties = array();
+
+  $default_properties['title'] = array(
+    'label' => "Title",
+    'type' => "text",
+    'behavior' => 'title',
+  );
+
+  $default_properties['uid'] = array(
+    'label' => "Author",
+    'type' => "integer",
+    'behavior' => 'author',
+  );
+
+  $default_properties['created'] = array(
+    'label' => "Created",
+    'type' => "integer",
+    'behavior' => 'created',
+  );
+
+  $default_properties['changed'] = array(
+    'label' => "Changed",
+    'type' => "integer",
+    'behavior' => 'changed',
+  );
+  $default_properties['language'] = array(
+    'label' => "Entity language",
+    'type' => "language",
+    'behavior' => 'language',
+  );
+  // Include uuid as default property if module_exists.
+  if (module_exists('uuid')) {
+    $default_properties['uuid'] = array(
+      'label' => "UUID",
+      'type' => "text",
+      'behavior' => 'uuid',
+    );
+  }
+
+  return $default_properties;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function eck_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'eck' && $plugin_type == 'property_behavior') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function eck_ctools_plugin_type() {
+  return array(
+    'property_behavior' => array(),
+  );
+}
+
+/**
+ * Entity label callback.
+ *
+ * This is the callback function for an entities label
+ * By default the label is the id of the entity, but a number of
+ * hooks are defined to customize the label if needed
+ *
+ * @param object $entity
+ *   an object as returned by entity_load().
+ */
+function eck__entity__label($entity) {
+  $hook_names = array(
+    "eck_entity_label",
+    "eck_entity_{$entity->entityType()}_label",
+    "eck_entity_{$entity->entityType()}_{$entity->bundle()}_label",
+  );
+
+  foreach ($hook_names as $hook_name) {
+    $new_label = module_invoke_all($hook_name, $entity, $entity->id);
+    $empty = empty($new_label);
+    if (!$empty) {
+      break;
+    }
+  }
+
+  if (!$empty) {
+    return $new_label[0];
+  }
+  else {
+    return $entity->id;
+  }
+}
+
+/**
+ * Entity URI callback.
+ *
+ * @param object $entity
+ *   an object as returned by entity_load().
+ */
+function eck__entity__uri($entity) {
+
+  $ids = entity_extract_ids($entity->entityType(), $entity);
+
+  module_load_include('inc', 'eck', 'eck.entity');
+  $crud_info = get_bundle_crud_info($entity->entityType(), $entity->bundle());
+  $view_path = str_replace('%eckentity', $ids[0], $crud_info['view']['path']);
+
+  return array('path' => $view_path);
+}
+
+/**
+ * Implements hook_schema_alter().
+ */
+function eck_schema_alter(&$schema) {
+
+  if (db_table_exists('eck_entity_type')) {
+
+    // When something requests an entity's info, the hook_schema is called to
+    // get the information about the entity's table, so we need to provide that
+    // information in the hook.
+
+    // Get all the entity types that have been create
+    // (all the rows in eck_entity_type table).
+    foreach (EntityType::loadAll() as $entity_type) {
+      // The function eck__entity_type__schema returns a schema for that
+      // entity type given and entity_type object.
+      $schema = array_merge($schema, array("eck_{$entity_type->name}" => eck__entity_type__schema($entity_type)));
+
+      // Allow properties to modify the schema.
+      $vars = array('entity_type' => $entity_type, 'schema' => $schema);
+
+      // The behavior hook should return its modifications in the same format
+      // that they were sent to it. So we would be expecting an array with an
+      // entity_type key, and a schema key.
+      $vars = eck_property_behavior_invoke_plugin_alter($entity_type, 'schema', $vars);
+
+      if (array_key_exists('schema', $vars) && isset($vars['schema'])) {
+        $schema = array_merge($schema, $vars['schema']);
+      }
+    }
+  }
+}
+
+/**
+ * Creates a table showing a group of entities.
+ *
+ * @param array $entities
+ *   the entities to create the table from
+ * @param bool $select
+ *   a boolean value that will determine whether the
+ *   table is a select table or a regular table
+ */
+function entity_table($entities, $select = FALSE) {
+  module_load_include('inc', 'eck', 'eck.entity');
+  // This is information set up for each bundle in the hook_entity_info
+  // look there for more details.
+  $crud_info = NULL;
+
+  $rows = array();
+  $header = array(t('Name'), array('data' => t('Operations'), 'colspan' => '1'));
+
+  $info = NULL;
+  foreach ($entities as $entity) {
+    $info = array();
+    $entity_type = $entity->entityType();
+    $bundle = $entity->bundle();
+    $id = $entity->id;
+
+    if ($crud_info == NULL) {
+      $crud_info = get_bundle_crud_info($entity_type, $bundle);
+    }
+
+    $allowed_operations = '';
+    $destination = drupal_get_destination();
+    // Check that the user has permissions to edit.
+    if (eck__entity_menu_access('edit', $entity_type, $bundle, $id)) {
+      $edit_path = str_replace('%eckentity', $id, $crud_info['edit']['path']);
+      $allowed_operations = l(t('edit'), $edit_path, array('query' => $destination));
+    }
+
+    // Check that the user has permissions to delete.
+    if (eck__entity_menu_access('delete', $entity_type, $bundle, $id)) {
+      $delete_path = str_replace('%eckentity', $id, $crud_info['delete']['path']);
+      $allowed_operations .= (($allowed_operations) ? '<br />' : '') . l(t('delete'), $delete_path, array('query' => $destination));
+    }
+
+    // Check that the user has permissions to view.
+    if (eck__entity_menu_access('view', $entity_type, $bundle, $id)) {
+      $uri = entity_uri($entity_type, $entity);
+      $row = array(
+        l(entity_label($entity_type, $entity), $uri['path'], $uri['options']),
+      );
+    }
+    else {
+      $row = array(
+        entity_label($entity_type, $entity),
+      );
+    }
+
+    $row[] = array('data' => $allowed_operations);
+    $info['entity'] = $entity;
+    drupal_alter("entity_{$entity_type}_{$bundle}_tr", $row, $info);
+    $info['bundle'] = $bundle;
+    drupal_alter("entity_{$entity_type}_tr", $row, $info);
+    $info['entity_type'] = $entity_type;
+    drupal_alter("entity_tr", $row, $info);
+
+    $rows[$id] = $row;
+  }
+
+  if ($info) {
+    unset($info['entity']);
+    drupal_alter("entity_th", $header, $info);
+    unset($info['entity_type']);
+    drupal_alter("entity_{$entity_type}_th", $header, $info);
+    unset($info['bundle']);
+    drupal_alter("entity_{$entity_type}_{$bundle}_th", $header, $info);
+  }
+
+  if ($select) {
+    if (!isset($entity_type)) {
+      return array('#theme' => 'table', '#header' => $header, '#rows' => $rows);
+    }
+    else {
+      return drupal_get_form("entity_table_select_{$entity_type}_{$bundle}", $entity_type, $bundle, $header, $rows);
+    }
+  }
+  else {
+    return array('#theme' => 'table', '#header' => $header, '#rows' => $rows);
+  }
+}
+
+/**
+ * Implements hook_entity_info().
+ *
+ * The Entity information for all the entity types created with eck.
+ */
+function eck_entity_info() {
+  module_load_include('inc', 'eck', 'eck.entity_type');
+  $info = array();
+
+  // Get all the names of all the entity types from the eck table
+  // for each of the created entity types add its info to the $info array.
+  foreach (EntityType::loadAll() as $entity_type) {
+    // eck__entity_info creates the entity_info for each entity type.
+    $info = array_merge($info, eck__entity_type__info($entity_type));
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function eck_entity_info_alter(&$info) {
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    $entity_type_info = $info[$entity_type->name];
+
+    $entity_type_info = eck_property_behavior_invoke_plugin_alter($entity_type, 'entity_info', $entity_type_info);
+
+    if ($entity_type_info) {
+      $info[$entity_type->name] = $entity_type_info;
+    }
+  }
+}
+
+/**
+ * Entity type load.
+ */
+function entity_type_load($entity_type_name) {
+  return EntityType::loadByName($entity_type_name);
+}
+
+/**
+ * Bundle load.
+ */
+function bundle_load($entity_type_name, $bundle_name) {
+  return Bundle::loadByMachineName("{$entity_type_name}_{$bundle_name}");
+}
+
+/**
+ * Comply with requirements probably no one will use this.
+ */
+function _eck_fake_exists() {
+  return FALSE;
+}
+
+/**
+ * Implements hook_entity_property_info().
+ */
+function eck_entity_property_info() {
+  module_load_include('inc', 'entity', 'entity.info');
+
+  $info = array();
+  foreach (EntityType::loadAll() as $entity_type) {
+
+    $properties = $entity_type->properties;
+    $stuff = entity_metadata_convert_schema("eck_{$entity_type->name}");
+    foreach ($stuff as $key => $property) {
+      // Use user defined label for property.
+      if (isset($properties[$key])) {
+        $property['label'] = $properties[$key]['label'];
+      }
+      $property['setter callback'] = "entity_property_verbatim_set";
+      $property['getter callback'] = 'entity_property_verbatim_get';
+      $property['description'] = $property['label'];
+
+      // A couple of alter hooks so a module can alter the property info
+      // of a given property, or even a specific property on a
+      // specific entity_type.
+      drupal_alter("entity_property_{$key}_info", $property);
+      drupal_alter("entity_property_{$entity_type->name}_{$key}_info", $property);
+
+      if ($key == 'type') {
+        $property['label'] = t('!entity_type type', array('!entity_type' => $entity_type->name));
+        $property['type'] = 'token';
+        $property['description'] = t('The type of this :entity_type entity.', array(':entity_type' => $entity_type->name));
+        $property['options list'] = 'EntityDefaultMetadataController::bundleOptionsList';
+        $property['required'] = TRUE;
+      }
+      $stuff[$key] = $property;
+    }
+    $info[$entity_type->name]['properties'] = $stuff;
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function eck_entity_property_info_alter(&$info) {
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    $entity_property_info = $info[$entity_type->name];
+
+    $entity_property_info = eck_property_behavior_invoke_plugin_alter($entity_type, 'property_info', $entity_property_info);
+
+    foreach ($entity_type->properties as $property => $stuff) {
+      foreach (array('setter', 'getter', 'validation') as $function_name) {
+        if (eck_property_behavior_implements($entity_type, $property, $function_name)) {
+          $entity_property_info['properties'][$property]["{$function_name} callback"] = "eck_property_behavior_{$function_name}";
+        }
+      }
+    }
+
+    if ($entity_property_info) {
+      $info[$entity_type->name] = $entity_property_info;
+    }
+  }
+}
+
+/**
+ * Get property label.
+ */
+function eck_get_property_label($name) {
+  $info = hook_eck_property_info();
+  return $info[$name]['label'];
+}
+
+/**
+ * Implements hook_features_api().
+ */
+function eck_features_api() {
+  return array(
+    'eck_entity_type' => array(
+      'name' => t('Entity Types'),
+      'feature_source' => TRUE,
+      'file' => drupal_get_path('module', 'eck') . '/eck.features.inc',
+      'default_hook' => 'eck_entity_type_info',
+    ),
+    'eck_bundle' => array(
+      'name' => t('Bundles'),
+      'feature_source' => TRUE,
+      'file' => drupal_get_path('module', 'eck') . '/eck.features.inc',
+      'default_hook' => 'eck_bundle_info',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function eck_menu() {
+
+  $menu = array();
+
+  module_load_include('inc', 'eck', 'eck.entity_type');
+  $menu = array_merge(eck__entity_type__menu(), $menu);
+  return $menu;
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * A pretty through set of permission
+ * you can set permissiona at each level: entity_type, bundle, entity
+ * and for each action of the CRUD
+ */
+function eck_permission() {
+
+  module_load_include('inc', 'eck', 'eck.entity_type');
+  module_load_include('inc', 'eck', 'eck.bundle');
+
+  $perms = array(
+    // Entity Type permissions.
+    'eck administer entity types' => array(
+      'title' => t('Administer Entity Types'),
+      'restrict access' => TRUE,
+      'description' => t('Grants the ability to administer(add/edit/delete/view) any ECK Entity Type.'),
+    ),
+    'eck add entity types' => array(
+      'title' => t('Add Entity Types'),
+      'restrict access' => TRUE,
+    ),
+    'eck edit entity types' => array(
+      'title' => t('Edit Entity Types'),
+      'restrict access' => TRUE,
+    ),
+    'eck delete entity types' => array(
+      'title' => t('Delete Entity Types'),
+      'restrict access' => TRUE,
+    ),
+    'eck list entity types' => array(
+      'title' => t('View Entity Type List'),
+    ),
+    // Bundle Permissions.
+    'eck administer bundles' => array(
+      'title' => t('Administer Bundles'),
+      'restrict access' => TRUE,
+      'description' => t('Grants the ability to administer(add/edit/delete/list) any ECK Bundle.'),
+    ),
+    'eck add bundles' => array(
+      'title' => t('Add Bundles'),
+      'restrict access' => TRUE,
+      'description' => t('Grants the ability to add new bundles to any Entity type.'),
+    ),
+    'eck edit bundles' => array(
+      'title' => t('Edit Bundles'),
+      'restrict access' => TRUE,
+    ),
+    'eck delete bundles' => array(
+      'title' => t('Delete Bundles'),
+      'restrict access' => TRUE,
+    ),
+    'eck list bundles' => array(
+      'title' => t('View Bundle Lists'),
+    ),
+    // Entitiy Permissions.
+    'eck administer entities' => array(
+      'title' => t('Administer Entities'),
+      'restrict access' => TRUE,
+    ),
+    'eck add entities' => array(
+      'title' => t('Add Entities'),
+      'restrict access' => TRUE,
+      'description' => t('Grants the ability to add new entities of any Entity type.'),
+    ),
+    'eck edit entities' => array(
+      'title' => t('Edit Any Entity'),
+      'restrict access' => TRUE,
+    ),
+    'eck delete entities' => array(
+      'title' => t('Delete Any Entity'),
+      'restrict access' => TRUE,
+    ),
+    'eck view entities' => array(
+      'title' => t('View Any Entity'),
+    ),
+    'eck list entities' => array(
+      'title' => t('View Entity Lists'),
+      'description' => t('Grants the ability to view the list of entities displayed on any bundle page.'),
+    ),
+  );
+
+  $perms_info = array(
+    'eck administer' => 'Administer',
+    'eck add' => "Add",
+    'eck edit' => 'Edit',
+    'eck delete' => 'Delete',
+    'eck list' => 'View List of',
+    'eck view' => 'View',
+  );
+
+  foreach (EntityType::loadAll() as $entity_type) {
+
+    $perms["manage {$entity_type->name} properties"] = array(
+      'title' => "Manage {$entity_type->label} Properties",
+    );
+
+    foreach ($perms_info as $op => $op_label) {
+      $perms["{$op} {$entity_type->name} bundles"] = array(
+        'title' => "{$op_label} {$entity_type->label} Bundles",
+      );
+    }
+
+    foreach (Bundle::loadByEntityType($entity_type) as $bundle) {
+      $entity_perm_info = $perms_info + array('eck view' => "View");
+
+      foreach ($entity_perm_info as $op => $op_label) {
+        $perm_name = "{$op} {$entity_type->name} {$bundle->name} entities";
+        $perms[$perm_name] = array(
+          'title' => "{$op_label} {$entity_type->label} {$bundle->label} Entities",
+        );
+      }
+    }
+  }
+
+  return $perms;
+}
+
+/**
+ * Callback for checking multiple permissions.
+ *
+ * @param array $perms
+ *   An array of permissions to be checked against.
+ * @param bool $b_own
+ *   (optional) Flag to indicate if we should also check ownership permissions
+ *   which are the same as the usual permissions, but will be postfixed with
+ *   ' own'. Defaults to FALSE.
+ * @param object $account
+ *   (optional) The account to check permissions against. Defaults to the
+ *   current user.
+ */
+function eck__multiple_access_check($perms, $b_own = FALSE, $account = NULL) {
+  if (!isset($account)) {
+    $account = $GLOBALS['user'];
+  }
+  foreach ($perms as $perm) {
+    if (user_access($perm, $account)) {
+      return TRUE;
+    }
+  }
+  if (!$b_own) {
+    return FALSE;
+  }
+  // Check for entity author field and user ownership permissions.
+  foreach ($perms as $perm) {
+    if (user_access($perm . ' own', $account)) {
+      return TRUE;
+    }
+  }
+  // The user does not have any of the supplied permissions.
+  return FALSE;
+}
+
+/**
+ * Implements hook_forms().
+ */
+function eck_forms($form_id, $args) {
+  $forms = array();
+  if (strpos($form_id, 'entity_table_select_') === 0) {
+    $forms[$form_id] = array(
+      'callback' => 'entity_table_select',
+    );
+  }
+  elseif (strpos($form_id, 'eck__entity__form_') === 0) {
+    $forms[$form_id] = array(
+      'callback' => 'eck__entity__form',
+    );
+  }
+
+  return $forms;
+}
+
+/**
+ * Helper function for the entities_table.
+ *
+ * This function creates a select table.
+ *
+ * @param array $form
+ *   A form arrary as returned by drupal_get_form.
+ * @param array $state
+ *   The form state, this is also provided by the Form API.
+ * @param string $entity_type
+ *   the type of the entities that will be in the table.
+ * @param string $bundle
+ *   The bundle of the entity that will be in the table.
+ * @param array $header
+ *   An array for the table header for more info look at theme_table.
+ * @param array $rows
+ *   The rows of the table for more info on what this should look like look
+ *   at theme_table.
+ */
+function entity_table_select($form, &$state, $entity_type, $bundle, $header, $rows) {
+  $form['entity_type'] = array('#type' => 'value', '#value' => $entity_type);
+  $form['bundle'] = array('#type' => 'value', '#value' => $bundle);
+
+  $form['entity_table'] = array(
+    // '#theme' => 'table',
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $rows,
+  );
+
+  return $form;
+}
+
+/**
+ * Base class for ECK entites.
+ */
+class ECKEntity extends Entity {}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function eck_entity_presave($entity, $entity_type) {
+  $entity_type = EntityType::loadByName($entity_type);
+
+  // This is an eck entity.
+  if ($entity_type) {
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_save',
+      array('entity' => $entity)
+    );
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function eck_entity_insert($entity, $entity_type) {
+  $entity_type = EntityType::loadByName($entity_type);
+
+  // This is an eck entity.
+  if ($entity_type) {
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_insert',
+      array('entity' => $entity)
+    );
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function eck_entity_update($entity, $entity_type) {
+  $entity_type = EntityType::loadByName($entity_type);
+
+  // This is an eck entity.
+  if ($entity_type) {
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_update',
+      array('entity' => $entity)
+    );
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function eck_entity_delete($entity, $entity_type) {
+  $entity_type = EntityType::loadByName($entity_type);
+
+  // This is an eck entity.
+  if ($entity_type) {
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_delete',
+      array('entity' => $entity)
+    );
+  }
+}
+
+/**
+ * Menu access callback for ECK entities.
+ *
+ * As much as possible, this function is a simple wrapper around the Entity
+ * module's entity_access() function (so that it respects changes made by other
+ * modules which alter the Entity module's access callbacks using
+ * hook_entity_info_alter()).
+ *
+ * @param string $action
+ *   The CRUD action to check on the entity ("add", "edit", "delete", or
+ *   "view").
+ * @param string $entity_type_name
+ *   A string representing the entity type to check.
+ * @param string $bundle_name
+ *   A string representing the entity bundle to check.
+ * @param mixed $entity_id
+ *   (optional) The entity object or ID to check. This should be passed whenever
+ *   it is available (i.e., for any action besides "add", since in that case
+ *   there is no existing entity to check).
+ *
+ * @return bool
+ *   TRUE if access is granted, FALSE otherwise.
+ */
+function eck__entity_menu_access($action, $entity_type_name, $bundle_name, $entity_id = NULL) {
+  // Either pass the full entity along, or the bundle if no entity ID was
+  // provided. (The latter is to allow eck__entity_access() to work similarly
+  // to node_access() in the case of the "add" operation.)
+  if (isset($entity_id)) {
+    if (is_object($entity_id) and $entity_id->entityType() == $entity_type_name) {
+      // You already have the entity.
+      $entity_or_bundle = $entity_id;
+    }
+    else {
+      $entity_or_bundle = entity_load_single($entity_type_name, $entity_id);
+    }
+
+    if (empty($entity_or_bundle)) {
+      // Deny access if the requested entity doesn't exist.
+      return FALSE;
+    }
+  }
+  else {
+    $entity_or_bundle = $bundle_name;
+  }
+
+  // @todo This module uses different CRUD terminology than is normally used in
+  //   Drupal, so we need to convert it so that entity_access() will understand
+  //   it.
+  $crud_map = array(
+    'add' => 'create',
+    'edit' => 'update',
+  );
+  if (isset($crud_map[$action])) {
+    $action = $crud_map[$action];
+  }
+
+  // Check access for the current user to the requested action on the entity or
+  // bundle.
+  return entity_access($action, $entity_type_name, $entity_or_bundle);
+}
+
+/**
+ * Default access callback for ECK entities.
+ *
+ * This is used as the default behavior when entity_access() is called to check
+ * access on an entity provided by ECK. Note that in addition to calls from
+ * within this own module, entity_access() is also called by other modules such
+ * as Rules, Entity Reference, etc. (although it is not consistently called
+ * throughout Drupal).
+ *
+ * @param string $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param mixed $entity_or_bundle
+ *   Normally, an entity to check access for. If this is NULL, we are checking
+ *   access for all entities of the given type. If this is a string
+ *   (representing the bundle to check access for; see parallel example in
+ *   node_access()) we are checking access for all entities of the given type
+ *   and bundle.
+ * @param object $account
+ *   The user to check access for. If this is NULL, access will be checked for
+ *   the current user.
+ * @param string $entity_type_name
+ *   A string representing the type of entity to check access for.
+ *
+ * @return bool
+ *   TRUE if access is granted, FALSE otherwise.
+ *
+ * @see entity_access()
+ */
+function eck__entity_access($op, $entity_or_bundle, $account, $entity_type_name) {
+  // @todo This module uses different CRUD terminology than is normally used in
+  //   Drupal, so we need to convert what entity_access() sent us back to
+  //   something this module will understand.
+  $crud_map = array(
+    'create' => 'add',
+    'update' => 'edit',
+  );
+  if (isset($crud_map[$op])) {
+    $op = $crud_map[$op];
+  }
+
+  // Check the relevant permissions. If an entity or bundle is provided, use
+  // that to get the bundle-specific permissions and check those too.
+  $permissions = array(
+    'eck administer entities',
+    "eck {$op} entities",
+  );
+  if (isset($entity_or_bundle)) {
+    if (is_object($entity_or_bundle)) {
+      list(, , $bundle_name) = entity_extract_ids($entity_type_name, $entity_or_bundle);
+    }
+    else {
+      $bundle_name = $entity_or_bundle;
+    }
+    $permissions[] = "eck administer {$entity_type_name} {$bundle_name} entities";
+    $permissions[] = "eck {$op} {$entity_type_name} {$bundle_name} entities";
+  }
+
+  // @todo should auto-load entity author here.
+
+  return eck__multiple_access_check($permissions, FALSE, $account);
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function eck_entity_view_alter(&$build, $entity_type) {
+  $entity_types = EntityType::loadAll();
+
+  $this_entity_type = $build['#entity_type'];
+
+  foreach ($entity_types as $et) {
+    if ($et->name == $this_entity_type) {
+      $entity = $build['#entity'];
+      $this_bundle = $entity->bundle();
+      // Lets add contextual links to our entities in eck you can change
+      // the paths of any of the possible operations, since contextual links
+      // are dependent on the hierarchy of those paths, changing the paths
+      // could cause of contextual links not to work correctly.
+
+      $build['#contextual_links']['eck']
+        = array("{$this_entity_type}/{$this_bundle}",array($entity->id));
+    }
+  }
+}
+
+/**
+ * Helper function to order objects with a name in alphabetical order.
+ */
+function eck_alphabetical_cmp($a, $b) {
+  return strcasecmp($a->name, $b->name);
+}
+
+/**
+ * Implements hook_init().
+ */
+function eck_init() {
+  // Let's initialize our global caches.
+  global $_eck_entity_types_cache;
+  global $_eck_bundles_cache;
+
+  $_eck_entity_types_cache = new ECKCache("entity_types");
+  $_eck_bundles_cache = new ECKCache("bundles");
+
+  if (variable_get("eck_clear_caches", FALSE)) {
+    variable_set("eck_clear_caches", FALSE);
+    eck_clean_up();
+  }
+}
+
+/**
+ * Clean/clear all relevant caches.
+ *
+ * Actions like creating and entity type or a bundle require modifycations
+ * to many parts of drupal, this function takes care of clearing those
+ * caches.
+ */
+function eck_clean_up() {
+  drupal_get_schema(NULL, TRUE);
+  entity_info_cache_clear();
+  entity_flush_caches();
+  menu_rebuild();
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * If there are entity types created, let's not let the user disable the module.
+ * If the eck_entity_cache module is installed, eck can not be disabled.
+ */
+function eck_system_info_alter(&$info, $file, $type) {
+  if ($type == "module" && array_key_exists("name", $info) && $info['name'] == "Entity Construction Kit") {
+    $done = FALSE;
+    $entity_types = EntityType::loadAll();
+    if (!empty($entity_types)) {
+      $info['required'] = TRUE;
+      $info['explanation'] = "Entity types created by ECK are still present in the system.";
+      $done = TRUE;
+    }
+
+    // If ECK EntityCache is installed, we can not disable or uninstall ECK.
+    if (!$done) {
+      $query = db_select("system", "s");
+      $query->fields('s', array('schema_version'));
+      $query->condition('s.name', 'eck_entitycache', '=');
+      $query->condition('s.type', 'module', '=');
+
+      $result = $query->execute();
+
+      foreach ($result as $row) {
+        $schema_version = $row->schema_version;
+        if ($schema_version == 0) {
+          $info['required'] = TRUE;
+          $info['explanation'] = "ECK EntityCache must be uninstalled before you can disable/uninstall ECK";
+        }
+      }
+    }
+  }
+}

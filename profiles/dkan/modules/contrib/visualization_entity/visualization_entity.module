@@ -1,0 +1,117 @@
+<?php
+/**
+ * @file
+ * Code for the Nudata Visualization Entity feature.
+ */
+
+include_once 'visualization_entity.features.inc';
+include_once drupal_get_path('module', 'visualization_entity') . '/includes/utils.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function visualization_entity_menu() {
+  return array(
+    'visualization/%/%/iframe' => array(
+      'title' => 'Visualization',
+      'page callback' => 'visualization_entity_iframe',
+      'page arguments' => array(2),
+      'access arguments' => array('access content'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function visualization_entity_theme($existing, $type, $theme, $path) {
+  $tpls_path = drupal_get_path('module', 'visualization_entity') . '/theme';
+  return array(
+    'visualization-iframe' => array(
+      'variables' => array(
+        'content' => t('HTML for Visualization.'),
+      ),
+      'template' => 'visualization-iframe',
+      'path' => $tpls_path,
+    ),
+    'visualization-embed-button' => array(
+      'variables' => array('embed_url' => NULL),
+      'template' => 'visualization-embed-button',
+      'path' => $tpls_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function visualization_entity_entity_view_alter(&$build, $type) {
+  if ($type === 'visualization' && $build['#view_mode'] === 'full') {
+    $build['#post_render'][] = 'visualization_entity_attach_embed_widget';
+  }
+}
+
+/**
+ * Markup for embed widget.
+ */
+function visualization_entity_attach_embed_widget($markup, $element) {
+  $module_path = drupal_get_path('module', 'visualization_entity');
+  $embed_url = current_path();
+  if (!is_numeric(strpos($embed_url, '/iframe'))) {
+    $embed_url = $embed_url . '/iframe';
+    $embed_url = url($embed_url, array('absolute' => TRUE));
+    $embed_button = theme('visualization-embed-button', array('embed_url' => $embed_url));
+    $markup .= $embed_button;
+    drupal_add_js($module_path . '/visualization_entity.js');
+  }
+  return $markup;
+}
+/**
+ * Renders iframe view for visualization.
+ *
+ * @param int $entity_id
+ *   The Entity id to load.
+ *
+ * @return string
+ *   A rendered entity or MENU_NOT_FOUND constant
+ */
+function visualization_entity_iframe($entity_id) {
+  $entity = entity_load_single(
+    'visualization',
+    $entity_id
+  );
+
+  if (!empty($entity)) {
+    $entity_view = entity_view('visualization', array($entity), 'full');
+    $visualization = drupal_render($entity_view);
+    return $visualization;
+  }
+  else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function visualization_entity_preprocess_page(&$vars) {
+  if (in_array_match('/page__visualization__([a-zA-Z0-9_.-]+)__iframe/', $vars['theme_hook_suggestions'])) {
+    $vars['theme_hook_suggestions'][] = 'visualization-iframe';
+  }
+}
+
+/**
+ * Check regex against elements in an array.
+ */
+function in_array_match($regex, $array) {
+  if (!is_array($array)) {
+    trigger_error('Argument 2 must be array');
+  }
+  foreach ($array as $v) {
+    $match = preg_match($regex, $v);
+    if ($match >= 1) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}

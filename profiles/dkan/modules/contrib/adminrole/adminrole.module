@@ -1,0 +1,102 @@
+<?php
+// $Id: adminrole.module,v 1.2.2.8.2.11 2010/08/14 17:59:20 davereid Exp $
+
+/**
+ * @file
+ * This module simply gives a designated role all permissions every time the
+ * modules page is submitted.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function adminrole_form_user_admin_settings_alter(&$form, $form_state) {
+  // Administrative role option.
+  $form['admin_role'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Administrator role'),
+  );
+
+  // Do not allow users to set the anonymous or authenticated user roles as the administrator role.
+  $roles = user_roles();
+  unset($roles[DRUPAL_ANONYMOUS_RID]);
+  unset($roles[DRUPAL_AUTHENTICATED_RID]);
+
+  $form['admin_role']['user_admin_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Administrator role'),
+    '#default_value' => variable_get('user_admin_role', 0),
+    '#options' => array(0 => t('Disabled')) + $roles,
+    '#description' => t('This role will be automatically assign new permissions whenever a module is enabled, field is added/updated or entity is aded/updated.'),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function adminrole_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('system_modules', 'user_admin_settings', 'user_admin_permissions'))) {
+    $form['#submit'][] = 'adminrole_update_permissions';
+  }
+}
+
+/**
+ *
+ * Respond to fields/entities being created, updated, deleted   - NOTE - this is the wrong code fore this!!
+ */
+function adminrole_node_type_update() {
+  adminrole_update_permissions();
+}
+function adminrole_field_update_field() {
+  adminrole_update_permissions();
+}                
+function adminrole_field_delete_field() {
+  adminrole_update_permissions();
+}
+
+
+/**
+ * Implements hook_menu_alter().
+ */
+function adminrole_menu_alter(&$items) {
+  //adminrole_update_permissions();
+}
+
+/**
+ * Update the admin role with all current available permissions.
+ */
+function adminrole_update_permissions() {
+  static $messaged;
+  if ($rid = variable_get('user_admin_role', 0)) {
+    foreach (module_implements('permission') as $module) {
+      foreach(module_invoke($module, 'permission') as $key => $perm) {
+        $perms[$key] = $module;
+      }
+    }
+        
+    /*if ($excluded = variable_get('adminrole_exclude_permissions', array())) {
+      $permissions = array_diff($permissions, $excluded);
+    } */
+    
+    db_delete('role_permission')
+      ->condition('rid', $rid)
+      ->execute();
+    if ($perms) {
+      $query = db_insert('role_permission')
+        ->fields(array(
+          'rid',
+          'permission',
+          'module',
+        ));
+      foreach ($perms as $perm => $module) {
+        $query->values(array($rid, $perm, $module));
+      }
+      $query->execute();
+      $role = db_query("SELECT name FROM {role} WHERE rid = :rid", array(":rid" => $rid))->fetchField();
+      if (!$messaged) {
+        drupal_set_message(t("The <em>@role</em> role has been reset for all permissions.", array("@role" => $role)));
+        $messaged = TRUE;
+      }
+    }
+  }
+}

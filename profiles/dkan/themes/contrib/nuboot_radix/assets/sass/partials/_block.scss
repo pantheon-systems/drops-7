@@ -1,0 +1,272 @@
+// Social Links
+.pane-dkan-sitewide-dkan-sitewide-social,
+#block-dkan-sitewide-dkan-sitewide-social {
+  .pane-content,
+  .content {
+    padding: 0;
+  }
+  .social-links {
+    margin: 0;
+    list-style: none;
+    padding: 0;
+    li {
+      margin:0;
+      line-height: 1.1666666666666667em;
+      padding: 0;
+      border-bottom: 1px dotted #CCC;
+      position:relative;
+      a {
+        display: block;
+        margin:0;
+      }
+      a:hover {
+        background:#FFFEEE;
+        //color:$brand-primary;
+      }
+    }
+  }
+}
+
+// OTHER ACCESS
+.pane-dkan-sitewide-dkan-sitewide-other-access,
+#block-dkan-sitewide-dkan-sitewide-other-access {
+  a.btn {
+    background-image: auto;
+    border:1px solid $smoke;
+    padding:0 10px 0 36px;
+    position:relative;
+    i {
+      background-position: 0 0;
+      position:absolute;
+      top:8px;
+      left:5px;
+      visibility:visible;
+      &.ckan-icon-rdfxml {
+        background-image: url(../images/rdf.png);
+      }
+      &.ckan-icon-json {
+        background-image: url(../images/json.png);
+      }
+    }
+    &:hover {
+      background-color:$gray-lighter;
+    }
+  }
+  .btn-group {
+    margin:.6em 0;
+    .btn:first-child {
+      background-image: url(../images/json.png);
+      background-repeat:no-repeat;
+      background-position: 10px 10px;
+    }
+    .btn:last-child {
+      background-image: url(../images/rdf.png);
+      background-repeat:no-repeat;
+      background-position: 10px 10px;
+    }
+  }
+}
+
+// DKAN FORMS
+#block-dkan-forms-dkan-forms-dataset-help h2.block-title::before{
+  content: "\f05a";
+  font-family: $icon-fa;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  text-decoration: inherit;
+  font-size: 1.2em;
+  line-height: 1;
+  position: relative;
+  top: 1px;
+  margin-right: 0.4em;
+}
+
+// FACET API
+div[class*="pane-facetapi"],
+.region-sidebar-first .block-facetapi,
+.block-facetapi {
+  .pane-content,
+  .content {
+    padding:0;
+    @include border-bottom-radius(4px);
+  }
+  ul {
+    margin:0 0 0.5em;
+    padding:0;
+    @include border-bottom-radius(4px);
+  }
+  ul li.leaf {
+    border-bottom:1px dotted $smoke;
+    list-style-type:none;
+    list-style-image:none;
+    margin:0;
+    padding:0;
+      li {
+        position:relative;
+      a {
+        padding-right:48px;
+      }
+    }
+    &.last {
+      border-bottom:none;
+    }
+    li:before {
+    content:"\f178";
+    font-family:$icon-fa;
+    //color:$brand-primary;
+    position:absolute;
+    top:4px;
+    right:30px;
+    }
+    a {
+      color:$gray-dark;
+      display:block;
+      padding:4px 20px 4px 10px;
+      position:relative;
+      &:hover {
+        color:darken($gray-dark, 10%);
+        background: rgba(black, 0.03);
+        text-decoration:none;
+      }
+      &:hover:after {
+        content:"\f055";
+        color:$brand-success;
+        font-family:$icon-fa;
+        position:absolute;
+        top:4px;
+        right:6px;
+      }
+    }
+    a.facetapi-active {
+      //background:rgba(black, 0.15);
+      background:$smoke;
+      border-bottom:1px solid #fff;
+      color:#333;
+      z-index:0;
+    }
+    a.facetapi-active:before {
+      //@include transform(scalex(.8)); //remove jagged edge
+      content: '';
+      position: absolute;
+      border-style: solid;
+      border-width: 13px 0 13px 13px;
+      border-color: transparent $smoke;
+      display: block;
+      width: 0;
+      z-index: 1;
+      right: -13px;
+      top: 0;
+    }
+    a.facetapi-active:after {
+      content:"\f00d";
+      font-family:$icon-fa;
+      position:absolute;
+      top:3px;
+      right:6px;
+    }
+    a.facetapi-active:hover:after {
+      color:red;
+    }
+  }
+  a.facetapi-limit-link {
+    display:block;
+    padding:5px 30px 5px 5px;
+    position:relative;
+  }
+  a.facetapi-limit-link:before {
+    content:"\f150";
+    font-family:$icon-fa;
+    position:absolute;
+    top:6px;
+    right:15px;
+  }
+  a.facetapi-limit-link.open:before {
+    content:"\f151";
+  }
+}
+// Wrap long value strings.
+.facetapi-facet-field-license a {
+  @include wrap;
+}
+
+// Groups
+.pane-views-group-block-block,
+#block-views-group-block-block {
+  overflow:hidden;
+  .views-field-title a {
+    display: block;
+    padding: .5em 0;
+  }
+  .views-field-body p {
+    margin: .5em 0 1em;
+  }
+  .group-subscribe-message {
+    @include border-bottom-radius(4px);
+    background: $brand-primary;
+    color: #fff;
+    padding:5px;
+    text-align: center;
+    margin-left: -15px;
+    margin-right: -15px;
+    a {
+      color: #fff;
+      display: block;
+    }
+  }
+}
+.radix-layouts-sidebar .pane-block.pane-views-group-block-block .pane-content {
+  padding: 0 15px;
+}
+#block-dkan-dataset-dkan-dataset-dataset-help {
+  .content {
+    padding: 10px;
+  }
+}
+
+#block-dkan-forms-dkan-forms-dataset-help {
+  h2:before {
+    content: "\f05a";
+    font-family: $icon-fa;
+    font-weight: normal;
+    font-style: normal;
+    display: inline-block;
+    text-decoration: inherit;
+    font-size: 1.2em;
+    line-height: 1;
+    position: relative;
+    top: 1px;
+    margin-right: 0.4em;
+  }
+}
+
+.pane-dkan-sitewide-demo-front-dkan-demo-front,
+#block-dkan-sitewide-demo-front-dkan-demo-front {
+  @include box-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+  //background-color: rgba($brand-primary, 0.5);
+  p {
+    color: $white;
+    padding: 15px;
+  }
+  .media-overlay {
+    position: relative;
+    padding: 0;
+    img {
+      width: 100%;
+      height: auto;
+    }
+  }
+  .media-overlay .media-heading {
+    background-color: rgba(0, 0, 0, 0.8);
+    bottom: 0;
+    color: #FFFFFF;
+    font-size: 13px;
+    left: 0;
+    line-height: 18px;
+    margin: 0;
+    padding: 12px 10px;
+    position: absolute;
+    right: 0;
+    z-index: 1;
+  }
+}

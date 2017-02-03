@@ -1,0 +1,50 @@
+<?php
+/**
+ * @file
+ * Tests for conditional stylesheets.
+ */
+
+/**
+ * Test the Conditional Stylesheets module.
+ */
+class ConditionalStylesheetsTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Conditional stylesheets',
+      'description' => 'Tests adding conditional stylesheets via a .info file.',
+      'group' => 'Conditional Stylesheets',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('conditional_styles_test');
+  }
+
+  /**
+   * Test that stylesheets in theme .info files are loaded.
+   */
+  function testThemeInfo() {
+    theme_enable(array('conditional_styles_subtheme'));
+    variable_set('theme_default', 'conditional_styles_subtheme');
+
+    $this->drupalGet('');
+
+    // Verify sub-style.css is in an IE conditional comment.
+    $pattern = '/<!--\[if\ gte\ IE\ 1\]>.*sub\-style\.css.*<!\[endif\]-->/simx';
+    $this->assertPattern($pattern, t('Conditional stylesheet added via theme .info file was found.'));
+  }
+
+  /**
+   * Test that stylesheets in base theme .info files are loaded.
+   */
+  function testBaseThemeInfo() {
+    theme_enable(array('conditional_styles_subtheme'));
+    variable_set('theme_default', 'conditional_styles_subtheme');
+
+    $this->drupalGet('');
+
+    // Verify base-style.css is in an IE conditional comment.
+    $pattern = '/<!--\[if\ gte\ IE\ 1\]>.*base\-style\.css.*<!\[endif\]-->/simx';
+    $this->assertPattern($pattern, t('Conditional stylesheet added via base theme .info file was found.'));
+  }
+}

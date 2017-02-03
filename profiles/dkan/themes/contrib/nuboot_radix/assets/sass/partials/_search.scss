@@ -1,0 +1,46 @@
+.search-form,
+#dkan-sitewide-dataset-search-form,
+#dkan-sitewide-dataset-search-form--2 {
+  @include searchbox;
+  position: relative;
+}
+#dkan-sitewide-dataset-search-form,
+#dkan-sitewide-dataset-search-form--2 {
+  input[type="submit"] { 
+    top: 3px;
+  }
+  label {
+    @extend %screenreader;
+  }
+} 
+
+#region-branding #block-dkan-sitewide-dkan-sitewide-search-bar label {
+  @extend %screenreader;
+}
+
+#block-dkan-sitewide-dkan-sitewide-search-bar {
+  @media all and (min-width:768px) {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    width:172px;
+    form {
+      width:172px;
+    }
+    input.form-control {
+      width:170px;
+      height: 36px;
+      margin: 0;
+    }
+  }
+  @include searchbox;
+  clear: both;
+  .views-exposed-form .form-submit {
+    margin:22px 0 0;
+    text-shadow: none;
+  }
+  input[type="submit"] {
+    top: 3px;
+  }
+}
+

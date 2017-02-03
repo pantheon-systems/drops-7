@@ -1,0 +1,51 @@
+7.x-1.10 2015-11-10
+--------------------------
+- NOTE: 7.x-1.10 Was re-released on 2015-11-18 to address bugs in the teaser preview links.
+- Various improvements to dataset teaser displays.
+- Support for external previews (opening catalogued resources instantly in third-party visualization services, including ArcGIS and CartoDB)
+- Support for Flaticon at module level, so vector icons work on any theme
+- Minor improvements and bugfixes
+
+7.x-1.9 2015-09-17
+--------------------------
+- Fixed issues around the group/publisher field in search indexes and facets
+- When multiple resources are available for a dataset, new option to download all as zip file
+- Improvements for resource display in dataset pages and teasers
+- New hooks to allow additional license options https://github.com/NuCivic/dkan/issues/447
+- Numerous small improvements and bugfixes
+
+7.x-1.8  2015-04-02
+--------------------------
+ - Several recline.js tweaks
+ - Updated open_data_schema_map to include module that allows to hook your own custom output formatters (xml example included)
+ - Security updates for contrib modules
+
+
+
+7.x-1.7  2015-02-20
+--------------------------
+ - Adds Project Open Data v1.1 schema through open_data_schema_map update
+ - Adds dkan data.json v1.1 complaint implementation through open_data_schema_map_dkan update
+ - Adds Panels implementation for dkan_dataset_groups: http://docs.getdkan.com/dkan-documentation/dkan-users-guide/customize-dkan-pages-layouts-and-components-using-panels
+ - Updates to dkan_dataset stylesheet to make them radix compatible
+ - Security updates for several modules
+
+7.x-1.6
+---------
+ - Creating taxonomies during setup test
+ - Updating ref_field patch
+ - Replacing dkan_dataset_api with open_data_schema_map
+
+7.x-1.4  2014-10-10
+--------------------------
+ - Many warnings fixed with proper isset calls
+ - Changes in make file (fixed versions on some components)
+ - Additional Info block on dataset page
+ - Added docx as allowed format for field_upload
+ -
+
+7.x-1.1 2013-06-27
+------------------
+- Change references to NuCivic organization on github
+- Several bug fixes
+- Some changes for Project Open Data compliance, including data.json self-reference

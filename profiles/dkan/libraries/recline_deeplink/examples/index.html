@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- bootstrap -->
+  <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="../vendor/bootstrap-css/css/bootstrap.css" />
+
+  <link rel="stylesheet" href="../vendor/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="../vendor/leaflet.markercluster/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="../vendor/leaflet.markercluster/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="../vendor/slickgrid/slick.grid.css">
+  <link rel="stylesheet" href="../vendor/timeline/css/timeline.css">
+
+  <!-- Recline CSS components -->
+  <link rel="stylesheet" href="../css/grid.css">
+  <link rel="stylesheet" href="../css/slickgrid.css">
+  <link rel="stylesheet" href="../css/flot.css">
+  <link rel="stylesheet" href="../css/map.css">
+  <link rel="stylesheet" href="../css/multiview.css">
+  <link rel="stylesheet" href="../css/timeline.css">
+  <!-- /Recline CSS components -->
+
+  <!-- 3rd party JS libraries -->
+  <!--script type="text/javascript" src="../vendor/jquery/1.7.1/jquery.js"></script-->
+  <script src="../vendor/slickgrid/lib/jquery-1.7.min.js"></script>
+  <script type="text/javascript" src="../vendor/underscore/underscore.js"></script>
+  <script type="text/javascript" src="../vendor/backbone/backbone.js"></script>
+  <script type="text/javascript" src="../vendor/mustache/mustache.js"></script>
+  <script type="text/javascript" src="../vendor/bootstrap-css/js/bootstrap.js"></script>
+  <!--[if lte IE 8]>
+  <script language="javascript" type="text/javascript" src="../vendor/flot/excanvas.min.js"></script>
+  <![endif]-->
+  <script type="text/javascript" src="../vendor/flot/jquery.flot.js"></script>
+  <script type="text/javascript" src="../vendor/flot/jquery.flot.time.js"></script>
+  <script type="text/javascript" src="../vendor/leaflet/dist/leaflet.js"></script>
+  <script type="text/javascript" src="../vendor/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drag-2.0.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drop-2.0.min.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/slick.core.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.formatters.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.editors.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.grid.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowselectionmodel.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowmovemanager.js"></script>
+
+
+  <script type="text/javascript" src="../vendor/moment/moment.js"></script>
+  <script type="text/javascript" src="../vendor/timeline/js/timeline.js"></script>
+  <script type="text/javascript" src="../vendor/deep-diff/releases/deep-diff-0.3.0.min.js"></script>
+  <!--[if lte IE 7]>
+  <script language="javascript" type="text/javascript" src="../vendor/json/json2.js"></script>
+  <![endif]-->
+
+  <!--
+    ## Just use the all in one library version rather than individual files
+
+  <script type="text/javascript" src="dist/recline.js"></script>
+
+  -->
+
+  <!-- model and backends -->
+  <script type="text/javascript" src="../lib/ecma-fixes.js"></script>
+  <script type="text/javascript" src="../lib/model.js"></script>
+  <script type="text/javascript" src="../lib/backend.memory.js"></script>
+  <script type="text/javascript" src="../lib/backend.dataproxy.js"></script>
+  <script type="text/javascript" src="http://okfnlabs.org/recline.backend.gdocs/backend.gdocs.js"></script>
+  <script type="text/javascript" src="http://okfnlabs.org/csv.js/csv.js"></script>
+
+  <!-- views -->
+  <script type="text/javascript" src="../lib/view.grid.js"></script>
+  <script type="text/javascript" src="../lib/view.slickgrid.js"></script>
+  <script type="text/javascript" src="../lib/view.flot.js"></script>
+  <script type="text/javascript" src="../lib/view.graph.js"></script>
+  <script type="text/javascript" src="../lib/view.map.js"></script>
+  <script type="text/javascript" src="../lib/view.timeline.js"></script>
+  <script type="text/javascript" src="../lib/widget.pager.js"></script>
+  <script type="text/javascript" src="../lib/widget.queryeditor.js"></script>
+  <script type="text/javascript" src="../lib/widget.filtereditor.js"></script>
+  <script type="text/javascript" src="../lib/widget.valuefilter.js"></script>
+  <script type="text/javascript" src="../lib/widget.facetviewer.js"></script>
+  <script type="text/javascript" src="../lib/widget.fields.js"></script>
+  <script type="text/javascript" src="../lib/view.multiview.js"></script>
+  <style type="text/css">
+  body{
+    margin-bottom: 50px;
+  }
+  .recline-slickgrid {
+    height: 300px;
+  }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Recline DeepLink</h2>
+    <p>Saves the current multiview state allowing to share a visualization by url.</p>
+
+    <h3>Requirementes</h3>
+    <ul>
+      <li>Recline multiview</li>
+    </ul>
+    <h4>To save time we recommend to install this tools:</h4>
+    <ul>
+      <li><a href="https://www.npmjs.org/">NPM</a></li>
+      <li><a href="http://gruntjs.com/">Grunt</a></li>
+      <li><a href="http://bower.io/">Bower</a></li>
+    </ul>
+
+    <h3>Usage</h3>
+    <p>You only have to pass a valid multiview object as value to recline.DeepLink.Router constructor.</p>
+    <div class="highlight highlight-javascript"><pre><span class="kt">var</span> router <span class="o">=</span> <span class="o">new</span> <span class="no">recline</span>.DeepLink.Router(multiview);</pre></div>
+
+    <h3>Installation</h3>
+    <pre>git clone https://github.com/NuCivic/recline-deeplink.git
+cd recline-deeplink
+bower install
+npm install</pre>
+
+    <h3>Run demo</h3>
+    <pre>grunt</pre>
+
+    <h3>Example</h3>
+    <div class="data-explorer-here"></div>
+    <div style="clear: both;"></div>
+  </div>
+  <script type="text/javascript" src="app.js"></script>
+  <script type="text/javascript" src="../src/map.dep.js"></script>
+  <script type="text/javascript" src="../src/recline.deeplink.js"></script>
+</body>
+</html>

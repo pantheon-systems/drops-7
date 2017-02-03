@@ -1,0 +1,9 @@
+name = Schema test
+core = 7.x
+hidden = TRUE
+files[] = SchemaTestDatabaseConnection.php
+
+; Information added by drush on 2014-03-23
+version = "7.x-1.2"
+project = "schema"
+datestamp = "1395606147"

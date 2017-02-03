@@ -1,0 +1,29 @@
+7.x-1.10 2015-11-10
+--------------------------
+- Style improvements for "open with" button
+- Fix default logo path when svg not available
+
+7.x-1.9 2015-09-17
+--------------------------
+- Add support for SVG logos
+- New option to use solid color for background/hero graphic instead of image
+- Improved Colorizer support for different page elements
+- Numerous bug fixes and small styling improvements
+
+7.x-1.2
+------------------
+- Switch to radix subtheme
+- Updates for panels layouts
+- Switch to flat icons for files http://www.flaticon.com/packs/file-formats-icons
+
+7.x-1.1 2014-06-27
+------------------
+- Styles for resource download button
+- Change nuams references to NuCivic to reflect branding changes 
+- Left floating resource list
+- Improve colorizer functionality
+
+
+7.x-1.0
+-------
+- Added nuBoot theme as the main out-of-box theme for DKAN distro.

@@ -1,0 +1,13 @@
+name = Feeds Admin UI
+description = Administrative UI for Feeds module.
+package = Feeds
+core = 7.x
+dependencies[] = feeds
+configure = admin/structure/feeds
+
+files[] = feeds_ui.test
+
+; Information added by drush on 2015-11-01
+version = "7.x-2.0-beta1+17-dev"
+project = "feeds"
+datestamp = "1446372284"

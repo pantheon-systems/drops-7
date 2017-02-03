@@ -1,0 +1,485 @@
+<?php
+
+/**
+ * Implements hook_views_api()
+ */
+function uuidreference_views_api() {
+  return array(
+    'api' => 3.0,
+  );
+}
+
+function uuidreference_menu() {
+  $items = array();
+
+  $items['uuidreference/autocomplete/%/%/%'] = array(
+    'page callback' => 'uuidreference_autocomplete',
+    'page arguments' => array(2, 3, 4),
+    'access callback' => 'uuidreference_autocomplete_access_callback',
+    'access arguments' => array(2, 3, 4),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu Access callback for the autocomplete widget.
+ *
+ * @param string $target_type
+ *   The entity type this field instance is attached to.
+ * @param string $bundle
+ *   The bundle this field instance is attached to.
+ * @param $field_name
+ *   The name of the entity-reference field.
+ * @return
+ *   True if user can access this menu item.
+ */
+function uuidreference_autocomplete_access_callback($entity_type, $bundle, $field_name) {
+  $field = field_info_field($field_name);
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+
+  if ($field && $instance && ($field['type'] == 'uuidreference') && field_access('edit', $field, $entity_type)) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_field_info().
+ */
+function uuidreference_field_info() {
+  $field_info['uuidreference'] = array(
+    'label' => t('UUID reference'),
+    'description' => t('Reference another entity by its UUID.'),
+    'settings' => array(
+      'target_type' => ($entity_info = entity_get_info()) && isset($entity_info['node']) ? 'node' : key($entity_info),
+      'target_bundles' => array(),
+    ),
+    'default_widget' => 'uuidreference_textfield',
+    'default_formatter' => 'uuidreference_label',
+  );
+
+  return $field_info;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function uuidreference_field_formatter_info() {
+  return array(
+    'uuidreference_label' => array(
+      'label' => t('Label'),
+      'description' => t('Display the label of the referenced entities.'),
+      'field types' => array('uuidreference'),
+      'settings' => array(
+        'link' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function uuidreference_field_widget_info() {
+  return array(
+    'uuidreference_textfield' => array(
+      'label' => t('UUID reference text field'),
+      'field types' => array('uuidreference'),
+      'settings' => array('size' => 60),
+    ),
+    'uuidreference_autocomplete' => array(
+      'label' => t('UUID reference autocomplete'),
+      'field types' => array('uuidreference'),
+      'settings' => array(
+        'autocomplete_path' => 'uuidreference/autocomplete',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function uuidreference_field_settings_form($field, $instance, $has_data) {
+  // Select the target entity type.
+  $entity_type_options = array();
+  foreach (entity_get_info() as $entity_type => $info) {
+    $entity_type_options[$entity_type] = $info['label'];
+  }
+
+  $form['target_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Target type'),
+    '#options' => $entity_type_options,
+    '#default_value' => $field['settings']['target_type'],
+    '#required' => TRUE,
+    '#description' => t('The entity type that can be referenced via this field.'),
+    '#disabled' => $has_data,
+    '#size' => 1,
+    '#ajax' => array(
+      'callback' => 'uuidreference_field_settings_ajax_callback',
+      'wrapper' => 'uuidreference-field-settings-bundles',
+    ),
+    '#limit_validation_errors' => array(),
+  );
+
+  // The bundle options will be added in hook_form_alter.
+  // @see uuidreference_form_alter().
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alter the field_ui_settings_form to add in the correct bundle options via
+ * AJAX. This cannot be done in uuidreference_field_settings_form() as we don't
+ * have access to the whole form or form_state. We also have to account for the
+ * field settings form, and field settings edit form.
+ */
+function uuidreference_form_alter(&$form, &$form_state, $form_id) {
+  $entity_info = entity_get_info();
+
+  if ($form_id == 'field_ui_field_settings_form') {
+    if ($form['field']['module']['#value'] == 'uuidreference') {
+      if (!empty($form_state['input']['field']['settings']['target_type'])) {
+        $target_type = $form_state['input']['field']['settings']['target_type'];
+      }
+      else {
+        $target_type = $form['field']['settings']['target_type']['#default_value'];
+      }
+
+      _uuidreference_add_target_bundle_elements($form['field'], $form_state, $target_type, field_info_field($form['field']['field_name']['#value']),  $entity_info);
+    }
+  }
+
+  if ($form_id == 'field_ui_field_edit_form') {
+    if ($form['#field']['module'] == 'uuidreference') {
+      if (!empty($form_state['input']['field']['settings']['target_type'])) {
+        $target_type = $form_state['input']['field']['settings']['target_type'];
+      }
+      else {
+        $target_type = $form['#field']['settings']['target_type'];
+      }
+
+      _uuidreference_add_target_bundle_elements($form['field']['settings'], $form_state, $target_type, $form['#field'], $entity_info);
+    }
+  }
+}
+
+/**
+ * Helper function to add the target_bundles build array to a form element.
+ *
+ * @param $element
+ * @param $form_state
+ * @param $target_type
+ * @param $entity_info
+ */
+function _uuidreference_add_target_bundle_elements(&$element, &$form_state, $target_type, $field, $entity_info) {
+  if (!empty($entity_info[$target_type]['entity keys']['bundle'])) {
+    $bundles = array();
+    foreach ($entity_info[$target_type]['bundles'] as $bundle_name => $bundle_info) {
+      $bundles[$bundle_name] = $bundle_info['label'];
+    }
+
+    $element['target_bundles'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Target bundles'),
+      '#options' => $bundles,
+      '#default_value' => $field['settings']['target_bundles'],
+      '#size' => 6,
+      '#multiple' => TRUE,
+      '#description' => t('The bundles of the entity type that can be referenced. Optional, leave empty for all bundles.'),
+      '#prefix' => '<div id="uuidreference-field-settings-bundles">',
+      '#suffix' => '</div>',
+    );
+  }
+  else {
+    $element['target_bundles'] = array(
+      '#type' => 'value',
+      '#value' => array(),
+      '#prefix' => '<div id="uuidreference-field-settings-bundles">',
+      '#suffix' => '</div>',
+    );
+  }
+}
+
+/**
+ * Ajax callback for the handler settings form.
+ *
+ * @see entityreference_field_settings_form()
+ */
+function uuidreference_field_settings_ajax_callback($form, $form_state) {
+  if (!empty($form['field']['target_bundles'])) {
+    return $form['field']['target_bundles'];
+  }
+  else {
+    return $form['field']['settings']['target_bundles'];
+  }
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function uuidreference_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  switch ($instance['widget']['type']) {
+    case 'uuidreference_autocomplete':
+      $base = $instance['widget']['settings']['autocomplete_path'];
+      $element += array(
+        '#autocomplete_path' => $base . '/' . $instance['entity_type'] . '/' . $instance['bundle'] . '/' . $field['field_name'],
+        '#element_validate' => array('uuidreference_autocomplete_validate'),
+        '#value_callback' => 'uuidreference_autocomplete_value',
+      );
+    // Intentionally fall through from autocomplete case to inherit textfield
+    // defaults.
+    case 'uuidreference_textfield':
+      $element += array(
+        '#type' => 'textfield',
+        '#default_value' => isset($items[$delta]['target_uuid']) ? $items[$delta]['target_uuid'] : NULL,
+      );
+    break;
+  }
+
+  return array('target_uuid' => $element);
+}
+
+/**
+ * Value callback for autocomplete element.
+ */
+function uuidreference_autocomplete_value($element, $input = FALSE, $form_state) {
+  if ($input === FALSE) {
+    $uuid = $element['#default_value'];
+    if (!empty($uuid)) {
+      $field = field_info_field($element['#field_name']);
+      $target_type = $field['settings']['target_type'];
+      $ids = entity_get_id_by_uuid($target_type, array($uuid));
+      if (!empty($ids)) {
+        $entities = entity_load($target_type, $ids);
+        $entity = reset($entities);
+        $label = check_plain(entity_label($target_type, $entity));
+        $label .= ' [' . $uuid . ']';
+        return $label;
+      }
+    }
+  }
+}
+
+/**
+ * Validation callback for autocomplete strings.
+ *
+ * @param $element
+ * @param $form_state
+ * @param $form
+ */
+function uuidreference_autocomplete_validate($element, &$form_state, $form) {
+  $value = '';
+
+  if (!empty($element['#value'])) {
+    // Match UUID from "label [UUID]".
+    if (preg_match("/.+\[([a-f0-9\-]+)\]/", $element['#value'], $matches)) {
+      $value = $matches[1];
+    }
+    else {
+      $value = $element['#value'];
+    }
+  }
+
+  // Update the value of this element so the field can validate by UUID.
+  form_set_value($element, $value, $form_state);
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function uuidreference_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+
+  switch ($display['type']) {
+    case 'uuidreference_label':
+      $element['link'] = array(
+        '#title' => t('Link label to the referenced entity'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['link'],
+      );
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function uuidreference_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+  switch ($display['type']) {
+    case 'uuidreference_label':
+      $summary[] = $settings['link'] ? t('Link to the referenced entity') : t('No link');
+      break;
+  }
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ *
+ * Ripped directly from entityreference.
+ */
+function uuidreference_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  $target_uuids = array();
+
+  // Collect every possible entity attached to any of the entities.
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      $target_uuids[] = $item['target_uuid'];
+    }
+  }
+
+  if (!empty($target_uuids)) {
+    // This is mostly copied from entity_uuid_load() but that function doesn't
+    // return the id map which we will need later.
+    $uuid_id_map = entity_get_id_by_uuid($field['settings']['target_type'], $target_uuids);
+    $target_entities = entity_load($field['settings']['target_type'], $uuid_id_map);
+
+    // Iterate through the fieldable entities again to attach the loaded data.
+    foreach ($entities as $id => $entity) {
+      $rekey = FALSE;
+
+      foreach ($items[$id] as $delta => $item) {
+        // Check whether the referenced entity could be loaded.
+        if (isset($target_entities[$uuid_id_map[$item['target_uuid']]])) {
+          // Replace the instance value with the term data.
+          $items[$id][$delta]['entity'] = $target_entities[$uuid_id_map[$item['target_uuid']]];
+        }
+        // Otherwise, unset the instance value, since the entity does not exist.
+        else {
+          unset($items[$id][$delta]);
+          $rekey = TRUE;
+        }
+      }
+
+      if ($rekey) {
+        // Rekey the items array.
+        $items[$id] = array_values($items[$id]);
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function uuidreference_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $result = array();
+
+  switch ($display['type']) {
+    case 'uuidreference_label':
+      $ref_entity_type = $field['settings']['target_type'];
+      foreach ($items as $delta => $item) {
+        $label = entity_label($ref_entity_type, $item['entity']);
+        // If the link is to be displayed and the entity has a uri, display a link.
+        if ($display['settings']['link'] && ($uri = entity_uri($ref_entity_type, $item['entity']))) {
+          $result[$delta] = array('#markup' => l($label, $uri['path'], $uri['options']));
+        }
+        else {
+          $result[$delta] = array('#markup' => check_plain($label));
+        }
+      }
+      break;
+  }
+
+  return $result;
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function uuidreference_field_is_empty($item, $field) {
+  return empty($item['target_uuid']) || !uuid_is_valid($item['target_uuid']);
+}
+
+/**
+ * Implements hook_field_presave().
+ *
+ * Adds the target type to the field data structure when saving.
+ */
+function uuidreference_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  foreach ($items as $delta => $item) {
+    if (uuidreference_field_is_empty($item, $field)) {
+      unset($items[$delta]);
+    }
+    else {
+      $items[$delta]['target_type'] = $field['settings']['target_type'];
+    }
+  }
+}
+
+/**
+ * Autocomplete callback for uuidreference_autocomplete field widget.
+ *
+ * @param string $target_type
+ * @param string $string
+ */
+function uuidreference_autocomplete($entity_type, $bundle, $field_name, $string = '') {
+  watchdog('acquia_entity', "$string has been searched for.");
+  $field = field_info_field($field_name);
+  $target_type = $field['settings']['target_type'];
+
+  $entity_info = entity_get_info($target_type);
+
+  // @todo This could also be title, but what else to assume if no label key is
+  // present?
+  $label_key = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
+  $uuid_key = isset($entity_info['array keys']['uuid']) ? $entity_info['array keys']['uuid'] : 'uuid';
+
+  $query = db_select($entity_info['base table'], 'base')
+    ->fields('base', array($uuid_key, $label_key))
+    ->condition($label_key, '%' . db_like(trim($string)) . '%', 'LIKE')
+    ->addTag($target_type . '_access')
+    ->addTag('uuidreference')
+    ->range(0, 15);
+
+  // If there are any specified bundles, try to add those as a query condition.
+  $target_bundles = array_filter(array_values($field['settings']['target_bundles']));
+  if (!empty($target_bundles)) {
+    $query->condition($entity_info['entity keys']['bundle'], $field['settings']['target_bundles']);
+  }
+
+  // Invoke hook_uuidreference_autocomplete_query_alter() to allow other modules
+  // to alter the autocomplete query based on entity_type, bundle, or field
+  // context.
+  foreach (module_implements('uuidreference_autocomplete_query_alter') as $module) {
+    $function = $module . '_uuidreference_autocomplete_query_alter';
+    $function($query, $entity_type, $bundle, $field_name);
+  }
+
+  $result = $query->execute()->fetchAllKeyed();
+
+  $matches = array();
+  if (!empty($result)) {
+    // Loop through the products and convert them into autocomplete output.
+    foreach ($result as $uuid => $label) {
+      $label = check_plain($label);
+      $key = "$label [$uuid]";
+      // Strip things like starting/trailing white spaces, line breaks and tags.
+      $key = preg_replace('/\s\s+/', ' ', str_replace("\n", '', trim(decode_entities(strip_tags($key)))));
+      // Names containing commas or quotes must be wrapped in quotes.
+      if (strpos($key, ',') !== FALSE || strpos($key, '"') !== FALSE) {
+        $key = '"' . str_replace('"', '""', $key) . '"';
+      }
+
+      $matches[$key] = $label;
+    }
+  }
+
+  drupal_json_output($matches);
+}

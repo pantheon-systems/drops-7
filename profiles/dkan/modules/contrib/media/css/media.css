@@ -1,0 +1,147 @@
+/**
+ * @file
+ * Styles for the media library.
+ *
+ * The display and layout of the Media browser assumes Drupal's Seven theme as
+ * the theme active when this is displayed.
+ */
+
+/* jQuery UI Resets */
+.ui-tabs {
+  padding: 0;
+}
+.ui-front {
+  z-index: 10001 !important;
+}
+
+.ui-dialog.media-wrapper .ui-dialog-content {
+  padding: 0;
+}
+
+.ui-dialog.media-wrapper .ui-dialog-buttonpane {
+  display: none;
+}
+
+#media-browser-tabset .ui-widget-header {
+  background: none;
+}
+
+/* Remove the default border */
+.ui-widget-content {
+  border: none;
+}
+
+/* *********************************************************** */
+/* Browser layout themeing */
+
+/* Size the branding header appropriately */
+#media-browser-tabset #branding {
+  padding: 10px 10px 0px 10px;
+}
+
+#media-browser-tabset #branding h1 {
+  float: left;
+  height: 16px;
+  margin-top: 0px;
+}
+
+/* Float the tabs right to keep the UI consistent across themes */
+#media-tabs-wrapper {
+  float: right;
+}
+
+#media-browser-tabset ul.tabs {
+  padding: 0;
+  border: none;
+}
+
+/* Reset the height to match the browser */
+#media-browser-tabset ul.tabs.primary li a:link {
+  font-weight: bold;
+  margin-right: 0;
+}
+
+/* *********************************************************** */
+/* Media item display */
+
+.media-item {
+  background: #eee;
+  border: 1px solid #CCCCCC;
+  box-shadow: inset 0 0 15px rgba(0,0,0,.1), inset 0 0 0 1px rgba(0,0,0,.05);
+  display: inline-block;
+  padding: 5px;
+  position: relative;
+}
+
+.media-item img {
+  display: block;
+}
+
+.media-item .label-wrapper {
+  background: rgba(255,255,255,.8);
+  bottom: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+  left: 0;
+  max-height: 100%;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.media-item .label-wrapper label {
+  font-size: 10px;
+  padding: 5px 10px;
+}
+
+/* Media item lists */
+
+#media-browser-library-list {
+  margin: 0;
+  padding: 0;
+}
+
+.media-list-thumbnails li {
+  float: left;
+  list-style: none;
+  margin: 0 10px 10px 0;
+}
+
+.media-list-thumbnails li a {
+  text-decoration: none;
+}
+
+.media-list-thumbnails .media-item.selected {
+  background: #F4ECC7;
+  border-color: #058AC5;
+}
+
+.media-list-thumbnails .media-item:hover {
+  border-color: #058AC5;
+  cursor: pointer;
+}
+
+.media-list-thumbnails .media-item .label-wrapper label {
+  color: #058AC5;
+}
+
+.media-list-thumbnails .media-item .label-wrapper label:hover {
+  cursor: pointer;
+}
+
+.media-list-thumbnails .form-type-checkbox {
+  bottom: 117px;
+  left: 6px;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* File field */
+
+.media-widget .preview {
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}

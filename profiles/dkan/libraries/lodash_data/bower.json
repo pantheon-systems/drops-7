@@ -1,0 +1,16 @@
+{
+  "name": "lodash.data",
+  "version": "0.0.1",
+  "keywords": [ ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "vendor",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "lodash": "2.4.1"
+  }
+}

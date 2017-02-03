@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Installation and update functionality for colorizer.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function colorizer_schema() {
+  $schema['colorizer_instance'] = array(
+    // Example (partial) specification for table "node".
+    'description' => 'The base table for colorizer settings.',
+    'fields' => array(
+      'instance' => array(
+        'description' => 'The {node_type} of this node.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'stylesheet' => array(
+        'type' => 'varchar',
+        'description' => 'The stylesheet to use for this instance.',
+        'default' => '',
+        'length' => 255,
+      ),
+      'palette' => array(
+        'description' => 'The palette to use for this instance.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('instance'),
+  );
+  return $schema;
+}
+
+function colorizer_update_7100() {
+  drupal_install_schema('colorizer');
+  global $conf;
+  foreach ($conf as $name => $value) {
+    $matches = array();
+    if (preg_match('/colorizer_([A-Za-z\-_0-9]*)_stylesheet/', $name, $matches)) {
+      $instance = $matches[1];
+      colorizer_save($instance, array('stylesheet' => $value));
+      variable_del($name);
+    }
+    elseif (preg_match('/colorizer_([A-Za-z\-_0-9]*)_palette/', $name, $matches)) {
+      $instance = $matches[1];
+      colorizer_save($instance, array('palette' => $value));
+      variable_del($name);
+    }
+    // Couldn't find any use of this variable.
+    elseif (preg_match('/colorizer_([A-Za-z\-_0-9]*)_files/', $name, $matches)) {
+      variable_del($name);
+    }
+  }
+}

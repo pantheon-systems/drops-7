@@ -1,0 +1,11 @@
+name = Image styles admin
+description = Provides additional administrative functionality to duplicate, export or import image styles.
+package = Media
+core = 7.x
+
+dependencies[] = image
+
+; Information added by drush on 2014-03-25
+version = "7.x-1.4+17-dev"
+project = "imagecache_actions"
+datestamp = "1395771921"

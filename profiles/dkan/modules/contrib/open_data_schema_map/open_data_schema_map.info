@@ -1,0 +1,11 @@
+name = Open Data Schema Map
+description = Maps entities to Open Data schemas.
+core = 7.x
+package = Open Data
+version = 7.x-1.x
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = features
+dependencies[] = token
+files[] = open_data_schema_map.features.inc
+files[] = test/open_data_schema_map_api.test

@@ -1,0 +1,137 @@
+<?php
+/**
+ * @file
+ * Provides a Views style plugin to display content in a responsive grid.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function views_responsive_grid_views_api() {
+  return array('api' => '3.0');
+}
+
+/**
+ * Set default options.
+ */
+function views_responsive_grid_get_options($array) {
+  $options = array();
+  foreach ($array as $key => $value) {
+    if (!is_array($value)) {
+      $options[$key] = $value;
+    }
+    else {
+      $options = array_merge($options, views_responsive_grid_get_options($value));
+    }
+  }
+  return $options;
+}
+
+/**
+ * Display a view as a responsive grid style.
+ */
+function template_preprocess_views_view_responsive_grid(&$vars) {
+  $view = $vars['view'];
+  $result = $view->result;
+  $options = views_responsive_grid_get_options($view->style_plugin->options);
+  $handler = $view->style_plugin;
+  $columns  = $options['columns'];
+  $vars['classes_array'] = array();
+  if (!$options['default_classes']) {
+    $vars['classes_array'][] = 'views-responsive-grid';
+    $vars['classes_array'][] = 'views-responsive-grid-' . $options['alignment'];
+    $vars['classes_array'][] = 'views-columns-' . $columns;
+  }
+  $vars['classes_array'] = array_merge($vars['classes_array'], explode(' ', $options['wrapper_classes']));
+  $vars['classes_array'] = array_filter($vars['classes_array']);
+  // Check if there are views results to process.
+  if (!empty($vars['rows'])) {
+    $col_id = 0;
+    $row_id = 0;
+    $keys = array_keys($vars['rows']);
+    // Determine style alignment.
+    if ($options['alignment'] == 'horizontal') {
+      $rows = array();
+      $vars['row_classes'] = array();
+      foreach ($vars['rows'] as $i => $row) {
+        $classes = explode(' ', $options['column_classes']);
+        if (!$options['default_classes']) {
+          $classes[] = 'views-column-' . ($col_id + 1);
+        }
+        $rows[$row_id][$col_id] = array(
+          'classes' => implode(' ', $classes),
+          'content' => $vars['rows'][current($keys)],
+        );
+        $classes = explode(' ', $options['row_classes']);
+        if (!$options['default_classes']) {
+          $classes[] = 'views-row-' . ($row_id + 1);
+        }
+        $vars['row_classes'][$row_id] = implode(' ', $classes);
+
+        if ($row_id == 0) {
+          $vars['row_classes'][$row_id] .= ' ' . $options['first_row_classes'];
+        }
+        elseif ($row_id == ceil(count($vars['rows']) / $columns) - 1) {
+          $vars['row_classes'][$row_id] .= ' ' . $options['last_row_classes'];
+        }
+        if ($col_id == 0) {
+          $rows[$row_id][$col_id]['classes'] .= ' ' . $options['first_column_classes'];
+          $col_id++;
+        }
+        elseif ($col_id == $columns - 1) {
+          $rows[$row_id][$col_id]['classes'] .= ' ' . $options['last_column_classes'];
+          $col_id = 0;
+          $row_id++;
+        }
+        else {
+          $col_id++;
+        }
+        next($keys);
+      }
+      $vars['rows'] = $rows;
+    }
+    else {
+      $cols = array();
+      $extra = count($vars['rows']) % $columns;
+      $per_col = floor(count($vars['rows']) / $columns);
+      $vars['column_classes'] = array();
+      for ($i = 0; $i < $columns; $i++) {
+        $classes = explode(' ', $options['column_classes']);
+        if (!$options['default_classes']) {
+          $classes[] = 'views-column-' . ($col_id + 1);
+        }
+        $vars['column_classes'][$i] = $classes;
+        if ($i == 0 && !empty($options['first_column_classes'])) {
+          $vars['column_classes'][$i] = array_merge($vars['column_classes'][$i], explode(' ', $options['first_column_classes']));
+        }
+        elseif ($i == $columns - 1 && !empty($options['last_column_classes'])) {
+          $vars['column_classes'][$i] = array_merge($vars['column_classes'][$i], explode(' ', $options['last_column_classes']));
+        }
+        $vars['column_classes'][$i] = implode(' ', $vars['column_classes'][$i]);
+        for ($n = 0; $n <= ($per_col - 1) + ($i < $extra ? 1 : 0); $n++) {
+          $classes = explode(' ', $options['row_classes']);
+          if (!$options['default_classes']) {
+            $classes[] = 'views-row-' . ($row_id + 1);
+          }
+          $cols[$i][$n] = array(
+            'classes' => $classes,
+            'content' => $vars['rows'][current($keys)],
+          );
+          if ($n == 0 && !empty($options['first_row_classes'])) {
+            $cols[$i][$n]['classes'] = array_merge($cols[$i][$n]['classes'], explode(' ', $options['first_row_classes']));
+          }
+          elseif ($n == ($per_col - 1) + ($i < $extra ? 1 : 0)  && !empty($options['last_row_classes'])) {
+            $cols[$i][$n]['classes'] = array_merge($cols[$i][$n]['classes'], explode(' ', $options['last_row_classes']));
+          }
+          $cols[$i][$n]['classes'] = implode(' ', $cols[$i][$n]['classes']);
+          next($keys);
+          $row_id++;
+        }
+        $col_id++;
+        $row_id = 0;
+      }
+      $vars['columns'] = $cols;
+    }
+  }
+  $vars['classes'] = implode(' ', $vars['classes_array']);
+}
