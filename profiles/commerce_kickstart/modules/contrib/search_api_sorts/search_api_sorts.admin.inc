@@ -1,8 +1,12 @@
 <?php
 
 /**
- * Displays a form for selecting the indexed fields for which sorts should be
- * created.
+ * @file
+ * Administration page callbacks for the Search API sorts module.
+ */
+
+/**
+ * Displays a form for selecting the indexed fields for which to create sorts.
  *
  * @param SearchApiIndex $index
  *   The index for which to display the settings.
@@ -14,17 +18,12 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
 
   if (!$index->server() || !$index->server()->supportsFeature('search_api_facets')) {
     // We can't offer any sorts, but maybe the user can delete old sort data.
-    drupal_set_message(t("The server this index currently lies on doesn't support sorts. " .
-        'To use sorts, you will have to move this index to a server supporting this feature.'), 'error');
+    drupal_set_message(t("The server this index currently lies on doesn't support sorts. To use sorts, you will have to move this index to a server supporting this feature."), 'error');
     return $form;
   }
 
-  $sort_options = array('' => t('None'));
-  $has_default = FALSE;
-  $has_default_no_terms = FALSE;
-
-  // get the sorts ordered by weight using EntityFieldQuery
-  $query = new EntityFieldQuery;
+  // Get the sorts ordered by weight using EntityFieldQuery.
+  $query = new EntityFieldQuery();
   $results = $query
     ->entityCondition('entity_type', 'search_api_sort')
     ->propertyCondition('index_id', $index->machine_name)
@@ -33,22 +32,11 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
 
   $sort_ids = array();
   if (isset($results['search_api_sort'])) {
-    foreach($results['search_api_sort'] as $result) {
+    foreach ($results['search_api_sort'] as $result) {
       $sort_ids[] = $result->id;
     }
   }
   $sorts = search_api_sorts_load_multiple($sort_ids);
-  foreach ($sorts as $sort) {
-    if ($sort->enabled == 1) {
-      $sort_options[$sort->field] = $sort->name;
-    }
-    if ($sort->default_sort) {
-      $has_default = TRUE;
-    }
-    if ($sort->default_sort_no_terms) {
-      $has_default_no_terms = TRUE;
-    }
-  }
 
   $form['description'] = array(
     '#type' => 'item',
@@ -82,7 +70,7 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
 
   if (!empty($fields)) {
     if ($disabled = empty($index->enabled)) {
-      drupal_set_message('Since this index is at the moment disabled, no sorts can be activated.', 'warning');
+      drupal_set_message(t('Since this index is at the moment disabled, no sorts can be activated.'), 'warning');
     }
     $show_status = FALSE;
     foreach ($sorts as $sort) {
@@ -108,20 +96,28 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
 
     $types = search_api_field_types();
 
-    // need to get the index fields ordered by sort's weight
-    $index_fields = $fields;
+    // Need to get the index fields ordered by sort's weight.
     foreach ($sorts as $key => $sort) {
       if (isset($fields[$key])) {
         $fields[$key]['weight'] = isset($sorts[$key][0]->weight) ? $sorts[$key][0]->weight : 0;
-        $index_fields[$key] = $fields[$key];
       }
     }
+
+    // Order fields according to sorts weight.
+    $new_fields = array();
+    foreach ($sorts as $key => $sort) {
+      if (!empty($fields[$key])) {
+        $new_fields[$key] = $fields[$key];
+        unset($fields[$key]);
+      }
+    }
+    $fields = $new_fields + $fields;
 
     foreach ($fields as $key => $field) {
       if (!$field['indexed']) {
         continue;
       }
-      // skip fulltext or multi-value, you cannot sort them
+      // Skip fulltext or multi-value, you cannot sort them.
       if ($field['type'] == 'text' || strpos($field['type'], 'list<') !== FALSE) {
         continue;
       }
@@ -221,7 +217,6 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
     '#type' => 'submit',
     '#value' => t('Save settings'),
   );
-
   return $form;
 }
 
@@ -254,15 +249,11 @@ function search_api_sorts_index_select_validate(array $form, array &$form_state)
  * Submit callback for search_api_sorts_index_select().
  */
 function search_api_sorts_index_select_submit(array $form, array &$form_state) {
-  $index = $form_state['index'];
   $count = 0;
   $delete_count = 0;
   $reset_count = 0;
 
-  $counts = array();
   foreach ($form_state['values']['sorts'] as $key => $v) {
-    $field = $v['sort']->field;
-    $c = $counts[$field] = (isset($counts[$field]) ? $counts[$field] + 1 : 1);
     if (empty($v['enabled']) || (isset($v['sort']->status) && $v['sort']->status == ENTITY_OVERRIDDEN)) {
       // This is the only case in which a "delete" makes sense.
       if (!empty($v['delete'])) {

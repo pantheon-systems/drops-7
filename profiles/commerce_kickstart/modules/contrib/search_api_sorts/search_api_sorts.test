@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Class for testing search api sorts capabilities.
+ */
+class SearchApiSortsTest extends DrupalWebTestCase {
+
+  protected $server_id;
+  protected $index_id;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Test "Search Api Sorts" module',
+      'description' => 'Tests the "Search Api Sorts" module.',
+      'group' => 'Search API Sorts',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('entity', 'search_api', 'search_api_db', 'search_api_sorts');
+
+    $this->drupalLogin($this->drupalCreateUser(array('administer search_api')));
+
+    // Create Search Api DB Server.
+    $edit = array(
+      'name' => 'TestSearchApiDB Server',
+      'machine_name' => 'testserver',
+      'enabled' => TRUE,
+      'class' => 'search_api_db_service'
+    );
+    $this->drupalPost('admin/config/search/search_api/add_server', $edit, t('Create server'));
+    $this->drupalPost(NULL, array(), t('Create server'));
+    $this->assertText(t('The server was successfully created.'));
+
+    // Create Search Api Index.
+    $values = array(
+      'name' => 'TestSearchApi Index',
+      'machine_name' => 'testindex',
+      'item_type' => 'node',
+      'options' => array(
+        'datasource' => array('bundles'=>array()),
+        'index_directly' => 1,
+        'cron_limit' => 50
+      ),
+      'enabled' => 1,
+      'description' => 'An index used for testing.',
+      'server' => 'testserver',
+      'read_only' => 0,
+      'old_type' => 'node',
+      'datasource_config' => TRUE,
+    );
+    $index = entity_create('search_api_index', $values);
+    $index->is_new = TRUE;
+    $index->save();
+
+    // Select fields to index.
+    $edit = array(
+      'fields[type][indexed]' => TRUE,
+      'fields[type][type]' => 'string',
+      'fields[title][indexed]' => TRUE,
+      'fields[title][type]' => 'string',
+      'fields[created][indexed]' => TRUE,
+      'fields[created][type]' => 'date',
+      'fields[changed][indexed]' => TRUE,
+      'fields[changed][type]' => 'integer',
+      'fields[url][indexed]' => TRUE,
+      'fields[url][type]' => 'uri',
+      'fields[status][indexed]' => TRUE,
+      'fields[status][type]' => 'boolean',
+      'fields[edit_url][indexed]' => TRUE,
+      'fields[edit_url][type]' => 'text',
+      'fields[edit_url][boost]' => '1.0'
+    );
+    $this->drupalPost('admin/config/search/search_api/index/testindex/fields', $edit, t('Save changes'));
+    $this->drupalGet('admin/config/search/search_api/index/testindex/fields');
+
+  }
+
+  public function testFieldTypesSortable() {
+    $this->drupalGet('admin/config/search/search_api/index/testindex/sorts');
+
+    $this->assertText('Date created', 'Date field types can be sorted.');
+    $this->assertText('Date changed', 'Integer field types can be sorted.');
+    $this->assertText('Content type', 'String field types can be sorted.');
+    $this->assertText('Relevance', 'Decimal field types can be sorted.');
+    $this->assertText('URL', 'URI field types can be sorted.');
+    $this->assertText('Status', 'Boolean field types can be sorted.');
+    $this->assertNoText('Edit URL', 'Fulltext field types are not sortable.');
+  }
+
+}

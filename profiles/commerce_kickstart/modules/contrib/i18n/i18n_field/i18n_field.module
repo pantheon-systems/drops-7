@@ -446,3 +446,69 @@ function i18n_field_type_info($type = NULL, $property = NULL) {
     return $info;
   }
 }
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function i18n_field_field_info_alter(&$field_info) {
+  foreach(array_keys($field_info) as $type) {
+    $field_info[$type]['property_callbacks'][] = 'i18n_field_entity_property_callback';
+  }
+}
+
+/**
+ * Callback to translate entity property info for a fields.
+ *
+ * @see entity_metadata_field_entity_property_info()
+ * @see entity_metadata_field_default_property_callback()
+ * @see i18n_field_i18n_object_info_alter()
+ * @see hook_module_implements_alter()
+ */
+function i18n_field_entity_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  global $language;
+
+  // This could create a endless recursion if it's called during rebuilding the
+  // cache for i18n_object_info(). So if the cache of i18n_object_info isn't
+  // available yet we assume the worst case, leave the info alone but trigger a
+  // rebuild of the property when hook_i18n_object_info_alter is invoked. At
+  // that point the info is available and we can rely on it.
+  if (!$info = &drupal_static('i18n_object_info')) {
+    $i18n_field_entity_property_callback_fallback = &drupal_static(__FUNCTION__);
+    $i18n_field_entity_property_callback_fallback = TRUE;
+    return;
+  }
+
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+  $property['label'] = i18n_field_translate_property($instance, 'label', $language->language);
+}
+
+/**
+ * Implements hook_i18n_object_info_alter().
+ */
+function i18n_field_i18n_object_info_alter(&$info) {
+  if (drupal_static('i18n_field_entity_property_callback')) {
+    if ($info = drupal_static('i18n_object_info')) {
+      // Clean static and permanent cache of the data and then re-run the property
+      // building.
+      drupal_static_reset('entity_get_property_info');
+      cache_clear_all('entity_property_info:' . $GLOBALS['language']->language, 'cache');
+      entity_get_property_info();
+    }
+    else {
+      watchdog('i18n_field', 'Unable to run fall-back handling for entity property translation due missing "i18n_object_info" cache', array(), WATCHDOG_WARNING);
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function i18n_field_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'i18n_object_info_alter') {
+    // Move our hook implementation to the bottom.
+    $group = $implementations['i18n_field'];
+    unset($implementations['i18n_field']);
+    $implementations['i18n_field'] = $group;
+  }
+}

@@ -567,6 +567,9 @@ function lingotek_admin_entity_bundle_profiles_form_submit($form, &$form_state) 
           if ($field_based_translation) {
             // Update the field via the Field API (Instead of the direct db_update)
             $field = field_info_field($content_field);
+            if (!$field) {
+              continue;
+            }
             $is_field_collection = key_exists($content_field, $field_collection_field_types);
             $field['translatable'] = $is_field_collection ? 0 : 1;
             if ($entity_type != 'menu_link') {
@@ -1443,12 +1446,25 @@ function lingotek_admin_prefs_form($form, &$form_state, $show_fieldset = FALSE) 
     );
   }
 
-  $form['prefs']['lingotek_translate_original_node_titles'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable translation of node titles'),
-    '#description' => t('This option is used to translate non-field node titles.'),
-    '#default_value' => variable_get('lingotek_translate_original_node_titles', FALSE),
-  );
+  if (module_exists('file_entity')) {
+    $form[$fkey]['lingotek_translate_files'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable file entity translation'),
+      '#default_value' => variable_get('lingotek_translate_files', FALSE),
+      '#description' => t('If checked, file entity fields will be managed by Lingotek.'),
+    );
+  }
+
+  $node_based_translation = variable_get('lingotek_nodes_translation_method') == 'node' ? TRUE : FALSE;
+
+  if ($node_based_translation) {
+    $form['prefs']['lingotek_translate_original_node_titles'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable translation of node titles'),
+      '#description' => t('This option is used to translate non-field node titles.'),
+      '#default_value' => variable_get('lingotek_translate_original_node_titles', FALSE),
+    );
+  }
 
   $form['prefs']['lingotek_hide_tlmi'] = array(
     '#type' => 'checkbox',
@@ -1504,6 +1520,20 @@ function lingotek_admin_prefs_form($form, &$form_state, $show_fieldset = FALSE) 
     '#default_value' => $lang_specific_profiles_enabled ? 1 : 0,
     '#description' => t('If checked, languages enabled for Lingotek translation will not automatically be queued for all content.  Instead, languages enabled for Lingotek will be added to the available languages for profiles but will be disabled by default on profiles that have existing content. (Note: this cannot be unchecked if language-specific settings are in use.)'),
     '#disabled' => $lang_specific_profiles_enabled && lingotek_using_language_specific_profiles() ? TRUE : FALSE,
+  );
+
+  $form[$fkey]['lingotek_remove_target_from_tms'] = array(
+    '#prefix' => '<div style="margin-left: 20px;">',
+    '#suffix' => '</div>',
+    '#type' => 'checkbox',
+    '#title' => t('Remove languages from TMS when changing profiles'),
+    '#default_value' => variable_get('lingotek_remove_target_from_tms', FALSE),
+    '#description' => t('If checked, changing the translation profile to a profile with fewer languages will cause the non-applicable languages to be removed from the TMS.'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="lingotek_enable_language_specific_profiles"]' => array('checked' => FALSE),
+      ),
+    ),
   );
 
   $form[$fkey]['lingotek_account_plan_type'] = array(
@@ -1563,6 +1593,23 @@ function lingotek_admin_prefs_form_submit($form, &$form_state) {
       );
       db_add_field('paragraphs_item', 'language', $schema['paragraphs_item']['fields']['language']);
       LingotekLog::warning('Language column has been added to the @module_name by Lingotek.', array('@module_name' => ('Paragraph')));
+    }
+
+    if (!db_table_exists('entity_translation')) {
+      drupal_set_message(t('For Paragraphs translation, make sure you\'ve installed the <i>Entity Translation</i> module.'), 'warning', FALSE);
+    }
+  }
+  if (module_exists('file_entity') && variable_get('lingotek_translate_files', FALSE)) {
+    if (!db_field_exists('file_managed', 'language')) {
+      $schema['file_managed']['fields']['language'] = array(
+        'type' => 'char',
+        'length' => 8,
+        'not null' => TRUE,
+        'default' => language_default()->language,
+        'description' => 'Language used for third party translation',
+      );
+      db_add_field('file_managed', 'language', $schema['file_managed']['fields']['language']);
+      LingotekLog::warning('Language column has been added to the @module_name by Lingotek.', array('@module_name' => ('File Entity')));
     }
 
     if (!db_table_exists('entity_translation')) {

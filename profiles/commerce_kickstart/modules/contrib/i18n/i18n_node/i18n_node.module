@@ -506,8 +506,11 @@ function _i18n_node_form_node_form_alter($form, &$form_state) {
     }
   }
   elseif (variable_get('i18n_node_default_language_none', 0) && !isset($form['#node']->nid)) {
-    // Override locale module setting default language to nodes. It is already in form_state.
-    $form['language']['#value'] = $form_state['values']['language'] = LANGUAGE_NONE;
+    // Only do this if the language is really disabled
+    if (variable_get('language_content_type_' . $node->type, 0) == 0) {
+      // Override locale module setting default language to nodes. It is already in form_state.
+      $form['language']['#value'] = $form_state['values']['language'] = LANGUAGE_NONE;
+    }
   }
   // Translate field names for title and body for the node edit form.
   if (!empty($form['title']['#title'])) {

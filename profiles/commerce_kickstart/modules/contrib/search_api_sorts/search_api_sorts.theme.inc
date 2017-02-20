@@ -38,7 +38,7 @@ function theme_search_api_sorts_sort(array $variables) {
 
   if ($variables['active']) {
     $return_html = '<span class="search-api-sort-active">';
-    $return_html .= l(t($name) . theme('tablesort_indicator', array('style' => $order_options['query']['order'])), $path, $order_options);
+    $return_html .= l(t(check_plain($name)) . theme('tablesort_indicator', array('style' => $order_options['query']['order'])), $path, $order_options);
     $return_html .= '</span>';
   }
   else {

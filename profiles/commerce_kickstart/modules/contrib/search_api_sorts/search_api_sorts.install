@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Install, update, and uninstall functions for the Search API sorts module.
+ */
+
+/**
  * Implements hook_schema().
  */
 function search_api_sorts_schema() {
@@ -16,7 +21,8 @@ function search_api_sorts_schema() {
       'identifier' => array(
         'description' => 'The identifier for this sort.',
         'type' => 'varchar',
-        'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+        // This is ugly, but we can't be sure how long a field name might get.
+        'length' => 255,
         'not null' => TRUE,
       ),
       'index_id' => array(
@@ -28,7 +34,8 @@ function search_api_sorts_schema() {
       'field' => array(
         'description' => 'The index field this sort belongs to.',
         'type' => 'varchar',
-        'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+        // This is ugly, but we can't be sure how long a field name might get.
+        'length' => 255,
         'not null' => TRUE,
       ),
       'name' => array(
@@ -92,7 +99,7 @@ function search_api_sorts_uninstall() {
 }
 
 /**
- * Add default sort and order columns to the sort table. Removed deprecated variables.
+ * Created new fields for default sort and order. Removed deprecated variables.
  */
 function search_api_sorts_update_7201() {
   variable_del('search_api_sorts_default_sort');
@@ -110,18 +117,19 @@ function search_api_sorts_update_7201() {
     'type' => 'varchar',
     'length' => 4,
     'not null' => TRUE,
-    'default' => 'desc'
+    'default' => 'desc',
   ));
 }
 
 /**
- * Add an identifier field consisting of the index and field name
+ * Add an identifier field consisting of the index and field name.
  */
 function search_api_sorts_update_7202() {
   db_add_field('search_api_sort', 'identifier', array(
     'description' => 'The identifier for this sort.',
     'type' => 'varchar',
-    'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+    // This is ugly, but we can't be sure how long a field name might get.
+    'length' => 255,
     'not null' => TRUE,
     'default' => '',
   ));
@@ -156,4 +164,3 @@ function search_api_sorts_update_7204() {
     'default' => 0,
   ));
 }
-

@@ -210,7 +210,7 @@ class LingotekApi {
   }
 
   /**
-   * Checks if this content needs to have it's url translated, strips it out if it doesn't. 
+   * Checks if this content needs to have it's url translated, strips it out if it doesn't.
    * Best place for this function as the function that puts the url alias into the content
    * is used in other places.
    * @param type $translatable_object
@@ -224,7 +224,7 @@ class LingotekApi {
         $closeTagPosition = strpos($content, '</url_alias>') + strlen('</url_alias>');
         $firstChunk = substr($content, 0, $openTagPosition);
         $lastChunk = substr($content, $closeTagPosition);
-        $content = $firstChunk . $lastChunk; 
+        $content = $firstChunk . $lastChunk;
       }
     }
     return $content;
@@ -534,6 +534,21 @@ class LingotekApi {
     }
     $documents = $this->request('listDocumentProgress', $params);
     return $documents;
+  }
+
+  /**
+   * Gets the Target Tranlsations of the specified document.
+   *
+   * @param int $document_id
+   *   The ID of the Lingotek Document to retrieve.
+   *
+   * @return mixed
+   *  The API response object with Lingotek Document data, or FALSE on error.
+   */
+  public function listTranslationTargets($document_id) {
+    $params['documentId'] = $document_id;
+    $targetTranslations = $this->request('listTranslationTargets', $params);
+    return $targetTranslations;
   }
 
   /**

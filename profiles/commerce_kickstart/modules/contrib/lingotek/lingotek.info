@@ -46,9 +46,9 @@ files[] = lingotek_views_handler_workbench_link.inc
 
 stylesheets[all][] = style/base.css
 
-; Information added by Drupal.org packaging script on 2016-12-15
-version = "7.x-7.17"
+; Information added by Drupal.org packaging script on 2017-02-15
+version = "7.x-7.19"
 core = "7.x"
 project = "lingotek"
-datestamp = "1481842388"
+datestamp = "1487181189"
 

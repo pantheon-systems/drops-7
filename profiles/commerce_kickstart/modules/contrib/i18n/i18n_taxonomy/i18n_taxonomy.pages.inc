@@ -100,7 +100,7 @@ function _i18n_taxonomy_autocomplete($langcode, $vids, $tags_typed = '') {
     $query = db_select('taxonomy_term_data', 't')
       ->fields('t', array('tid', 'name'));
     $query->addTag('translatable');
-    $query->addTag('term_access');
+    $query->addTag('taxonomy_term_access');
     // Disable i18n_select for this query
     $query->addTag('i18n_select');
     // Add language condition

@@ -56,6 +56,14 @@ function mailjet_event_entity_info() {
   return $data;
 }
 
+
+function mailjet_event_access($op, $mailjet_campaign = NULL, $account = NULL) {
+  if (user_access('administer mailjet module', $account)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
 /**
  * Returns an initialized MailJet Event Entity
  */

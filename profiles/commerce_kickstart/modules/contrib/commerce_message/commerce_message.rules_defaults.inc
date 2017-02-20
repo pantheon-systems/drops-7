@@ -217,6 +217,39 @@ function commerce_message_default_rules_configuration() {
     }
   }');
 
+  $rules['rules_commerce_order_message_admin_order_notification'] = entity_import('rules_config', '{ "rules_commerce_order_message_admin_order_notification" : {
+      "LABEL" : "Commerce order message: admin order notification e-mail",
+      "PLUGIN" : "reaction rule",
+      "WEIGHT" : "3",
+      "OWNER" : "rules",
+      "REQUIRES" : [ "rules", "message_notify", "commerce_checkout" ],
+      "ON" : { "commerce_checkout_complete" : [] },
+      "DO" : [
+        { "entity_create" : {
+            "USING" : {
+              "type" : "message",
+              "param_type" : "commerce_order_admin_order_confirmation",
+              "param_user" : [ "commerce-order:owner" ]
+            },
+            "PROVIDE" : { "entity_created" : { "entity_created" : "Created entity" } }
+          }
+        },
+        { "data_set" : {
+            "data" : [ "entity-created:message-commerce-order" ],
+            "value" : [ "commerce-order" ]
+          }
+        },
+        { "entity_save" : { "data" : [ "entity-created" ], "immediate" : 1 } },
+        { "message_notify_process" : {
+            "message" : [ "entity-created" ],
+            "save_on_fail" : 0,
+            "save_on_success" : 0
+          }
+        }
+      ]
+    }
+  }');
+
   return $rules;
 }
 

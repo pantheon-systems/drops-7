@@ -9,8 +9,8 @@
  */
 function mailjet_install()
 {
-    variable_set('mailjet_debug', FALSE);
-    cache_clear_all();
+  variable_set('mailjet_debug', FALSE);
+  cache_clear_all();
 }
 
 /**
@@ -18,17 +18,17 @@ function mailjet_install()
  */
 function mailjet_uninstall()
 {
-    variable_del('mailjet_from');
-    variable_del('mailjet_host');
-    variable_del('mailjet_on');
-    variable_del('mailjet_password');
-    variable_del('mailjet_port');
-    variable_del('mailjet_protocol');
-    variable_del('mailjet_test');
-    variable_del('mailjet_test_address');
-    variable_del('mailjet_username');
-    variable_del('mailjet_allowhtml');
-    variable_del('mailjet_debug');
+  variable_del('mailjet_from');
+  variable_del('mailjet_host');
+  variable_del('mailjet_on');
+  variable_del('mailjet_password');
+  variable_del('mailjet_port');
+  variable_del('mailjet_protocol');
+  variable_del('mailjet_test');
+  variable_del('mailjet_test_address');
+  variable_del('mailjet_username');
+  variable_del('mailjet_allowhtml');
+  variable_del('mailjet_debug');
 }
 
 /**
@@ -36,8 +36,8 @@ function mailjet_uninstall()
  */
 function mailjet_disable()
 {
-    variable_set('mailjet_on', FALSE);
-    variable_set('mail_system', array('default-system' => 'DefaultMailSystem'));
+  variable_set('mailjet_on', FALSE);
+  variable_set('mail_system', array('default-system' => 'DefaultMailSystem'));
 }
 
 /**
@@ -45,8 +45,39 @@ function mailjet_disable()
  */
 function mailjet_update_7000()
 {
-    if (variable_get('mailjet_on', FALSE)) {
-        variable_set('mail_system', array('default-system' => 'MailjetSmtpMailSystem'));
+  if (variable_get('mailjet_on', FALSE)) {
+    variable_set('mail_system', array('default-system' => 'MailjetSmtpMailSystem'));
+  }
+  cache_clear_all();
+}
+
+
+/**
+ * Implements hook_requirements().
+ */
+function mailjet_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  if ($phase == 'install') {
+    $errorData = array(
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t('Mailjet module requires the <a href="@phpmailer">PHPMailer Library</a>, which is missing. Download and extract the entire contents of the archive into the %path directory on your server.',
+        array(
+          '@phpmailer' => 'http://github.com/PHPMailer/PHPMailer/archive/v5.2.21.zip',
+          '%path' => 'sites/all/libraries/phpmailer'
+        )
+      ),
+    );
+
+    if (function_exists('libraries_get_path')) {
+      $phpmailer_path = libraries_get_path('phpmailer');
+      if (!$phpmailer_path) {
+        $requirements['phpmailer'] = $errorData;
+      }
     }
-    cache_clear_all();
+    elseif (!file_exists('sites/all/libraries/phpmailer/PHPMailerAutoload.php')) {
+      $requirements['phpmailer'] = $errorData;
+    }
+  }
+  return $requirements;
 }

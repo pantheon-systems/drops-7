@@ -263,17 +263,19 @@ function commerce_message_views_default_views() {
     'commerce_order_message' => 'commerce_order_message',
   );
 
-  /* Display: Entity content */
-  $handler = $view->new_display('entity_view', 'Entity content', 'order_view');
-  $handler->display->display_options['defaults']['pager'] = FALSE;
-  $handler->display->display_options['pager']['type'] = 'some';
-  $handler->display->display_options['pager']['options']['items_per_page'] = '4';
-  $handler->display->display_options['pager']['options']['offset'] = '0';
-  $handler->display->display_options['entity_type'] = 'commerce_order';
-  $handler->display->display_options['bundles'] = array(
-    0 => 'commerce_order',
-  );
-  $handler->display->display_options['show_title'] = 1;
+  if (module_exists('eva')) {
+    /* Display: Entity content */
+    $handler = $view->new_display('entity_view', 'Entity content', 'order_view');
+    $handler->display->display_options['defaults']['pager'] = FALSE;
+    $handler->display->display_options['pager']['type'] = 'some';
+    $handler->display->display_options['pager']['options']['items_per_page'] = '4';
+    $handler->display->display_options['pager']['options']['offset'] = '0';
+    $handler->display->display_options['entity_type'] = 'commerce_order';
+    $handler->display->display_options['bundles'] = array(
+      0 => 'commerce_order',
+    );
+    $handler->display->display_options['show_title'] = 1;
+  }
 
   /* Display: Block */
   $handler = $view->new_display('block', 'Block', 'block_1');

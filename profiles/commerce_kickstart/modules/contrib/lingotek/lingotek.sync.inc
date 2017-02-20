@@ -285,7 +285,9 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids, $c
               $to_status = $status;
             }
           }
-          $entity_values[] = array($entity_type, $entity_id, 'target_sync_status_' . $language, $to_status);
+          if ($status != LingotekSync::STATUS_UNTRACKED) {
+            $entity_values[] = array($entity_type, $entity_id, 'target_sync_status_' . $language, $to_status);
+          }
         }
       }
       // update source status when necessary

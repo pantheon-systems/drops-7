@@ -40,7 +40,7 @@ projects[commerce_extra_price_formatters][version] = 1.x-dev
 projects[commerce_extra_price_formatters][download][type] = git
 projects[commerce_extra_price_formatters][download][revision] = 1371336
 projects[commerce_extra_price_formatters][download][branch] = 7.x-1.x
-projects[commerce_checkout_redirect][version] = 2.0-rc1
+projects[commerce_checkout_redirect][version] = 2.0
 projects[commerce_hosted_pci][version] = 1.0-rc2
 projects[commerce_payleap][version] = 1.1
 projects[commerce_moneybookers][version] = 1.2
@@ -48,13 +48,13 @@ projects[commerce_moneybookers][patch][] = "http://drupal.org/files/commerce_mon
 projects[commerce_paypal][version] = 2.3
 projects[commerce_paypal][patch][2458721] = "https://www.drupal.org/files/issues/commerce_paypal-addressfield-default-values-2458721-1.patch"
 projects[commerce_backoffice][version] = 1.5
-projects[commerce_message][version] = 1.0-rc4
+projects[commerce_message][version] = 1.0-rc5
 projects[commerce_search_api][version] = 1.6
 projects[commerce_add_to_cart_confirmation][version] = 1.0-rc2
 projects[commerce_kiala][version] = 1.0-rc1
-; projects[commerce_physical][version] = 1.x-dev
+projects[commerce_physical][version] = 1.x-dev
 projects[commerce_physical][download][type] = git
-projects[commerce_physical][download][revision] = e2a8866
+projects[commerce_physical][download][revision] = 477aaee
 projects[commerce_physical][download][branch] = 7.x-1.x
 projects[commerce_amex][version] = 1.1
 projects[commerce_cba][version] = 1.0-beta1
@@ -63,7 +63,7 @@ projects[commerce_exactor][version] = 1.3
 projects[commerce_paymill][version] = 2.4
 projects[commerce_nosto_tagging][version] = 1.1
 projects[commerce_yotpo][version] = 1.2
-projects[commerce_firstdata_gge4][version] = 1.0
+projects[commerce_firstdata_gge4][version] = 1.1
 
 ; Other contribs.
 projects[countries][version] = 2.3
@@ -72,8 +72,7 @@ projects[colorbox][version] = 2.12
 projects[physical][version] = 1.0
 projects[crumbs][version] = 1.10
 projects[http_client][version] = 2.4
-projects[oauth][version] = 3.2
-projects[oauth][patch][] = "http://drupal.org/files/980340-d7.patch"
+projects[oauth][version] = 3.4
 projects[connector][version] = 1.0-beta2
 projects[oauthconnector][version] = 1.0-beta2
 projects[inline_entity_form][version] = 1.8
@@ -87,7 +86,7 @@ projects[advanced_help][version] = 1.3
 projects[mailsystem][version] = 2.34
 projects[mailsystem][patch][1534706] = "https://www.drupal.org/files/mailsystem.1534706.6.patch"
 projects[mimemail][version] = 1.0-beta4
-projects[token][version] = 1.6
+projects[token][version] = 1.7
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
 projects[eva][version] = 1.3
 projects[message][version] = 1.12
@@ -102,7 +101,7 @@ projects[fences][version] = 1.2
 projects[title][version] = 1.0-alpha9
 projects[kameleoon][version] = 1.1
 projects[mailup][version] = 1.4
-projects[mailjet][version] = 2.7
+projects[mailjet][version] = 2.12
 
 ; Search related modules.
 projects[search_api][version] = 1.20
@@ -112,7 +111,7 @@ projects[search_api_ranges][patch][] = "https://drupal.org/files/issues/search_a
 projects[facetapi][version] = 1.5
 projects[facetapi][patch][] = "https://drupal.org/files/1616518-term_remove_link-24.patch"
 projects[facetapi][patch][2378693] = "https://www.drupal.org/files/issues/notice_undefined-2378693-3.patch"
-projects[search_api_sorts][version] = 1.6
+projects[search_api_sorts][version] = 1.7
 
 ; UI improvement modules.
 projects[module_filter][version] = 2.0
@@ -133,8 +132,8 @@ projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5
-projects[i18n][version] = 1.14
-projects[lingotek][version] = 7.17
+projects[i18n][version] = 1.15
+projects[lingotek][version] = 7.19
 
 ; Base theme.
 projects[omega][version] = 3.1

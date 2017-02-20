@@ -4,9 +4,9 @@ package = Commerce (payment)
 dependencies[] = commerce_firstdata_gge4
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2013-12-16
-version = "7.x-1.0"
+; Information added by Drupal.org packaging script on 2015-05-19
+version = "7.x-1.1"
 core = "7.x"
 project = "commerce_firstdata_gge4"
-datestamp = "1387206506"
+datestamp = "1432055609"
 

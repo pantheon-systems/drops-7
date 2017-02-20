@@ -5,9 +5,9 @@ dependencies[] = commerce_cart
 core = 7.x
 configure = admin/commerce/config/checkout_redirect
 
-; Information added by Drupal.org packaging script on 2014-07-23
-version = "7.x-2.0-rc1"
+; Information added by Drupal.org packaging script on 2016-11-29
+version = "7.x-2.0"
 core = "7.x"
 project = "commerce_checkout_redirect"
-datestamp = "1406127529"
+datestamp = "1480426089"
 

@@ -574,7 +574,7 @@ class CommerceFirstDataGGE4ComponentWS extends CommerceFirstDataGGE4ComponentBas
       CURLOPT_POST => 1,
       CURLOPT_POSTFIELDS => $request_content,
       CURLOPT_RETURNTRANSFER => 1,
-      CURLOPT_SSL_VERIFYPEER => 0,
+      CURLOPT_SSL_VERIFYPEER => 1,
       CURLOPT_NOPROGRESS => 1,
       CURLOPT_FOLLOWLOCATION => 0,
       CURLOPT_FRESH_CONNECT => 1,
@@ -582,6 +582,19 @@ class CommerceFirstDataGGE4ComponentWS extends CommerceFirstDataGGE4ComponentBas
       CURLOPT_TIMEOUT => 60,
       CURLOPT_HTTPHEADER => array_values($request_headers),
     );
+
+    // Commerce First Data GGE4 requires SSL peer verification, which may prevent
+    // out of date servers from successfully processing API requests. If you get
+    // an error related to peer verification, you may need to download the CA
+    // certificate bundle file from http://curl.haxx.se/docs/caextract.html,
+    // place it in a safe location on your web server, and update your
+    // settings.php to set the commerce_firstdata_gge4_cacert variable to contain
+    // the absolute path of the file.
+    // Alternately, you may be able to update your php.ini to point to the file
+    // with the curl.cainfo setting.
+    if ($cert_path = variable_get('commerce_firstdata_gge4_cacert', FALSE)) {
+      $curl_options[CURLOPT_CAINFO] = $cert_path;
+    }
 
     $ch = curl_init();
     curl_setopt_array($ch, $curl_options);

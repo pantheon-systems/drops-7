@@ -415,7 +415,7 @@ function lingotek_perform_action(nid, action) {
           break;
         case "EDITED":
           $(this).removeClass().addClass('language-icon target-edited');
-          $(this).attr('title', 'Not Current');
+          $(this).attr('title', 'Source Edited');
           break;
         case "PENDING":
           $(this).removeClass().addClass('language-icon target-pending');

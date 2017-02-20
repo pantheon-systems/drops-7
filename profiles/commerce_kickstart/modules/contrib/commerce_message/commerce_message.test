@@ -89,7 +89,9 @@ abstract class CommerceMessageTestBase extends CommerceBaseTestCase {
   }
 }
 
-
+/**
+ * Class CommerceMessageOrderHistoryTest
+ */
 class CommerceMessageOrderHistoryTest extends CommerceMessageTestBase {
 
   public static function getInfo() {
@@ -273,5 +275,286 @@ Please contact us if you have any questions about your order.', array(
     }
 
     $this->assertNotNull(self::$sent_message);
+  }
+}
+
+/**
+ * Class CommerceMessageAdminOrderNotificationTest
+ *
+ * @see MailTestCase
+ */
+class CommerceMessageAdminOrderNotificationTest extends CommerceMessageTestBase implements MailSystemInterface {
+  /**
+   * The most recent message that was sent through the test case.
+   */
+  private static $sent_message;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Message admin order notification',
+      'description' => 'Tests messages as order history',
+      'group' => 'Commerce Message',
+      'dependencies' => array('rules'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    // Set MailTestCase (i.e. this class) as the SMTP library.
+    variable_set('mail_system', array('default-system' => 'CommerceMessageAdminOrderNotificationTest'));
+  }
+
+  /**
+   * Concatenate and wrap the e-mail body for plain-text mails.
+   *
+   * @see DefaultMailSystem
+   */
+  public function format(array $message) {
+    // Join the body array into one string.
+    $message['body'] = implode("\n\n", $message['body']);
+    // Convert any HTML to plain-text.
+    $message['body'] = drupal_html_to_text($message['body']);
+    // Wrap the mail body for sending.
+    $message['body'] = drupal_wrap_mail($message['body']);
+    return $message;
+  }
+
+  /**
+   * Send function that is called through the mail system.
+   */
+  public function mail(array $message) {
+    self::$sent_message = $message;
+  }
+
+
+  /**
+   * Test the order message's content.
+   */
+  public function testOrderNotificationMessageContent() {
+    $order = $this->createDummyOrder();
+    $message = message_create('commerce_order_admin_order_confirmation', array(), $this->store_admin);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+    $mid = $message->mid;
+
+    // Reload the message to see it was saved.
+    $message = message_load($mid);
+    $this->assertTrue(!empty($message->mid), t('Message was saved to the database.'));
+
+    $message = $message->buildContent();
+
+    global $language;
+    $url_options = array(
+      'absolute' => TRUE,
+      'language' => $language,
+    );
+
+    $this->assertEqual(
+      t('Order @order_id at @site', array(
+        '@order_id' => $order->order_id,
+        '@site' => variable_get('site_name', 'Drupal'),
+      )),
+      $message['message__message_text__0']['#markup']);
+
+    $body = t('A new order (@order_id) has been placed at @site.
+Here is a link to the order:
+
+@order-view', array(
+      '@order_id' => $order->order_id,
+      '@site' => variable_get('site_name', 'Drupal'),
+      '@login-url' => url('user', $url_options),
+      '@order-view' => url('user/' . $order->uid . '/orders/' . $order->order_id, $url_options),
+    ));
+    $this->assertEqual($body, $message['message__message_text__1']['#markup']);
+  }
+
+  /**
+   * Tests that the notification is generated on checkout complete.
+   */
+  public function testOrderNotificationMessageCreation() {
+    $order = $this->createDummyOrder();
+    commerce_checkout_complete($order);
+
+    $messages = $this->loadMessagesForOrder($order);
+    foreach ($messages as $message) {
+      if ($message->bundle() == 'commerce_order_admin_order_confirmation') {
+        $this->pass('Order that completed checkout had an admin order notification generated.');
+      }
+    }
+
+    $this->assertNotNull(self::$sent_message);
+  }
+}
+
+class CommerceMessageTokenTest extends CommerceMessageTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Message order summary token',
+      'description' => 'Tests the order summary token',
+      'group' => 'Commerce Message',
+    );
+  }
+
+  public function testOrderSummaryToken() {
+    $order = $this->createDummyOrder();
+    $message = message_create('commerce_order_order_confirmation', array(), $this->store_admin);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+
+    $this->assertTrue(isset($message->arguments['!order-summary']));
+
+    $message = message_create('commerce_order_admin_order_confirmation', array(), $this->store_admin);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+
+    $this->assertTrue(isset($message->arguments['!order-summary']));
+  }
+
+  public function testTokenCustomMessageType() {
+    $message_type = message_type_create('foo', array('message_text' => array(LANGUAGE_NONE => array(array('value' => 'Example text.\n\n!order-summary')))));
+    $message_type->save();
+
+    $message = message_create('foo', array(), $this->store_admin);
+    $message->save();
+
+    $this->assertFalse(isset($message->arguments['!order-summary']));
+
+    // Attach field to message type.
+    $fields['message_commerce_order']['field'] = array(
+      'type' => 'entityreference',
+      'module' => 'entityreference',
+      'cardinality' => '1',
+      'translatable' => FALSE,
+      'settings' => array(
+        'target_type' => 'commerce_order',
+        'handler' => 'base',
+        'handler_settings' => array(
+          'target_bundles' => array(),
+          'sort' => array(
+            'type' => 'property',
+            'property' => 'order_id',
+            'direction' => 'ASC',
+          ),
+        ),
+      ),
+      'locked' => TRUE,
+    );
+    $fields['message_commerce_order']['instances'][] = array(
+      'entity_type' => 'message',
+      'bundles' => array('foo'),
+      'label' => 'Order',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'entityreference_autocomplete',
+        'module' => 'entityreference',
+        'settings' => array(
+          'match_operator' => 'CONTAINS',
+          'size' => '60',
+          'path' => '',
+        ),
+      ),
+      'settings' => array(),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'entityreference_label',
+          'settings' => array(
+            'link' => FALSE,
+          ),
+          'module' => 'entityreference',
+          'weight' => 0,
+        ),
+      ),
+    );
+    foreach ($fields as $field_name => $info) {
+      $field = $info['field'];
+      $field += array(
+        'field_name' => $field_name,
+      );
+      if (!field_info_field($field_name)) {
+        field_create_field($field);
+      }
+
+      foreach ($info['instances'] as $instance) {
+        foreach ($instance['bundles'] as $bundle) {
+          $instance['bundle'] = $bundle;
+          unset($instance['bundles']);
+          $instance['field_name'] = $field_name;
+          if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+            field_create_instance($instance);
+          }
+        }
+      }
+    }
+
+    $order = $this->createDummyOrder();
+    $message = message_create('foo', array(), $this->store_admin);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+
+    $this->assertTrue(isset($message->arguments['!order-summary']));
+
+  }
+
+  public function testCloneHasToken() {
+    $this->drupalLogin($this->store_admin);
+    $edit = array(
+      'name' => 'commerce_order_order_confirmation_cloned_',
+      'description' => 'Commerce Order: order confirmation (cloned)',
+    );
+    $this->drupalPost('admin/structure/messages/manage/commerce_order_order_confirmation/clone', $edit, t('Save message type'));
+
+    if (!message_type_load('commerce_order_order_confirmation_cloned_')) {
+      $this->fail('Failed to clone the message type');
+    }
+
+    $this->drupalGet('admin/structure/messages/manage/commerce_order_order_confirmation_cloned_/fields');
+    $this->assertText('message_commerce_order');
+
+  }
+}
+
+class CommerceMessageOrderSummaryTest extends CommerceMessageTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Message order summary token',
+      'description' => 'Tests the order summary token',
+      'group' => 'Commerce Message',
+    );
+  }
+
+  public function testViewAsOrderOwner() {
+    $original_user = $GLOBALS['user'];
+
+    $customer = $this->createStoreCustomer();
+    $order = $this->createDummyOrder($customer->uid);
+    $message = message_create('commerce_order_order_confirmation', array(), $customer);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+
+    $GLOBALS['user'] = $customer;
+    $this->assertIdentical($GLOBALS['user']->uid, $customer->uid);
+    $summary = commerce_message_order_summary($message);
+    // The view-dom-id-* class is dynamic each time, so we need to check for
+    // the order total area class in our returned markup.
+    $this->assertTrue(strpos($summary, 'commerce-order-handler-area-order-total') !== FALSE);
+
+    $GLOBALS['user'] = $this->store_admin;
+    $this->assertIdentical($GLOBALS['user']->uid, $this->store_admin->uid);
+    $summary = commerce_message_order_summary($message);
+    $this->assertTrue(strpos($summary, 'commerce-order-handler-area-order-total') !== FALSE);
+
+    // Now there is a chance a payment gateway's IPN returns when there is not
+    // and active session. That means it'll run as anonymous and ruin our fun.
+    // Here we test SQL rewrite is disabled so our messages work.
+    $GLOBALS['user'] = drupal_anonymous_user();
+    $this->assertIdentical($GLOBALS['user']->uid, 0);
+    $summary = commerce_message_order_summary($message);
+    $this->assertTrue(strpos($summary, 'commerce-order-handler-area-order-total') !== FALSE);
+
+    // Reset just in case.
+    $GLOBALS['user'] = $original_user;
+
   }
 }

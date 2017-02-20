@@ -249,6 +249,13 @@ class LingotekSync {
       $query->condition('entity_id', $group_source_check, "NOT IN");
     }
 
+    if (module_exists('file_entity') && variable_get('lingotek_translate_files')) {
+      $file_source_check = db_select('file_managed', 'fm');
+      $file_source_check->addField('fm', 'fid');
+      $file_source_check->condition('fm.language', $locale);
+      $query->condition('entity_id', $file_source_check, "NOT IN");
+    }
+
     $entities = $query->execute()->fetchAll();
 
     foreach ($entities as $e) {

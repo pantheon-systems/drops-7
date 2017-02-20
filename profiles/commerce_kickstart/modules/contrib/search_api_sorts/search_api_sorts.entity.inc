@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * The Search API sort entity definition.
+ */
+
+/**
  * Class representing a search sort.
  */
 class SearchApiSort extends Entity {
@@ -8,31 +13,43 @@ class SearchApiSort extends Entity {
   /* Database values that will be set when object is loaded: */
 
   /**
+   * The Search API sort id.
+   *
    * @var integer
    */
   public $id = 0;
 
   /**
+   * The Search API sort index id.
+   *
    * @var string
    */
   public $index_id = '';
 
   /**
+   * The Search API sort field name.
+   *
    * @var string
    */
   public $field = '';
 
   /**
+   * The Search API sort name.
+   *
    * @var string
    */
   public $name = '';
 
   /**
+   * The Search API sort is enabled.
+   *
    * @var integer
    */
   public $enabled = 0;
 
   /**
+   * The Search API sort weight.
+   *
    * @var integer
    */
   public $weight = 0;

@@ -430,6 +430,17 @@ function lingotek_menu() {
     'options' => array('attributes' => array('class' => array('overlay-exclude'))),
   );
 
+  // Current Enterprise Users (0 for enterprise, 1 for sandbox)
+  $items[LINGOTEK_MENU_LANG_BASE_URL . '/enterprise-account-settings/%'] = array(
+    'title' => 'Lingotek Enterprise Account Login',
+    'description' => 'Manage your Lingotek Enterprise account settings.',
+    'file' => 'lingotek.setup.inc',
+    'page callback' => 'lingotek_enterprise_account_setting',
+    'page arguments' => array(5),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('administer lingotek'),
+  );
+
   $items[LINGOTEK_MENU_LANG_BASE_URL . '/community-select'] = array(
     'title' => 'Choose Your Community',
     'description' => 'Select a community to use with this site.',
@@ -951,7 +962,7 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#description' => t("The Lingotek Translation module was developed to help you translate your site. The module integrates the Lingotek translation management system directly into Drupal, so that your users can leverage the power of Lingotek's translation tools and services without ever having to leave the comfort of your Drupal environment."),
   );
   if (!empty($node->lingotek['document_id'])) {
-    $form['lingotek']['lingotek_note']['#description'] .= t('<p><b>NOTE: This node has already been uploaded to Lingotek. To change the workflow, you must use the <i>Change Workflow</i> action on the Manage tab rather than modifying the Translation Profile here.</b></p>');
+    $form['lingotek']['lingotek_note']['#description'] .= t('<p><b>NOTE: This node has already been uploaded to Lingotek. If changing to a profile with additional target languages, those languages will be added locally and in the TMS. If changing to a profile without all current target languages then the default setting is to leave the target language in the TMS but not locally; this can be changed in the Lingotek Preferences. To change the workflow, however, you must use the Change Workflow action on the Manage tab rather than modifying the Translation Profile here.</b></p>');
   }
 
   // With the Translation Management tab in place, disable it and return the
@@ -1165,10 +1176,58 @@ function lingotek_get_node_settings_form_submit($form, $form_state) {
       $node = lingotek_entity_load_single($entity_type, $nid);
       $node->lingotek = array_replace($node->lingotek, $form_state['values']['lingotek']);
       lingotek_entity_save($node, $entity_type);
+      if (variable_get('lingotek_enable_language_specific_profiles', FALSE)) {
+        lingotek_sync_target_locales($node, $entity_type);
+      }
     }
     node_types_rebuild();
     menu_rebuild();
   }
+}
+
+function lingotek_sync_target_locales($entity, $entity_type) {
+  $ln = LingotekEntity::load($entity, $entity_type);
+  $api = LingotekApi::instance();
+  $document_id = $ln->lingotekDocumentId();
+
+  $source = isset($ln->language) ? $ln->language : language_default()->language;
+  $source = Lingotek::convertDrupal2Lingotek($source);
+  $target_locales = Lingotek::getLanguagesWithoutSource($source);
+  $profile = LingotekProfile::loadById($ln->getMetadataValue('profile'));
+  $target_locales = $profile->filterTargetLocales(array_keys($target_locales));
+
+  $targetTranslations = (array) $api->listTranslationTargets($document_id);
+  $drupal_target_locales = $target_locales;
+  $tms_target_locales = array();
+  foreach ($targetTranslations['translationTargets'] as $targetObject) {
+    $item = (array) $targetObject;
+    $tms_target_locales[$item['language']] = 1;
+  }
+  $remove = array();
+  foreach ($drupal_target_locales as $dtl => $val1) {
+    if (LingotekSync::getTargetStatus($document_id, $dtl) == LingotekSync::STATUS_UNTRACKED) {
+      LingotekSync::setTargetStatus($ln->getEntityType(), $ln->getId(), $dtl, LingotekSync::STATUS_NONE);
+    }
+    foreach ($tms_target_locales as $ttl => $val2) {
+      if ($dtl == $ttl) {
+        unset($drupal_target_locales[$dtl]);
+        unset($tms_target_locales[$dtl]);
+      }
+    }
+  }
+
+  foreach($drupal_target_locales as $dtl => $val) {
+    $workflow = isset($val['workflow_id']) ? $val['workflow_id'] : '';
+    $api->addTranslationTarget($document_id, NULL, $dtl, $workflow);
+  }
+
+  foreach ($tms_target_locales as $ttl => $val) {
+    if (variable_get('lingotek_remove_target_from_tms', FALSE)) {
+      $api->removeTranslationTarget($document_id, NULL, $ttl);
+    }
+    LingotekSync::setTargetStatus($ln->getEntityType(), $ln->getId(), $ttl, LingotekSync::STATUS_UNTRACKED);
+  }
+  lingotek_get_and_update_target_progress($ln->getEntityType(), $document_id, 1, 1);
 }
 
 function lingotek_get_change_workflow_form_submit($form, $form_state) {
@@ -1447,6 +1506,9 @@ function lingotek_entity_load_single($entity_type, $entity_id) {
     if ($entity_type == 'paragraphs_item') {
       $language = lingotek_get_paragraphs_item_source($entity->item_id);
       $entity->language = $language;
+    }
+    if ($entity_type == 'file') {
+      $entity->language = lingotek_get_file_source($entity->fid);
     }
   }
   return $entity;
@@ -2063,7 +2125,7 @@ function lingotek_entity_info_alter(&$entity_info) {
       break;
     }
   }
-  
+
   if (isset($entity_info['comment'])) {
     $entity_info['comment']['translation']['lingotek'] = $field_translation;
   }

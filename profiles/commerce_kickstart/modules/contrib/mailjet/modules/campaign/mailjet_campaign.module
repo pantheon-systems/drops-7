@@ -76,6 +76,25 @@ function mailjet_campaign_entity_info() {
   return $data;
 }
 
+
+/**
+ * Determines whether the given user has access to a Mailjet campaign.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function mailjet_campaign_access($op, $mailjet_campaign = NULL, $account = NULL) {
+  if (user_access('administer mailjet module', $account)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
 /**
  * Loads campaign by id.
  */

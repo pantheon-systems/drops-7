@@ -70,9 +70,11 @@ function lingotek_setup_new_account_form() {
   
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Next') // Create Account
+    '#value' => t('Create New Lingotek Account') // Create Account
   );
-  $form['lingotek_back_button'] = lingotek_setup_link_on_right(LINGOTEK_MENU_LANG_BASE_URL . '/account-settings', t('Enterprise Customers - Connect Here'));
+
+  $form['lingotek_back_button'] = lingotek_connect_account_link('Do you already have a Lingotek account? ', LINGOTEK_MENU_LANG_BASE_URL . '/enterprise-account-settings/0', t('Connect Lingotek Account'));
+  $form['lingotek_sandbox_connect_link'] = lingotek_connect_account_link('Do you have a Lingotek sandbox account? ', LINGOTEK_MENU_LANG_BASE_URL . '/enterprise-account-settings/1', t('Connect Sandbox Account'));
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
   return $form;
@@ -238,13 +240,15 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
  */
 function lingotek_setup_account_settings_form() {
 
+  $sandbox_message = variable_get('lingotek_use_stage_servers', FALSE) ? ' (Sandbox)' : '' ;
+
   $current_login_id = variable_get('lingotek_login_id', '');
   $current_password = variable_get('lingotek_password', '');
 
   $form = array();
   $form['lingotek_user_directions_1'] = array(
     '#type' => 'item',
-    '#title' => 'Account Login',
+    '#title' => 'Account Login' . $sandbox_message,
     '#description' => 'Connect an existing Lingotek account. This option is for users with an active paid TMS subscription.'
   );
 
@@ -930,8 +934,24 @@ function lingotek_setup_link($path, $text = 'Previous Step') {
 //this covers the case of the link being on the right of a non-default theme button
 function lingotek_setup_link_on_right($path, $text = 'Previous Step') {
   return array(
-    '#markup' => '<span style="margin-left:5px; margin-right: 15px;">' . l($text, $path) . '</span>'
+    '#markup' => '<span style="margin-left:5px; margin-right: 15px;">'. l($text, $path) . '</span>'
   );
+}
+
+function lingotek_connect_account_link($message, $path, $text = 'Previous Step') {
+  return array(
+    '#markup' => '<br><span style="margin-left:5px; margin-right: 15px;">'. $message . l($text, $path) . '</span>'
+  );
+}
+
+function lingotek_enterprise_account_setting($is_staging) {
+  if ($is_staging) {
+    variable_set('lingotek_use_stage_servers', TRUE);
+  }
+  else {
+    variable_set('lingotek_use_stage_servers', FALSE);
+  }
+  drupal_goto(LINGOTEK_MENU_LANG_BASE_URL . "/account-settings");
 }
 
 /*

@@ -6,9 +6,9 @@ core = 7.x
 configure = admin/config/regional/i18n/select
 files[] = i18n_select.test
 
-; Information added by Drupal.org packaging script on 2016-10-22
-version = "7.x-1.14"
+; Information added by Drupal.org packaging script on 2017-01-31
+version = "7.x-1.15"
 core = "7.x"
 project = "i18n"
-datestamp = "1477154943"
+datestamp = "1485834792"
 

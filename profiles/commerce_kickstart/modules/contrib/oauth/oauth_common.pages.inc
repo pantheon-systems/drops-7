@@ -149,13 +149,6 @@ function oauth_common_form_authorize() {
       '#value' => $token,
     );
 
-   if (!empty($callback) && valid_url($callback, TRUE)) {
-      $form['callback'] = array(
-        '#type' => 'value',
-        '#value' => $callback
-      );
-    }
-
     $message = !empty($auth_ops['message']) ? $auth_ops['message'] :
       'The application @appname wants to access @sitename on your behalf, check the permissions ' .
       'that you would like the application to have.';
@@ -309,16 +302,25 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
 
   $token->write(TRUE);
 
-  $callback = isset($form_state['values']['callback']) ? $form_state['values']['callback'] : $consumer->callback_url;
-  if (!empty($callback) && $callback !== 'oob') {
+  if (!empty($consumer->callback_url) && $consumer->callback_url !== 'oob') {
     // Pick the callback url apart and add the token parameter
-    $callback = parse_url($callback);
+    $callback = parse_url($consumer->callback_url);
     $query = array();
     if (!empty($callback['query'])) {
       parse_str($callback['query'], $query);
     }
     $query['oauth_token'] = $token->key;
-    $callback['query'] = http_build_query($query, 'idx_', '&');
+    $query['oauth_verifier'] = hash('sha1', $token->expires);
+
+    // Append Consumer provided query parameters according to the spec 6.2.3 for OAuth 1.0a.
+    $oauth_query = array();
+    $oauth_callback = !empty($token->callback_url) ? parse_url($token->callback_url) : '';
+    if (!empty($oauth_callback['query'])) {
+      parse_str($oauth_callback['query'], $oauth_query);
+    }
+
+    // Build the and combine the query parameters.
+    $callback['query'] = http_build_query($query + $oauth_query, 'idx_', '&');
 
     // Return to the consumer site
     header('Location: ' . _oauth_common_glue_url($callback), TRUE, 302);

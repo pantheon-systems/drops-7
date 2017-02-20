@@ -1,3 +1,3 @@
 libraries[phpmailer][download][type] = "get"
-libraries[phpmailer][download][url] = "http://github.com/PHPMailer/PHPMailer/archive/v5.2.6.zip"
+libraries[phpmailer][download][url] = "http://github.com/PHPMailer/PHPMailer/archive/v5.2.21.zip"
 libraries[phpmailer][directory_name] = "phpmailer"

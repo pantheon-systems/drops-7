@@ -1,14 +1,16 @@
-
-name = Search sorts
+name = Search API sorts
 description = "Create sort options for search queries executed via the Search API."
 dependencies[] = search_api
+test_dependencies[] = search_api_db
 core = 7.x
 package = Search
 
 files[] = search_api_sorts.entity.inc
-; Information added by Drupal.org packaging script on 2015-12-22
-version = "7.x-1.6"
+files[] = search_api_sorts.test
+
+; Information added by Drupal.org packaging script on 2017-02-14
+version = "7.x-1.7"
 core = "7.x"
 project = "search_api_sorts"
-datestamp = "1450819140"
+datestamp = "1487095386"
 

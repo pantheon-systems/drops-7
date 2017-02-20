@@ -363,6 +363,10 @@ class LingotekEntity implements LingotekTranslatableEntity {
       $paragraphs_language = lingotek_get_paragraphs_item_source($this->entity->item_id);
       return Lingotek::convertDrupal2Lingotek($paragraphs_language);
     }
+    if ($this->entity_type == 'file') {
+      $file_language = lingotek_get_file_source($this->entity->fid);
+      return Lingotek::convertDrupal2Lingotek($file_language);
+    }
     return Lingotek::convertDrupal2Lingotek($this->language);
   }
 
@@ -458,6 +462,9 @@ class LingotekEntity implements LingotekTranslatableEntity {
       }
       elseif ($this->entity_type == 'paragraphs_item') {
         $language = lingotek_get_paragraphs_item_source($this->entity->item_id);
+      }
+      elseif ($this->entity_type == 'file') {
+        $language = lingotek_get_file_source($this->entity->fid);
       }
       else {
         $drupal_locale = Lingotek::convertDrupal2Lingotek($this->entity->language);

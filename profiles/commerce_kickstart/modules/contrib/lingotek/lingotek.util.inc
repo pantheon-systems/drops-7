@@ -249,7 +249,7 @@ function watchdog_format_object($object) {
 
 function lingotek_get_translatable_field_types() {
   // What types of fields DO we translate?
-  $included_fields = array('text', 'text_long', 'text_with_summary', 'field_collection');
+  $included_fields = array('text', 'text_long', 'text_with_summary', 'field_collection', 'image');
   if (module_exists('link')) {
     $included_fields[] = 'link_field';
   }
@@ -331,6 +331,10 @@ function lingotek_entity_xml_body($entity_type, $entity) {
     $entity->language = lingotek_get_paragraphs_item_source($entity->item_id);
   }
 
+  if ($entity_type == 'file') {
+    $entity->language = lingotek_get_file_source($entity->fid);
+  }
+
   $content_obj = lingotek_xml_fields($entity_type, $entity, $translatable, $entity->language);
 
   if ($entity_type == 'node') {
@@ -368,6 +372,7 @@ function lingotek_entity_xml_body($entity_type, $entity) {
   catch (Exception $e) {
     LingotekLog::error("Failed to parse or modify XML before uploading. Error: @error. Text: !xml.", array('!xml' => $text, '@error' => $e->getMessage()));
   }
+
   return $content_obj->asXML();
 }
 
@@ -676,15 +681,11 @@ function lingotek_get_source_language() {
   return language_default('language');
 }
 
-// END:  lingotek_get_source_language()
-
-
 /**
  * Return a whitelist of entity types supported for translation by the Lingotek module
  */
 function lingotek_managed_entity_types($include_all = FALSE) {
   $type_info = entity_get_info();
-
   $whitelist = array('node', 'comment', 'message_type', 'fieldable_panels_pane'); // supported types
   if ($include_all) {
     // include the entities that should not normally be managed separately
@@ -706,6 +707,9 @@ function lingotek_managed_entity_types($include_all = FALSE) {
   }
   if (module_exists('paragraphs') && variable_get('lingotek_translate_paragraphs', FALSE)) {
     $whitelist[] = 'paragraphs_item';
+  }
+  if (module_exists('file_entity') && variable_get('lingotek_translate_files', FALSE)) {
+    $whitelist[] = 'file';
   }
   $whitelist = array_flip($whitelist);
   $enabled_types = array_intersect_key($type_info, $whitelist);
@@ -740,6 +744,9 @@ function lingotek_managed_entity_types($include_all = FALSE) {
   }
   if (isset($enabled_types['paragraphs_item'])) {
     $enabled_types['paragraphs_item']['label'] = 'Paragraphs';
+  }
+  if (isset($enabled_types['file'])) {
+    $enabled_types['file']['label'] = 'Files';
   }
 
   // Allow other modules to add/remove entity types to the list supported.
@@ -2167,9 +2174,11 @@ function lingotek_entity_langcode($entity_type, $entity) {
     }
     return $source_language;
   }
-
   if ($entity_type == 'paragraphs_item') {
     return lingotek_get_paragraphs_item_source($entity->item_id);
+  }
+  if ($entity_type == 'file') {
+    return lingotek_get_file_source($entity->fid);
   }
 
   $info = entity_get_info($entity_type);
@@ -2405,7 +2414,17 @@ function lingotek_delete_field_translations($entity_type, $entity) {
         }
       }
       if ($langcode && !empty($entity->$field_name)) {
-        $entity->{$field_name}[$langcode] = array();
+        if (isset($field['display']['default']['type']) && $field['display']['default']['type'] === 'image') {
+          if (isset($entity->{$field_name}[$langcode][0]['alt'])) {
+            $entity->{$field_name}[$langcode][0]['alt'] = '';
+          }
+          if (isset($entity->{$field_name}[$langcode][0]['title'])) {
+            $entity->{$field_name}[$langcode][0]['title'] = '';
+          }
+        }
+        else {
+          $entity->{$field_name}[$langcode] = array();
+        }
       }
       LingotekSync::setTargetStatus($entity_type, $entity_data[0], $lingotek_locale, $target_status);
     }
@@ -2651,4 +2670,28 @@ function lingotek_get_paragraphs_item_source($entity_id) {
     ->fetch(PDO::FETCH_ASSOC);
 
     return $row['language'];
+  }
+
+  /*
+ * Loads a source language for a file entity
+ */
+function lingotek_get_file_source($entity_id) {
+  if (!module_exists('entity_translation')) {
+    drupal_set_message(t('The Entity Translation module is required for translation of Paragraphs module types.'), 'warning', FALSE);
+    return language_default()->language;
+  }
+
+  $source = db_select('entity_translation', 'et')
+    ->fields('et', array('language'))
+    ->condition('entity_type', 'file')
+    ->condition('entity_id', $entity_id)
+    ->condition('source', '')
+    ->execute()
+    ->fetchField();
+
+    if (!$source) {
+      return language_default()->language;
+    }
+
+    return $source;
   }
