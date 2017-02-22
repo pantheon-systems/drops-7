@@ -17,11 +17,11 @@ function manualcrop_global_settings_form() {
     '#default_value' => variable_get('manualcrop_cache_control', TRUE),
   );
 
-  $form['manualcrop_skip_js_check'] = array(
+  $form['manualcrop_force_effect_order'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Skip javascript cookie check'),
-    '#description' => t('Enable Manual Crop even if the <em>has_js</em> cookie (which is set by Drupal when the brower supports javascript) is missing.'),
-    '#default_value' => variable_get('manualcrop_skip_js_check', FALSE),
+    '#title' => t('Force Manual Crop effects to run first'),
+    '#description' => t('Manual Crop effects must execute before the dimentions of the original image are changed. <strong>Disable at your own risk!</strong'),
+    '#default_value' => variable_get('manualcrop_force_effect_order', TRUE),
   );
 
   $form['#submit'] = array('manualcrop_global_settings_form_submit');
@@ -327,7 +327,7 @@ function manualcrop_auto_reuse_form($data) {
     $form['style_priority'][$style_name] = &$weight;
     $form['style_priority']['#rows'][] = array(
       'data' => array(
-        array('data' => $label),
+        array('data' => check_plain($label)),
         array('data' => &$weight),
       ),
       'class' => array('draggable'),
@@ -415,7 +415,7 @@ function manualcrop_form_image_effect_form_alter(&$form, &$form_state) {
     // Add the effect info on submit.
     array_unshift($form['#submit'], 'manualcrop_add_effect_info');
   }
-  elseif (!empty($style['effects'])) {
+  elseif (!empty($style['effects']) && variable_get('manualcrop_force_effect_order', TRUE)) {
     // Force the effect order for none-Manual Crop effects.
     $form['#submit'][] = 'manualcrop_force_effect_order';
   }
@@ -477,8 +477,10 @@ function manualcrop_form_image_style_form_alter(&$form, &$form_state) {
       $form['#submit'] = array('image_style_form_submit');
     }
 
-    // Reorder effects on submit.
-    $form['#submit'][] = 'manualcrop_force_effect_order';
+    if (variable_get('manualcrop_force_effect_order', TRUE)) {
+      // Reorder effects on submit.
+      $form['#submit'][] = 'manualcrop_force_effect_order';
+    }
 
     // Update style name in effect data.
     $form['#submit'][] = 'manualcrop_update_style_name';
@@ -726,6 +728,8 @@ function manualcrop_field_widget_settings_form($widget_type, $settings) {
     ),
     '#default_value' => $settings['manualcrop_styles_mode'],
   );
+
+  $style_options = array_map('check_plain', $style_options);
 
   $form['manualcrop']['manualcrop_styles_list'] = array(
     '#type' => 'checkboxes',

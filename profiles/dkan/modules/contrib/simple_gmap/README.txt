@@ -26,9 +26,8 @@ To install and use:
 - If desired, click the button to change the field display settings.
 
 Note: There are no field validation steps in this module, and it just uses a
-regular Text field rather than defining its own field (this is the "simple"
-part of this module). The display settings let you choose the size of the map,
-the text for the map link, the map zoom level (applies to both embedded and
-linked map), whether to display information about the address in a bubble, and
-to turn on/off the various things you can display. That's pretty much it
-(remember: simple is in the name!).
+regular Text field rather than defining its own field (this is the "simple" part
+of this module). The display settings let you choose the size of the map, the
+text for the map link, the map zoom level (applies to both embedded and linked
+map), and to turn on/off the various things you can display. That's pretty much
+it (remember: simple is in the name!).

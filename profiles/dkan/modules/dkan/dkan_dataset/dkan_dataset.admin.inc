@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * Administration of DKAN Dataset
+ * Administration of DKAN Dataset.
  */
 
 /**
@@ -10,7 +11,7 @@
 function dkan_dataset_preview_settings() {
   $form = array();
 
-  // Help text for formats
+  // Help text for formats.
   $form['preview_list'] = array(
     '#type' => 'fieldset',
     '#title' => t('Available preview descriptions'),
@@ -32,7 +33,7 @@ function dkan_dataset_preview_settings() {
     )),
     '#collapsible' => FALSE,
   );
-   $form['external_previews']['formats'] = array(
+  $form['external_previews']['formats'] = array(
     '#prefix' => '<div id="external-previews-providers">',
     '#suffix' => '</div>',
     '#theme' => 'dkan_dataset_preview_settings_external_table_form',
@@ -44,7 +45,6 @@ function dkan_dataset_preview_settings() {
   $formats = taxonomy_get_tree($format_vocabulary->vid);
   $previews = dkan_dataset_teaser_get_external_previews();
 
-
   // We will check to see if the preview is is already toggled in the variable.
   // If not, we chekck the defaults set by the preview definition.
   foreach ($formats as $format) {
@@ -55,7 +55,7 @@ function dkan_dataset_preview_settings() {
       if ($machine_name == 'dkan') {
         continue;
       }
-      // Restrict available options to sugested formats
+      // Restrict available options to sugested formats.
       if (in_array($format->name, $preview['suggested_formats'])) {
         $preview_options[$machine_name] = $preview['name'];
       }
@@ -104,28 +104,45 @@ function dkan_dataset_api_menu_settings() {
  */
 function dkan_dataset_form_settings() {
   $form = array();
-  $form['dkan_dataset_form_ajax'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use Ajax on dataset node.'),
-    '#default_value' => variable_get('dkan_dataset_form_ajax', 0),
-  );
-  $form['dkan_resource_form_ajax'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use Ajax on resource node.'),
-    '#default_value' => variable_get('dkan_resource_form_ajax', 0),
-  );
   $form['dkan_dataset_form_additional_info'] = array(
     '#type' => 'checkbox',
     '#title' => t('Divide Dataset form into main form and "Additional Data" (CKAN style).'),
     '#default_value' => variable_get('dkan_dataset_form_additional_info', 1),
   );
+  $form['dkan_dataset_form_pod_validation'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Validate dataset form according to Project Open Data (more strict
+        than default DKAN validation).'),
+    '#description' => t('By default, DKAN make only a small number of metadata fields required to
+        create datasets. Enable this setting to make all fields required by Project Open Data
+        be required fields on the dataset form. Note: "Publisher" is a required Project Open Data
+        field that is usually mapped to the "Group" field in DKAN. Use the setting below to make
+        this field required as well.'),
+    '#default_value' => variable_get('dkan_dataset_form_pod_validation', 0),
+  );
+  $form['dkan_dataset_form_group_validation'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Require datasets to have a group.'),
+    '#description' => t('Enable to force users to set a specific group for every dataset.
+        If you are leaving this un-checked and therefore making groups optional for datasets,
+        be aware that you may end up with an empty "publisher" field in your data.json
+        and DCAT endpoints if you do not have a fallback value set in
+        <a href="/admin/config/services/odsm/edit/data_json_1_1">Open Data Schema Map</a> for those endpoints.
+        Also note that a user who is not a member of any group will not be able
+        to create new datasets if this is enabled.'),
+    '#default_value' => variable_get('dkan_dataset_form_group_validation', 0),
+  );
+
   return system_settings_form($form);
 }
 
 /**
  * Create table of available formats.
+ *
  * @todo This should be a theme function.
- * @return string Formatted table
+ *
+ * @return string
+ *   String Formatted table.
  */
 function _dkan_dataset_preview_list_table() {
   $vars = array(

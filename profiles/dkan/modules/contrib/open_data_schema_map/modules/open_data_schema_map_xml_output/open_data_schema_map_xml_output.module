@@ -43,7 +43,7 @@ function open_data_schema_map_xml_output_odsm_form_alter(&$form, $api) {
     '#type' => 'textfield',
     '#description' => t('(XML only) Enter the XML Root Name (default: records).'),
     '#required' => FALSE,
-    '#default_value' => $api->xml_root,
+    '#default_value' => ($api && property_exists($api, 'xml_root')) ? $api->xml_root : '',
     '#weight' => 3,
     '#states' => array(
       'visible' => array(
@@ -56,7 +56,7 @@ function open_data_schema_map_xml_output_odsm_form_alter(&$form, $api) {
     '#type' => 'textfield',
     '#description' => t('(XML only) Enter the XML Default Node Name (default: record).'),
     '#required' => FALSE,
-    '#default_value' => $api->xml_defaulttag,
+    '#default_value' => ($api && property_exists($api, 'xml_defaulttag')) ? $api->xml_defaulttag : '',
     '#weight' => 4,
     '#states' => array(
       'visible' => array(
@@ -117,6 +117,11 @@ function open_data_schema_map_xml_output_render($api, $result) {
   $normalizers = array(new GetSetMethodNormalizer());
   $serializer = new Serializer($normalizers, $encoders);
 
-  return $serializer->serialize($xml, 'xml');
+  $output =  $serializer->serialize($xml, 'xml');
+
+  //Allow alter xml after create the output
+  drupal_alter('open_data_schema_map_xml_output_post_render_data', $output, $api);
+
+  return $output;
 }
 

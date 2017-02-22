@@ -33,16 +33,7 @@ class FppPermissionsTest extends FppTestHelper {
    */
   function testAdminPermission() {
     // Create a user with the admin permission.
-    $permissions = array(
-      'administer fieldable panels panes',
-    );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
+    $this->adminUser = $this->createAdminUser();
 
     $this->drupalLogin($this->adminUser);
 
@@ -86,14 +77,13 @@ class FppPermissionsTest extends FppTestHelper {
     $this->assertResponse(200, 'Loaded the Manage Display page for the default FPP type.');
     $this->assertText(t('Use custom display settings for the following view modes'));
 
-    // These two paths don't exist.
+    // These two legacy paths should redirect to the correct paths.
     $this->drupalGet('admin/structure/fieldable-panels-panes/manage/' . $this->bundle . '/fields');
     $this->assertResponse(200);
-    $this->assertText(t('There are currently no entities of this type.'), 'The old(?) FPP manage fields URL no longer works.');
-
+    $this->assertEqual($this->getUrl(), url('admin/structure/fieldable-panels-panes/' . $this->bundle . '/fields', array('absolute' => TRUE)));
     $this->drupalGet('admin/structure/fieldable-panels-panes/manage/' . $this->bundle . '/display');
     $this->assertResponse(200);
-    $this->assertText(t('There are currently no entities of this type.'), 'The old(?) FPP manage display URL no longer works.');
+    $this->assertEqual($this->getUrl(), url('admin/structure/fieldable-panels-panes/' . $this->bundle . '/display', array('absolute' => TRUE)));
   }
 
   /**
@@ -104,15 +94,8 @@ class FppPermissionsTest extends FppTestHelper {
     $permissions = array(
       'access fieldable panels panes master list',
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
-
-    $this->drupalLogin($this->adminUser);
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
 
     // Load the 'list' page.
     $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/list');
@@ -126,17 +109,10 @@ class FppPermissionsTest extends FppTestHelper {
   function testCreateBundlePermission() {
     // Create a user with the admin permission.
     $permissions = array(
-      'create fieldable ' . $this->bundle,
+      "create fieldable {$this->bundle}",
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
-
-    $this->drupalLogin($this->adminUser);
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
 
     // Load the 'add' page.
     $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
@@ -173,17 +149,10 @@ class FppPermissionsTest extends FppTestHelper {
   function testEditBundlePermission() {
     // Create a user with edit permission.
     $permissions = array(
-      'edit fieldable ' . $this->bundle,
+      "edit fieldable {$this->bundle}",
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
-
-    $this->drupalLogin($this->adminUser);
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
 
     // Load the 'add' page.
     $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
@@ -196,18 +165,11 @@ class FppPermissionsTest extends FppTestHelper {
   function testCreateEditBundlePermission() {
     // Create a user with create & edit permission.
     $permissions = array(
-      'create fieldable ' . $this->bundle,
-      'edit fieldable ' . $this->bundle,
+      "create fieldable {$this->bundle}",
+      "edit fieldable {$this->bundle}",
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
-
-    $this->drupalLogin($this->adminUser);
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
 
     // Load the 'add' page.
     $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
@@ -237,18 +199,11 @@ class FppPermissionsTest extends FppTestHelper {
   function testDeleteBundlePermission() {
     // Create a user with the admin permission.
     $permissions = array(
-      'create fieldable ' . $this->bundle,
-      'delete fieldable ' . $this->bundle,
+      "create fieldable {$this->bundle}",
+      "delete fieldable {$this->bundle}",
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
-
-    $this->drupalLogin($this->adminUser);
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
 
     // Load the 'add' page.
     $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');

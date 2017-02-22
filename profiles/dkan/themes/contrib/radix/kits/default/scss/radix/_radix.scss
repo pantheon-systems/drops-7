@@ -1,0 +1,20 @@
+// SASS partials import
+// -----------------------------------------------------------------------------
+@import "mixins";
+
+// Layouts
+// -----------------------------------------------------------------------------
+@import "layout";
+@import "maintenance";
+
+// Components.
+// -----------------------------------------------------------------------------
+@import "admin";
+@import "comment";
+@import "form";
+@import "modal";
+@import "nav";
+@import "node";
+@import "panel";
+@import "structure";
+@import "view";

@@ -93,8 +93,9 @@ function radix_preprocess_panels_add_content_link(&$vars) {
   $button_classes = 'panels-modal-add-config btn btn-default btn-sm';
   $vars['button'] = ctools_ajax_text_button($title, $vars['url'], $vars['description'], $button_classes);
 
-  // If title is Add, assume we are rendering an 'Add' button for preview;
-  if ($vars['title'] == t('Add')) {
+  // If title is Add, or if the Panopoly Magic add button variable is set,
+  // assume we are rendering an 'Add' button for preview.
+  if ($vars['title'] == t('Add') || !empty($vars['content_type']['panopoly_magic_add_button'])) {
     $title = '<i class="fa fa-plus"></i> ' . $vars['title'];
     $button_classes = 'panels-modal-add-config btn btn-success btn-sm pull-right';
     $vars['button'] = ctools_ajax_text_button($title, $vars['url'], $vars['description'], $button_classes);

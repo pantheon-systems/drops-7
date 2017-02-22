@@ -36,6 +36,14 @@ function fieldable_panels_panes_settings() {
     '#description' => t('Fieldable panels panes that are reusable will be made available as blocks.'),
     '#default_value' => variable_get('fpp_blocks_expose', FALSE),
   );
+
+  $form['fpp_allow_reusable_access'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow access to the "reusable" option on the pane edit form after initial creation'),
+    '#description' => t('This only allows the pane te be made reusable. Reusable panes cannot be changed back to non reusable panes.<br />Warning: enabling this option could break the editorial workflows using e.g. the Workbench Moderation or Revisioning modules, and could cause other problems too.'),
+    '#default_value' => variable_get('fpp_allow_reusable_access', FALSE),
+  );
+
   $form['bundles'] = array(
     '#type' => 'fieldset',
     '#title' => t('FPP Types Exposed as Blocks'),

@@ -178,13 +178,13 @@ class fieldable_panels_pane extends ctools_export_ui {
         if (user_access('administer fieldable panels panes') || user_access('access fieldable panels panes master list')) {
           $operations['list'] = array(
             'title' => t('list'),
-            'href' => 'admin/structure/fieldable-panels-panes/manage/' . $bundle,
+            'href' => 'admin/structure/fieldable-panels-panes/' . $bundle,
           );
         }
         if (user_access('administer fieldable panels panes')) {
           $operations['add'] = array(
             'title' => t('add'),
-            'href' => 'admin/structure/fieldable-panels-panes/manage/' . $bundle . '/add',
+            'href' => 'admin/structure/fieldable-panels-panes/' . $bundle . '/add',
           );
           $operations['edit'] = array(
             'title' => t('edit'),

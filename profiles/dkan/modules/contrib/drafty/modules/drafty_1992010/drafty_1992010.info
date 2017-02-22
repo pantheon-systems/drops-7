@@ -1,0 +1,20 @@
+name = Drafty http://drupal.org/node/1992010
+description = Works around http://drupal.org/node/1992010
+core = 7.x
+
+dependencies[] = drafty
+dependencies[] = entity_translation
+
+weight = -50
+
+test_dependencies[] = field_collection
+test_dependencies[] = entity_translation
+
+files[] = drafty_1992010.test
+
+; Information added by Drupal.org packaging script on 2016-05-18
+version = "7.x-1.0-beta3"
+core = "7.x"
+project = "drafty"
+datestamp = "1463582945"
+

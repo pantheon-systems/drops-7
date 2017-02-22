@@ -1,0 +1,177 @@
+<?php
+
+/**
+ * @file
+ * Written by Henri MEDOT <henri.medot[AT]absyx[DOT]fr>
+ * http://www.absyx.fr
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function menu_admin_per_menu_permission() {
+  $perms = array();
+
+  $menus = menu_get_menus();
+  foreach ($menus as $name => $title) {
+    $perms['administer ' . $name . ' menu items'] = array('title' => t('Administer %menu menu items', array('%menu' => $title)));
+  }
+
+  return $perms;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function menu_admin_per_menu_menu_alter(&$items) {
+  $items['admin/structure/menu']['page callback'] = '_menu_admin_per_menu_menu_overview_page';
+  $items['admin/structure/menu']['access callback'] = '_menu_admin_per_menu_access';
+  unset($items['admin/structure/menu']['access arguments']);
+  $items['admin/structure/menu/manage/%menu']['access callback'] = '_menu_admin_per_menu_menu_access';
+  $items['admin/structure/menu/manage/%menu']['access arguments'] = array(4);
+  $items['admin/structure/menu/manage/%menu/add']['access callback'] = '_menu_admin_per_menu_menu_access';
+  $items['admin/structure/menu/manage/%menu/add']['access arguments'] = array(4);
+  $items['admin/structure/menu/item/%menu_link/edit']['access callback'] = '_menu_admin_per_menu_menu_link_access';
+  $items['admin/structure/menu/item/%menu_link/edit']['access arguments'] = array(4);
+  $items['admin/structure/menu/item/%menu_link/reset']['access callback'] = '_menu_admin_per_menu_menu_link_access';
+  $items['admin/structure/menu/item/%menu_link/reset']['access arguments'] = array(4);
+  $items['admin/structure/menu/item/%menu_link/delete']['access callback'] = '_menu_admin_per_menu_menu_link_access';
+  $items['admin/structure/menu/item/%menu_link/delete']['access arguments'] = array(4);
+}
+
+/**
+ * Overrides menu_overview_page().
+ */
+function _menu_admin_per_menu_menu_overview_page() {
+  if (user_access('administer menu')) {
+    return menu_overview_page();
+  }
+
+  $perm_menus = _menu_admin_per_menu_get_perm_menus();
+  $result = db_query("SELECT * FROM {menu_custom} ORDER BY title", array(), array('fetch' => PDO::FETCH_ASSOC));
+  $header = array(t('Title'), array('data' => t('Operations'), 'colspan' => '2'));
+  $rows = array();
+  foreach ($result as $menu) {
+    if (isset($perm_menus[$menu['menu_name']])) {
+      $row = array(theme('menu_admin_overview', array('title' => $menu['title'], 'name' => $menu['menu_name'], 'description' => $menu['description'])));
+      $row[] = array('data' => l(t('list links'), 'admin/structure/menu/manage/' . $menu['menu_name']));
+      $row[] = array('data' => l(t('add link'), 'admin/structure/menu/manage/' . $menu['menu_name'] . '/add'));
+      $rows[] = $row;
+    }
+  }
+
+  return theme('table', array('header' => $header, 'rows' => $rows));
+}
+
+/**
+ * Access callback for the overview page of all the menus.
+ */
+function _menu_admin_per_menu_access() {
+  return user_access('administer menu') || _menu_admin_per_menu_get_perm_menus();
+}
+
+/**
+ * Access callback for the overview and add menu link pages of a menu.
+ */
+function _menu_admin_per_menu_menu_access($menu) {
+  if (user_access('administer menu')) {
+    return TRUE;
+  }
+
+  $perm_menus = _menu_admin_per_menu_get_perm_menus();
+  return isset($perm_menus[$menu['menu_name']]);
+}
+
+/**
+ * Access callback for the menu link administration pages.
+ */
+function _menu_admin_per_menu_menu_link_access($menu_link) {
+  if (user_access('administer menu')) {
+    return TRUE;
+  }
+
+  $perm_menus = _menu_admin_per_menu_get_perm_menus();
+  return isset($perm_menus[$menu_link['menu_name']]);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function menu_admin_per_menu_form_alter(&$form, $form_state, $form_id) {
+  // Alter the menu element of the node form.
+  if (isset($form['menu']['link']['parent']) && !user_access('administer menu')) {
+    $form['menu']['#access'] = FALSE;
+    if (_menu_admin_per_menu_filter_parent_options($form['menu']['link'])) {
+      $option_keys = array_keys($form['menu']['link']['parent']['#options']);
+      $form['menu']['#access'] = TRUE;
+      if (empty($form['menu']['link']['mlid']['#value']) && !in_array($form['menu']['link']['parent']['#default_value'], $option_keys)) {
+        $form['menu']['link']['parent']['#default_value'] = $option_keys[0];
+      }
+    }
+  }
+}
+
+/**
+ * Filters parent options based on allowed menus.
+ */
+function _menu_admin_per_menu_filter_parent_options(&$element) {
+  $perm_menus = _menu_admin_per_menu_get_perm_menus();
+
+  if ($perm_menus && is_array($element['parent']['#options'])) {
+    $has_mlid = !empty($element['mlid']['#value']);
+    $default_value = $element['parent']['#default_value'];
+    $option_keys = array_keys($element['parent']['#options']);
+
+    foreach ($option_keys as $option_key) {
+      list($menu, $item) = explode(':', $option_key);
+      if (!isset($perm_menus[$menu])) {
+        unset($element['parent']['#options'][$option_key]);
+        if ($has_mlid && $option_key == $default_value) {
+          return FALSE;
+        }
+      }
+    }
+
+    return count($element['parent']['#options']) > 0;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns the menus for which a user has per menu admin permissions.
+ */
+function _menu_admin_per_menu_get_perm_menus($account = NULL) {
+  $perm_menus = &drupal_static(__FUNCTION__, array());
+
+  if (!isset($account)) {
+    $account = $GLOBALS['user'];
+  }
+
+  if (!isset($perm_menus[$account->uid])) {
+    $perm_menus[$account->uid] = array();
+
+    $menus = menu_get_menus();
+    foreach ($menus as $name => $title) {
+      if (user_access('administer ' . $name . ' menu items', $account)) {
+        $perm_menus[$account->uid][$name] = $name;
+      }
+    }
+
+    drupal_alter('menu_admin_per_menu_perm_menus', $perm_menus[$account->uid], $account);
+  }
+
+  return $perm_menus[$account->uid];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for menu_edit_item().
+ */
+function menu_admin_per_menu_form_menu_edit_item_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['parent']) && !user_access('administer menu') && _menu_admin_per_menu_filter_parent_options($form)) {
+    $option_keys = array_keys($form['parent']['#options']);
+    if (empty($form['mlid']['#value']) && !in_array($form['parent']['#default_value'], $option_keys)) {
+      $form['parent']['#default_value'] = $option_keys[0];
+    }
+  }
+}

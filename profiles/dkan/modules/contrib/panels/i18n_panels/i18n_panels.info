@@ -7,9 +7,9 @@ dependencies[] = i18n_translation
 package = Multilingual - Internationalization
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2016-08-17
-version = "7.x-3.6"
+; Information added by Drupal.org packaging script on 2016-10-16
+version = "7.x-3.8"
 core = "7.x"
 project = "panels"
-datestamp = "1471447743"
+datestamp = "1476582295"
 

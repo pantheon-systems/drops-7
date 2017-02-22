@@ -1,0 +1,18 @@
+{
+  "name": "radix",
+  "description": "Radix theme",
+  "private": true,
+  "scripts": {
+    "setup": "npm install",
+    "postinstall": "find node_modules/ -name '*.info' -type f -delete"
+  },
+  "dependencies": {
+    "gulp": "~3.9.0"
+  },
+  "devDependencies": {
+    "jshint": "~2.9.1",
+    "gulp-jshint": "~2.0.0",
+    "sass-lint": "~1.5.1",
+    "gulp-sass-lint": "~1.1.1"
+  }
+}

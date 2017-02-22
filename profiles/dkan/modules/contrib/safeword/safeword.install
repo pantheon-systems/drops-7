@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Install/Update/Uninstall functions for safeword module
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * This defines the actual database schema of the field, using the format
+ * used by the Schema API.
+ *
+ * The actual data we store here consists of two columns, one for the user
+ * visible string and another for the machine string.
+ *
+ * @see hook_field_schema()
+ * @link schemaapi Schema API @endlink
+ */
+function safeword_field_schema($field) {
+  $columns = array(
+    'human' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+    'machine' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+  );
+  $indexes = array(
+    'machine' => array('machine'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}

@@ -1,11 +1,18 @@
 L.Edit = L.Edit || {};
 
+/**
+ * @class L.Edit.Marker
+ * @aka Edit.Marker
+ */
 L.Edit.Marker = L.Handler.extend({
+	// @method initialize(): void
 	initialize: function (marker, options) {
 		this._marker = marker;
 		L.setOptions(this, options);
 	},
 
+	// @method addHooks(): void
+	// Add listener hooks to this handler
 	addHooks: function () {
 		var marker = this._marker;
 
@@ -14,6 +21,8 @@ L.Edit.Marker = L.Handler.extend({
 		this._toggleMarkerHighlight();
 	},
 
+	// @method removeHooks(): void
+	// Remove listener hooks from this handler
 	removeHooks: function () {
 		var marker = this._marker;
 
@@ -25,20 +34,20 @@ L.Edit.Marker = L.Handler.extend({
 	_onDragEnd: function (e) {
 		var layer = e.target;
 		layer.edited = true;
+		this._map.fire(L.Draw.Event.EDITMOVE, { layer: layer });
 	},
 
 	_toggleMarkerHighlight: function () {
+		var icon = this._marker._icon;
 
 		// Don't do anything if this layer is a marker but doesn't have an icon. Markers
-		// should usually have icons. If using Leaflet.draw with Leafler.markercluster there
+		// should usually have icons. If using Leaflet.draw with Leaflet.markercluster there
 		// is a chance that a marker doesn't.
-		if (!this._icon) {
+		if (!icon) {
 			return;
 		}
-		
-		// This is quite naughty, but I don't see another way of doing it. (short of setting a new icon)
-		var icon = this._icon;
 
+		// This is quite naughty, but I don't see another way of doing it. (short of setting a new icon)
 		icon.style.display = 'none';
 
 		if (L.DomUtil.hasClass(icon, 'leaflet-edit-marker-selected')) {

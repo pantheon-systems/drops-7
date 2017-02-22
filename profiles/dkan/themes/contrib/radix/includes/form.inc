@@ -29,6 +29,8 @@ function radix_form($variables) {
  */
 function radix_container($variables) {
   $element = $variables['element'];
+  // Ensure an array is always passed to drupal_attributes().
+  $element['#attributes'] = is_array($element['#attributes']) ? $element['#attributes'] : array();
 
   // Special handling for form elements.
   if (isset($element['#array_parents'])) {
@@ -62,6 +64,10 @@ function radix_element_info_alter(&$elements) {
     // Process input elements.
     if (!empty($element['#input'])) {
       $element['#process'][] = '_radix_process_input';
+    }
+    // Process text format elements.
+    if (!empty($element['#type']) && $element['#type'] == 'text_format') {
+      $element['#after_build'][] = '_radix_text_format_after_build';
     }
   }
 }
@@ -111,9 +117,24 @@ function _radix_process_input(&$element, &$form_state) {
     'select_as_checkboxes',
   );
 
-  if (!empty($element['#type']) && in_array($element['#type'], $types) && (empty($element['#theme']) || !in_array($element['#theme'], $skip_themes))) {
+  if (!empty($element['#type']) && in_array($element['#type'], $types) && (empty($element['#theme']) || (!empty($element['#theme']) && !in_array($element['#theme'], $skip_themes)))) {
     $element['#attributes']['class'][] = 'form-control';
   }
+
+  return $element;
+}
+
+/**
+ * Last minute theming for format selectors.
+ */
+function _radix_text_format_after_build($element, &$form_state) {
+  // This thing runs twice, but the first time around format is not set yet.
+  if (empty($element['format'])) { return $element; }
+
+  $format = &$element['format']['format'];
+  // Set title to show in a field group before the input.
+  $format['#input_group'] = TRUE;
+  $format['#title_display'] = 'prefix';
 
   return $element;
 }
@@ -125,6 +146,7 @@ function radix_form_element($variables) {
   $element = &$variables['element'];
   $is_checkbox = FALSE;
   $is_radio = FALSE;
+  $is_input_group = FALSE;
 
   // This is also used in the installer, pre-database setup.
   $t = get_t();
@@ -175,6 +197,12 @@ function radix_form_element($variables) {
     }
   }
 
+  // Recognize non-standard #input_group key to use a Bootstrap input group.
+  if (!empty($element['#input_group'])) {
+    $attributes['class'][] = 'input-group';
+    $is_input_group = TRUE;
+  }
+
   // Add a class for disabled elements to facilitate cross-browser styling.
   if (!empty($element['#attributes']['disabled'])) {
     $attributes['class'][] = 'form-disabled';
@@ -185,8 +213,32 @@ function radix_form_element($variables) {
   if (!isset($element['#title'])) {
     $element['#title_display'] = 'none';
   }
-  $prefix = isset($element['#field_prefix']) ? '<span class="field-prefix">' . $element['#field_prefix'] . '</span> ' : '';
-  $suffix = isset($element['#field_suffix']) ? ' <span class="field-suffix">' . $element['#field_suffix'] . '</span>' : '';
+
+  // Support for non-standard #title_display options.
+  if ($element['#title_display'] == 'prefix') {
+    if (empty($element['#field_prefix'])) {
+      $element['#field_prefix'] = '';
+    }
+    $element['#field_prefix'] = theme('form_element_label', $variables) . $element['#field_prefix'];
+    $element['#title_display'] = 'none';
+  }
+  elseif ($element['#title_display'] == 'suffix') {
+    if (empty($element['#field_suffix'])) {
+      $element['#field_suffix'] = '';
+    }
+    $element['#field_suffix'] .= theme('form_element_label', $variables);
+    $element['#title_display'] = 'none';
+  }
+
+  // Generate the prefix and suffix.
+  if ($is_input_group) {
+    $prefix = isset($element['#field_prefix']) ? theme('radix_input_group_addon', array('content' => $element['#field_prefix'])) . ' ' : '';
+    $suffix = isset($element['#field_suffix']) ? ' ' . theme('radix_input_group_addon', array('content' => $element['#field_suffix'])) : '';
+  }
+  else {
+    $prefix = isset($element['#field_prefix']) ? '<span class="field-prefix">' . $element['#field_prefix'] . '</span> ' : '';
+    $suffix = isset($element['#field_suffix']) ? ' <span class="field-suffix">' . $element['#field_suffix'] . '</span>' : '';
+  }
 
   switch ($element['#title_display']) {
     case 'invisible':

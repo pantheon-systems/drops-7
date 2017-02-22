@@ -12,6 +12,7 @@ function open_data_schema_ckan_open_data_schema_map_endpoints_alter(&$records) {
   $records[] = 'ckan_site_read';
   $records[] = 'ckan_revision_list';
   $records[] = 'ckan_package_revision_list';
+  $records[] = 'ckan_package_list';
 }
 
 /**

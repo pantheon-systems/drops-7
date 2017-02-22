@@ -20,6 +20,21 @@ function workbench_moderation_test_menu() {
 }
 
 /**
+ * Implements hook_menu_alter().
+ */
+function workbench_moderation_test_menu_alter(&$items) {
+  // This menu altering replicates what restws_menu_alter() does.
+  // @see https://www.drupal.org/node/1838640
+  array_unshift($items['node/%node']['page arguments'], 'additional parameter', $items['node/%node']['page callback']);
+  $items['node/%node']['page callback'] = 'workbench_moderation_test_menu_node_callback';
+}
+
+function workbench_moderation_test_menu_node_callback($ignored_parameter, $page_callback) {
+  $args = func_get_args();
+  return call_user_func_array($page_callback, array_slice($args, 2));
+}
+
+/**
  * Page callback. Publishes, unpublishes or resaves the given node.
  *
  * @param object $node

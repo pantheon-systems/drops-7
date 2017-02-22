@@ -1,3 +1,30 @@
+Radix 7.x-3.5, 2016-08-03
+-------------------
+- Issue #2223365 by dsnopek, barraponto: Use input group component for Input Format Widget
+- Issue #2773717 by cboyden: Theming for Add Content links depends on exact title text match
+- Issue #2755845 by k4v, arshadcn: Remove compass
+- Issue #2554019 by dsnopek: Nested dropdown menus
+- Issue #2583483 by dsnopek: Closing CTools dialog with escape key leaves page without scrollbars
+- Issue #2756419 by dsnopek: Menu dropdown reopen when browser tab regains focus
+- Issue #2744371 by hanoii: Preprocessing css, how to, whats the point of a theme settings?
+
+Radix 7.x-3.4, 2016-05-15
+-------------------
+- Add radix-upgrade-7034 drush command
+- Use machine_name instead of name in .json files
+- Fix js path for drush
+- Move js under assets and remove js gulp task
+- Allow BrowserSync to stream/inject css
+- Fix scss and js linting in gulpfile
+- Issue #2711987 by jday: Minor issues in _mixins.scss calls
+- Issue #2695995 by lsolesen: Add linters to establish coding standards
+- Issue #2565281 by tema: Destination is broken for drush command
+- Add license to README
+- Issue #2568751: Update bootstrap cdn
+- Update default name to machine_name in theme-settings.php
+- Issue #2653686 by Albert Volkman, jday, arshadcn: Rename upgrade command to radix-upgrade-gulp
+- Issue #2627442 by scottalan, sleepingmonk: Ensure '#attributes' is set to prevent Fatal Error
+
 Radix 7.x-3.3, 2016-02-01
 -------------------
 - Add examples for upgrade command.

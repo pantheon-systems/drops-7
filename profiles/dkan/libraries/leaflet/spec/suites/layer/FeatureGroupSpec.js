@@ -18,7 +18,7 @@
 				fg2.addLayer(marker);
 
 				var wasClicked1,
-					wasClicked2;
+				    wasClicked2;
 
 				fg2.on('click', function (e) {
 					expect(e.layer).to.be(marker);
@@ -32,7 +32,7 @@
 					wasClicked1 = true;
 				});
 
-				marker.fire('click', { type: 'click' });
+				marker.fire('click', {type: 'click'}, true);
 
 				expect(wasClicked1).to.be(true);
 				expect(wasClicked2).to.be(true);

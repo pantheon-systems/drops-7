@@ -2,7 +2,7 @@ name = Visualization Entity Choropleth Bundle
 description = Create choropleth map visualizations using leaflet
 core = 7.x
 package = Data Visualization
-version = 7.x-1.0-beta1
+version = 7.x-1.0
 
 dependencies[] = list
 dependencies[] = text

@@ -84,7 +84,7 @@ function open_data_schema_map_menu() {
     'title' => 'Open Data Schema Mapper',
     'description' => 'Map Drupal structures to Open Data specfications',
     'page callback' => 'open_data_schema_map_page_overview',
-    'access arguments' => array('administer open data schema mapper.'),
+    'access arguments' => array('administer open data schema mapper'),
     'file' => 'open_data_schema_map.pages.inc',
   );
   $items[$pre . '/overview'] = array(
@@ -96,7 +96,7 @@ function open_data_schema_map_menu() {
     'description' => 'Add a new API Endpoint',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('open_data_schema_map_manage'),
-    'access arguments' => array('administer open data schema mapper.'),
+    'access arguments' => array('administer open data schema mapper'),
     'file' => 'open_data_schema_map.pages.inc',
     'type' => MENU_LOCAL_ACTION,
   );
@@ -105,7 +105,7 @@ function open_data_schema_map_menu() {
     'description' => 'Edit an existing API Endpoint',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('open_data_schema_map_manage', 5),
-    'access arguments' => array('administer open data schema mapper.'),
+    'access arguments' => array('administer open data schema mapper'),
     'file' => 'open_data_schema_map.pages.inc',
   );
   $items[$pre . '/delete/%open_data_schema_map_api'] = array(
@@ -113,7 +113,7 @@ function open_data_schema_map_menu() {
     'description' => 'Delete an existing API Endpoint',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('open_data_schema_map_delete', 5),
-    'access arguments' => array('administer open data schema mapper.'),
+    'access arguments' => array('administer open data schema mapper'),
     'file' => 'open_data_schema_map.pages.inc',
   );
 
@@ -961,6 +961,9 @@ function open_data_schema_mapper_field_type_check($value, $token) {
         $value = array($value);
       }
     }
+  }
+  elseif ($token['type'] == 'boolean') {
+    $value = (boolean)$value;
   }
   elseif ($token['type'] == 'object') {
     // TODO: make object.

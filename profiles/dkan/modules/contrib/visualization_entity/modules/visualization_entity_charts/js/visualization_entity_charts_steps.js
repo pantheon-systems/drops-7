@@ -60,7 +60,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
                 '</div>' +
               '</div>' +
               '<div class="col-md-12" id="controls">' +
-                '<div id="prev" class="btn btn-default pull-left">Back</div>' +
+                '<button type="button" id="prev" class="btn btn-default pull-left">Back</button>' +
                 '<button type="submit" class="form-submit btn btn-success pull-right">Finish</button>' +
               '</div>',
     events: {
@@ -100,15 +100,8 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         self.$(this).next().slideToggle('fast');
       });
 
-      // Common controls for all the charts.
-      self.baseControls = new recline.View.nvd3.BaseControl({
-        model: self.state.get('model'),
-        state: self.state,
-        parent: self
-      });
-
       // Controls available only for this graphType.
-      self.extendedControls = new recline.View.nvd3[graphType + 'Controls']({
+      self.controls = new recline.View.nvd3[graphType + 'Controls']({
         model: self.state.get('model'),
         state: self.state
       });
@@ -146,8 +139,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
       self.grid.visible = true;
 
       self.assign(self.graph, '#chart-viewport');
-      self.assign(self.baseControls, '#base-controls');
-      self.assign(self.extendedControls, '#extended-controls');
+      self.assign(self.controls, '#base-controls');
       self.assign(self.grid, '#grid');
       self.assign(self.pager, '#pager');
       self.assign(self.queryEditor, '#query-editor');
@@ -193,15 +185,15 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
                   '<label>Series fields</label>' +
                   '<div>{{seriesFields}}</div>'+
                 '</div>' +
-                '<ul id="chart-selector">' +
+                '<div id="chart-selector">' +
                   '{{#graphTypes}}' +
-                    '<li class="{{value}} {{#selected}}selected{{/selected}}" data-selected="{{value}}"></li>' +
+                    '<button type="button" class="{{value}} {{#selected}}selected{{/selected}}" data-selected="{{value}}"><span class="sr-only">{{value}}</span></button>' +
                   '{{/graphTypes}}' +
                 '</ul>' +
               '</div>' +
               '<div id="controls">' +
-                '<div id="prev" class="btn btn-default pull-left">Back</div>' +
-                '<div id="next" class="btn btn-primary pull-right">Next</div>' +
+                '<button type="button" id="prev" class="btn btn-default pull-left">Back</button>' +
+                '<button type="button" id="next" class="btn btn-primary pull-right">Next</button>' +
               '</div>',
     initialize: function(options){
       var self = this;
@@ -213,26 +205,27 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
       };
     },
     events: {
-      'click #chart-selector li': 'selectChart'
+      'click #chart-selector button': 'selectChart'
     },
     selectChart: function(e){
       var self = this;
-      self.$('li').removeClass('selected');
+      self.$('button').removeClass('selected');
       self.$(e.target).addClass('selected');
     },
     getSelected: function(){
       var self = this;
-      return self.$('li.selected').data('selected');
+      return self.$('button.selected').data('selected');
     },
     render: function(){
       var self = this;
-      var graphTypes = ['discreteBarChart', 'multiBarChart', 'multiBarHorizontalChart', 'stackedAreaChart', 'pieChart',
-        'lineChart', 'lineWithFocusChart', 'scatterChart', 'linePlusBarChart'
+      var graphTypes = [
+        'discreteBarChart', 'multiBarChart', 'multiBarHorizontalChart', 'stackedAreaChart',
+        'pieChart', 'lineChart', 'lineWithFocusChart', 'scatterChart', 'linePlusBarChart'
       ];
-
-      self.state.set('graphTypes', _.applyOption(
-        _.arrayToOptions(graphTypes), [self.state.get('graphType') || 'discreteBarChart']
-      ));
+      self.state.set('graphTypes', graphTypes.map(function(type, index){
+        var selected = type === (self.state.get('graphType') || 'discreteBarChart' );
+        return {value: type, selected: selected};
+      }));
       self.$el.html(Mustache.render(self.template, self.state.toJSON()));
       self.$('.chosen-select').chosen({width: '95%'});
     },
@@ -254,7 +247,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
                     '<div>{{source.url}}</div>'+
                   '</div>' +
                   '<label for="control-chart-series">Series</label>' +
-                  '<select id="control-chart-series" multiple class="form-control chosen-select">' +
+                  '<select title="Select a column whose values will be used as series" id="control-chart-series" multiple class="form-control chosen-select">' +
                     '{{#fields}}' +
                       '<option value="{{value}}" {{#selected}} selected{{/selected}}>{{name}}</option>' +
                     '{{/fields}}' +
@@ -276,8 +269,8 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
                   '{{/xDataTypes}}' +
                 '</div>' +
                 '<div id="controls">' +
-                  '<div id="prev" class="btn btn-default pull-left">Back</div>' +
-                  '<div id="next" class="btn btn-primary pull-right">Next</div>' +
+                  '<button type="button" id="prev" class="btn btn-default pull-left">Back</button>' +
+                  '<button type="button" id="next" class="btn btn-primary pull-right">Next</button>' +
                 '</div>' +
               '</div>',
     initialize: function(options){
@@ -324,14 +317,14 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
                 '<input value="{{source.url}}" type="text" id="control-chart-source" class="form-control" />' +
               '</div>' +
               '<div class="form-group">' +
-                '<select id="control-chart-backend" class="form-control">' +
+                '<select title="Select backend source type" id="control-chart-backend" class="form-control">' +
                   '<option value="csv">CSV</option>' +
                   '<option value="gdocs">Google Spreadsheet</option>' +
                   '<option value="dataproxy">DataProxy</option>' +
                 '</select>' +
               '</div>' +
               '<div id="controls">' +
-                '<div id="next" class="btn btn-primary pull-right">Next</div>' +
+                '<button type="button" id="next" class="btn btn-primary pull-right">Next</button>' +
               '</div>',
     initialize: function(options){
       var self = this;
@@ -437,6 +430,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         self.state = state;
         self.gotoStep(n);
         self.trigger('multistep:change', {step:n});
+        self.$('.chosen-choices .search-field input, .chosen-search input').attr('aria-label', 'Choose some options');
       };
     },
     gotoStep: function(n){

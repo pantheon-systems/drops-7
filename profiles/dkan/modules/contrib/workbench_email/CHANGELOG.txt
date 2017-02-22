@@ -1,4 +1,44 @@
-Workbench Email 7.x-3.2, 2014-09-25
+Workbench Email 7.x-3.11, 2016-08-19
+-----------------------------------
+by jstoller, frosev: Issue 2758079: Invalid argument supplied for foreach() workbench_email.features.inc:94
+by Tunprog: Issue 2770787: Error message displayed for filtered emails
+by szeidler: Issue 2775607: Modules tokens are missing in token browser
+by Abdulla Abu-Zakham: Issue 2649368: Make email body and subject translatable before replace tokens
+by joppy: Issue 2781033: Validate Workbench Access Configuration: does not check enabled content type for node operation
+
+Workbench Email 7.x-3.10, 2016-06-06
+-----------------------------------
+by bmonizzle: Issue 2501321: Fixed Add email subject and message to Features
+
+Workbench Email 7.x-3.9, 2016-03-08
+-----------------------------------
+by minorOffense: Issue 2678102: Use token browser link
+by alexharries: Issue 2674810: Configuration form attempts to submit thousands of token browser element IDs causing errors such as request too large and max_input_vars limit exceeded.
+
+Workbench Email 7.x-3.8, 2016-02-17
+-----------------------------------
+by ron_s: Issue 2663184: Notification validate does not support multiple user roles
+
+Workbench Email 7.x-3.7, 2015-12-10
+-----------------------------------
+by loziju: Issue 2369983: Notice: Trying to get property of non-object in workbench_email_features_export_render() (line 67 of workbench_email/workbench_email.features.inc)
+
+bWorkbench Email 7.x-3.6, 2015-10-18
+-----------------------------------
+by ron_s: Issue 2575417: Fixed Problem with workbench access roles patch
+
+bWorkbench Email 7.x-3.5, 2015-05-06
+-----------------------------------
+by frosev: Issue 2532198: Fixed Problems with the integration of workbench access
+by joekers: Issue 2548837: Fixed Only show list of active users when selecting who to notify
+by teknic: Issue 2378203: Fixed 1064 Syntax error in workbench_email_scheme_menu_get_parents() line 904 of workbench_email.module
+
+Workbench Email 7.x-3.4, 2015-05-06
+-----------------------------------
+See Workbench Email - Moderately Critical - Access bypass - DRUPAL-SA-CONTRIB-2015-139
+
+Workbench Email 7.x-3.3, 2014-09-25
+-----------------------------------
 by teknic: Issue 2279273: Fixed error where if no one is selected from drop down
 by teknic: Issue 2268703: Added token for name of user who is being emailed
 by teknic: Issue 2280193: Fixed error on install or update

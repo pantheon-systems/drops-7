@@ -1,7 +1,10 @@
 {
     "require": {
+        "phpunit/phpunit": "4.6.*",
         "behat/behat": "3.1.*@dev",
         "devinci/devinci-behat-extension": "dev-master",
+        "myplanetdigital/function_mock": "dev-master",
+        "drupal/drupal-driver": "^1.2",
         "drupal/drupal-extension": "~3.0"
     },
     "autoload": {

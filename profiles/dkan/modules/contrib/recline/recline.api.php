@@ -101,7 +101,7 @@ function hook_theme_registry_alter(&$theme_registry) {
  * Adds js settings from recline field.
  */
 function MY_MODULE_recline_default_formatter($variables) {
-  $output = recline_default_formatter_output($variables);
+  $output = recline_preview_multiview($variables);
   $settings = array();
   if (isset($variables['item']['my_new_view_additional_data']) || isset($variables['item']['my_new_view_additional_data'])) {
     $settings['choropleth'] = array(

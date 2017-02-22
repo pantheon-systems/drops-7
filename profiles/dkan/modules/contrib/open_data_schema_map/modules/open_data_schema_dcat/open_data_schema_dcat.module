@@ -86,10 +86,22 @@ function open_data_schema_dcat_open_data_schema_fill_references($schema_name, &$
 }
 
 /**
+ * Implements hook_open_data_schema_map_xml_output_post_render_data().
+ */
+function open_data_schema_dcat_open_data_schema_map_xml_output_post_render_data_alter(&$output, &$api) {
+  if ($api->api_schema == 'dcat') {
+    //We implement this replace because with default serializer we can't create items as <item_name attribute="...">value</item>
+    $output = str_replace('<dct:issued', '<dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date"', $output);
+    $output = str_replace('<dct:modified', '<dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date"', $output);
+//    $output = str_replace('<dcat:accessURL>', '<dcat:accessURL rdf:datatype="http://www.w3.org/2001/XMLSchema#anyURI"/>', $output);
+  }
+}
+
+/**
  * Implements hook_open_data_schema_map_xml_output_render_data_alter().
  */
 function open_data_schema_dcat_open_data_schema_map_xml_output_render_data_alter(&$xml, &$api) {
-  global $base_url;
+  global $base_url, $language;
 
   //If is dcat schema then add attributes on the xml root
   if ($api->api_schema == 'dcat' || $api->api_schema == 'dcat_dataset') {
@@ -105,33 +117,65 @@ function open_data_schema_dcat_open_data_schema_map_xml_output_render_data_alter
     $xml['@xmlns:dcterms'] = "http://purl.org/dc/terms/";
     $xml['@xmlns:vcard'] = "http://www.w3.org/2006/vcard/ns#";
 
-    //Fix some data output (datetimes format, ...).
+    $datasets_url = array();
+    $distribution_data = array();
+
     if (!empty($xml['dcat:Dataset'])) {
       foreach ($xml['dcat:Dataset'] as &$dataset) {
-         if (isset($dataset['dct:temporal'])) {
-            $dataset['dct:temporal'][0]['schema:startDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
-            $dataset['dct:temporal'][0]['schema:endDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
-            $dataset['dct:temporal']['dct:PeriodOfTime'] = $dataset['dct:temporal'];
-            unset ($dataset['dct:temporal']);
+        if (isset($dataset['dct:temporal'])) {
+          $dataset['dct:temporal'][0]['schema:startDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
+          $dataset['dct:temporal'][0]['schema:endDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
+          $dataset['dct:temporal']['dct:PeriodOfTime'] = $dataset['dct:temporal'];
+          unset ($dataset['dct:temporal']);
+        }
+        if (isset($dataset['dcat:contactPoint'])) {
+          $dataset['dcat:contactPoint'] = array('vcard:Kind' => $dataset['dcat:contactPoint']); 
+        }
+        else {
+          unset($dataset['dcat:contactPoint']);
+        }
+        $datasets_url[] = array('@rdf:resource' => $dataset['@rdf:about']);
+
+        //Process Distributions
+        if (!empty($dataset['dcat:Distribution'])) {
+        $distribution_url = array();
+          foreach ($dataset['dcat:Distribution'] as $distribution) {
+            if (isset($distribution['dcat:accessURL'])) {
+              $distribution['dcat:accessURL'] = array('@rdf:resource' => $distribution['dcat:accessURL']);
+            }
+            $distribution['@rdf:about'] = $distribution['foaf:page'];
+            $distribution['dcat:downloadURL'] = array('@rdf:resource' => $distribution['dcat:downloadURL']);
+            $distribution_data[] = $distribution;
+            $distribution_url[] = array('@rdf:resource' => $distribution['foaf:page']);
           }
+          $dataset['dcat:distribution'] = $distribution_url;
+          unset($dataset['dcat:Distribution']);
+        }
       }
     }
 
+
+    //Add catalog information
+    $publisher = array('@rdf:about' => $base_url  .'/publisher/n0', 'foaf:name' => 'DKAN', 'foaf:homepage' => $base_url, 'dct:type' => array('@rdf:resource' => 'http://purl.org/adms/publishertype/NonProfitOrganisation'));
+    $catalog = array(
+      'dct:title' => variable_get('site_name', t('Dataset')),
+      'dct:description' =>  variable_get('site_slogan', t('Description')),
+      'dcterms:publisher' => array('@rdf:resource' => $base_url  .'/publisher/n0'),
+      'foaf:homepage' => $base_url . '/search/type/dataset',
+      'dct:language' => $language->language,
+      'dct:issued' => date('c'),
+      'dct:modified' => date('c'),
+    );
+
+    //Add dataset information
+    $catalog = $catalog + array('dcat:dataset' => $datasets_url);
+
+
     if ($api->api_schema == 'dcat') {
-      //Add catalog information
-      $catalog = array(
-        'dct:title' => variable_get('site_name', t('Dataset')),
-        'dct:description' =>  variable_get('site_slogan', t('Description')),
-        'dcterms:publisher' => array('@rdf:nodeID' => "_n0"),
-        'foaf:homepage' => $base_url . '/search/type/dataset',
-        'rdf:type' => array('@rdf:resource' => 'http://www.w3.org/ns/dcat#Dataset'),
-      );
-
-      $publisher = array(
-        'rdf:Description' => array('@rdf:nodeID' => '_n0', 'foaf:name' => 'DKAN', 'rdf:type' => array('@rdf:resource' => 'http://xmlns.com/foaf/0.1/Agent'))
-      );
-
-      $xml = array('dcat:Catalog' => $catalog) + $xml + $publisher;
+      $xml = array('dcat:Catalog' => $catalog) + $xml + array('dcat:Distribution' => $distribution_data) + array('foaf:Agent' => $publisher);
+    }
+    else {
+      $xml = $xml + array('dcat:Distribution' => $distribution_data) + array('foaf:Agent' => $publisher);
     }
   }
 }

@@ -26,9 +26,13 @@ stylesheets[all][]     = assets/css/{{machine_name}}.style.css
 ; Javascript
 scripts[] = assets/js/{{machine_name}}.script.js
 
-; Information added by Drupal.org packaging script on 2016-02-01
-version = "7.x-3.3"
+; Maximum depth for dropdown menus (1 = no dropdowns, 2 = single dropdown,
+; 3 or greater = nested dropdown menus).
+settings[main_menu_max_depth] = 2
+
+; Information added by Drupal.org packaging script on 2016-08-03
+version = "7.x-3.5"
 core = "7.x"
 project = "radix"
-datestamp = "1454337570"
+datestamp = "1470238162"
 

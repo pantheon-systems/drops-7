@@ -6,9 +6,9 @@
  */
 
 /**
- * Copy of theme_file_file_link() for linking to the view file page.
+ * Copy of theme_file_link() for linking to the view file page.
  *
- * @see theme_file_file_link()
+ * @see theme_file_link()
  */
 function theme_file_entity_file_link($variables) {
   $file = $variables['file'];
@@ -38,9 +38,9 @@ function theme_file_entity_file_link($variables) {
 }
 
 /**
- * Copy of theme_file_file_link() for linking to the file download URL.
+ * Copy of theme_file_link() for linking to the file download URL.
  *
- * @see theme_file_file_link()
+ * @see theme_file_link()
  */
 function theme_file_entity_download_link($variables) {
   $file = $variables['file'];

@@ -5,6 +5,10 @@
  * Form elements for DKAN.
  */
 
+use dkanDataset\getRemoteFileInfo;
+
+include_once 'includes/getRemoteFileInfo.php';
+
 /**
  * Implements hook_field_group_build_pre_render_alter().
  */
@@ -17,48 +21,55 @@ function dkan_dataset_field_group_build_pre_render_alter(&$element) {
     $element['group_primary']['path']['#weight'] = "1";
     $element['group_primary']['body']['#weight'] = "2";
     $element['group_primary']['field_tags']['#weight'] = "3";
+    $element['group_primary']['og_group_ref']['#weight'] = "4";
     unset($element['path']);
   }
 }
 
 /**
- * Implements hook_field_group_pre_render().
+ * Helper function to get the node title without loading the whole node object.
  */
-function dkan_dataset_field_group_pre_render(&$element, $group, &$form) {
+function dkan_dataset_get_node_title($nid) {
+  return db_query('SELECT title FROM {node} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
+}
 
-  // Only pre_render if additional info form should appear on separate page
-  if (variable_get('dkan_dataset_form_additional_info', 1 )) {
-    if (module_exists('context')) {
-      $contexts = context_active_contexts();
-    }
-    $query = drupal_get_query_parameters();
-    $arg2 = arg(2);
-    $additional = isset($form['#additional_processed']) && $form['#additional_processed'] ? TRUE : FALSE;
-    if ((isset($form['#groups'][$group->group_name]->disabled) && $form['#groups'][$group->group_name]->disabled) || isset($query['additional'])) {
-      if ($group->group_name == 'group_primary') {
-        $element += array(
-          '#type' => 'markup',
-          '#weight' => $group->weight,
-          '#access' => FALSE,
-        );
-      }
-    }
-    elseif (isset($form['#action']) && $form['#action'] == url('node/add/dataset') && !$additional && $arg2 != 'edit') {
-      if ($group->group_name == 'group_additional') {
-        $element += array(
-          '#type' => 'markup',
-          '#weight' => $group->weight,
-          '#access' => FALSE,
-        );
-      }
+/**
+ * Returns an array with the available group options for the current user.
+ */
+function dkan_dataset_get_group_options() {
+
+  $available_groups = array();
+
+  if (user_access('administer group')) {
+    // If the user is a group administrator then show all groups as options.
+    $groups = og_get_all_group();
+  }
+  else {
+    // If the user is not an administrator then only display the groups that the
+    // user is a member of. If a user is not specified for
+    // 'og_get_groups_by_user' then it defaults to the current user.
+    $groups = og_get_groups_by_user(NULL, 'node');
+  }
+
+  if ($groups) {
+    foreach ($groups as $group_id) {
+      $available_groups[$group_id] = dkan_dataset_get_node_title($group_id);
     }
   }
+
+  return $available_groups;
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
 function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'eck__properties__form') {
+    $form['#after_build'][] = 'dkan_dataset_eck_properties_after_build_form';
+  }
+  if ($form_id == 'entity_table_select_visualization_ve_chart') {
+    $form['#after_build'][] = 'dkan_dataset_visualization_after_build_form';
+  }
 
   if ($form_id == 'dataset_node_form') {
 
@@ -91,7 +102,6 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
                                     </div>';
       $form['path']['#suffix'] = '</div>';
       $form['path']['alias']['#prefix'] = '<span class="add-on">/dataset/</span>';
-      $form['path']['alias']['#title'] = 'URL';
     }
     // Adding descriptions.
     $form['title']['#attributes']['placeholder'] = t('eg. A descriptive title');
@@ -102,7 +112,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     $form['body'][$body_langcode][0]['#prefix'] = '<div id="prefix">';
     $form['body'][$body_langcode][0]['#suffix'] = '</div>';
     $form['path']['alias']['#description'] = '';
-    $form['path']['alias']['#title'] = '';
+    $form['path']['alias']['#title'] = t('URL');
 
     // Get langcode for field_tags.
     $field_tags_langcode = dkan_dataset_form_field_language($form, 'field_tags');
@@ -112,7 +122,10 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     // Get langcode for field_license.
     $field_license_langcode = dkan_dataset_form_field_language($form, 'field_license');
     // Add icon to license field.
-    $form['field_license'][$field_license_langcode]['#description'] = '<i class="icon-large icon-info-sign"></i>' . t('License definitions and additional information can be found at ') . '<a href="http://opendefinition.org">opendefinition.org</a>';
+    $form['field_license'][$field_license_langcode]['#description'] =
+      t('<i class="icon-large icon-info-sign"></i>
+        License definitions and additional information can be found at
+        <a href="http://opendefinition.org">opendefinition.org</a>');
 
     // Get langcode for field_additional_info.
     if (isset($form['field_additional_info'])) {
@@ -129,17 +142,15 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
       // Get langcode for og_group_ref.
       $og_group_ref_langcode = dkan_dataset_form_field_language($form, 'og_group_ref');
 
+      // Modify title of Publisher field.
+      $form['og_group_ref'][$og_group_ref_langcode]['#title'] = t('Groups');
+
+      $groups = dkan_dataset_get_group_options();
+      $form['og_group_ref'][$og_group_ref_langcode]['#options'] = $groups;
       // Don't show groups if user doesn't have any groups to add.
-      if (isset($form['og_group_ref'][$og_group_ref_langcode][0]['default'])) {
-        $groups = $form['og_group_ref'][$og_group_ref_langcode][0]['default']['#options'];
-      }
-      if (isset($groups) and (count($groups) < 2)) {
+      if (empty($groups)) {
         $form['og_group_ref']['#access'] = FALSE;
       }
-      // Move groups to vertical tabs.
-      $form['og_group_ref']['#group'] = 'additional_settings';
-      $form['og_group_ref']['#title'] = t('Groups');
-      $form['og_group_ref']['#type'] = 'fieldset';
     }
 
     if (arg(1) == 'add') {
@@ -156,17 +167,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
         '#weight' => -5,
         '#submit' => array('node_form_submit'),
       );
-      if (variable_get('dkan_dataset_form_ajax', 0)) {
-        $form['actions']['next']['#ajax'] = array(
-          'callback' => 'dkan_dataset_dataset_submit_js',
-          'wrapper' => $form['#id'],
-          'method' => 'replace',
-          'effect' => 'fade',
-        );
-      }
-      else {
-        $form['actions']['next']['#submit'] = array('node_form_submit', 'dkan_dataset_dataset_form_submit');
-      }
+      $form['actions']['next']['#submit'] = array('node_form_submit', 'dkan_dataset_dataset_form_submit');
       $form['actions']['terms'] = array(
         '#type' => 'item',
         '#markup' => '<div id="action-info">' . t('Important: By submitting content, you agree to release your contributions under the Open Database License.') . '</div>',
@@ -185,9 +186,118 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     }
     else {
       $form['actions']['submit']['#value'] = t('Finish');
-      // This is here for AJAX compatibililty but causing other problems; commenting out for now
-      // $form['#action'] = url('node/add/dataset');
+      // This is here for AJAX compatibililty but causing other problems;
+      // commenting out for now
+      // $form['#action'] = url('node/add/dataset');.
     }
+
+    // Mark all POD related required fields as required except for 'Publisher',
+    // handled separately if POD validation is enabled on DKAN Dataset Forms.
+    if (variable_get('dkan_dataset_form_pod_validation')) {
+      // Body.
+      $body_langcode = dkan_dataset_form_field_language($form, 'body');
+      $form['body'][$body_langcode][0]['#required'] = TRUE;
+      // Tags.
+      $field_tags_langcode = dkan_dataset_form_field_language($form, 'field_tags');
+      $form['field_tags'][$field_tags_langcode]['#required'] = TRUE;
+      // Contact email.
+      $field_contact_email_langcode = dkan_dataset_form_field_language($form, 'field_contact_email');
+      $form['field_contact_email'][$field_contact_email_langcode][0]['value']['#required'] = TRUE;
+      // Contact name.
+      $field_contact_name_langcode = dkan_dataset_form_field_language($form, 'field_contact_name');
+      $form['field_contact_name'][$field_contact_name_langcode][0]['value']['#required'] = TRUE;
+      // Public access level.
+      $field_public_access_level_langcode = dkan_dataset_form_field_language($form, 'field_public_access_level');
+      $form['field_public_access_level'][$field_public_access_level_langcode]['#required'] = TRUE;
+      // License.
+      $field_license_langcode = dkan_dataset_form_field_language($form, 'field_license');
+      // Set 'Open Data Commons Open Database License (ODbL)' as default value.
+      $valid_pod_license = TRUE;
+      $selected_license_code = $form['field_license'][$field_license_langcode]['#default_value'];
+      // If the license is not specified then it's not a POD valid license.
+      if ($selected_license_code === 'notspecified') {
+        $valid_pod_license = FALSE;
+      }
+      else {
+        $available_licenses = dkan_dataset_content_types_license_subscribed_values();
+        // If the license is not available then is not a POD valid license.
+        if (!isset($available_licenses[$selected_license_code])) {
+          $valid_pod_license = FALSE;
+          drupal_set_message(
+            t('The dataset had a license value that is not valid on Project Open
+              Data, so it was changed automatically. Please check the new value
+              before saving any changes.')
+          );
+        }
+      }
+
+      if (!$valid_pod_license) {
+        $form['field_license'][$field_license_langcode]['#default_value'] = 'odc-odbl';
+      }
+    }
+
+    // Make 'Rights' field visible and required if 'Public Access Level' is set
+    // to 'restricted' or 'private'.
+    $access_level_values = array(
+      array('value' => t('restricted')),
+      array('value' => t('private')),
+    );
+    $field_public_access_level_langcode = dkan_dataset_form_field_language($form, 'field_public_access_level');
+    $form['field_rights']['#states'] = array(
+      'visible' => array(
+        '[name="field_public_access_level[' . $field_public_access_level_langcode . ']"]' => array($access_level_values),
+      ),
+      'required' => array(
+        '[name="field_public_access_level[' . $field_public_access_level_langcode . ']"]' => array($access_level_values),
+      ),
+    );
+
+    // Mark 'Groups' field as required if the group validation is enabled on
+    // DKAN Dataset forms.
+    if (variable_get('dkan_dataset_form_group_validation') && module_exists('dkan_dataset_groups')) {
+      // Groups.
+      $og_group_ref_langcode = dkan_dataset_form_field_language($form, 'og_group_ref');
+      $form['og_group_ref'][$og_group_ref_langcode]['#required'] = TRUE;
+      // If there are no groups then display a warning letting the user know
+      // they won't be able to create the dataset since the 'Publisher' field is
+      // a POD-required field.
+      $available_groups = $form['og_group_ref'][$og_group_ref_langcode]['#options'];
+      if (empty($available_groups)) {
+        // Show a warning message.
+        dkan_dataset_display_groups_warning();
+      }
+    }
+
+    // If 'Validate dataset form according to Project Open Data' is enabled on
+    // dataset form settings then move all POD required fields to the first step
+    // if the form is a multistep form.
+    $multistep_form_enabled = variable_get('dkan_dataset_form_additional_info', 1);
+    $pod_validation_enabled = variable_get('dkan_dataset_form_pod_validation');
+    if ($multistep_form_enabled && $pod_validation_enabled) {
+      $form['#group_children']['field_contact_name'] = 'group_primary';
+      $form['#group_children']['field_contact_email'] = 'group_primary';
+      $form['#group_children']['field_public_access_level'] = 'group_primary';
+      $form['#group_children']['field_rights'] = 'group_primary';
+    }
+
+    // Hide field groups if multi step form is enabled and the dataset API is
+    // not being used.
+    if (variable_get('dkan_dataset_form_additional_info', 1) && (current_path() != 'api/dataset/node')) {
+      $query = drupal_get_query_parameters();
+      $arg2 = arg(2);
+      $additional = isset($form['#additional_processed']) && $form['#additional_processed'] ? TRUE : FALSE;
+      if ((isset($form['#groups']['group_primary']->disabled) && $form['#groups']['group_primary']->disabled) || isset($query['additional'])) {
+        field_group_hide_field_groups($form, array('group_primary'));
+        if (module_exists('open_data_federal_extras')) {
+          field_group_hide_field_groups($form, array('group_odfie_pod'));
+        }
+      }
+      elseif (isset($form['#action']) && $form['#action'] == url('node/add/dataset') && !$additional && $arg2 != 'edit') {
+        field_group_hide_field_groups($form, array('group_additional'));
+      }
+    }
+
+    $form['#validate'][] = 'dkan_dataset_dataset_node_form_validate';
   }
   if ($form_id == 'resource_node_form') {
     drupal_add_library('system', 'jquery.bbq');
@@ -204,7 +314,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     $field_dataset_ref_langcode = dkan_dataset_form_field_language($form, 'field_dataset_ref');
     $form['field_dataset_ref'][$field_dataset_ref_langcode]['#description'] = t('Dataset that this resource is attached to.');
     $dataset_options = $form['field_dataset_ref'][$field_dataset_ref_langcode]['#options'];
-    $fix_apostrophes = function($value) {
+    $fix_apostrophes = function ($value) {
       return html_entity_decode($value, ENT_QUOTES, "UTF-8");
     };
     $form['field_dataset_ref'][$field_dataset_ref_langcode]['#options'] = array_map($fix_apostrophes, $dataset_options);
@@ -220,12 +330,15 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
 
     // Get langcode for field_link_remote_file.
     $field_link_remote_file_langcode = dkan_dataset_form_field_language($form, 'field_link_remote_file');
-    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['#description'] = 'Link to a CSV file that will be imported into the DKAN datastore.';
-    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['#description'] = 'Link to a csv, html, xls, json, xlsx, doc, docx, rdf, txt, jpg, png, gif, tiff, pdf, odf, ods, odt, tsv, geojson, or xml file. CSV files can be imported into the DKAN datastore.';
+    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['#description'] = t('Link to a file hosted on a remote server. CSV files can be imported into the DKAN datastore.');
 
     // Get langcode for field_link_api.
     $field_link_api_langcode = dkan_dataset_form_field_language($form, 'field_link_api');
-    $form['field_link_api'][$field_link_api_langcode][0]['#description'] = 'Link to a public API or information source.';
+    $form['field_link_api'][$field_link_api_langcode][0]['#description'] = t('Link to a public API or information source.');
+
+    // Get langcode for field_format.
+    $field_link_api_langcode = dkan_dataset_form_field_language($form, 'field_format');
+    $form['field_format'][$field_link_api_langcode]['#description'] = 'Leave blank to auto-detect resource format';
 
     $form['title']['#attributes']['placeholder'] = t('eg. January Gold Prices');
     $form['title']['#required'] = TRUE;
@@ -233,12 +346,9 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     $form['field_link_api'][$field_link_api_langcode][0]['#title'] = '';
     $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['#title'] = '';
 
-    // Move groups to vertical tabs.
-    if (isset($form['og_group_ref'])) {
-      $form['og_group_ref']['#group'] = 'additional_settings';
-      $form['og_group_ref']['#title'] = t('Groups');
-      $form['og_group_ref']['#type'] = 'fieldset';
-    }
+    // Resources inherit groups from parent dataset.
+    // Hide field so users cannot manually modify that information.
+    $form['og_group_ref']['#access'] = FALSE;
 
     if ($query = drupal_get_query_parameters()) {
       if (isset($query['dataset'])) {
@@ -262,10 +372,10 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     else {
       $form['#action'] = url('node/add/resource');
       if (drupal_match_path(current_path(), 'node/*/edit')) {
-          $form['#action'] = url('node/' . $form['#node']->nid . '/edit');
-       }    
+        $form['#action'] = url('node/' . $form['#node']->nid . '/edit');
+      }
     }
-    if (variable_get('dkan_dataset_form_additional_info', 1 )) {
+    if (variable_get('dkan_dataset_form_additional_info', 1)) {
       if (isset($query['dataset']) || (isset($form_state['input']['field_dataset_ref']['und'][0]))) {
         $form['actions']['additional'] = array(
           '#type' => 'submit',
@@ -273,17 +383,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
           '#weight' => -5,
           '#submit' => array('node_form_submit'),
         );
-        if (variable_get('dkan_resource_form_ajax', 0)) {
-          $form['actions']['additional']['#ajax'] = array(
-            'callback' => 'dkan_dataset_additional_submit_js',
-            'wrapper' => $form['#id'],
-            'method' => 'replace',
-            'effect' => 'fade',
-          );
-        }
-        else {
-          $form['actions']['additional']['#submit'] = array('node_form_submit', 'dkan_dataset_resource_additional_form_submit');
-        }
+        $form['actions']['additional']['#submit'] = array('node_form_submit', 'dkan_dataset_resource_additional_form_submit');
       }
     }
     $form['actions']['another'] = array(
@@ -292,47 +392,36 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
       '#weight' => 10,
       '#submit' => array('node_form_submit'),
     );
-    if (variable_get('dkan_resource_form_ajax', 0)) {
-      $form['actions']['another']['#ajax'] = array(
-        'callback' => 'dkan_dataset_resource_another_submit_js',
-        'wrapper' => $form['#id'],
-        'method' => 'replace',
-        'effect' => 'fade',
-      );
-    }
-    else {
-      $form['actions']['another']['#submit'] = array('node_form_submit', 'dkan_dataset_resource_form_submit');
-    }
-
-    $group_description = t("This resource is not assigned to any groups. Groups can only be assigned to Datasets. Resources are always a part of the parent Datasets's groups");
-
-    if (isset($form['og_group_ref'][$form['og_group_ref']['#language']][0])
-        && isset($form['og_group_ref'][$form['og_group_ref']['#language']][0]['#entity']->og_group_ref)
-        && !empty($form['og_group_ref'][$form['og_group_ref']['#language']][0]['#entity']->og_group_ref)
-    ) {
-      $titles = array();
-      foreach ($form['og_group_ref'][$form['og_group_ref']['#language']][0]['#entity']->og_group_ref['und'] as $group) {
-        $group = node_load($group['target_id']);
-        $titles[] = l($group->title, 'node/' . $group->nid);
-      }
-      $titles = theme('item_list', array('items' => $titles));
-      $group_description = t("This resource is in the following groups: !groups Groups can only be assigned to Datasets. Resources are always a part of the parent Datasets's groups.", array('!groups' => $titles));
-    }
-    else {
-      $group_description = t('No groups are attached to this resource. Groups can only be attached on datasets that resources are linked to.');
-    }
-
-    $form['og_group_ref']['#access'] = FALSE;
-    $form['groups'] = array(
-        '#type' => 'fieldset',
-        'und' => array(
-            '#type' => 'item',
-            '#markup' => $group_description,
-        ),
-        '#title' => t('Groups'),
-        '#group' => 'additional_settings',
-    );
+    $form['actions']['another']['#submit'] = array('node_form_submit', 'dkan_dataset_resource_form_submit');
   }
+}
+
+/**
+ * Process tableselect to pass 508 compliance.
+ */
+function dkan_dataset_eck_properties_after_build_form($form, &$form_state) {
+  $table = $form['new_properties_table'];
+  $children = element_children($table);
+
+  foreach ($children as $key) {
+    $form['new_properties_table'][$key]['#title'] = t('A checkbox for tableselect');
+  }
+
+  return $form;
+}
+
+/**
+ * Process visualization entity table to pass 508 compliance.
+ */
+function dkan_dataset_visualization_after_build_form($form, &$form_state) {
+  $table = $form['entity_table'];
+  $children = element_children($table);
+
+  foreach ($children as $key) {
+    $form['entity_table'][$key]['#title'] = t('A checkbox for tableselect');
+  }
+
+  return $form;
 }
 
 /**
@@ -381,6 +470,47 @@ function dkan_dataset_dataset_form_submit($form, &$form_state) {
 }
 
 /**
+ * Validation function for dataset node form.
+ */
+function dkan_dataset_dataset_node_form_validate($form, &$form_state) {
+  // Throw an error if the user has no groups available but the strict POD
+  // validation is enabled in DKAN Dataset Forms. The check about the field
+  // being required and empty won't work because the 'Groups'
+  // field is hidden when the user is not associated with any groups.
+  if (variable_get('dkan_dataset_form_group_validation') && module_exists('dkan_dataset_groups')) {
+    // Get available groups from the field options.
+    $field_og_group_ref_langcode = dkan_dataset_form_field_language($form, 'og_group_ref');
+    $available_groups = $form['og_group_ref'][$field_og_group_ref_langcode]['#options'];
+    // If there are no options then display an error.
+    if (empty($available_groups)) {
+      dkan_dataset_display_groups_warning();
+      form_set_error('', 'Error: You tried to submit a dataset with no groups assigned.');
+    }
+  }
+
+  // Display an error if the 'Public Access Level' field value is not 'public'
+  // and the 'Rights' field is empty.
+  $field_public_access_level_langcode = dkan_dataset_form_field_language($form, 'field_public_access_level');
+  $public_access_level = $form_state['values']['field_public_access_level'][$field_public_access_level_langcode][0]['value'];
+  $field_rights_langcode = dkan_dataset_form_field_language($form, 'field_rights');
+  $rights = $form_state['values']['field_rights'][$field_rights_langcode][0]['value'];
+  if ($public_access_level != 'public' && empty($rights)) {
+    form_set_error('field_rights', 'Rights field is required.');
+  }
+}
+
+/**
+ * Display groups warning on dataset form.
+ */
+function dkan_dataset_display_groups_warning() {
+  if (!user_access('administer group')) {
+    drupal_set_message(t("A dataset must be added to a specific group, but you don’t belong to any groups.
+          Ask a supervisor or site administrator to add you to a group or
+          promote you to site manager to add datasets."), 'warning');
+  }
+}
+
+/**
  * Validation function for resource node form.
  */
 function dkan_dataset_resource_node_form_validate($form, &$form_state) {
@@ -394,7 +524,7 @@ function dkan_dataset_resource_node_form_validate($form, &$form_state) {
   $field_format_langcode = dkan_dataset_form_field_language($form, 'field_format');
 
   // See if file link, api link, or file upload.
-  $link = isset($form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode]) ? $form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_remotefile']['url'] : NULL;
+  $link = isset($form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode]) ? $form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_dkan_remotefile']['url'] : NULL;
   $link_fid = isset($form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode]) ? $form_state['values']['field_link_remote_file'][$field_link_remote_file_langcode][0]['fid'] : NULL;
   $api = isset($form_state['values']['field_link_api']) ? $form_state['values']['field_link_api'][$field_link_api_langcode][0]['url'] : NULL;
   $upload_fid = isset($form_state['values']['field_upload'][$field_upload_langcode][0]['fid']) ? $form_state['values']['field_upload'][$field_upload_langcode][0]['fid'] : NULL;
@@ -447,29 +577,58 @@ function dkan_dataset_resource_node_form_validate($form, &$form_state) {
     if ($upload_fid || $link_fid || $api) {
       if ($upload_fid) {
         $file = file_load($upload_fid);
-        $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
+        $type = isset($file->filemime) ? dkan_dataset_discovery_extension($file->filemime) : '';
       }
       elseif ($link_fid) {
         $file = file_load($link_fid);
-        $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
-      }
-      elseif ($api) {
-        $request = drupal_http_request($api);
-        if (!isset($request->error)) {
-          // Remove char type or other info from content type.
-          $strpos = strpos($request->headers['content-type'], ';');
-          $mimetype = ($strpos !== FALSE) ? substr($request->headers['content-type'], 0, $strpos) : $request->headers['content-type'];
-          if (is_object(json_decode($request->data))) {
-            $type = 'json';
+        // If you have a file that provides a content-type header or filemime of
+        // octet-stream we can look if the file has a filename with an extension
+        // we can use.
+        if (isset($file->filemime) && $file->filemime == 'application/octet-stream') {
+          $name = explode(".", $file->filename);
+          if (count($name) > 1) {
+            $type = $name[count($name) - 1];
           }
-          else {
-            $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
+        }
+        else {
+          $type = isset($file->filemime) ? dkan_dataset_discovery_extension($file->filemime) : '';
+        }
+
+      }
+      // @todo Probably remove all this
+      elseif ($api) {
+        $file = new GetRemoteFileInfo($api, t('!site_name crawler', array('!site_name' => variable_get('site_name'))), TRUE, file_directory_temp());
+        $filemime = $file->getType();
+        $type = dkan_dataset_discovery_extension($filemime);
+      }
+      // Check for geojson.
+      if ($type == 'json' && isset($file)) {
+        $response = drupal_http_request($file->uri, array('timeout' => 5));
+        // dpm($response);
+        if ($response->code == '200') {
+          $data = $response->data;
+          $decoded = drupal_json_decode($data);
+          $geojson_types = array(
+            'FeatureCollection',
+            'GeometryCollection',
+            'Feature',
+            'Point',
+            'MultiPoint',
+            'LineString',
+            'MultiLineString',
+            'Polygon',
+            'MultiPolygon',
+          );
+          foreach ($geojson_types as $geojson_type) {
+            foreach ($decoded as $key => $value) {
+              if ($geojson_type === $value) {
+                $type = 'geojson';
+              }
+            }
           }
         }
       }
-      else {
-        $type = substr($link, strrpos($link, '.') + 1);
-      }
+
     }
   }
   $vocabs = taxonomy_vocabulary_get_names();
@@ -502,11 +661,16 @@ function dkan_dataset_recline_format_alter(&$format, $entity) {
  * After build function for resource and dataset nodes.
  */
 function dkan_dataset_resource_form_after_build($form, &$form_state) {
+  // Hide 'Other' options if strict POD validation is enabled.
+  if (isset($form['field_license']) && variable_get('dkan_dataset_form_pod_validation')) {
+    unset($form['field_license']['und']['select']['#options']['select_or_other']);
+    unset($form['field_license']['und']['select']['#options']['_none']);
+  }
   if (isset($form['field_link_remote_file'])) {
     // Get langcode for field_link_remote_file.
     $field_link_remote_file_langcode = dkan_dataset_form_field_language($form, 'field_link_remote_file');
-    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_remotefile']['url']['#attributes']['placeholder'] = 'eg. http://example.com/gold-prices-jan-2011.csv';
-    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_remotefile']['select']['#suffix'] = '';
+    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_dkan_remotefile']['url']['#attributes']['placeholder'] = 'eg. http://example.com/gold-prices-jan-2011.csv';
+    $form['field_link_remote_file'][$field_link_remote_file_langcode][0]['filefield_dkan_remotefile']['select']['#suffix'] = '';
   }
   if (isset($form['field_link_api'])) {
     // Get langcode for field_link_api.
@@ -527,108 +691,6 @@ function dkan_dataset_resource_form_after_build($form, &$form_state) {
 }
 
 module_load_include('inc', 'node', 'node.pages');
-
-/**
- * Builds the additional data for the dateset form.
- */
-function dkan_dataset_additional_submit_js($form, &$form_state) {
-  form_load_include($form_state, 'inc', 'node', 'node.pages');
-  module_load_include('inc', 'node', 'node.pages');
-  $type = 'dataset';
-  global $user;
-  // Return the actual form if it contains errors.
-  if (form_get_errors()) {
-    return $form;
-  }
-  // Get langcode for field_dataset_ref.
-  $field_dataset_ref_langcode = dkan_dataset_form_field_language($form, 'field_dataset_ref');
-
-  $nid = $form_state['values']['field_dataset_ref'][$field_dataset_ref_langcode][0]['target_id'];
-  $node = node_load($nid);
-  $dataset_form = drupal_get_form($type . '_node_form', $node);
-
-  $dataset_form['#groups']['group_primary']->disabled = TRUE;
-  $dataset_form['#additional_processed'] = TRUE;
-
-  $stage = dkan_form_create_stages('dataset-additional', $nid);
-
-  $commands[] = ajax_command_replace('.node-resource-form', drupal_render($dataset_form));
-  $commands[] = ajax_command_prepend('.node-dataset-form', $stage);
-  $commands[] = ajax_command_settings(array('dkanAdditional' => array('nid' => $nid)), TRUE);
-  $output = array('#type' => 'ajax', '#commands' => $commands);
-  return $output;
-}
-
-/**
- * Builds the resource form after resource form submit.
- */
-function dkan_dataset_resource_another_submit_js($form, &$form_state) {
-  // Return the actual form if it contains errors.
-  if (form_get_errors()) {
-    return $form;
-  }
-  // Get langcode for field_dataset_ref.
-  $field_dataset_ref_langcode = dkan_dataset_form_field_language($form, 'field_dataset_ref');
-
-  $nid = isset($form_state['build_info']['args'][0]->field_dataset_ref['nid']) ? $form_state['build_info']['args'][0]->field_dataset_ref['nid'] : $form_state['values']['field_dataset_ref'][$field_dataset_ref_langcode][0]['target_id'];
-  $resource_form = dkan_dataset_prepare_resource_form($nid);
-  $stage = dkan_form_create_stages('resource-edit', $nid);
-
-  $commands[] = ajax_command_replace('ol.stages', $stage);
-  $message = '<div id="messages"><div class="messages status"> Your resource <em class="placeholder">' . $form_state['values']['title'] . '</em> has been created. View it here: ' . l($form_state['values']['title'], 'node/' . $form_state['nid']) . ' or add another.</div></div>';
-
-  $commands[] = ajax_command_replace('.node-resource-form', drupal_render($resource_form));
-  $commands[] = ajax_command_prepend('ul.nav-simple', '<li>' . l($form_state['values']['title'], 'node/' . $form_state['nid'] . '/edit') . '</li>');
-  $commands[] = ajax_command_prepend('form.node-form', $message);
-  // Needed to prepend language after ajax redirect. Ugly.
-  global $language_url;
-  if (isset($language_url->provider) && $language_url->provider == 'locale-url') {
-    $push = array('dkanPush' => array('nid' => $form_state['node']->nid, 'lang' => $language_url->prefix));
-  }
-  else {
-    $push = array('dkanPush' => array('nid' => $form_state['node']->nid));
-  }
-  $commands[] = ajax_command_settings($push, TRUE);
-  $output = array('#type' => 'ajax', '#commands' => $commands);
-  return $output;
-}
-
-/**
- * Builds the resource form after the dataset submit.
- */
-function dkan_dataset_dataset_submit_js($form, &$form_state) {
-  // Return the actual form if it contains errors.
-  if (form_get_errors()) {
-    return $form;
-  }
-  $resource_form = dkan_dataset_prepare_resource_form($form_state['node']->nid);
-
-  // Replacement elements.
-  $stage = dkan_form_create_stages('resource-edit', $form_state['node']->nid);
-  $resource_url = url('node/add/resource', array('query' => array('dataset' => $form_state['nid'])));
-  $breadcrumbs = '<ul class="breadcrumb"><li><a href="/">Home</a></li><li><a href="/dataset">Datasets</a></li><li>' . l($form_state['values']['title'], 'node/' . $form_state['nid']) . '</li><li><a href="' . $resource_url . '" class="active">Add Resource</a></li></ul>';
-  $resources_block = '<section class="block block-dkan-forms block-dkan-forms-resource-nodes block-dkan-forms-dkan-forms-resource-nodes even" id="block-dkan-forms-dkan-forms-resource-nodes"><div class="block-inner clearfix"><h2 class="block-title">Resources</h2><div class="content clearfix"><div class="item-list"><ul class="nav-simple"><li class="last"></li></ul></div><a id="context-block-dkan_dataset-dkan_forms_resource_nodes" class="context-block editable edit-resource-create"></a></div></div></section>';
-
-  $commands[] = ajax_command_append('#region-sidebar-first .region-inner', $resources_block);
-  $commands[] = ajax_command_replace('ul.breadcrumb', $breadcrumbs);
-  $commands[] = ajax_command_replace('#block-dkan-forms-dkan-forms-dataset-help h2', '<h2 class="block-title">What is data?</h2>');
-  $commands[] = ajax_command_replace('#block-dkan-forms-dkan-forms-dataset-help .content', '<div class="content">' . dkan_dataset_resource_form_help() . '</div>');
-  $commands[] = ajax_command_replace('ol.stages', $stage);
-  $commands[] = ajax_command_replace('#page-title', '<h1 class="title" id="page-title">Add data</h1>');
-  // Needed to prepend language after ajax redirect. Ugly.
-  global $language_url;
-  if (isset($language_url->provider) && $language_url->provider == 'locale-url') {
-    $push = array('dkanPush' => array('nid' => $form_state['node']->nid, 'lang' => $language_url->prefix));
-  }
-  else {
-    $push = array('dkanPush' => array('nid' => $form_state['node']->nid));
-  }
-  $commands[] = ajax_command_settings($push, TRUE);
-
-  $commands[] = ajax_command_replace('#' . $form['#id'], drupal_render($resource_form));
-  $output = array('#type' => 'ajax', '#commands' => $commands);
-  return $output;
-}
 
 /**
  * Creates initial resource node form.
@@ -740,7 +802,7 @@ function dkan_dataset_resource_nodes() {
   }
   if ($nodes) {
     foreach ($nodes as $node) {
-      $attributes = array('attributes' => array('class' => array('list-group-item')),'html' => true);
+      $attributes = array('attributes' => array('class' => array('list-group-item')), 'html' => TRUE);
       $links[] = l('<span>' . $node->title . '</span>', 'node/' . $node->nid, $attributes);
     }
     if (!$current_node) {
@@ -758,13 +820,13 @@ function dkan_dataset_visualizations_list() {
   $output = '';
   $current_node = menu_get_object();
   if (isset($current_node->type) && $current_node->type == 'resource') {
-    if($current_node->uuid) {
+    if ($current_node->uuid) {
       // Find all visualizations created from this resource.
       $nodes = dkan_dataset_get_visualization_entities($current_node->uuid);
     }
     if ($nodes) {
       foreach ($nodes as $node) {
-        $attributes = array('attributes' => array('class' => array('list-group-item')),'html' => true);
+        $attributes = array('attributes' => array('class' => array('list-group-item')), 'html' => TRUE);
         // Fetch title and type.
         $result = db_query("SELECT type, title FROM {eck_visualization} WHERE id = :id", array(':id' => $node->nid));
         foreach ($result as $row) {

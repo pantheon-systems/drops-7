@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Some rudimentary tests for the node_view handler.
+ */
+
+class PanelsNodeViewWebTestCase extends PanelsEntityViewWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panels node_view tests',
+      'description' => 'Test the standard node_view task handler.',
+      'group' => 'Panels',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_name = 'node_view';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_label = 'Node template';
+
+}

@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * Test draft revisions with entity translation.
+ */
+class Drafty1992010Test extends  EntityTranslationTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty Entity Translation #1992010',
+      'description' => 'Tests for the existence of the core bug this module works around',
+      'group' => 'Drafty',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('locale', 'entity_translation', 'drafty_enforce');
+    $this->login($this->getAdminUser());
+    $this->addLanguage('en');
+    $this->addLanguage('es');
+    $this->configureContentType();
+    $this->login($this->getTranslatorUser());
+  }
+
+  /**
+   * Create a translation.
+   *
+   * This overrides because with drafty, asserting an 'edit' link for a
+   * translation fails when the revision with the added translation has not yet
+   * been published.
+   *
+   * @param $node
+   *   Node of the basic page to create translation for.
+   * @param $title
+   *   Title of the basic page in the specified language.
+   * @param $body
+   *   Body of the basic page in the specified language.
+   * @param $langcode
+   *   The language code to be assigned to the specified values.
+   */
+  function createTranslation($node, $title, $body, $langcode, $source_langcode = 'en') {
+    $this->drupalGet('node/' . $node->nid . '/edit/add/' . $source_langcode . '/' . $langcode);
+
+    $body_key = "body[$langcode][0][value]";
+    $this->assertFieldByXPath("//textarea[@name='$body_key']", $node->body[$source_langcode][0]['value'], 'Original body value correctly populated.');
+    $this->assertFieldById('edit-body-' . $langcode . '-add-more', t('Add another item'), t('Add another item button found.'));
+
+    $edit = array();
+    $edit[$body_key] = $body;
+
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->drupalGet('node/' . $node->nid . '/translate');
+
+    return $node;
+  }
+
+  /**
+   * Test if field based translation works.
+   *
+   * Enable field based translation for basic pages. Add a field with a
+   * cardinality higher than 1, to test if field_default_extract_form_values()
+   * is invoked. Create a basic page and translate it.
+   */
+  function testFieldTranslation() {
+    // Create Basic page in English.
+    $node_title = $this->randomName();
+    $node_body = $this->randomName();
+    $node = $this->createPage($node_title, $node_body, 'en');
+    $original_version = node_load($node->nid, NULL, TRUE);
+
+    // Submit translation in Spanish.
+    $node_translation_title = $this->randomName();
+    $node_translation_body = $this->randomName();
+    $node_translation = $this->createTranslation($node, $node_translation_title, $node_translation_body, 'es');
+    $published_version = node_load($node->nid, NULL, TRUE);
+
+    // At this point there should be three versions of the node:
+    //  - the original version with no translation.
+    //  - an unpublished version with a translation.
+    //  - the published version with no translation, identical to the original.
+    $this->assertTrue(!isset($original_version->body['es']), 'No Spanish translation on the original version');
+    // This assertion is the reverse of the correct behaviour, so it will fail
+    // if http://drupal.org/node/1992010 is fixed. When that happens this entire
+    // module can be uninstalled then removed.
+    $this->assertFalse(!isset($published_version->body['es']), 'Spanish translation on the published version so http://drupal.org/node/1992010 not fixed yet');
+  }
+}

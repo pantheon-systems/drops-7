@@ -18,7 +18,7 @@ describe("Point", function () {
 	describe('#subtract', function () {
 		it('subtracts the given point from this one', function () {
 			var a = new L.Point(50, 30),
-				b = new L.Point(20, 10);
+			    b = new L.Point(20, 10);
 			expect(a.subtract(b)).to.eql(new L.Point(30, 20));
 		});
 	});
@@ -69,9 +69,9 @@ describe("Point", function () {
 	describe('#contains', function () {
 		it('returns true if the point is bigger in absolute dimensions than the passed one', function () {
 			var p1 = new L.Point(50, 30),
-				p2 = new L.Point(-40, 20),
-				p3 = new L.Point(60, -20),
-				p4 = new L.Point(-40, -40);
+			    p2 = new L.Point(-40, 20),
+			    p3 = new L.Point(60, -20),
+			    p4 = new L.Point(-40, -40);
 
 			expect(p1.contains(p2)).to.be(true);
 			expect(p1.contains(p3)).to.be(false);
@@ -95,6 +95,9 @@ describe("Point", function () {
 		});
 		it('creates a point from an array of coordinates', function () {
 			expect(L.point([50, 30])).to.eql(new L.Point(50, 30));
+		});
+		it("creates a point from an object with x and y properties", function () {
+			expect(L.point({x: 50, y: 30})).to.eql(new L.Point(50, 30));
 		});
 		it('does not fail on invalid arguments', function () {
 			expect(L.point(undefined)).to.be(undefined);

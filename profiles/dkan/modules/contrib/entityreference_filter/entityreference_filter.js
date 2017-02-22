@@ -1,5 +1,7 @@
 (function ($) {
 
+"use strict";
+
 Drupal.behaviors.entityreference_filter_dynamic = {
   attach: function (context, settings) {
     if (settings.entityreference_filter) {
@@ -9,9 +11,9 @@ Drupal.behaviors.entityreference_filter_dynamic = {
           return;
         }
 
-        var view = filter_setting['view'];
-        var args = filter_setting['args'];
-        var dependent_filters = filter_setting['dynamic'];
+        var view = filter_setting.view;
+        var args = filter_setting.args;
+        var dependent_filters = filter_setting.dynamic;
         var elements = {};
         var controlling_filters = {};
 
@@ -28,7 +30,7 @@ Drupal.behaviors.entityreference_filter_dynamic = {
           if (element.length > 0) {
             elements[controlling_filter] = element;
             element.attr('autocomplete', 'off');
-            var url = settings['basePath'] + settings['pathPrefix'] + 'entityreference_filter/update/' + view + '/' + controlling_filter;
+            var url = settings.basePath + settings.pathPrefix + 'entityreference_filter/update/' + view + '/' + controlling_filter;
 
             element.once('entityreference_filter').change(function() {
               var ajax = new Drupal.ajax(false, false, {url: url});
@@ -45,11 +47,12 @@ Drupal.behaviors.entityreference_filter_dynamic = {
                   }
                 });
 
-                options.data['entityreference_filter_form_id'] = form_id;
-                options.data['entityreference_filter_args'] = args;
+                options.data.entityreference_filter_form_id = form_id;
+                options.data.entityreference_filter_args = args;
               };
               ajax.eventResponse(ajax, {});
             });
+            // Another way.
             //var ajax = new Drupal.ajax(false, element, {event: 'change', url: url});
             //var parentBeforeSerialize = ajax.beforeSerialize;
             //ajax.beforeSerialize = function(element, options) {
@@ -102,6 +105,7 @@ Drupal.ajax.prototype.commands.entityreference_filter_insertnowrap = function (a
     case 'remove':
       settings = response.settings || ajax.settings || Drupal.settings;
       Drupal.detachBehaviors(wrapper, settings);
+      break;
   }
 
   // Add the new content to the page.

@@ -1,16 +1,23 @@
 L.SimpleShape = {};
-
+/**
+ * @class L.Draw.SimpleShape
+ * @aka Draw.SimpleShape
+ * @inherits L.Draw.Feature
+ */
 L.Draw.SimpleShape = L.Draw.Feature.extend({
 	options: {
 		repeatMode: false
 	},
 
+	// @method initialize(): void
 	initialize: function (map, options) {
 		this._endLabelText = L.drawLocal.draw.handlers.simpleshape.tooltip.end;
 
 		L.Draw.Feature.prototype.initialize.call(this, map, options);
 	},
 
+	// @method addHooks(): void
+	// Add listener hooks to this handler.
 	addHooks: function () {
 		L.Draw.Feature.prototype.addHooks.call(this);
 		if (this._map) {
@@ -27,10 +34,14 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 
 			this._map
 				.on('mousedown', this._onMouseDown, this)
-				.on('mousemove', this._onMouseMove, this);
+				.on('mousemove', this._onMouseMove, this)
+				.on('touchstart', this._onMouseDown, this)
+				.on('touchmove', this._onMouseMove, this);
 		}
 	},
 
+	// @method removeHooks(): void
+	// Remove listener hooks from this handler.
 	removeHooks: function () {
 		L.Draw.Feature.prototype.removeHooks.call(this);
 		if (this._map) {
@@ -43,9 +54,12 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 
 			this._map
 				.off('mousedown', this._onMouseDown, this)
-				.off('mousemove', this._onMouseMove, this);
+				.off('mousemove', this._onMouseMove, this)
+				.off('touchstart', this._onMouseDown, this)
+				.off('touchmove', this._onMouseMove, this);
 
 			L.DomEvent.off(document, 'mouseup', this._onMouseUp, this);
+			L.DomEvent.off(document, 'touchend', this._onMouseUp, this);
 
 			// If the box element doesn't exist they must not have moved the mouse, so don't need to destroy/return
 			if (this._shape) {
@@ -68,6 +82,7 @@ L.Draw.SimpleShape = L.Draw.Feature.extend({
 
 		L.DomEvent
 			.on(document, 'mouseup', this._onMouseUp, this)
+			.on(document, 'touchend', this._onMouseUp, this)
 			.preventDefault(e.originalEvent);
 	},
 

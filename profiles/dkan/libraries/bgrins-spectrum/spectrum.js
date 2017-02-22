@@ -43,6 +43,10 @@
         localStorageKey: false,
         appendTo: "body",
         maxSelectionSize: 7,
+        inputAriaLabel: "Enter a color",
+        paletteAriaLabel: "Color palette",
+        initialSwatchAriaLabel: "Initial color",
+        currentSwatchAriaLabel: "Current color",
         cancelText: "cancel",
         chooseText: "choose",
         togglePaletteMoreText: "more",
@@ -92,7 +96,7 @@
         return [
             "<div class='sp-container sp-hidden'>",
                 "<div class='sp-palette-container'>",
-                    "<div class='sp-palette sp-thumb sp-cf'></div>",
+                    "<div class='sp-palette sp-thumb sp-cf' tabindex='0'></div>",
                     "<div class='sp-palette-button-container sp-cf'>",
                         "<button type='button' class='sp-palette-toggle'></button>",
                     "</div>",
@@ -137,7 +141,7 @@
             if(current) {
                 var tiny = tinycolor(current);
                 var c = tiny.toHsl().l < 0.5 ? "sp-thumb-el sp-thumb-dark" : "sp-thumb-el sp-thumb-light";
-                c += (tinycolor.equals(color, current)) ? " sp-thumb-active" : "";
+                c += (tinycolor.equals(color, current)) ? " sp-thumb-active sp-thumb-focus" : "";
                 var formattedString = tiny.toString(opts.preferredFormat || "rgb");
                 var swatchStyle = rgbaSupport ? ("background-color:" + tiny.toRgbString()) : "filter:" + tiny.toFilter();
                 html.push('<span title="' + formattedString + '" data-color="' + tiny.toRgbString() + '" class="' + c + '"><span class="sp-thumb-inner" style="' + swatchStyle + ';" /></span>');
@@ -304,7 +308,7 @@
 
             updateSelectionPaletteFromStorage();
 
-            offsetElement.bind("click.spectrum touchstart.spectrum", function (e) {
+            offsetElement.on("click.spectrum touchstart.spectrum", function (e) {
                 if (!disabled) {
                     toggle();
                 }
@@ -323,15 +327,76 @@
             // Prevent clicks from bubbling up to document.  This would cause it to be hidden.
             container.click(stopPropagation);
 
+            // Handle arrow keys and Enter -- for keyboard navigation
+            paletteContainer.keydown(function(e) {
+
+                var focusedColor;
+
+                // Arrow key
+                if ($.inArray(e.keyCode, [37, 38, 39, 40]) >= 0) {
+
+                    // Currently-focused color
+                    focusedColor = $(this).find(".sp-thumb-focus");
+
+                    var newFocusedColor;
+                  
+                    if (focusedColor.length > 0) {
+                        // Find the color above/below/before/after the currently-focused color
+                        if (e.keyCode == 37 || e.keyCode == 39) {
+                            // left or right
+                            newFocusedColor = e.keyCode == 37 ? focusedColor.prev() : focusedColor.next();
+                        }
+                        else if (e.keyCode == 38 || e.keyCode == 40) {
+                            // up or down
+                            var row = e.keyCode == 38 ? focusedColor.parent().prev() : focusedColor.parent().next();
+                            if (row.length > 0) {
+                                newFocusedColor = row.children().eq(focusedColor.index());
+                            }
+                        }
+                    }
+                    else {
+                        // No currently-focused color, so just choose the first one
+                        newFocusedColor = $(this).find(".sp-thumb-el").first();
+                    }
+ 
+                    // Give focus to the new focused color
+                    if (newFocusedColor && newFocusedColor.length > 0) {
+                        newFocusedColor.focus();
+
+                        focusedColor.removeClass("sp-thumb-focus");
+                        newFocusedColor.addClass("sp-thumb-focus");
+                    }
+
+                    return false;
+                }
+
+                // Enter key
+                else if (e.keyCode == 13) {
+
+                    // Currently-focused color
+                    focusedColor = $(this).find(".sp-thumb-focus");
+                    if (focusedColor) {
+                        set(focusedColor.data("color"));
+                        move();
+                        updateOriginalInput(true);
+                        if (opts.hideAfterPaletteSelect) {
+                            hide();
+                        }
+                    }
+
+                    return false;
+                }
+            });
+
             // Handle user typed input
             textInput.change(setFromTextInput);
-            textInput.bind("paste", function () {
+            textInput.on("paste", function () {
                 setTimeout(setFromTextInput, 1);
             });
             textInput.keydown(function (e) { if (e.keyCode == 13) { setFromTextInput(); } });
 
             cancelButton.text(opts.cancelText);
-            cancelButton.bind("click.spectrum", function (e) {
+            cancelButton.on("click.spectrum", function (e) {
                 e.stopPropagation();
                 e.preventDefault();
                 revert();
@@ -339,7 +404,7 @@
             });
 
             clearButton.attr("title", opts.clearText);
-            clearButton.bind("click.spectrum", function (e) {
+            clearButton.on("click.spectrum", function (e) {
                 e.stopPropagation();
                 e.preventDefault();
                 isEmpty = true;
@@ -352,7 +417,7 @@
             });
 
             chooseButton.text(opts.chooseText);
-            chooseButton.bind("click.spectrum", function (e) {
+            chooseButton.on("click.spectrum", function (e) {
                 e.stopPropagation();
                 e.preventDefault();
 
@@ -367,7 +432,7 @@
             });
 
             toggleButton.text(opts.showPaletteOnly ? opts.togglePaletteMoreText : opts.togglePaletteLessText);
-            toggleButton.bind("click.spectrum", function (e) {
+            toggleButton.on("click.spectrum", function (e) {
                 e.stopPropagation();
                 e.preventDefault();
 
@@ -462,9 +527,14 @@
                 else {
                     set($(e.target).closest(".sp-thumb-el").data("color"));
                     move();
-                    updateOriginalInput(true);
+
+                    // If the picker is going to close immediately, a palette selection
+                    // is a change.  Otherwise, it's a move only.
                     if (opts.hideAfterPaletteSelect) {
-                      hide();
+                        updateOriginalInput(true);
+                        hide();
+                    } else {
+                        updateOriginalInput();
                     }
                 }
 
@@ -472,8 +542,8 @@
             }
 
             var paletteEvent = IE ? "mousedown.spectrum" : "click.spectrum touchstart.spectrum";
-            paletteContainer.delegate(".sp-thumb-el", paletteEvent, paletteElementClick);
-            initialColorContainer.delegate(".sp-thumb-el:nth-child(1)", paletteEvent, { ignore: true }, paletteElementClick);
+            paletteContainer.on(paletteEvent, ".sp-thumb-el", paletteElementClick);
+            initialColorContainer.on(paletteEvent, ".sp-thumb-el:nth-child(1)", { ignore: true }, paletteElementClick);
         }
 
         function updateSelectionPaletteFromStorage() {
@@ -548,6 +618,8 @@
             }
 
             paletteContainer.html(html.join(""));
+
+            paletteContainer.attr("aria-label", opts.paletteAriaLabel);
         }
 
         function drawInitial() {
@@ -555,6 +627,23 @@
                 var initial = colorOnShow;
                 var current = get();
                 initialColorContainer.html(paletteTemplate([initial, current], current, "sp-palette-row-initial", opts));
+
+                // Accessibility for initial color
+                var thumbs = initialColorContainer.find('.sp-thumb-el');
+                if (thumbs.length === 2) {
+                    $(thumbs[0]).attr("tabindex", 0);
+                    $(thumbs[0]).attr("aria-label", opts.initialSwatchAriaLabel);
+                    $(thumbs[1]).attr("tabindex", 0);
+                    $(thumbs[1]).attr("aria-label", opts.currentSwatchAriaLabel);
+
+                    // Clicking Enter on the Initial color selects it
+                    $(thumbs[0]).keydown(function(e) {
+                        if (e.keyCode == 13) {
+                            set($(e.target).closest(".sp-thumb-el").data("color"));
+                            move();
+                        }
+                    });
+                }
             }
         }
 
@@ -580,13 +669,15 @@
 
             if ((value === null || value === "") && allowEmpty) {
                 set(null);
-                updateOriginalInput(true);
+                move();
+                updateOriginalInput();
             }
             else {
                 var tiny = tinycolor(value);
                 if (tiny.isValid()) {
                     set(tiny);
-                    updateOriginalInput(true);
+                    move();
+                    updateOriginalInput();
                 }
                 else {
                     textInput.addClass("sp-validation-error");
@@ -620,9 +711,9 @@
             hideAll();
             visible = true;
 
-            $(doc).bind("keydown.spectrum", onkeydown);
-            $(doc).bind("click.spectrum", clickout);
-            $(window).bind("resize.spectrum", resize);
+            $(doc).on("keydown.spectrum", onkeydown);
+            $(doc).on("click.spectrum", clickout);
+            $(window).on("resize.spectrum", resize);
             replacer.addClass("sp-active");
             container.removeClass("sp-hidden");
 
@@ -634,6 +725,12 @@
             drawInitial();
             callbacks.show(colorOnShow);
             boundElement.trigger('show.spectrum', [ colorOnShow ]);
+
+            // Set focus on selected color to start with
+            var focused = paletteContainer.find(".sp-thumb-focus");
+            if (focused) {
+                focused.focus();
+            }
         }
 
         function onkeydown(e) {
@@ -665,9 +762,9 @@
             if (!visible || flat) { return; }
             visible = false;
 
-            $(doc).unbind("keydown.spectrum", onkeydown);
-            $(doc).unbind("click.spectrum", clickout);
-            $(window).unbind("resize.spectrum", resize);
+            $(doc).off("keydown.spectrum", onkeydown);
+            $(doc).off("click.spectrum", clickout);
+            $(window).off("resize.spectrum", resize);
 
             replacer.removeClass("sp-active");
             container.addClass("sp-hidden");
@@ -678,6 +775,7 @@
 
         function revert() {
             set(colorOnShow, true);
+            updateOriginalInput(true);
         }
 
         function set(color, ignoreFormatChange) {
@@ -719,7 +817,7 @@
                 h: currentHue,
                 s: currentSaturation,
                 v: currentValue,
-                a: Math.round(currentAlpha * 100) / 100
+                a: Math.round(currentAlpha * 1000) / 1000
             }, { format: opts.format || currentPreferredFormat });
         }
 
@@ -801,6 +899,7 @@
             // Update the text entry input as it changes happen
             if (opts.showInput) {
                 textInput.val(displayColor);
+                textInput.attr("aria-label", opts.inputAriaLabel);
             }
 
             if (opts.showPalette) {
@@ -909,7 +1008,7 @@
 
         function destroy() {
             boundElement.show();
-            offsetElement.unbind("click.spectrum touchstart.spectrum");
+            offsetElement.off("click.spectrum touchstart.spectrum");
             container.remove();
             replacer.remove();
             spectrums[spect.id] = null;
@@ -988,17 +1087,27 @@
         var viewWidth = docElem.clientWidth + $(doc).scrollLeft();
         var viewHeight = docElem.clientHeight + $(doc).scrollTop();
         var offset = input.offset();
-        offset.top += inputHeight;
+        var offsetLeft = offset.left;
+        var offsetTop = offset.top;
 
-        offset.left -=
-            Math.min(offset.left, (offset.left + dpWidth > viewWidth && viewWidth > dpWidth) ?
-            Math.abs(offset.left + dpWidth - viewWidth) : 0);
+        offsetTop += inputHeight;
 
-        offset.top -=
-            Math.min(offset.top, ((offset.top + dpHeight > viewHeight && viewHeight > dpHeight) ?
+        offsetLeft -=
+            Math.min(offsetLeft, (offsetLeft + dpWidth > viewWidth && viewWidth > dpWidth) ?
+            Math.abs(offsetLeft + dpWidth - viewWidth) : 0);
+
+        offsetTop -=
+            Math.min(offsetTop, ((offsetTop + dpHeight > viewHeight && viewHeight > dpHeight) ?
             Math.abs(dpHeight + inputHeight - extraY) : extraY));
 
-        return offset;
+        return {
+            top: offsetTop,
+            bottom: offset.bottom,
+            left: offsetLeft,
+            right: offset.right,
+            width: offset.width,
+            height: offset.height
+        };
     }
 
     /**
@@ -1091,7 +1200,7 @@
                     maxWidth = $(element).width();
                     offset = $(element).offset();
 
-                    $(doc).bind(duringDragEvents);
+                    $(doc).on(duringDragEvents);
                     $(doc.body).addClass("sp-dragging");
 
                     move(e);
@@ -1103,7 +1212,7 @@
 
         function stop() {
             if (dragging) {
-                $(doc).unbind(duringDragEvents);
+                $(doc).off(duringDragEvents);
                 $(doc.body).removeClass("sp-dragging");
 
                 // Wait a tick before notifying observers to allow the click event
@@ -1115,7 +1224,7 @@
             dragging = false;
         }
 
-        $(element).bind("touchstart mousedown", start);
+        $(element).on("touchstart mousedown", start);
     }
 
     function throttle(func, wait, debounce) {
@@ -1178,7 +1287,7 @@
 
         // Initializing a new instance of spectrum
         return this.spectrum("destroy").each(function () {
-            var options = $.extend({}, opts, $(this).data());
+            var options = $.extend({}, $(this).data(), opts);
             var spect = spectrum(this, options);
             $(this).data(dataID, spect.id);
         });
@@ -1244,7 +1353,7 @@
         this._g = rgb.g,
         this._b = rgb.b,
         this._a = rgb.a,
-        this._roundA = mathRound(100*this._a) / 100,
+        this._roundA = mathRound(1000 * this._a) / 1000,
         this._format = opts.format || rgb.format;
         this._gradientType = opts.gradientType;
 
@@ -1285,7 +1394,7 @@
         },
         setAlpha: function(value) {
             this._a = boundAlpha(value);
-            this._roundA = mathRound(100*this._a) / 100;
+            this._roundA = mathRound(1000 * this._a) / 1000;
             return this;
         },
         toHsv: function() {

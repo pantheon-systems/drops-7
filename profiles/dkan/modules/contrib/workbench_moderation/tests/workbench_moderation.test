@@ -10,7 +10,7 @@ class WorkbenchModerationTestCase extends DrupalWebTestCase {
   protected $moderator_user;
 
   function setUp($modules = array()) {
-    $modules = array_merge($modules, array('workbench_moderation'));
+    $modules = array_merge($modules, array('drafty', 'workbench_moderation', 'workbench_moderation_test'));
     parent::setUp($modules);
 
     // Create a new content type and enable moderation on it.
@@ -41,6 +41,17 @@ class WorkbenchModerationTestCase extends DrupalWebTestCase {
     ));
   }
 
+  /**
+   * Override DrupalWebTestCase::drupalGetToken() as it does not return the
+   * correct token for the currently logged-in testing user.
+   */
+  protected function drupalGetToken($value = '') {
+    $session_id = $this->session_id;
+    if (empty($session_id) && !empty($this->loggedInUser)) {
+      $session_id = db_query("SELECT sid FROM {sessions} WHERE uid = :uid ORDER BY timestamp DESC", array(':uid' => $this->loggedInUser->uid))->fetchField();
+    }
+    return drupal_hmac_base64($value, $session_id . drupal_get_private_key() . drupal_get_hash_salt());
+  }
 }
 
 class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase {
@@ -56,18 +67,6 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
   function setUp($modules = array()) {
     parent::setUp($modules);
     $this->drupalLogin($this->moderator_user);
-  }
-
-  /**
-   * Override DrupalWebTestCase::drupalGetToken() as it does not return the
-   * correct token for the currently logged-in testing user.
-   */
-  protected function drupalGetToken($value = '') {
-    $session_id = $this->session_id;
-    if (empty($session_id) && !empty($this->loggedInUser)) {
-      $session_id = db_query("SELECT sid FROM {sessions} WHERE uid = :uid ORDER BY timestamp DESC", array(':uid' => $this->loggedInUser->uid))->fetchField();
-    }
-    return drupal_hmac_base64($value, $session_id . drupal_get_private_key() . drupal_get_hash_salt());
   }
 
   function testModerateTab() {
@@ -153,7 +152,7 @@ class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
     $body_name = 'body[' . LANGUAGE_NONE . '][0]';
     $edit = array(
       'title' => $this->randomName(),
-      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[value]" => $this->randomName(128),
       "{$body_name}[format]" => filter_default_format(),
     );
     $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
@@ -170,12 +169,19 @@ class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
     $this->assertTrue($node->status, t('Content is published'));
 
     // Create a new draft.
-    $edit = array('title' => $this->randomName(10) . '_revision1');
+    $edit = array(
+      'title' => $this->randomName(10) . '_revision1',
+      "{$body_name}[value]" => $this->randomName(128) . '_revision1',
+    );
     $this->drupalPost("node/{$node->nid}/edit", $edit, t('Save'));
 
     // Can we get to the 'draft' tab?
     $this->drupalGet("node/{$node->nid}/draft");
     $this->assertResponse(200, t('Draft tab is accessible'));
+
+    // Ensure the new draft content is visible.
+    $this->assertText($edit['title']);
+    $this->assertText($edit["{$body_name}[value]"]);
 
     // Moderate the content to a non-draft, non-published state.
     $middle_state = current(array_diff(array_keys(workbench_moderation_states()), array(workbench_moderation_state_none(), workbench_moderation_state_published())));

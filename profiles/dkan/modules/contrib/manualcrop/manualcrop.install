@@ -28,7 +28,7 @@ function manualcrop_requirements($phase) {
         $requirements[$name] = array(
           'title' => $info['name'],
           'value' => $t('Not installed'),
-          'description' => $info['error message'] . '<br />' . $t('Download and copy the <a href="@link">@name</a> library to %path.', array(
+          'description' => $t('Download and copy the <a href="@link">@name</a> library to %path.', array(
             '@link' => $info['vendor url'],
             '@name' => $info['name'],
             '%path' => 'sites/all/libraries/' . $name,
@@ -58,7 +58,7 @@ function manualcrop_install() {
  */
 function manualcrop_uninstall() {
   variable_del('manualcrop_cache_control');
-  variable_del('manualcrop_skip_js_check');
+  variable_del('manualcrop_force_effect_order');
 
   if (module_exists('file_entity') && function_exists('file_type_load_all')) {
     // Remove the settings for individual file types.
@@ -131,6 +131,9 @@ function manualcrop_schema() {
       ),
     ),
     'primary key' => array('fid', 'vid', 'style_name'),
+    'indexes' => array(
+      'vid' => array('vid'),
+    ),
   );
 
   return $schema;
@@ -356,6 +359,106 @@ function manualcrop_update_7108() {
   // Update the primary key so it includes teh vid field.
   db_drop_primary_key('manualcrop');
   db_add_primary_key('manualcrop', array('fid', 'vid', 'style_name'));
+}
+
+/**
+ * Removed the has_js cookie check.
+ */
+function manualcrop_update_7109(&$sandbox) {
+  variable_del('manualcrop_skip_js_check');
+}
+
+/**
+ * Migrate the existing file revisions data.
+ */
+function manualcrop_update_7110() {
+  // This update is only needed when using file revisions.
+  if (!db_table_exists('file_managed_revisions')) {
+    return;
+  }
+
+  // Rename the current table and create an empty copy.
+  db_rename_table('manualcrop', 'manualcrop_old');
+  db_create_table('manualcrop', array(
+    'description' => 'Holds the crop-area position and size all cropped images.',
+    'fields' => array(
+      'fid' => array(
+        'description' => 'The {file_managed}.fid of the image file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'vid' => array(
+        'description' => 'The {file_managed_revisions}.vid (if it exists) of the file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'style_name' => array(
+        'description' => 'The machine name of the style.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'x' => array(
+        'description' => 'The x-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'y' => array(
+        'description' => 'The y-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'width' => array(
+        'description' => 'The width of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'height' => array(
+        'description' => 'The height of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'foreign keys' => array(
+      'file' => array(
+        'table' => 'file_managed',
+        'columns' => array('fid' => 'fid'),
+      ),
+    ),
+    'primary key' => array('fid', 'vid', 'style_name'),
+  ));
+
+  // Create new entries for each file revision.
+  db_query('INSERT INTO {manualcrop} (fid, style_name, x, y, width, height, vid)
+    SELECT mo.fid as fid, mo.style_name as style_name, mo.x as x, mo.y as y, mo.width as width, mo.height as height, fmr.vid as vid
+    FROM {file_managed_revisions} fmr
+    INNER JOIN {manualcrop_old} mo ON fmr.fid = mo.fid
+    WHERE mo.vid = 0');
+
+  // Copy back any rows that were newly created, with a vid.
+  db_query('INSERT INTO {manualcrop} SELECT * FROM {manualcrop_old} WHERE vid != 0');
+
+  // Drop the old table.
+  db_drop_table('manualcrop_old');
+}
+
+/**
+ * Add index on vid.
+ */
+function manualcrop_update_7111() {
+  db_add_index('manualcrop', 'vid', array('vid'));
 }
 
 /**

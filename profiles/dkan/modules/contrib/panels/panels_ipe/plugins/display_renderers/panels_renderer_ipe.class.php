@@ -345,6 +345,9 @@ class panels_renderer_ipe extends panels_renderer_editor {
       // rendered.
       $this->meta_location = 'inline';
       $this->commands[] = ajax_command_replace("#panels-ipe-display-{$this->clean_key}", panels_render_display($this->display, $this));
+      $buttons = &drupal_static('panels_ipe_toolbar_buttons', array());
+      $output = theme('panels_ipe_toolbar', array('buttons' => $buttons));
+      $this->commands[] = ajax_command_replace('#panels-ipe-control-container', $output);
     }
     else {
       // Cancelled. Clear the cache.

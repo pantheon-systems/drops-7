@@ -14,7 +14,7 @@ class WorkbenchModerationFilesTestCase extends FileFieldTestCase {
   function setUp() {
     parent::setUp();
 
-    module_enable(array('workbench_moderation'));
+    module_enable(array('drafty', 'workbench_moderation'));
 
     // Create a new content type and enable moderation on it.
     $type = $this->drupalCreateContentType();

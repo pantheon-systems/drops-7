@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Some rudimentary tests for the user_view handler.
+ */
+
+class PanelsUserViewWebTestCase extends PanelsEntityViewWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panels user_view tests',
+      'description' => 'Test the standard user_view task handler.',
+      'group' => 'Panels',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_name = 'user_view';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_label = 'Users';
+
+}

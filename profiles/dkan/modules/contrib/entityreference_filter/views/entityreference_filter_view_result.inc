@@ -15,6 +15,7 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
   function option_definition() {
     $options = parent::option_definition();
 
+    $options['value']['default'] = NULL;
     $options['reference_display'] = array('default' => '');
     $options['reference_arguments'] = array('default' => '');
     $options['expose']['contains']['hide_empty_filter'] = array('default' => TRUE, 'bool' => TRUE);
@@ -119,9 +120,7 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
       '#required' => TRUE,
       '#options' => $options,
       '#default_value' => $this->options['reference_display'],
-      '#description' => '<p>' .
-        t('Choose the view and display that select the entities that can be referenced.<br />Only views with a display of type "Entity Reference" are eligible.') .
-        '</p>',
+      '#description' => '<p>' . t('Choose the view and display that select the entities that can be referenced.<br />Only views with a display of type "Entity Reference" are eligible.') . '</p>',
     );
 
     if (empty($this->options['reference_display'])) {
@@ -131,6 +130,7 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
     $form['reference_arguments'] = array(
       '#type' => 'textfield',
       '#size' => 50,
+      '#maxlength' => 256,
       '#title' => t('Arguments for the view'),
       '#default_value' => isset($this->options['reference_arguments']) ? $this->options['reference_arguments'] : '',
       '#description' => t('Define arguments for the view that selects the entities. Empty value means passing arguments of the current view. Format is arg1/arg2/...argN. Possible arguments are !n - argument number n of the current view, [filter_name] - value of the named exposed filter, other strings are passed as is.'),
@@ -199,6 +199,7 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
     }
     list($view_name, $display_name) = explode(':', $this->options['reference_display']);
     // Check that the view is valid and the display still exists.
+    /** @var view $view */
     $view = views_get_view($view_name);
     if (!$view || !isset($view->display[$display_name]) || !$view->access($display_name)) {
       watchdog('entityreference', 'The view %view_name is no longer eligible for the filter.', array('%view_name' => $view_name), WATCHDOG_WARNING);
@@ -210,10 +211,13 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
     $view->set_items_per_page(0);
     // Make the display render the result as array.
     $view->display_handler->set_option('entityreference_options', array('limit' => 0));
+    // Avoid warnings when the view can't run.
+    $view->display_handler->id_field_alias = '';
 
     $filters_by_identifier = array();
 
-    $args = $this->view->args;
+    $args = $this->dynamic_filter_get_view_args();
+
     if (isset($this->options['reference_arguments'])) {
       $arg_str = trim($this->options['reference_arguments']);
       if (strlen($arg_str) > 0) {
@@ -289,6 +293,13 @@ class entityreference_filter_view_result extends views_handler_filter_in_operato
     }
 
     $result = $view->execute_display($display_name, $args);
+
+    if (is_array($result)) {
+      // Clean entity reference style output.
+      foreach ($result as &$item) {
+        $item = trim($item);
+      }
+    }
 
     return $result ? $result : array();
   }

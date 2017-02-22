@@ -313,9 +313,6 @@ function panels_mini_load_all($reset = FALSE) {
       foreach ($panel_names as $name) {
         $cids[] = 'panels_mini_load:' . $name->name;
       }
-      if (empty($cids)) {
-        return array_filter($cache);
-      }
       $output = cache_get_multiple($cids, 'cache_panels');
       foreach ($output as $mini) {
         if (!empty($mini->data)) {

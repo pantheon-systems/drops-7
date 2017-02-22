@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file
+ * Some rudimentary tests for entity handling, will be overridden by others.
+ */
+
+abstract class PanelsEntityViewWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Admin user.
+   *
+   * @var \StdClass
+   */
+  protected $adminUser;
+
+  /**
+   * The task handler used for managing a specific entity type.
+   *
+   * @var \StdClass
+   */
+  protected $view_name = 'node_view';
+
+  /**
+   * The label used for this entity's task handler.
+   *
+   * @var \StdClass
+   */
+  protected $view_label = 'Node template';
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'panels';
+    $modules[] = 'page_manager';
+
+    parent::setUp($modules);
+
+    $permissions = array(
+      // Allow the user to access the Page Manager admin page.
+      'use page manager',
+
+      // Basic permissions for the module.
+      'use panels dashboard',
+
+      // General admin access.
+      'access administration pages',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    // Create the admin user.
+    $this->adminUser = $this->drupalCreateUser($permissions);
+  }
+
+  /**
+   * Ensure that the {ENTITY}_view toggle works correctly.
+   */
+  function testToggle() {
+    // Log in as the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Load the Panels dashboard.
+    $this->drupalGet('admin/structure/panels');
+    $this->assertResponse(200, 'Loaded the main Panels admin page.');
+
+    // Confirm that the Node View task handler is disabled.
+    $this->assertText(t($this->view_label));
+    $this->assertLinkByHref(url('admin/structure/pages/edit/' . $this->view_name, array('absolute' => FALSE)));
+    $xpath = $this->xpath("//tr[contains(@class,:tr)]/td/div/div/ul/li[contains(@class,:li)]/a", array(':tr' => 'page-task-' . $this->view_name, ':li' => 'first'));
+    $this->assertEqual($xpath[0][0], t('Enable'));
+
+    // Set the Node View handler to "off".
+    variable_set('page_manager_' . $this->view_name . '_disabled', TRUE);
+
+    // Load the Panels dashboard again.
+    $this->drupalGet('admin/structure/panels');
+    $this->assertResponse(200, 'Loaded the main Panels admin page.');
+
+    // Confirm that the Node View task handler is still disabled.
+    $this->assertText(t($this->view_label));
+    $this->assertNoLinkByHref(url('admin/structure/pages/nojs/disable/' . $this->view_name, array('absolute' => FALSE)));
+    $xpath = $this->xpath("//tr[contains(@class,:tr)]/td/div/div/ul/li[contains(@class,:li)]/a", array(':tr' => 'page-task-' . $this->view_name, ':li' => 'first'));
+    $this->assertEqual($xpath[0][0], t('Enable'));
+
+    // Set the Node View handler to "on".
+    variable_set('page_manager_' . $this->view_name . '_disabled', FALSE);
+
+    // Load the Panels dashboard again.
+    $this->drupalGet('admin/structure/panels');
+    $this->assertResponse(200, 'Loaded the main Panels admin page.');
+
+    // Confirm that the Node View task handler is now enabled.
+    $this->assertLinkByHref(url('admin/structure/pages/nojs/disable/' . $this->view_name, array('absolute' => FALSE)));
+    $xpath = $this->xpath("//tr[contains(@class,:tr)]/td/div/div/ul/li[contains(@class,:li)]/a", array(':tr' => 'page-task-' . $this->view_name, ':li' => 'last'));
+    $this->assertEqual($xpath[0][0], t('Disable'));
+  }
+
+}

@@ -56,13 +56,17 @@ files[] = tests/fpp.with_panels_and_entity.test
 test_dependencies[] = panelizer
 files[] = tests/fpp.with_panelizer.test
 
+; Test the interaction with the Pathauto module.
+test_dependencies[] = pathauto
+files[] = tests/fpp.with_pathauto.test
+
 ; Test the node revisions workflow with Revisioning module.
 test_dependencies[] = revisioning
 files[] = tests/fpp.with_revisioning.test
 
-; Information added by Drupal.org packaging script on 2016-05-04
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2016-11-05
+version = "7.x-1.11"
 core = "7.x"
 project = "fieldable_panels_panes"
-datestamp = "1462374853"
+datestamp = "1478371741"
 

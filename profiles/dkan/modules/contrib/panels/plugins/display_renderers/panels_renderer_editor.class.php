@@ -218,7 +218,7 @@ class panels_renderer_editor extends panels_renderer_standard {
   function get_display_links() {
     $links = array();
 
-    if (user_access('administer panels styles')) {
+    if (user_access('administer panels display styles')) {
       $style_links = $this->get_style_links('display');
       $links[] = array(
         'title' => '<span class="dropdown-header">' . t('Style') . '</span>' . theme_links(array('links' => $style_links, 'attributes' => array(), 'heading' => array())),
@@ -280,7 +280,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       ),
     );
 
-    if (user_access('administer panels styles')) {
+    if (user_access('administer panels region styles')) {
       $links[] = array(
         'title' => '<hr />',
         'html' => TRUE,
@@ -545,7 +545,7 @@ class panels_renderer_editor extends panels_renderer_standard {
         return 'update';
     }
 
-    return parent::get_panels_storage_op($method);
+    return parent::get_panels_storage_op_for_ajax($method);
   }
 
   /**

@@ -1,13 +1,19 @@
-/*
- * L.Class powers the OOP facilities of the library.
- * Thanks to John Resig and Dean Edwards for inspiration!
- */
+
+// @class Class
+// @aka L.Class
+
+// @section
+// @uninheritable
+
+// Thanks to John Resig and Dean Edwards for inspiration!
 
 L.Class = function () {};
 
 L.Class.extend = function (props) {
 
-	// extended class with the new prototype
+	// @function extend(props: Object): Function
+	// [Extends the current class](#class-inheritance) given the properties to be included.
+	// Returns a Javascript function that is a class constructor (to be called with `new`).
 	var NewClass = function () {
 
 		// call the constructor
@@ -16,21 +22,17 @@ L.Class.extend = function (props) {
 		}
 
 		// call all constructor hooks
-		if (this._initHooks) {
-			this.callInitHooks();
-		}
+		this.callInitHooks();
 	};
 
-	// instantiate class without calling constructor
-	var F = function () {};
-	F.prototype = this.prototype;
+	var parentProto = NewClass.__super__ = this.prototype;
 
-	var proto = new F();
+	var proto = L.Util.create(parentProto);
 	proto.constructor = NewClass;
 
 	NewClass.prototype = proto;
 
-	//inherit parent's statics
+	// inherit parent's statics
 	for (var i in this) {
 		if (this.hasOwnProperty(i) && i !== 'prototype') {
 			NewClass[i] = this[i];
@@ -50,8 +52,8 @@ L.Class.extend = function (props) {
 	}
 
 	// merge options
-	if (props.options && proto.options) {
-		props.options = L.extend({}, proto.options, props.options);
+	if (proto.options) {
+		props.options = L.Util.extend(L.Util.create(proto.options), props.options);
 	}
 
 	// mix given properties into the prototype
@@ -59,17 +61,13 @@ L.Class.extend = function (props) {
 
 	proto._initHooks = [];
 
-	var parent = this;
-	// jshint camelcase: false
-	NewClass.__super__ = parent.prototype;
-
 	// add method for calling all hooks
 	proto.callInitHooks = function () {
 
 		if (this._initHooksCalled) { return; }
 
-		if (parent.prototype.callInitHooks) {
-			parent.prototype.callInitHooks.call(this);
+		if (parentProto.callInitHooks) {
+			parentProto.callInitHooks.call(this);
 		}
 
 		this._initHooksCalled = true;
@@ -83,17 +81,22 @@ L.Class.extend = function (props) {
 };
 
 
-// method for adding properties to prototype
+// @function include(properties: Object): this
+// [Includes a mixin](#class-includes) into the current class.
 L.Class.include = function (props) {
 	L.extend(this.prototype, props);
+	return this;
 };
 
-// merge new default options to the Class
+// @function mergeOptions(options: Object): this
+// [Merges `options`](#class-options) into the defaults of the class.
 L.Class.mergeOptions = function (options) {
 	L.extend(this.prototype.options, options);
+	return this;
 };
 
-// add a constructor hook
+// @function addInitHook(fn: Function): this
+// Adds a [constructor hook](#class-constructor-hooks) to the class.
 L.Class.addInitHook = function (fn) { // (Function) || (String, args...)
 	var args = Array.prototype.slice.call(arguments, 1);
 
@@ -103,4 +106,5 @@ L.Class.addInitHook = function (fn) { // (Function) || (String, args...)
 
 	this.prototype._initHooks = this.prototype._initHooks || [];
 	this.prototype._initHooks.push(init);
+	return this;
 };

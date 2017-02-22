@@ -104,9 +104,9 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_content_types
   // The current function is called as part of the standard panel pane rendering
   // pipeline. To prevent a full list of FPP entities from being generated every
   // time that a panel is rendered, generate the list only when a request is
-  // made from an administrative URL.
+  // made from an administrative URL or Panel Nodes pages.
   // @see https://www.drupal.org/node/2374577
-  if (path_is_admin(current_path()) || preg_match('/panels/i', current_path())) {
+  if (path_is_admin(current_path()) || preg_match('#(panels|panel_content$)#i', current_path())) {
     $fpp_info = entity_get_info('fieldable_panels_pane');
     foreach ($fpp_info['bundles'] as $bundle_name => $bundle) {
       $ids = db_query('SELECT fpid FROM {fieldable_panels_panes} WHERE reusable = 1 AND bundle = :bundle', array(':bundle' => $bundle_name))->fetchCol();
@@ -179,14 +179,16 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_render($subty
       // Is this view mode configured?
       $is_view_mode_set = isset($settings['extra_fields']['display']['title'][$view_mode]['visible']);
 
-      // Is the title configured for this view mode?
-      $show_view_mode_title = ($is_view_mode_set && $settings['extra_fields']['display']['title'][$view_mode]['visible']);
-
       // Should the default view mode show the title?
       $show_default_title = !empty($settings['extra_fields']['display']['title']['default']['visible']);
 
+      // Is the title configured for this view mode?
+      $show_view_mode_title = ($is_view_mode_set && $settings['extra_fields']['display']['title'][$view_mode]['visible']);
+
       // Combine all of the above logic.
-      if (empty($settings['extra_fields']['display']) || (!$is_view_mode_set && $show_default_title) || $show_view_mode_title) {
+      if (empty($settings['extra_fields']['display'])
+          || (!$is_view_mode_set && $show_default_title)
+          || $show_view_mode_title) {
         $block->title = filter_xss_admin($entity->title);
       }
     }
@@ -436,6 +438,7 @@ function _fieldable_panels_panes_custom_content_type($entity) {
   }
 
   $info['entity_id'] = $info['name'];
+  $info['bundle'] = $entity->bundle;
   return $info;
 }
 

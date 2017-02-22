@@ -34,6 +34,13 @@ function workbench_moderation_router_item_page_callback($node) {
     require_once DRUPAL_ROOT . '/' . $router_item['include_file'];
   }
 
+  // Replace the node in the router arguments with the draft node.
+  foreach ($router_item['page_arguments'] as $index => $arg) {
+    if (is_object($arg) && isset($arg->nid) && $arg->nid == $node->nid) {
+      $router_item['page_arguments'][$index] = $node;
+    }
+  }
+
   // Call whatever function is assigned to the main node path but pass the
   // current node as an argument. This approach allows for the reuse of of Panel
   // definition acting on node/%node.

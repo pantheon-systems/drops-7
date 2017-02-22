@@ -42,8 +42,7 @@ module.exports = function(grunt) {
         options: {
           bases: ['./'],
           port: 8080,
-          hostname: '0.0.0.0',
-          livereload: true
+          hostname: '0.0.0.0'
         }
       }
     },
@@ -54,11 +53,9 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      files:  ['<%= jshint.files %>'],
-      tasks: ['jshint', 'concat', 'uglify'],
-      options: {
-        livereload: true
-      }
+      files: ['Gruntfile.js', 'src/**/*.js', 'examples/*.js' ],
+      tasks: ['concat', 'uglify'],
+      // tasks: ['jshint', 'concat', 'uglify'],
     },
     open: {
       all: {
@@ -70,13 +67,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-open');
   grunt.loadNpmTasks('grunt-express');
-  grunt.loadNpmTasks('grunt-livereload');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-concat');
 
   // Default task(s).
   grunt.registerTask('default', [
-    'express',
     'watch',
   ]);
 

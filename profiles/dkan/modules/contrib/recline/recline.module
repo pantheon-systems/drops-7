@@ -18,6 +18,27 @@ function recline_embedded() {
 }
 
 /**
+ * Check if bootstrap is already added.
+ */
+function is_boostrap_available() {
+  global $theme;
+  $themes = list_themes();
+  if ($theme == 'nuboot_radix' || isset($themes[$theme]->base_themes['nuboot_radix'])) {
+    return TRUE;
+  }
+  else {
+    $re = '/bootstrap(\\.min)?\\.js/';
+    $js = array_keys(drupal_add_js());
+    foreach ($js as $j) {
+      if (preg_match($re, $j)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function recline_menu() {
@@ -79,7 +100,7 @@ function recline_configuration_form() {
 }
 
 /**
- * Submit function for recline_configuration_form
+ * Submit function for recline_configuration_form.
  */
 function recline_configuration_form_save($form, &$form_state) {
   if (isset($form['preview_limit']['#value'])) {
@@ -122,8 +143,8 @@ function recline_add_cache_header() {
   // Support using APE module.
   if (module_exists('ape')) {
     $max_age = ape_cache_set();
-    // Check to see if another module or hook has already set an APE header. This
-    // allows rules or other module integration to take precedent.
+    // Check to see if another module or hook has already set an APE header.
+    // This allows rules or other module integration to take precedent.
     if (is_null($max_age)) {
       if (ape_check_path(variable_get('ape_alternatives', ''), $_GET['q'])) {
         $max_age = variable_get('ape_alternative_lifetime', 0);
@@ -171,19 +192,11 @@ function recline_theme() {
   return array(
     'recline_default_formatter' => array(
       'variables' => array('item' => NULL),
-      'file' => 'recline.field.inc',
-    ),
-    'recline_link_formatter' => array(
-      'variables' => array('item' => NULL),
-      'file' => 'recline.field.inc',
-    ),
-    'recline_url_formatter' => array(
-      'variables' => array('item' => NULL),
-      'file' => 'recline.field.inc',
+      'file' => 'recline.theme.inc',
     ),
     'recline_widget' => array(
       'render element' => 'element',
-      'file' => 'recline.field.inc',
+      'file' => 'recline.theme.inc',
     ),
     'recline_embed' => array(
       'variables' => array('title' => NULL, 'content' => NULL),
@@ -237,11 +250,6 @@ function recline_libraries_info() {
       ),
     ),
   );
-
-  if(!is_boostrap_available()) {
-    $libraries['recline']['files']['js'][] = 'vendor/bootstrap/3.2.0/js/bootstrap.js';
-    $libraries['recline']['files']['css'][] = 'vendor/bootstrap/3.2.0/css/bootstrap.css';
-  }
 
   $libraries['lodash'] = array(
     'name' => 'lodash',
@@ -420,34 +428,96 @@ function recline_libraries_info() {
         'dist/MarkerCluster.Default.css',
       ),
       'js' => array(
-        'dist/leaflet.markercluster.js'
+        'dist/leaflet.markercluster.js',
       ),
     ),
   );
+
+  $libraries['xls'] = array(
+    'name' => 'xls',
+    'vendor url' => 'https://github.com/NuCivic/recline.backend.xlsx',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'dist/recline.backend.xlsx.min.js',
+      ),
+    ),
+  );
+
+  $libraries['jsxlsx'] = array(
+    'name' => 'jsxlsx',
+    'vendor url' => 'https://github.com/SheetJS/js-xls',
+    'version' => '0.7.5',
+    'files' => array(
+      'js' => array(
+        'dist/xlsx.core.min.js',
+      ),
+    ),
+  );
+
+  $libraries['jsonview'] = array(
+    'name' => 'jQuery JSONView',
+    'vendor url' => 'https://github.com/yesmeck/jquery-jsonview',
+    'download url' => 'https://github.com/yesmeck/jquery-jsonview',
+    'path' => '',
+    'version' => array(
+      'file' => 'bower.json',
+      'pattern' => '@+([0-9][.][0-9][.][0-9])@',
+      'lines' => 4,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/jquery.jsonview.js',
+      ),
+      'css' => array(
+        'dist/jquery.jsonview.css',
+      ),
+    ),
+  );
+
+  $libraries['highlight'] = array(
+    'name' => 'Highlight.js',
+    'vendor url' => 'https://github.com/isagalaev/highlight.js',
+    'download url' => 'https://github.com/isagalaev/highlight.js',
+    'path' => '',
+    'version' => '8.8.0',
+    'files' => array(
+      'js' => array(
+        'highlight.pack.js',
+      ),
+      'css' => array(
+        'styles/default.css',
+      ),
+    ),
+  );
+
+  if (!is_boostrap_available()) {
+    $libraries['recline']['files']['js'][] = 'vendor/bootstrap/3.2.0/js/bootstrap.js';
+    $libraries['recline']['files']['css'][] = 'vendor/bootstrap/3.2.0/css/bootstrap.css';
+  }
 
   return $libraries;
 }
 
 /**
- * Check if bootstrap is already added.
+ * Implements hook_library().
  */
-function is_boostrap_available(){
-  global $theme;
-  $themes = list_themes();
-  $base_theme = drupal_find_base_themes($themes, $theme);
+function recline_library() {
+  $module_path = drupal_get_path('module', 'recline');
+  $libraries['highlight'] = array(
+    'title' => 'Highlight.js',
+    'website' => 'https://github.com/isagalaev/highlight.js',
+    'version' => '8.8.0',
+    'js' => array(
+      $module_path . '/lib/highlight/highlight.pack.js' => array('group' => JS_DEFAULT),
+    ),
+    'css' => array(
+      $module_path . '/lib/highlight/styles/default.css',
+    ),
+  );
 
-  if($theme == 'nuboot_radix' || in_array('NuBoot Radix', $base_theme)) {
-    return TRUE;
-  } else {
-    $re = '/bootstrap(\\.min)?\\.js/';
-    $js = array_keys(drupal_add_js());
-    foreach ($js as $j) {
-      if(preg_match($re, $j)) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-  }
+  return $libraries;
 }
 
 /**
@@ -497,4 +567,16 @@ function recline_file_download($uri, $field_type = 'file') {
  */
 function recline_file_resup_supported_field_widget_types() {
   return 'recline_widget';
+}
+
+/**
+ * Returns array of possible view types supported by Recline.
+ */
+function recline_view_options() {
+  $options = array(
+    'grid' => t('Grid'),
+    'graph' => t('Graph'),
+    'map' => t('Map'),
+  );
+  return $options + module_invoke_all('recline_view_options');
 }

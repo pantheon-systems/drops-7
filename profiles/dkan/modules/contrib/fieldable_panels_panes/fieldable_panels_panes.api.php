@@ -107,5 +107,29 @@ function hook_fieldable_panels_panes_content_types_alter(&$types, $bundle, $enti
 }
 
 /**
+ * Allow other modules to control access to Fieldable Panels Pane objects.
+ *
+ * @param string $op
+ *   The operation to be performed.
+ * @param $entity
+ *   The fieldable panels pane that is being accessed.
+ * @param $account
+ *   The user account whose access should be checked.
+ *
+ * @return TRUE|FALSE|NULL
+ *   Returns TRUE to allow access, FALSE to deny, or NULL to pass the access
+ *   decision off to the next hook or the module itself.
+ *
+ * @ingroup fieldable_panels_pane_api_hooks
+ */
+function hook_fieldable_panels_panes_access($op, $entity = NULL, $account = NULL) {
+  // Example implementation which restricts access to edit reusable panes.
+  if ($op == 'update' && !empty($entity) && $entity->reusable && !user_access('administer fieldable panels panes')) {
+    return FALSE;
+  }
+  return NULL;
+}
+
+/**
  * @} End of "addtogroup hooks".
  */

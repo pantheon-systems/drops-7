@@ -45,7 +45,7 @@ svg {
   overflow: auto;
   padding: 0px;
 }
-#chart-selector li{
+#chart-selector button{
   height: 180px;
   width: 260px;
   background-size: 260px 180px;
@@ -125,12 +125,12 @@ svg {
 /**
  * Charts thumbnails
  */
-#chart-selector li:hover {
+#chart-selector button:hover {
   border-color: #0088cc;
   cursor: pointer;
 }
 
-#chart-selector li.selected {
+#chart-selector button.selected {
   border-color: #0088cc;
 }
 

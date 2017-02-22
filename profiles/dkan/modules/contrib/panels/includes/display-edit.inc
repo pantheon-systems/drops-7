@@ -302,7 +302,7 @@ function panels_edit_display_settings_form($form, &$form_state) {
  * Validate the layout settings form.
  */
 function panels_edit_display_settings_form_validate($form, &$form_state) {
-  if ($function = panels_plugin_get_function('layout', $form_state['layout'], 'settings validate')) {
+  if ($function = panels_plugin_get_function('layouts', $form_state['layout'], 'settings validate')) {
     $function($form_state['values']['layout_settings'], $form['layout_settings'], $form_state['display'], $form_state['layout'], $form_state['display']->layout_settings);
   }
 }
@@ -312,7 +312,7 @@ function panels_edit_display_settings_form_validate($form, &$form_state) {
  */
 function panels_edit_display_settings_form_submit($form, &$form_state) {
   $display = &$form_state['display'];
-  if ($function = panels_plugin_get_function('layout', $form_state['layout'], 'settings submit')) {
+  if ($function = panels_plugin_get_function('layouts', $form_state['layout'], 'settings submit')) {
     $function($form_state['values']['layout_settings'], $display, $form_state['layout'], $display->layout_settings);
   }
 

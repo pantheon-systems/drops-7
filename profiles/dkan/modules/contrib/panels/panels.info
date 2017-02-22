@@ -10,9 +10,17 @@ files[] = includes/legacy.inc
 files[] = includes/plugins.inc
 files[] = plugins/views/panels_views_plugin_row_fields.inc
 
-; Information added by Drupal.org packaging script on 2016-08-17
-version = "7.x-3.6"
+; Tests.
+; Task handlers for entities. These inherit off one base class to make it easier
+; to repeat tests across multiple entity types.
+files[] = tests/PanelsEntityViewWebTestCase.test
+files[] = tests/PanelsNodeViewWebTestCase.test
+files[] = tests/PanelsTermViewWebTestCase.test
+files[] = tests/PanelsUserViewWebTestCase.test
+
+; Information added by Drupal.org packaging script on 2016-10-16
+version = "7.x-3.8"
 core = "7.x"
 project = "panels"
-datestamp = "1471447743"
+datestamp = "1476582295"
 

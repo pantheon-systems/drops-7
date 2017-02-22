@@ -216,7 +216,12 @@ function _file_resource_create_raw() {
     // file_save_upload() validates the file extension and name's length. File
     // size is limited by the upload_max_filesize directive in php.ini.
     $scheme = file_default_scheme();
-    $file = file_save_upload($field_name, array(), "$scheme://");
+    // Set file validators: allowed extension
+    $validators = array();
+    if ($extensions = variable_get('services_allowed_extensions', SERVICES_ALLOWED_EXTENSIONS)) {
+      $validators['file_validate_extensions'] = $extensions;
+    }
+    $file = file_save_upload($field_name, $validators, "$scheme://");
 
     if (!empty($file->fid)) {
       // Change the file status from temporary to permanent.
@@ -433,8 +438,8 @@ function _services_file_check_destination($destination) {
  *   A safe file name and extension.
  */
 function _services_file_check_name_extension($name) {
-  // This whitelist is copied from file_save_upload().
-  $extensions = 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp';
+  //Fetch the file extensions set in the variable at the time module is enabled
+  $extensions = variable_get('services_allowed_extensions', SERVICES_ALLOWED_EXTENSIONS);
 
   // Get the part of the name after the last period (".").
   $name = explode('.', $name);

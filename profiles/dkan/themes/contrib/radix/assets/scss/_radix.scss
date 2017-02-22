@@ -1,0 +1,20 @@
+// SASS partials import
+// -----------------------------------------------------------------------------
+@import "radix/mixins";
+
+// Layouts
+// -----------------------------------------------------------------------------
+@import "radix/layout";
+@import "radix/maintenance";
+
+// Components.
+// -----------------------------------------------------------------------------
+@import "radix/admin";
+@import "radix/comment";
+@import "radix/form";
+@import "radix/modal";
+@import "radix/nav";
+@import "radix/node";
+@import "radix/panel";
+@import "radix/structure";
+@import "radix/view";

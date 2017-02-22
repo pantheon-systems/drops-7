@@ -1,0 +1,37 @@
+{
+  "name": "radix",
+  "homepage": "http://radixtheme.org",
+  "version": "7.3.3",
+  "authors": [
+    "Arshad Chummun <arshad@chummun.com>"
+  ],
+  "description": "Base theme for Drupal and BackdropCMS.",
+  "moduleType": "globals",
+  "main": [
+    "assets/scss/_radix.scss",
+    "assets/js/radix.script.js"
+  ],
+  "keywords": [
+    "drupal",
+    "themes",
+    "bootstrap",
+    "sass"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "includes",
+    "kits",
+    "templates",
+    "logo.png",
+    "radix.drush.inc",
+    "radix.info",
+    "screenshot.png",
+    "template.php",
+    "THEMING.md"
+  ]
+}

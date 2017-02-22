@@ -6,7 +6,7 @@
  * Core functionality for the Panels engine.
  */
 
-define('PANELS_REQUIRED_CTOOLS_API', '2.0.8');
+define('PANELS_REQUIRED_CTOOLS_API', '2.0.9');
 
 /**
  * The current working panels version.
@@ -20,7 +20,7 @@ define('PANELS_REQUIRED_CTOOLS_API', '2.0.8');
  *   ; Requires Panels v7.x-3.4 or newer.
  *   dependencies[] = panels (>=3.4)
  */
-define('PANELS_VERSION', '7.x-3.6');
+define('PANELS_VERSION', '7.x-3.8');
 
 
 define('PANELS_TITLE_FIXED', 0); // Hide title use to be true/false. So false remains old behavior.
@@ -317,7 +317,19 @@ function panels_permission() {
     ),
     'administer panels styles' => array(
       'title' => t("Administer Panels styles"),
+      'description' => t("DEPRECATED: Modules using this permission should use specific style permissions. See Issue #2329419 for more info."),
+    ),
+    'administer panels display styles' => array(
+      'title' => t("Administer Panels display styles"),
+      'description' => t("Allows a user to administer the styles of Panel displays."),
+    ),
+    'administer panels pane styles' => array(
+      'title' => t("Administer Panels pane styles"),
       'description' => t("Allows a user to administer the styles of Panel panes."),
+    ),
+    'administer panels region styles' => array(
+      'title' => t("Administer Panels region styles"),
+      'description' => t("Allows a user to administer the styles of Panel regions."),
     ),
     'use panels caching features' => array(
       'title' => t("Configure caching settings on Panels"),
@@ -333,17 +345,6 @@ function panels_permission() {
     ),
   );
 }
-
-/**
- * Implementation of hook_flush_caches().
- *
- * We implement this so that we can be sure our legacy rendering state setting
- * in $conf is updated whenever caches are cleared.
- */
-//function panels_flush_caches() {
-//  $legacy = panels_get_legacy_state();
-//  $legacy->determineStatus();
-//}
 
 /**
  * Implements hook_flush_caches().
@@ -664,7 +665,6 @@ function panels_edit_layout($display, $finish, $destination = NULL, $allowed_lay
 
 /**
  * Forms the basis of a panel display
- *
  */
 class panels_display {
   var $args = array();
@@ -1779,38 +1779,6 @@ function panels_page_wizard_panels_cache_set($key, $cache) {
   $wizard_cache = page_manager_get_wizard_cache($key);
   $wizard_cache->display_cache = $cache;
   page_manager_set_wizard_cache($wizard_cache);
-}
-
-/**
- * Alter the page wizard basic page, when panels is selected, to inject page
- * manager as the storage plugin for panels.
- * @param $form
- * @param $form_state
- */
-function panels_form_page_manager_page_form_basic_alter(&$form, &$form_state) {
-  $form['#validate'][] = 'panels_page_manager_handler_add_validate';
-}
-
-/**
- * Alter the variant add page, so when panels is selected, page manager is the
- * storage plugin for panels.
- * @param $form
- * @param $form_state
- */
-function panels_form_page_manager_handler_add_alter(&$form, &$form_state) {
-  $form['#validate'][] = 'panels_page_manager_handler_add_validate';
-}
-
-/**
- * Perform the validation check to see if panel context is selected to use
- * page manager as the storage plugin.
- * @param $form
- * @param $form_state
- */
-function panels_page_manager_handler_add_validate($form, &$form_state) {
-  if($form_state['values']['handler'] == 'panel_context') {
-    $form_state['page']->storage_type = 'page_manager';
-  }
 }
 
 /**

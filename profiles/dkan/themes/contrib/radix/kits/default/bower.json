@@ -1,5 +1,5 @@
 {
-  "name": "{{Name}}",
+  "name": "{{machine_name}}",
   "description": "{{Description}}",
   "private": true,
   "ignore": [
@@ -19,7 +19,6 @@
   ],
   "dependencies": {
     "bootstrap-sass": "~3.3.5",
-    "font-awesome": "fontawesome#~4.4.0",
-    "compass-mixins": "~1.0.2"
+    "font-awesome": "fontawesome#~4.4.0"
   }
 }

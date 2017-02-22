@@ -28,6 +28,7 @@ dependencies[] = views_content
 stylesheets[all][] = panopoly-widgets.css
 stylesheets[all][] = panopoly-widgets-spotlight.css
 features[ctools][] = file_entity:file_default_displays:1
+features[ctools][] = linkit:linkit_profiles:1
 features[ctools][] = views:views_default:3.0
 features[defaultconfig][] = strongarm:media_wysiwyg_default_render
 features[defaultconfig][] = user_default_permissions:access media browser
@@ -88,6 +89,7 @@ features[field_base][] = field_basic_file_file
 features[field_base][] = field_basic_file_text
 features[field_base][] = field_basic_image_caption
 features[field_base][] = field_basic_image_image
+features[field_base][] = field_basic_image_link
 features[field_base][] = field_basic_spotlight_duration
 features[field_base][] = field_basic_spotlight_items
 features[field_base][] = field_basic_spotlight_pager
@@ -101,6 +103,7 @@ features[field_instance][] = fieldable_panels_pane-basic_file-field_basic_file_f
 features[field_instance][] = fieldable_panels_pane-basic_file-field_basic_file_text
 features[field_instance][] = fieldable_panels_pane-image-field_basic_image_caption
 features[field_instance][] = fieldable_panels_pane-image-field_basic_image_image
+features[field_instance][] = fieldable_panels_pane-image-field_basic_image_link
 features[field_instance][] = fieldable_panels_pane-map-field_map_address
 features[field_instance][] = fieldable_panels_pane-map-field_map_information
 features[field_instance][] = fieldable_panels_pane-quick_links-field_quick_links_links
@@ -118,10 +121,11 @@ features[file_display][] = video__preview__media_youtube_image
 features[file_display][] = video__teaser__media_youtube_image
 features[file_display][] = video__teaser__media_youtube_video
 features[views_view][] = panopoly_widgets_general_content
+features_exclude[dependencies][linkit] = linkit
 
-; Information added by Drupal.org packaging script on 2016-06-16
-version = "7.x-1.37"
+; Information added by Drupal.org packaging script on 2016-11-17
+version = "7.x-1.41"
 core = "7.x"
 project = "panopoly_widgets"
-datestamp = "1466091963"
+datestamp = "1479408816"
 

@@ -70,6 +70,13 @@ class PanelsPaneController extends DrupalDefaultEntityController {
       return TRUE;
     }
 
+    // On the first FALSE we return, otherwise we use our own access check.
+    foreach (module_invoke_all('fieldable_panels_panes_access', $op, $entity, $account) as $result) {
+      if ($result === FALSE) {
+        return $result;
+      }
+    }
+
     $bundle = is_string($entity) ? $entity : $entity->bundle;
 
     if ($op == 'create') {

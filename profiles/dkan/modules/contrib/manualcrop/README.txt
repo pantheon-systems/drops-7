@@ -13,22 +13,22 @@ Dependencies
         + Download: https://github.com/desandro/imagesloaded/archive/v2.1.2.tar.gz
     - imgAreaSelect:
         + Website: http://odyniec.net/projects/imgareaselect
-        + Download: http://odyniec.net/projects/imgareaselect/jquery.imgareaselect-0.9.10.zip
+        + Download: https://github.com/odyniec/imgareaselect/archive/v0.9.11-rc.1.tar.gz
 
 Installation
 ------------
 Start by downloading and installing the Libraries 2.x module.
 
 Next download and extract the imagesLoaded plugin, rename the extracted folder to
-"imagesloaded" and place it under "sites/all/libraries". The plugin should
-now be located at "sites/all/libraries/imagesloaded/jquery.imagesloaded.min.js"
+"jquery.imagesloaded" and place it under "sites/all/libraries". The plugin should
+now be located at "sites/all/libraries/jquery.imagesloaded/jquery.imagesloaded.min.js".
 
 Please note that the 3.x version can also be used, but it depends on jQuery 1.5
 which can only be obtained by installing the jQuery Update module.
 
 Now download and extract the imgAreaSelect plugin, rename extracted folder to
-"imgareaselect" and copy it into "sites/all/libraries". The plugin should
-now be located at "sites/all/libraries/imgareaselect/jquery.imgareaselect.dev.js".
+"jquery.imgareaselect" and copy it into "sites/all/libraries". The plugin should
+now be located at "sites/all/libraries/jquery.imgareaselect/jquery.imgareaselect.dev.js".
 
 When finished you can activate the module via the Modules page!
 
@@ -49,3 +49,8 @@ and configure Manual Crop (open the "Manual Crop" fieldset) for the current fiel
 
 After saving the settings you should return to the content type overview and click
 on "manage display" so you can set the (cropped) image style that should be used.
+
+Manual Crop adds a "?c=md5_hash" query string parameter to the image url so the
+at client-side cached image gets refreshed whenever the crop selection changes.
+To prevent an SEO impact, this can be disabled by unchecking the
+"Reload cache-control" setting at admin/config/media/manualcrop.

@@ -1,0 +1,599 @@
+<?php
+
+/**
+ * @file
+ * Tests for drafty.module.
+ */
+
+/**
+ * Defines a base class for testing Drafty revision support.
+ */
+class DraftyWebTestCase extends NodeWebTestCase {
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'drafty';
+    parent::setUp($modules);
+  }
+
+  /**
+   * Make it easy for drafty_enforce to subclass.
+   *
+   * @param $entity
+   *   An entity object.
+   */
+  protected function setRevision($entity) {
+    $entity->revision = TRUE;
+  }
+}
+
+/**
+ * Test drafty revision support with a single entity.
+ */
+class DraftyTestCase extends DraftyWebTestCase {
+
+  protected $type;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty',
+      'description' => 'Test revision manipulation.',
+      'group' => 'Drafty',
+    );
+  }
+
+
+  /**
+   * Create a node and check creation of draft and published revisions. 
+   */
+  function testDraftRevisions() {
+    $node = new stdClass();
+    $node->title = 'Title A';
+    $node->type = 'article';
+    $node->status = 1;
+    $this->setRevision($node);
+    node_save($node);
+
+    // Save the vid for later comparison.
+    $published_vid = $node->vid;
+
+    // Save a new draft.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $node->title = 'Title B';
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+
+    $draft_vid = $node->vid;
+    // Confirm that the published and draft version IDs differ.
+    $this->assertNotEqual($published_vid, $draft_vid);
+
+    // Confirm that loading the node gets the published revision.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $this->assertNotEqual($node->vid, $draft_vid);
+  }
+}
+
+/**
+ * Test drafty revision support with field collections.
+ */
+class DraftyFieldCollectionTest extends DraftyWebTestCase {
+
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'field_collection';
+    parent::setUp($modules);
+
+    $field = array(
+      'field_name' => 'field_collection_test',
+      'type' => 'field_collection',
+      'cardinality' => 5,
+    );
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => 'field_collection_test',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    );
+    field_create_instance($instance);
+
+    // Add a text field to the field collection for more human readable testing.
+    $field = array(
+      'field_name' => 'field_fc_title',
+      'type' => 'text',
+    );
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => 'field_fc_title',
+      'entity_type' => 'field_collection_item',
+      'bundle' => 'field_collection_test',
+    );
+    field_create_instance($instance);
+  }
+
+  protected $type;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty field collection',
+      'description' => 'Test revision manipulation with field collections.',
+      'group' => 'Drafty',
+    );
+  }
+
+  function testDraftyFieldCollection() {
+    // Create an initial node with no field collection content.
+    $node = new stdClass();
+    $node->title = 'Title A';
+    $node->type = 'article';
+    $node->status = 1;
+    $this->setRevision($node);
+    node_save($node);
+
+    // Save the vid for later comparison.
+    $published_vid = $node->vid;
+
+    // Save a new draft of the node with the field collection field populated.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $node->title = 'Title B';
+    $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_collection_test'));
+    $field_collection_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title A';
+    $node->field_collection_test[LANGUAGE_NONE][0]['entity'] = $field_collection_item;
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+
+    $draft_vid = $node->vid;
+    // Confirm that the published and draft version IDs differ.
+    $this->assertNotEqual($published_vid, $draft_vid);
+
+    // Confirm that loading the node gets the published revision.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $this->assertEqual($node->field_collection_test, array());
+
+    // Now publish the draft.
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $this->assertNotEqual($node->vid, $draft_vid);
+
+    // Now update the field collection with a new value for the text field.
+    // Also add a new field collection.
+    $fc_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title B';
+    $node->field_collection_test[LANGUAGE_NONE][0]['entity'] = $fc_item;
+    $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_collection_test'));
+    $field_collection_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title C';
+    $field_collection_item->setHostEntity('node', $node);
+    $node->title = 'Title C';
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    $node->field_collection_test[LANGUAGE_NONE][1]['entity'] = $field_collection_item;
+    node_save($node);
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+
+    $new_draft_vid = $node->vid;
+    $node = node_load($node->nid);
+    // Ensure the version ID increments.
+    $this->assertNotEqual($draft_vid, $new_draft_vid);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    // Ensure the second field collection is not populated in the published
+    // revision.
+    $this->assertTrue(!isset($node->field_collection_test[LANGUAGE_NONE][1]));
+
+    // Publish the new draft.
+    $vid = drafty()->publishRevision('node', $node->nid, $new_draft_vid);
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title C');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][1]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title C');
+    $this->assertFieldCollectionArchivedCount(0);
+    $this->assertFieldCollectionNotArchivedCount(2);
+
+    // The published version should also increment the version ID.
+    $this->assertNotEqual($node->vid, $draft_vid);
+    $this->assertNotEqual($node->vid, $new_draft_vid);
+    $this->assertTrue($node->vid > $new_draft_vid);
+
+    // Republish the old revision.
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $this->assertTrue(!isset($node->field_collection_test[LANGUAGE_NONE][1]));
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+    $this->assertNotEqual($node->vid, $new_draft_vid);
+    $this->assertNotEqual($node->vid, $draft_vid);
+
+    // Explicitly load the non-default revision and confirm the field collection
+    // is marked archived.
+    $node = node_load($node->nid, $new_draft_vid);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][1]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title C');
+    $this->assertFalse($fc_item->archived);
+
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+  }
+
+  protected function assertFieldCollectionArchivedCount($count) {
+    $archived_count = db_query('SELECT COUNT(*) FROM {field_collection_item} WHERE archived = 1')->fetchField();
+    $this->assertEqual($archived_count, $count);
+  }
+  protected function assertFieldCollectionNotArchivedCount($count) {
+    $not_archived_count = db_query('SELECT COUNT(*) FROM {field_collection_item} WHERE archived = 0')->fetchField();
+    $this->assertEqual($not_archived_count, $count);
+  }
+
+
+}
+
+/**
+ * Test draft revisions with entity translation.
+ */
+class DraftyEtTest extends EntityTranslationTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty Entity Translation',
+      'description' => 'Test revision manipulation with entity translation',
+      'group' => 'Drafty',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('locale', 'entity_translation', 'drafty_enforce', 'drafty_1992010');
+    $this->login($this->getAdminUser());
+    $this->addLanguage('en');
+    $this->addLanguage('es');
+    $this->configureContentType();
+    $this->login($this->getTranslatorUser());
+  }
+
+  /**
+
+   * Create a translation.
+   *
+   * This overrides because with drafty, asserting an 'edit' link for a
+   * translation fails when the revision with the added translation has not yet
+   * been published.
+   *
+   * @param $node
+   *   Node of the basic page to create translation for.
+   * @param $title
+   *   Title of the basic page in the specified language.
+   * @param $body
+   *   Body of the basic page in the specified language.
+   * @param $langcode
+   *   The language code to be assigned to the specified values.
+   */
+  function createTranslation($node, $title, $body, $langcode, $source_langcode = 'en') {
+    $this->drupalGet('node/' . $node->nid . '/edit/add/' . $source_langcode . '/' . $langcode);
+
+    $body_key = "body[$langcode][0][value]";
+    $this->assertFieldByXPath("//textarea[@name='$body_key']", $node->body[$source_langcode][0]['value'], 'Original body value correctly populated.');
+    $this->assertFieldById('edit-body-' . $langcode . '-add-more', t('Add another item'), t('Add another item button found.'));
+
+    $edit = array();
+    $edit[$body_key] = $body;
+
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->drupalGet('node/' . $node->nid . '/translate');
+
+    return $node;
+  }
+
+  /**
+   * Test if field based translation works.
+   *
+   * Enable field based translation for basic pages. Add a field with a
+   * cardinality higher than 1, to test if field_default_extract_form_values()
+   * is invoked. Create a basic page and translate it.
+   */
+  function testFieldTranslation() {
+    // Create Basic page in English.
+    $node_title = $this->randomName();
+    $node_body = $this->randomName();
+    $node = $this->createPage($node_title, $node_body, 'en');
+    $original_version = node_load($node->nid, NULL, TRUE);
+
+    // Submit translation in Spanish.
+    $node_translation_title = $this->randomName();
+    $node_translation_body = $this->randomName();
+    $node_translation = $this->createTranslation($node, $node_translation_title, $node_translation_body, 'es');
+    $published_version = node_load($node->nid, NULL, TRUE);
+
+    // At this point there should be three versions of the node:
+    //  - the original version with no translation.
+    //  - an unpublished version with a translation.
+    //  - the published version with no translation, identical to the original.
+    $this->assertTrue(!isset($original_version->body['es']), 'No Spanish translation on the original version');
+    $this->assertTrue(!isset($published_version->body['es']), 'No Spanish translation on the published version');
+
+    //  Drafty doesn't allow us to load the draft revision while it's being
+    //  created by design, so find it manually based on the two revisions IDs
+    //  we know about.
+    $vid = db_select('node_revision')
+      ->fields('node_revision', array('vid'))
+      ->condition('nid', $node->nid)
+      ->condition('vid', $original_version->vid, '>')
+      ->condition('vid', $published_version->vid, '<')
+      ->execute()->fetchField();
+
+    $draft_version = node_load($node->nid, $vid);
+    $this->assertTrue($draft_version->body['es'], 'Spanish translation on the draft version');
+
+    // Now explicitly publish the draft.
+    drafty()->publishRevision('node', $node->nid, $draft_version->vid);
+    $new_published_version = node_load($node->nid, NULL, TRUE);
+    $this->assertTrue($draft_version->body['es'], 'Spanish translation on the newly published version');
+
+    // Now re-publish the original version, and ensure the translation is gone
+    // again.
+    drafty()->publishRevision('node', $node->nid, $original_version->vid);
+    $re_published_original = node_load($node->nid, NULL, TRUE);
+    $this->assertTrue(!isset($original_version->body['es']), 'No Spanish translation on the re-published original version');
+  }
+}
+
+/**
+ * Tests for legacy field replacement.
+ */
+class DraftyTitleTranslationTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty with title translation',
+      'description' => 'Test replaced field translation.',
+      'group' => 'Drafty',
+    );
+  }
+
+  protected function setUp() {
+    parent::setUp('locale', 'entity_translation', 'title', 'drafty', 'drafty_enforce', 'drafty_1992010');
+
+    // Create a power user.
+    $admin_user = $this->drupalCreateUser(array('administer modules',  'view the administration theme', 'administer languages', 'administer entity translation', 'translate any entity'));
+    $this->drupalLogin($admin_user);
+
+    // Enable a translation language.
+    $edit = array('langcode' => 'it');
+    $this->drupalPost('admin/config/regional/language/add', $edit, t('Add language'));
+    $this->assertTrue(drupal_multilingual(), t('Italian language installed.'));
+
+    // Enable URL language negotiation.
+    $name = 'language_content[enabled][locale-url]';
+    $edit = array($name => 1);
+    $this->drupalPost('admin/config/regional/language/configure', $edit, t('Save settings'));
+    $this->assertFieldByName($name, 1, t('URL language negotiation enabled.'));
+
+    // Enable node translation.
+    $name = 'entity_translation_entity_types[node]';
+    $edit = array($name => 1);
+    $this->drupalPost('admin/config/regional/entity_translation', $edit, t('Save configuration'));
+    $this->assertFieldByName($name, 'node', t('Node translation enabled.'));
+
+    // Replace the title field.
+    $entity_type = 'node';
+    foreach (title_field_replacement_info($entity_type) as $legacy_field => $info) {
+      title_field_replacement_toggle($entity_type, 'page', $legacy_field);
+      $t_args = array('%legacy_field' => $legacy_field);
+      $this->assertTrue(field_info_instance($entity_type, $info['field']['field_name'], 'page'), t('The %legacy_field field has been correctly replaced.', $t_args));
+    }
+
+    // Ensure static caches do not interfere with API calls.
+    drupal_static_reset();
+  }
+
+  /**
+   * Tests title module interaction with draft translation creation.
+   */
+  public function testProgrammaticTranslationWorkflow() {
+    // Create a node and assign it an original language different from
+    // the default language.
+    $langcode = 'it';
+    $original_values = array(
+      'title' => $langcode . '_' . $this->randomName(),
+    );
+
+    $node = (object) ($original_values + array(
+      'type' => 'page',
+      'status' => 1,
+    ));
+    entity_translation_get_handler('node', $node)->setOriginalLanguage($langcode);
+    $node->language = $langcode;
+    node_save($node);
+    $original_vid = $node->vid;
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field values correctly created from the legacy field values.');
+
+    // Pollute synchronization cache to ensure the expected values are stored
+    // anyway.
+    title_entity_sync('node', $node, $langcode);
+
+    // Create a translation using the default language.
+    $translation_langcode = language_default()->language;
+    $translated_values = array(
+      'title' => $translation_langcode . '_' . $this->randomName(),
+    );
+    foreach ($translated_values as $name => $value) {
+      $node->{$name} = $value;
+    }
+    $translation = array(
+      'language' => $translation_langcode,
+      'source' => $langcode,
+      'uid' => $this->loggedInUser->uid,
+      'status' => 1,
+      'translate' => 0,
+      'created' => REQUEST_TIME,
+      'changed' => REQUEST_TIME,
+    );
+    entity_translation_get_handler('node', $node)->setTranslation($translation);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $new_vid = $node->vid;
+    //  Drafty doesn't allow us to load the draft revision while it's being
+    //  created by design, so find it manually based on the two revisions IDs
+    //  we know about.
+    $vid = db_select('node_revision')
+      ->fields('node_revision', array('vid'))
+      ->condition('nid', $node->nid)
+      ->condition('vid', $original_vid, '>')
+      ->condition('vid', $new_vid, '<')
+      ->execute()->fetchField();
+
+    $node = node_load($node->nid, $vid, TRUE);
+
+    $vids = db_query('SELECT vid FROM {node_revision} WHERE nid = :nid', array(':nid' => $node->nid))->fetchCol();
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    // Even though the language is set to that of the translation, no
+    // translation should happen since it's in a draft revision.
+    $this->assertFalse($this->checkFieldValues($node, $translated_values, $translation_langcode), 'Field translation for draft revision does not override.');
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field original values correctly preserved.');
+
+    drafty()->publishRevision('node', $node->nid, $vid);
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $this->assertTrue($this->checkFieldValues($node, $translated_values, $translation_langcode), 'Field translation overrides once draft is published.');
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode, FALSE), 'Replacing field original values correctly preserved.');
+
+    // Delete the translation.
+    entity_translation_get_handler('node', $node)->removeTranslation($translation_langcode);
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $langcode);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field translations correctly deleted.');
+
+    // Make the node language neutral.
+    entity_translation_get_handler('node', $node)->setOriginalLanguage(LANGUAGE_NONE);
+    foreach ($original_values as $name => $value) {
+      $field_name = $name . '_field';
+      $node->{$field_name}[LANGUAGE_NONE] = $node->{$field_name}[$langcode];
+      $node->{$field_name}[$langcode] = array();
+    }
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, LANGUAGE_NONE), 'Term original language correctly changed to the former translation language.');
+
+    // Change the node language to the former translation language.
+    entity_translation_get_handler('node', $node)->setOriginalLanguage($translation_langcode);
+    foreach ($original_values as $name => $value) {
+      $field_name = $name . '_field';
+      $node->{$field_name}[$translation_langcode] = $node->{$field_name}[LANGUAGE_NONE];
+      $node->{$field_name}[LANGUAGE_NONE] = array();
+    }
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $translation_langcode), 'Term original language correctly changed to language neutral.');
+
+    // Make a replacing field untranslatable and change its value.
+    $field_name = 'title_field';
+    $field = field_info_field($field_name);
+    $field['translatable'] = FALSE;
+    field_update_field($field);
+    $original_values['title'] = LANGUAGE_NONE . '_' . $this->randomName();
+    $node->title = $original_values['title'];
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertEqual($node->{$field_name}[LANGUAGE_NONE][0]['value'], $original_values['title'], 'Untranslatable replacing field on translatable entity correctly handled.');
+  }
+
+  /**
+   * Loads a term using the given language as active language.
+   */
+  protected function nodeLoad($nid, $langcode = NULL) {
+    drupal_static_reset();
+    title_active_language($langcode);
+    return node_load($nid, NULL, TRUE);
+  }
+
+  /**
+   * Returns the drupalPost() $edit array corresponding to the given values.
+   */
+  protected function editValues($values, $langcode) {
+    $edit = array();
+    foreach ($values as $name => $value) {
+      $edit["{$name}_field[{$langcode}][0][value]"] = $value;
+    }
+    return $edit;
+  }
+
+  /**
+   * Checks that the field values and optionally the legacy ones match the given values.
+   */
+  protected function checkFieldValues($entity, $values, $langcode, $legacy_match = TRUE) {
+    foreach ($values as $name => $value) {
+      $field_name = $name . '_field';
+      if (!empty($entity->{$field_name}[$langcode])) {
+        $field_value = $entity->{$field_name}[$langcode][0]['value'];
+      }
+      else {
+        return FALSE;
+      }
+      if ($field_value != $value) {
+        debug($field_value);
+        debug($value);
+        return FALSE;
+      }
+      if ($legacy_match !== ($field_value == $entity->{$name})) {
+        debug($legacy_match);
+        debug($field_value);
+        debug($entity->{$name});
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Checks that the legacy field values stored in the database match the given values.
+   */
+  protected function checkLegacyValues($node, $values) {
+    $record = db_query('SELECT * FROM {node} n WHERE n.nid = :nid', array(':nid' => $node->nid))->fetchAssoc();
+    foreach ($values as $name => $value) {
+      debug($record[$name]);
+      debug($value);
+      if ($record[$name] != $value) {
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+}

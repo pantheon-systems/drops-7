@@ -17,7 +17,7 @@ class FeedsFileFieldFetcher extends FeedsFetcher {
     $source_config = $source->getConfigFor($this);
     $field = $this->config['file_field'];
 
-    if ($source_config['source']) {
+    if (isset($source_config['source']) && $source_config['source']) {
       // Just return a file fetcher result if this is a file.
       if (is_file($source_config['source'])) {
         return new FeedsFileFetcherResult($source_config['source']);
@@ -25,7 +25,7 @@ class FeedsFileFieldFetcher extends FeedsFetcher {
       throw new Exception(t('Resource is not a file or it is an empty directory: %source', array('%source' => $source_config['source'])));
     }
     else {
-      throw new Exception(t('File field it empty.'));
+      throw new Exception(t('File field is empty.'));
     }
   }
 

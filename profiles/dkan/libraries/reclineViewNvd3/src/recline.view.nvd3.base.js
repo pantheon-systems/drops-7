@@ -50,7 +50,6 @@ var chartAxes = ['x','y','y1','y2'];
         self.model = self.options.model;
         self.state.set(stateData);
         self.chartMap = d3.map();
-        self.listenTo(self.state, 'change', self.render.bind(self));
         self.listenTo(self.model.records, 'add remove reset change', self.lightUpdate.bind(self));
         globalchart = self;
       },
@@ -70,6 +69,9 @@ var chartAxes = ['x','y','y1','y2'];
         var layout;
         var xFormat;
         var yFormat, y1Format, y2Format;
+
+        // Reattach listener
+        self.listenToOnce(self.state, 'change', self.render.bind(self));
 
         layout = self.getLayoutParams();
         tmplData = self.model.toTemplateJSON();
@@ -100,7 +102,7 @@ var chartAxes = ['x','y','y1','y2'];
             if (self.chart[axis+'Axis']) {
               var format = self.state.get(axis+'Format') || {type: 'String', format: ''};
               var formatter = self.getFormatter(format.type, format.format, axis);
-              self.calcTickValues(axis, self.chart[axis+'Axis'], self.state.get(axis+'Values'), self.state.get(axis, self.state.get(axis+'ValuesStep')));
+              self.calcTickValues(axis, self.chart[axis+'Axis'], self.state.get(axis+'Values'), self.state.get(axis+'ValuesStep'));
               self.chart[axis+'Axis'].tickFormat(formatter);
             }
           })
@@ -364,8 +366,7 @@ var chartAxes = ['x','y','y1','y2'];
           'Date': _.compose(d3.time.format(format || '%x'),_.instantiate(Date)),
           'Number': d3.format(format || '.02f'),
           'Percentage': d3.format(format || '.02f'),
-          'PercentageA': function (n) { return d3.format(format || '.02f')(n) + '%'; },
-          'PercentageB': function (n) { return d3.format(format || '.02f')(n*100) + '%'; },
+          'PercentageInt': function (n) { return d3.format(format || '.02f')(n) + '%'; },
         };
         return formatter[type];
       },

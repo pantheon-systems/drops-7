@@ -124,19 +124,20 @@ function radix_menu_link__dropdown($variables) {
     unset($element['#below']['#theme_wrappers']);
     $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
     $element['#localized_options']['attributes']['class'][] = 'dropdown-toggle';
-    $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
+    $element['#localized_options']['html'] = TRUE;
 
     // Check if element is nested.
     if ((!empty($element['#original_link']['depth'])) && ($element['#original_link']['depth'] > 1)) {
       $element['#attributes']['class'][] = 'dropdown-submenu';
+      $element['#title'] .= ' <span class="fa fa-caret-right"></span>';
     }
     else {
       $element['#attributes']['class'][] = 'dropdown';
-      $element['#localized_options']['html'] = TRUE;
-      $element['#title'] .= '<span class="caret"></span>';
-    }
+      $element['#title'] .= ' <span class="fa fa-caret-down"></span>';
 
-    $element['#localized_options']['attributes']['data-target'] = '#';
+      $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
+      $element['#localized_options']['attributes']['data-target'] = '#';
+    }
   }
 
   // Fix for active class.

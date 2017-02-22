@@ -34,7 +34,8 @@ class SearchApiAlterBundleFilter extends SearchApiAbstractAlterCallback {
       return;
     }
 
-    if ($this->isMultiEntityIndex()) {
+    $multi_entity = $this->isMultiEntityIndex();
+    if ($multi_entity) {
       $bundle_prop = 'item_bundle';
     }
     else {
@@ -46,6 +47,10 @@ class SearchApiAlterBundleFilter extends SearchApiAbstractAlterCallback {
     $default = (bool) $this->options['default'];
 
     foreach ($items as $id => $item) {
+      // Ignore types that have no bundles.
+      if ($multi_entity && !self::hasBundles(entity_get_info($item->item_type))) {
+        continue;
+      }
       if (isset($bundles[$item->$bundle_prop]) == $default) {
         unset($items[$id]);
       }

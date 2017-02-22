@@ -151,6 +151,22 @@ function visualization_entity_iframe($entity) {
 function visualization_entity_entity_info_alter(&$entity_info) {
   // Override the default eck__entity__uri to allow uuids in the url.
   $entity_info['visualization']['uri callback'] = 'visualization_entity_uri';
+
+  // Override default edit/delete paths used on visualization tables 
+  // on admin pages. Change default paths with the form 
+  // 'admin/structure/entity-type/visualization/ve_chart/NODE_ID/edit' 
+  // to '/visualization/ve_chart/NODE_ID/edit'.
+  $bundles = isset($entity_info['visualization']['bundles']) ? $entity_info['visualization']['bundles'] : '';
+  if ($bundles) {
+    foreach ($bundles as $bundle_name => $bundle_data) {
+      // Override 'Edit' path.
+      $entity_info['visualization']['bundles'][$bundle_name]['crud']['edit']['path'] =
+          'visualization/' . $bundle_name . '/%eckentity/edit';
+      // Override 'Delete' path.
+      $entity_info['visualization']['bundles'][$bundle_name]['crud']['delete']['path'] =
+          'visualization/' . $bundle_name . '/%eckentity/delete';
+    }
+  }
 }
 
 /**

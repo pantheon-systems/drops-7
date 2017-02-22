@@ -178,12 +178,13 @@ class WorkbenchModerationExternalNodeUpdateTestCase extends WorkbenchModerationT
    *   The node's record(s) from the {workbench_moderation_node_history} table.
    */
   protected function getModerationRecord($status = 'is_current') {
-    return db_select('workbench_moderation_node_history', 'nh')
+    $data = db_select('workbench_moderation_node_history', 'nh')
       ->fields('nh', array('from_state', 'state', 'published', 'is_current'))
       ->condition('nid', $this->node->nid, '=')
       ->condition($status, 1)
       ->execute()
       ->fetchAssoc();
+    return $data;
   }
 
 }
