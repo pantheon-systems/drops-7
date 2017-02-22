@@ -1,5 +1,5 @@
 {
-  "name": "{{Name}}",
+  "name": "{{machine_name}}",
   "description": "{{Description}}",
   "browserSyncProxy" : "http://panopoly.dev",
   "bowerDir": "./bower_components",
@@ -11,14 +11,13 @@
     "dest": "assets/css",
     "includePaths": [
       "./bower_components/bootstrap-sass/assets/stylesheets",
-      "./bower_components/font-awesome/scss",
-      "./bower_components/compass-mixins/lib"
+      "./bower_components/font-awesome/scss"
     ]
   },
   "js": {
     "file" : "{{machine_name}}.script.js",
     "src": [
-      "js/**/*.js"
+      "assets/js/**/*.js"
     ],
     "dest": "assets/js"
   },

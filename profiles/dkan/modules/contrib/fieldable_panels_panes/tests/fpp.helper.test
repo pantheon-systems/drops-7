@@ -4,7 +4,7 @@
  * A base class for the Fieldable Panels Panes tests, provides shared methods.
  */
 
-class FppTestHelper extends DrupalWebTestCase {
+abstract class FppTestHelper extends DrupalWebTestCase {
 
   /**
    * Admin user.
@@ -24,21 +24,42 @@ class FppTestHelper extends DrupalWebTestCase {
   /**
    * Create an admin-level user.
    *
+   * @param array $perms
+   *   Any permissions to be added to the user.
+   *
    * @return object
    *   A standard Drupal user object.
    */
-  function createAdminUser() {
+  function createAdminUser(array $perms = array()) {
     // Create a user with the admin permission.
     $permissions = array(
+      // The master permission for FPP.
       'administer fieldable panels panes',
+
+      // Required for Drupal core 7.50+, otherwise the user won't have access to
+      // the field settings.
+      'administer fields',
     );
 
+    return $this->createUser(array_merge($permissions, $perms));
+  }
+
+  /**
+   * Create a new user account with limited permissions.
+   *
+   * @param array $perms
+   *   Any permissions to be added to the user.
+   *
+   * @return object
+   *   A standard Drupal user object.
+   */
+  function createUser(array $perms = array()) {
     // Reset the static variable used to identify permissions, otherwise it's
     // possible the permissions check in drupalCreateUser will fail.
     $this->checkPermissions(array(), TRUE);
     cache_clear_all();
 
-    return $this->drupalCreateUser($permissions);
+    return $this->drupalCreateUser($perms);
   }
 
   /**

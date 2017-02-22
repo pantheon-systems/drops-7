@@ -7,7 +7,10 @@ this.recline.View = this.recline.View || {};
 'use strict';
 
   my.scatterChartControls = recline.View.nvd3.BaseControl.extend({
-    template: ''
+    customOptions: '',
+    events: function(){
+      return _.extend({}, recline.View.nvd3.BaseControl.prototype.events);
+    }
   });
 
 })(jQuery, recline.View.nvd3);

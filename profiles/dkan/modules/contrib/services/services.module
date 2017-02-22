@@ -9,6 +9,7 @@
  * Minimum CTools version needed.
  */
 define('SERVICES_REQUIRED_CTOOLS_API', '1.7');
+define('SERVICES_ALLOWED_EXTENSIONS', 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp');
 
 /*
  * Function to return list of batch options
@@ -1007,6 +1008,7 @@ function services_remove_user_data(&$account) {
 
   // Remove the user password from the account object.
   unset($account->pass);
+  if (isset($account->current_pass)) { unset($account->current_pass); }
 
   // Remove the user mail, if current user don't have "administer users"
   // permission, and the requested account not match the current user.

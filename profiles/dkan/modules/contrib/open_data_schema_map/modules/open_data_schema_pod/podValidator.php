@@ -19,13 +19,23 @@ class validate {
   {
     if (!isset($this->dataset)) {
       $this->dataset = array();
-      $data = json_decode(file_get_contents($this->url));
-      $this->dataJSON = $data;
-
-      foreach($this->dataJSON->dataset as $dataset) {
-        $this->dataset[$dataset->identifier] = $dataset;
+      $arrContextOptions = array(
+        "ssl"=>array(
+          "verify_peer"=>false,
+          "verify_peer_name"=>false,
+        ),
+      );
+      $resp = drupal_http_request($this->url, array('context' => stream_context_create($arrContextOptions)));
+      if ($resp->code == 200) {
+        $this->dataJSON = json_decode($resp->data);
+        foreach($this->dataJSON->dataset as $dataset) {
+          $this->dataset[$dataset->identifier] = $dataset;
+        }
+        $this->dataJSON->dataset = $this->dataset;
       }
-      $this->dataJSON->dataset = $this->dataset;
+      else {
+        throw new Exception(t("POD validator could not access %url", array("%url" => $this->url)));
+      }
     }
   }
 

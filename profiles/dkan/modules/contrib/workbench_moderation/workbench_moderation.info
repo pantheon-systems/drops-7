@@ -16,11 +16,15 @@ files[] = workbench_moderation.migrate.inc
 files[] = tests/external_node_update.test
 files[] = tests/workbench_moderation.test
 files[] = tests/workbench_moderation.files.test
+files[] = tests/workbench_moderation.perms.test
+files[] = tests/workbench_moderation.node_access.test
+files[] = tests/workbench_moderation.transition.test
 
-; Dependencies that are only required for the testbot.
-test_dependencies[] = drafty
+dependencies[] = drafty
 
-; Information added by drush on 2016-03-16
-version = "7.x-1.4+9-dev"
+; Information added by Drupal.org packaging script on 2016-11-02
+version = "7.x-3.0"
+core = "7.x"
 project = "workbench_moderation"
-datestamp = "1458161940"
+datestamp = "1478119457"
+

@@ -24,6 +24,7 @@ function leaflet_widget_field_widget_info() {
         'zoom' => 10,
       ),
       'toggle' => '',
+      'geographic_areas' => FALSE,
       'draw' => array(
         'tools' => array(
           'polyline' => TRUE,
@@ -54,44 +55,50 @@ function leaflet_widget_field_widget_settings_form($field, $instance) {
     case 'leaflet_widget_widget':
       $form['map'] = array(
         '#type' => 'fieldset',
-        '#title' => 'Default map settings',
+        '#title' => t('Default map settings'),
       );
       $form['map']['base_url'] = array(
         '#type' => 'select',
-        '#title' => 'Leaflet.draw widget settings',
+        '#title' => t('Leaflet.draw widget settings'),
         '#default_value' => $settings['map']['base_url'],
         '#options' => leaflet_widget_base_layers(),
       );
       $form['map']['center'] = array('#type' => 'fieldset', '#collapsed' => TRUE, '#collapsible' => TRUE, '#title' => 'Default map center');
       $form['map']['center']['lat'] = array(
         '#type' => 'textfield', // 'hidden',
-        '#title' => 'Latitude',
+        '#title' => t('Latitude'),
         '#default_value' => $settings['map']['center']['lat'],
         '#required' => TRUE,
       );
       $form['map']['center']['lng'] = array(
         '#type' => 'textfield', // 'hidden',
-        '#title' => 'Longtitude',
+        '#title' => t('Longtitude'),
         '#default_value' => $settings['map']['center']['lng'],
         '#required' => TRUE,
       );
       $form['map']['auto_center'] = array(
         '#type' => 'checkbox',
-        '#title' => 'Automatically center map on existing features',
-        '#description' => "This option overrides the widget's default center.",
+        '#title' => t('Automatically center map on existing features'),
+        '#description' => t("This option overrides the widget's default center."),
         '#default_value' => $settings['map']['auto_center'],
       );
       $form['map']['zoom'] = array(
         '#type' => 'textfield', // 'hidden',
-        '#title' => 'Default zoom level',
+        '#title' => t('Default zoom level'),
         '#default_value' => $settings['map']['zoom'],
         '#required' => TRUE,
       );
       $form['toggle'] = array(
         '#type' => 'checkbox',
-        '#title' => 'Allow users option to input values directly.',
-        '#description' => "When checked this option allows users to add to input form directly instead of using the map.",
+        '#title' => t('Allow users option to input values directly.'),
+        '#description' => t('When checked this option allows users to add to input form directly instead of using the map (geojson or point).'),
         '#default_value' => $settings['toggle'],
+      );
+      $form['geographic_areas'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Allow users use a predefined geographic areas'),
+        '#description' => t('Show a select list on the top with predefined areas'),
+        '#default_value' => $settings['geographic_areas'],
       );
       $form['draw'] = array(
         '#type' => 'fieldset',
@@ -106,11 +113,12 @@ function leaflet_widget_field_widget_settings_form($field, $instance) {
       );
       $form['draw']['tools'] = array(
         '#type' => 'checkboxes',
-        '#title' => 'Tools to include on the map.',
-        '#description' => "Decide which tools you want to add. Defaults to all.",
+        '#title' => t('Tools to include on the map.'),
+        '#description' => t('Decide which tools you want to add. Defaults to all.'),
         '#default_value' => $settings['draw']['tools'],
         '#options' => $options,
       );
+
       break;
 
   }
@@ -164,10 +172,25 @@ function leaflet_widget_field_widget_form(&$form, &$form_state, $field, $instanc
 
       // Include javascript.
       $widget['#attached']['library'][] = array('leaflet_widget', 'draw');
+      $widget['#attached']['library'][] = array('system', 'ui.tabs');
+
+      //Check if we need to add geographic areas
+      if (isset($settings['geographic_areas']) && $settings['geographic_areas']) {
+        //TODO: Add documentation about this hook.
+        $areas = module_invoke_all('leaflet_widget_geographic_areas');
+        $settings['areas'] = $areas;
+      }
+
       // Settings and geo-data are passed to the widget keyed by field id.
       $widget['#attached']['js'][] = array(
         'type' => 'setting',
         'data' => array('leaflet_widget_widget' => array($id => $settings)),
+      );
+
+      // Add JSON utility js.
+      $widget['#attached']['js'][] = array(
+        'type' => 'file',
+        'data' => drupal_get_path('module', 'leaflet_widget') . '/js/json2.min.js',
       );
       break;
   }
@@ -189,9 +212,28 @@ function leaflet_widget_widget_validate($element, &$form_state) {
   $geophp = geophp_load();
   if (!$geophp) return FALSE;
 
+  //Validate json type is valid.
   $geojson = json_decode($element['wkt']['#value']);
+  $types = array('FeatureCollection', 'GeometryCollection', 'Feature', 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon');
+
   $results = array();
   if ($geojson) {
+    //Validate type
+    if (!in_array($geojson->type, $types)) {
+      form_set_error($element['wkt']['#name'], 'Please enter valid GeoJSON');
+      return FALSE;
+    }
+
+    //validate structure
+    try {
+      $geometry = geoPHP::load($element['wkt']['#value'], 'json');
+      $geometry->out('wkt');
+    }
+    catch (Exception $e) {
+      form_set_error($element['wkt']['#name'], 'Please enter valid GeoJSON');
+      return FALSE;
+    }
+
     if ($geojson->type === 'FeatureCollection') {
       foreach ($geojson->features as $feature) {
         $results[] = array_merge($results, leaflet_widget_process_geojson($feature));
@@ -222,7 +264,7 @@ function leaflet_widget_process_geojson($geojson) {
 function leaflet_widget_library() {
   $path = drupal_get_path('module', 'leaflet_widget');
   $leaflet_draw = libraries_get_path('leaflet_draw');
-  $leaflet_core = libraries_get_path('leaflet_core');
+  $leaflet = libraries_get_path('leaflet');
 
   $libraries = array();
 
@@ -239,7 +281,7 @@ function leaflet_widget_library() {
 
   $libraries['leaflet_draw'] = array(
     'title' => 'Leaflet.draw',
-    'version' => '0.2.4',
+    'version' => '0.4.7',
     'css' => array(
       "$leaflet_draw/dist/leaflet.draw.css" => array(),
     ),
@@ -247,18 +289,20 @@ function leaflet_widget_library() {
       "$leaflet_draw/dist/leaflet.draw.js" => array(),
     ),
     'dependencies' => array(
-      array('leaflet_widget', 'leaflet_core'),
+      array('leaflet_widget', 'leaflet'),
     ),
   );
 
-  $libraries['leaflet_core'] = array(
+  $leaflet_image_path = $leaflet . '/dist/images/';
+  $libraries['leaflet'] = array(
     'title' => 'Leaflet (Leaflet Widget)',
-    'version' => '0.7.3',
+    'version' => '1.0.2',
     'css' => array(
-      "$leaflet_core/dist/leaflet.css" => array(),
+      "$leaflet/dist/leaflet.css" => array(),
     ),
     'js' => array(
-      "$leaflet_core/dist/leaflet.js" => array(),
+      "$leaflet/dist/leaflet.js" => array(),
+      'if (!L.Icon.Default.imagePath) L.Icon.Default.imagePath = "/' . $leaflet_image_path . '"' => array('type' => 'inline'),
     ),
   );
 
@@ -293,7 +337,7 @@ function leaflet_widget_geojson_feature($wkt, $properties = array()) {
  */
 function leaflet_widget_leaflet_widget_base_layers() {
   return array(
-    'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' => 'OSM Mapnik',
+    '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' => 'OSM Mapnik',
   );
 }
 

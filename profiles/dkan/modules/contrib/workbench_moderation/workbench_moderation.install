@@ -670,3 +670,15 @@ function workbench_moderation_update_7010() {
   db_change_field($table, $field, $field_new, $spec);
   return t("Renamed 'current' column in node_history table");
 }
+
+/**
+ * Enable the Drafty module, a new dependency.
+ */
+function workbench_moderation_update_7300() {
+  if (module_enable(array('drafty'))) {
+    drupal_set_message(t('The Drafty module has been enabled.'));
+  }
+  else {
+    throw new DrupalUpdateException('Unable to enable the Drafty module, it is a new dependency that must be downloaded.');
+  }
+}

@@ -1,7 +1,13 @@
-7.x-1.12.13 2017-01-04
-----------------------
-- Make recline previews work on subdir paths.
+7.x-1.x
+-------
+- Improved handling of missing remote zip files during resource preview generation.
 - Improved check used to determine if bootstrap is available.
+- Added cache support for recline previews.
+- Added delimiter configuration on chart settings. 
+
+7.x-1.12.x
+----------
+- Make recline previews work on subdir paths.
 
 7.x-1.11 2016-02-03
 ------------------

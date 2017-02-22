@@ -196,7 +196,7 @@ class panels_allowed_layouts {
    */
   function save() {
     if (!is_null($this->module_name)) {
-      variable_set($this->module_name . "_allowed_layouts", serialize($this));
+      variable_set($this->module_name . '_allowed_layouts', serialize($this));
     }
   }
 
@@ -272,7 +272,11 @@ function panels_common_settings($form, &$form_state, $module_name = 'panels_comm
     // each type its own checkboxes set unless it's 'single' in which
     // case it can go into our fake other set.
     $available_content_types = ctools_content_get_all_types();
-    $allowed_content_types = variable_get($module_name . '_allowed_types', array());
+    $allowed_content_types = db_select('panels_allowed_types', 'pat')
+      ->fields('pat', array('type', 'allowed'))
+      ->condition('module', $module_name)
+      ->execute()
+      ->fetchAllKeyed();
 
     foreach ($available_content_types as $id => $types) {
       foreach ($types as $type => $info) {
@@ -354,21 +358,21 @@ function panels_common_settings_submit($form, &$form_state) {
   if (!$form_state['skip']) {
     // Merge the broken apart array neatly back together.
     $allowed_content_types = array();
-    foreach ($form_state['values']['allowed'] as $allowed) {
-      $values = $form_state['values']['content_types'][$allowed]['options'];
-      // If new content of the type is not added, storing a lisy of disabled
-      // content is not needed.
-      if (!$form_state['values']['panels_common_default'][$allowed]) {
-        $values = array_filter($values);
+    $content_types = $form_state['values']['allowed'];
+    foreach ($content_types as $content_type) {
+      $allowed_content_types = array_merge($allowed_content_types, $form_state['values']['content_types'][$content_type]['options']);
+      foreach ($allowed_content_types as $type => $allowed) {
+        $allowed = empty($allowed) ? 0 : 1;
+        db_merge('panels_allowed_types')
+          ->key(array('module' => $module_name, 'type' => $type))
+          ->fields(array(
+            'module' => $module_name,
+            'type' => $type,
+            'allowed' => $allowed,
+          ))
+          ->execute();
       }
-      $allowed_content_types = array_merge($allowed_content_types, $values);
     }
-    // Values from checkboxes are the same string as they key, but we only need
-    // to store the boolean value.
-    foreach ($allowed_content_types as &$value) {
-      $value = (bool) $value;
-    }
-    variable_set($module_name . '_allowed_types', $allowed_content_types);
   }
   drupal_set_message(t('Your changes have been saved.'));
 }
@@ -378,9 +382,13 @@ function panels_common_settings_submit($form, &$form_state) {
  */
 function panels_common_get_allowed_types($module, $contexts = array(), $has_content = FALSE, $default_defaults = array(), $default_allowed_types = array()) {
   // Get a list of all types that are available
-
   $default_types = variable_get($module . '_default', $default_defaults);
-  $allowed_types = variable_get($module . '_allowed_types', $default_allowed_types);
+  $allowed_types = db_select('panels_allowed_types', 'pat')
+    ->fields('pat', array('type', 'allowed'))
+    ->condition('module', $module)
+    ->execute()
+    ->fetchAllKeyed();
+  $allowed_types = !empty($allowed_types) ? $allowed_types : $default_allowed_types;
 
   // By default, if they haven't gone and done the initial setup here,
   // let all 'other' types (which will be all types) be available.
@@ -465,7 +473,7 @@ function panels_common_allowed_layouts_form_submit($form, &$form_state) {
  * Get the allowed layout object for the given module.
  */
 function panels_common_get_allowed_layout_object($module_name) {
-  $allowed_layouts = unserialize(variable_get($module_name . "_allowed_layouts", serialize('')));
+  $allowed_layouts = unserialize(variable_get($module_name . '_allowed_layouts', serialize('')));
 
   // if no parameter was provided, or the variable_get failed
   if (!$allowed_layouts) {

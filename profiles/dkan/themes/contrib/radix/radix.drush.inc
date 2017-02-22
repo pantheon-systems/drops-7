@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains Drush hooks. Inspired by Zen and Omega Tools.
+ * Drush commands for Radix theme.
  */
 
 // BOOTSWATCH_URL
@@ -32,10 +32,22 @@ function radix_drush_command() {
     ),
   );
 
-  $items['radix-upgrade-33'] = array(
-    'description' => 'Update subtheme to Radix 3.3.',
+  // Upgrade to the Gulp version.
+  $items['radix-upgrade-gulp'] = array(
+    'description' => 'Upgrade subtheme to use Gulp instead of Compass.',
     'examples' => array(
-      'drush radix-upgrade-33 my_theme' => 'Upgrades my_theme to work with Radix 3.3',
+      'drush radix-upgrade-gulp my_theme' => 'Upgrades my_theme to use Gulp',
+    ),
+  );
+
+  // Upgrade to the latest radix.
+  $items['radix-upgrade-7034'] = array(
+    'description' => 'Upgrade your Radix subtheme to the latest version.',
+    'arguments' => array(
+      'name' => 'The name of your subtheme.',
+    ),
+    'examples' => array(
+      'drush radix-upgrade my_theme' => 'Upgrades my_theme to the latest version',
     ),
   );
 
@@ -49,8 +61,8 @@ function radix_drush_help($section) {
   switch ($section) {
     case 'drush:radix':
       return dt('This command will create a Radix subtheme. See examples to get started.');
-    case 'drush:radix-upgrade-33':
-      return dt('This command will upgrade a Radix subtheme to version 3.3.');
+    case 'drush:radix-upgrade-gulp':
+      return dt('This command will upgrade a Radix subtheme to the Gulp version.');
   }
 }
 
@@ -89,8 +101,8 @@ function drush_radix($name = NULL, $machine_name = NULL) {
 
   // Determine the path to the new subtheme.
   $subtheme_path = 'sites/all/themes';
-  if ($path = drush_get_option('path')) {
-    $subtheme_path = drush_trim_path($path);
+  if ($destination = drush_get_option('destination')) {
+    $subtheme_path = drush_trim_path($destination);
   }
   $subtheme_path = drush_normalize_path(drush_get_context('DRUSH_DRUPAL_ROOT') . '/' . $subtheme_path . '/' . $machine_name);
 
@@ -186,7 +198,7 @@ function drush_radix($name = NULL, $machine_name = NULL) {
   $files_to_rename = array(
     '{{kit}}.info',
     'scss/{{kit}}.style.scss',
-    'js/{{kit}}.script.js',
+    'assets/js/{{kit}}.script.js',
   );
   foreach ($files_to_rename as $file_to_rename_path) {
     $file_original_path = $subtheme_path . '/' . str_replace('{{kit}}', $kit, $file_to_rename_path);
@@ -214,7 +226,7 @@ function drush_radix($name = NULL, $machine_name = NULL) {
 /**
  * Implements drush_hook_COMMAND().
  */
-function drush_radix_upgrade_33() {
+function drush_radix_upgrade_gulp() {
   global $base_url;
 
   // Prepare options.
@@ -325,11 +337,129 @@ function drush_radix_upgrade_33() {
 }
 
 /**
+ * Implements drush_hook_COMMAND().
+ */
+function drush_radix_upgrade_7034($subtheme = NULL) {
+  // Check if the subtheme exists.
+  $subtheme_path = drupal_get_path('theme', $subtheme);
+  if (!$subtheme_path) {
+    drush_set_error('SUBTHEME_NOT_FOUND', dt('Radix subtheme \'@subtheme\' not found.', array(
+      '@subtheme' => $subtheme
+    )));
+    return;
+  }
+
+  // Ask for confirmation
+  drush_print('--- --- ---');
+  drush_print(dt('This command will upgrade subtheme \'@subtheme\' to Radix 7.x-3.4.', array(
+    '@subtheme' => $subtheme
+  )));
+  drush_print(dt('Please make sure you have a backup before proceeding.'));
+
+  if (!drush_confirm('Are you sure you want to proceed?')) {
+    drush_user_abort();
+    return;
+  }
+
+  // Set paths.
+  $radix_path = drush_normalize_path(drush_get_context('DRUSH_DRUPAL_ROOT') . '/' . drupal_get_path('theme', 'radix'));
+  $subtheme_path = drush_normalize_path(drush_get_context('DRUSH_DRUPAL_ROOT') . '/' . $subtheme_path);
+
+  // Check if subtheme radix scss files is there.
+  $subtheme_radix_scss_path = $subtheme_path . '/scss/radix';
+  if (!file_exists($subtheme_radix_scss_path)) {
+    drush_set_error('SUBTHEME_RADIX_SCSS_NOT_FOUND', dt('Radix scss files for subtheme \'@subtheme\' not found.', array(
+      '@subtheme' => $subtheme
+    )));
+    return;
+  }
+
+  // Start the upgrade.
+  drush_print(dt('Starting subtheme \'@subtheme\' upgrade to Radix 7.x-3.4.', array(
+    '@subtheme' => $subtheme
+  )));
+  drush_print('--- --- ---');
+
+  // Step 1: Delete subtheme radix scss files.
+  if (drush_delete_dir($subtheme_radix_scss_path)) {
+    drush_print(dt('1. Successfully removed old scss/radix files for subtheme \'@subtheme\'.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+
+  // Step 2: Copy Radix scss.
+  if (drush_op('drush_copy_dir', $radix_path . '/kits/default/scss/radix', $subtheme_path . '/scss/radix')) {
+    drush_print(dt('2. Successfully copied new scss/radix files to subtheme \'@subtheme\'.', array(
+      '@subtheme' => $subtheme
+    )));
+  } else {
+    drush_set_error('SCSS_NOT_COPIED', dt('2. Failed to copy Radix scss files to subtheme \'@subtheme\'.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+
+  // Step 3: Move js files.
+  if (file_exists($subtheme_path . '/js')) {
+    if (drush_copy_dir($subtheme_path . '/js', $subtheme_path . '/assets/js', FILE_EXISTS_OVERWRITE)) {
+      drush_print(dt('3. Successfully copied js files to assets/js.'));
+
+      // Step 4: Delete js files.
+      if (drush_delete_dir($subtheme_path . '/js')) {
+        drush_print(dt('4. Successfully removed old js.'));
+      }
+    }
+  }
+  else {
+    drush_set_error('JS_NOT_COPIED', dt('3. Failed to copy js files to assets/js.'));
+    drush_set_error('JS_NOT_COPIED', dt('4. Failed to remove old js files.'));
+  }
+
+  // Step 5: Update gulpfile.
+  $subtheme_gulpfile_path = $subtheme_path . '/gulpfile.js';
+  if (drush_op('copy', $radix_path . '/kits/default/gulpfile.js', $subtheme_gulpfile_path)) {
+    drush_print(dt('5. Successfully copied new gulpfile.js to subtheme \'@subtheme\'.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+  else {
+    drush_set_error('GULPFILE_NOT_COPIED', dt('5. Failed to copy new gulpfile.js to subtheme \'@subtheme\'.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+
+  // Step 6: Add settings to info file.
+  $subtheme_info_path = $subtheme_path . '/' . $subtheme . '.info';
+  $preprocess_css_setting = "\n; Settings\n; Set this to FALSE for development only.\nsettings[preprocess_css] = FALSE";
+  if (radix_file_str_replace($subtheme_info_path, 'base theme  = radix', 'base theme  = radix' . $preprocess_css_setting)) {
+    drush_print(dt('6. Successfully added preprocess_css setting to \'@subtheme\'.info.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+  else {
+    drush_set_error('GULPFILE_NOT_COPIED', dt('6. Failed to add preprocess_css setting to \'@subtheme\'.info.', array(
+      '@subtheme' => $subtheme
+    )));
+  }
+
+  // Print messages.
+  drush_print('--- --- ---');
+  drush_print(dt('Radix subtheme \'@subtheme\' has been upgraded to the Radix 7.x-3.4. Please verify your theme files.', array(
+    '@subtheme' => $subtheme
+  )));
+  drush_print('--- --- ---');
+
+  drush_print(dt('IMPORTANT: Run the following commands to install new npm modules: '));
+  drush_print(dt('  npm install --save gulp-jshint gulp-scss-lint'));
+  drush_print(dt('  gulp'));
+  drush_print('--- --- ---');
+}
+
+/**
  * Replace strings in a file.
  */
 function radix_file_str_replace($file_path, $find, $replace) {
   $file_path = drush_normalize_path($file_path);
   $file_contents = file_get_contents($file_path);
   $file_contents = str_replace($find, $replace, $file_contents);
-  file_put_contents($file_path, $file_contents);
+  return file_put_contents($file_path, $file_contents);
 }

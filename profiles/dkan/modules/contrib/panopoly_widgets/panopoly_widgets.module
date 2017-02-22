@@ -78,9 +78,18 @@ function panopoly_widgets_configure_form_submit($form, &$form_state) {
  * Implements hook_field_default_field_instances_alter().
  */
 function panopoly_widgets_field_default_field_instances_alter(&$instances) {
+  // Set the file extensions from our configuration setting.
   if (isset($instances['fieldable_panels_pane-basic_file-field_basic_file_file'])) {
     $file_extensions = variable_get('panopoly_widgets_file_extensions', PANOPOLY_WIDGETS_FILE_EXTENSIONS_DEFAULT);
     $instances['fieldable_panels_pane-basic_file-field_basic_file_file']['settings']['file_extensions'] = $file_extensions;
+  }
+  // If the linkit module isn't present, then we alter the field settings for
+  // the 'Add image' widget to disable linkit on the 'Link' field.
+  if (isset($instances['fieldable_panels_pane-image-field_basic_image_link'])) {
+    if (!module_exists('linkit')) {
+      $instances['fieldable_panels_pane-image-field_basic_image_link']['settings']['linkit']['enable'] = 0;
+      $instances['fieldable_panels_pane-image-field_basic_image_link']['settings']['linkit']['profile'] = NULL;
+    }
   }
 }
 
@@ -462,6 +471,20 @@ function panopoly_widgets_menu_block_tree_alter($tree, $config) {
   if (arg(0) == 'panels' && arg(1) == 'ajax') {
     foreach ($tree as $key => $value) {
       $tree[$key]['link']['in_active_trail'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Implements hook_fieldable_panels_pane_view().
+ */
+function panopoly_widgets_fieldable_panels_pane_view($entity, $view_mode, $langcode) {
+  if ($entity->bundle == 'image') {
+    // Render the image in a link if one is given.
+    if (!empty($entity->field_basic_image_link[LANGUAGE_NONE][0]['url'])) {
+      $entity->content['field_basic_image_image'][0]['#path'] = array(
+        'path' => $entity->field_basic_image_link[LANGUAGE_NONE][0]['display_url'],
+      );
     }
   }
 }

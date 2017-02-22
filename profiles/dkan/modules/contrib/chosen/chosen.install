@@ -50,6 +50,8 @@ function chosen_uninstall() {
   variable_del('chosen_disabled_themes');
   variable_del('chosen_disable_search');
   variable_del('chosen_disable_search_threshold');
+  variable_del('chosen_allow_single_deselect');
+  variable_del('chosen_include');
 }
 
 /**

@@ -1,12 +1,12 @@
 {
-  "name": "{{Name}}",
+  "name": "{{machine_name}}",
   "description": "{{Description}}",
   "private": true,
   "scripts": {
     "setup": "npm install && bower install",
     "postinstall": "find node_modules/ -name '*.info' -type f -delete"
   },
-  "dependencies": {
+  "devDependencies": {
     "browser-sync": "~2.7.4",
     "imagemin-pngcrush": "~4.1.0",
     "node-sass": "^3.4.1",
@@ -21,6 +21,9 @@
     "gulp-sass-glob": "0.0.2",
     "gulp-shell": "~0.4.1",
     "gulp-sourcemaps": "^1.6.0",
-    "gulp-uglify": "^1.5.1"
+    "gulp-uglify": "^1.5.1",
+    "gulp-scss-lint": "~0.3.9",
+    "jshint": "~2.9.1",
+    "gulp-jshint": "~2.0.0"
   }
 }

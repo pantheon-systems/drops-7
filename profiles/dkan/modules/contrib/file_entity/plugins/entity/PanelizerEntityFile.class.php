@@ -10,8 +10,8 @@
  * Handles file specific functionality for Panelizer.
  */
 class PanelizerEntityFile extends PanelizerEntityDefault {
-  public $entity_admin_root = 'admin/structure/file-types/%';
-  public $entity_admin_bundle = 3;
+  public $entity_admin_root = 'admin/structure/file-types/manage/%';
+  public $entity_admin_bundle = 4;
   public $views_table = 'file_managed';
 
   public function entity_access($op, $entity) {

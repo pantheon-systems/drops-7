@@ -1,12 +1,39 @@
 /*
- * L.ImageOverlay is used to overlay images over the map (to specific geographical bounds).
+ * @class ImageOverlay
+ * @aka L.ImageOverlay
+ * @inherits Interactive layer
+ *
+ * Used to load and display a single image over specific bounds of the map. Extends `Layer`.
+ *
+ * @example
+ *
+ * ```js
+ * var imageUrl = 'http://www.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
+ * 	imageBounds = [[40.712216, -74.22655], [40.773941, -74.12544]];
+ * L.imageOverlay(imageUrl, imageBounds).addTo(map);
+ * ```
  */
 
-L.ImageOverlay = L.Class.extend({
-	includes: L.Mixin.Events,
+L.ImageOverlay = L.Layer.extend({
 
+	// @section
+	// @aka ImageOverlay options
 	options: {
-		opacity: 1
+		// @option opacity: Number = 1.0
+		// The opacity of the image overlay.
+		opacity: 1,
+
+		// @option alt: String = ''
+		// Text for the `alt` attribute of the image (useful for accessibility).
+		alt: '',
+
+		// @option interactive: Boolean = false
+		// If `true`, the image overlay will emit [mouse events](#interactive-layer) when clicked or hovered.
+		interactive: false,
+
+		// @option crossOrigin: Boolean = false
+		// If true, the image will have its crossOrigin attribute set to ''. This is needed if you want to access image pixel data.
+		crossOrigin: false
 	},
 
 	initialize: function (url, bounds, options) { // (String, LatLngBounds, Object)
@@ -16,119 +43,149 @@ L.ImageOverlay = L.Class.extend({
 		L.setOptions(this, options);
 	},
 
-	onAdd: function (map) {
-		this._map = map;
-
+	onAdd: function () {
 		if (!this._image) {
 			this._initImage();
+
+			if (this.options.opacity < 1) {
+				this._updateOpacity();
+			}
 		}
 
-		map._panes.overlayPane.appendChild(this._image);
-
-		map.on('viewreset', this._reset, this);
-
-		if (map.options.zoomAnimation && L.Browser.any3d) {
-			map.on('zoomanim', this._animateZoom, this);
+		if (this.options.interactive) {
+			L.DomUtil.addClass(this._image, 'leaflet-interactive');
+			this.addInteractiveTarget(this._image);
 		}
 
+		this.getPane().appendChild(this._image);
 		this._reset();
 	},
 
-	onRemove: function (map) {
-		map.getPanes().overlayPane.removeChild(this._image);
-
-		map.off('viewreset', this._reset, this);
-
-		if (map.options.zoomAnimation) {
-			map.off('zoomanim', this._animateZoom, this);
+	onRemove: function () {
+		L.DomUtil.remove(this._image);
+		if (this.options.interactive) {
+			this.removeInteractiveTarget(this._image);
 		}
 	},
 
-	addTo: function (map) {
-		map.addLayer(this);
-		return this;
-	},
-
+	// @method setOpacity(opacity: Number): this
+	// Sets the opacity of the overlay.
 	setOpacity: function (opacity) {
 		this.options.opacity = opacity;
-		this._updateOpacity();
+
+		if (this._image) {
+			this._updateOpacity();
+		}
 		return this;
 	},
 
-	// TODO remove bringToFront/bringToBack duplication from TileLayer/Path
+	setStyle: function (styleOpts) {
+		if (styleOpts.opacity) {
+			this.setOpacity(styleOpts.opacity);
+		}
+		return this;
+	},
+
+	// @method bringToFront(): this
+	// Brings the layer to the top of all overlays.
 	bringToFront: function () {
-		if (this._image) {
-			this._map._panes.overlayPane.appendChild(this._image);
+		if (this._map) {
+			L.DomUtil.toFront(this._image);
 		}
 		return this;
 	},
 
+	// @method bringToBack(): this
+	// Brings the layer to the bottom of all overlays.
 	bringToBack: function () {
-		var pane = this._map._panes.overlayPane;
-		if (this._image) {
-			pane.insertBefore(this._image, pane.firstChild);
+		if (this._map) {
+			L.DomUtil.toBack(this._image);
 		}
 		return this;
 	},
 
+	// @method setUrl(url: String): this
+	// Changes the URL of the image.
 	setUrl: function (url) {
 		this._url = url;
-		this._image.src = this._url;
+
+		if (this._image) {
+			this._image.src = url;
+		}
+		return this;
 	},
 
-	getAttribution: function () {
-		return this.options.attribution;
+	// @method setBounds(bounds: LatLngBounds): this
+	// Update the bounds that this ImageOverlay covers
+	setBounds: function (bounds) {
+		this._bounds = bounds;
+
+		if (this._map) {
+			this._reset();
+		}
+		return this;
+	},
+
+	getEvents: function () {
+		var events = {
+			zoom: this._reset,
+			viewreset: this._reset
+		};
+
+		if (this._zoomAnimated) {
+			events.zoomanim = this._animateZoom;
+		}
+
+		return events;
+	},
+
+	// @method getBounds(): LatLngBounds
+	// Get the bounds that this ImageOverlay covers
+	getBounds: function () {
+		return this._bounds;
+	},
+
+	// @method getElement(): HTMLElement
+	// Get the img element that represents the ImageOverlay on the map
+	getElement: function () {
+		return this._image;
 	},
 
 	_initImage: function () {
-		this._image = L.DomUtil.create('img', 'leaflet-image-layer');
+		var img = this._image = L.DomUtil.create('img',
+				'leaflet-image-layer ' + (this._zoomAnimated ? 'leaflet-zoom-animated' : ''));
 
-		if (this._map.options.zoomAnimation && L.Browser.any3d) {
-			L.DomUtil.addClass(this._image, 'leaflet-zoom-animated');
-		} else {
-			L.DomUtil.addClass(this._image, 'leaflet-zoom-hide');
+		img.onselectstart = L.Util.falseFn;
+		img.onmousemove = L.Util.falseFn;
+
+		img.onload = L.bind(this.fire, this, 'load');
+
+		if (this.options.crossOrigin) {
+			img.crossOrigin = '';
 		}
 
-		this._updateOpacity();
-
-		//TODO createImage util method to remove duplication
-		L.extend(this._image, {
-			galleryimg: 'no',
-			onselectstart: L.Util.falseFn,
-			onmousemove: L.Util.falseFn,
-			onload: L.bind(this._onImageLoad, this),
-			src: this._url
-		});
+		img.src = this._url;
+		img.alt = this.options.alt;
 	},
 
 	_animateZoom: function (e) {
-		var map = this._map,
-		    image = this._image,
-		    scale = map.getZoomScale(e.zoom),
-		    nw = this._bounds.getNorthWest(),
-		    se = this._bounds.getSouthEast(),
+		var scale = this._map.getZoomScale(e.zoom),
+		    offset = this._map._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min;
 
-		    topLeft = map._latLngToNewLayerPoint(nw, e.zoom, e.center),
-		    size = map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft),
-		    origin = topLeft._add(size._multiplyBy((1 / 2) * (1 - 1 / scale)));
-
-		image.style[L.DomUtil.TRANSFORM] =
-		        L.DomUtil.getTranslateString(origin) + ' scale(' + scale + ') ';
+		L.DomUtil.setTransform(this._image, offset, scale);
 	},
 
 	_reset: function () {
-		var image   = this._image,
-		    topLeft = this._map.latLngToLayerPoint(this._bounds.getNorthWest()),
-		    size = this._map.latLngToLayerPoint(this._bounds.getSouthEast())._subtract(topLeft);
+		var image = this._image,
+		    bounds = new L.Bounds(
+		        this._map.latLngToLayerPoint(this._bounds.getNorthWest()),
+		        this._map.latLngToLayerPoint(this._bounds.getSouthEast())),
+		    size = bounds.getSize();
 
-		L.DomUtil.setPosition(image, topLeft);
+		L.DomUtil.setPosition(image, bounds.min);
 
 		image.style.width  = size.x + 'px';
 		image.style.height = size.y + 'px';
-	},
-
-	_onImageLoad: function () {
-		this.fire('load');
 	},
 
 	_updateOpacity: function () {
@@ -136,6 +193,9 @@ L.ImageOverlay = L.Class.extend({
 	}
 });
 
+// @factory L.imageOverlay(imageUrl: String, bounds: LatLngBounds, options?: ImageOverlay options)
+// Instantiates an image overlay object given the URL of the image and the
+// geographical bounds it is tied to.
 L.imageOverlay = function (url, bounds, options) {
 	return new L.ImageOverlay(url, bounds, options);
 };

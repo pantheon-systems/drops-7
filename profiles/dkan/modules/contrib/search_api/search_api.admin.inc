@@ -338,13 +338,6 @@ function search_api_admin_add_server_submit(array $form, array &$form_state) {
 }
 
 /**
- * Title callback for viewing or editing a server or index.
- */
-function search_api_admin_item_title($object) {
-  return $object->name;
-}
-
-/**
  * Page callback: Displays information about a server.
  *
  * @param SearchApiServer $server

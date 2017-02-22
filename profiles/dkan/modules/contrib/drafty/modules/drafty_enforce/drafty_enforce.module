@@ -1,0 +1,35 @@
+<?php
+/**
+ * @file
+ * Hook implementations and API functions for drafty module.
+ */
+
+/**
+ * Implements hook_field_attach_submit().
+ */
+function drafty_enforce_field_attach_submit($entity_type, $entity, $form, &$form_state) {
+  // Only force a draft revision when the entity form is submitted.
+  $info = entity_get_info();
+  if (!empty($info[$entity_type]['entity keys']['revision']) && !drafty_entity_is_new($entity, $entity_type)) {
+    $entity->is_draft_revision = TRUE;
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function drafty_enforce_entity_presave($entity, $type) {
+  // Always force a new revision.
+  $entity->revision = TRUE;
+  $entity->new_revision = TRUE;
+  $entity->is_new_revision = TRUE;
+  $entity->default_revision = TRUE;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function drafty_enforce_form_node_form_alter(&$form, &$form_state) {
+  // Since we always force revisions, don't bother showing the option.
+  $form['revision_information']['revision']['#access'] = FALSE;
+}

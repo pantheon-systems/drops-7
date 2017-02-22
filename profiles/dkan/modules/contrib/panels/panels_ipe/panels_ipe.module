@@ -96,7 +96,7 @@ function template_preprocess_panels_ipe_pane_wrapper(&$vars) {
   }
 
   // Add option to configure style in IPE
-  if (user_access('administer panels styles')) {
+  if (user_access('administer panels pane styles')) {
     $vars['links']['style'] = array(
       'title' => '<span>' . t('Style') . '</span>',
       'href' => $renderer->get_url('style-type', 'pane', $pane->pid),
@@ -167,7 +167,7 @@ function template_preprocess_panels_ipe_add_pane_button(&$vars) {
   $vars['links'] = '';
 
   // Add option to configure style in IPE
-  if (user_access('administer panels styles')) {
+  if (user_access('administer panels region styles')) {
     $vars['links']['style'] = array(
       'title' => '<span>' . t('Region style') . '</span>',
       'href' => $renderer->get_url('style-type', 'region', $region_id),

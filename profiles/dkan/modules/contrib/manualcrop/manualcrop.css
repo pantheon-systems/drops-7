@@ -3,13 +3,13 @@
   position: fixed;
   left: 0px;
   top: 0px;
-  z-index: 10000;
+  z-index: 10003;
 }
 .manualcrop-overlay-bg {
   width: 100%;
   height: 100%;
   position: absolute;
-  z-index: 10001;
+  z-index: 10004;
   opacity: 0.90;
   filter: alpha(opacity=90);
   -ms-filter: "alpha(opacity=90)";
@@ -25,7 +25,7 @@
   position: absolute;
   left: 0px;
   top: 0px;
-  z-index: 10002;
+  z-index: 10005;
 }
 .manualcrop-inline .manualcrop-image-holder {
   position: relative;
@@ -54,7 +54,7 @@
   position: absolute;
   top: 5px;
   left: 5px;
-  z-index: 10002;
+  z-index: 10005;
 }
 .toolbar .manualcrop-overlay .manualcrop-instantpreview {
   top: 35px;
@@ -149,7 +149,7 @@
   position: absolute;
   bottom: 0.8em;
   right: 0em;
-  z-index: 10004;
+  z-index: 10007;
 }
 .manualcrop-inline .manualcrop-buttons {
   padding-bottom: 1em;

@@ -1,8 +1,72 @@
 /*
- * L.GeoJSON turns any GeoJSON data into a Leaflet layer.
+ * @class GeoJSON
+ * @aka L.GeoJSON
+ * @inherits FeatureGroup
+ *
+ * Represents a GeoJSON object or an array of GeoJSON objects. Allows you to parse
+ * GeoJSON data and display it on the map. Extends `FeatureGroup`.
+ *
+ * @example
+ *
+ * ```js
+ * L.geoJSON(data, {
+ * 	style: function (feature) {
+ * 		return {color: feature.properties.color};
+ * 	}
+ * }).bindPopup(function (layer) {
+ * 	return layer.feature.properties.description;
+ * }).addTo(map);
+ * ```
  */
 
 L.GeoJSON = L.FeatureGroup.extend({
+
+	/* @section
+	 * @aka GeoJSON options
+	 *
+	 * @option pointToLayer: Function = *
+	 * A `Function` defining how GeoJSON points spawn Leaflet layers. It is internally
+	 * called when data is added, passing the GeoJSON point feature and its `LatLng`.
+	 * The default is to spawn a default `Marker`:
+	 * ```js
+	 * function(geoJsonPoint, latlng) {
+	 * 	return L.marker(latlng);
+	 * }
+	 * ```
+	 *
+	 * @option style: Function = *
+	 * A `Function` defining the `Path options` for styling GeoJSON lines and polygons,
+	 * called internally when data is added.
+	 * The default value is to not override any defaults:
+	 * ```js
+	 * function (geoJsonFeature) {
+	 * 	return {}
+	 * }
+	 * ```
+	 *
+	 * @option onEachFeature: Function = *
+	 * A `Function` that will be called once for each created `Feature`, after it has
+	 * been created and styled. Useful for attaching events and popups to features.
+	 * The default is to do nothing with the newly created layers:
+	 * ```js
+	 * function (feature, layer) {}
+	 * ```
+	 *
+	 * @option filter: Function = *
+	 * A `Function` that will be used to decide whether to include a feature or not.
+	 * The default is to include all features:
+	 * ```js
+	 * function (geoJsonFeature) {
+	 * 	return true;
+	 * }
+	 * ```
+	 * Note: dynamically changing the `filter` option will have effect only on newly
+	 * added data. It will _not_ re-evaluate already included features.
+	 *
+	 * @option coordsToLatLng: Function = *
+	 * A `Function` that will be used for converting GeoJSON coordinates to `LatLng`s.
+	 * The default is the `coordsToLatLng` static method.
+	 */
 
 	initialize: function (geojson, options) {
 		L.setOptions(this, options);
@@ -14,16 +78,18 @@ L.GeoJSON = L.FeatureGroup.extend({
 		}
 	},
 
+	// @method addData( <GeoJSON> data ): this
+	// Adds a GeoJSON object to the layer.
 	addData: function (geojson) {
 		var features = L.Util.isArray(geojson) ? geojson : geojson.features,
 		    i, len, feature;
 
 		if (features) {
 			for (i = 0, len = features.length; i < len; i++) {
-				// Only add this if geometry or geometries are set and not null
+				// only add this if geometry or geometries are set and not null
 				feature = features[i];
 				if (feature.geometries || feature.geometry || feature.features || feature.coordinates) {
-					this.addData(features[i]);
+					this.addData(feature);
 				}
 			}
 			return this;
@@ -31,9 +97,12 @@ L.GeoJSON = L.FeatureGroup.extend({
 
 		var options = this.options;
 
-		if (options.filter && !options.filter(geojson)) { return; }
+		if (options.filter && !options.filter(geojson)) { return this; }
 
-		var layer = L.GeoJSON.geometryToLayer(geojson, options.pointToLayer, options.coordsToLatLng, options);
+		var layer = L.GeoJSON.geometryToLayer(geojson, options);
+		if (!layer) {
+			return this;
+		}
 		layer.feature = L.GeoJSON.asFeature(geojson);
 
 		layer.defaultOptions = layer.options;
@@ -46,18 +115,19 @@ L.GeoJSON = L.FeatureGroup.extend({
 		return this.addLayer(layer);
 	},
 
+	// @method resetStyle( <Path> layer ): this
+	// Resets the given vector layer's style to the original GeoJSON style, useful for resetting style after hover events.
 	resetStyle: function (layer) {
-		var style = this.options.style;
-		if (style) {
-			// reset any custom styles
-			L.Util.extend(layer.options, layer.defaultOptions);
-
-			this._setLayerStyle(layer, style);
-		}
+		// reset any custom styles
+		layer.options = L.Util.extend({}, layer.defaultOptions);
+		this._setLayerStyle(layer, this.options.style);
+		return this;
 	},
 
+	// @method setStyle( <Function> style ): this
+	// Changes styles of GeoJSON vector layers with the given style function.
 	setStyle: function (style) {
-		this.eachLayer(function (layer) {
+		return this.eachLayer(function (layer) {
 			this._setLayerStyle(layer, style);
 		}, this);
 	},
@@ -72,14 +142,25 @@ L.GeoJSON = L.FeatureGroup.extend({
 	}
 });
 
+// @section
+// There are several static functions which can be called without instantiating L.GeoJSON:
 L.extend(L.GeoJSON, {
-	geometryToLayer: function (geojson, pointToLayer, coordsToLatLng, vectorOptions) {
+	// @function geometryToLayer(featureData: Object, options?: GeoJSON options): Layer
+	// Creates a `Layer` from a given GeoJSON feature. Can use a custom
+	// [`pointToLayer`](#geojson-pointtolayer) and/or [`coordsToLatLng`](#geojson-coordstolatlng)
+	// functions if provided as options.
+	geometryToLayer: function (geojson, options) {
+
 		var geometry = geojson.type === 'Feature' ? geojson.geometry : geojson,
-		    coords = geometry.coordinates,
+		    coords = geometry ? geometry.coordinates : null,
 		    layers = [],
+		    pointToLayer = options && options.pointToLayer,
+		    coordsToLatLng = options && options.coordsToLatLng || this.coordsToLatLng,
 		    latlng, latlngs, i, len;
 
-		coordsToLatLng = coordsToLatLng || this.coordsToLatLng;
+		if (!coords && !geometry) {
+			return null;
+		}
 
 		switch (geometry.type) {
 		case 'Point':
@@ -94,32 +175,26 @@ L.extend(L.GeoJSON, {
 			return new L.FeatureGroup(layers);
 
 		case 'LineString':
-			latlngs = this.coordsToLatLngs(coords, 0, coordsToLatLng);
-			return new L.Polyline(latlngs, vectorOptions);
+		case 'MultiLineString':
+			latlngs = this.coordsToLatLngs(coords, geometry.type === 'LineString' ? 0 : 1, coordsToLatLng);
+			return new L.Polyline(latlngs, options);
 
 		case 'Polygon':
-			if (coords.length === 2 && !coords[1].length) {
-				throw new Error('Invalid GeoJSON object.');
-			}
-			latlngs = this.coordsToLatLngs(coords, 1, coordsToLatLng);
-			return new L.Polygon(latlngs, vectorOptions);
-
-		case 'MultiLineString':
-			latlngs = this.coordsToLatLngs(coords, 1, coordsToLatLng);
-			return new L.MultiPolyline(latlngs, vectorOptions);
-
 		case 'MultiPolygon':
-			latlngs = this.coordsToLatLngs(coords, 2, coordsToLatLng);
-			return new L.MultiPolygon(latlngs, vectorOptions);
+			latlngs = this.coordsToLatLngs(coords, geometry.type === 'Polygon' ? 1 : 2, coordsToLatLng);
+			return new L.Polygon(latlngs, options);
 
 		case 'GeometryCollection':
 			for (i = 0, len = geometry.geometries.length; i < len; i++) {
-
-				layers.push(this.geometryToLayer({
+				var layer = this.geometryToLayer({
 					geometry: geometry.geometries[i],
 					type: 'Feature',
 					properties: geojson.properties
-				}, pointToLayer, coordsToLatLng, vectorOptions));
+				}, options);
+
+				if (layer) {
+					layers.push(layer);
+				}
 			}
 			return new L.FeatureGroup(layers);
 
@@ -128,15 +203,21 @@ L.extend(L.GeoJSON, {
 		}
 	},
 
-	coordsToLatLng: function (coords) { // (Array[, Boolean]) -> LatLng
+	// @function coordsToLatLng(coords: Array): LatLng
+	// Creates a `LatLng` object from an array of 2 numbers (longitude, latitude)
+	// or 3 numbers (longitude, latitude, altitude) used in GeoJSON for points.
+	coordsToLatLng: function (coords) {
 		return new L.LatLng(coords[1], coords[0], coords[2]);
 	},
 
-	coordsToLatLngs: function (coords, levelsDeep, coordsToLatLng) { // (Array[, Number, Function]) -> Array
-		var latlng, i, len,
-		    latlngs = [];
+	// @function coordsToLatLngs(coords: Array, levelsDeep?: Number, coordsToLatLng?: Function): Array
+	// Creates a multidimensional array of `LatLng`s from a GeoJSON coordinates array.
+	// `levelsDeep` specifies the nesting level (0 is for an array of points, 1 for an array of arrays of points, etc., 0 by default).
+	// Can use a custom [`coordsToLatLng`](#geojson-coordstolatlng) function.
+	coordsToLatLngs: function (coords, levelsDeep, coordsToLatLng) {
+		var latlngs = [];
 
-		for (i = 0, len = coords.length; i < len; i++) {
+		for (var i = 0, len = coords.length, latlng; i < len; i++) {
 			latlng = levelsDeep ?
 			        this.coordsToLatLngs(coords[i], levelsDeep - 1, coordsToLatLng) :
 			        (coordsToLatLng || this.coordsToLatLng)(coords[i]);
@@ -147,38 +228,50 @@ L.extend(L.GeoJSON, {
 		return latlngs;
 	},
 
+	// @function latLngToCoords(latlng: LatLng): Array
+	// Reverse of [`coordsToLatLng`](#geojson-coordstolatlng)
 	latLngToCoords: function (latlng) {
-		var coords = [latlng.lng, latlng.lat];
-
-		if (latlng.alt !== undefined) {
-			coords.push(latlng.alt);
-		}
-		return coords;
+		return latlng.alt !== undefined ?
+				[latlng.lng, latlng.lat, latlng.alt] :
+				[latlng.lng, latlng.lat];
 	},
 
-	latLngsToCoords: function (latLngs) {
+	// @function latLngsToCoords(latlngs: Array, levelsDeep?: Number, closed?: Boolean): Array
+	// Reverse of [`coordsToLatLngs`](#geojson-coordstolatlngs)
+	// `closed` determines whether the first point should be appended to the end of the array to close the feature, only used when `levelsDeep` is 0. False by default.
+	latLngsToCoords: function (latlngs, levelsDeep, closed) {
 		var coords = [];
 
-		for (var i = 0, len = latLngs.length; i < len; i++) {
-			coords.push(L.GeoJSON.latLngToCoords(latLngs[i]));
+		for (var i = 0, len = latlngs.length; i < len; i++) {
+			coords.push(levelsDeep ?
+				L.GeoJSON.latLngsToCoords(latlngs[i], levelsDeep - 1, closed) :
+				L.GeoJSON.latLngToCoords(latlngs[i]));
+		}
+
+		if (!levelsDeep && closed) {
+			coords.push(coords[0]);
 		}
 
 		return coords;
 	},
 
 	getFeature: function (layer, newGeometry) {
-		return layer.feature ? L.extend({}, layer.feature, {geometry: newGeometry}) : L.GeoJSON.asFeature(newGeometry);
+		return layer.feature ?
+				L.extend({}, layer.feature, {geometry: newGeometry}) :
+				L.GeoJSON.asFeature(newGeometry);
 	},
 
-	asFeature: function (geoJSON) {
-		if (geoJSON.type === 'Feature') {
-			return geoJSON;
+	// @function asFeature(geojson: Object): Object
+	// Normalize GeoJSON geometries/features into GeoJSON features.
+	asFeature: function (geojson) {
+		if (geojson.type === 'Feature' || geojson.type === 'FeatureCollection') {
+			return geojson;
 		}
 
 		return {
 			type: 'Feature',
 			properties: {},
-			geometry: geoJSON
+			geometry: geojson
 		};
 	}
 });
@@ -192,95 +285,108 @@ var PointToGeoJSON = {
 	}
 };
 
+// @namespace Marker
+// @method toGeoJSON(): Object
+// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the marker (as a GeoJSON `Point` Feature).
 L.Marker.include(PointToGeoJSON);
+
+// @namespace CircleMarker
+// @method toGeoJSON(): Object
+// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the circle marker (as a GeoJSON `Point` Feature).
 L.Circle.include(PointToGeoJSON);
 L.CircleMarker.include(PointToGeoJSON);
 
-L.Polyline.include({
-	toGeoJSON: function () {
-		return L.GeoJSON.getFeature(this, {
-			type: 'LineString',
-			coordinates: L.GeoJSON.latLngsToCoords(this.getLatLngs())
-		});
+
+// @namespace Polyline
+// @method toGeoJSON(): Object
+// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the polyline (as a GeoJSON `LineString` or `MultiLineString` Feature).
+L.Polyline.prototype.toGeoJSON = function () {
+	var multi = !L.Polyline._flat(this._latlngs);
+
+	var coords = L.GeoJSON.latLngsToCoords(this._latlngs, multi ? 1 : 0);
+
+	return L.GeoJSON.getFeature(this, {
+		type: (multi ? 'Multi' : '') + 'LineString',
+		coordinates: coords
+	});
+};
+
+// @namespace Polygon
+// @method toGeoJSON(): Object
+// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the polygon (as a GeoJSON `Polygon` or `MultiPolygon` Feature).
+L.Polygon.prototype.toGeoJSON = function () {
+	var holes = !L.Polyline._flat(this._latlngs),
+	    multi = holes && !L.Polyline._flat(this._latlngs[0]);
+
+	var coords = L.GeoJSON.latLngsToCoords(this._latlngs, multi ? 2 : holes ? 1 : 0, true);
+
+	if (!holes) {
+		coords = [coords];
 	}
-});
 
-L.Polygon.include({
-	toGeoJSON: function () {
-		var coords = [L.GeoJSON.latLngsToCoords(this.getLatLngs())],
-		    i, len, hole;
+	return L.GeoJSON.getFeature(this, {
+		type: (multi ? 'Multi' : '') + 'Polygon',
+		coordinates: coords
+	});
+};
 
-		coords[0].push(coords[0][0]);
 
-		if (this._holes) {
-			for (i = 0, len = this._holes.length; i < len; i++) {
-				hole = L.GeoJSON.latLngsToCoords(this._holes[i]);
-				hole.push(hole[0]);
-				coords.push(hole);
-			}
-		}
+// @namespace LayerGroup
+L.LayerGroup.include({
+	toMultiPoint: function () {
+		var coords = [];
+
+		this.eachLayer(function (layer) {
+			coords.push(layer.toGeoJSON().geometry.coordinates);
+		});
 
 		return L.GeoJSON.getFeature(this, {
-			type: 'Polygon',
+			type: 'MultiPoint',
 			coordinates: coords
 		});
+	},
+
+	// @method toGeoJSON(): Object
+	// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the layer group (as a GeoJSON `GeometryCollection`).
+	toGeoJSON: function () {
+
+		var type = this.feature && this.feature.geometry && this.feature.geometry.type;
+
+		if (type === 'MultiPoint') {
+			return this.toMultiPoint();
+		}
+
+		var isGeometryCollection = type === 'GeometryCollection',
+		    jsons = [];
+
+		this.eachLayer(function (layer) {
+			if (layer.toGeoJSON) {
+				var json = layer.toGeoJSON();
+				jsons.push(isGeometryCollection ? json.geometry : L.GeoJSON.asFeature(json));
+			}
+		});
+
+		if (isGeometryCollection) {
+			return L.GeoJSON.getFeature(this, {
+				geometries: jsons,
+				type: 'GeometryCollection'
+			});
+		}
+
+		return {
+			type: 'FeatureCollection',
+			features: jsons
+		};
 	}
 });
 
-(function () {
-	function multiToGeoJSON(type) {
-		return function () {
-			var coords = [];
-
-			this.eachLayer(function (layer) {
-				coords.push(layer.toGeoJSON().geometry.coordinates);
-			});
-
-			return L.GeoJSON.getFeature(this, {
-				type: type,
-				coordinates: coords
-			});
-		};
-	}
-
-	L.MultiPolyline.include({toGeoJSON: multiToGeoJSON('MultiLineString')});
-	L.MultiPolygon.include({toGeoJSON: multiToGeoJSON('MultiPolygon')});
-
-	L.LayerGroup.include({
-		toGeoJSON: function () {
-
-			var geometry = this.feature && this.feature.geometry,
-				jsons = [],
-				json;
-
-			if (geometry && geometry.type === 'MultiPoint') {
-				return multiToGeoJSON('MultiPoint').call(this);
-			}
-
-			var isGeometryCollection = geometry && geometry.type === 'GeometryCollection';
-
-			this.eachLayer(function (layer) {
-				if (layer.toGeoJSON) {
-					json = layer.toGeoJSON();
-					jsons.push(isGeometryCollection ? json.geometry : L.GeoJSON.asFeature(json));
-				}
-			});
-
-			if (isGeometryCollection) {
-				return L.GeoJSON.getFeature(this, {
-					geometries: jsons,
-					type: 'GeometryCollection'
-				});
-			}
-
-			return {
-				type: 'FeatureCollection',
-				features: jsons
-			};
-		}
-	});
-}());
-
-L.geoJson = function (geojson, options) {
+// @namespace GeoJSON
+// @factory L.geoJSON(geojson?: Object, options?: GeoJSON options)
+// Creates a GeoJSON layer. Optionally accepts an object in
+// [GeoJSON format](http://geojson.org/geojson-spec.html) to display on the map
+// (you can alternatively add it later with `addData` method) and an `options` object.
+L.geoJSON = function (geojson, options) {
 	return new L.GeoJSON(geojson, options);
 };
+// Backward compatibility.
+L.geoJson = L.geoJSON;

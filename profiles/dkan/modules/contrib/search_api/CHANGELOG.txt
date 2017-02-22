@@ -1,5 +1,42 @@
-Search API 1.x, dev (xxxx-xx-xx):
----------------------------------
+Search API 1.20 (2016-07-21):
+-----------------------------
+- #2731103 by drunken monkey: Fixed the default value for the taxonomy term
+  filter "multiple" setting.
+- #1818572 by morningtime, drunken monkey, lodey, guillaumev: Added pretty
+  paths support to the Views facets block.
+- #2753441 by Johnny vd Laar: Fixed translated field names in
+  language-independent cache.
+
+Search API 1.19 (2016-07-05):
+-----------------------------
+- #2724687 by StefanPr, drunken monkey: Fixed failed sanitization of NULL field
+  values.
+- #2744189 by nikolabintev, drunken monkey: Fixed highlighting for single-word
+  fields.
+- #2744995 by John Cook, drunken monkey: Fixed search views without pager.
+- #2742053 by tunic: Fixed change notification on node access records change.
+- #2733447 by jsacksick: Fixed translatability of our Views taxonomy term
+  filter.
+- #2720465 by drunken monkey: Fixed bundle filter's handling of entity types
+  with no bundles on multi-type indexes.
+- #2710893 by alan-ps, drunken monkey: Fixed creation of comment indexes when
+  no nodes exist.
+- #2707039 by alan-ps: Fixed indexes of flag entities with "bundles" setting.
+- #2700879 by drunken monkey: Fixed breadcrumbs on index tabs.
+- #1889940 by cspurk, Yaron Tal: Fixed "HTML filter" processor to recognize all
+  valid HTML tags.
+- #2700011 by drunken monkey: Fixed compatibility issues of facets from
+  different indexes.
+- #2665970 by andrei.colesnic, drunken monkey: Added "Limit list to selected
+  items" exposed option support for Views taxonomy term filters.
+- #2703675 by drunken monkey, heykarthikwithu: Fixed accidental assumption that
+  all facets are taxonomy terms.
+- #2419853 by drunken monkey: Fixed HTML filter leaves escaped entities in
+  field values sometimes.
+
+Search API 1.18 (2016-04-20):
+-----------------------------
+- Various security fixes – see https://www.drupal.org/node/2710063.
 - #2693425 by jojyja: Fixed a typo in search_api.info.
 
 Search API 1.17 (2016-03-14):

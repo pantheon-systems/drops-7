@@ -23,6 +23,9 @@ function entityreference_filter_views_data_alter(&$data) {
       elseif ($field_name === 'tid') {
         $base_table = 'taxonomy_term_data';
       }
+      elseif ($field_name === 'product_id') {
+        $base_table = 'commerce_product';
+      }
       elseif (substr($field_name, -4) === '_tid') {
         if (isset($field_info['filter']['field_name'])) {
           $field = field_info_field($field_info['filter']['field_name']);
@@ -73,6 +76,7 @@ function entityreference_filter_update_callback($view_name, $display_name, $cont
     return $result;
   }
   // Check that the view is valid and the display still exists.
+  /** @var view $view */
   $view = views_get_view($view_name);
   if (!$view || !isset($view->display[$display_name]) || !$view->access($display_name)) {
     watchdog('entityreference', 'The view %view_name is no longer eligible for the filter.', array('%view_name' => $view_name), WATCHDOG_WARNING);
@@ -82,6 +86,11 @@ function entityreference_filter_update_callback($view_name, $display_name, $cont
 
   if (!$view->access(array($display_name))) {
     return $result;
+  }
+
+  if (!empty($_REQUEST['entityreference_filter_args'])) {
+    // Use the initial arguments of this view.
+    $view->set_arguments($_REQUEST['entityreference_filter_args']);
   }
 
   $view->build();

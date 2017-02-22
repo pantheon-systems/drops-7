@@ -1,3 +1,8 @@
+7.x-1.12.14
+-----------
+- Add support for validation of data.json files from sites with self-signed certificates.
+- Fix exported feature component not reverting correctly.
+
 7.x-1.12.12
 -----------
 - Added support for federal and non-federal on POD validation.
@@ -7,6 +12,7 @@
 - Sync up versioning to DKAN
 - Stop trying to determine the media type for resources in POD when format is set to "data". This was causing errors and we should trust the "format" field.
 - Add DCAT support
+- Output booleans values as true booleans
 
 7.x-1.0 2016-08-24
 ------------------

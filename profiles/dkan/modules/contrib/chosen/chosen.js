@@ -12,11 +12,13 @@
 
         // The width default option is considered the minimum width, so this
         // must be evaluated for every option.
-        if ($(element).width() < settings.chosen.minimum_width) {
-          options.width = settings.chosen.minimum_width + 'px';
-        }
-        else {
-          options.width = $(element).width() + 'px';
+        if (settings.chosen.minimum_width > 0) {
+          if ($(element).width() < settings.chosen.minimum_width) {
+            options.width = settings.chosen.minimum_width + 'px';
+          }
+          else {
+            options.width = $(element).width() + 'px';
+          }
         }
 
         // Some field widgets have cardinality, so we must respect that.
@@ -59,6 +61,9 @@
           options = getElementOptions(this);
           $(this).chosen(options);
         });
+
+        //Add data aria for input with choosen widget. This line is for accesibility.
+        $('.chosen-choices .search-field input, .chosen-search input').attr('aria-label', 'Choose some options');
     }
   };
 })(jQuery);

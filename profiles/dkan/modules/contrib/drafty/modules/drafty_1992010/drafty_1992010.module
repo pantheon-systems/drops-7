@@ -1,0 +1,46 @@
+<?php
+/**
+ * @file
+ * Cleans up translations in field_data_* tables.
+ */
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function drafty_1992010(&$implementations) {
+  if (isset($implementations['drafty_1992010'])) {
+   $group = $implementations['drafty_1992010'];
+   unset($implementations['drafty_1992010']);
+   $implementations['drafty_1992010'] = $group;
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function drafty_1992010_entity_update($entity, $entity_type) {
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  if (!isset($vid)) {
+    $vid = $id;
+  }
+
+  // By the time we reach here, field_sql_storage has written to the field_data_*
+  // and field_revision_* tables. Due to http://drupal.org/node/1992010 there
+  // might be stale translation data in the field_data_* table. For each field,
+  // delete any data in the field table that does not correspond to the
+  // languages on the entity being passed in. The quickest and safest way to do
+  // this is to delete any data not matching the version ID of the item being
+  // passed in.
+  $instances = field_info_instances($entity_type, $bundle);
+
+  foreach ($instances as $instance) {
+    // For our purposes, and instance with the field_name key set works for
+    // passing into _field_sql_storage_tablename().
+    $table_name = _field_sql_storage_tablename($instance);
+    db_delete($table_name)
+      ->condition('entity_type', $entity_type)
+      ->condition('entity_id', $id)
+      ->condition('revision_id', $vid, '<>')
+      ->execute();
+  }
+}

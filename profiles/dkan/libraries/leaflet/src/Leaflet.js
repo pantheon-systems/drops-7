@@ -1,8 +1,18 @@
 
-var oldL = window.L,
-    L = {};
+var L = {
+	version: '1.0.2'
+};
 
-L.version = '0.7.3';
+function expose() {
+	var oldL = window.L;
+
+	L.noConflict = function () {
+		window.L = oldL;
+		return this;
+	};
+
+	window.L = L;
+}
 
 // define Leaflet for Node module pattern loaders, including Browserify
 if (typeof module === 'object' && typeof module.exports === 'object') {
@@ -14,10 +24,6 @@ if (typeof module === 'object' && typeof module.exports === 'object') {
 }
 
 // define Leaflet as a global L variable, saving the original L to restore later if needed
-
-L.noConflict = function () {
-	window.L = oldL;
-	return this;
-};
-
-window.L = L;
+if (typeof window !== 'undefined') {
+	expose();
+}

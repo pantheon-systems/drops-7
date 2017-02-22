@@ -36,7 +36,7 @@
         contentBottom: 45
       },
       modalOptions: {
-        opacity: .55,
+        opacity: 0.55,
         background: '#fff'
       }
     };
@@ -75,7 +75,7 @@
         'width': (width - Drupal.CTools.Modal.currentSettings.modalSize.contentRight) + 'px',
         'height': (height - Drupal.CTools.Modal.currentSettings.modalSize.contentBottom) + 'px'
       });
-    }
+    };
 
     if (!Drupal.CTools.Modal.modal) {
       Drupal.CTools.Modal.modal = $(Drupal.theme(settings.modalTheme));
@@ -102,14 +102,20 @@
     }
   };
 
+  $(document).keyup(function (evt) {
+    if (evt.which == 27) {
+      Drupal.CTools.Modal.dismiss();
+    }
+  });
+
   /**
    * Provide the HTML for the Modal.
    */
   Drupal.theme.prototype.CToolsModalDialog = function () {
-    var html = ''
-    html += '  <div id="ctools-modal">'
-    html += '    <div class="ctools-modal-dialog modal-dialog">'
-    html += '      <div class="modal-content">'
+    var html = '';
+    html += '  <div id="ctools-modal">';
+    html += '    <div class="ctools-modal-dialog modal-dialog">';
+    html += '      <div class="modal-content">';
     html += '        <div class="modal-header">';
     html += '          <button type="button" class="close ctools-close-modal" aria-label="Close Window">&times; <span class="element-invisible">Close Window</span></button>';
     html += '          <h4 id="modal-title" class="modal-title">&nbsp;</h4>';
@@ -121,7 +127,7 @@
     html += '  </div>';
 
     return html;
-  }
+  };
 
   /**
    * Provide the HTML for Modal Throbber.
@@ -134,6 +140,5 @@
 
     return html;
   };
-
 
 })(jQuery);

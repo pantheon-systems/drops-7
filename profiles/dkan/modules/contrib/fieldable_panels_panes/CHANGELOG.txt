@@ -1,3 +1,29 @@
+Fieldable Panels Panes 7.x-1.11, 2016-11-05
+-------------------------------------------
+#2688577 by rigoucr: Wrong function name for update 7114.
+#2778265 by DamienMcKenna: Fixed tests due to permission changes in core.
+#2233363 by DamienMcKenna: Removed some legacy paths that were causing problems
+  on some sites.
+#2798963 by tbfisher: Typo on Migrate integration could lead to dataloss.
+#2798965 by tbfisher: Migrate class for use as a data source.
+#2730465 by joelpittet: Fixed integration with Panel Nodes.
+#2548883 by Ahmad Abbad: Title field was shown twice in certain circumstances.
+#2637740 by joelstein, Chris Burge: Add the entity's bundle name, to make some
+  of the hooks easier to work with.
+#2494733 by DamienMcKenna: Added a test dependency on Pathauto.
+#2494733 by DamienMcKenna: Added a test for path handling when Pathauto is
+  installed.
+#2801605 by scuba_fly, DamienMcKenna, mrmikedewolf: Allow 'reuseable' option to
+  be changed after initial FPP creation.
+#2814117 by cboyden, lucas.constantino, dsnopek: Added
+  hook_fieldable_panels_panes_access() to allow other modules to control access
+  to Fieldable Panels Pane objects.
+#2801353 by ChaseOnTheWeb, DamienMcKenna: Duplicate logic of update_7112 and
+  update_7113 for when using UUID.
+#2723655 by DamienMcKenna: Fixed usage of POSITION() in update_7112 and
+  update_7113.
+
+
 Fieldable Panels Panes 7.x-1.10, 2016-05-04
 -------------------------------------------
 By cboyden, DamienMcKenna, dsnopek: Admin title formatting.

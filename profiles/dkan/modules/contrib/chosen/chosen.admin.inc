@@ -46,10 +46,9 @@ function chosen_admin_settings($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Minimum width of widget'),
     '#field_suffix' => 'px',
-    '#required' => TRUE,
     '#size' => 3,
-    '#default_value' => variable_get('chosen_minimum_width', 200),
-    '#description' => t('The minimum width of the Chosen widget.'),
+    '#default_value' => variable_get('chosen_minimum_width', ''),
+    '#description' => t('The minimum width of the Chosen widget. Leave blank to have chosen determine this.'),
   );
 
   $form['chosen_jquery_selector'] = array(
@@ -88,6 +87,24 @@ function chosen_admin_settings($form, &$form_state) {
     '#options' => _chosen_enabled_themes_options(),
     '#default_value' => variable_get('chosen_disabled_themes', array()),
     '#description' => t('Enable or disable the default Chosen CSS file. Select a theme if it contains custom styles for Chosen replacements.'),
+  );
+
+  $form['options']['chosen_include'] = array(
+    '#type' => 'radios',
+    '#title' => t('Use chosen for admin pages and/or front end pages'),
+    '#options' => array(
+      CHOSEN_INCLUDE_EVERYWHERE => t('Include Chosen on every page'),
+      CHOSEN_INCLUDE_ADMIN => t('Include Chosen only on admin pages'),
+      CHOSEN_INCLUDE_NO_ADMIN => t('Include Chosen only on front end pages'),
+    ),
+    '#default_value' => variable_get('chosen_include', CHOSEN_INCLUDE_EVERYWHERE),
+  );
+
+  $form['options']['chosen_allow_single_deselect'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow deselect on single selects'),
+    '#default_value' => variable_get('chosen_allow_single_deselect', FALSE),
+    '#description' => t("Enable or disable option deselection for single select fields. This will only work if the first option has blank text."),
   );
 
   $form['strings'] = array(

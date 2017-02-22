@@ -120,7 +120,7 @@ function panels_node_update_7301() {
   }
 }
 
-/*
+/**
  * Set the storage type and id on existing panels nodes.
  */
 function panels_node_update_7302() {

@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Serializer\Tests\Encoder;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Tests\Fixtures\Dummy;
 use Symfony\Component\Serializer\Tests\Fixtures\NormalizableTraversableDummy;
 use Symfony\Component\Serializer\Tests\Fixtures\ScalarDummy;
@@ -19,7 +20,7 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 
-class XmlEncoderTest extends \PHPUnit_Framework_TestCase
+class XmlEncoderTest extends TestCase
 {
     private $encoder;
 
@@ -471,7 +472,12 @@ XML;
 
     public function testDecodeEmptyXml()
     {
-        $this->setExpectedException('Symfony\Component\Serializer\Exception\UnexpectedValueException', 'Invalid XML data, it can not be empty.');
+        if (method_exists($this, 'expectException')) {
+            $this->expectException('Symfony\Component\Serializer\Exception\UnexpectedValueException');
+            $this->expectExceptionMessage('Invalid XML data, it can not be empty.');
+        } else {
+            $this->setExpectedException('Symfony\Component\Serializer\Exception\UnexpectedValueException', 'Invalid XML data, it can not be empty.');
+        }
         $this->encoder->decode(' ', 'xml');
     }
 

@@ -1,13 +1,11 @@
 <html>
     <head>
     <link rel="stylesheet" href="../../dist/leaflet.css" />
-    <script>
-        L_PREFER_CANVAS = true;
-    </script>
     <link rel="stylesheet" href="../css/screen.css" />
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="../../build/deps.js"></script>
 
+        <script src="../leaflet-include.js"></script>
     </head>
     <body>
 
@@ -15,12 +13,11 @@
 
 
         <script>
-
-        $(document).ready(function() {
             //Init a map, and attempt a locate.
             var map = L.map('map', {
                 center: [39.84, -96.591],
-                zoom: 4
+                zoom: 4,
+                preferCanvas: true
             }).locate();
 
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -35,13 +32,8 @@
             });
 
             //For experiments using setRadius
-            window.marker = L.circleMarker(map.getCenter(),{radius:30}).addTo(vanillaLayer);
-        });
-
+            var marker = L.circleMarker(map.getCenter(),{radius:30}).addTo(vanillaLayer);
         </script>
-        <script type="text/javascript" src="../../build/deps.js"></script>
-
-        <script src="../leaflet-include.js"></script>
 
     </body>
 </html>

@@ -14,7 +14,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
             <div class="input-group-btn"> \
               <button type="button" class="btn btn-default">Go &raquo;</button> \
             </div> \
-            <input class="form-control search-query" type="text" name="q" value="{{q}}" placeholder="Search data ..."> \
+            <input aria-label="Search query" class="form-control search-query" type="text" name="q" value="{{q}}" placeholder="Search data ..."/> \
           </div> \
         </div> \
       </form> \
@@ -49,7 +49,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         <div class="form-stacked js-add"> \
           <div class="form-group"> \
             <label>Field</label> \
-            <select class="fields form-control"> \
+            <select aria-label="Field to filter" class="fields form-control"> \
               {{#fields}} \
               <option value="{{id}}">{{label}}</option> \
               {{/fields}} \
@@ -57,7 +57,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
           </div> \
           <div class="form-group"> \
             <label>Filter type</label> \
-            <select class="filterType form-control"> \
+            <select aria-label="Field filter type" class="filterType form-control"> \
               <option value="term">Value</option> \
               <option value="range">Range</option> \
               <option value="geo_distance">Geo distance</option> \
@@ -83,7 +83,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
               {{field}} <small>{{type}}</small> \
               <a class="js-remove-filter" href="#" title="Remove this filter" data-filter-id="{{id}}">&times;</a> \
             </label> \
-            <input class="form-control" type="text" value="{{term}}" name="term" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+            <input aria-label="Field filter value" class="form-control" type="text" value="{{term}}" name="term" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
           </div> \
         </div> \
       ',
@@ -98,11 +98,11 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
             </div> \
             <div class="form-group"> \
               <label for="">From</label> \
-              <input class="form-control" type="text" value="{{from}}" name="from" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+              <input aria-label="Field filter value from" class="form-control" type="text" value="{{from}}" name="from" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
             </div> \
             <div class="form-group"> \
               <label for="">To</label> \
-              <input class="form-control" type="text" value="{{to}}" name="to" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+              <input aria-label="Field filter value to" class="form-control" type="text" value="{{to}}" name="to" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
             </div> \
           </fieldset> \
         </div> \
@@ -116,15 +116,15 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
             </legend> \
             <div class="form-group"> \
               <label class="control-label" for="">Longitude</label> \
-              <input class="input-sm" type="text" value="{{point.lon}}" name="lon" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+              <input aria-label="Field filter longitude value" class="input-sm" type="text" value="{{point.lon}}" name="lon" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
             </div> \
             <div class="form-group"> \
               <label class="control-label" for="">Latitude</label> \
-              <input class="input-sm" type="text" value="{{point.lat}}" name="lat" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+              <input aria-label="Field filter latitude value" class="input-sm" type="text" value="{{point.lat}}" name="lat" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
             </div> \
             <div class="form-group"> \
               <label class="control-label" for="">Distance (km)</label> \
-              <input class="input-sm" type="text" value="{{distance}}" name="distance" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
+              <input aria-label="Field filter distance value" class="input-sm" type="text" value="{{distance}}" name="distance" data-filter-field="{{field}}" data-filter-id="{{id}}" data-filter-type="{{type}}" /> \
             </div> \
           </fieldset> \
         </div> \

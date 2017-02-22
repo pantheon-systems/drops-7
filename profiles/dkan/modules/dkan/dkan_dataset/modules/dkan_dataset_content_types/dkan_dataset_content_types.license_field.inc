@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * dkan_dataset_content_types.license_field.inc
@@ -45,6 +46,15 @@ function dkan_dataset_content_types_license_subscribed_values() {
       }
     }
   }
+
+  // Remove licenses with empty URIs if strict POD validation is enabled.
+  foreach ($subscribed_values as $key => $value) {
+    // Skip licenses with empty URIs if strict POD validation is enabled.
+    if (variable_get('dkan_dataset_form_pod_validation') && !isset($value['uri'])) {
+      unset($subscribed_values[$key]);
+    }
+  }
+
   return $subscribed_values;
 }
 
@@ -91,22 +101,22 @@ function dkan_dataset_content_types_license_subscribe() {
     ),
     "uk-ogl" => array(
       "label" => "UK Open Government Licence (OGL)",
-      "url" => 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/'
+      "url" => 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/',
     ),
     "other-at" => array(
-      "label" => "Other (Attribution)"
+      "label" => "Other (Attribution)",
     ),
     "other-nc" => array(
-      "label" => "Other (Non-Commercial)"
+      "label" => "Other (Non-Commercial)",
     ),
     "other-closed" => array(
-      "label" => "Other (Not Open)"
+      "label" => "Other (Not Open)",
     ),
     "other-open" => array(
-      "label" => "Other (Open)"
+      "label" => "Other (Open)",
     ),
     "other-pd" => array(
-      "label" => "Other (Public Domain)"
+      "label" => "Other (Public Domain)",
     ),
     "notspecified" => array(
       "label" => "License Not Specified",

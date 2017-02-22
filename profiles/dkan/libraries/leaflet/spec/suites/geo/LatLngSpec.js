@@ -50,40 +50,6 @@ describe('LatLng', function () {
 		});
 	});
 
-	describe('#wrap', function () {
-		it("wraps longitude to lie between -180 and 180 by default", function () {
-			var a = new L.LatLng(0, 190).wrap().lng;
-			expect(a).to.eql(-170);
-
-			var b = new L.LatLng(0, 360).wrap().lng;
-			expect(b).to.eql(0);
-
-			var c = new L.LatLng(0, 380).wrap().lng;
-			expect(c).to.eql(20);
-
-			var d = new L.LatLng(0, -190).wrap().lng;
-			expect(d).to.eql(170);
-
-			var e = new L.LatLng(0, -360).wrap().lng;
-			expect(e).to.eql(0);
-
-			var f = new L.LatLng(0, -380).wrap().lng;
-			expect(f).to.eql(-20);
-
-			var g = new L.LatLng(0, 90).wrap().lng;
-			expect(g).to.eql(90);
-
-			var h = new L.LatLng(0, 180).wrap().lng;
-			expect(h).to.eql(180);
-		});
-
-		it("wraps longitude within the given range", function () {
-			var a = new L.LatLng(0, 190).wrap(-100, 100).lng;
-			expect(a).to.eql(-10);
-		});
-
-	});
-
 	describe('#toString', function () {
 		it('formats a string', function () {
 			var a = new L.LatLng(10.333333333, 20.2222222);
@@ -98,6 +64,12 @@ describe('LatLng', function () {
 
 			expect(Math.abs(Math.round(a.distanceTo(b) / 1000) - 2084) < 5).to.eql(true);
 		});
+		it('does not return NaN if input points are equal', function () {
+			var a = new L.LatLng(50.5, 30.5);
+			var b = new L.LatLng(50.5, 30.5);
+
+			expect(a.distanceTo(b)).to.eql(0);
+		});
 	});
 
 	describe('L.latLng factory', function () {
@@ -108,7 +80,10 @@ describe('LatLng', function () {
 		});
 
 		it('accepts an array of coordinates', function () {
+			expect(L.latLng([])).to.eql(null);
+			expect(L.latLng([50])).to.eql(null);
 			expect(L.latLng([50, 30])).to.eql(new L.LatLng(50, 30));
+			expect(L.latLng([50, 30, 100])).to.eql(new L.LatLng(50, 30, 100));
 		});
 
 		it('passes null or undefined as is', function () {
@@ -127,6 +102,39 @@ describe('LatLng', function () {
 		it('accepts an object with lat/lon', function () {
 			expect(L.latLng({lat: 50, lon: 30})).to.eql(new L.LatLng(50, 30));
 		});
-	});
-});
 
+		it('returns null if lng not specified', function () {
+			expect(L.latLng(50)).to.be(null);
+		});
+
+		it('accepts altitude as third parameter', function () {
+			expect(L.latLng(50, 30, 100)).to.eql(new L.LatLng(50, 30, 100));
+		});
+
+		it('accepts an object with alt', function () {
+			expect(L.latLng({lat: 50, lng: 30, alt: 100})).to.eql(new L.LatLng(50, 30, 100));
+			expect(L.latLng({lat: 50, lon: 30, alt: 100})).to.eql(new L.LatLng(50, 30, 100));
+		});
+	});
+
+	describe('#clone', function () {
+
+		it('should clone attributes', function () {
+			var a = new L.LatLng(50.5, 30.5, 100);
+			var b = a.clone();
+
+			expect(b.lat).to.equal(50.5);
+			expect(b.lng).to.equal(30.5);
+			expect(b.alt).to.equal(100);
+		});
+
+		it('should create another reference', function () {
+			var a = new L.LatLng(50.5, 30.5, 100);
+			var b = a.clone();
+
+			expect(a === b).to.be(false);
+		});
+
+	});
+
+});

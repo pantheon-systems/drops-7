@@ -104,51 +104,24 @@ function manualcrop_libraries_info() {
 
   $libraries['jquery.imagesloaded'] = array(
     'name' => 'imagesLoaded',
-    'vendor url' => 'http://imagesloaded.desandro.com/',
-    'version callback' => 'imagesloaded_get_version',
+    'vendor url' => 'https://github.com/desandro/imagesloaded/tree/v2.1.1',
     'version arguments' => array(
-      'pattern' => '#imagesLoaded.*v([0-9\.]+)#',
-      'lines' => 3,
+      'file' => 'jquery.imagesloaded.js',
+      'pattern' => '# v([0-9\.]+)#',
+      'lines' => 5,
       'cols' => 40,
     ),
-    'versions' => array(
-      '2.1.2' => array(
-        'files' => array(
-          'js' => array(
-            'jquery.imagesloaded.min.js',
-          ),
-        ),
-        'variants' => array(
-          'source' => array(
-            'files' => array(
-              'js' => array(
-                'jquery.imagesloaded.js',
-              ),
-            ),
-          ),
-        ),
+    'files' => array(
+      'js' => array(
+        'jquery.imagesloaded.min.js',
       ),
-      '3.1.5' => array(
+    ),
+    'variants' => array(
+      'source' => array(
         'files' => array(
           'js' => array(
-            'imagesloaded.pkgd.min.js',
+            'jquery.imagesloaded.js',
           ),
-        ),
-        'variants' => array(
-          'packaged' => array(
-            'files' => array(
-              'js' => array(
-                'imagesloaded.pkgd.js',
-              ),
-            ),
-          ),
-          'source' => array(
-            'files' => array(
-              'js' => array(
-                'imagesloaded.js',
-              ),
-            ),
-         ),
         ),
       ),
     ),
@@ -156,85 +129,24 @@ function manualcrop_libraries_info() {
 
   $libraries['jquery.imgareaselect'] = array(
     'name' => 'imgAreaSelect',
-    'vendor url' => 'http://odyniec.net/projects/imgareaselect',
+    'vendor url' => 'https://github.com/odyniec/imgareaselect/tree/v0.9.11-rc.1',
     'version arguments' => array(
       'file' => 'imgareaselect.jquery.json',
       'pattern' => '#"version"[\t ]*:[\t ]*"([^"]+)"#',
       'lines' => 6,
       'cols' => 30,
     ),
-    'versions' => array(
-      '0.9.11-rc.1' => array(
-        'files' => array(
-          'js' => array(
-            'jquery.imgareaselect.dev.js',
-          ),
-          'css' => array(
-            'distfiles/css/imgareaselect-animated.css',
-          ),
-        ),
+    'files' => array(
+      'js' => array(
+        'jquery.imgareaselect.dev.js',
       ),
-    ),
-    'variants' => array(
-      'source' => array(
-        'files' => array(
-          'js' => array(
-            'scripts/jquery.imgareaselect.js',
-          ),
-          'css' => array(
-            'css/imgareaselect-animated.css',
-          ),
-        ),
-      ),
-      'packed' => array(
-        'files' => array(
-          'js' => array(
-            'scripts/jquery.imgareaselect.pack.js',
-          ),
-          'css' => array(
-            'css/imgareaselect-animated.css',
-          ),
-        ),
+      'css' => array(
+        'distfiles/css/imgareaselect-animated.css',
       ),
     ),
   );
 
   return $libraries;
-}
-
-/**
- * Custom function to get imagesLoaded library version.
- */
-function imagesloaded_get_version($library, $options) {
-  // Provide defaults.
-  $options += array(
-    'pattern' => '',
-    'lines' => 20,
-    'cols' => 200,
-  );
-
-  // Get list of possible filenames.
-  $filenames = array(
-    'jquery.imagesloaded.js',
-    'imagesloaded.pkgd.min.js',
-    'imagesloaded.pkgd.js',
-    'imagesloaded.js',
-  );
-
-  foreach ($filenames as $filename) {
-    $file = DRUPAL_ROOT . '/' . $library['library path'] . '/' . $filename;
-    if (file_exists($file)) {
-      $file = fopen($file, 'r');
-      while ($options['lines'] && $line = fgets($file, $options['cols'])) {
-        if (preg_match($options['pattern'], $line, $version)) {
-          fclose($file);
-          return $version[1];
-        }
-        $options['lines']--;
-      }
-      fclose($file);
-    }
-  }
 }
 
 /**
@@ -360,12 +272,18 @@ function manualcrop_field_widget_form_alter(&$element, &$form_state, $context) {
  * Implements hook_field_attach_submit().
  */
 function manualcrop_field_attach_submit($entity_type, $entity, $form, &$form_state) {
-  // We don't do this to file_entity_edit because that form can use revisions
-  // if file_entity_revisions is enabled, and we want to save our crop data
-  // AFTER we know the revision id.
-  if (user_access('use manualcrop') && (!isset($form['#form_id']) || $form['#form_id'] != 'file_entity_edit')) {
-    manualcrop_croptool_submit($form, $form_state);
+  if (!user_access('use manualcrop')) {
+    // The user is not allowed to crop images.
+    return;
   }
+
+  if (isset($form['#form_id']) && $form['#form_id'] == 'file_entity_edit') {
+    // Skip the file_entity_edit form because it may use revisions and
+    // we want to save our crop data when the revision id is known.
+    return;
+  }
+
+  manualcrop_croptool_submit($form, $form_state);
 }
 
 /**
@@ -377,6 +295,7 @@ function manualcrop_manualcrop_supported_widgets() {
     'image_miw' => array('thumblist', 'inline_crop', 'instant_crop'),
     'media_generic' => array('thumblist', 'inline_crop'),
     'linkimagefield_widget' => array('thumblist', 'inline_crop', 'instant_crop'),
+    'dragndrop_upload_image' => array('thumblist', 'inline_crop', 'instant_crop'),
   );
 }
 
@@ -406,8 +325,6 @@ function manualcrop_widget_process($element, &$form_state, $form) {
 /**
  * Additional after build callback to modify form elements added by the Insert module.
  *
- * @param $element
- *   The element to process.
  */
 function manualcrop_insert_element_process($element) {
   foreach (element_children($element) as $key) {
@@ -448,11 +365,8 @@ function manualcrop_insert_content($item, $style, $widget) {
 
 /**
  * Additional after build callback to modify the Media widget.
- *
- * @param $element
- *   The element to process.
  */
-function manualcrop_media_element_process($element) {
+function manualcrop_media_element_after_build($element) {
   $data = array(
     'manualcrop' => array(
       'entity_type' => $element['#entity_type'],
@@ -465,13 +379,16 @@ function manualcrop_media_element_process($element) {
   $element['#media_options']['global'] += $data;
 
   // Attach the options as javascript settings.
-  foreach ($element['#attached']['js'] as &$js) {
-    if (isset($js['data']['media'])) {
-      if (!isset($js['data']['media']['elements'][$element['#id']]['global'])) {
-        $js['data']['media']['elements'][$element['#id']]['global'] = array();
+  if (!empty($element['#attached']['js'])) {
+    foreach ($element['#attached']['js'] as &$js) {
+      if (isset($js['data']['media'])) {
+        if (!isset($js['data']['media']['elements']['#' . $element['#id']]['global'])) {
+          $js['data']['media']['elements']['#' . $element['#id']]['global'] = array();
+        }
+
+        $js['data']['media']['elements']['#' . $element['#id']]['global'] += $data;
+        break;
       }
-      $js['data']['media']['elements'][$element['#id']]['global'] += $data;
-      break;
     }
   }
 
@@ -487,7 +404,15 @@ function manualcrop_media_element_process($element) {
  * Element validation handler; Validates each crop selection.
  */
 function manualcrop_croptool_validate($element, &$form_state) {
-  if (!empty($form_state['manualcrop_data']['images']) && (!isset($form_state['triggering_element']) || !in_array($form_state['triggering_element']['#value'], array(t('Upload'), t('Remove'))))) {
+  if (!empty($form_state['manualcrop_data']['images'])) {
+    if (isset($form_state['triggering_element'])) {
+      // Skip validation when needed.
+      $te = $form_state['triggering_element'];
+      if (!empty($te['#manualcrop_skip']) || in_array($te['#value'], array(t('Upload'), t('Remove'), t('Browse')))) {
+        return;
+      }
+    }
+
     // Create a new key, to store processed selections, in the data array.
     $form_state['manualcrop_data']['selections'] = array();
     $selections = &$form_state['manualcrop_data']['selections'];
@@ -565,7 +490,9 @@ function manualcrop_croptool_validate($element, &$form_state) {
  * Form submit handler; Saves each crop selection.
  */
 function manualcrop_croptool_submit($form, &$form_state) {
-  if (!empty($form_state['manualcrop_data']['selections'])) {
+  static $submitted = FALSE;
+
+  if (!$submitted && !empty($form_state['manualcrop_data']['selections'])) {
     // Loop trough the selections to save them.
     foreach ($form_state['manualcrop_data']['selections'] as $fid => $data) {
       // In general this file entity should be loaded from a cache, so this
@@ -586,8 +513,9 @@ function manualcrop_croptool_submit($form, &$form_state) {
       drupal_set_message(t('The crop selections have been saved.'));
     }
 
-    // Unset the form state data to prevent submitting twice.
-    unset($form_state['manualcrop_data']);
+    // Prevent additional submits.
+    unset($form_state['manualcrop_data']['selections']);
+    $submitted = TRUE;
   }
 }
 
@@ -901,10 +829,10 @@ function manualcrop_crop_and_scale_effect(&$image, $data) {
     return TRUE;
   }
   else {
-    // Automated crop, don't use image_scale_and_crop_effect() unless both
-    // imagedimensions are bigger than the desired dimensions. This way
-    // unwanted upscaling is prevented.
-    if ($image->info['width'] > $scale_data['width'] && $image->info['height'] > $scale_data['height']) {
+    // Automated crop, don't use image_scale_and_crop_effect() unless
+    // upscaling is allowed or both image dimensions are bigger than
+    // the desired dimensions.
+    if ($scale_data['upscale'] || ($image->info['width'] > $scale_data['width'] && $image->info['height'] > $scale_data['height'])) {
       if (!image_scale_and_crop_effect($image, $scale_data)) {
         return FALSE;
       }

@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Node Access tests for workbench_moderation.module.
+ */
+
+class WorkbenchModerationNodeAccessTestCase extends WorkbenchModerationTestCase {
+  protected $test_user;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Node Access test',
+      'description' => 'Ensure that node access rules are enforced during moderation.',
+      'group' => 'Workbench Moderation',
+    );
+  }
+
+  function setUp($modules = array()) {
+    $modules = array_merge($modules, array('workbench_moderation_node_access_test'));
+    parent::setUp($modules);
+  }
+
+  /**
+   * Creates a node and tests the creation of node access rules.
+   */
+  function testNodeAccessRecords() {
+    // Make sure this node type is moderated.
+    $is_moderated = workbench_moderation_node_type_moderated($this->content_type);
+    $this->assertTrue($is_moderated, t('The content type is moderated.'));
+
+    // Create an published node that has access records.
+    $node1 = $this->drupalCreateNode(array('type' => $this->content_type, 'title' => 'Published node', 'status' => 1));
+    $this->assertTrue(node_load($node1->nid), 'Test published node created.');
+
+    // Assert grants were added to node_access on creation.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node1->nid))->fetchAll();
+    $this->assertEqual(count($records), 1, 'Returned the correct number of rows.');
+    $this->assertEqual($records[0]->realm, 'test_wm_realm', 'Grant with test_wm_realm acquired for node without alteration.');
+    $this->assertEqual($records[0]->gid, 1, 'Grant with gid = 1 acquired for node without alteration.');
+
+    // Create an unpublished node that has no access records.
+    $node2 = $this->drupalCreateNode(array('type' => $this->content_type, 'title' => 'Unpublished node', 'status' => 0));
+    $this->assertTrue(node_load($node2->nid), 'Test unpublished node created.');
+
+    // Check that no access records are present for the node, since it is not published.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node2->nid))->fetchAll();
+    $this->assertEqual(count($records), 0, 'Returned no records for unpublished node.');
+
+    // Login for form testing.
+    $this->drupalLogin($this->moderator_user);
+
+    // Create a new draft of the published node.
+    $edit = array('title' => 'Draft node revision1');
+    $this->drupalPost("node/{$node1->nid}/edit", $edit, t('Save'));
+
+    // Assert grants still exist on node_access after draft created.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node1->nid))->fetchAll();
+    $this->assertEqual(count($records), 1, 'Returned the correct number of rows.');
+    $this->assertEqual($records[0]->realm, 'test_wm_realm', 'Grant with article_realm acquired for node without alteration.');
+    $this->assertEqual($records[0]->gid, 1, 'Grant with gid = 1 acquired for node without alteration.');
+
+    // Create an published node that has access records.
+    $node3 = $this->drupalCreateNode(array('type' => $this->content_type, 'title' => 'Published node', 'status' => 1));
+    $this->assertTrue(node_load($node3->nid), 'Test published node created.');
+
+    // Make sure the "Moderate" tab is accessible.
+    $this->drupalGet("node/{$node3->nid}/moderation");
+
+    // Attempt to change the moderation state without a token in the link.
+    $this->drupalGet("node/{$node3->nid}/moderation/{$node3->vid}/change-state/needs_review");
+    $this->assertResponse(403);
+
+    // Run the same state change with a valid token, which should succeed.
+    $this->drupalGet("node/{$node3->nid}/moderation/{$node3->vid}/change-state/needs_review", array(
+      'query' => array('token' => $this->drupalGetToken("{$node3->nid}:{$node3->vid}:needs_review"))
+    ));
+
+    // Test that we have unpublished the node.
+    $this->assertResponse(200);
+    $node = node_load($node3->nid, NULL, TRUE);
+    $this->assertEqual($node->workbench_moderation['current']->state, 'needs_review', 'Node state changed to Needs Review via callback.');
+    $this->assertFalse($node->status, 'Node is no longer published after moderation.');
+
+    // Check that no access records are present for the node, since it is not published.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node3->nid))->fetchAll();
+    $this->assertEqual(count($records), 0, 'Returned no records for unpublished node.');
+
+    // Publish the node via the moderation form.
+    $moderate = array('state' => workbench_moderation_state_published());
+    $this->drupalPost("node/{$node3->nid}/moderation", $moderate, t('Apply'));
+
+    // Ensure published status.
+    $node = node_load($node3->nid, NULL, TRUE);
+    $this->assertTrue(isset($node->workbench_moderation['published']), t('Workbench moderation has a published revision'));
+
+    // Check to see if grants are still present.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node3->nid))->fetchAll();
+    $this->assertEqual(count($records), 1, 'Returned the correct number of rows.');
+    $this->assertEqual($records[0]->realm, 'test_wm_realm', 'Grant with article_realm acquired for node without alteration.');
+    $this->assertEqual($records[0]->gid, 1, 'Grant with gid = 1 acquired for node without alteration.');
+
+    // Create a new draft.
+    $edit = array('title' => $this->randomName(10) . '_revision1');
+    $this->drupalPost("node/{$node3->nid}/edit", $edit, t('Save'));
+
+    // Check that grants are not changed.
+    $records = db_query('SELECT realm, gid FROM {node_access} WHERE nid = :nid', array(':nid' => $node3->nid))->fetchAll();
+    $this->assertEqual(count($records), 1, 'Returned the correct number of rows.');
+    $this->assertEqual($records[0]->realm, 'test_wm_realm', 'Grant with article_realm acquired for node without alteration.');
+    $this->assertEqual($records[0]->gid, 1, 'Grant with gid = 1 acquired for node without alteration.');
+
+    // Ensure that the published version is still present.
+    $node = node_load($node3->nid, NULL, TRUE);
+    debug($node->title);
+    $this->assertTrue($node->status, t('Content is published'));
+    $this->assertEqual($node->title, 'Published node', t('Published version is loaded.'));
+
+    // Load the published and draft revisions.
+    $draft = clone $node;
+    $draft = workbench_moderation_node_current_load($draft);
+
+    // Assert the two revisions are unique.
+    $this->assertEqual($node->vid, $node->workbench_moderation['published']->vid, t('Published revision is loaded by default'));
+    $this->assertTrue($node->status, t('Published revision has status = 1'));
+    $this->assertNotEqual($node->vid, $draft->vid, t('Draft revision is different from the published revision'));
+
+    // Test the node for an anon user.
+    $this->drupalLogout();
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertRaw('Published node', t('Page title is "Published node"'));
+  }
+}

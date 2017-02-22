@@ -580,6 +580,7 @@ function _workbench_moderation_access_current_draft($node) {
   }
 
   $state = $node->workbench_moderation;
+
   return (_workbench_moderation_access('view revisions', $node)
       && !empty($state['published'])
       && $state['published']->vid != $state['current']->vid);
@@ -656,65 +657,70 @@ function workbench_moderation_views_default_views() {
   return $return;
 }
 
-
 /**
- * Implements hook_node_presave().
- *
- * Ensure that a node in moderation has the proper publication status.
- * We set $node->status = 0 (unpublished) if this is a new node which has not
- * been marked as published, or if the node has no published revision.
+ * Implements hook_entity_presave().
  */
-function workbench_moderation_node_presave($node) {
-  global $user;
-  if (isset($node->workbench_moderation_state_new)) {
-    // If the new moderation state is published, set the node status to
-    // published.
-    if ($node->workbench_moderation_state_new == workbench_moderation_state_published()) {
-      $node->status = 1;
-    }
-    else {
-      $node->status = 0;
-    }
+function workbench_moderation_entity_presave($entity, $entity_type) {
+  // Note: this only supports nodes at the moment.
+  if ($entity_type != 'node') {
+    return;
+  }
+  // Is the content type under moderation?
+  if (!workbench_moderation_node_type_moderated($entity->type)) {
+    return;
   }
 
-  // Preserve the changed timestamp of the revision when updating live revision.
-  if (!empty($node->workbench_moderation['updating_live_revision'])) {
-    $node->timestamp = $node->workbench_moderation['my_revision']->stamp;
-    $node->changed = $node->workbench_moderation['my_revision']->stamp;
+  // Load our data onto the entity.
+  if (!$entity->is_new) {
+    workbench_moderation_set_node_state($entity);
   }
+
+  $published = FALSE;
+  // Ensure the entity is marked as published.
+  if (isset($entity->workbench_moderation_state_new) && $entity->workbench_moderation_state_new == workbench_moderation_state_published()) {
+    $published = TRUE;
+    $entity->status = NODE_PUBLISHED;
+  }
+
+  // If we are unpublishing a node, do not force revision.
+  if (!$entity->status) {
+    $entity->is_draft_revision = FALSE;
+  }
+
+  // Inform drafty if this is a new revision, if it has not already been
+  // marked as such.
+  elseif (!isset($entity->is_draft_revision) && !$published) {
+    $entity->is_draft_revision = TRUE;
+  }
+
 }
 
 /**
  * Implements hook_node_insert().
  *
- * Wrapper call to the update hook.
+ * Store moderation data for this node.
  */
 function workbench_moderation_node_insert($node) {
-  workbench_moderation_node_update($node);
+  workbench_moderation_save($node);
 }
 
 /**
- * Implements hook_node_update().
- *
- * Handles the submit of the node form moderation information
+ * Loads moderation information onto a node being saved.
  */
-function workbench_moderation_node_update($node) {
+function workbench_moderation_set_node_state($node) {
   global $user;
-
-  // Don't proceed if moderation is not enabled on this content, or if
-  // we're replacing an already-published revision.
-  if (!workbench_moderation_node_moderated($node) || 
-      !empty($node->workbench_moderation['updating_live_revision'])) {
-    return;
-  }
 
   // Set moderation state values.
   if (!isset($node->workbench_moderation_state_current)) {
     $node->workbench_moderation_state_current = !empty($node->original->workbench_moderation['current']->state) ? $node->original->workbench_moderation['current']->state : workbench_moderation_state_none();
   }
   if (!isset($node->workbench_moderation_state_new)) {
+    // Moderating the default revision. Capture the proper state from drafty.
+    if (!empty($node->default_revision) && $node->status) {
+      $node->workbench_moderation_state_new = workbench_moderation_state_published();
+    }
     // Moving from published to unpublished.
-    if ($node->status == NODE_NOT_PUBLISHED && isset($node->original->status) && $node->original->status == NODE_PUBLISHED) {
+    elseif ($node->status == NODE_NOT_PUBLISHED && isset($node->original->status) && $node->original->status == NODE_PUBLISHED) {
       // @todo Currently we cannot set the state correctly if the default state
       //   is "Published".
       // @see https://www.drupal.org/node/1436260
@@ -748,17 +754,85 @@ function workbench_moderation_node_update($node) {
       'stamp' => $node->changed,
     );
   }
+}
 
-  // Apply moderation changes if this is a new revision or if the moderation
-  // state has changed.
-  if (!empty($node->revision) || $node->workbench_moderation_state_current != $node->workbench_moderation_state_new) {
-    // Update attached fields.
-    field_attach_update('node', $node);
-    // Moderate the node.
-    workbench_moderation_moderate($node, $node->workbench_moderation_state_new);
+/**
+ * Implements hook_node_update().
+ *
+ * Stores the moderation information for this node.
+ */
+function workbench_moderation_node_update($node) {
+  workbench_moderation_save($node);
+}
+
+/**
+ * Saves the moderation history for the node.
+ */
+function workbench_moderation_save($node) {
+  $current_draft = &drupal_static(__FUNCTION__, 0);
+  global $user;
+
+  // Don't proceed if moderation is not enabled on this content or if we
+  // are saving the published version from drafty.
+  if (!workbench_moderation_node_moderated($node)) {
+    return;
+  }
+  // Ensure that we have loaded our data onto the node. This function will
+  // check that the required properties are set for all nodes.
+  workbench_moderation_set_node_state($node);
+
+  // Prepare the state information.
+  $state = $node->workbench_moderation_state_new;
+  $old_revision = $node->workbench_moderation['my_revision'];
+
+  $node->is_current = FALSE;
+  if (empty($node->default_revision)) {
+    $node->is_current = TRUE;
   }
 
-  return;
+
+  // Build a history record.
+  $new_revision = (object) array(
+    'from_state' => $old_revision->state,
+    'state' => $state,
+    'nid' => $node->nid,
+    'vid' => $node->vid,
+    'uid' => $user->uid,
+    'is_current' => !empty($node->is_current),
+    'published' => ($state == workbench_moderation_state_published()),
+    'stamp' => $_SERVER['REQUEST_TIME'],
+  );
+
+  // If this is the new 'current' moderation record, it should be the only one
+  // flagged 'current' in {workbench_moderation_node_history}.
+  if ($new_revision->is_current) {
+    $query = db_update('workbench_moderation_node_history')
+      ->condition('nid', $node->nid)
+      ->fields(array('is_current' => 0))
+      ->execute();
+  }
+
+  // If this revision is to be published, the new moderation record should be
+  // the only one flagged 'published' in {workbench_moderation_node_history}.
+  // Also applies in the case where we unpublish a live revision.
+  if ($new_revision->published || !$node->status) {
+    $query = db_update('workbench_moderation_node_history')
+      ->condition('nid', $node->nid)
+      ->fields(array('published' => 0))
+      ->execute();
+  }
+
+  // Save the node history record.
+  drupal_write_record('workbench_moderation_node_history', $new_revision);
+
+  // On a moderation loop, inform other modules of the change.
+  if (!empty($node->is_current)) {
+    // Clear the node's cache.
+    entity_get_controller('node')->resetCache(array($node->nid));
+
+    // Notify other modules that the state was changed.
+    module_invoke_all('workbench_moderation_transition', $node, $node->workbench_moderation['my_revision']->state, $node->workbench_moderation_state_new);
+  }
 }
 
 /**
@@ -1151,13 +1225,12 @@ function workbench_moderation_node_data($node) {
   // We'll store moderation state information in an array on the node.
   $node->workbench_moderation = array();
 
-  // Fetch the most recent revision from the {node_revision} table. This is the
+  // Fetch the most current revision from the {node_revision} table. This is the
   // current revision ("head").
   $query = db_select('node_revision', 'r');
   $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = %alias.vid');
   $query->condition('r.nid', $node->nid)
-    ->orderBy('r.vid', 'DESC')
-    ->orderBy('m.hid', 'DESC')
+    ->condition('m.is_current', 1)
     ->fields('m')
     ->fields('r', array('title', 'timestamp'));
   $current = $query->execute()->fetchObject();
@@ -1640,164 +1713,25 @@ function workbench_moderation_states_next($current_state, $account = NULL, $node
  *   The node being acted upon.
  * @param $state
  *   The new moderation state requested.
- * @param $uid
- *   (optional) uid of moderator user.
  */
-function workbench_moderation_moderate($node, $state, $uid = NULL) {
-  // If uid is specified then save state as that user, otherwise use current user.
-  if (empty($uid)) {
-    global $user;
+function workbench_moderation_moderate($node, $state) {
+  // Set the current and new moderation state value.
+  $node->original = $node;
+
+  // Ensure that published nodes are flagged properly.
+  if ($state == workbench_moderation_state_published()) {
+    $node->status = NODE_PUBLISHED;
   }
-  else {
-    $user = user_load($uid);
-  }
-
-  $old_revision = $node->workbench_moderation['my_revision'];
-
-  // Get the number of revisions for this node with vids greater than $node->vid
-  $vid_count = db_select('node_revision', 'r')
-    ->condition('r.nid', $node->nid)
-    ->condition('r.vid', $node->vid, '>')
-    ->countQuery()->execute()->fetchField();
-  // If the number of greater vids is 0, then this is the most current revision
-  $current = ($vid_count == 0);
-
-  // Build a history record.
-  $new_revision = (object) array(
-    'from_state' => $old_revision->state,
-    'state' => $state,
-    'nid' => $node->nid,
-    'vid' => $node->vid,
-    'uid' => $user->uid,
-    'is_current' => $current,
-    'published' => ($state == workbench_moderation_state_published()),
-    'stamp' => $_SERVER['REQUEST_TIME'],
-  );
-
-  // If this is the new 'current' moderation record, it should be the only one
-  // flagged 'current' in {workbench_moderation_node_history}.
-  if ($new_revision->is_current) {
-    $query = db_update('workbench_moderation_node_history')
-      ->condition('nid', $node->nid)
-      ->fields(array('is_current' => 0))
-      ->execute();
+  // If the published version is being unpublished, account for that.
+  elseif (isset($node->workbench_moderation['published']) && $node->workbench_moderation['published']->vid == $node->vid) {
+    $node->status = NODE_NOT_PUBLISHED;
   }
 
-  // If this revision is to be published, the new moderation record should be
-  // the only one flagged 'published' in both
-  // {workbench_moderation_node_history} AND {node_revision}
-  if ($new_revision->published) {
-    $query = db_update('workbench_moderation_node_history')
-      ->condition('nid', $node->nid)
-      ->fields(array('published' => 0))
-      ->execute();
-    $query = db_update('node_revision')
-      ->condition('nid', $node->nid)
-      ->fields(array('status' => 0))
-      ->execute();
-  }
+  // Set the state property for saving.
+  $node->workbench_moderation_state_new = $state;
 
-  // Save the node history record.
-  drupal_write_record('workbench_moderation_node_history', $new_revision);
-
-  // Update the node's content_moderation information so that we can publish it
-  // if necessary.
-  $node->workbench_moderation['my_revision'] = $new_revision;
-  if ($new_revision->is_current) {
-    $node->workbench_moderation['current'] = $new_revision;
-  }
-  // Handle the published revision.
-  if ($new_revision->published) {
-    // If we're moderating a revision to the published state, mark the new
-    // revision as the published revision.
-    $node->workbench_moderation['published'] = $new_revision;
-  }
-  elseif (isset($node->workbench_moderation['published']) && $new_revision->vid == $node->workbench_moderation['published']->vid && $new_revision->from_state == workbench_moderation_state_published()) {
-    // If we're moderating the published revision to a non-published state,
-    // remove the workbench moderation 'published' property.
-    $query = db_update('workbench_moderation_node_history')
-      ->condition('hid', $node->workbench_moderation['published']->hid)
-      ->fields(array('published' => 0))
-      ->execute();
-    unset($node->workbench_moderation['published']);
-    $node->workbench_moderation['current']->unpublishing = TRUE;
-  }
-
-  // If we need to make changes to the currently published node we do this in a
-  // shutdown function to avoid race conditions when running node_save() from
-  // within a node submission. We need to change the published node:
-  // - If we're moderating an unpublished revision and there is an existing
-  //   published revision, make sure that the published revision is live.
-  // - If we are moving to unpublished state we should make sure the published
-  //   revision is the 'current' revision.
-  if (!empty($node->workbench_moderation['published']) || !empty($node->workbench_moderation['current']->unpublishing)) {
-    // Clone the node to make sure our data arrives intact in the shutdown
-    // function. It might still be altered before the shutdown is reached.
-    drupal_register_shutdown_function('workbench_moderation_store', clone $node);
-  }
-  else {
-    entity_get_controller('node')->resetCache(array($node->nid));
-  }
-
-  // Notify other modules that the state was changed.
-  module_invoke_all('workbench_moderation_transition', $node, $old_revision->state, $state);
-}
-
-/**
- * Shutdown callback for saving a node revision.
- *
- * This function is called by drupal_register_shutdown_function().
- * The purpose is to delay a node_save() call so that a live revision
- * is not called during hook_node_update().
- *
- * Instead, we delay the update until the new revision is saved. This way,
- * we can more safely call the revision and pick up changes to items
- * that are not revisioned (such as menu and path assignments).
- *
- * @see workbench_moderation_moderate()
- *
- * @param $node
- *   The node being saved.
- */
-function workbench_moderation_store($node) {
-  if (!isset($node->nid)) {
-    watchdog('Workbench moderation', 'Failed to save node revision: node not passed to shutdown function.', array(), WATCHDOG_NOTICE);
-    return;
-  }
-  watchdog('Workbench moderation', 'Saved node revision: %node as live version for node %live.', array('%node' => $node->vid, '%live' => $node->nid), WATCHDOG_NOTICE, l($node->title, 'node/' . $node->nid));
-
-  // If we are saving a published node, work from the live revision, otherwise
-  // make sure that the entry in the {node} table points to the current
-  // revision.
-  if (empty($node->workbench_moderation['current']->unpublishing)) {
-    $live_revision = workbench_moderation_node_live_load($node);
-    $live_revision->status = 1;
-  }
-  else {
-    $live_revision = workbench_moderation_node_current_load($node);
-    $live_revision->status = 0;
-  }
-  // Don't create a new revision.
-  $live_revision->revision = 0;
-  // Prevent another moderation record from being written.
-  $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
-
-  // Reset flag from taxonomy_field_update() so that {taxonomy_index} values aren't written twice.
-  $taxonomy_index_flag = &drupal_static('taxonomy_field_update', array());
-  unset($taxonomy_index_flag[$node->nid]);
-
-  // Ensure we do not have field translations belonging to a draft revision in
-  // the field data tables.
-  $empty_values = array_fill_keys(array_keys(language_list()), array());
-  foreach (field_info_instances('node', $live_revision->type) as $field_name => $instance) {
-    $field = field_info_field($field_name);
-    if (!empty($live_revision->{$field_name}) && field_is_translatable('node', $field)) {
-      $live_revision->{$field_name} += $empty_values;
-    }
-  }
-
-  // Save the node.
-  node_save($live_revision);
+  // Save the node and let drafty handle it.
+  node_save($node);
 }
 
 /**

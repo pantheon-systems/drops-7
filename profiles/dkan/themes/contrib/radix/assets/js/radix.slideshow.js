@@ -42,7 +42,7 @@
             timeout: parseInt(settings.timeout),
             index: i,
             settings: settings
-          }
+          };
 
           if (settings.speed == "0" && settings.timeout == "0") options.fastOnEvent = true;
           if (settings.controls) {
@@ -118,7 +118,7 @@
               var carousel = $("#" + options.index + "-carousel").data("jcarousel");
               carousel.scroll(nextIndex, true);
             }
-          }
+          };
 
           if (num_slides > 1) {
 
@@ -191,17 +191,17 @@
       else {
         $(window).load(function(){
           $('.field-slideshow').each(function(){
-            rebuild_max_height($(this))
-          })
+            rebuild_max_height($(this));
+          });
         });
 
       }
       $(window).resize(function(){
         $('.field-slideshow').each(function(){
-          rebuild_max_height($(this))
-        })
+          rebuild_max_height($(this));
+        });
       });
 
     }
-  }
+  };
 })(jQuery);

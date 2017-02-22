@@ -22,9 +22,12 @@ features[] = logo
 features[] = name
 features[] = favicon
 
-; Information added by Drupal.org packaging script on 2016-02-01
-version = "7.x-3.3"
+; Settings
+settings[main_menu_max_depth] = 2
+
+; Information added by Drupal.org packaging script on 2016-08-03
+version = "7.x-3.5"
 core = "7.x"
 project = "radix"
-datestamp = "1454337570"
+datestamp = "1470238162"
 

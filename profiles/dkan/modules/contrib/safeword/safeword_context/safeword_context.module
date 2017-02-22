@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * Implements hook_context_plugins().
+ */
+function safeword_context_context_plugins() {
+  $plugins['safeword_context_condition'] = array(
+    'handler' => array(
+      'path'   => drupal_get_path('module', 'safeword_context'),
+      'file'   => 'safeword_context_condition.inc',
+      'class'  => 'safeword_context_condition',
+      'parent' => 'context_condition',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function safeword_context_context_registry() {
+  $registry['conditions']['safeword'] = array(
+    'title'  => t('Safeword'),
+    'plugin' => 'safeword_context_condition',
+  );
+
+  return $registry;
+}
+
+/**
+ * Implements hook_context_page_condition().
+ */
+function safeword_context_context_page_condition() {
+  if ($plugin = context_get_plugin('condition', 'safeword')) {
+    $item = menu_get_item();
+    if ($item['load_functions']) {
+      $loader_index = key($item['load_functions']);
+      $loader       = @$item['load_functions'][$loader_index];
+
+      if ($loader) {
+        $entity_type = substr($loader, 0, -5);
+        $entity_info = entity_get_info();
+        if (isset($entity_info[$entity_type])) {
+          $entity = $item['map'][$loader_index];
+          $op     = isset($item['original_map'][$loader_index + 1]) ? $item['original_map'][$loader_index + 1] : 'view';
+          $plugin->execute($entity_type, $entity, $op);
+        }
+      }
+    }
+  }
+}

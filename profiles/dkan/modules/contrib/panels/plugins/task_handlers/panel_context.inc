@@ -219,23 +219,23 @@ function panels_panel_context_tab_operation($handler, $contexts, $args) {
  *   for the handler and pla
  */
 function &panels_panel_context_get_display(&$handler) {
-  if (isset($handler->conf['display'])) {
-    return $handler->conf['display'];
-  }
+  if (!isset($handler->conf['display'])) {
+    if (isset($handler->conf['did'])) {
+      $handler->conf['display'] = panels_load_display($handler->conf['did']);
+    }
 
-  if (isset($handler->conf['did'])) {
-    $handler->conf['display'] = panels_load_display($handler->conf['did']);
-
-    // Check for a valid display. If no valid display can be loaded, something
-    // is wrong and we'll create a new one.
-    if (!empty($handler->conf['display'])) {
-      return $handler->conf['display'];
+    // Check for again for a valid display. If no valid display could be loaded,
+    // something is wrong and we'll create a new one.
+    if (empty($handler->conf['display'])) {
+      $handler->conf['display'] = panels_new_display();
     }
   }
 
-  $handler->conf['display'] = panels_new_display();
+  $display =& $handler->conf['display'];
+  $display->storage_type = 'page_manager';
+  $display->storage_id = !empty($handler->name) ? $handler->name : 'new';
 
-  return $handler->conf['display'];
+  return $display;
 }
 
 /**
@@ -287,7 +287,7 @@ function panels_panel_context_render($handler, $base_contexts, $args, $test = TR
   $display->context = $contexts;
   $display->args = $args;
   $page_css_id = ctools_context_keyword_substitute($handler->conf['css_id'], array(), $contexts);
-  $display->css_id = drupal_html_id($page_css_id);
+  $display->css_id = check_plain($page_css_id);
   $task_name = page_manager_make_task_name($handler->task, $handler->subtask);
 
   $display->cache_key = panels_panel_context_cache_key($task_name, $handler->name, $args);
@@ -323,19 +323,19 @@ function panels_panel_context_render($handler, $base_contexts, $args, $test = TR
   if (isset($handler->conf['body_classes_to_remove'])) {
     $classes = ctools_context_keyword_substitute($handler->conf['body_classes_to_remove'], array(), $contexts, array('css safe' => TRUE));
     if (!isset($panel_body_css['body_classes_to_remove'])) {
-      $panel_body_css['body_classes_to_remove'] = check_plain(drupal_strtolower($classes));
+      $panel_body_css['body_classes_to_remove'] = check_plain($classes);
     }
     else{
-      $panel_body_css['body_classes_to_remove'] .= ' ' . check_plain(drupal_strtolower($classes));
+      $panel_body_css['body_classes_to_remove'] .= ' ' . check_plain($classes);
     }
   }
   if (isset($handler->conf['body_classes_to_add'])) {
     $classes = ctools_context_keyword_substitute($handler->conf['body_classes_to_add'], array(), $contexts, array('css safe' => TRUE));
     if (!isset($panel_body_css['body_classes_to_add'])) {
-    $panel_body_css['body_classes_to_add'] = check_plain(drupal_strtolower($classes));
+    $panel_body_css['body_classes_to_add'] = check_plain($classes);
     }
     else {
-      $panel_body_css['body_classes_to_add'] .= ' '. check_plain(drupal_strtolower($classes));
+      $panel_body_css['body_classes_to_add'] .= ' '. check_plain($classes);
     }
   }
 
@@ -371,8 +371,8 @@ function panels_panel_context_save(&$handler, $update) {
   ctools_include('css');
   ctools_css_clear('panel_context:' . $handler->name);
 
-  if (isset($page->conf['temp_layout'])) {
-    unset($page->conf['temp_layout']);
+  if (isset($handler->conf['temp_layout'])) {
+    unset($handler->conf['temp_layout']);
   }
 }
 
@@ -586,19 +586,6 @@ function panels_panel_context_edit_choose($form, &$form_state) {
 
   $form_state['display'] = &panels_panel_context_get_display($form_state['handler']);
 
-  // Grab the storage_type and storage_id and inject it into the display.
-  if (empty($form_state['display']->storage_type)) {
-    if (!isset($form_state[$form_state['task_id']]->storage_type)) {
-      watchdog('panels', "Unable to find the storage type for specified storage. Read 'Upgrading task handlers' in CHANGELOG.txt", array(), WATCHDOG_ERROR);
-      $form_state['display']->storage_type = 'unknown';
-    }
-    else {
-      $form_state['display']->storage_type = $form_state[$form_state['task_id']]->storage_type;
-    }
-    // When adding variants, we don't know the handler id yet. In that case,
-    // Mark it as new. We'll assign it later.
-    $form_state['display']->storage_id = !empty($form_state['handler_id']) ? $form_state['handler_id'] : 'new';
-  }
   // Tell the Panels form not to display buttons.
   $form_state['no buttons'] = TRUE;
 

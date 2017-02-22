@@ -66,6 +66,8 @@ function panels_landing_page_new_page(&$cache) {
   );
   $cache->display = panels_new_display();
   $cache->display->layout = 'flexible';
+  $cache->display->storage_type = 'page_manager';
+  $cache->display->storage_id = 'new';
 }
 
 /**
@@ -256,6 +258,9 @@ function panels_landing_page_finish(&$form_state) {
 
   // Create the the panel context variant configured with our display
   $plugin = page_manager_get_task_handler('panel_context');
+
+  // Set the storage id.
+  $cache->display->storage_id = $cache->name;
 
   // Create a new handler.
   $handler = page_manager_new_task_handler($plugin);

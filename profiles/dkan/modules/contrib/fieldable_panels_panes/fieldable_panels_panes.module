@@ -73,7 +73,7 @@ function fieldable_panels_panes_entity_info() {
     'save callback' => 'fieldable_panels_panes_save',
     'deletion callback' => 'fieldable_panels_panes_delete',
 
-    // Entity translation support
+    // Entity translation support.
     'translation' => array(
       'entity_translation' => array(
         'class' => 'EntityTranslationFieldablePanelsPaneHandler',
@@ -83,7 +83,7 @@ function fieldable_panels_panes_entity_info() {
       ),
     ),
 
-    // Title module support
+    // Title module support.
     'field replacement' => array(
       'title' => array(
         'field' => array(
@@ -224,7 +224,8 @@ function fieldable_panels_panes_menu() {
     'file' => 'includes/admin.inc',
   );
 
-  // Legacy paths to support the old method of providing bundles via entity_hook_info().
+  // Legacy paths to support the old method of providing bundles via
+  // entity_hook_info().
   $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes'] = array(
     'title callback' => 'fieldable_panels_panes_entity_title',
     'title arguments' => array(4),
@@ -255,7 +256,7 @@ function fieldable_panels_panes_menu() {
     'weight' => -9,
   ) + $base;
 
-  // Access control
+  // Access control.
   $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/access'] = array(
     'title' => 'Access control',
     'type' => MENU_LOCAL_TASK,
@@ -391,27 +392,20 @@ function fieldable_panels_panes_menu() {
     );
   }
 
-  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type'] = array(
+  $items['admin/structure/fieldable-panels-panes/%fieldable_panels_pane_type'] = array(
     'title callback' => 'fieldable_panels_panes_entities_title',
-    'title arguments' => array(4),
+    'title arguments' => array(3),
     'page callback' => 'fieldable_panels_panes_entities_list_page',
-    'page arguments' => array(4),
+    'page arguments' => array(3),
   ) + $base;
 
-  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type/list'] = array(
-    'title' => 'List',
-    'type' => MENU_LOCAL_TASK,
-    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    'weight' => -10,
-  );
-
-  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type/add'] = array(
-    'title' => 'Add fieldable panel pane',
+  $items['admin/structure/fieldable-panels-panes/%fieldable_panels_pane_type/add'] = array(
+    'title' => 'Add fieldable panels pane',
     'page callback' => 'fieldable_panels_panes_entities_add_page',
-    'page arguments' => array(4),
+    'page arguments' => array(3),
     'access callback' => 'fieldable_panels_panes_access',
-    'access arguments' => array('create', 4),
-    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('create', 3),
+    'type' => MENU_LOCAL_ACTION,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
   ) + $base;
 
@@ -421,20 +415,11 @@ function fieldable_panels_panes_menu() {
     'page arguments' => array(3),
     'access callback' => 'fieldable_panels_panes_access_callback',
     'access arguments' => array(),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     'weight' => -10,
   ) + $base;
 
-  $items['admin/structure/fieldable-panels-panes/%fieldable_panels_pane_type/add'] = array(
-    'title' => 'Add',
-    'page callback' => 'fieldable_panels_panes_entities_add_page',
-    'page arguments' => array(3),
-    'access callback' => 'fieldable_panels_panes_access',
-    'access arguments' => array('create', 3),
-    'type' => MENU_LOCAL_TASK,
-    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-  ) + $base;
 
   // Settings.
   $items['admin/structure/fieldable-panels-panes/settings'] = array(
@@ -631,6 +616,22 @@ function fieldable_panels_pane_type_load($type) {
 
   if (isset($entity_info['bundles'][$type])) {
     return $type;
+  }// If bundle is not set and $type is 'view', return FALSE.
+  elseif ($type == 'view' || empty($type)) {
+    return FALSE;
+  }
+  else {
+    // Special handling for two legacy paths:
+    // * admin/structure/fieldable-panels-panes/manage/FPPTYPE/fields
+    // * admin/structure/fieldable-panels-panes/manage/FPPTYPE/display
+    // Redirect these paths as appropriate.
+    if ($type == 'manage' && (arg(5) == 'fields' || arg(5) == 'display')) {
+      drupal_goto('admin/structure/fieldable-panels-panes/' . arg(4) . '/' . arg(5));
+    }
+
+    // If nothing else was found, redirect to the main FPP admin page.
+    drupal_set_message(t('Unable to load the "@type" Fieldable Panels Pane type.', array('@type' => $type)));
+    drupal_goto('admin/structure/fieldable-panels-panes');
   }
 }
 
@@ -982,8 +983,8 @@ function fieldable_panels_panes_load($fpid, $vid = NULL) {
  *   A string combining an indicator of the type of ID, e.g. 'fpid', 'vid' or
  *   'vuuid', and an integer ID, separated by a colon; e.g. "fpid:123".
  *
- * @return object
- *   The requested FPP object.
+ * @return object|bool
+ *   The requested FPP object, FALSE otherwise.
  */
 function fieldable_panels_panes_load_from_subtype($subtype_name) {
   ctools_include('content');
@@ -992,8 +993,12 @@ function fieldable_panels_panes_load_from_subtype($subtype_name) {
   // Next, check to see how the subtype is configured.
   $subtype_info = ctools_content_get_subtype($plugin, $subtype_name);
 
+  if (!isset($subtype_info['bundle'])) {
+    return FALSE;
+  }
+
   // This means we're probably in the process of creating a new one.
-  if (isset($subtype_info['bundle'])) {
+  if (!isset($subtype_info['entity_id'])) {
     return fieldable_panels_panes_create(array('bundle' => $subtype_info['bundle']));
   }
 
@@ -1419,6 +1424,14 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
       ),
     ),
   );
+
+  // Override reusable pane settings to be changed after the pane is created.
+  if (variable_get('fpp_allow_reusable_access', FALSE)) {
+    // Reset field access.
+    unset($form['reusable']['#access']);
+    $form['reusable']['reusable']['#description'] = t('A reusable pane may be used multiple times on the same page or on other pages. A non-reusable pane may not be added to another page once it is created and added to this page. Once this option has been checked it cannot be turned off.');
+    $form['reusable']['reusable']['#disabled'] = !empty($form_state['entity']->reusable);
+  }
 
   $language = NULL;
   if (function_exists('entity_language')) {

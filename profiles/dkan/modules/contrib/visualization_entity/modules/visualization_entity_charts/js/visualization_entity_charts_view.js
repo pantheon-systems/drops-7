@@ -42,7 +42,7 @@
         source.url = cleanURL(source.url);
         var model = new recline.Model.Dataset(source);
         state.set('model', model);
-        model.queryState.set(state.get('queryState'));
+        state.get('model').queryState.attributes = state.get('queryState');
 
         graph = new recline.View.nvd3[state.get('graphType')]({
           model: model,

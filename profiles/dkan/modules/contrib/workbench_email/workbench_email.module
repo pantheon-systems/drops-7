@@ -189,6 +189,9 @@ function workbench_email_mail_send($email, $email_transition, $node) {
     if ($result['result'] == TRUE) {
       drupal_set_message(t('Email notifications sent.'), 'status', FALSE);
     }
+    elseif ($result['result'] == NULL) {
+      return;
+    }
     else {
       drupal_set_message(t('There was a problem sending the
                          email notifications. No messages were
@@ -253,8 +256,8 @@ function workbench_email_send_queue_email($message = array()) {
 function workbench_email_mail($key, &$message, $params) {
   switch ($key) {
     case 'we_transition':
-      $message['subject'] = t(token_replace($params['subject'], $params));
-      $message['body'][] = t(token_replace($params['message'], $params));
+      $message['subject'] = token_replace(t($params['subject']), $params);
+      $message['body'][] = token_replace(t($params['message']), $params);
       break;
   }
 }
@@ -705,6 +708,9 @@ function workbench_email_validate_workbench_access_configuration($op, $data = ar
   $configured = TRUE;
 
   if ($op == 'node') {
+    if (isset($data['data']->type) && !variable_get('workbench_access_node_type_' . $data['data']->type, 1)) {
+      $configured = FALSE;
+    }
     return $configured;
   }
 
@@ -1111,9 +1117,9 @@ function workbench_email_get_workbench_access_editors($rid, $sections) {
   if ($active_scheme == 'taxonomy') {
     $sections = workbench_email_scheme_taxonomy_get_parents($sections);
   }
-  else if ($active_scheme == 'menu') {
-      $sections = workbench_email_scheme_menu_get_parents($sections);
-    }
+  elseif ($active_scheme == 'menu') {
+    $sections = workbench_email_scheme_menu_get_parents($sections);
+  }
   $role = workbench_email_get_role_by_rid($rid);
   // Get all the editors of workbench access section.
   $editors = workbench_email_get_editors($role, $sections);
@@ -1125,21 +1131,19 @@ function workbench_email_get_workbench_access_editors($rid, $sections) {
  */
 function workbench_email_token_info() {
   $info = array();
-  if ($_GET['q'] == 'admin/config/workbench/email') {
-    // Workbench email tokens.
-    $info['types']['workbench-email'] = array(
-      'name' => t('Workbench email'),
-      'description' => t('Tokens related to Workbench Email.'),
-    );
-    $info['tokens']['workbench-email']['name'] = array(
-      'name' => t('Username being emailed'),
-      'description' => t('The username of the user being emailed.'),
-    );
-    $info['tokens']['workbench-email']['email-transition'] = array(
-      'name' => t('Email transition state'),
-      'description' => t('The transition state of the node (eg: Draft to Needs Review).'),
-    );
-  }
+  // Workbench email tokens.
+  $info['types']['workbench-email'] = array(
+    'name' => t('Workbench email'),
+    'description' => t('Tokens related to Workbench Email.'),
+  );
+  $info['tokens']['workbench-email']['name'] = array(
+    'name' => t('Username being emailed'),
+    'description' => t('The username of the user being emailed.'),
+  );
+  $info['tokens']['workbench-email']['email-transition'] = array(
+    'name' => t('Email transition state'),
+    'description' => t('The transition state of the node (eg: Draft to Needs Review).'),
+  );
   return $info;
 }
 

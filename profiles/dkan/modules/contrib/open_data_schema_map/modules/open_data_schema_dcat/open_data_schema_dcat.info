@@ -6,3 +6,4 @@ dependencies[] = features
 dependencies[] = open_data_schema_map
 dependencies[] = open_data_schema_map_xml_output
 dependencies[] = pathauto
+version = 7.x-1.13

@@ -13,7 +13,21 @@ describe("L.Edit", function () {
 			marker.editing.enable();
 		});
 
-		it("Is activated correctly when editing.enable() is called.", function () {});
+		it("Has the leaflet-edit-marker-selected class applied when enabled.", function () {
+			var editingClass = 'leaflet-edit-marker-selected';
+
+			expect(marker.editing.enabled()).to.equal(true);
+			expect(L.DomUtil.hasClass(marker._icon, editingClass)).to.equal(true);
+		});
+
+		it("Lacks the leaflet-edit-marker-selected class when disabled.", function () {
+			var editingClass = 'leaflet-edit-marker-selected';
+
+			marker.editing.disable();
+
+			expect(marker.editing.enabled()).to.equal(false);
+			expect(L.DomUtil.hasClass(marker._icon, editingClass)).to.equal(false);
+		});
 	});
 
 	describe("L.Edit.Circle", function () {
@@ -43,6 +57,9 @@ describe("L.Edit", function () {
 			drawnItems = new L.FeatureGroup().addTo(map);
 			edit = new L.EditToolbar.Edit(map, {
 				featureGroup: drawnItems,
+				poly: {
+					allowIntersection : false
+				},
 				selectedPathOptions: L.EditToolbar.prototype.options.edit.selectedPathOptions
 			});
 			poly = new L.Polyline(L.latLng(41, -87), L.latLng(42, -88));
@@ -59,7 +76,7 @@ describe("L.Edit", function () {
 		});
 
 		it("Should revert to original styles when editing is toggled.", function () {
-			var originalOptions = L.extend({maintainColor: false }, poly.options);
+			var originalOptions = L.extend({maintainColor: false, poly : {allowIntersection: false} }, poly.options);
 
 			drawnItems.addLayer(poly);
 			edit.enable();
@@ -67,5 +84,16 @@ describe("L.Edit", function () {
 
 			expect(poly.options).to.eql(originalOptions);
 		});
+
+		it("Should set allowIntersection to be false when setting is set", function () {
+
+			drawnItems.addLayer(poly);
+			edit.enable();
+
+			expect(poly.editing.enabled()).to.equal(true);
+			expect(poly.options.poly.allowIntersection).to.equal(false);
+
+		});
+
 	});
 });

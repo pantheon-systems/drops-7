@@ -31,6 +31,7 @@ function fieldable_panels_panes_uninstall() {
 
   // Variables.
   variable_del('fieldable_panels_panes_skip_default_type');
+  variable_del('fpp_allow_reusable_access');
   variable_del('fpp_blocks_expose');
   variable_del('fpp_hide_contextual_links');
   variable_del('fpp_revision_locking');
@@ -517,7 +518,7 @@ function fieldable_panels_panes_update_7112(&$sandbox) {
     $sandbox['max'] = db_query("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
       FROM {fieldable_panels_panes} fpp
       INNER JOIN {panels_pane} pp
-        ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+        ON fpp.fpid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
       INNER JOIN {panelizer_entity} pe
         ON pe.did = pp.did
       WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
@@ -537,7 +538,7 @@ function fieldable_panels_panes_update_7112(&$sandbox) {
   $results = db_query_range("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
     FROM {fieldable_panels_panes} fpp
     INNER JOIN {panels_pane} pp
-      ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+      ON fpp.fpid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
     INNER JOIN {panelizer_entity} pe
       ON pe.did = pp.did
     WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
@@ -643,7 +644,7 @@ function fieldable_panels_panes_update_7113() {
     $sandbox['max'] = db_query("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
       FROM {fieldable_panels_panes} fpp
       INNER JOIN {panels_pane} pp
-        ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+        ON fpp.fpid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
       INNER JOIN {panels_node} pn
         ON pn.did = pp.did
       WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
@@ -663,7 +664,7 @@ function fieldable_panels_panes_update_7113() {
   $results = db_query_range("SELECT DISTINCT fpp.fpid as fpid, fpp.vid as vid
     FROM {fieldable_panels_panes} fpp
     INNER JOIN {panels_pane} pp
-      ON fpp.fpid = SUBSTRING_INDEX(pp.subtype, ':', -1)
+      ON fpp.fpid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
     INNER JOIN {panels_node} pn
       ON pn.did = pp.did
     WHERE (pp.subtype LIKE 'fpid:%' OR pp.subtype LIKE 'current:%')
@@ -699,11 +700,11 @@ function fieldable_panels_panes_update_7113() {
 /**
  * Restore the default FPP bundle that may have been purged in update 7108.
  */
-function incae_custom_panes_update_7114() {
+function fieldable_panels_panes_update_7114() {
   if (!variable_get('fieldable_panels_panes_skip_default_type', FALSE)) {
     // Check if the FPP type exists.
     $found = db_select('fieldable_panels_pane_type', 'fppt')
-      ->fields('fppt', 'name')
+      ->fields('fppt', array('name'))
       ->condition('name', 'fieldable_panels_pane')
       ->execute()
       ->fetchField();
@@ -715,5 +716,259 @@ function incae_custom_panes_update_7114() {
       ctools_export_crud_save('fieldable_panels_pane_type', $item);
       return t('The default Fieldable Panels Pane entity type has been recovered.');
     }
+  }
+}
+
+/**
+ * Update all Panelizer displays to point non-reusable FPPs to the vuuid instead
+ * of the uuid.
+ */
+function fieldable_panels_panes_update_7115(&$sandbox) {
+  if (!module_exists('panelizer')) {
+    return t('Panelizer is not installed, so nothing to do.');
+  }
+
+  // This won't as-is work for many sites because the 'fpp_revision_locking'
+  // variable won't be defined before it's checked for. The simplest approach
+  // is to manually rerun the updates.
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  // /**
+  //  * Rerun Fieldable Panels Panes update 7115.
+  //  */
+  // function MYMODULE_update_7101(&$sandbox) {
+  //   return fieldable_panels_panes_update_7115($sandbox);
+  // }
+  //
+  //
+  // A more correct approach is to use hook_update_dependencies to ensure that
+  // the updates happen in the correct order. This may not work because if the
+  // hook implementation is newly added to the module it won't be recognized
+  // until the caches are cleared, which may not happen until after the updates
+  // are ran, thus the updates not running in the correct order.
+  //
+  // /**
+  //  * Implements hook_update_dependencies().
+  //  */
+  // function MYMODULE_update_dependencies() {
+  //   // Make sure that update 7100 below runs *after* Fieldable Panels Pane
+  //   // update 7111 and *before* Fieldable Panels Pane update 7112, that way
+  //   // the FPP 'lock' option will be enabled when the Panelizer updates are
+  //   // started.
+  //   $dependencies['MYMODULE'][7100] = array(
+  //     'fieldable_panels_panes' => 7111,
+  //   );
+  //   $dependencies['fieldable_panels_panes'][7115] = array(
+  //     'MYMODULE' => 7100,
+  //   );
+  //   return $dependencies;
+  // }
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  //
+  // An alternative solution would be to rerun the updates.
+
+  if (variable_get('fpp_revision_locking', 'lock') != 'lock') {
+    return t('Pane locking is not enabled, so nothing to do.');
+  }
+
+  // Update all Panelizer displays.
+
+  // The first time through, work out how many records need to be updated.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+
+    // Total records that must be processed.
+    $sandbox['max'] = db_query("SELECT DISTINCT fpp.uuid as uuid, fppr.vuuid as vuuid
+      FROM {fieldable_panels_panes} fpp
+      INNER JOIN {fieldable_panels_panes_revision} fppr
+        ON fpp.vid = fppr.vid
+      INNER JOIN {panels_pane} pp
+        ON fpp.uuid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
+      INNER JOIN {panelizer_entity} pe
+        ON pe.did = pp.did
+      WHERE (pp.subtype LIKE 'uuid:%')
+        AND fpp.reusable != 1
+      ORDER BY fpp.uuid")->rowCount();
+
+    // If there's nothing to do, bail early.
+    if (empty($sandbox['max'])) {
+      return t('No panels needed to be updated.');
+    }
+  }
+
+  // Do the updates in small batches.
+  $limit = 10;
+
+  // Get a list of all UUIDs for Panelizer displays.
+  $results = db_query_range("SELECT DISTINCT fpp.uuid as uuid, fppr.vuuid as vuuid
+    FROM {fieldable_panels_panes} fpp
+    INNER JOIN {fieldable_panels_panes_revision} fppr
+      ON fpp.vid = fppr.vid
+    INNER JOIN {panels_pane} pp
+      ON fpp.uuid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
+    INNER JOIN {panelizer_entity} pe
+      ON pe.did = pp.did
+    WHERE (pp.subtype LIKE 'uuid:%')
+      AND fpp.reusable != 1
+    ORDER BY fpp.uuid", 0, $limit);
+
+  // Loop through the FPPs.
+  foreach ($results as $record) {
+    // Update the 'uuid:' records to use 'vuuid:'; don't bother checking if the
+    // record exists first because there's no down side to running this query
+    // immediately.
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vuuid:' . $record->vuuid))
+      ->condition('subtype', 'uuid:' . $record->uuid)
+      ->execute();
+
+    // Increment the progress counter.
+    $sandbox['progress']++;
+  }
+
+  // Done yet?
+  $sandbox['#finished'] = empty($sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished'] === TRUE) {
+    return t('Updated @count record(s) to use the new locking system.', array('@count' => $sandbox['max']));
+  }
+}
+
+/**
+ * Update all Panel Nodes displays to point non-reusable FPPs to the vuuid
+ * instead of the uuid.
+ */
+function fieldable_panels_panes_update_7116(&$sandbox) {
+  if (!module_exists('panels_node')) {
+    return t('Panel Nodes is not installed, so nothing to do.');
+  }
+
+  // This won't as-is work for many sites because the 'fpp_revision_locking'
+  // variable won't be defined before it's checked for. The simplest approach
+  // is to manually rerun the updates.
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  // /**
+  //  * Rerun Fieldable Panels Panes update 7116.
+  //  */
+  // function MYMODULE_update_7101(&$sandbox) {
+  //   return fieldable_panels_panes_update_7116($sandbox);
+  // }
+  //
+  //
+  // A more correct approach is to use hook_update_dependencies to ensure that
+  // the updates happen in the correct order. This may not work because if the
+  // hook implementation is newly added to the module it won't be recognized
+  // until the caches are cleared, which may not happen until after the updates
+  // are ran, thus the updates not running in the correct order.
+  //
+  // /**
+  //  * Implements hook_update_dependencies().
+  //  */
+  // function MYMODULE_update_dependencies() {
+  //   // Make sure that update 7100 below runs *after* Fieldable Panels Pane
+  //   // update 7111 and *before* Fieldable Panels Pane update 7112, that way
+  //   // the FPP 'lock' option will be enabled when the Panel Nodes updates are
+  //   // started.
+  //   $dependencies['MYMODULE'][7100] = array(
+  //     'fieldable_panels_panes' => 7111,
+  //   );
+  //   $dependencies['fieldable_panels_panes'][7116] = array(
+  //     'MYMODULE' => 7100,
+  //   );
+  //   return $dependencies;
+  // }
+  //
+  // /**
+  //  * Enable the FPP revision locking feature.
+  //  */
+  // function MYMODULE_update_7100() {
+  //   variable_set('fpp_revision_locking', 'lock');
+  // }
+  //
+  //
+  // An alternative solution would be to rerun the updates.
+
+  if (variable_get('fpp_revision_locking', 'lock') != 'lock') {
+    return t('Pane locking is not enabled, so nothing to do.');
+  }
+
+  // The first time through, work out how many records need to be updated.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+
+    // Total records that must be processed.
+    $sandbox['max'] = db_query("SELECT DISTINCT fpp.uuid as uuid, fppr.vuuid as vuuid
+      FROM {fieldable_panels_panes} fpp
+      INNER JOIN {fieldable_panels_panes_revision} fppr
+        ON fpp.vid = fppr.vid
+      INNER JOIN {panels_pane} pp
+        ON fpp.uuid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
+      INNER JOIN {panels_node} pn
+        ON pn.did = pp.did
+      WHERE (pp.subtype LIKE 'uuid:%')
+        AND fpp.reusable != 1
+      ORDER BY fpp.uuid")->rowCount();
+
+    // If there's nothing to do, bail early.
+    if (empty($sandbox['max'])) {
+      return t('No panels needed to be updated.');
+    }
+  }
+
+  // Do the updates in small batches.
+  $limit = 10;
+
+  // Get a list of all UUIDs for Panel Nodes displays.
+  $results = db_query_range("SELECT DISTINCT fpp.uuid as uuid, fppr.vuuid as vuuid
+    FROM {fieldable_panels_panes} fpp
+    INNER JOIN {fieldable_panels_panes_revision} fppr
+      ON fpp.vid = fppr.vid
+    INNER JOIN {panels_pane} pp
+      ON fpp.uuid = SUBSTRING(pp.subtype FROM (POSITION(':' IN pp.subtype) + 1))
+    INNER JOIN {panels_node} pn
+      ON pn.did = pp.did
+    WHERE (pp.subtype LIKE 'uuid:%')
+      AND fpp.reusable != 1
+    ORDER BY fpp.uuid", 0, $limit);
+
+  // Loop through the FPPs.
+  foreach ($results as $record) {
+    // Update the 'uuid:' records to use 'vuuid:'; don't bother checking if the
+    // record exists first because there's no down side to running this query
+    // immediately.
+    $query = db_update('panels_pane')
+      ->fields(array('subtype' => 'vuuid:' . $record->vuuid))
+      ->condition('subtype', 'uuid:' . $record->uuid)
+      ->execute();
+
+    // Increment the progress counter.
+    $sandbox['progress']++;
+  }
+
+  // Done yet?
+  $sandbox['#finished'] = empty($sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished'] === TRUE) {
+    return t('Updated @count record(s) to use the new locking system.', array('@count' => $sandbox['max']));
   }
 }

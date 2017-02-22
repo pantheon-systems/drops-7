@@ -1,0 +1,587 @@
+<?php
+
+/**
+ * @file
+ * Provides a FieldAPI field type, widget, and several formatters for a combined
+ * human readable/machine name pair of values. Possible uses include automatic
+ * generation of editable pathauto segments, handy Views argument values, and
+ * impressing friends.
+ */
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function safeword_theme() {
+  return array(
+    'safeword_un_editable_path_parts' => array(
+      'variables' => array('path' => ''),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function safeword_menu() {
+  // Returns AJAX commands if the user has JavaScript turned on.
+  $items['safeword/ajax/transliterate'] = array(
+    'page callback'    => 'safeword_ajax_callback',
+    'type'             => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Field definition code. Handles basic metadata for the field, and the settings
+ * form.
+ */
+
+
+/**
+ * Implements hook_field_info().
+ *
+ * Provides the description of the field.
+ */
+function safeword_field_info() {
+  $field_settings = array(
+    'max_length' => 255,
+     'machine_label' => t('URL-safe'),
+     'machine_description' => t('A URL-safe version of the text. It may only contain lowercase letters, numbers and underscores. Leave blank to re-generate.'),
+     'replace_pattern' => '(--|<[^<>]+>|[^/a-z0-9-])+', // old [^a-z0-9-]+
+     'replace_value' => '-',
+     'allow_machine_changes' => TRUE,
+     'unique' => FALSE,
+     'show_complete_path' => FALSE,
+     'complete_path_label' => t('Complete path'),
+     );
+
+  // Work out where this field is being added and adapt labels.
+  $path        = $_GET['q'];
+  $path_parts  = explode('/', $path);
+  $second_part = isset($path_parts[2]) ? $path_parts[2] : '';
+
+  switch ($second_part) {
+    case 'types':
+      $label       = t('Machine name from node title');
+      $description = t('A field with a scrubbed machine-safe variation of the node title.');
+      break;
+    case 'taxonomy':
+      $label       = t('Machine name from taxonomy term name');
+      $description = t('A field with a scrubbed machine-safe variation of the taxonomy term name.');
+      break;
+    default:
+      $label       = t('Machine name from title');
+      $description = t('A field with a scrubbed machine-safe variation of the title.');
+      break;
+  }
+
+  return array(
+    'safeword'       => array(
+      'label'                   => t('Machine name from text'),
+      'description'             => t('A field with human readable text and a scrubbed machine-safe variation.'),
+      'default_widget'          => 'safeword_machine_name',
+      'default_formatter'       => 'safeword_human',
+      // Support default token formatter for field tokens.
+      'default_token_formatter' => 'safeword_machine_basic',
+      'property_type'           => 'safeword_field',
+      'property_callbacks'      => array('safeword_field_property_info_callback'),
+      'settings' => $field_settings,
+    ),
+    'safeword_title' => array(
+      'label'                   => $label,
+      'description'             => $description,
+      'default_widget'          => 'safeword_machine_name_only',
+      'default_formatter'       => 'safeword_machine_basic',
+      // Support default token formatter for field tokens.
+      'default_token_formatter' => 'safeword_machine_basic',
+      'property_type'           => 'safeword_field',
+      'property_callbacks'      => array('safeword_field_property_info_callback'),
+      'settings' => $field_settings,
+    ),
+  );
+}
+
+/**
+ * Implements property_callbacks for hook_field_info().
+ */
+function safeword_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  unset($property['query callback']);
+
+  $property['property info'] = array(
+    'machine' => array(
+      'type'            => 'text',
+      'label'           => t('Machine name'),
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'human'   => array(
+      'type'            => 'text',
+      'label'           => t('Human friendly name'),
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * Verifies that both the human and machine readable values are populated.
+ */
+function safeword_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+
+  // Set error message if non-Roman letters are found, suggest corrected machine name.
+  if (function_exists('transliteration_get') && isset($field['settings']['transliterate']) && !empty($field['settings']['transliterate'])) {
+
+    $machine_label = $field['settings']['machine_label'];
+
+    foreach ($items as $delta => $item) {
+
+      $machine_suggestion = transliteration_get($item['machine'], '-', 'en');
+      $machine_suggestion = strtolower($machine_suggestion);
+
+      if ($machine_suggestion != $item['machine']) {
+
+        /*
+         * @todo use regex pattern to strip out characters that would cause an error.
+         */
+
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error'   => 'safeword_invalid',
+          'message' => t('The machine-readable name may only contain Roman characters, without accent, such as: %machine_suggestion',
+            array('%machine_suggestion' => $machine_suggestion)),
+        );
+      }
+    }
+  }
+
+  return;
+}
+
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function safeword_field_is_empty($item, $field) {
+  return (empty($item['human']) && empty($item['machine']));
+}
+
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function safeword_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+
+  $entity_type = $instance['entity_type'];
+
+  switch ($entity_type) {
+    case 'node':
+      $unique_title = t('Require unique values for this field (per content type).');
+      break;
+    case 'taxonomy_term':
+      $unique_title = t('Require unique values for this field (per taxonomy vocabulary).');
+      break;
+    default:
+      $unique_title = t('Require unique values for this field (per content type).');
+      break;
+  }
+
+  $form = array();
+
+  if ($field['type'] == 'safeword' || $field['type'] == 'safeword_title') {
+    // @TODO: Smarter handling of the #disabled flag. These can all collide in
+    // counterintuitive ways if we're not careful.
+
+    $form['max_length'] = array(
+      '#type'             => 'textfield',
+      '#title'            => t('Maximum length'),
+      '#default_value'    => $settings['max_length'],
+      '#required'         => TRUE,
+      '#description'      => t('The maximum length of the field in characters.'),
+      '#element_validate' => array('_element_validate_integer_positive'),
+      '#disabled'         => $has_data,
+    );
+
+    $form['machine_label'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Machine name label'),
+      '#default_value' => $settings['machine_label'],
+      '#description'   => t('Label for the machine-readable version of the field.'),
+    );
+
+    $form['machine_description'] = array(
+      '#type'          => 'textarea',
+      '#title'         => t('Machine name description'),
+      '#default_value' => $settings['machine_description'],
+      '#description'   => t('Descriptive text for the machine-readable version of the field.'),
+    );
+
+    $form['replace_pattern'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Replacement pattern'),
+      '#default_value' => $settings['replace_pattern'],
+      '#required'      => TRUE,
+      '#description'   => t('A regular expression matching the banned characters. (--|<[^<>]+>|[^/a-z0-9-])+ is recommended for URL paths.'),
+    );
+
+
+    $form['replace_value'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Replacement value'),
+      '#default_value' => $settings['replace_value'],
+      '#required'      => TRUE,
+      '#description'   => t('A character to replace disallowed characters in the machine name via JavaScript.'),
+    );
+
+    $form['unique'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => $unique_title,
+      '#default_value' => $settings['unique'],
+    );
+
+    $form['show_complete_path'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Show the complete path'),
+      '#default_value' => $settings['show_complete_path'],
+      '#description'   => t("Display the complete path to the node next to the source field as it's being edited."),
+    );
+
+    $form['allow_machine_changes'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Allow machine name changes'),
+      '#default_value' => $settings['allow_machine_changes'],
+      '#description'   => t('If this option is disabled, machine-readable text will be locked after creation.'),
+    );
+
+    if (function_exists('transliteration_get')) {
+      $form['transliterate'] = array(
+        '#type'          => 'checkbox',
+        '#title'         => t('Transliterate - convert to Roman characters, removing accents.'),
+        '#default_value' => isset($settings['transliterate']) ? $settings['transliterate'] : 0,
+      );
+    }
+
+  }
+
+  return $form;
+}
+
+
+/**
+ * Formatter-related code. Handles the stuff that happens when a Safeword field
+ * is prepped for output on a web page.
+ */
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function safeword_field_formatter_info() {
+  return array(
+    'safeword_human'         => array(
+      'label'       => t('Human-readable version'),
+      'field types' => array('safeword'),
+    ),
+    'safeword_machine'       => array(
+      'label'       => t('Machine-readable version wrapped in an acronym tag'),
+      'field types' => array('safeword'),
+    ),
+    'safeword_machine_basic' => array(
+      'label'       => t('Machine-readable version'),
+      'field types' => array('safeword', 'safeword_title'),
+    ),
+    'safeword_both'          => array(
+      'label'       => t('Show both versions'),
+      'field types' => array('safeword'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ * Three formatters are implemented.
+ * - safeword_human outputs an XSL-scrubbed version of the human text.
+ * - safeword_machine outputs the machine readable text, optionally displaying
+ *   the human readable text in an HTML <acronym> tag.
+ * - safeword_both outputs the human readable text with the machine version
+ *   in parenthesis.
+ */
+function safeword_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    // This formatter simply outputs the field as text and with a color.
+    case 'safeword_human':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = filter_xss($item['human']);
+      }
+      break;
+
+    case 'safeword_machine':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = '<acronym title="' . filter_xss($item['human']) . '">' . filter_xss($item['machine']) . '</acronym>';
+      }
+      break;
+
+    case 'safeword_machine_basic':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = filter_xss($item['machine']);
+      }
+      break;
+
+    // This formatter simply outputs the field as text and with a color.
+    case 'safeword_both':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = t("!human (!machine)", array('!human' => filter_xss($item['human']), '!machine' => filter_xss($item['machine'])));
+      }
+      break;
+  }
+
+  return $element;
+}
+
+
+/**
+ * Widget-related code. Handles the stuff that happens on the edit form
+ * when a Safeword field is used.
+ */
+
+
+/**
+ * Implements hook_field_widget_info().
+ *
+ * Provides a widget that uses Drupal's built-in machine name FormAPI element.
+ */
+function safeword_field_widget_info() {
+  return array(
+    'safeword_machine_name'      => array(
+      'label'       => t('Machine name with text'),
+      'field types' => array('safeword'),
+    ),
+    'safeword_machine_name_only' => array(
+      'label'       => t('Machine name'),
+      'field types' => array('safeword_title'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * safeword_machine_name uses Drupal's built-in 'Machine Readable Name' form
+ * element to display both values for editing.
+ */
+function safeword_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  // Add machine name target functionality
+  $element += array(
+    '#delta' => $delta,
+  );
+
+  // The $element variable is a pre-populated form element with no #type property,
+  // but all the bits like #description, #title, and #required filled in as
+  // appropriate. When building sub-elements for this widget, we can copy the
+  // FAPI properties from the parent element.
+
+  switch ($instance['widget']['type']) {
+    case 'safeword_machine_name':
+      $element['human'] = array(
+        '#title'         => $element['#title'],
+        '#type'          => 'textfield',
+        '#default_value' => empty($items[$delta]['human']) ? '' : $items[$delta]['human'],
+        '#maxlength'     => $field['settings']['max_length'],
+        '#description'   => filter_xss_admin($element['#description']),
+        '#required'      => $element['#required']
+      );
+
+      $safeword_source = array_merge($element['#field_parents'], array($field['field_name'], $langcode, $delta, 'human'));
+
+    case 'safeword_machine_name_only':
+      if (!isset($safeword_source)) {
+        $safeword_source = array('title');
+        // Taxonomy terms use a "name" field instead of "title"
+        if ($instance['entity_type'] == 'taxonomy_term') {
+          $safeword_source = array('name');
+        }
+      }
+      $element['machine'] = array(
+        '#type'          => 'machine_name',
+        '#default_value' => empty($items[$delta]['machine']) ? '' : $items[$delta]['machine'],
+        '#maxlength'     => $field['settings']['max_length'],
+        '#description'   => filter_xss_admin($field['settings']['machine_description']),
+        '#machine_name'  => array(
+          'source'          => $safeword_source,
+          'label'           => check_plain($field['settings']['machine_label']),
+          'replace_pattern' => $field['settings']['replace_pattern'],
+          'replace'         => $field['settings']['replace_value'],
+          'field_prefix'    => '',
+          'field_suffix'    => '',
+        ),
+        '#required'      => $element['#required'],
+        '#disabled'      => (!empty($items[$delta]['machine']) && empty($field['settings']['allow_machine_changes'])),
+      );
+
+      // Load the JS file, provides transliteration.
+      drupal_add_js(drupal_get_path('module', 'safeword') . '/safeword.js', array('weight' => 1));
+
+      // Show complete path functionality
+      //   - use path auto settings to show the full URL to the user
+      if ($field['settings']['show_complete_path'] && module_exists('pathauto')) {
+
+        // Load the CSS file, styling for Pathauto path preffix and suffix.
+        drupal_add_css(drupal_get_path('module', 'safeword') . '/safeword.css', array('group' => CSS_DEFAULT, 'type' => 'file'));
+
+        // Get the pattern from pathauto
+        $pathauto_pattern = pathauto_pattern_load_by_entity($element['#entity_type'], $element['#bundle'], $element['#language']);
+
+        // Find out what the token name will be
+        $token = '[' . $element['#entity_type'] . ':' . $field['field_name'] . ']';
+
+        // Edge case: if "Machine name from title", and there is no pathauto
+        //  token containing field name but there is an entity:title token,
+        //  replace the title instead
+        if ($field['type'] == 'safeword_title') {
+
+          $title_field_token = '[' . $element['#entity_type'] . ':title]';
+
+          if (strpos($pathauto_pattern, $token) === FALSE
+            && strpos($pathauto_pattern, $title_field_token) !== FALSE
+          ) {
+            $token = $title_field_token;
+
+          }
+        }
+
+        // Explode the path based on the token
+        $exploded_path = explode($token, $pathauto_pattern);
+
+        if (count($exploded_path) > 1) {
+
+          foreach ($exploded_path as $path_key => $path_part) {
+            //$exploded_path[$path_key] = '<span class="safeword-path-un-editable">' . $path_part . '</span>';
+            $exploded_path[$path_key] = theme('safeword_un_editable_path_parts', array('path' => check_plain($path_part)));
+          }
+
+
+          $element['machine']['#machine_name']['field_prefix'] = array_shift($exploded_path);
+
+          // Implode the remaining path - if the token appears more than once
+          // then only replace the first version.
+          $element['machine']['#machine_name']['field_suffix'] = implode($token, $exploded_path);
+        }
+      }
+
+
+      // Only add the code for the uniqueness check if the field requires it.
+      // No need to trigger the extra checks.
+      if ($field['settings']['unique']) {
+        $element['machine']['#machine_name']['exists'] = 'safeword_value_collides';
+
+        $element['machine']['#exists_params'] = array(
+          'field_name'  => $field['field_name'],
+          'entity_type' => $instance['entity_type'],
+          'bundle'      => $instance['bundle'],
+        );
+      }
+      else {
+        $element['machine']['#machine_name']['exists'] = 'safeword_value_not_unique';
+      }
+  }
+
+  return $element;
+}
+
+
+/**
+ * Uniqueness callback for safeword fields.
+ */
+function safeword_value_collides($name, array $element = NULL, $form_state) {
+  // This should never be the case, but it doesn't hurt to check.
+  if (empty($element) && empty($element['#exists_params'])) {
+    return FALSE;
+  }
+  else {
+    $settings = $element['#exists_params'];
+
+    $query = new EntityFieldQuery();
+
+    $query
+      ->entityCondition('entity_type', $settings['entity_type'], '=')
+      ->fieldCondition($settings['field_name'], 'machine', $name, '=')
+      ->count();
+
+    if (!empty($settings['bundle'])) {
+      $query->entityCondition('bundle', $settings['bundle'], '=');
+    }
+
+    return $query->execute() > 0 ? TRUE : FALSE;
+  }
+}
+
+/**
+ * Dummy callback for when uniquenes doesn't need to be checked, but FAPI checks anyway.
+ */
+function safeword_value_not_unique($name, array $element = NULL, $form_state) {
+  return FALSE;
+}
+
+
+/**
+ * Implements hook_field_views_data().
+ */
+function safeword_field_views_data($field) {
+  // Views has helper functions to build filters, sorts, args, and so on for
+  // FieldAPI data. All we need to do is ensure that the 'name field' for our
+  // argument definition is set properly, and we'll get the correct value in
+  // summary titles and breadcrumb trails.
+
+  // Alas, this only works if http://drupal.org/node/1016814 is applied;
+  // Hopefully that'll make it in.
+
+  $views_fields = field_views_field_default_views_data($field);
+  foreach ($views_fields as $key => $data) {
+    $views_fields[$key][$field['field_name'] . '_machine']['argument']['name field'] = $field['field_name'] . '_human';
+  }
+
+  return $views_fields;
+}
+
+/**
+ * Markup of parts of path that can't be edited via the machine-name.
+ */
+function theme_safeword_un_editable_path_parts($variables) {
+
+  return '<span class="safeword-path-un-editable">' . $variables['path'] . '</span>';
+}
+
+/*
+ * Transliterate non-Roman characters to Roman characters without accents.
+ */
+function safeword_ajax_callback() {
+  // Retrieve our post value.
+  $source = $_POST['source'];
+
+  if (function_exists('transliteration_get')) {
+    $source = transliteration_get($source, '-', 'en');
+  }
+
+  drupal_json_output($source);
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function safeword_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'arguments') {
+    return 'plugins/' . $plugin_type;
+  }
+}

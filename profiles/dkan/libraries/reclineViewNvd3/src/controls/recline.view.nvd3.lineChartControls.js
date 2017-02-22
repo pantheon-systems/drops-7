@@ -7,7 +7,7 @@ this.recline.View = this.recline.View || {};
 'use strict';
 
   my.lineChartControls = recline.View.nvd3.BaseControl.extend({
-    template: '<fieldset>' +
+    customOptions: '<fieldset>' +
                 '<legend>Extra</legend>' +
                 '<div class="form-group checkbox">' +
                   '<label for="control-chart-datapoints">' +
@@ -15,12 +15,15 @@ this.recline.View = this.recline.View || {};
                   '</label>' +
                 '</div>' +
               '</fieldset>',
-    events: {
-      'change input[type="checkbox"]': 'update',
+    events: function(){
+      return _.extend({}, recline.View.nvd3.BaseControl.prototype.events, {
+        'change input[type="checkbox"]': 'update'
+      });
     },
     getUIState:function(){
       var self = this;
-      var computedState = {options: {}};
+      var computedState = recline.View.nvd3.BaseControl.prototype.getUIState.call(this);
+      computedState = _.merge({}, computedState, {options: {}});
       computedState.options.datapoints = self.$('#control-chart-datapoints').is(':checked');
       return computedState;
     }

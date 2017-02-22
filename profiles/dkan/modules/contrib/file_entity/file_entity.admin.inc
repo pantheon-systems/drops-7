@@ -540,7 +540,9 @@ function file_entity_multiple_delete_confirm_submit($form, &$form_state) {
  */
 function file_entity_list_types_page() {
   $file_entity_info = entity_get_info('file');
-  $field_ui = module_exists('field_ui');
+  // Newer versions of Drupal core require the "administer fields" permission
+  // to access the Field UI.
+  $field_ui = module_exists('field_ui') && (user_access('administer fields') || !function_exists('field_ui_admin_access'));
   $colspan = $field_ui ? 5 : 3;
   $header = array(
     array('data' => t('Name')),

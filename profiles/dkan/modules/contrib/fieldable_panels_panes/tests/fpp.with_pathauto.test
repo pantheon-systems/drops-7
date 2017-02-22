@@ -1,0 +1,75 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module with Pathauto.
+ */
+
+class FppWithPathautoTest extends FppTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for Pathauto',
+      'description' => 'Confirm that FPP does not break when using Pathauto.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+
+    // 
+    $modules[] = 'pathauto';
+
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+  }
+
+  function testPathauto() {
+    // Create a test node.
+    $node = $this->drupalCreateNode();
+
+    // Create a user with the admin permission.
+    $permissions = array(
+      "create fieldable {$this->bundle}",
+      'view the administration theme',
+    );
+    $this->user = $this->createUser($permissions);
+    $this->drupalLogin($this->user);
+
+    // Load the 'add' page.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200, 'Loaded the Add page for the default FPP type.');
+
+    // Save the record with a path that points to the node.
+    $args = array(
+      'title' => t('Test'),
+      'link' => TRUE,
+      'path' => 'node/1',
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('The entity has been saved.'));
+
+    // Confirm the record was saved.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertNoText(t('There are currently no entities of this type.'));
+
+    // Try loading it.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/1');
+    $this->assertResponse(200, 'Loaded the FPP object.');
+
+    // Load the FPP.
+    $fpp = fieldable_panels_panes_load(1);
+
+    // Confirm there's a link with the FPP's title and the node's URL.
+    $this->assertRaw(l($fpp->title, 'node/' . $node->nid));
+  }
+
+}

@@ -1,3 +1,25 @@
+Manual Crop 7.x-1.6, 2016-12-04
+-------------------------------
+- Added file entity revision support.
+- Added option to disable effect ordering.
+- Added a property to skip the validation and save of crop selections.
+- Added support for the Drag & Drop Upload widget.
+- Updated version extraction imgAreaSelect, use the json file from now on.
+- Updated to imgAreaSelect 0.9.11-rc.1 from github.
+- Updated croptool to a renderable array.
+- Updated croptool to show the style label instead of machine name.
+- Removed has_js cookie check.
+- Fixed manual_crop_load_crop_selection() causing a temp table/filesort.
+- Fixed required crops not working when mode set to exclude.
+- Fixed various issues with the Media module.
+- Fixed saving of new crop selections after a form rebuild.
+- Fixed compatibility with the CKEditor Insert module.
+- Fixed submit handler to skip additional submits.
+- Fixed unwanted upscaling when no crop selection has been made.
+- Fixed missing js settings when the user is not allowed to access the first croptool.
+- Fixed ecaping image style label.
+- And various other fixes.
+
 Manual Crop 7.x-1.5, 2015-04-11
 -------------------------------
 - Added a permission to crop images.

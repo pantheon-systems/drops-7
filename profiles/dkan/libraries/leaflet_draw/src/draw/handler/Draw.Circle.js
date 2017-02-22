@@ -1,3 +1,8 @@
+/**
+ * @class L.Draw.Circle
+ * @aka Draw.Circle
+ * @inherits L.Draw.SimpleShape
+ */
 L.Draw.Circle = L.Draw.SimpleShape.extend({
 	statics: {
 		TYPE: 'circle'
@@ -6,7 +11,7 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 	options: {
 		shapeOptions: {
 			stroke: true,
-			color: '#f06eaa',
+			color: '#3388ff',
 			weight: 4,
 			opacity: 0.5,
 			fill: true,
@@ -15,9 +20,12 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 			clickable: true
 		},
 		showRadius: true,
-		metric: true // Whether to use the metric meaurement system or imperial
+		metric: true, // Whether to use the metric measurement system or imperial
+		feet: true, // When not metric, use feet instead of yards for display
+		nautic: false // When not metric, not feet use nautic mile for display
 	},
 
+	// @method initialize(): void
 	initialize: function (map, options) {
 		// Save the type so super can fire, need to do this as cannot do this.TYPE :(
 		this.type = L.Draw.Circle.TYPE;
@@ -54,9 +62,14 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 			// Get the new radius (rounded to 1 dp)
 			radius = this._shape.getRadius().toFixed(1);
 
+			var subtext = '';
+			if (showRadius) {
+				subtext = L.drawLocal.draw.handlers.circle.radius + ': ' +
+						  L.GeometryUtil.readableDistance(radius, useMetric, this.options.feet, this.options.nautic);
+			}
 			this._tooltip.updateContent({
 				text: this._endLabelText,
-				subtext: showRadius ? L.drawLocal.draw.handlers.circle.radius + ': ' + L.GeometryUtil.readableDistance(radius, useMetric) : ''
+				subtext: subtext
 			});
 		}
 	}

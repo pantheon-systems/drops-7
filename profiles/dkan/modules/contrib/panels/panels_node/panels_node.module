@@ -72,7 +72,7 @@ function panels_node_menu() {
 
   $items['node/add/panel/choose-layout'] = array(
     'title' => 'Choose layout',
-    'access arguments' => array('create panel-nodes'),
+    'access callback' => 'panels_add_panel_access_callback',
     'page callback' => 'panels_node_add',
     'type' => MENU_CALLBACK,
   );
@@ -89,6 +89,13 @@ function panels_node_edit_node($node) {
   }
 
   return node_access('update', $node);
+}
+
+/**
+ * Access callback to determine if user has access to add panel nodes.
+ */
+function panels_add_panel_access_callback() {
+  return user_access('create panel content') || user_access('administer panel-nodes');
 }
 
 /**

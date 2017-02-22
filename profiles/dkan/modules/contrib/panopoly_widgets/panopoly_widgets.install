@@ -100,6 +100,13 @@ function panopoly_widgets_update_dependencies() {
     // attempt to use pathauto, which means it's a dependency.
     'panopoly_core' => 7002,
   );
+  if (module_exists('linkit')) {
+    $deps['panopoly_widgets'][7017] = array(
+      // The new 'Link' field depends on Linkit, so we need to make sure that
+      // we create it after Linkit has had a chance to update 2.x -> 3.x.
+      'linkit' => 7301,
+    );
+  }
   return $deps;
 }
 
@@ -375,3 +382,18 @@ function panopoly_widgets_update_7016() {
     }
   }
 }
+
+/**
+ * Make sure the new 'field_basic_image_link' gets created.
+ */
+function panopoly_widgets_update_7017() {
+  features_revert(array('panopoly_widgets' => array('field_base', 'field_instance')));
+}
+
+/**
+ * Make sure the image widget switches to the Media browser widget.
+ */
+function panopoly_widgets_update_7018() {
+  features_revert(array('panopoly_widgets' => array('field_instance')));
+}
+

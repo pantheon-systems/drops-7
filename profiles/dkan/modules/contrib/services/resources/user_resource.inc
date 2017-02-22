@@ -899,7 +899,7 @@ function _user_resource_access($op = 'view', $args = array()) {
   if ($op != 'create' && $op != 'register' ) {
     $account = user_load($args[0]);
     if (!$account) {
-      return services_error(t('There is no user with ID @uid.', array('@uid' => $args[0])), 406);
+      return services_error(t('There is no user with ID @uid.', array('@uid' => $args[0])), 404);
     }
   }
 

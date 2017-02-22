@@ -33,19 +33,11 @@ class FppWithPanelsTest extends FppTestHelper {
 
     // Create a user with all the permissions
     $permissions = array(
-      'administer fieldable panels panes',
-
       // Needed for Page Manager.
       'administer page manager',
       'use page manager',
     );
-
-    // Reset the static variable used to identify permissions, otherwise it's
-    // possible the permissions check in drupalCreateUser will fail.
-    $this->checkPermissions(array(), TRUE);
-    cache_clear_all();
-
-    $this->adminUser = $this->drupalCreateUser($permissions);
+    $this->adminUser = $this->createAdminUser($permissions);
     $this->drupalLogin($this->adminUser);
   }
 

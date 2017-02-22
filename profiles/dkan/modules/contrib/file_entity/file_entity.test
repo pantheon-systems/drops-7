@@ -979,6 +979,45 @@ class FileEntityAltTitleTestCase extends FileEntityTestHelper {
 }
 
 /**
+ * Test changing the scheme of a file.
+ */
+class FileEntityChangeSchemeTestCase extends FileEntityTestHelper {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Changing file scheme',
+      'description' => 'Test changing the scheme of a file.',
+      'group' => 'File entity',
+    );
+  }
+
+  function testChangeScheme() {
+    // Select the first text test file to use.
+    $file = $this->createFileEntity(array('type' => 'document'));
+    $this->assertEqual(file_uri_scheme($file->uri), 'public', 'File is public.');
+
+    // Create a user with file edit permissions.
+    $user = $this->drupalCreateUser(array('edit any document files'));
+    $this->drupalLogin($user);
+
+    $this->drupalGet('file/' . $file->fid . '/edit');
+    $this->assertNoFieldByName('scheme');
+
+    // Create a user with file admin permissions.
+    $user = $this->drupalCreateUser(array('edit any document files', 'administer files'));
+    $this->drupalLogin($user);
+
+    $this->drupalGet('file/' . $file->fid . '/edit');
+    $this->assertFieldByName('scheme', 'public');
+
+    $this->drupalPost(NULL, array('scheme' => 'private'), 'Save');
+    $file = entity_load_unchanged('file', $file->fid);
+    $this->assertEqual(file_uri_scheme($file->uri), 'private', 'File has changed to private.');
+  }
+
+}
+
+/**
  * Tests replacing the file associated with a file entity.
  */
 class FileEntityReplaceTestCase extends FileEntityTestHelper {
@@ -1156,7 +1195,7 @@ class FileEntityTypeTestCase extends FileEntityTestHelper {
     $type_machine_label = 'foobar';
     $type = $this->createFileType(array('type' => $type_machine_type, 'label' => $type_machine_label));
     $loaded_type = file_type_load($type_machine_type);
-    $this->assertEqual($loaded_type->label, $type_machine_label, "Was able to create a type and retreive it.");
+    $this->assertEqual($loaded_type->label, $type_machine_label, "Was able to create a type and retrieve it.");
   }
 
   /**

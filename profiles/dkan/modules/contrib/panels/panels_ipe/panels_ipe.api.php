@@ -15,7 +15,7 @@
  *   Returns TRUE to allow access, FALSE to deny, or NULL if the module
  *   implementing this hook doesn't care about access for the given display.
  */
-function hook_panels_ipe_access($panels_display) {
+function hook_panels_ipe_access(panels_display $display) {
   // We only care about displays with the 'panelizer' context.
   if (!isset($display->context['panelizer'])) {
     return NULL;
