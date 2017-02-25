@@ -7,9 +7,9 @@ dependencies[] = commerce_product
 dependencies[] = views
 dependencies[] = libraries
 
-; Information added by Drupal.org packaging script on 2017-02-20
-version = "7.x-2.44"
+; Information added by Drupal.org packaging script on 2017-02-24
+version = "7.x-2.45"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1487606082"
+datestamp = "1487976276"
 

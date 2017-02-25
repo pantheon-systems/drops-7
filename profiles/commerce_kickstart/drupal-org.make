@@ -9,8 +9,8 @@ projects[ctools][version] = 1.12
 projects[entity][version] = 1.8
 projects[entityreference][version] = 1.2
 projects[rules][version] = 2.9
-projects[views][version] = 3.14
-projects[views_bulk_operations][version] = 3.3
+projects[views][version] = 3.15
+projects[views_bulk_operations][version] = 3.4
 projects[addressfield][version] = 1.2
 projects[features][version] = 2.10
 projects[features][patch][2143765] = "http://drupal.org/files/issues/features-fix-modules-enabled-2143765-1.patch"
@@ -104,8 +104,8 @@ projects[mailup][version] = 1.4
 projects[mailjet][version] = 2.12
 
 ; Search related modules.
-projects[search_api][version] = 1.20
-projects[search_api_db][version] = 1.5
+projects[search_api][version] = 1.21
+projects[search_api_db][version] = 1.6
 projects[search_api_ranges][version] = 1.5
 projects[search_api_ranges][patch][] = "https://drupal.org/files/issues/search_api_ranges-rewrite-data-alteration-callback-2001846-4.patch"
 projects[facetapi][version] = 1.5
