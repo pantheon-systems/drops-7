@@ -3,4 +3,4 @@ description = Provides xml output for for Open Data Schema Map.
 core = 7.x
 package = Open Data
 dependencies[] = open_data_schema_map
-version = 7.x-1.13
+version = 7.x-1.13.1

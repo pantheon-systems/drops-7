@@ -6,4 +6,4 @@ dependencies[] = libraries
 dependencies[] = file
 scripts[] = js/jsondataview.js
 scripts[] = js/restdataview.js
-version = 7.x-1.13
+version = 7.x-1.13.1
