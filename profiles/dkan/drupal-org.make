@@ -3,9 +3,9 @@ api: '2'
 core: 7.x
 includes:
 - https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.0/visualization_entity.make
-- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.13/open_data_schema_map.make
+- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.13.1/open_data_schema_map.make
 - https://raw.githubusercontent.com/NuCivic/leaflet_draw_widget/cb0d2b0e8c733a5f997038bd0b444ab2b6072542/leaflet_widget.make
-- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.13/recline.make
+- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.13.1/recline.make
 projects:
   admin_menu:
     version: 3.0-rc5
@@ -246,7 +246,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/open_data_schema_map.git
-      tag: 7.x-1.13
+      tag: 7.x-1.13.1
   panelizer:
     version: '3.4'
   panels:
@@ -276,7 +276,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/recline.git
-      tag: 7.x-1.13
+      tag: 7.x-1.13.1
   ref_field:
     download:
       type: git
