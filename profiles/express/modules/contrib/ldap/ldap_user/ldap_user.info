@@ -23,9 +23,9 @@ files[] = tests/ldap_user.test
 stylesheets[all][] = ldap_user.css
 configure = admin/config/people/ldap/user
 
-; Information added by Drupal.org packaging script on 2016-08-07
-version = "7.x-2.0-beta11"
+; Information added by Drupal.org packaging script on 2017-02-19
+version = "7.x-2.0-beta12+7-dev"
 core = "7.x"
 project = "ldap"
-datestamp = "1470608343"
+datestamp = "1487504891"
 

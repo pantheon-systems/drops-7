@@ -461,7 +461,7 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
 
     // don't pass in ldap user to provisionDrupalAccount, because want to requery with correct attributes needed
     // this may be a case where efficiency dictates querying for all attributes
-    $drupal_account = $auth_conf->ldapUser->provisionDrupalAccount(NULL, $user_edit, NULL, TRUE);
+    $drupal_account = $auth_conf->ldapUser->provisionDrupalAccount(NULL, $user_edit, $ldap_user, TRUE);
 
     if ($drupal_account === FALSE) {
       watchdog('ldap_user', 'Failed to find or create %drupal_accountname on logon.', $watchdog_tokens, WATCHDOG_ERROR);

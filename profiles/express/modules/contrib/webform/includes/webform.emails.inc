@@ -186,6 +186,9 @@ function webform_emails_form_status_save($form, &$form_state) {
     ->condition('nid', $form['#node']->nid)
     ->execute();
   }
+
+  // Refresh the entity cache, should it be cached in persistent storage.
+  entity_get_controller('node')->resetCache(array($form['#node']->nid));
 }
 
 /**

@@ -42,7 +42,8 @@ Dependencies
 Tasks
 -----
 
-1. Download the FlexSlider library from https://github.com/woothemes/FlexSlider/tree/version/2.2
+1. Download the FlexSlider library from https://github.com/woothemes/FlexSlider
+    - Only the 2.x branch is supported
 2. Unzip the file and rename the folder to "flexslider" (pay attention to the case of the letters)
 3. Put the folder in a libraries directory
     - Ex: sites/all/libraries
@@ -93,10 +94,10 @@ You can toggle the development version of the library in the administrative sett
 
 ### Image Width/Height Attributes
 
-If your images aren't resizing, ensure the width and height attributes are removed. The module will attempt to remove them automatically on any image matching the pattern 
+If your images aren't resizing, ensure the width and height attributes are removed. The module will attempt to remove them automatically on any image matching the pattern
 
     ul.slides > li > img
-    
+
 
 
 Export API
@@ -108,3 +109,11 @@ External Links
 ==============
 
 - [Wiki Documentation for FlexSlider 2](https://github.com/woothemes/FlexSlider/wiki/FlexSlider-Properties)
+
+General Notes
+=============
+
+Using FlexSlider with Advagg and Domain Access
+----------------------------------------------
+
+If you use multiple domains or subdomains together with advagg module you have to set the following option at the advagg config page admin/config/development/performance/advagg ”Include the base_url variable in the hooks hash array.” This will generate separate aggregates for each domain.

@@ -492,6 +492,15 @@ function ldap_user_form_password_policy_password_tab_alter(&$form, &$form_state)
 }
 
 /**
+* Implements hook_form_FORM_ID_alter(). for user-pass-reset form. Useful for
+* sites where this is the form ID for a user to intially set their password
+* (user clicks an emailed registration link, is prompted to set their password).
+*/
+function ldap_user_form_user_pass_reset_alter(&$form, &$form_state) {
+  array_unshift($form['#validate'], 'ldap_user_grab_password_validate');
+}
+
+/**
  * store password from logon forms in ldap_user_ldap_provision_pwd static variable
  * for use in provisioning to ldap
  */
@@ -595,7 +604,7 @@ function ldap_user_form_register_form_validate($form, &$form_state) {
   $drupal_username = $form_state['values']['name'];
 
   if ($values['ldap_user_association'] == LDAP_USER_MANUAL_ACCT_CONFLICT_NO_LDAP_ASSOCIATE) {
-    $form_state['values']['ldap_user_ldap_exclude']['und'][0]['value'] = 1;
+    $form_state['values']['ldap_user_ldap_exclude'][LANGUAGE_NONE][0]['value'] = 1;
   }
 
   // if corresponding ldap account doesn't exist and provision not selected and make ldap associated is selected, throw error
@@ -668,13 +677,13 @@ function ldap_user_ldap_exclude($account = NULL, $edit = NULL, $direction = LDAP
   }
 
   // exclude users who have the field ldap_user_ldap_exclude set to 1
-  if (is_object($account) && isset($account->ldap_user_ldap_exclude['und'][0]['value'])
+  if (is_object($account) && isset($account->ldap_user_ldap_exclude[LANGUAGE_NONE][0]['value'])
     && $account->ldap_user_ldap_exclude[LANGUAGE_NONE][0]['value'] == 1) {
     return TRUE;
   }
 
   // exclude new users who have the value set to 1 in their $edit array
-  if (is_array($edit) && isset($edit['ldap_user_ldap_exclude']['und'][0]['value'])
+  if (is_array($edit) && isset($edit['ldap_user_ldap_exclude'][LANGUAGE_NONE][0]['value'])
     && $edit['ldap_user_ldap_exclude'][LANGUAGE_NONE][0]['value'] == 1) {
     return TRUE;
   }
@@ -693,7 +702,6 @@ function ldap_user_ldap_exclude($account = NULL, $edit = NULL, $direction = LDAP
  *
  * @return boolean if user is ldap associated
  */
-
 function ldap_user_is_ldap_associated($account, $direction = NULL) {
 
   $to_drupal_user = FALSE;
@@ -701,17 +709,17 @@ function ldap_user_is_ldap_associated($account, $direction = NULL) {
 
   if ($direction === NULL || $direction == LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER) {
 
-    if (property_exists($account, 'ldap_user_current_dn') && !empty($account->ldap_user_current_dn['und'][0]['value'])) {
+    if (property_exists($account, 'ldap_user_current_dn') && !empty($account->ldap_user_current_dn[LANGUAGE_NONE][0]['value'])) {
       $to_drupal_user = TRUE;
     }
     elseif (isset($account->uid)) {
-      $authname = ldap_user_get_authname($account->uid);
+      $authname = ldap_user_get_authname($account);
       $to_drupal_user = (boolean)$authname;
     }
   }
 
   if ($direction === NULL || $direction == LDAP_USER_PROV_DIRECTION_TO_LDAP_ENTRY) {
-    if (property_exists($account, 'ldap_user_prov_entries') && !empty($account->ldap_user_prov_entries['und'][0]['value'])) {
+    if (property_exists($account, 'ldap_user_prov_entries') && !empty($account->ldap_user_prov_entries[LANGUAGE_NONE][0]['value'])) {
       $to_ldap_entry = TRUE;
     }
   }
@@ -764,10 +772,8 @@ function ldap_user_provision_to_drupal($ldap_user, $user_edit = array()) {
  *   and protect unencrypted user password from other modules
  *
  *   @param enum string $action 'get' | 'set'
- *   @param string | FALE $value as user entered password
+ *   @param string | FALSE $value as user entered password
  */
-
-
 function ldap_user_ldap_provision_pwd($action, $value = NULL, $reset = FALSE) {
 
   //$calling_function = FALSE;
@@ -1184,8 +1190,8 @@ function ldap_user_token_tokenize_entry($account, $token_keys, $pre = LDAP_SERVE
     switch ($type) {
 
       case 'field':
-        if (isset( $user_entity->{$attr}['und'][$ordinal]['value'])) {
-          $tokens[$token] = $user_entity->{$attr}['und'][$ordinal]['value'];
+        if (isset( $user_entity->{$attr}[LANGUAGE_NONE][$ordinal]['value'])) {
+          $tokens[$token] = $user_entity->{$attr}[LANGUAGE_NONE][$ordinal]['value'];
         }
       break;
 
@@ -1248,13 +1254,15 @@ function ldap_user_ldap_servers_username_to_ldapname_alter(&$ldap_username, $dru
 }
 
 /**
- * Returns LDAP authname from the authmap table for a variant input
+ * Returns LDAP authname from the authmap table for a variant input.
  *
  * @param $data
  *   A variant input. Allowed variable types:
  *   - object: user account object
- *   - integer: user id
  *   - string: username
+ *
+ * @return string|NULL
+ *   Returns the LDAP authname of the passed Drupal user.
  */
 function ldap_user_get_authname($data) {
   $cache = &drupal_static(__FUNCTION__, array());
@@ -1268,13 +1276,7 @@ function ldap_user_get_authname($data) {
       $uid = $data->uid;
     }
   }
-  elseif (is_numeric($data) && intval($data) == $data) {
-    // Integer - set uid number is an integer > 0
-    if ($data > 0) {
-      $uid = $data;
-    }
-  }
-  elseif (is_string($data)) {
+  else {
     // String - load account and set uid if uid > 0
     $account = user_load_by_name($data);
     if (!empty($account->uid)) {

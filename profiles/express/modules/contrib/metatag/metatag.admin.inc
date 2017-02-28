@@ -342,7 +342,7 @@ function metatag_config_disable($config) {
   ctools_export_crud_disable('metatag_config', $config);
 
   $label = metatag_config_instance_label($config->instance);
-  drupal_set_message(t('The meta tag defaults for @label have been disabed.', array('@label' => $label)));
+  drupal_set_message(t('The meta tag defaults for @label have been disabled.', array('@label' => $label)));
   drupal_goto();
 }
 
@@ -391,8 +391,7 @@ function metatag_bulk_revert_form() {
   foreach (entity_get_info() as $entity_type => $entity_info) {
     foreach (array_keys($entity_info['bundles']) as $bundle) {
       if (metatag_entity_supports_metatags($entity_type, $bundle)) {
-        $options[$entity_type . ':' . $bundle] =
-          $entity_info['label'] . ': ' . $entity_info['bundles'][$bundle]['label'];
+        $options[$entity_type . ':' . $bundle] = $entity_info['label'] . ': ' . $entity_info['bundles'][$bundle]['label'];
       }
     }
   }
@@ -404,6 +403,41 @@ function metatag_bulk_revert_form() {
     '#options' => $options,
     '#default_value' => array(),
     '#description' => t('All meta tags will be removed for all content of the selected entities.'),
+  );
+
+  $metatags = metatag_get_info();
+  $options = array();
+  foreach ($metatags['tags'] as $tag_name => $tag) {
+    $options[$tag_name] = t('@group_label: @tag_label', array(
+      '@group_label' => $metatags['groups'][$tag['group']]['label'],
+      '@tag_label' => $tag['label'],
+    ));
+  }
+
+  if (count($options) > 0) {
+    $form['tags'] = array(
+      '#type' => 'checkboxes',
+      '#required' => FALSE,
+      '#title' => t('Select the tags to revert'),
+      '#description' => t('If you select any tags, only those tags will be reverted.'),
+      '#options' => $options,
+    );
+  }
+
+  $languages = language_list();
+  $options = array(
+    LANGUAGE_NONE => t('Language neutral'),
+  );
+  foreach ($languages as $language) {
+    $options[$language->language] = $language->name;
+  }
+
+  $form['languages'] = array(
+    '#type' => 'checkboxes',
+    '#required' => FALSE,
+    '#title' => t('Select the languages to revert'),
+    '#description' => t('If you select any languages, only tags for those languages will be reverted.'),
+    '#options' => $options,
   );
 
   $form['submit'] = array(
@@ -428,10 +462,13 @@ function metatag_bulk_revert_form_submit($form, &$form_state) {
     'file' => drupal_get_path('module', 'metatag') . '/metatag.admin.inc',
   );
 
+  $tags = isset($form_state['values']['tags']) ? array_filter($form_state['values']['tags']) : array();
+  $languages = isset($form_state['values']['languages']) ? array_filter($form_state['values']['languages']) : array();
+
   // Set a batch operation per entity:bundle.
   foreach (array_filter($form_state['values']['update']) as $option) {
     list($entity_type, $bundle) = explode(':', $option);
-    $batch['operations'][] = array('metatag_bulk_revert_batch_operation', array($entity_type, $bundle));
+    $batch['operations'][] = array('metatag_bulk_revert_batch_operation', array($entity_type, $bundle, $tags, $languages));
   }
 
   batch_set($batch);
@@ -440,7 +477,7 @@ function metatag_bulk_revert_form_submit($form, &$form_state) {
 /**
  * Batch callback: delete custom metatags for selected bundles.
  */
-function metatag_bulk_revert_batch_operation($entity_type, $bundle, &$context) {
+function metatag_bulk_revert_batch_operation($entity_type, $bundle, $tags, $languages, &$context) {
   if (!isset($context['sandbox']['current'])) {
     $context['sandbox']['count'] = 0;
     $context['sandbox']['current'] = 0;
@@ -478,14 +515,53 @@ function metatag_bulk_revert_batch_operation($entity_type, $bundle, &$context) {
   foreach ($entity_ids as $entity_id) {
     $metatags = metatag_metatags_load($entity_type, $entity_id);
     if (!empty($metatags)) {
-      db_delete('metatag')->condition('entity_type', $entity_type)
-        ->condition('entity_id', $entity_id)
-        ->execute();
-      metatag_metatags_cache_clear($entity_type, $entity_id);
-      $context['results'][] = t('Reverted metatags for @bundle with id @id.', array(
-        '@bundle' => $entity_type . ': ' . $bundle,
-        '@id' => $entity_id,
-      ));
+      $reset = FALSE;
+      if (empty($tags)) {
+        // All tags should be reset, so we just delete any records from the db.
+        $query = db_delete('metatag')
+          ->condition('entity_type', $entity_type)
+          ->condition('entity_id', $entity_id);
+        if (!empty($languages)) {
+          $query->condition('language', $languages, 'IN');
+        }
+        $query->execute();
+        metatag_metatags_cache_clear($entity_type, $entity_id);
+        $reset = TRUE;
+      }
+      else {
+        // Iterate over tags and unset those, that we want to reset.
+        $needs_reset = FALSE;
+        foreach ($metatags as $metatags_language => $metatags_tags) {
+          if (empty($languages) || in_array($metatags_language, $languages)) {
+            foreach ($metatags_tags as $metatags_tag => $metatags_value) {
+              if (in_array($metatags_tag, $tags)) {
+                unset($metatags[$metatags_language][$metatags_tag]);
+                $needs_reset = TRUE;
+              }
+            }
+          }
+        }
+        // Save modified metatags.
+        if ($needs_reset) {
+          // We don't have a revision id, so we'll get the active one.
+          // Unfortunately, the only way of getting the active revision ID is to
+          // first load the entity, and then extract the ID. This is a bit
+          // performance intensive, but it seems to be the only way of doing it.
+          $entities = entity_load($entity_type, array($entity_id));
+          if (!empty($entities[$entity_id])) {
+            // We only care about the revision_id.
+            list(, $revision_id, ) = entity_extract_ids($entity_type, $entities[$entity_id]);
+          }
+          metatag_metatags_save($entity_type, $entity_id, $revision_id, $metatags, $bundle);
+          $reset = TRUE;
+        }
+      }
+      if ($reset) {
+        $context['results'][] = t('Reverted metatags for @bundle with id @id.', array(
+          '@bundle' => $entity_type . ': ' . $bundle,
+          '@id' => $entity_id,
+        ));
+      }
     }
   }
 
@@ -674,8 +750,8 @@ function metatag_admin_settings_form() {
   $form['advanced']['metatag_cache_output'] = array(
     '#type' => 'checkbox',
     '#title' => t('Cache meta tag output'),
-    '#description' => t('Disabling this will cause all meta tag output to be generated uniquely for each page load. Currently only affects entities. Note: the entity configuration and output for other types of pages will still be cached, but this can stop the {cache_metatag} table from growing out of control in some scenarios.'),
-    '#default_value' => variable_get('metatag_cache_output', TRUE),
+    '#description' => t('Enabling this will cause all meta tag output to be cached for each page, which may aid with site performance in some circumstances. Should not be used if there are paths which include user-specific meta tags for the <em>current user</em>, they may lead to information about the user being accidentally leaked; this problem does not affect the "user/[uid]" pages. It may also cause the {cache_metatag} cache table to grow to be extremely large in certain circumstances.'),
+    '#default_value' => variable_get('metatag_cache_output', FALSE),
   );
 
   $form['advanced']['metatag_leave_core_tags'] = array(

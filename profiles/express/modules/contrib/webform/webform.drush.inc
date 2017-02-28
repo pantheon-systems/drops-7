@@ -18,8 +18,8 @@ function webform_drush_command() {
         'delimiter' => 'Delimiter between columns (defaults to site-wide setting). This option may need to be wrapped in quotes. i.e. --delimter="\t".',
         'components' => 'Comma-separated list of component IDs or form keys to include.' . "\n" .
                         'May also include "webform_serial", "webform_sid", "webform_time", "webform_complete_time", "webform_modified_time", "webform_draft", "webform_ip_address", "webform_uid", and "webform_username".',
-        'header-keys' => 'Integer -1 for none, 0 for label (default) or 1 for field key.',
-        'select-keys' => 'Integer 0 or 1 value. Set to 1 to print select list values by their field keys instead of labels.',
+        'header-keys' => 'Integer -1 for none, 0 for label (default) or 1 for form key.',
+        'select-keys' => 'Integer 0 or 1 value. Set to 1 to print select list values by their form keys instead of labels.',
         'select-format' => 'Set to "separate" (default) or "compact" to determine how select list values are exported.',
         'range-type' => 'Range of submissions to export: "all", "new", "latest", "range" (by sid, default if start is supplied), "range-serial", or "range-date".',
         'range-latest' => 'Integer specifying the latest X submissions will be downloaded. Used if "range-type" is "latest" or no other range options are provided.',

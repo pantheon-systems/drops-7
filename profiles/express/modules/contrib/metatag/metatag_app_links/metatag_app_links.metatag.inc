@@ -10,7 +10,7 @@
 function metatag_app_links_metatag_info() {
   $info['groups']['app_links'] = array(
     'label' => t('App Links'),
-    'description' => t('Meta tags used to expose App Links for app deep linking. See <a href="@url">applinks.org</a> for details and documentation.', array('@url' => 'http://applinks.org')),
+    'description' => t('Meta tags used to expose app Links for app deep linking. See <a href="@url">applinks.org</a> for details and documentation.', array('@url' => 'http://applinks.org')),
     'form' => array(
       '#weight' => 90,
     ),
@@ -29,122 +29,122 @@ function metatag_app_links_metatag_info() {
   $weight = 80;
 
   $info['tags']['al:android:package'] = array(
-    'label' => t('Android App Package ID'),
-    'description' => t('A fully-qualified package name for intent generation. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('Android app package ID'),
+    'description' => t('A fully-qualified package name for intent generation. <strong>This attribute is required by the app Links specification.</strong>'),
     'weight' => ++$weight,
   ) + $defaults;
 
   $info['tags']['al:android:url'] = array(
-    'label' => t('Android App URL scheme'),
+    'label' => t('Android app URL scheme'),
     'description' => t('A custom scheme for the Android app.'),
   ) + $defaults;
 
   $info['tags']['al:android:class'] = array(
-    'label' => t('Android App Activity Class'),
+    'label' => t('Android app Activity Class'),
     'description' => t('A fully-qualified Activity class name for intent generation.'),
   ) + $defaults;
 
   $info['tags']['al:android:app_name'] = array(
-    'label' => t('Android App Name'),
+    'label' => t('Android app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:ios:url'] = array(
-    'label' => t('iOS App URL scheme'),
-    'description' => t('A custom scheme for the iOS app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('iOS app URL scheme'),
+    'description' => t('A custom scheme for the iOS app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:ios:app_store_id'] = array(
-    'label' => t('iOS App Store ID'),
-    'description' => t('The app ID for the App Store.'),
+    'label' => t('iOS app store ID'),
+    'description' => t('The app ID for the app Store.'),
     'devel_generate' => array(
       'type' => 'integer',
     ),
   ) + $defaults;
 
   $info['tags']['al:ios:app_name'] = array(
-    'label' => t('iOS App Name'),
+    'label' => t('iOS app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:ipad:url'] = array(
-    'label' => t('iPad App URL scheme'),
-    'description' => t('A custom scheme for the iPad app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('iPad app URL scheme'),
+    'description' => t('A custom scheme for the iPad app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:ipad:app_store_id'] = array(
-    'label' => t('iPad App Store ID'),
-    'description' => t('The app ID for the App Store.'),
+    'label' => t('iPad app store ID'),
+    'description' => t('The app ID for the app Store.'),
     'devel_generate' => array(
       'type' => 'integer',
     ),
   ) + $defaults;
 
   $info['tags']['al:ipad:app_name'] = array(
-    'label' => t('iPad App Name'),
+    'label' => t('iPad app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:iphone:url'] = array(
-    'label' => t('iPhone App URL'),
-    'description' => t('A custom scheme for the iPhone app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('iPhone app URL'),
+    'description' => t('A custom scheme for the iPhone app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:iphone:app_store_id'] = array(
-    'label' => t('iPhone App Store ID'),
-    'description' => t('The app ID for the App Store.'),
+    'label' => t('iPhone app store ID'),
+    'description' => t('The app ID for the app Store.'),
     'devel_generate' => array(
       'type' => 'integer',
     ),
   ) + $defaults;
 
   $info['tags']['al:iphone:app_name'] = array(
-    'label' => t('iPhone App Name'),
+    'label' => t('iPhone app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows_phone:url'] = array(
-    'label' => t('Windows Phone App URL scheme'),
-    'description' => t('A custom scheme for the Windows Phone app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('Windows Phone app URL scheme'),
+    'description' => t('A custom scheme for the Windows Phone app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:windows_phone:app_id'] = array(
-    'label' => t('Windows Phone App GUID'),
+    'label' => t('Windows Phone app GUID'),
     'description' => t('The app ID (a GUID) for app store.'),
   ) + $defaults;
 
   $info['tags']['al:windows_phone:app_name'] = array(
-    'label' => t('Windows Phone App Name'),
+    'label' => t('Windows Phone app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows:url'] = array(
-    'label' => t('Windows App URL scheme'),
-    'description' => t('A custom scheme for the Windows app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('Windows app URL scheme'),
+    'description' => t('A custom scheme for the Windows app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:windows:app_id'] = array(
-    'label' => t('Windows App GUID'),
+    'label' => t('Windows app GUID'),
     'description' => t('The app ID (a GUID) for app store.'),
   ) + $defaults;
 
   $info['tags']['al:windows:app_name'] = array(
-    'label' => t('Windows App Name'),
+    'label' => t('Windows app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows_universal:url'] = array(
-    'label' => t('Windows Universal App URL scheme'),
-    'description' => t('A custom scheme for the Windows Universal app. <strong>This attribute is required by the App Links specification.</strong>'),
+    'label' => t('Windows Universal app URL scheme'),
+    'description' => t('A custom scheme for the Windows Universal app. <strong>This attribute is required by the app Links specification.</strong>'),
   ) + $defaults;
 
   $info['tags']['al:windows_universal:app_id'] = array(
-    'label' => t('Windows Universal App GUID'),
+    'label' => t('Windows Universal app GUID'),
     'description' => t('The app ID (a GUID) for app store.'),
   ) + $defaults;
 
   $info['tags']['al:windows_universal:app_name'] = array(
-    'label' => t('Windows Universal App Name'),
+    'label' => t('Windows Universal app name'),
     'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 

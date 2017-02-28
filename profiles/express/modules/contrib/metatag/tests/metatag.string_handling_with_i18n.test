@@ -1,11 +1,7 @@
 <?php
-/**
- * @file
- * Contains the tests for Metatag's string handling.
- */
 
 /**
- * Tests the Metatag string handling.
+ * Tests for Metatag's string handling when the i18n module is enabled.
  */
 class MetatagCoreStringHandlingWithI18nTest extends MetatagCoreStringHandlingTest {
 
@@ -17,6 +13,7 @@ class MetatagCoreStringHandlingWithI18nTest extends MetatagCoreStringHandlingTes
       'name' => 'Metatag core tests for string handling w i18n',
       'description' => "Tests Metatag's string handling when i18n is enabled.",
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
     );
   }
 

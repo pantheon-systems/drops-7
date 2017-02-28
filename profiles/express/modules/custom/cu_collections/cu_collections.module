@@ -45,7 +45,7 @@ function cu_collections_preprocess_entity(&$vars) {
     // Collection grid options
     $filter_type = $vars['bean']->field_collection_filter_type[LANGUAGE_NONE][0]['value'];
     $summary = ($vars['bean']->field_collection_display_summary[LANGUAGE_NONE][0]['value'] == 'show') ? 1 : 0;
-
+    $filter_effect = !empty($vars['bean']->field_collection_filter_effect) ? $vars['bean']->field_collection_filter_effect[LANGUAGE_NONE][0]['value'] : 'fade';
     // Build anchor link prefix
     $anchor = 'collection-' . $vars['bean']->bid . '-';
     $vars['content'] = array();
@@ -68,22 +68,26 @@ function cu_collections_preprocess_entity(&$vars) {
     $categories = array();
     $terms = array();
     $sort = 0;
-    foreach ($vars['bean']->field_collection_grid_category[LANGUAGE_NONE] as $category) {
-      $term = taxonomy_term_load($category['tid']);
-      $categories[$term->tid] = array(
-        'name' => $term->name,
-        'weight' => $term->weight,
-      );
-      if ($term->weight != 0) {
-        $sort = 1;
+
+    if (!empty($vars['bean']->field_collection_grid_category)) {
+      foreach ($vars['bean']->field_collection_grid_category[LANGUAGE_NONE] as $category) {
+        $term = taxonomy_term_load($category['tid']);
+        $categories[$term->tid] = array(
+          'name' => $term->name,
+          'weight' => $term->weight,
+        );
+        if ($term->weight != 0) {
+          $sort = 1;
+        }
       }
-    }
-    // Sort categories by weight or by name
-    if ($sort) {
-      uasort($categories, 'drupal_sort_weight');
-    }
-    else {
-      uasort($categories, '_cu_collections_category_name_sort');
+
+      // Sort categories by weight or by name
+      if ($sort) {
+        uasort($categories, 'drupal_sort_weight');
+      }
+      else {
+        uasort($categories, '_cu_collections_category_name_sort');
+      }
     }
     // If there are > 2 categories, let's add navigation
     if (!empty($categories) && count($categories) > 1) {
@@ -100,7 +104,10 @@ function cu_collections_preprocess_entity(&$vars) {
         );
         // Add an All link
         $links['items'][] = l('All', '',  array(
-          'attributes' => array('data-collection' => 'collection-' . $vars['bean']->bid),
+          'attributes' => array(
+            'data-collection' => 'collection-' . $vars['bean']->bid,
+            'class' => array('collection-category-all'),
+          ),
           'fragment' => $anchor . 'all' ,
           'external' => TRUE)
         );
@@ -108,8 +115,11 @@ function cu_collections_preprocess_entity(&$vars) {
         // Add links for each category
         foreach ($categories as $key => $category) {
           $links['items'][] = l($category['name'], '',  array(
-            'attributes' => array('data-collection' => 'collection-' . $vars['bean']->bid),
-            'fragment' => $anchor . _cu_collections_clean_string($category['name']),
+            'attributes' => array(
+              'data-collection' => 'collection-' . $vars['bean']->bid,
+              'data-collection-category' => _cu_collections_clean_string($category['name']),
+            ),
+            'fragment' => $anchor,
             'external' => TRUE, 'html' => TRUE)
           );
         }
@@ -120,14 +130,14 @@ function cu_collections_preprocess_entity(&$vars) {
       elseif ($filter_type == 'select') {
         //uasort($categories, '_cu_collections_category_name_sort');
         $options = array();
-        $options[$anchor . 'all'] = 'All';
+        $options['all'] = 'All';
         foreach ($categories as $key => $category) {
-          $option_value = $anchor . $category['name'];
+          $option_value = _cu_collections_clean_string($category['name']);
           $options[$option_value] = $category['name'];
         }
-        $output = '<label for="' . $anchor . '">Filter</label> <select id=' . $anchor .'select" class="collection-filter">';
+        $output = '<label for="' . $anchor . '">Filter</label> <select id=' . $anchor .'select" class="collection-filter" data-collection="collection-' . $vars['bean']->bid . '">';
         foreach ($options as $key => $option) {
-          $output .= '<option value="#' . _cu_collections_clean_string($key) . '">' . $option . '</option>';
+          $output .= '<option value="' . _cu_collections_clean_string($key) . '">' . $option . '</option>';
         }
         $output .= '</select>';
         $vars['content']['filter']['#markup'] = $output;
@@ -141,15 +151,9 @@ function cu_collections_preprocess_entity(&$vars) {
 
     // Add categories of items to output.
     // Only do separate groups if there are more than 2 categories selected
-    if (!empty($categories) && count($categories) > 1) {
-      foreach ($categories as $key => $category) {
-        $vars['content']['items'][$key] = _cu_collections_category_query($types, array($key), $summary);
-        $vars['content']['items'][$key]['#prefix'] = '<div class="collection-items collection-items-categories" id="' . $anchor . _cu_collections_clean_string($category['name']) . '"><h3 class="element-invisible">' . $category['name'] . '</h3><div class="clear clearfix row">';
-        $vars['content']['items'][$key]['#suffix'] = '</div></div>';
-      }
-    }
+
     // Add wrapper for collections to give specificity to selectors
-    $vars['content']['#prefix'] = '<div id="collection-' . $vars['bean']->bid. '">';
+    $vars['content']['#prefix'] = '<div id="collection-' . $vars['bean']->bid. '" class="collection-filter-effect-' . $filter_effect . '">';
     $vars['content']['#suffix'] = '</div>';
   }
 }
@@ -175,11 +179,8 @@ function _cu_collections_category_query($types, $category = NULL, $summary = FAL
   $query->condition('type.field_collection_type_tid', $types, 'in');
 
   // Categories
-  if ($category) {
-    $query->join('field_data_field_collection_category', 'category', 'n.nid = category.entity_id');
-    $query->fields('category', array('field_collection_category_tid'));
-    $query->condition('category.field_collection_category_tid', $category, 'in');
-  }
+  $query->join('field_data_field_collection_category', 'category', 'n.nid = category.entity_id');
+  $query->fields('category', array('field_collection_category_tid'));
 
   $query->orderBy('sticky', 'DESC');
   $query->orderBy('title', 'ASC');
@@ -187,6 +188,7 @@ function _cu_collections_category_query($types, $category = NULL, $summary = FAL
   $query->groupBy('n.nid');
   $nids = $query->execute()->fetchCol();
   $nodes = node_load_multiple($nids);
+
   foreach ($nodes as $key => $node) {
     $nodes[$key]->heading_tag['#tag'] = 'h3';
   }
@@ -353,5 +355,18 @@ function cu_collections_taxonomy_overview_form_validate($form, &$form_state) {
       form_set_error($key . '[depth]', t('!change has caused the taxonomy to exceed its maximum depth of 1 levels.', array('!change' => $error_link)));
 
     }
+  }
+}
+
+function cu_collections_preprocess_node(&$vars) {
+  if ($vars['type'] == 'collection_item') {
+    //dpm($vars);
+    $categories = array();
+    foreach ($vars['field_collection_category'][LANGUAGE_NONE] as $category) {
+      $term = taxonomy_term_load($category['tid']);
+      $categories[] = 'collection-category-' . _cu_collections_clean_string($term->name);
+    }
+    //dpm($categories);
+    $vars['category_classes'] = join(' ', $categories);
   }
 }

@@ -222,3 +222,18 @@ function cu_redirect_form_redirect_edit_form_alter(&$form, &$form_state, $form_i
     unset($form['advanced']['status_code']['#options'][300]);
   }
 }
+
+/**
+ * Implements hook_redirect_insert().
+ *
+ * Displays a message on redirect creation.
+ *
+ * @param object $redirect
+ *   The redirect object that is being inserted.
+ */
+function cu_redirect_redirect_insert($redirect) {
+  drupal_set_message(t('Redirect from !source to !redirect was created.', array(
+    '!source' => l($redirect->source, $redirect->source),
+    '!redirect' => $redirect->redirect ? l($redirect->redirect, $redirect->redirect) : l('<front>', '<front>')
+  )));
+}

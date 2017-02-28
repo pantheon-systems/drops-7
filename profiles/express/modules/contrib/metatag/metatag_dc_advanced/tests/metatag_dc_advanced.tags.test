@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * Tests that each of the Metatag Advanced Dublin Core tags work correctly.
+ */
+class MetatagDcAdvancedTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Dublin Core Advanced',
+      'description' => 'Test the Advanced Dublin Core meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'dcterms.abstract',
+    'dcterms.accessRights',
+    'dcterms.accrualMethod',
+    'dcterms.accrualPeriodicity',
+    'dcterms.accrualPolicy',
+    'dcterms.alternative',
+    'dcterms.audience',
+    'dcterms.available',
+    'dcterms.bibliographicCitation',
+    'dcterms.conformsTo',
+    'dcterms.created',
+    'dcterms.dateAccepted',
+    'dcterms.dateCopyrighted',
+    'dcterms.dateSubmitted',
+    'dcterms.educationLevel',
+    'dcterms.extent',
+    'dcterms.hasFormat',
+    'dcterms.hasPart',
+    'dcterms.hasVersion',
+    'dcterms.instructionalMethod',
+    'dcterms.isFormatOf',
+    'dcterms.isPartOf',
+    'dcterms.isReferencedBy',
+    'dcterms.isReplacedBy',
+    'dcterms.isRequiredBy',
+    'dcterms.isVersionOf',
+    'dcterms.issued',
+    'dcterms.license',
+    'dcterms.mediator',
+    'dcterms.medium',
+    'dcterms.modified',
+    'dcterms.provenance',
+    'dcterms.references',
+    'dcterms.replaces',
+    'dcterms.requires',
+    'dcterms.rightsHolder',
+    'dcterms.spatial',
+    'dcterms.tableOfContents',
+    'dcterms.temporal',
+    'dcterms.valid',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_dc_advanced';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    return str_replace('dcterms_', 'dcterms.', $tag_name);
+  }
+
+}

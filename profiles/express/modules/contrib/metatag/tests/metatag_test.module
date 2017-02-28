@@ -35,6 +35,13 @@ function metatag_test_menu() {
     'page arguments' => array(13),
   ) + $defaults;
 
+  // User-specific meta tags.
+  $items['account-test-page'] = array(
+    'title' => 'User test page',
+    'description' => 'Test how user tokens are handled.',
+    'page callback' => 'metatag_test_user_page_callback',
+  ) + $defaults;
+
   return $items;
 }
 
@@ -43,4 +50,19 @@ function metatag_test_menu() {
  */
 function metatag_test_page_callback() {
   return t('Test page.');
+}
+
+/**
+ * Simple page callback for the user test page.
+ */
+function metatag_test_user_page_callback() {
+  global $user;
+
+  $username = 'Anonymous visitor';
+  if (isset($user->name)) {
+    $username = $user->name;
+  }
+  drupal_set_title('Hello ' . $username);
+
+  return t('Test page for user tokens.');
 }

@@ -48,6 +48,28 @@ function ldap_password_modify($userdn, $new_password, $ldap_server) {
 }
 
 /**
+ * Converts a password to the format that Active Directory supports (for the 
+ * purpose of changing or setting).  Note that AD needs the field to be called
+ * unicodePwd (as opposed to userPassword)
+ * 
+ * @param string $password
+ *    The password that is being formatted for Active Directory unicodePwd field
+ * @return string
+ *    $password surrounded with quotes and in UTF-16LE encoding
+ */
+function ldap_servers_convert_password_for_active_directory_unicodePwd($password) {
+  // This function can be called with $attributes['unicodePwd'] as an array.
+  if (!is_array($password)) {
+    return mb_convert_encoding("\"{$password}\"", "UTF-16LE");
+  }
+  else {
+    // Presumably there is no use case for there being more than one password in
+    // the $attributes array, hence it will be at index 0 and we return in kind.
+    return array(mb_convert_encoding("\"{$password[0]}\"", "UTF-16LE"));
+  }
+}
+
+/**
  *
  *  this attempts to find bad dns, but should only be used as warnings
  *  as the ldap spec allows for any old character to be escaped and ldap

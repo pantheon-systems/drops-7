@@ -5,7 +5,7 @@ Feature: Article Content Type
 
   @api
   Scenario Outline: An authenticated user should be able to access the form for adding page content
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/article"
     Then I should not see <message>
 
@@ -24,7 +24,7 @@ Feature: Article Content Type
 
   @api @javascript
   Scenario: An authenticated user should be able to create article node
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
       And am on "node/add/article"
       And fill in "Title" with "New article"
       And I click "Disable rich-text"

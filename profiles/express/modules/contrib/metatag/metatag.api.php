@@ -435,3 +435,20 @@ function hook_metatag_i18n_context_alter(&$context, $tag_name) {
     $context = '';
   }
 }
+
+/**
+ * Allow modules to overide the expiration of metatag caches.
+ *
+ * By default Metatag caches everything as CACHE_PERMANENT, this alter allows to
+ * change that.
+ *
+ * @param $expire
+ *   The expire value to change.
+ * @param $cid
+ *   The cid about to be cached.
+ * @param $data
+ *   The data to be cached.
+ */
+function hook_metatag_cache_set_expire_alter(&$expire, $cid, $data) {
+  $expire = CACHE_TEMPORARY;
+}

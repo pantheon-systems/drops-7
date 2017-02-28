@@ -78,10 +78,10 @@ function metatag_requirements($phase) {
     // Add a note if Page Title is also installed.
     if (module_exists('page_title')) {
       $requirements['metatag_page_title'] = array(
-        'severity' => REQUIREMENT_INFO,
+        'severity' => REQUIREMENT_WARNING,
         'title' => 'Metatag',
-        'value' => $t('Possible conflicts with Page Title module'),
-        'description' => $t('The Metatag module is able to customize page titles so running the Page Title module simultaneously can lead to complications.'),
+        'value' => $t('Page Title module should be removed'),
+        'description' => $t('The Metatag module is able to customize page titles, so running the Page Title module simultaneously can lead to complications. Please follow the instructions to <a href="@page">convert the Page Title settings</a> and uninstall the module.', array('@page' => 'https://www.drupal.org/node/2774833')),
       );
     }
 
@@ -178,6 +178,36 @@ function metatag_requirements($phase) {
           'title' => 'Metatag',
           'value' => $t('Token module is out of date.'),
           'description' => $t('It is highly recommended to install <a href="https://www.drupal.org/project/token">Token module</a> v7.x-1.6 or newer, otherwise there may be problems using certain meta tags.'),
+        );
+      }
+    }
+
+    // If Workbench Moderation is installed, show a message if it is out of
+    // date.
+    if (module_exists('workbench_moderation')) {
+      $wm_module = $module_data['workbench_moderation'];
+      // If the version string is not present then it means the module is
+      // running from git, which means it can't be compared against.
+      if (!empty($wm_module->info['version'])) {
+        // Versions are in the format 7.x-1.y, so split the string up to find
+        // the 'y' portion.
+        $version = explode('-', $wm_module->info['version']);
+        if (isset($version[1])) {
+          list($major, $minor) = explode('.', $version[1]);
+        }
+        // If the version string couldn't be extracted correctly, assume that
+        // an incorrect version is installed.
+        else {
+          $major = 0;
+        }
+      }
+      // If v3.x is not installed, give a message.
+      if ($major < 3) {
+        $requirements['metatag_wm_version'] = array(
+          'severity' => REQUIREMENT_INFO,
+          'title' => 'Metatag',
+          'value' => $t('Workbench Moderation module is out of date.'),
+          'description' => $t('It is recommended to use <a href="https://www.drupal.org/project/workbench_moderation">Workbench Moderation module</a> v7.x-3.0 or newer.'),
         );
       }
     }
@@ -455,7 +485,7 @@ function metatag_enable() {
 }
 
 /**
- * Replace one meta tag with another in the entity records.
+ * Replace one meta tag's with another in the entity records.
  *
  * @param array $sandbox
  *   A Batch API sandbox, passed by reference.
@@ -464,18 +494,18 @@ function metatag_enable() {
  * @param string $new_tag
  *   The meta tag that replaces the old one.
  */
-function metatag_update_replace_meta_tag(&$sandbox, $old_tag, $new_tag) {
+function metatag_update_replace_entity_tag(&$sandbox, $old_tag, $new_tag) {
   if (!isset($sandbox['progress'])) {
     // Count of all {metatag} records that contained an entry for the old meta
     // tag.
     $records_count = db_select('metatag', 'm')
-      ->condition('m.data', '%' . db_like('"" . $old_tag . ""') . '%', 'LIKE')
+      ->condition('m.data', '%' . db_like('"' . $old_tag . '"') . '%', 'LIKE')
       ->countQuery()
       ->execute()
       ->fetchField();
 
     if (empty($records_count)) {
-      return t('No Metatag entity records needed to have the "' . $old_tag . '" meta tag renamed.');
+      return t('No Metatag entity records needed to have the "@tag" meta tag renamed.', array('@tag' => $old_tag));
     }
 
     $sandbox['max'] = $records_count;
@@ -513,11 +543,102 @@ function metatag_update_replace_meta_tag(&$sandbox, $old_tag, $new_tag) {
 
   if (!empty($count)) {
     $sandbox['progress'] += $count;
-    $sandbox['#finished'] = min(0.99, $sandbox['progress'] / $sandbox['max']);
+    // In some cases the query yields results that cannot be fixed and we would
+    // run into an infinite loop. Stop immediately if we processed all records.
+    if ($sandbox['progress'] >= $sandbox['max']) {
+      $sandbox['#finished'] = TRUE;
+    }
+    else {
+      $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+    }
   }
   else {
-    $sandbox['#finished'] = 1;
-    return t('Converted the "' . $old_tag . '" meta tag for @count entity records to "' . $new_tag . '" meta tag.', array('@count' => $sandbox['progress']));
+    $sandbox['#finished'] = TRUE;
+    return t('Converted the "@old_tag" meta tag for @count entity records to "@new_tag" meta tag.', array('@old_tag' => $old_tag, '@new_tag' => $new_tag, '@count' => $sandbox['progress']));
+  }
+}
+
+/**
+ * Replace one meta tag's value in the entity records.
+ *
+ * @param array $sandbox
+ *   A Batch API sandbox, passed by reference.
+ * @param string $meta_tag
+ *   The meta tag that needs its value replaced.
+ * @param string $old_value
+ *   The meta tag value that is to be replaced.
+ * @param string $new_value
+ *   The meta tag value that replaces the old one.
+ */
+function metatag_update_replace_entity_value(&$sandbox, $meta_tag, $old_value, $new_value) {
+  // The condition used for both queries.
+  $db_and = db_and();
+  $db_and->condition('m.data', '%' . db_like('"' . $meta_tag . '"') . '%', 'LIKE');
+  $db_and->condition('m.data', '%' . db_like('"' . $old_value . '"') . '%', 'LIKE');
+
+  if (!isset($sandbox['progress'])) {
+    // Count of all {metatag} records that contained an entry for the old meta
+    // tag value
+    $records_count = db_select('metatag', 'm')
+      ->condition($db_and)
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    if (empty($records_count)) {
+      return t('No Metatag entity records needed to have the "@tag" meta tag "@old_value" value replaced.', array('@tag' => $meta_tag, '@old_value' => $old_value));
+    }
+
+    $sandbox['max'] = $records_count;
+    $sandbox['progress'] = 0;
+
+    // Keep track of the number of replaced values separately.
+    $sandbox['count'] = 0;
+  }
+
+  // Count of rows that will be processed per iteration.
+  $limit = 100;
+
+  // Fetches a part of records.
+  $records = db_select('metatag', 'm')
+    ->fields('m', array())
+    ->condition($db_and)
+    ->range(0, $limit)
+    ->execute();
+
+  $count = 0;
+  $keys = array('entity_type', 'entity_id', 'revision_id', 'language');
+
+  // Loop over the values and correct them.
+  foreach ($records as $record) {
+    $record->data = unserialize($record->data);
+
+    if (isset($record->data[$meta_tag])) {
+      $record->data[$meta_tag]['value'] = str_replace($old_value, $new_value, $record->data[$meta_tag]['value']);
+      drupal_write_record('metatag', $record, $keys);
+
+      // Clear the cache for the entity this belongs to.
+      entity_get_controller($record->entity_type)->resetCache(array($record->entity_id));
+
+      $sandbox['count']++;
+    }
+
+    $sandbox['progress']++;
+  }
+
+  if (!empty($count)) {
+    // In some cases the query yields results that cannot be fixed and we would
+    // run into an infinite loop. Stop immediately if we processed all records.
+    if ($sandbox['progress'] >= $sandbox['max']) {
+      $sandbox['#finished'] = TRUE;
+    }
+    else {
+      $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+    }
+  }
+  else {
+    $sandbox['#finished'] = TRUE;
+    return t('Replaced the value of @count entity records for the "@meta_tag" meta tag.', array('@meta_tag' => $meta_tag, '@count' => $sandbox['count']));
   }
 }
 
@@ -529,7 +650,7 @@ function metatag_update_replace_meta_tag(&$sandbox, $old_tag, $new_tag) {
  * @param string $new_tag
  *   The meta tag that replaces the old one.
  */
-function metatag_update_replace_config($old_tag, $new_tag) {
+function metatag_update_replace_config_tag($old_tag, $new_tag) {
   // Find all {metatag_config} records that contained an entry for the old meta
   // tag.
   $records = db_select('metatag_config', 'm')
@@ -537,11 +658,11 @@ function metatag_update_replace_config($old_tag, $new_tag) {
     ->condition('m.config', '%' . db_like('"' . $old_tag . '"') . '%', 'LIKE')
     ->execute();
   // This message will be returned if nothing needed to be updated.
-  $none_message = t('No Metatag configuration records needed to have the "og:video" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.');
+  $none_message = t('No Metatag configuration records needed to have the "@tag" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.', array('@tag' => $old_tag));
 
   // Loop over the values and correct them.
   if ($records->rowCount() == 0) {
-    drupal_set_message($none_message);
+    $message = $none_message;
   }
   else {
     $keys = array('cid');
@@ -552,8 +673,118 @@ function metatag_update_replace_config($old_tag, $new_tag) {
       $record->config = unserialize($record->config);
       if (isset($record->config[$old_tag])) {
         $record->config[$new_tag] = $record->config[$old_tag];
-        unset($record->config['og:video']);
+        unset($record->config[$old_tag]);
         drupal_write_record('metatag_config', $record, $keys);
+        $counter++;
+      }
+    }
+    if ($counter == 0) {
+      $message = $none_message;
+    }
+    else {
+      $message = t('Converted the "@old_tag" meta tag for @count configurations to the new "@new_tag" meta tag.', array('@old_tag' => $old_tag, '@new_tag' => $new_tag, '@count' => $counter));
+    }
+  }
+
+  // Clear all Metatag caches.
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  drupal_static_reset('metatag_config_load_with_defaults');
+  drupal_static_reset('metatag_entity_supports_metatags');
+  drupal_static_reset('metatag_config_instance_info');
+  drupal_static_reset('metatag_get_info');
+  ctools_include('export');
+  ctools_export_load_object_reset('metatag_config');
+
+  return $message;
+}
+
+/**
+ * Replace one meta tag with another in the configs.
+ *
+ * @param string $meta_tag
+ *   The meta tag that needs its value replaced.
+ * @param string $old_value
+ *   The meta tag value that is to be replaced.
+ * @param string $new_value
+ *   The meta tag value that replaces the old one.
+ */
+function metatag_update_replace_config_value($meta_tag, $old_value, $new_value) {
+  // Find all {metatag_config} records that contained an entry for the old meta
+  // tag.
+  $db_and = db_and();
+  $db_and->condition('m.config', '%' . db_like('"' . $meta_tag . '"') . '%', 'LIKE');
+  $db_and->condition('m.config', '%' . db_like('"' . $old_value . '"') . '%', 'LIKE');
+  $records = db_select('metatag_config', 'm')
+    ->fields('m', array('cid', 'config'))
+    ->condition($db_and)
+    ->execute();
+  // This message will be returned if nothing needed to be updated.
+  $none_message = t('No Metatag configuration records needed to have the "@tag" meta tag values updated. That said, there may be other configurations elsewhere that do need updating.', array('@tag' => $meta_tag));
+
+  // Loop over the values and correct them.
+  if ($records->rowCount() == 0) {
+    $message = $none_message;
+  }
+  else {
+    $keys = array('cid');
+
+    // Loop over the values and correct them.
+    $counter = 0;
+    foreach ($records as $record) {
+      $record->config = unserialize($record->config);
+      if (isset($record->config[$meta_tag])) {
+        $record->config[$meta_tag]['value'] = str_replace($old_value, $new_value, $record->config[$meta_tag]['value']);
+        drupal_write_record('metatag_config', $record, $keys);
+        $counter++;
+      }
+    }
+    if ($counter == 0) {
+      $message = $none_message;
+    }
+    else {
+      $message = t('Replaced the value of @count entity records for the "@meta_tag" meta tag.', array('@meta_tag' => $meta_tag, '@count' => $counter));
+    }
+  }
+
+  // Clear all Metatag caches.
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  drupal_static_reset('metatag_config_load_with_defaults');
+  drupal_static_reset('metatag_entity_supports_metatags');
+  drupal_static_reset('metatag_config_instance_info');
+  drupal_static_reset('metatag_get_info');
+  ctools_include('export');
+  ctools_export_load_object_reset('metatag_config');
+
+  return $message;
+}
+
+/**
+ * Remove a specific meta tag from all configs.
+ *
+ * @param string $$tag_name
+ *   The meta tag that is to be removed.
+ */
+function metatag_update_delete_config($tag_name) {
+  // Find all {metatag_config} records that contained an entry for the meta tag.
+  $records = db_select('metatag_config', 'm')
+    ->fields('m', array('cid', 'config'))
+    ->condition('m.config', '%' . db_like('"' . $tag_name . '"') . '%', 'LIKE')
+    ->execute();
+  // This message will be returned if nothing needed to be updated.
+  $none_message = t('No Metatag configuration records needed to have the "@tag" meta tag removed.', array('@tag' => $tag_name));
+
+  // Loop over the values and correct them.
+  if ($records->rowCount() == 0) {
+    drupal_set_message($none_message);
+  }
+  else {
+    // Loop over the values and correct them.
+    $counter = 0;
+    foreach ($records as $record) {
+      $record->config = unserialize($record->config);
+      if (isset($record->config[$tag_name])) {
+        unset($record->config[$tag_name]);
+        drupal_write_record('metatag_config', $record, array('cid'));
         $counter++;
       }
     }
@@ -561,9 +792,18 @@ function metatag_update_replace_config($old_tag, $new_tag) {
       drupal_set_message($none_message);
     }
     else {
-      drupal_set_message(t('Converted the "' . $old_tag . '" meta tag for @count configurations to the new "' . $new_tag . '" meta tag.', array('@count' => $counter)));
+      drupal_set_message(t('Removed the "@tag" meta tag for @count configurations.', array('@tag' => $tag_name, '@count' => $counter)));
     }
   }
+
+  // Clear all Metatag caches.
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  drupal_static_reset('metatag_config_load_with_defaults');
+  drupal_static_reset('metatag_entity_supports_metatags');
+  drupal_static_reset('metatag_config_instance_info');
+  drupal_static_reset('metatag_get_info');
+  ctools_include('export');
+  ctools_export_load_object_reset('metatag_config');
 }
 
 /**
@@ -915,7 +1155,12 @@ function metatag_update_7011(&$sandbox) {
   // Set the "finished" status, to tell batch engine whether this function
   // needs to run again. If you set a float, this will indicate the progress of
   // the batch so the progress bar will update.
-  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
+  }
+  else {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
 
   if ($sandbox['#finished']) {
     // Clear all caches so the fixed data will be reloaded.
@@ -1073,7 +1318,12 @@ function metatag_update_7013(&$sandbox) {
   // Set the "finished" status, to tell batch engine whether this function
   // needs to run again. If you set a float, this will indicate the progress of
   // the batch so the progress bar will update.
-  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
+  }
+  else {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
 
   if ($sandbox['#finished']) {
     // Clear all caches so the fixed data will be reloaded.
@@ -1558,7 +1808,12 @@ function metatag_update_7018(&$sandbox) {
   // Set the "finished" status, to tell batch engine whether this function
   // needs to run again. If you set a float, this will indicate the progress of
   // the batch so the progress bar will update.
-  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
+  }
+  else {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
 
   if ($sandbox['#finished']) {
     // Clear all caches so the fixed data will be reloaded.
@@ -1645,7 +1900,7 @@ function metatag_update_7025() {
 function metatag_update_7026(&$sandbox) {
   $old_tag = 'copyright';
   $new_tag = 'rights';
-  return metatag_update_replace_meta_tag($sandbox, $old_tag, $new_tag);
+  return metatag_update_replace_entity_tag($sandbox, $old_tag, $new_tag);
 }
 
 /**
@@ -1688,7 +1943,7 @@ function metatag_update_7030() {
 function metatag_update_7031() {
   $old_tag = 'copyright';
   $new_tag = 'rights';
-  return metatag_update_replace_config($old_tag, $new_tag);
+  return metatag_update_replace_config_tag($old_tag, $new_tag);
 }
 
 /**
@@ -1926,7 +2181,12 @@ function metatag_update_7040(&$sandbox) {
   // Set the "finished" status, to tell batch engine whether this function
   // needs to run again. If you set a float, this will indicate the progress of
   // the batch so the progress bar will update.
-  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
+  }
+  else {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
 
   // Only display a status message if process finished.
   if ($sandbox['#finished'] === TRUE) {
@@ -2109,7 +2369,12 @@ function metatag_update_7104(&$sandbox) {
   // Set the "finished" status, to tell batch engine whether this function
   // needs to run again. If you set a float, this will indicate the progress of
   // the batch so the progress bar will update.
-  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
+  }
+  else {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
 
   if ($sandbox['#finished']) {
     // Clear all caches so the fixed data will be reloaded.
@@ -2167,7 +2432,7 @@ function metatag_update_7107() {
 /**
  * Delete output translations if it's disabled.
  */
-function metatag_update_7108() {
+function metatag_update_7108(&$sandbox) {
   if (!module_exists('locale') || !db_table_exists('locales_source')) {
     return t('No translations to fix as the locale system is not enabled.');
   }
@@ -2177,31 +2442,85 @@ function metatag_update_7108() {
     return t("Metatag: Not deleting output translations because that option is enabled.");
   }
 
-  $lids = db_select('locales_source', 'ls')
-    ->fields('ls', array('lid'))
-    ->condition('ls.textgroup', 'metatag')
-    ->condition('ls.context', 'output:%', 'LIKE')
-    ->execute()
-    ->fetchCol();
+  $limit = 100;
 
-  if (!empty($lids)) {
-    // Delete records in the tables in reverse order, so that if the query fails
-    // and has to be reran it'll still find records. But it should be ok.
-    if (db_table_exists('i18n_string')) {
-      db_delete('i18n_string')
-        ->condition('lid', $lids)
-        ->execute();
+  // When ran through Drush it's Ok to process a larger number of objects at a
+  // time.
+  if (drupal_is_cli()) {
+    $limit = 500;
+  }
+
+  // Use the sandbox at your convenience to store the information needed to
+  // track progression between successive calls to the function.
+  if (!isset($sandbox['progress'])) {
+    // The count of records visited so far.
+    $sandbox['progress'] = 0;
+
+    $sandbox['max'] = db_query("SELECT COUNT(lid)
+      FROM {locales_source}
+      WHERE textgroup = 'metatag'
+      AND context LIKE 'output:%'")->fetchField();
+
+    // If there's no data, don't bother with the extra work.
+    if (empty($sandbox['max'])) {
+      watchdog('metatag', 'Update 7108: No nodes need the translation entity string fixed.', array(), WATCHDOG_INFO);
+      if (drupal_is_cli()) {
+        drupal_set_message(t('Update 7108: No nodes need the translation entity string fixed.'));
+      }
+      return t('No nodes need the Metatag language values fixed.');
     }
-    db_delete('locales_target')
-      ->condition('lid', $lids)
+
+    // A place to store messages during the run.
+    $sandbox['messages'] = array();
+
+    // An initial record of the number of records to be updated.
+    watchdog('metatag', 'Update 7108: !count records to update.', array('!count' => $sandbox['max']), WATCHDOG_INFO);
+    if (drupal_is_cli()) {
+      drupal_set_message(t('Update 7108: !count records to update.', array('!count' => $sandbox['max'])));
+    }
+  }
+
+  // Get a batch of records that need to be fixed.
+  $records = db_query_range("SELECT lid
+    FROM {locales_source}
+    WHERE textgroup = 'metatag'
+    AND context LIKE 'output:%'", 0, $limit);
+
+  $lids = $records->fetchCol();
+  $count = count($lids);
+  // Delete records in the tables in reverse order, so that if the query fails
+  // and has to be reran it'll still find records. But it should be ok.
+  if (db_table_exists('i18n_string')) {
+    db_delete('i18n_string')
+      ->condition('lid', $lids, 'IN')
       ->execute();
-    db_delete('locales_source')
-      ->condition('lid', $lids)
-      ->execute();
-    return t('Metatag: Removed @count output translation records that were not needed.', array('@count' => count($lids)));
+  }
+  db_delete('locales_target')
+    ->condition('lid', $lids, 'IN')
+    ->execute();
+  db_delete('locales_source')
+    ->condition('lid', $lids, 'IN')
+    ->execute();
+
+  $sandbox['progress'] = $sandbox['progress'] + $count;
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again. If you set a float, this will indicate the progress of
+  // the batch so the progress bar will update.
+  if ($sandbox['progress'] >= $sandbox['max']) {
+    $sandbox['#finished'] = TRUE;
   }
   else {
-    return t('Metatag; No output translation records needed to be removed.');
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
+
+  if ($sandbox['#finished']) {
+    // Clear all caches so the fixed data will be reloaded.
+    cache_clear_all('*', 'cache_metatag', TRUE);
+
+    // hook_update_N() may optionally return a string which will be displayed
+    // to the user.
+    return t('Deleted output translation if disabled for  @count items.', array('@count' => $sandbox['progress']));
   }
 }
 
@@ -2212,7 +2531,7 @@ function metatag_update_7109(&$sandbox) {
   module_load_include('install', 'metatag');
   $old_tag = 'icon_any';
   $new_tag = 'mask-icon';
-  return metatag_update_replace_meta_tag($sandbox, $old_tag, $new_tag);
+  return metatag_update_replace_entity_tag($sandbox, $old_tag, $new_tag);
 }
 
 /**
@@ -2222,5 +2541,45 @@ function metatag_update_7110() {
   module_load_include('install', 'metatag');
   $old_tag = 'icon_any';
   $new_tag = 'mask-icon';
-  return metatag_update_replace_config($old_tag, $new_tag);
+  return metatag_update_replace_config_tag($old_tag, $new_tag);
+}
+
+/**
+ * Remove the "metatag_ui" record from the {system} table.
+ */
+function metatag_update_7111() {
+  db_delete('system')
+    ->condition('name', 'metatag_ui')
+    ->execute();
+}
+
+/**
+ * The Publisher meta tag is now part of the Google Plus submodule.
+ */
+function metatag_update_7112() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  drupal_set_message(t('The Publisher meta tag is now part of the Google Plus submodule.'));
+}
+
+/**
+ * Clear all metatag output caches if output caching is disabled.
+ */
+function metatag_update_7113() {
+  if (variable_get('metatag_cache_output', TRUE) == FALSE) {
+    cache_clear_all('output:', 'cache_metatag', TRUE);
+  }
+}
+
+/**
+ * Disable output caching.
+ */
+function metatag_update_7114() {
+  variable_del('metatag_cache_output');
+}
+
+/**
+ * Clear all metatag output caches, it will be rebuild if needed.
+ */
+function metatag_update_7115() {
+  cache_clear_all('output:', 'cache_metatag', TRUE);
 }

@@ -1,10 +1,10 @@
 <?php
-/**
- * @file
- * Tests for the Metatag module to ensure i18n integration doesn't break.
- */
 
+/**
+ * Tests for Metatag for when i18n is enabled but not actually configured.
+ */
 class MetatagCoreWithI18nDisabledTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagCoreWithI18nDisabledTest extends MetatagTestHelper {
       'name' => 'Metatag core tests with i18n disabled',
       'description' => 'Test Metatag integration with the i18n module enabled but the integration disabled.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
     );
   }
 
@@ -27,6 +28,9 @@ class MetatagCoreWithI18nDisabledTest extends MetatagTestHelper {
     // Enable all of the modules that are needed.
     parent::setUp($modules);
 
+    // Add more locales.
+    $this->setupLocales();
+
     // Set up the locales.
     $perms = array(
       'administer languages',
@@ -36,7 +40,9 @@ class MetatagCoreWithI18nDisabledTest extends MetatagTestHelper {
       'translate user-defined strings',
     );
     $this->adminUser = $this->createAdminUser($perms);
-    $this->setupLocales();
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
 
     // Turn off i18n integration.
     variable_set('metatag_i18n_disabled', TRUE);

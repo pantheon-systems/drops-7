@@ -25,12 +25,23 @@ function atlas_statistics_atlas_statistics() {
 
   // Count Nodes.
   $node_query = db_select('node', 'n');
+  $node_query->addExpression('COUNT(type)', 'count_type');
   $node_query->addExpression('MAX(changed)', 'max_changed');
   $node_query->orderBy('max_changed', 'DESC');
   $node_result = $node_query->execute();
   $all_nodes = $node_result->fetchAll();
 
-  $statistics_data['nodes_total'] = count($all_nodes);
+  // Count by type.
+  $node_type_counts = array();
+  foreach ($all_nodes as $object) {
+    $node_type_counts[] = $object->count_type;
+  }
+  // Total up the number of nodes.
+  $number_nodes = array_sum($node_type_counts);
+  if (empty($number_nodes)) {
+    $number_nodes = 0;
+  }
+  $statistics_data['nodes_total'] = $number_nodes;
 
   // Days since last edit.
   $most_recent_edit = $all_nodes[0]->max_changed;
@@ -46,17 +57,27 @@ function atlas_statistics_atlas_statistics() {
     // Removes user 0 (aka Anonymous).
     if ($user->name) {
       $usernames[] = $user->name;
+      if (in_array('site_owner', $user->roles)) {
+        $usernames_site_contact[] = $user->name;
+      }
     }
     if ($user->mail) {
       $useremails[] = $user->mail;
+      if (in_array('site_owner', $user->roles)) {
+        $useremails_site_contact[] = $user->mail;
+      }
     }
   }
-  $statistics_data['users']['username'] = $usernames;
-  $statistics_data['users']['email_address'] = $useremails;
+  $statistics_data['users']['username']['all'] = $usernames;
+  $statistics_data['users']['username']['site_contact'] = $usernames_site_contact;
+  $statistics_data['users']['email_address']['all'] = $useremails;
+  $statistics_data['users']['email_address']['site_contact'] = $useremails_site_contact;
 
-  // Add report of overridden features.
-  if (module_exists('features')) {
-    $statistics_data['overridden_features'] = _atlas_statistics_get_features_statuses();
+  // Add report of overridden features if the module is enabled and there are
+  // overridden features.
+  $overridden = _atlas_statistics_get_features_statuses();
+  if (module_exists('features') && !empty($overridden)) {
+    $statistics_data['overridden_features'] = $overridden;
   }
 
   return $statistics_data;

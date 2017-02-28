@@ -5,7 +5,7 @@ Feature: Page Content Type
 
   @api @page
   Scenario Outline: An authenticated user should be able to access the form for adding page content
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/page"
     Then I should not see <message>
 
@@ -24,7 +24,7 @@ Feature: Page Content Type
 
   @api @page
   Scenario: An authenticated user should be able to create page node
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
       And I am on "node/add/page"
       And for "Title" I enter "New Page"
       And for "Body" I enter "Demo body content"
@@ -42,7 +42,7 @@ Feature: Page Content Type
 
   @api @page
   Scenario: The provide menu link box should be checked on node creation but remain unchecked if user chooses to uncheck that box.
-    Given I am logged in as a user with the "site_owner" role
+    Given  CU - I am logged in as a user with the "site_owner" role
     When I go to "node/add/page"
     And  I fill in "edit-title" with "New Page"
     Then the "edit-menu-enabled" checkbox should be checked

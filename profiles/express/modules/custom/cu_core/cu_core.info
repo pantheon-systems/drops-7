@@ -1,7 +1,7 @@
 name = CU Core
 description = Provides CU-specific functionality, like adding variables, to Express Core.
 core = 7.x
-version = 7.x-3.0
+version = 7.x-3.2
 package = CU-Core
 
 dependencies[] = ldap_authentication
@@ -15,10 +15,11 @@ dependencies[] = user_external_invite
 dependencies[] = syslog
 dependencies[] = rave_alerts
 dependencies[] = cu_alerts
+dependencies[] = cu_atlas
+dependencies[] = atlas
+dependencies[] = atlas_statistics
 
 optional-dependencies[] = cu_users
-optional-dependencies[] = cu_inventory
-optional-dependencies[] = cu_inventory_stats
 optional-dependencies[] = memcache
 optional-dependencies[] = varnish
 optional-dependencies[] = entityreference

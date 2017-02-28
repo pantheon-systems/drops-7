@@ -15,7 +15,7 @@
  * of an image field.
  */
 function flexslider_fields_field_formatter_info() {
-  return array(
+  $info = array(
     'flexslider' => array(
       'label' => t('flexslider'),
       'field types' => array('image', 'media'),
@@ -26,6 +26,20 @@ function flexslider_fields_field_formatter_info() {
       ),
     ),
   );
+  // Integrate with file entity / media.
+  if (module_exists('file_entity')) {
+    $info['flexslider_file_entity'] = array(
+      'label' => t('FlexSlider File Entity'),
+      'description' => t('Render files in a specific view mode.'),
+      'field types' => array('image', 'media', 'file'),
+      'settings' => array(
+        'optionset' => 'default',
+        'file_view_mode' => 'default',
+        'caption' => FALSE,
+      ),
+    );
+  }
+  return $info;
 }
 
 /**
@@ -54,29 +68,49 @@ function flexslider_fields_field_formatter_settings_form($field, $instance, $vie
     '#default_value' => $settings['optionset'],
   );
 
-  $image_styles = image_style_options(FALSE, PASS_THROUGH);
-  $form['image_style'] = array(
+  if ($display['type'] == 'flexslider') {
+    $image_styles = image_style_options(FALSE, PASS_THROUGH);
+    $form['image_style'] = array(
       '#title' => t('Image style'),
       '#type' => 'select',
       '#default_value' => $settings['image_style'],
       '#empty_option' => t('None (original image)'),
       '#options' => $image_styles,
-  );
+    );
+  }
+  elseif ($display['type'] == 'flexslider_file_entity') {
+    $form['file_view_mode'] = array(
+      '#title' => t('File view mode'),
+      '#type' => 'select',
+      '#default_value' => $settings['file_view_mode'],
+      '#options' => file_entity_view_mode_labels(),
+    );
+  }
 
   if (!empty($instance['settings'])) {
     // If the image field doesn't have the Title field enabled, tell the user.
     if ($instance['settings']['title_field'] == FALSE and $instance['bundle'] != 'ctools') {
       $form['caption'] = array(
-        '#title' => t('Use image title as the caption'),
-        '#type' => 'checkbox',
+        '#title' => t('Choose a caption source'),
+        '#type' => 'select',
         '#disabled' => TRUE,
+        '#options' => array(
+          0 => t('None'),
+          1 => t('Image title'),
+          'alt' => t('Image ALT attribute'),
+        ),
         '#description' => t('You need to <a href="@url">enable the Title field</a> for this image field to be able use it as a caption.', array('@url' => url('admin/structure/types/manage/' . $instance['bundle'] . '/fields/' . $instance['field_name'], array('fragment' => 'edit-instance-settings-title-field', 'query' => array('destination' => 'admin/structure/types/manage/' . $instance['bundle'] . '/display'))))),
       );
     }
     else {
       $form['caption'] = array(
-        '#title' => t('Use image title as the caption'),
-        '#type' => 'checkbox',
+        '#title' => t('Choose a caption source'),
+        '#type' => 'select',
+        '#options' => array(
+          0 => t('None'),
+          1 => t('Image title'),
+          'alt' => t('Image ALT attribute'),
+        ),
         '#default_value' => $settings['caption'],
       );
     }
@@ -96,7 +130,7 @@ function flexslider_fields_field_formatter_settings_summary($field, $instance, $
 
   $summary = array();
 
-  // Load option set
+  // Load option set.
   ctools_include('export');
   if (!empty($settings['optionset'])) {
     $o = flexslider_optionset_load($settings['optionset']);
@@ -105,15 +139,27 @@ function flexslider_fields_field_formatter_settings_summary($field, $instance, $
     }
   }
 
-  // Display the selected image style
-  if (!empty($settings['image_style'])) {
-    $is = t('Image style: %imagestyle', array('%imagestyle' => $settings['image_style']));
+  // Display the selected image style.
+  if ($instance['display'][$view_mode]['type'] == 'flexslider') {
+    if (!empty($settings['image_style'])) {
+      $is = t('Image style: %imagestyle', array('%imagestyle' => $settings['image_style']));
+    }
+    else {
+      $is = t('Image style: None (original image)');
+    }
   }
-  else {
-    $is = t('Image style: None (original image)');
+  elseif ($instance['display'][$view_mode]['type'] == 'flexslider_file_entity') {
+    if (!empty($settings['file_view_mode'])) {
+      $is = t('File view mode: %file_view_mode', array(
+        '%file_view_mode' => file_entity_view_mode_label($settings['file_view_mode']),
+      ));
+    }
+    else {
+      $is = t('File view mode: Default');
+    }
   }
 
-  // Build settings summary
+  // Build settings summary.
   $optionset = isset($optionset) ? $optionset->title : t('Default settings');
   $summary[] = t('Option set: %optionset', array('%optionset' => $optionset));
   $summary[] = $is;
@@ -124,9 +170,16 @@ function flexslider_fields_field_formatter_settings_summary($field, $instance, $
 /**
  * Implements hook_field_formatter_view().
  *
- * Prepares a renderable array of images and adds the neccessary JS and CSS
+ * Prepares a renderable array of images and adds the necessary JS and CSS.
  */
 function flexslider_fields_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+
+  // If file entity formatter is selected render all files initially.
+  if ($display['type'] == 'flexslider_file_entity') {
+    $file_display = $display;
+    $file_display['type'] = 'file_rendered';
+    $file_items = module_invoke('file_entity', 'field_formatter_view', $entity_type, $entity, $field, $instance, $langcode, $items, $file_display);
+  }
 
   $element = array();
   if (count($items) > 0) {
@@ -157,27 +210,35 @@ function flexslider_fields_field_formatter_view($entity_type, $entity, $field, $
         $item['slide']['title'] = $item['item']['title'];
       }
 
-      // Render the slide item
-      // If not style set, we have to call theme_image since theme_image_style
-      // doesn't auto-fallback to full size image
-      if (!empty($item['slide']['style_name'])) {
-        // Generate the HTML for the slide
-        $item['slide'] = theme('image_style', $item['slide']);
+      // Render the slide item.
+      if ($display['type'] == 'flexslider') {
+        // If no style set, we have to call theme_image since theme_image_style
+        // doesn't auto-fallback to full size image.
+        if (!empty($item['slide']['style_name'])) {
+          // Generate the HTML for the slide.
+          $item['slide'] = theme('image_style', $item['slide']);
+        }
+        else {
+          // Generate the HTML for the slide.
+          $item['slide'] = theme('image', $item['slide']);
+        }
       }
-      else {
-        // Generate the HTML for the slide
-        $item['slide'] = theme('image', $item['slide']);
+      elseif ($display['type'] == 'flexslider_file_entity') {
+        $item['slide'] = render($file_items[$key]);
       }
 
-      // Check caption settings
-      if ($display['settings']['caption']) {
+      // Check caption settings.
+      if ($display['settings']['caption'] === '1') {
         $item['caption'] = filter_xss($item['item']['title']);
+      }
+      elseif ($display['settings']['caption'] === 'alt') {
+        $item['caption'] = filter_xss($item['item']['alt']);
       }
 
       $items[$key] = $item;
     }
 
-    $element = array(
+    $element[0] = array(
       '#theme' => 'flexslider',
       '#items' => $items,
       '#settings' => $display['settings'],

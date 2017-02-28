@@ -81,7 +81,7 @@ function flexslider_option_elements($options = array()) {
   $easing_options = array('swing' => t('Swing'), 'linear' => t('Linear'));
   if (module_exists('jqeasing')) {
     $easing_options = array_merge($easing_options, _flexslider_jqeasing_options());
-    
+
   }
 
   $form['animation_slideshow']['easing'] = array(
@@ -212,7 +212,7 @@ function flexslider_option_elements($options = array()) {
         ':input[name="controlNav"]' => array('value' => 'thumbnails'),
       ),
     ),
-    '#element_validate' => array('_flexslider_validate_minimum_version_22'),
+    '#element_validate' => array('_flexslider_validate_minimum_version_22', '_flexslider_validate_thumb_caption'),
   );
   $form['nav_controls']['thumbCaptionsBoth'] = array(
     '#type' => 'checkbox',
@@ -224,7 +224,7 @@ function flexslider_option_elements($options = array()) {
         ':input[name="controlNav"]' => array('value' => 'thumbnails'),
       ),
     ),
-    '#element_validate' => array('_flexslider_validate_minimum_version_22'),
+    '#element_validate' => array('_flexslider_validate_minimum_version_22', '_flexslider_validate_thumb_caption'),
   );
   $form['nav_controls']['keyboard'] = array(
     '#type' => 'checkbox',
@@ -404,6 +404,10 @@ function flexslider_form_optionset_edit($form, &$form_state) {
     '#default_value' => $optionset->name,
   );
 
+  if ($optionset->name) {
+    $form['name']['#disabled'] = TRUE;
+  }
+
   // Options Vertical Tab Group table
   $form['options'] = array(
     '#type' => 'vertical_tabs',
@@ -411,7 +415,7 @@ function flexslider_form_optionset_edit($form, &$form_state) {
 
   $default_options = flexslider_option_elements($optionset->options);
   // Add the options to the vertical tabs section
-  foreach ($default_options as $key => $value) {
+  foreach ($default_options as $value) {
     $form['options'][] = $value;
   }
 
@@ -463,8 +467,7 @@ function flexslider_optionset_form_delete_submit($form, &$form_state) {
   $optionset = &$form_state['optionset'];
   $op = ($optionset->export_type & EXPORT_IN_CODE) ? 'reverted' : 'deleted';
 
-  ctools_include('export');
-  ctools_export_crud_delete('flexslider_optionset', $optionset);
+  flexslider_optionset_delete($optionset);
 
   drupal_set_message(t('Option set %name was ' . $op . '.', array('%name' => $optionset->name)));
   $form_state['redirect'] = 'admin/config/media/flexslider';
@@ -517,7 +520,7 @@ function _flexslider_validate_selector($element, &$form_state) {
 }
 
 /**
- * Validate a form element that should have a number as value.
+ * Validate the minimum library version.
  */
 function _flexslider_validate_minimum_version_22($element, &$form_state) {
   $lib = libraries_detect('flexslider');
@@ -528,11 +531,26 @@ function _flexslider_validate_minimum_version_22($element, &$form_state) {
     $version = $lib['version'];
     $required = "2.2";
 
-    if (!version_compare($version, $required, '>=')) {
+    if ($element['#value'] && !version_compare($version, $required, '>=')) {
       form_error($element, t('To use %name you must install FlexSlider version !required or higher.', array(
         '%name' => $element['#title'],
         '!required' => l($required, 'https://github.com/woothemes/FlexSlider/tree/version/2.2'),
       )));
     }
+  }
+}
+
+/**
+ * Validate the thumb caption options.
+ *
+ * Empties the value of the thumbnail caption option when the paging control
+ * is not set to thumbnails.
+ *
+ * @param array $element
+ * @param array$form_state
+ */
+function _flexslider_validate_thumb_caption($element, &$form_state) {
+  if ($form_state['values']['controlNav'] !== 'thumbnails' && $element['#value']) {
+    form_set_value($element, '', $form_state);
   }
 }

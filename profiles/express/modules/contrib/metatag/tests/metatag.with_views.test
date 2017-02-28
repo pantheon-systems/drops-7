@@ -1,11 +1,11 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module for Views integration, outside of
  * Metatag:Views.
  */
-
 class MetatagCoreWithViewsTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -14,6 +14,7 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
       'name' => 'Metatag core tests with Views',
       'description' => 'Test Metatag integration with the Views module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'views'),
     );
   }
 
@@ -58,6 +59,8 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
       'administer views',
     );
     $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
     $this->drupalLogin($this->adminUser);
 
     // Load the "add default configuration" page.
@@ -78,9 +81,7 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
 
     // Submit the form with some values.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[term:name]',
-      'metatags[und][dcterms.format][value]' => 'text/html',
-      'metatags[und][dcterms.identifier][value]' => '[current-page:url:absolute]',
+      'metatags[und][abstract][value]' => '[term:name]',
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -102,7 +103,7 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
 
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[term:name] ponies',
+      'metatags[und][abstract][value]' => '[term:name] ponies',
       'name' => $term_name,
       'path[alias]' => $term_path,
     ), t('Save'));
@@ -133,7 +134,7 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
     $this->assertResponse(200);
 
     $vars = variable_get('views_defaults');
-    $this->verbose(print_r($vars, TRUE));
+    $this->verbose($vars);
     $this->assertFalse($vars['taxonomy_term'], 'Taxonomy term page is enabled.');
 
     // Load the page again.
@@ -166,7 +167,7 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
       // Only the non-default values are stored.
       $expected = array(
         'und' => array(
-          'dcterms.subject' => array(
+          'abstract' => array(
             'value' => '[term:name] ponies',
           ),
         ),
@@ -180,8 +181,8 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
     }
 
     // Verify the title is using the custom default for this vocabulary.
-    $xpath = $this->xpath("//meta[@name='dcterms.subject']");
-    $this->assertEqual(count($xpath), 1, 'Exactly one dcterms.subject meta tag found.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
     $this->assertEqual($xpath[0]['content'], "Who likes magic ponies");
   }
 

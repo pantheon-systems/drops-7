@@ -1,9 +1,8 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag AppLinks module.
  */
-
 class MetatagAppLinksTest extends MetatagTestHelper {
 
   /**

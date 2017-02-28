@@ -1,9 +1,8 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag Favicons module.
  */
-
 class MetatagFaviconsTest extends MetatagTestHelper {
 
   /**
@@ -205,6 +204,25 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
     $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
     $this->assertEqual((string)$xpath[0]['color'], $color);
+
+    // Try empty color.
+    $color = '';
+
+    // Update the global config.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    $config->config['mask-icon']['color'] = $color;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
+    $this->assertFalse(isset($xpath[0]['color']));
   }
 
 }

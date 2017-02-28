@@ -12,7 +12,7 @@ Feature: Content Management
   # Test to cover the regression in FIT-902.
   @api
   Scenario: A user should not see a subnavigation menu header
-      Given I am logged in as a user with the "content_editor" role
+      Given  CU - I am logged in as a user with the "content_editor" role
       When I visit "node/add/page"
         And for "Title" I enter "Basic Page"
         And for "Menu link title" I enter "Basic Page"

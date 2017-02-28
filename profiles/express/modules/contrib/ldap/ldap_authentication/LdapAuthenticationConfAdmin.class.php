@@ -69,9 +69,9 @@ class LdapAuthenticationConfAdmin extends LdapAuthenticationConf {
     */
 
     $values['emailOptionOptions'] = array(
-      LDAP_AUTHENTICATION_EMAIL_FIELD_REMOVE => t('Don\'t show an email field on user forms.  LDAP derived email will be used for user and connot be changed by user'),
-      LDAP_AUTHENTICATION_EMAIL_FIELD_DISABLE => t('Show disabled email field on user forms with LDAP derived email.  LDAP derived email will be used for user and connot be changed by user'),
-      LDAP_AUTHENTICATION_EMAIL_FIELD_ALLOW => t('Leave email field on user forms enabled.  Generally used when provisioning to LDAP or not using email derived from LDAP.'),
+      LDAP_AUTHENTICATION_EMAIL_FIELD_REMOVE => t('Don\'t show an email field on user forms. LDAP derived email will be used for user and cannot be changed by user.'),
+      LDAP_AUTHENTICATION_EMAIL_FIELD_DISABLE => t('Show disabled email field on user forms with LDAP derived email. LDAP derived email will be used for user and cannot be changed by user.'),
+      LDAP_AUTHENTICATION_EMAIL_FIELD_ALLOW => t('Leave email field on user forms enabled. Generally used when provisioning to LDAP or not using email derived from LDAP.'),
       );
 
     $values['emailUpdateOptions'] = array(

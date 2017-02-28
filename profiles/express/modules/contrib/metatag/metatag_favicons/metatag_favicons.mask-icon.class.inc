@@ -39,7 +39,7 @@ class DrupalMaskIconMetaTag extends DrupalTextMetaTag {
   public function getValue(array $options = array()) {
     $value = array(
       'value' => '',
-      'color' => '',
+      'color' => NULL,
     );
 
     // The 'color' attribute will only be output if the 'value' is present.

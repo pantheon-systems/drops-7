@@ -2,7 +2,7 @@ Feature: WYSIWYG Pathologic tests
 
   @api @wysiwyg @javascript
   Scenario: Pathologic should change URLs
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I setup Pathologic local paths
       And I go to "node/add/page"
       And I click "Disable rich-text"

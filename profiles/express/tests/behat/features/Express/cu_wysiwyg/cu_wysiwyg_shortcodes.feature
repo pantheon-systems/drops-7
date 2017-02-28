@@ -5,7 +5,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a video shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Video Shortcode"
       And I press the "Video Shortcode Generator" button
@@ -17,7 +17,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a button shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Button Shortcode"
       And I press the "Button Shortcode Generator" button
@@ -32,7 +32,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add an image caption shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Image Caption Shortcode"
       And I attach the file "ralphie.jpg" to "edit-field-photo-und-0-upload"
@@ -48,7 +48,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add an icon shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Icon Shortcode"
       And I press the "Icon Shortcode Generator" button
@@ -63,7 +63,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a give button shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Give Button Shortcode"
       And I press the "Give Button Shortcode Generator" button
@@ -81,7 +81,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a expand content shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Expandable Content Shortcode"
       And I press the "Expand Content Shortcode Generator" button
@@ -107,7 +107,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a map embed shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Map Shortcode"
       And I press the "Map Shortcode Generator" button
@@ -120,7 +120,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a box shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My Box Shortcode"
       And I press the "Box Shortcode Generator" button
@@ -137,7 +137,7 @@ I should be able to use the full functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario: A content editor should be able to add a video shortcode
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/page"
       And I fill in "Title" with "My video Shortcode"
       And I press the "Video Shortcode Generator" button

@@ -303,7 +303,7 @@ class LdapAuthenticationConf {
 
     $this->ldapUser = new LdapUserConf();
     $this->ssoEnabled = module_exists('ldap_sso');
-    $this->apiPrefs['requireHttps'] = variable_get('ldap_servers_require_ssl_for_credentails', 0);
+    $this->apiPrefs['requireHttps'] = variable_get('ldap_servers_require_ssl_for_credentials', 0);
     $this->apiPrefs['encryption'] = variable_get('ldap_servers_encryption', LDAP_SERVERS_ENC_TYPE_CLEARTEXT);
 
   }

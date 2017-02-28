@@ -7,6 +7,8 @@ The following Google+ tags are provided:
 * itemprop:name
 * itemprop:description
 * itemprop:image
+* author
+* publisher
 
 Also itemtype is provided to add schema in the HTML markup as follows:
 

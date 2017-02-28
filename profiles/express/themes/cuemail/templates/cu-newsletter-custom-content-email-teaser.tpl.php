@@ -3,10 +3,10 @@
     $content['image'][0]['#image_style'] = 'email_teaser_thumbnail';
   }
 ?>
-<table class="row article-content">
+<table class="row article-content" role="presentation">
   <tr>
     <td class="wrapper last">
-      <table class="twelve columns">
+      <table class="twelve columns" role="presentation">
         <tr>
           <?php if (!empty($content['image'])): ?>
           <td class="three sub-columns text-pad padding-bottom">

@@ -48,7 +48,7 @@ class ldap_views_handler_argument_attribute extends views_handler_argument {
   /**
    * Build the query
    */
-  function query() {
+  function query($group_by = FALSE) {
     $this->query->add_where(0, $this->options['attribute_name'], $this->argument, '=');
   }
 }

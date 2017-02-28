@@ -1,0 +1,113 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module for Workbench Moderation integration.
+ */
+
+class MetatagCoreWithWorkbenchModerationTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Workbench Moderation v3',
+      'description' => 'Test Metatag integration with the Workbench Moderation module (v3).',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'workbench_moderation'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'workbench_moderation';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Confirm that WM-based node edit workflows work properly.
+   */
+  public function testNodeEdit() {
+    // Create a new content type and enable moderation on it.
+    $content_type = 'metatag_test';
+    $content_type_path = str_replace('_', '-', $content_type);
+    $label = 'Test';
+    $this->createContentType($content_type, $label);
+    variable_set('node_options_' . $content_type, array('revision', 'moderation'));
+
+    // Create a brand new unpublished node programmatically.
+    $settings = array(
+      'title' => 'Who likes magic',
+      'type' => $content_type,
+      'metatags' => array(
+        LANGUAGE_NONE => array(
+          'abstract' => array('value' => '[node:title] ponies'),
+        ),
+      ),
+      'status' => NODE_NOT_PUBLISHED,
+    );
+    $node = $this->drupalCreateNode($settings);
+
+    // Check that page is not published.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(403);
+
+    // Create and login user.
+    $moderator_user = $this->drupalCreateUser(array(
+      'access content',
+      'view revisions',
+      'view all unpublished content',
+      'view moderation history',
+      'view moderation messages',
+      'bypass workbench moderation',
+      "create {$content_type} content",
+      "edit any {$content_type} content",
+    ));
+    $this->drupalLogin($moderator_user);
+
+    // Publish the node via the moderation form.
+    $moderate = array('state' => workbench_moderation_state_published());
+    $this->drupalPost("node/{$node->nid}/moderation", $moderate, t('Apply'));
+
+    // Create draft with different node title.
+    $edit = array(
+      'title' => 'I like magic',
+    );
+    $this->drupalPost("node/{$node->nid}/edit", $edit, t('Save'));
+
+    // Logout user.
+    $this->drupalLogout();
+
+    // Check that page is already published.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Verify the title is using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
+
+    // Login user again.
+    $this->drupalLogin($moderator_user);
+
+    // Publish draft via the moderation form.
+    $moderate = array('state' => workbench_moderation_state_published());
+    $this->drupalPost("node/{$node->nid}/moderation", $moderate, t('Apply'));
+
+    // Logout user.
+    $this->drupalLogout();
+
+    // Check that page is already published.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Verify the title is using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'I like magic ponies');
+  }
+
+}

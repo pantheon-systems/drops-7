@@ -6,9 +6,9 @@ dependencies[] = entity
 
 configure = admin/config/people/invite
 
-; Information added by Drupal.org packaging script on 2016-11-10
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2016-12-06
+version = "7.x-1.2"
 core = "7.x"
 project = "user_external_invite"
-datestamp = "1478801040"
+datestamp = "1481043485"
 

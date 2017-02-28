@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * A base class for the Metatag tests, provides shared methods.
  */
+abstract class MetatagTestHelper extends DrupalWebTestCase {
 
-class MetatagTestHelper extends DrupalWebTestCase {
   /**
    * Admin user.
    *
@@ -25,18 +25,31 @@ class MetatagTestHelper extends DrupalWebTestCase {
     $modules[] = 'ctools';
     $modules[] = 'token';
 
-    // Metatag modules.
+    // Metatag modules. Only enable the main module, submodules will be tested
+    // separately.
     $modules[] = 'metatag';
-    $modules[] = 'metatag_dc';
-    $modules[] = 'metatag_facebook';
-    $modules[] = 'metatag_google_plus';
-    $modules[] = 'metatag_opengraph';
-    $modules[] = 'metatag_twitter_cards';
 
     // Adds some functionality for testing the entity handling.
     $modules[] = 'metatag_test';
 
     parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function verbose($message, $title = NULL) {
+    // Handle arrays, objects, etc.
+    if (!is_string($message)) {
+      $message = "<pre>\n" . print_r($message, TRUE) . "\n</pre>\n";
+    }
+
+    // Optional title to go before the output.
+    if (!empty($title)) {
+      $title = '<h2>' . check_plain($title) . "</h2>\n";
+    }
+
+    parent::verbose($title . $message);
   }
 
   /**
@@ -63,7 +76,7 @@ class MetatagTestHelper extends DrupalWebTestCase {
     ));
 
     // Enable meta tags for this new content type.
-    metatag_entity_type_enable('node', $machine_name);
+    metatag_entity_type_enable('node', $machine_name, TRUE);
 
     return $content_type;
   }
@@ -82,6 +95,7 @@ class MetatagTestHelper extends DrupalWebTestCase {
       // Basic permissions for the module.
       'administer meta tags',
       'edit meta tags',
+
       // General admin access.
       'access administration pages',
     );
@@ -147,7 +161,7 @@ class MetatagTestHelper extends DrupalWebTestCase {
     taxonomy_vocabulary_save($vocabulary);
 
     // Enable meta tags for this new vocabulary.
-    metatag_entity_type_enable('taxonomy_term', $vocab_name);
+    metatag_entity_type_enable('taxonomy_term', $vocab_name, TRUE);
 
     return $vocabulary;
   }
@@ -217,26 +231,6 @@ class MetatagTestHelper extends DrupalWebTestCase {
       // 'original-source' => array('value' => ''),
       // 'revisit-after' => array('value' => ''),
       // 'content-language' => array('value' => ''),'
-
-      // Dublin Core meta tags.
-      'dcterms.format' => array('value' => 'text/html'),
-      'dcterms.identifier' => array('value' => '[current-page:url:absolute]'),
-      'dcterms.title' => array('value' => '[current-page:title]'),
-      'dcterms.type' => array('value' => 'Text'),
-
-      // Google+ meta tags.
-      'itemprop:name' => array('value' => '[current-page:title]'),
-
-      // Open Graph meta tags.
-      'og:site_name' => array('value' => '[site:name]'),
-      'og:title' => array('value' => '[current-page:title]'),
-      'og:type' => array('value' => 'article'),
-      'og:url' => array('value' => '[current-page:url:absolute]'),
-
-      // Twitter Cards meta tags.
-      'twitter:card' => array('value' => 'summary'),
-      'twitter:title' => array('value' => '[current-page:title]'),
-      'twitter:url' => array('value' => '[current-page:url:absolute]'),
     );
   }
 
@@ -272,36 +266,58 @@ class MetatagTestHelper extends DrupalWebTestCase {
   /**
    * Set up a basic starting point for the locales.
    *
-   * This assumes the Locale module is enabled.
+   * This assumes the Locale module is enabled. This also must be done before
+   * other user accounts are logged in.
+   *
+   * @param array $locales
+   *   A list of locales to be enabled, in langcode format.
    */
-  public function setupLocales() {
-    // If there isn't an admin user already, create one.
-    if (empty($this->adminUser)) {
-      $perms = array(
-        'administer languages',
-        'translate interface',
-        'access administration pages',
-      );
-      $this->adminUser = $this->createAdminUser($perms);
+  public function setupLocales(array $locales = array()) {
+    // If no locales were requested, add Spanish and French.
+    if (empty($locales)) {
+      $locales[] = 'es';
+      $locales[] = 'fr';
     }
 
-    // Log in as the admin user.
-    $this->drupalLogin($this->adminUser);
+    // Log in as an admin user with privs to just set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      'access administration pages',
+    );
+    $admin_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($admin_user);
 
     // Load the admin page, just to have a point of reference.
     $this->drupalGet('admin');
     $this->assertResponse(200, 'Loaded the main admin page.');
 
-    // Add French.
-    $this->addSiteLanguage('fr');
+    // Identify the site's default language.
+    $default_language = language_default('language');
 
-    // Add Spanish.
-    $this->addSiteLanguage('es');
+    // Add the locales.
+    foreach ($locales as $langcode) {
+      // Don't create the default language, it's already present.
+      if ($langcode != $default_language) {
+        $this->addSiteLanguage($langcode);
+      }
+    }
 
     // Enable URL language detection and selection.
-    $edit = array('language[enabled][locale-url]' => '1');
-    $this->drupalPost('admin/config/regional/language/configure', $edit, t('Save settings'));
+    $this->drupalGet('admin/config/regional/language/configure');
     $this->assertResponse(200);
+    $edit = array(
+      'language[enabled][locale-url]' => TRUE,
+    );
+    // Also enable path handling for Entity Translation if it is installed.
+    if (module_exists('entity_translation')) {
+      $edit['language_content[enabled][locale-url]'] = TRUE;
+    }
+    $this->drupalPost(NULL, $edit, t('Save settings'));
+    $this->assertResponse(200);
+
+    // Once all the setup is done, log out the user.
+    $this->drupalLogout();
   }
 
   /**
@@ -712,6 +728,37 @@ class MetatagTestHelper extends DrupalWebTestCase {
     $saved_file = file_save($file);
 
     return $saved_file;
+  }
+
+  /**
+   * Verify a user entity's meta tags load correctly.
+   *
+   * @param object $user
+   *   A user object that is to be tested.
+   */
+  function assertUserEntityTags($user) {
+    // Load the user's profile page.
+    $this->drupalGet('user/' . $user->uid);
+    $this->assertResponse(200);
+
+    // Verify the title is using the custom default for this vocabulary.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $user->name . " ponies");
+  }
+
+  /**
+   * Generate a string that is allowable as a machine name.
+   *
+   * @param int $length
+   *   How long the machine name will be, defaults to eight characters.
+   *
+   * @return string
+   *   A string that contains lowercase letters and numbers, with a letter as
+   *   the first character.
+   */
+  function randomMachineName($length = 8) {
+    return strtolower($this->randomName($length));
   }
 
 }

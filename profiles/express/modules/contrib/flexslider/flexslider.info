@@ -15,9 +15,9 @@ files[] = flexslider.test
 ; Configuration link
 configure = admin/config/media/flexslider
 
-; Information added by Drupal.org packaging script on 2015-07-30
-version = "7.x-2.0-rc1"
+; Information added by Drupal.org packaging script on 2017-02-13
+version = "7.x-2.0-rc2"
 core = "7.x"
 project = "flexslider"
-datestamp = "1438285141"
+datestamp = "1487028488"
 

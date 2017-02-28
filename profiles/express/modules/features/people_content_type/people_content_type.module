@@ -161,14 +161,18 @@ function people_content_type_preprocess_node(&$vars) {
     case 'person':
       // prepare job titles for output
       $job_titles = array();
-      foreach ($vars['field_person_title'] as $key => $value) {
-        $job_titles[] = $vars['field_person_title'][$key]['value'];
+      if (!empty($vars['field_person_title'])) {
+        foreach ($vars['field_person_title'] as $key => $value) {
+          $job_titles[] = $vars['field_person_title'][$key]['value'];
+        }
       }
       $vars['content']['job_titles'] = join(' &bull; ', $job_titles);
       // prepare job titles for output
       $departments = array();
-      foreach ($vars['field_person_department'] as $key => $value) {
-        $departments[] = $vars['field_person_department'][$key]['taxonomy_term']->name;
+      if (!empty($vars['field_person_department'])) {
+        foreach ($vars['field_person_department'] as $key => $value) {
+          $departments[] = $vars['field_person_department'][$key]['taxonomy_term']->name;
+        }
       }
       $vars['content']['departments'] = join(' &bull; ', $departments);
       if (isset($vars['content']['attributes']['classes'])) {

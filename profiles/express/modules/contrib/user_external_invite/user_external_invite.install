@@ -123,7 +123,7 @@ To access and edit this site:
  * Add status row to table.
  */
 function user_external_invite_update_7001() {
-  if (!db_field_exists('user_external_invite','status')) {
+  if (!db_field_exists('user_external_invite', 'status')) {
     $spec = array(
       'description' => 'Status of the Invitation',
       'type' => 'varchar',
@@ -139,7 +139,7 @@ function user_external_invite_update_7001() {
  * Add index to expire field.
  */
 function user_external_invite_update_7002() {
-  if (db_field_exists('user_external_invite','expire')) {
+  if (db_field_exists('user_external_invite', 'expire')) {
     db_add_index('user_external_invite', 'invite_expired', array('expire'));
   }
 }

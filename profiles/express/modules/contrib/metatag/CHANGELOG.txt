@@ -1,3 +1,120 @@
+Metatag 7.x-1.21, 2017-02-15
+----------------------------
+#2844504 by DamienMcKenna: Add project names to all dependencies.
+By DamienMcKenna: Backported some minor text changes from the D8 branch.
+#2821713 by WidgetsBurritos: Don't output the mask-icon 'color' attribute if
+  it's empty.
+By DamienMcKenna, Michelle: Minor updates to README.txt.
+#2852260 by DamienMcKenna: Output caching wasn't fully disabled for the front
+  page or non-entity pages that used the global defaults.
+#2852737 by DamienMcKenna: Added CodeClimate config files.
+By DamienMcKenna, klausi: Information disclosure issue under certain
+  circumstances.
+
+
+Metatag 7.x-1.20, 2017-01-18
+----------------------------
+#2840500 by DamienMcKenna: Bring back compatibility with Workbench Moderation
+  v1.
+#2841064 by klausi, DamienMcKenna: Fix sandbox-based update scripts so they
+  don't run into infinite loops.
+
+
+Metatag 7.x-1.19, 2017-01-01
+----------------------------
+#2832427 by dmitry.kazberovich, e2thex, DamienMcKenna: Allow the metatag cache
+  expiration time to be modified.
+#2780025 by DamienMcKenna: Backported output tests from D8. Also fixes the
+  output of the shortcut icon, ios-app, android-app, author, publisher, and made
+  the Google CSE thumbnail tag an 'image'. Left some others to be fixed later.
+#2832476 by czigor; Added the 'product.group' and 'place' og:type options.
+#2835614 by drumm: metatag_metatags_load_multiple() doesn't need to sort the
+  results.
+By DamienMcKenna: Noted in the metatag_google_plus info file and README.txt that
+  it includes the Author and Publisher meta tags.
+By DamienMcKenna: Tweaked the favicons module description.
+By DamienMcKenna: Updated main tests to match the latest coding standards.
+By DamienMcKenna: Minor updates to various Google CSE labels.
+By DamienMcKenna: A string in metatag_opengraph_products wasn't using an
+  argument that was being passed to it.
+By DamienMcKenna: Minor adjustment to metatag_mobile strings.
+By DamienMcKenna: Updated submodule tests to match the latest coding standards.
+#2838198 by DamienMcKenna, Mixologic: Test dependency changes to workaround
+  changes in the DrupalCI platform.
+#2831073 by dxvargas, DamienMcKenna: Remove old workarounds due to Workbench
+  Moderation 3.x API changes, warn if older version installed.
+
+
+Metatag 7.x-1.18, 2016-11-30
+----------------------------
+#2761817 by DamienMcKenna: Fixed metatag_update_replace_config() so it isn't
+  hardcoded to only work with og:video.
+#2759843 by DamienMcKenna: Removed the Alexa verification tag.
+#2759855 by DamienMcKenna: Removed the Yahoo verification tag.
+By DamienMcKenna: Clear Metatag's caches after deleting or renaming a meta tag.
+#2763499 by DamienMcKenna: Don't use entity_load() when saving Metatag data,
+  it can cause anomolies.
+#2750705 by jalpesh, susannecoates: Updated description of the Google Play app
+  ID meta tag.
+#2771603 by FeyP: Fixed incorrect argument name to metatag_metatag_save().
+#2745177 by DamienMcKenna: Tests to confirm each meta tag can be filled in and
+  added to the global settings.
+#2773839 by DamienMcKenna: Remove 'metatag_ui' from the {system} table.
+#2773465 by DamienMcKenna: Because Page Title is now fully deprecated, promote
+  converting its settings and uninstalling it.
+#1944862 by FeyP, DamienMcKenna: Allow control over which meta tags and
+  languages are reverted on the Bulk Revert page.
+#2766315 by recrit, DamienMcKenna: metatag_entity_type_enable() would
+  incorrectly change settings in certain circumstances.
+#2774859 by DamienMcKenna: Refactored main tests to not use the submodules by
+  default.
+#2678896 by nmalinoski: Fixed redundant t() calls to fix double translation.
+#2787189 by DamienMcKenna: Added some tests to confirm that the different node
+  preview options don't interfere with saving meta tag values.
+By DamienMcKenna: Added a Known Issue for problems with Entity Token.
+#2790967 by DamienMcKenna: Added tests for taxonomy term config translations
+  using i18n.
+#2795255 by lazysoundsystem: 'disabled' was misspelled.
+By DamienMcKenna: Updated the description of content-language to clarify its
+  usage and the fact that Bing may still use it.
+#1865228 by DamienMcKenna: Moved Author meta tag to GooglePlus submodule.
+#1343914 by DamienMcKenna: Moved Publisher meta tag to GooglePlus submodule.
+#2784879 by sorinb, DamienMcKenna: Change metatag_update_7108 to use a sandbox.
+#2791963 by ttkaminski, DamienMcKenna: Don't change protocol-relative URLs in
+  image values.
+#2797069 by Internet, DamienMcKenna: Corrected the URL to Wikipedia's ICBM page.
+#2799317 by mdooley: Use a static date example for the Expires meta tag's
+  description to avoid flooding the {locales_source} table.
+#2800479 by DamienMcKenna, david.gil: Avoid showing errors if Search API is not
+  installed.
+By DamienMcKenna: Slight reordering of the main info file.
+#2663208 by DamienMcKenna, geertvd: Don't load meta tags on the /user/me page,
+  avoid problems when the Me module is installed.
+#2813429 by DamienMcKenna: Added tests for metatag_mobile.
+#2813427 by DamienMcKenna: Added support for the amphtml link tag.
+#2811735 by Stevel, DamienMcKenna: Added dependencies to all tests so that tests
+  will only be listed if those dependencies are also available.
+By stimalsina: Minor improvements to the amphtml meta tag's description.
+#2823367 by DamienMcKenna: Fixed tests after internal API change in Media.
+#2826023 by renatog, DamienMcKenna, gfcamilo: Coding standards fixes for
+  metatag.module.
+#2831030 by prince_zyxware: Fixed some minor coding standard bugs, spacing
+ issues.
+#2759461 by DamienMcKenna: hreflang=x-default is no longer removed when another
+  hreflang meta tag has the same URL, instead the other tag is removed as it
+  was supposed to be. Added a new [node:url-original] token for showing the
+  URL for the source node for translations; updated the default value for
+  the hreflang=x-default meta tag to use the new token instead of
+  [node:source:url]. Updates to many tests to allow these changes.
+#2532588 by cebasqueira, renatog, DamienMcKenna: Added new meta tags for Google
+  CSE.
+#2796701 by DrupalDano, DamienMcKenna: Some XSS tests for meta tag handling.
+#2831073 by DamienMcKenna: Added Workbench Moderation as a test dependency, for
+  future use.
+#2831822 by DamienMcKenna: Added support for the handheld mobile alternate link
+  tag, supported by Google.
+
+
 Metatag 7.x-1.17, 2016-06-30
 ----------------------------
 #2748627 by jalpesh: Corrected twitter:app:id:googleplay description.

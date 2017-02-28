@@ -1,11 +1,7 @@
 <?php
-/**
- * @file
- * Tests for the Search API integration.
- */
 
 /**
- * Class for testing the Search API integration.
+ * Tests for the Search API integration.
  */
 class MetatagCoreWithSearchAPITest extends MetatagTestHelper {
 
@@ -38,6 +34,7 @@ class MetatagCoreWithSearchAPITest extends MetatagTestHelper {
       'name' => 'Metatag Search API tests',
       'description' => 'Tests the Metatag Search API integration.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'entity', 'search_api'),
     );
   }
 
@@ -63,6 +60,8 @@ class MetatagCoreWithSearchAPITest extends MetatagTestHelper {
       'administer search_api',
     );
     $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
     $this->drupalLogin($this->adminUser);
 
     // Create an index.

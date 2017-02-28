@@ -32,6 +32,27 @@ function metatag_favicons_theme() {
 }
 
 /**
+ * Implements hoko_html_head_alter().
+ *
+ * Remove the default shortcut icon if one was set by Metatag.
+ */
+function metatag_favicons_html_head_alter(&$elements) {
+  if (isset($elements['metatag_shortcut icon'])) {
+    foreach ($elements as $key => $element) {
+      if (isset($element['#tag']) && $element['#tag'] == 'link') {
+        if (isset($element['#attributes']) && is_array($element['#attributes'])) {
+          if (isset($element['#attributes']['rel'])) {
+            if ($element['#attributes']['rel'] == 'shortcut icon') {
+              unset($elements[$key]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Theme callback for a favicon meta tag.
  *
  * The format is:

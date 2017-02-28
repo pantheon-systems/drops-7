@@ -15,11 +15,9 @@ function cu_debug_admin_bundle_enable() {
     module_disable(_cu_debug_admin_bundle_disable_modules());
     drupal_set_message('Disabling ' . join(', ', _cu_debug_admin_bundle_disable_modules()));
 
-    variable_set('cu_inventory_site_cron', FALSE);
-    variable_set('cu_inventory_user_cron', FALSE);
     variable_set('dev_timer', TRUE);
     variable_set('devel_memory', TRUE);
-   
+
   } else {
     drupal_set_message('Debugging on dev, test, or prod with minimum configuration changes.');
   }
@@ -34,12 +32,10 @@ function cu_debug_admin_bundle_disable() {
   module_enable(_cu_debug_admin_bundle_disable_modules());
   drupal_set_message('Disabling ' . join(', ', _cu_debug_admin_bundle_enable_modules()));
   drupal_set_message('Enabling ' . join(', ', _cu_debug_admin_bundle_disable_modules()));
-  variable_set('cu_inventory_site_cron', TRUE);
-  variable_set('cu_inventory_user_cron', TRUE);
-  
+
   variable_set('dev_timer', FALSE);
   variable_set('devel_memory', FALSE);
-  
+
 }
 
 /**
@@ -48,10 +44,9 @@ function cu_debug_admin_bundle_disable() {
 function _cu_debug_admin_bundle_enable_modules() {
   return array(
     'devel',
-    'devel_generate',
     'search_krumo',
     'ds_ui',
-    'security_review',
+    'views_ui',
     'diff',
   );
 }
@@ -61,7 +56,5 @@ function _cu_debug_admin_bundle_disable_modules() {
   return array(
     'varnish',
     'memcache',
-    'cu_apihooks',
-    'cu_inventory',
   );
 }

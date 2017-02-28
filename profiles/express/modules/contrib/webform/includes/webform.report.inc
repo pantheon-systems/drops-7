@@ -440,19 +440,28 @@ function webform_results_download_form($form, &$form_state, $node) {
     '#default_value' => webform_variable_get('webform_export_format'),
   );
 
-  $form['delimiter'] = array(
-    '#type' => 'select',
-    '#title' => t('Delimited text format'),
-    '#description' => t('This is the delimiter used in the CSV/TSV file when downloading Webform results. Using tabs in the export is the most reliable method for preserving non-latin characters. You may want to change this to another character depending on the program with which you anticipate importing results.'),
-    '#default_value' => webform_variable_get('webform_csv_delimiter'),
-    '#options' => array(
-      ','  => t('Comma (,)'),
-      '\t' => t('Tab (\t)'),
-      ';'  => t('Semicolon (;)'),
-      ':'  => t('Colon (:)'),
-      '|'  => t('Pipe (|)'),
-      '.'  => t('Period (.)'),
-      ' '  => t('Space ( )'),
+  $form['delimited_options'] = array(
+    '#type' => 'container',
+    'warning' => array(
+      '#markup' => '<p>' .
+                   t('<strong>Warning:</strong> Opening delimited text files with spreadsheet applications may expose you to <a href="!link">formula injection</a> or other security vulnerabilities. When the submissions contain data from untrusted users and the downloaded file will be used with spreadsheets, use Microsoft Excel format.',
+                     array('!link' => url('https://www.google.com/search?q=spreadsheet+formula+injection'))) .
+                 '</p>',
+    ),
+    'delimiter' => array(
+      '#type' => 'select',
+      '#title' => t('Delimited text format'),
+      '#description' => t('This is the delimiter used in the CSV/TSV file when downloading Webform results. Using tabs in the export is the most reliable method for preserving non-latin characters. You may want to change this to another character depending on the program with which you anticipate importing results.'),
+      '#default_value' => webform_variable_get('webform_csv_delimiter'),
+      '#options' => array(
+        ','  => t('Comma (,)'),
+        '\t' => t('Tab (\t)'),
+        ';'  => t('Semicolon (;)'),
+        ':'  => t('Colon (:)'),
+        '|'  => t('Pipe (|)'),
+        '.'  => t('Period (.)'),
+        ' '  => t('Space ( )'),
+      ),
     ),
     '#states' => array(
       'visible' => array(
@@ -467,10 +476,10 @@ function webform_results_download_form($form, &$form_state, $node) {
     '#options' => array(
       -1 => t('None'),
       0 => t('Label'),
-      1 => t('Field Key'),
+      1 => t('Form Key'),
     ),
     '#default_value' => 0,
-    '#description' => t('Choose whether to show the label or field key in each column header.'),
+    '#description' => t('Choose whether to show the label or form key in each column header.'),
   );
 
   $form['select_options'] = array(
@@ -1059,7 +1068,7 @@ function webform_results_download_headers($node, $options) {
  *   $pager_count variables. Note that the current page number is determined
  *   by the super-global $_GET['page'] variable.
  */
-function webform_results_download_rows($node, $options, $serial_start = 0, $last_sid = NULL) {
+function webform_results_download_rows($node, $options, $serial_start = 0, &$last_sid = NULL) {
   // Get all the required submissions for the download.
   $filters['nid'] = $node->nid;
   if (isset($options['sids'])) {

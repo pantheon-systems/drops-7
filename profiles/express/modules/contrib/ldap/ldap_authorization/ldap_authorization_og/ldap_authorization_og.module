@@ -141,9 +141,9 @@ function ldap_authorization_og1_get_group($value, $value_type = 'group_name', $r
 /**
  * Generic function to convert between query values and organic groups structures and attributes
  *
- * @param mixed $value signifies query value e.g. 'bakers', 7 etc.
- * @param mixed $value_type signifies query type e.g. 'group_name', 'gid', etc.
- * @param string $return signifying return type. e.g.  'object', 'label', 'name', 'gid'
+ * @param mixed $entity_type signifies query value e.g. 'bakers', 7 etc.
+ * @param mixed $group_name signifies query type e.g. 'group_name', 'gid', etc.
+ *
  * @return mixed organic group object, gid, label, etc.
  */
 function ldap_authorization_og2_get_group_from_name($entity_type, $group_name) {

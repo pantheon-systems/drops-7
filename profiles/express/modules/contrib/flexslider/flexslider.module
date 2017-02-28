@@ -4,7 +4,7 @@
  * A light-weight, customizable image gallery plugin for Drupal based on jQuery
  */
 
-define("FLEXSLIDER_VERSION", variable_get('flexslider_version', '2.0'));
+define("FLEXSLIDER_COMPATIBLE_MAJOR_VERSION", '2');
 define("FLEXSLIDER_DEBUG", variable_get('flexslider_debug', FALSE));
 
 /**
@@ -17,8 +17,7 @@ function flexslider_libraries_info() {
     'download url' => 'https://github.com/woothemes/FlexSlider',
     'version arguments' => array(
       'file' => 'jquery.flexslider-min.js',
-      // jQuery FlexSlider v2.1
-      'pattern' => '/jQuery FlexSlider v(\d+\.+\d+)/',
+      'pattern' => '/jQuery FlexSlider v([0-9a-zA-Z\.-]+)/',
       'lines' => 2,
     ),
     'files' => array(
@@ -66,23 +65,23 @@ function flexslider_libraries_info_alter(&$libraries) {
  */
 function flexslider_library() {
   $module_path = drupal_get_path('module', 'flexslider');
-  $library_path = libraries_get_path('flexslider');
-  
+  $library = libraries_detect('flexslider');
+
   $libraries['flexslider'] = array(
-    'title' => 'FlexSlider',
-    'website' => 'http://flexslider.woothemes.com',
-    'version' => FLEXSLIDER_VERSION,
+    'title' => $library['name'],
+    'website' => $library['vendor url'],
+    'version' => $library['version'],
     'js' => array(
-      $library_path . '/jquery.flexslider-min.js' => array(
+      $library['library path'] . '/' . key($library['files']['js']) => array(
         'scope' => 'footer',
       ),
     ),
     'css' => array(
-      $library_path . '/flexslider.css' => array(
+      $library['library path'] . '/' . key($library['files']['css']) => array(
         'type' => 'file',
         'media' => 'screen',
       ),
-      $module_path . '/assets/css/flexslider_img.css' => array(
+      $module_path . key($library['integration files']['flexslider']['css']) => array(
         'type' => 'file',
         'media' => 'screen',
       ),
@@ -164,13 +163,13 @@ function flexslider_theme() {
       'template' => 'theme/flexslider',
       'file' => 'theme/flexslider.theme.inc',
     ),
-    
+
     // Slide container
     'flexslider_list' => array(
       'variables' => array('items' => array(), 'settings' => array()),
       'file' => 'theme/flexslider.theme.inc',
     ),
-    
+
     // Slide item
     'flexslider_list_item' => array(
       'variables' => array('item' => array(), 'settings' => array(), 'caption' => ''),
@@ -254,7 +253,7 @@ function flexslider_optionset_create($values = array()) {
 
   // Merge default settings with any given settings
   $optionset_defaults = _flexslider_optionset_defaults();
-  $optionset->options = $optionset_defaults += $optionset->options;
+  $optionset->options = $optionset->options + $optionset_defaults;
 
   return $optionset;
 }
@@ -318,13 +317,14 @@ function flexslider_optionset_save($optionset, $new = FALSE) {
 
   // Merge default settings with any given settings
   $optionset_defaults = _flexslider_optionset_defaults();
-  $optionset->options = $optionset_defaults += $optionset->options;
+  $optionset->options = $optionset->options + $optionset_defaults;
+  _flexslider_typecast_optionset($optionset->options);
 
   // Prepare the database values.
   $db_values = array(
     'name' => $optionset->name,
     'title' => $optionset->title,
-    'options' => _flexslider_typecast_optionset($optionset->options),
+    'options' => $optionset->options,
   );
 
   if ($new) {
@@ -339,7 +339,7 @@ function flexslider_optionset_save($optionset, $new = FALSE) {
     return $optionset;
   }
 
-  // Otherwise, an error occured
+  // Otherwise, an error occurred
   return FALSE;
 }
 
@@ -350,13 +350,14 @@ function flexslider_optionset_save($optionset, $new = FALSE) {
  *  Optionset object or machine name
  */
 function flexslider_optionset_delete($optionset) {
-  if (isset($optionset->name)) {
-    $name = $optionset->name;
+  if (!$optionset) {
+    return;
+  } elseif (!isset($optionset->name)) {
+    $optionset = flexslider_optionset_load($optionset);
   }
-  else {
-    $name = $optionset;
-  }
-  db_delete('flexslider_optionset')->condition('name', $name)->execute();
+  ctools_include('export');
+  ctools_export_crud_delete('flexslider_optionset', $optionset);
+  ctools_export_load_object_reset('flexslider_optionset');
 }
 
 /*
@@ -395,7 +396,7 @@ function flexslider_add($id = NULL, $optionset = NULL) {
     );
     drupal_add_js(array('flexslider' => $js_setting), 'setting');
   }
-  
+
   if (!empty($id)) {
     // JavaScript settings
     $js_settings = array(

@@ -8,11 +8,11 @@
     $chunks = array_chunk($blocks['#items'], $columns, true);
   ?>
   <?php foreach ($chunks as $key => $chunk): ?>
-    <table class="row blocks">
+    <table class="row blocks" role="presentation">
       <tr>
         <?php foreach ($chunk as $key => $block): ?>
           <td class="wrapper <?php if ($key == 1) { print 'last'; } ?>">
-            <table class="six columns">
+            <table class="six columns" role="presentation">
               <tr>
                 <td class="text-pad padding-bottom">
                   <?php print render($content['field_newsletter_text_block'][$key]); ?>
@@ -26,10 +26,10 @@
     </table>
   <?php endforeach; ?>
 <?php else: ?>
-  <table class="row blocks">
+  <table class="row blocks" role="presentation">
     <tr>
       <td class="wrapper last">
-        <table class="twelve columns">
+        <table class="twelve columns" role="presentation">
           <tr>
             <td class="text-pad padding-bottom">
               <?php print render($content['field_newsletter_text_block']); ?>

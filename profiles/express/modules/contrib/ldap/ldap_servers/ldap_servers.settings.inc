@@ -20,13 +20,13 @@ function ldap_servers_settings() {
 
   $form['#title'] = "Configure LDAP Preferences";
   $form['ssl'] = array('#type' => 'fieldset', '#title' => t('Require HTTPS on Credential Pages'));
-  $form['ssl']['ldap_servers_require_ssl_for_credentails'] = array(
+  $form['ssl']['ldap_servers_require_ssl_for_credentials'] = array(
     '#type' => 'checkbox',
     '#title' => t('If checked, modules using LDAP will not allow credentials to
       be entered on or submitted to HTTP pages, only HTTPS. This option should be used with an
       approach to get all logon forms to be https, such as:') .
       theme('item_list', array('items' => $https_approaches)),
-    '#default_value' => variable_get('ldap_servers_require_ssl_for_credentails', 0),
+    '#default_value' => variable_get('ldap_servers_require_ssl_for_credentials', 0),
   );
 
   $options = ldap_servers_encrypt_types('encrypt');

@@ -3,6 +3,7 @@
   // Behavior to load FlexSlider
   Drupal.behaviors.flexslider = {
     attach: function(context, settings) {
+      var id;
       var sliders = [];
       if ($.type(settings.flexslider) !== 'undefined' && $.type(settings.flexslider.instances) !== 'undefined') {
 
@@ -34,28 +35,31 @@
     $('#' + id, context).once('flexslider', function() {
       // Remove width/height attributes
       // @todo load the css path from the settings
-      $(this).find('ul.slides > li > *').removeAttr('width').removeAttr('height');
+      $(this).find('ul.slides > li *').removeAttr('width').removeAttr('height');
 
       if (optionset) {
         // Add events that developers can use to interact.
         $(this).flexslider($.extend(optionset, {
           start: function(slider) {
-            slider.trigger('start');
+            slider.trigger('start', [slider]);
           },
           before: function(slider) {
-            slider.trigger('before');
+            slider.trigger('before', [slider]);
           },
           after: function(slider) {
-            slider.trigger('after');
+            slider.trigger('after', [slider]);
           },
           end: function(slider) {
-            slider.trigger('end');
+            slider.trigger('end', [slider]);
           },
           added: function(slider) {
-            slider.trigger('added');
+            slider.trigger('added', [slider]);
           },
           removed: function(slider) {
-            slider.trigger('removed');
+            slider.trigger('removed', [slider]);
+          },
+          init: function(slider) {
+            slider.trigger('init', [slider]);
           }
         }));
       } else {

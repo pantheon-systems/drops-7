@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * Tests that each of the Metatag Facebook tags work correctly.
+ */
+class MetatagFacebookTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Facebook',
+      'description' => 'Test the Facebook meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_facebook';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'fb:admins',
+    'fb:app_id',
+    'fb:pages',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'property';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    return str_replace('fb_', 'fb:', $tag_name);
+  }
+
+}

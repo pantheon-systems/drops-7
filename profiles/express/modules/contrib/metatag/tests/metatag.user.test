@@ -1,10 +1,10 @@
 <?php
-/**
- * @file
- * Tests for the Metatag module and user entities.
- */
 
+/**
+ * Tests for the Metatag module of user entities.
+ */
 class MetatagCoreUserTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagCoreUserTest extends MetatagTestHelper {
       'name' => 'Metatag core tests for users',
       'description' => 'Test Metatag edit functionality for users.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -38,7 +39,7 @@ class MetatagCoreUserTest extends MetatagTestHelper {
 
     // Submit the form with some values.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[user:name]',
+      'metatags[und][abstract][value]' => '[user:name]',
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -58,7 +59,7 @@ class MetatagCoreUserTest extends MetatagTestHelper {
 
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[user:name] ponies',
+      'metatags[und][abstract][value]' => '[user:name] ponies',
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -76,7 +77,7 @@ class MetatagCoreUserTest extends MetatagTestHelper {
     // Only the non-default values are stored.
     $expected = array(
       'und' => array(
-        'dcterms.subject' => array(
+        'abstract' => array(
           'value' => '[user:name] ponies',
         ),
       ),
@@ -85,23 +86,6 @@ class MetatagCoreUserTest extends MetatagTestHelper {
 
     // Confirm the user profile tags work correctly.
     $this->assertUserEntityTags($this->adminUser);
-  }
-
-  /**
-   * Verify a user entity's meta tags load correctly.
-   *
-   * @param object $user
-   *   A user object that is to be tested.
-   */
-  function assertUserEntityTags($user) {
-    // Load the user's profile page.
-    $this->drupalGet('user/' . $user->uid);
-    $this->assertResponse(200);
-
-    // Verify the title is using the custom default for this vocabulary.
-    $xpath = $this->xpath("//meta[@name='dcterms.subject']");
-    $this->assertEqual(count($xpath), 1, 'Exactly one dcterms.subject meta tag found.');
-    $this->assertEqual($xpath[0]['content'], $user->name . " ponies");
   }
 
 }

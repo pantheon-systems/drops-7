@@ -29,6 +29,9 @@ i.blockicon {
   margin:3px 5px 0px 0;
   float:left;
 }
+i.blockicon.none {
+  display: none;
+}
 span.blockicontext {
   overflow: hidden;
   display: block;

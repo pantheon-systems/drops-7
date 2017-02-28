@@ -2,7 +2,7 @@ Feature: People
 
 @api @people
 Scenario Outline: An authenticated user should be able to access the form for adding person content
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/person"
     Then I should not see <message>
 
@@ -21,7 +21,7 @@ Scenario: An anonymous user should not be able to access the form for adding per
 
 @api @people
 Scenario Outline: An authenticated user should be able to access the form for adding people list page content
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/people-list-page"
     Then I should not see <message>
 
@@ -40,7 +40,7 @@ Scenario: An anonymous user should not be able to access the form for adding peo
 
 @api @people
 Scenario: Content editors can create person nodes
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/person"
     And fill in "First Name" with "Staff"
     And fill in "Last Name" with "Person"
@@ -50,7 +50,7 @@ Scenario: Content editors can create person nodes
   When I press the "Save" button
   Then I should see "Person Staff Person has been created."
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/person"
     And fill in "First Name" with "Faculty"
     And fill in "Last Name" with "Person"
@@ -60,7 +60,7 @@ Scenario: Content editors can create person nodes
   When I press the "Save" button
   Then I should see "Person Faculty Person has been created."
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/people-list-page"
     And fill in "Title" with "People"
     And I select "Table" from "edit-field-people-list-display-und"
@@ -73,7 +73,7 @@ Scenario: Content editors can create person nodes
     And I should see "Faculty Person"
     And I should see a "select" element
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/people-list-page"
     And fill in "Title" with "Faculty People"
     And I check the box "Faculty"
@@ -82,7 +82,7 @@ Scenario: Content editors can create person nodes
   Then I should not see "Staff Person"
     And I should see "Faculty Person"
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/people-list-page"
     And fill in "Title" with "Staff People"
     And I check the box "Staff"
@@ -91,7 +91,7 @@ Scenario: Content editors can create person nodes
   Then I should see "Staff Person"
     And I should not see "Faculty Person"
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/people-list-page"
     And fill in "Title" with "Department One People"
     And I check the box "Department One"
@@ -100,7 +100,7 @@ Scenario: Content editors can create person nodes
   Then I should see "Staff Person"
     And I should not see "Faculty Person"
 
-  Given I am logged in as a user with the "content_editor" role
+  Given  CU - I am logged in as a user with the "content_editor" role
     And am on "node/add/people-list-page"
     And fill in "Title" with "Department Two People"
     And I check the box "Department Two"
@@ -112,7 +112,7 @@ Scenario: Content editors can create person nodes
 
   @api @people @people-filters
   Scenario: Person nodes should accept more than 1 filter value per filter
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
       And am on "node/add/person"
       And fill in "First Name" with "Faculty"
       And fill in "Last Name" with "Person"
@@ -137,7 +137,7 @@ Scenario: Content editors can create person nodes
 
     @api @people @javascript
     Scenario: Footer, Main Menu, and Secondary Menus should be available when creating a Person
-      Given I am logged in as a user with the "content_editor" role
+      Given  CU - I am logged in as a user with the "content_editor" role
         And I am on "node/add/person"
         And I fill in "First Name" with "John Doe"
         And I click the "#edit-menu-enabled" element
@@ -150,7 +150,7 @@ Scenario: Content editors can create person nodes
 
   @api @people @people-filters
   Scenario: Adding a label to the filter terms should result in the label showing up on the people list page.
-    Given I am logged in as a user with the "site_owner" role
+    Given  CU - I am logged in as a user with the "site_owner" role
       And am on "node/add/person"
       And fill in "First Name" with "Staff"
       And fill in "Last Name" with "Person"

@@ -7,3 +7,10 @@
   font-size: 100%;
   margin-bottom: 5px;
 }
+.related-articles .date {
+  font-size: 75%;
+  margin-bottom: 10px;
+}
+.related-articles-hide-date .date {
+  display: none;
+}

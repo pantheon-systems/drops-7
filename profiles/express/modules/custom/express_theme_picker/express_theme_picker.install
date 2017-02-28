@@ -15,12 +15,5 @@ function express_theme_picker_install() {
     ->fields(array('weight' => $weight +1))
     ->condition('name', 'express_theme_picker', '=')
     ->execute();
-
-  // Set hidden themes variable to avoid PHP warning message
-  $hidden_themes = array();
-  foreach (list_themes() as $theme => $data) {
-    $hidden_themes[$theme] = 0;
-  }
-  variable_set('express_theme_picker_theme_ignore', $hidden_themes);
 }
 

@@ -102,6 +102,11 @@ default:
   extensions:
     Behat\MinkExtension:
       goutte: ~
+      sessions:
+        my_session:
+          goutte:
+            guzzle_parameters:
+              ssl.certificate_authority: false
       selenium2: ~
       javascript_session: selenium2
       browser_name: firefox

@@ -3,7 +3,7 @@ Feature: Event Blocks Creation
 
   @api @events
   Scenario: Create an Events Calendar Block.
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
       And I am on "block/add/cu-events-calendar-block"
       And I fill in "Label" with "New Events Calendar Block"
       And I fill in "Title" with "Events Block Title"
@@ -18,7 +18,7 @@ Feature: Event Blocks Creation
 
   @api @events @javascript
   Scenario: Create an Events Calendar Block.
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
       And I am on "block/add/events-calendar-grid"
       And I fill in "Label" with "Grid Label"
       And I fill in "Title" with "Events Calendar Grid"

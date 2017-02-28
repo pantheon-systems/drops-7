@@ -313,3 +313,23 @@ function cu_users_update_7024() {
  $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
  $query->execute();
 }
+
+/**
+ * Add Tommy Cox as a developer.
+ */
+function cu_users_update_7025() {
+  // If thco6272 user does not exist.
+  $account = user_load_by_name('thco6272');
+  if (!isset($account->uid)) {
+    // Create new user.
+    $account = new stdClass();
+    $account->name = 'thco6272';
+    $account->mail = 'thomas.h.cox@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+  }
+  $developer_role = user_role_load_by_name('developer');
+  $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+  $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
+  $query->execute();
+}

@@ -83,14 +83,36 @@ function flexslider_requirements($phase) {
 
   // Check to see if the flexslider library is available
   if ($phase == 'runtime') {
-    $requirements['flexslider'] = array(
-      'title' => $t('FlexSlider'),
-      // @todo have the version automatically detected
-      'description' => $t('Version 2.0 installed'),
-      'severity' => REQUIREMENT_OK,
-    );
-    _flexslider_requirements_library_installed($requirements);
+    $library = libraries_detect('flexslider');
+
+    if ($library['installed']) {
+      $version = explode('.', $library['version']);
+
+      if ($version[0] == FLEXSLIDER_COMPATIBLE_MAJOR_VERSION) {
+        $requirements['flexslider'] = array(
+          'value' => $library['version'],
+          'severity' => REQUIREMENT_OK,
+        );
+      }
+      else {
+        $requirements['flexslider'] = array(
+          'value' => $library['version'],
+          'description' => $t('Incompatible version detected. The FlexSlider library version must be from the %version.x branch.', array('%version' => FLEXSLIDER_COMPATIBLE_MAJOR_VERSION)),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+    }
+    else {
+      $requirements['flexslider'] = array(
+        'value' => $t('FlexSlider library not found.'),
+        'description' => $t('The FlexSlider library could not be detected. Please consult the README.md for installation instructions.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+
+    $requirements['flexslider']['title'] = $t('FlexSlider');
   }
+
   return $requirements;
 }
 
@@ -130,7 +152,8 @@ function flexslider_update_7002(&$sandbox) {
  */
 function flexslider_update_7200(&$sandbox) {
   $t = get_t();
-
+  
+  module_load_include('module', 'flexslider', 'flexslider');
   $optionsets = flexslider_optionset_load_all();
 
   foreach ($optionsets as $optionset) {
@@ -186,48 +209,12 @@ function flexslider_update_7202(&$sandbox) {
 }
 
 /**
- * Check if the library is available
+ * Implements hook_update_N().
  *
- * @param array $requirements
- *  Requirements definition
+ * Remove the flexslider_version variable.
  */
-function _flexslider_requirements_library_installed(&$requirements) {
-  $t = get_t();
-
-  $path = libraries_get_path('flexslider');
-  $installed = file_exists($path . '/jquery.flexslider-min.js') && file_exists($path . '/jquery.flexslider.js');
-
-  // Check the results of the test
-  if (!$installed) {
-    $requirements['flexslider']['description'] = $t('FlexSlider library not found. Please consult the README.txt for installation instructions.');
-    $requirements['flexslider']['severity'] = REQUIREMENT_ERROR;
-    $requirements['flexslider']['value'] = $t('FlexSlider library not found.');
-    return;
-  }
-
-  $js = file_exists($path . '/jquery.flexslider-min.js') ? fopen($path . '/jquery.flexslider-min.js', 'r') : fopen($path . '/jquery.flexslider.js', 'r');
-  $header = fread($js, 64);
-  $matches = array();
-  if (preg_match("/ v([0-9]+)\.([0-9]+)/", $header, $matches)) {
-    if (!($matches[1] == 2 and $matches[2] >= 0)) {
-      $requirements['flexslider']['description'] = $t('FlexSlider must be version 2.0 or higher, but lower than version 3.0.  Please consult the README.txt for installation instructions.');
-      $requirements['flexslider']['severity'] = REQUIREMENT_WARNING;
-      $requirements['flexslider']['value'] = $t('Incorrect version detected.');
-      return;
-    }
-    else {
-      $version = $matches[1] . "." . $matches[2];
-      variable_set('flexslider_version', $version);
-      $requirements['flexslider']['description'] = $t('Version %version installed', array( '%version' => $version));
-      $requirements['flexslider']['value'] = $t('FlexSlider library installed.');
-      return;
-    }
-  }
-  else {
-    $requirements['flexslider']['description'] = $t('FlexSlider version could not be determined.  Please consult the README.txt for installation instructions.');
-    $requirements['flexslider']['severity'] = REQUIREMENT_WARNING;
-    $requirements['flexslider']['value'] = $t('Unable to detect version.');
-  }
+function flexslider_update_7203(&$sandbox) {
+  variable_del('flexslider_version');
 }
 
 // @todo add hook_update_N function to migrate old option set data to new values

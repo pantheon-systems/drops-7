@@ -117,7 +117,7 @@ function _webform_edit_number($component) {
     '#type' => 'checkbox',
     '#title' => t('Disabled'),
     '#return_value' => 1,
-    '#description' => t('Make this field non-editable. Useful for setting an unchangeable default value.'),
+    '#description' => t('Make this field non-editable. Useful for displaying default value. Changeable via JavaScript or developer tools.'),
     '#weight' => 11,
     '#default_value' => $component['extra']['disabled'],
     '#parents' => array('extra', 'disabled'),
@@ -809,8 +809,10 @@ function webform_number_format_match($value, $point, $separator) {
   //   3. optional integer portion, with thousands separators
   //   4. optional decimal portion, starting is a decimal separator
 
-  $thousands = $separator ? (preg_quote($separator, '/') . '?') : '';
-  $decimal = preg_quote($point, '/');
+  // Don't use preg_quote because a space is a valid thousands separator and
+  // needs quoting for the 'x' option to preg_match.
+  $thousands = $separator ? "\\$separator?" : '';
+  $decimal = "\\$point";
   return preg_match("/
                     ^               # Start of string
                     -?              # Optional minus sign

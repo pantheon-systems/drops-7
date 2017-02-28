@@ -81,6 +81,32 @@ function cu_collections_field_default_field_bases() {
     'type' => 'list_text',
   );
 
+  // Exported field_base: 'field_collection_filter_effect'.
+  $field_bases['field_collection_filter_effect'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_collection_filter_effect',
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'fade' => 'Fade Items',
+        'remove' => 'Remove Items',
+      ),
+      'allowed_values_function' => '',
+      'allowed_values_php' => '',
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+
   // Exported field_base: 'field_collection_filter_type'.
   $field_bases['field_collection_filter_type'] = array(
     'active' => 1,

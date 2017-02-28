@@ -562,7 +562,7 @@ function cu_shortcodes_expand($attrs, $content = NULL) {
     $content = $expand_title . '<span id="' . $id . '" class="tooltip-expand-content"><span class="tooltip-inner">' . $content . '<br /><a href="#' . $id . '" class="close-tip" rel="tipid-' . $id . '"><i class="fa fa-times"></i></a></span></span>';
     return '<' . $tag . ' class="tooltip-expand-set">' . $content . "</$tag>";
   } else {
-    $expand_title = $title ? '<a href="#' . $id . '" class="expand-title" aria-expanded="false" ><span>' . $title . '</span></a>' : '';
+    $expand_title = $title ? '<a href="#' . $id . '" class="expand-title expand-trigger" aria-expanded="false" ><span>' . $title . '</span></a>' : '';
     $classes = array();
     $tag = 'div';
     $classes[] = !empty($class) ? explode(' ', $class) : NULL;

@@ -6,6 +6,36 @@
  */
 
 /**
+ * Implements hook_cron().
+ */
+function atlas_statistics_cron() {
+  // Only run cron task if site is installed or launched.
+  $site_status = variable_get('atlas_status');
+  if ($site_status == 'installed' || $site_status == 'launched') {
+    $cron_last = variable_get('cron_last', NULL);
+    // Run once a day.
+    if (date('ymd', $cron_last) != date('ymd', time())) {
+      // Switch so that we can easily stop the processing.
+      if (variable_get('atlas_statistics_site_cron', TRUE)) {
+        $atlas_id = variable_get('atlas_id', NULL);
+        $site_array = atlas_api_request('sites', $atlas_id);
+        $statistics_id = $site_array['statistics'];
+        $statistics_array = atlas_api_request('statistics', $statistics_id);
+
+        module_load_include('inc', 'atlas_statistics');
+        $request_data = atlas_statistics_get_statistics();
+
+        // Set the etag from the form.
+        $request_data['_etag'] = $statistics_array['_etag'];
+        $request_data['site'] = $atlas_id;
+
+        atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function atlas_statistics_menu() {

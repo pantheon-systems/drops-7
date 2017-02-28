@@ -35,6 +35,19 @@ function express_layout_entity_info_alter(&$entity_info) {
   if (isset($entity_info['bean'])) {
     $entity_info['bean']['inline entity form']['controller'] = 'BeanInlineEntityFormController';
   }
+  if (module_exists('entitycache')) {
+    // Enable Entity Cache support for beans.
+    $entity_info['express_layout']['entity cache'] = TRUE;
+    // Which means that we don't need to cache the fields.
+    $entity_info['express_layout']['field cache'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function express_layout_flush_caches() {
+  return array('cache_entity_express_layout');
 }
 
 /**

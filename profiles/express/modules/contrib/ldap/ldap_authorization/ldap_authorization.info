@@ -14,13 +14,12 @@ files[] = ldap_authorization.admin.inc
 files[] = ldap_authorization.admin.test.inc
 files[] = ldap_authorization.theme.inc
 files[] = tests/BasicTests.test
-files[] = tests/Og1Tests.test
 files[] = tests/Og2Tests.test
 configure = admin/config/people/ldap/authorization
 
-; Information added by Drupal.org packaging script on 2016-08-07
-version = "7.x-2.0-beta11"
+; Information added by Drupal.org packaging script on 2017-02-19
+version = "7.x-2.0-beta12+7-dev"
 core = "7.x"
 project = "ldap"
-datestamp = "1470608343"
+datestamp = "1487504891"
 

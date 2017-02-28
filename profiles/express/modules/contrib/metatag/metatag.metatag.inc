@@ -326,28 +326,6 @@ function metatag_metatag_info() {
     ),
   );
 
-  $info['tags']['publisher'] = array(
-    'label' => t('Publisher URL'),
-    'description' => '',
-    'class' => 'DrupalLinkMetaTag',
-    'group' => 'advanced',
-    'weight' => ++$weight,
-    'devel_generate' => array(
-      'type' => 'url',
-    ),
-  );
-
-  $info['tags']['author'] = array(
-    'label' => t('Author URL'),
-    'description' => t("Used by some search engines to confirm authorship of the content on a page. Should be either the full URL for the author's Google+ profile page or a local page with information about the author."),
-    'class' => 'DrupalLinkMetaTag',
-    'group' => 'advanced',
-    'weight' => ++$weight,
-    'devel_generate' => array(
-      'type' => 'url',
-    ),
-  );
-
   $info['tags']['original-source'] = array(
     'label' => t('Original Source'),
     'description' => '',
@@ -384,7 +362,7 @@ function metatag_metatag_info() {
 
   $info['tags']['content-language'] = array(
     'label' => t('Content language'),
-    'description' => t("A deprecated meta tag for defining this page's two-letter language code(s)."),
+    'description' => t("Used to define this page's language code. May be the two letter language code, e.g. \"de\" for German, or the two letter code with a dash and the two letter ISO country code, e.g. \"de-AT\" for German in Austria. Still used by Bing."),
     'class' => 'DrupalTextMetaTag',
     'group' => 'advanced',
     'weight' => ++$weight,
@@ -420,7 +398,7 @@ function metatag_metatag_info() {
 
   $info['tags']['icbm'] = array(
     'label' => t('ICBM'),
-    'description' => t('Geo-spatial information in "latitude, longitude" format, e.g. "50.167958, -97.133185"; <a href="http://en.wikipedia.org/wiki/ICBM">see Wikipedia for details</a>.'),
+    'description' => t('Geo-spatial information in "latitude, longitude" format, e.g. "50.167958, -97.133185"; <a href="https://en.wikipedia.org/wiki/ICBM_address">see Wikipedia for details</a>.'),
     'class' => 'DrupalTextMetaTag',
     'group' => 'advanced',
     'weight' => ++$weight,
@@ -472,7 +450,7 @@ function metatag_metatag_info() {
 
   $info['tags']['expires'] = array(
     'label' => t('Expires'),
-    'description' => t("Control when the browser's internal cache of the current page should expire. The date must to be an <a href=\"@rfc\">RFC-1123</a>-compliant date string that is represented in Greenwich Mean Time (GMT), e.g. '@date'. Set to '0' to stop the page being cached entirely.", array('@rfc' => 'http://www.csgnetwork.com/timerfc1123calc.html', '@date' => gmdate("D, d M Y H:i:s \G\M\T"))),
+    'description' => t("Control when the browser's internal cache of the current page should expire. The date must to be an <a href=\"@rfc\">RFC-1123</a>-compliant date string that is represented in Greenwich Mean Time (GMT), e.g. 'Thu, 01 Sep 2016 00:12:56 GMT'. Set to '0' to stop the page being cached entirely.", array('@rfc' => 'http://www.csgnetwork.com/timerfc1123calc.html')),
     'class' => 'DrupalTextMetaTag',
     'weight' => ++$weight,
     'group' => 'advanced',

@@ -3,8 +3,9 @@ description = Adds inline help links to Express
 core = 7.x
 package = Express
 
-; Information added by Drupal.org packaging script on 2015-12-21
+; Information added by Drupal.org packaging script on 2017-02-17
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "express_help"
-datestamp = "1450739343"
+datestamp = "1487356919"
+

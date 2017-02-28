@@ -13,10 +13,12 @@ function atlas_requirements($phase) {
 
   if ($phase == 'runtime') {
     $t = get_t();
+    $atlas_up = atlas_up();
+    $atlas_version = atlas_version();
     if ($atlas_url = variable_get('atlas_url', FALSE)) {
       $requirements['atlas_url'] = array(
         'title' => $t('Atlas URL'),
-        'value' => $t('Connected to Atlas at !atlas_url.', array('!atlas_url' => $atlas_url)),
+        'value' => $t('Connected to !atlas_url - Atlas v!atlas_version.', array('!atlas_url' => $atlas_url, '!atlas_version' => $atlas_version)),
         'severity' => REQUIREMENT_OK,
       );
     }
@@ -27,18 +29,31 @@ function atlas_requirements($phase) {
         'severity' => REQUIREMENT_WARNING,
       );
     }
-    if ($atlas_id = variable_get('atlas_id', FALSE)) {
+    if ($atlas_username = variable_get('atlas_username', FALSE) && $atlas_password = variable_get('atlas_password', FALSE)) {
+      $requirements['atlas_credentials'] = array(
+        'title' => $t('Atlas Credentials'),
+        'value' => $t('Connected to Atlas via a service account - !user', array('!user' => variable_get('atlas_username'))),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['atlas_credentials'] = array(
+        'title' => $t('Atlas Credentials'),
+        'value' => $t('A full set of credentials has not been provided.'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    if (($atlas_id = variable_get('atlas_id', FALSE)) && ($cu_sid = variable_get('cu_sid', FALSE))) {
       $requirements['atlas_id'] = array(
         'title' => $t('Atlas Site ID'),
-        'value' => $t('This site reports an site id of !atlas_id.', array('!atlas_id' => $atlas_id)),
+        'value' => $t('This site reports an Atlas id of !atlas_id and a CU SID of !cu_sid', array('!atlas_id' => $atlas_id, '!cu_sid' => $cu_sid)),
         'severity' => REQUIREMENT_OK,
       );
       // Link to the logging in the Elasticsearch, Logstash, Kibana stack.
-      $logging_url = "https://wlogstash.colorado.edu/app/kibana/#/dashboard/Drupal-Syslog-Site?_g=(refreshInterval:(display:'1%20minute',pause:!t,section:2,value:60000),time:(from:now-24h,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Drupal-Syslog-Top-15-event-categories,row:1,size_x:6,size_y:4,type:visualization),(col:7,columns:!(_source),id:'*-Drupal-Syslog',row:1,size_x:6,size_y:7,sort:!('@timestamp',desc),type:search),(col:1,id:Drupal-Syslog-Messages-Top-5,row:5,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'atlas_id:%22" . $atlas_id . "%22')),title:'Drupal%20Syslog%20-%20Site')";
+      $logging_url = "https://wlogstash.colorado.edu/app/kibana/#/dashboard/Drupal-Syslog-Site?_g=(refreshInterval:(display:'1%20minute',pause:!t,section:2,value:60000),time:(from:now-24h,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Drupal-Syslog-Top-15-event-categories,row:1,size_x:6,size_y:4,type:visualization),(col:7,columns:!(_source),id:'*-Drupal-Syslog',row:1,size_x:6,size_y:7,sort:!('@timestamp',desc),type:search),(col:1,id:Drupal-Syslog-Messages-Top-5,row:5,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'atlas_id:%22" . $cu_sid . "%22')),title:'Drupal%20Syslog%20-%20Site')";
       $requirements['cu_log_link'] = array(
         'title' => $t('Atlas Syslog'),
-        'value' => $t('Available.'),
-        'description' => $t('See <a href="@url" target="_blank">logs on wlogstash.colorado.edu</a>. <em>Requires authorized Identikey</em>.', array('@url' => $logging_url)),
+        'value' => $t('See <a href="@url" target="_blank">logs on wlogstash.colorado.edu</a>. <em>Requires authorized Identikey</em>.', array('@url' => $logging_url)),
         'severity' => REQUIREMENT_OK,
       );
     }
@@ -54,7 +69,7 @@ function atlas_requirements($phase) {
         'severity' => REQUIREMENT_WARNING,
       );
     }
-    if (atlas_up()) {
+    if ($atlas_up) {
       $requirements['atlas_is_up'] = array(
         'title' => $t('Atlas Status'),
         'value' => $t('Is up and running.'),
@@ -64,7 +79,7 @@ function atlas_requirements($phase) {
     else {
       $requirements['atlas_is_up'] = array(
         'title' => $t('Atlas Status'),
-        'value' => $t('is down.'),
+        'value' => $t('Atlas is not responding.'),
         'severity' => REQUIREMENT_WARNING,
       );
     }

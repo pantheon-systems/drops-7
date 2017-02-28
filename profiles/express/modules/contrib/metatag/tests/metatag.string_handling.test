@@ -1,11 +1,7 @@
 <?php
-/**
- * @file
- * Contains the tests for Metatag's string handling.
- */
 
 /**
- * Tests the Metatag string handling.
+ * Tests for Metatag's string handling.
  */
 class MetatagCoreStringHandlingTest extends MetatagTestHelper {
 
@@ -23,6 +19,7 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
       'name' => 'Metatag core tests for string handling',
       'description' => "Tests Metatag's string handling.",
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -45,6 +42,8 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
       'administer nodes',
     );
     $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
     $this->drupalLogin($this->adminUser);
   }
 
@@ -176,6 +175,11 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
           ),
         ),
       ),
+      'metatags' => array(
+        LANGUAGE_NONE => array(
+          'abstract' => array('value' => '[node:title]'),
+        ),
+      ),
     ));
 
     // Page titles have a suffix added automatically.
@@ -198,15 +202,7 @@ class MetatagCoreStringHandlingTest extends MetatagTestHelper {
 
     // Test a few other versions of the title, to ensure it isn't broken
     // on another tag.
-    $xpath = $this->xpath("//meta[@name='dcterms.title']");
-    $this->assertEqual($xpath[0]['content'], $title_original);
-    $this->assertNotEqual($xpath[0]['content'], $title_encoded);
-    $this->assertNotEqual($xpath[0]['content'], $title_encodeded);
-    $xpath = $this->xpath("//meta[@property='og:title']");
-    $this->assertEqual($xpath[0]['content'], $title_original);
-    $this->assertNotEqual($xpath[0]['content'], $title_encoded);
-    $this->assertNotEqual($xpath[0]['content'], $title_encodeded);
-    $xpath = $this->xpath("//meta[@name='twitter:title']");
+    $xpath = $this->xpath("//meta[@name='abstract']");
     $this->assertEqual($xpath[0]['content'], $title_original);
     $this->assertNotEqual($xpath[0]['content'], $title_encoded);
     $this->assertNotEqual($xpath[0]['content'], $title_encodeded);

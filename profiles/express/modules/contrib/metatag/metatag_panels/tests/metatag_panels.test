@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module for the direct Panels integration.
  */
-
 class MetatagPanelsTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagPanelsTest extends MetatagTestHelper {
       'name' => 'Metatag:Panels tests',
       'description' => 'Test Metatag integration via the Metatag:Panels module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'panels', 'page_manager'),
     );
   }
 
