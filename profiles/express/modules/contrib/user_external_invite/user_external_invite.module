@@ -55,12 +55,28 @@ function user_external_invite_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/people/invite'] = array(
-    'title' => 'Invite user',
+    'title' => 'Invite users',
     'page callback' => 'user_external_invite_page',
     'page arguments' => array('user_external_invite_form'),
     'access arguments' => array('invite new user'),
     'file' => 'user_external_invite.admin.inc',
-    'type' => MENU_LOCAL_ACTION,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  $items['admin/people/invite/invite'] = array(
+    'title' => 'Invite users',
+    'page callback' => 'user_external_invite_page',
+    'page arguments' => array('user_external_invite_form'),
+    'access arguments' => array('invite new user'),
+    'file' => 'user_external_invite.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/people/invite/operations'] = array(
+    'title' => 'Manage invites',
+    'page callback' => 'user_external_invite_operations_page',
+    'page arguments' => array('user_external_invite_pending_invites_form'),
+    'access arguments' => array('invite new user'),
+    'type' => MENU_LOCAL_TASK,
   );
   $items['user-external/accept-invite'] = array(
     'title' => 'Accept an invite',
@@ -72,22 +88,17 @@ function user_external_invite_menu() {
 }
 
 /**
- * Page callback for admin/people/invite/cancel/%.
- *
- * Cancels a invite.
- */
-function user_external_invite_cancel_invite($mail) {
-  // @todo verify $mail is valid and invite currently exists.
-  _user_external_invite_change_invite_status($mail, 'canceled');
-  drupal_set_message(t('Invite for !mail successfully canceled.', array('!mail' => $mail)));
-  drupal_goto('admin/people/invite');
-}
-
-/**
  * Page callback for admin/people/invite.
  */
 function user_external_invite_page() {
   $build['form'] = drupal_get_form('user_external_invite_form');
+  return $build;
+}
+
+/**
+ * Page callback for admin/people/invite/operations.
+ */
+function user_external_invite_operations_page() {
   $build['invites'] = drupal_get_form('user_external_invite_pending_invites_form');
   return $build;
 }
@@ -108,7 +119,6 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
   );
 
   $rids = variable_get('user_external_invite_roles', NULL);
-  $rids = variable_get('user_external_invite_roles', NULL);
   if (!empty($rids)) {
     foreach ($rids as $rid) {
       $roles[$rid] = _user_external_invite_role_name_from_rid($rid);
@@ -117,7 +127,7 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
   $pending = _user_external_invite_pending_invites(NULL, $headers);
   $rows = array();
 
-  while ($r = $pending->fetchObject()){
+  while ($r = $pending->fetchObject()) {
     $inviter = user_load($r->uid);
     $rows[] = array(
       'id' => $r->id,
@@ -131,6 +141,7 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
 
   // Add operations only if rows are present.
   if (!empty($rows)) {
+
     // Add container for operations functionality.
     $form['operations'] = array(
       '#type' => 'fieldset',
@@ -139,14 +150,27 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
 
     // Add select list for choosing operations.
     $select_options = array(
-      0 => 'Cancel Invites'
+      'cancel' => 'Cancel Invites',
+      'resend' => 'Resend Invites',
     );
 
     $form['operations']['select'] = array(
       '#type' => 'select',
-      //'#title' => t('Operations'),
       '#options' => $select_options,
-      '#default_value' => $select_options[0],
+      '#default_value' => $select_options['cancel'],
+    );
+
+    $form['operations']['resend_message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Custom Message'),
+      '#cols' => 40,
+      '#rows' => 5,
+      '#description' => t('Message sent to users being re-invited. The rest of the email will include the "Invitation Email Template" text.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="select"]' => array('value' => 'resend'),
+        ),
+      ),
     );
 
     // Add submit button for operations.
@@ -168,6 +192,9 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
       '#weight' => 11,
     );
   }
+  else {
+    drupal_set_message(t('No invites available.'), 'status');
+  }
 
   return $form;
 }
@@ -179,10 +206,11 @@ function user_external_invite_pending_invites_form($form, &$form_state) {
  * @param $form_state
  */
 function user_external_invite_pending_invites_form_submit(&$form, &$form_state) {
-
+  // Define variables.
   $table_options = $form['table']['#options'];
   $selected_options = $form_state['input']['table'];
-  //$operation = $form_state['values']['select'];
+  $operation = $form_state['values']['select'];
+  $message = $form_state['values']['resend_message'];
   $ids = array();
 
   // Loop through selected rows and match with invite IDs.
@@ -192,9 +220,48 @@ function user_external_invite_pending_invites_form_submit(&$form, &$form_state) 
     }
   }
 
+  // If no IDs passed then return with error message.
+  if (empty($ids)) {
+    drupal_set_message(t('No invites selected for operation. Please select desired invites and try again.'), 'error');
+    return;
+  }
+
   // Pass IDs into corresponding callback function.
-  // No logic yet since only one option to cancel invites.
-  user_external_invite_cancel_invites($ids);
+  switch ($operation) {
+    case 'cancel':
+      user_external_invite_cancel_invites($ids);
+      break;
+    case 'resend':
+      // Adding additional message to send to invitees.
+      user_external_invite_resend_invites($ids, $message);
+
+      // Set message to user about successful resent invites.
+      // @todo Handle this better for possible errors. We're assuming invites were sent.
+      $num_invites = count($ids);
+      $plural_invites = $num_invites > 1 ? 'invites' : 'invite';
+      drupal_set_message(t('Successfully resent :number user :invites.', array(':number' => $num_invites, ':invites' => $plural_invites)));
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Callback to resend invites.
+ *
+ * @param array $ids
+ */
+function user_external_invite_resend_invites($ids = array(), $message = '') {
+  // Grab row from db and pass to add invite function.
+  // This is done to avoid duplication, but if enough needs added to resending,
+  // then a separate resend function should be developed.
+  $results = db_query('SELECT * FROM {user_external_invite} WHERE id IN (:ids)', array(':ids' => $ids))->fetchall();
+
+  $resend = TRUE;
+  foreach ($results as $result) {
+    $message = !empty($message) ? $message : $result->message;
+    _user_external_invite_add_invite($result->rid, array($result->mail), $result->uid, $message, $resend);
+  }
 }
 
 /**
@@ -203,11 +270,6 @@ function user_external_invite_pending_invites_form_submit(&$form, &$form_state) 
  * @param array $ids
  */
 function user_external_invite_cancel_invites($ids = array()) {
-  // If no IDs passed then return with error message.
-  if (empty($ids)) {
-    drupal_set_message('No invites selected for operation. Please select desired invites and try again.', 'error');
-    return;
-  }
 
   // Delete pending invites from database and set message.
   db_delete('user_external_invite')
@@ -245,25 +307,40 @@ function _user_external_invite_pending_invites(string $mail = NULL, $headers) {
 /**
  * Adds invite to database and sends email.
  */
-function _user_external_invite_add_invite($rid, $emails, $uid, $message = NULL) {
-  // @TODO: add custom message handling
+function _user_external_invite_add_invite($rid, $emails, $uid, $message = NULL, $resend = FALSE) {
   $now = REQUEST_TIME;
   $days = variable_get('user_external_invite_days_valid_for', 5);
   // Expire in X days.
   $expire = $now + ($days * 24 * 60 * 60);
   // All invites start out as pending.
   $status = 'Pending';
+
+  // Add or update invite in db.
   foreach ($emails as $mail) {
-    db_insert('user_external_invite')
-      ->fields(array(
-        'mail' => $mail,
-        'rid' => $rid,
-        'expire' => $expire,
-        'status' => $status,
-        'uid' => $uid,
-        'message' => $message,
-      ))
-      ->execute();
+    // Check and see if invite is supposed to be resent rather than added.
+    if ($resend == TRUE) {
+      db_update('user_external_invite')
+        ->fields(array(
+          'expire' => $expire,
+          'status' => $status,
+          'message' => $message,
+        ))
+        ->condition('mail', $mail, '=')
+        ->execute();
+    }
+    else {
+      db_insert('user_external_invite')
+        ->fields(array(
+          'mail' => $mail,
+          'rid' => $rid,
+          'expire' => $expire,
+          'status' => $status,
+          'uid' => $uid,
+          'message' => $message,
+        ))
+        ->execute();
+    }
+
     // Now send the email.
     _user_external_invite_send_invite($rid, $mail, $expire, $uid);
   }
@@ -490,7 +567,14 @@ function user_external_invite_accept_invite() {
 function user_external_invite_grant_invite($key, $mail, $account) {
   $grant_rid = _user_external_invite_dehash($key, $mail);
 
-  if ($grant_rid) {
+  // Allow for other actions and checks before a role is granted to a user.
+  // If any hook returns a message, then the role will not be granted.
+  $error_messages = module_invoke_all('user_external_invite_pre_grant_invite', $account, $grant_rid);
+
+  if ($grant_rid && !$error_messages) {
+    // Set message to user that role was granted.
+    drupal_set_message(t('Invite accepted!'));
+
     // Check to see if the user already has the role.  Because the email
     // Used in the invite is not always = to LDAP, they could already be
     // In the role.
@@ -499,12 +583,14 @@ function user_external_invite_grant_invite($key, $mail, $account) {
     if (in_array($role->name, $user->roles)) {
       return;
     }
+
     db_insert('users_roles')
       ->fields(array(
         'uid' => $account->uid,
         'rid' => $grant_rid,
       ))
       ->execute();
+
     // Send acceptance email.
     _user_external_invite_send_invite_accepted_mail($grant_rid, $account->mail);
 
@@ -517,10 +603,15 @@ function user_external_invite_grant_invite($key, $mail, $account) {
     // Once granted, change status of invite in database.
     _user_external_invite_change_invite_status($mail, 'Granted');
   }
+  // If messages from pre_grant_invite exists, combine them and print to screen.
+  elseif ($error_messages) {
+    foreach ($error_messages as $message) {
+      drupal_set_message(t($message), 'error');
+    }
+  }
+  // Provide generic error message if no other messages exist.
   else {
-    drupal_set_message(
-      t('Invite invalid or has expired! If you feel you have received this in error, please contact a site owner.'),
-      'error');
+    drupal_set_message( t('Invite invalid or has expired! If you feel you have received this in error, please contact a site owner.'), 'error');
   }
 }
 
@@ -608,7 +699,6 @@ function _user_external_invite_dehash($key, $mail) {
   }
   $expected_hash = _user_external_invite_calculate_hash($result['rid'], $result['mail'], $result['expire']);
   if ($key == $expected_hash) {
-    drupal_set_message(t('Invite accepted!'));
     return $result['rid'];
   }
   return FALSE;
@@ -716,7 +806,7 @@ function user_external_invite_tokens($type, $tokens, array $data = array(), arra
           break;
 
         case 'invite_expiration':
-          $replacements[$original] = date('F j, Y g:i', $data['ext-invite']->expire) . ' '. date_default_timezone_get();
+          $replacements[$original] = date('F j, Y g:i', $data['ext-invite']->expire) . ' ' . date_default_timezone_get();
           break;
 
       }

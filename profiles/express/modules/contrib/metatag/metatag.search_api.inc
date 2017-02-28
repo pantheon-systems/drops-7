@@ -21,58 +21,60 @@ function metatag_search_api_alter_callback_info() {
 /**
  * Adds meta tag values to the indexed items.
  */
-class MetatagSearchAlterCallback extends SearchApiAbstractAlterCallback {
+if (class_exists('SearchApiAbstractAlterCallback')) {
+  class MetatagSearchAlterCallback extends SearchApiAbstractAlterCallback {
 
-  /**
-   * {@inheritdoc}
-   */
-  public function supportsIndex(SearchApiIndex $index) {
-    // Only works on entities.
-    return (bool) $index->getEntityType();
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsIndex(SearchApiIndex $index) {
+      // Only works on entities.
+      return (bool) $index->getEntityType();
+    }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function alterItems(array &$items) {
-    $entity_type = $this->index->getEntityType();
-    $tags = metatag_get_info('tags');
-    foreach ($items as $id => $item) {
-      foreach (array_keys($tags) as $tag) {
-        $items[$id]->{'metatag_' . $tag} = NULL;
-        if (isset($item->language) && isset($item->metatags[$item->language][$tag])) {
-          $instance = metatag_get_instance($tag, $item->metatags[$item->language][$tag]);
-          $items[$id]->{'metatag_' . $tag} = $instance->getValue(array('token data' => array($entity_type => $item)));
+    /**
+     * {@inheritdoc}
+     */
+    public function alterItems(array &$items) {
+      $entity_type = $this->index->getEntityType();
+      $tags = metatag_get_info('tags');
+      foreach ($items as $id => $item) {
+        foreach (array_keys($tags) as $tag) {
+          $items[$id]->{'metatag_' . $tag} = NULL;
+          if (isset($item->language) && isset($item->metatags[$item->language][$tag])) {
+            $instance = metatag_get_instance($tag, $item->metatags[$item->language][$tag]);
+            $items[$id]->{'metatag_' . $tag} = $instance->getValue(array('token data' => array($entity_type => $item)));
+          }
         }
       }
     }
-  }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function propertyInfo() {
-    $properties = array();
+    /**
+     * {@inheritdoc}
+     */
+    public function propertyInfo() {
+      $properties = array();
 
-    // Get available meta tags.
-    $tags = metatag_get_info('tags');
-    foreach ($tags as $id => $tag) {
-      switch ($tag['class']) {
-        case 'DrupalLinkMetaTag':
-          $type = 'uri';
-          break;
-        default:
-          $type = 'text';
-          break;
+      // Get available meta tags.
+      $tags = metatag_get_info('tags');
+      foreach ($tags as $id => $tag) {
+        switch ($tag['class']) {
+          case 'DrupalLinkMetaTag':
+            $type = 'uri';
+            break;
+          default:
+            $type = 'text';
+            break;
+        }
+        $properties['metatag_' . $id] = array(
+          'label' => t('Meta tag: @label', array('@label' => $tag['label'])),
+          'description' => t('@label meta tag attached to an item.', array('@label' => $tag['label'])),
+          'type' => $type,
+        );
       }
-      $properties['metatag_' . $id] = array(
-        'label' => t('Meta tag: @label', array('@label' => $tag['label'])),
-        'description' => t('@label meta tag attached to an item.', array('@label' => $tag['label'])),
-        'type' => $type,
-      );
+
+      return $properties;
     }
 
-    return $properties;
   }
-
 }

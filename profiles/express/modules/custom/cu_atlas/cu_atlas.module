@@ -6,157 +6,6 @@
  */
 
 /**
- * Implements hook_cron().
- *
- * Currently this function is in charge of inactive site notifications.
- * Emails will be sent to site owners if their site is >= 30 days inactive and
- * not launched.
- */
-function cu_atlas_cron() {
-  if (atlas_up() && !_cu_atlas_check_site_launched()) {
-    $atlas_id = variable_get('atlas_id', FALSE);
-    $cron_last = variable_get('cron_last', NULL);
-    // Run once a day.
-    if (date('ymd', $cron_last) != date('ymd', time())) {
-      // Get the $site_array, which may be cached.
-      $site_array = atlas_api_request('sites', $atlas_id);
-      // Check if anybody has logged in recently.
-      $query = db_select('users', 'u');
-      $query->fields('u', array('name', 'uid'));
-      $result = $query->execute();
-      $access_list = array(0);
-      while ($record = $result->fetchAssoc()) {
-        if (!empty($record) && $record['uid'] != 0 && $record['uid'] != 1) {
-          $account = user_load((integer) $record['uid']);
-          if (!cu_users_check_user($record['name'])) {
-            if ($account->access !== '0') {
-              $access_list[] = (integer) $account->access;
-            }
-          }
-          // Add team members who have the site_owner role.
-          // They may be the only users of a site.
-          if (cu_users_check_user($record['name']) && cu_users_user_has_role('site_owner', $account)) {
-            if ($account->access !== '0') {
-              $access_list[] = (integer) $account->access;
-            }
-          }
-        }
-      }
-
-      // If no one has logged in ever then count days from creation date.
-      $most_recent = max($access_list);
-      if ($most_recent == 0) {
-        $most_recent = strtotime($site_array['_created']);
-      }
-      // 86400 seconds in a day.
-      $days = (time() - $most_recent) / 86400;
-      // If it has been 30 or more days and the site is not launched then think
-      // about sending notifications.
-      if ($days >= 30) {
-        _atlas_notify_inactive_site_owners($days);
-      }
-      else {
-        // Someone has logged in, so reset all variables.
-        variable_set("inactive_30_email", FALSE);
-        variable_set("inactive_55_email", FALSE);
-        variable_set("inactive_60_email", FALSE);
-      }
-    }
-  }
-}
-
-/**
- * Implements hook_mail().
- */
-function cu_atlas_mail($key, &$message, $params) {
-  $sid = variable_get('cu_sid', FALSE);
-  $inactive_site_url = "http://www.colorado.edu/" . $sid;
-  $today_plus_30 = date('l, F j, Y', strtotime("+30 days"));
-  $today_plus_5 = date('l, F j, Y', strtotime("+5 days"));
-
-  $inactive_30_email_body = "<p>We've noticed it's been over 30 days since you last logged in to your Web Express website at:<br /><a href='" . $inactive_site_url . "'>" . $inactive_site_url . "</a></p><p>If you don't log in to your website within the next 30 days, your website will be permanently removed from our system so that we can provide an optimal experience for all of our active site owners.</p><p><b>What you should do to keep your website:</b><br />If you want to keep your Web Express site, you must log in to your site by " . $today_plus_30 . ". If your site becomes inactive again, you will receive another reminder email.</p><p>Access your website now <a href='" . $inactive_site_url . "/user'>" . $inactive_site_url . "/user</a> </p><p><b>What you should do to relinquish your website:</b><br />If you don't need your Web Express website anymore, don't do anything. Keeping your website inactive will let us know it is no longer needed. We remove inactive websites after 60 days. You will receive another email in 25 days from now asking if you would like to keep the site before we remove it.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
-  $inactive_55_email_body = "<p>It's been 55 days since you've logged in to your Web Express website at:<br /><a href='" . $inactive_site_url . "'>" . $inactive_site_url . "</a></p><p>If your Web Express website is inactive for another 5 days, it will be permanently removed from the system so we can provide an optimal experience for all our active site owners and websites.</p><p><b>What you should do to keep your website:</b><br />If you want to keep your Web Express site, you must log in to your site by " . $today_plus_5 . ". If your site becomes inactive again, you will receive another reminder email.</p><p>Access your website now <a href='" . $inactive_site_url . "/user'>" . $inactive_site_url . "/user</a> </p><p><b>What you should do to relinquish your website:</b><br />If you don't need your Web Express website anymore, simply do nothing. Your site will automatically be removed in 5 days if no activity is detected.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
-  $inactive_60_email_body = "<p>Unfortunately, because you haven't signed in to your Web Express website at " . $inactive_site_url . " within the past 60 days we have permanently removed your website from the system.</p><p>Please note that we sent two previous emails to this email address to encourage you to sign in to your Web Express website.</p><p>In case your website contained information that you still require, we have created an archive. If you need to access this information, please <a href='http://www.colorado.edu/webcentral/content/request-help-website'>submit a request</a>. There may be a small fee required to retrieve this information.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
-  $site_take_down_email_body = "Took down - " . $sid;
-
-  switch ($key) {
-    case 'inactive_30_email':
-      $message['body'] = array();
-      $message['body'][] = $inactive_30_email_body;
-      $message['subject'] = "Inactive Web Express Site - 30 day notice";
-      $message['from'] = "websupport@colorado.edu";
-      $message['headers'] = array(
-        'Bcc' => 'websupport@colorado.edu',
-      );
-      break;
-
-    case 'inactive_55_email':
-      $message['body'] = array();
-      $message['body'][] = $inactive_55_email_body;
-      $message['subject'] = "Inactive Web Express Site - Final notice";
-      $message['from'] = "websupport@colorado.edu";
-      $message['headers'] = array(
-        'Bcc' => 'websupport@colorado.edu',
-      );
-      break;
-
-    case 'inactive_60_email':
-      $message['body'] = array();
-      $message['body'][] = $inactive_60_email_body;
-      $message['subject'] = "Inactive Web Express Site - Site removed";
-      $message['from'] = "websupport@colorado.edu";
-      $message['headers'] = array(
-        'Bcc' => 'websupport@colorado.edu',
-      );
-      break;
-
-    case 'site_take_down_email':
-      $message['body'] = array();
-      $message['body'][] = $site_take_down_email_body;
-      $message['subject'] = "Inactive Web Express Site - Took down - " . $sid;
-      $message['from'] = "websupport@colorado.edu";
-      break;
-  }
-}
-
-/**
- * Determine how long since a user logged in and if an email needs to be sent.
- *
- * Notification events happen at 30, 55, and 60 day thresholds.
- */
-function _atlas_notify_inactive_site_owners($days) {
-  $email_sent = FALSE;
-  if ($days >= 30 && $days < 55) {
-    $email_sent = variable_get("inactive_30_email", FALSE);
-    if (!$email_sent) {
-      drupal_mail("atlas", "inactive_30_email", _cu_atlas_get_site_owners(), language_default(), $send = TRUE);
-      variable_set("inactive_30_email", TRUE);
-    }
-  }
-  if ($days >= 55 && $days < 60) {
-    $email_sent = variable_get("inactive_55_email", FALSE);
-    if (!$email_sent) {
-      drupal_mail("atlas", "inactive_55_email", _cu_atlas_get_site_owners(), language_default(), $send = TRUE);
-      variable_set("inactive_55_email", TRUE);
-    }
-  }
-  elseif ($days >= 60) {
-    $email_sent = variable_get("inactive_60_email", FALSE);
-    if (!$email_sent) {
-      drupal_mail("atlas", "inactive_60_email", _cu_atlas_get_site_owners(), language_default(), $send = TRUE);
-      drupal_mail("atlas", "site_take_down_email", "websupport@colorado.edu", language_default(), $send = TRUE);
-      variable_set("inactive_60_email", TRUE);
-      $atlas_id = variable_get('atlas_id', FALSE);
-      $site_array = atlas_api_request('sites', $atlas_id);
-      if ($atlas_id) {
-        $statistics_id = $site_array[''];
-        atlas_api_request('statistics', $query = NULL, $method = 'GET', $data = NULL);
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Add additional validation to the invite.
@@ -173,87 +22,9 @@ function cu_atlas_form_user_external_invite_form_validate($form, &$form_state) {
   $site_array = atlas_api_request('sites', $atlas_id);
   if ($site_array && $site_array['status'] == 'available') {
     $site_data = $site_array;
-    $site_data['status'] = 'installed';
-    cu_inventory_update_site($site_data);
-    drupal_set_message('Site status updated to Installed');
-  }
-}
-
-/**
- * Get comma separated list of site owner email addresses.
- *
- * @return string
- *   String of emails, comma separated.
- */
-function _cu_atlas_get_site_owners() {
-  $role = user_role_load_by_name('site_owner');
-  if ($role) {
-    $role_rid = (integer) $role->rid;
-    $query = 'SELECT DISTINCT(ur.uid) FROM {users_roles} AS ur WHERE ur.rid IN (:rids)';
-    $result = db_query($query, array(':rids' => array($role_rid)));
-    $uids = $result->fetchCol();
-    $users = user_load_multiple($uids);
-    $emails = array();
-    foreach ($users as $u) {
-      $emails[] = $u->mail;
-    }
-    return implode(',', $emails);
-  }
-}
-
-/**
- * Check if site is 'launched'.
- *
- * Assumes the site is launched if Atlas is down.
- */
-function _cu_atlas_check_site_launched() {
-  $atlas_id = variable_get('atlas_id', FALSE);
-  $site_array = atlas_api_request('sites', $atlas_id);
-  if (isset($site_array['status']) && $site_array['status'] != 'launched') {
-    return FALSE;
-  }
-  return TRUE;
-}
-
-/**
- * Custom version of https://www.drupal.org/project/disable_all_forms.
- *
- * Disable all form elements.
- */
-function cu_atlas_init() {
-  global $base_url;
-  if ($atlas_id = variable_get('atlas_id', FALSE)) {
-    $site_array = atlas_api_request('sites', $atlas_id);
-    if ($site_array['status'] == 'available') {
-      if (user_is_logged_in()) {
-        drupal_set_message(
-          t('Most forms are disabled because this site is in the <i>available</i> status. <a href="@base_url/admin/config/development/inventory">Update Inventory Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
-            array('@base_url' => $base_url)
-          ),
-          'warning');
-      }
-    }
-  }
-}
-
-/**
- * Implements hook_form_alter().
- */
-function cu_atlas_form_alter(&$form, &$form_state, $form_id) {
-  if ($atlas_id = variable_get('atlas_id', FALSE)) {
-    $site_array = atlas_api_request('sites', $atlas_id);
-    if ($site_array['status'] == 'available') {
-      $exceptions = array(
-        'user_login',
-        'views_exposed_form',
-        'ctools_export_ui_list_form',
-        'user_external_invite_form',
-        'atlas_admin_settings',
-      );
-      if (!in_array($form_id, $exceptions)) {
-        $form['#after_build'][] = '_cu_atlas_recursive';
-      }
-    }
+    $site_data['status'] = 'installing';
+    atlas_api_request('sites', $atlas_id, 'PATCH', $site_data);
+    drupal_set_message('Site status updated to Installing');
   }
 }
 
@@ -274,6 +45,45 @@ function _cu_atlas_recursive(&$element) {
 function cu_atlas_atlas_statistics() {
   $statistics_data = array();
 
+  // Count Nodes.
+  $node_query = db_select('node', 'n');
+  $node_query->fields('n', array('type'));
+  $node_query->addExpression('COUNT(type)', 'count_type');
+  $node_query->addExpression('MAX(changed)', 'max_changed');
+  $node_query->groupBy('n.type');
+  $node_query->orderBy('max_changed', 'DESC');
+
+  $node_result = $node_query->execute();
+
+  // Counts for each node type.
+  $all_node_types = $node_result->fetchAll();
+  $node_type_counts = array();
+  foreach ($all_node_types as $object) {
+    $node_type_counts[$object->type] = $object->count_type;
+  }
+
+  $node_key_white_list = array(
+    'page',
+    'file',
+    'faqs',
+    'content_list_page',
+    'webform',
+    'article',
+    'article_list_page',
+    'person',
+    'person_list_page',
+    'photo_gallery',
+  );
+  $node_counts_white_listed = array_intersect_key($node_type_counts, array_flip($node_key_white_list));
+  $node_types_off_list = array_diff_key($node_type_counts, array_flip($node_key_white_list));
+
+  if (!empty($node_counts_white_listed)) {
+    $statistics_data['nodes_by_type'] = $node_counts_white_listed;
+  }
+  if (!empty($node_types_off_list)) {
+    $statistics_data['nodes_other'] = implode(", ", array_keys($node_types_off_list));
+  }
+
   // Count Beans.
   $bean_query = db_select('bean', 'b');
   $bean_query->fields('b', array('type'));
@@ -286,15 +96,48 @@ function cu_atlas_atlas_statistics() {
 
   $bean_counts = array();
   foreach ($all_beans as $object) {
-    $bean_count = 'bean_type_' . $object->type;
-    $bean_counts[$bean_count] = $object->count_bean;
+    $bean_counts[$object->type] = $object->count_bean;
   }
-  // Count the beans.
-  $number_beans = count($all_beans);
-  // If there are no beans, don't add empty statistics.
+  // Total up the number of nodes.
+  $number_beans = array_sum($bean_counts);
+  if (empty($number_beans)) {
+    $number_beans = 0;
+  }
   if ($number_beans > 0) {
-    $statistics_data['beans_by_type'] = $bean_counts;
     $statistics_data['beans_total'] = $number_beans;
+  }
+
+  $bean_key_white_list = array(
+    'hero_unit',
+    'slider',
+    'block',
+    'content_list',
+    'feature_callout',
+    'quicktab',
+    'video_reveal',
+    'block_row',
+    'block_section',
+    'cu_events_calendar_block',
+    'events_calendar_grid',
+    'rss',
+    'articles',
+    'article_feature',
+    'article_grid',
+    'article_slider',
+    'people_list_block',
+    'social_links',
+    'facebook_activity',
+    'facebook_like_button',
+    'twitter_block',
+  );
+  $bean_counts_white_listed = array_intersect_key($bean_counts, array_flip($bean_key_white_list));
+  $bean_types_off_list = array_diff_key($bean_counts, array_flip($bean_key_white_list));
+
+  if (!empty($bean_counts_white_listed)) {
+    $statistics_data['beans_by_type'] = $bean_counts_white_listed;
+  }
+  if (!empty($bean_types_off_list)) {
+    $statistics_data['beans_other'] = implode(", ", array_keys($bean_types_off_list));
   }
 
   // String variables.
@@ -330,9 +173,6 @@ function cu_atlas_atlas_statistics() {
     if ($diff = profile_module_manager_is_config_ideal()) {
       $checks = implode(", ", $diff);
       $statistics_data['profile_module_manager'] = $checks;
-    }
-    else {
-      $statistics_data['profile_module_manager'] = NULL;
     }
   }
 
@@ -408,4 +248,66 @@ function _get_bundle_stats() {
     }
   }
   return $bundle_stats;
+}
+
+/**
+ * Custom version of https://www.drupal.org/project/disable_all_forms.
+ *
+ * Disable all form elements.
+ */
+function cu_atlas_init() {
+  global $base_url;
+  if (variable_get('atlas_status') == 'available') {
+    if (user_is_logged_in()) {
+      drupal_set_message(
+        t('Most forms are disabled because this site is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
+          array('@base_url' => $base_url)
+        ),
+        'warning');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_atlas_form_alter(&$form, &$form_state, $form_id) {
+  if (variable_get('atlas_status') == 'available') {
+    $exceptions = array(
+      'user_login',
+      'views_exposed_form',
+      'ctools_export_ui_list_form',
+      'user_external_invite_form',
+      'atlas_admin_settings',
+    );
+    if (!in_array($form_id, $exceptions)) {
+      $form['#after_build'][] = '_cu_atlas_recursive';
+    }
+  }
+}
+
+/**
+ * Implements hook_menu_alter.
+ *
+ * Bundle enable isn't an actual form, so we have to alter the menu as well.
+ */
+function cu_atlas_menu_alter(&$items) {
+  if (variable_get('atlas_status') == 'available') {
+    $items['admin/settings/bundles/list/confirm/%']['page callback'] = 'cu_atlas_redirect';
+  }
+}
+
+/**
+ * Callback function for admin/settings/bundles/list/confirm/%.
+ *
+ * Redirect away from bundle enable while site status is "available".
+ */
+function cu_atlas_redirect() {
+  global $base_url;
+  drupal_set_message(
+    t('Enabling bundles has been disabled on this site while it is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
+          array('@base_url' => $base_url)
+        ),
+        'error');
+  return '';
 }

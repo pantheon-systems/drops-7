@@ -3,7 +3,7 @@ Feature: Events Bundle Access Feature
 
   @api @events
   Scenario Outline: Certain user roles should be able to create Event Calendar Block content.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
       And I am on "block/add/cu-events-calendar-block"
     Then I should see <message>
 
@@ -22,7 +22,7 @@ Feature: Events Bundle Access Feature
 
   @api @events @node_creation @max_execution_time
   Scenario Outline: All users should be able to view a Event Calendar Block.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
       And I create a "cu_events_calendar_block" block with the label "New Event Calendar Block"
     Then I should see <message>
 
@@ -42,7 +42,7 @@ Feature: Events Bundle Access Feature
 
   @api @events
   Scenario Outline: Certain user roles should be able to create Event Calendar Block content.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     And I am on "block/add/events-calendar-grid"
     Then I should see <message>
 
@@ -61,7 +61,7 @@ Feature: Events Bundle Access Feature
 
   @api @events @node_creation @max_execution_time
   Scenario Outline: All users should be able to view a Event Calendar Block.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     And I create a "events_calendar_grid" block with the label "New Event Calendar Grid"
     Then I should see <message>
 

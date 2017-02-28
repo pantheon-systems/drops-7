@@ -394,7 +394,8 @@ function cu_newsletter_permission() {
  * Set newsletter image field access to false if user doesn't have permission.
  */
 function cu_newsletter_form_taxonomy_form_term_alter(&$form, &$form_state, $form_id) {
-  if ($form['vocabulary_machine_name']['#value'] == 'newsletter') {
+  // This gets called on the confirm delete page so need to check for that.
+  if ($form['vocabulary_machine_name']['#value'] == 'newsletter' && $form['actions']['submit']['#value'] != 'Delete') {
     if (!user_access('add newsletter logo')) {
       $form['field_newsletter_name_image']['#access'] = FALSE;
     }
@@ -404,26 +405,52 @@ function cu_newsletter_form_taxonomy_form_term_alter(&$form, &$form_state, $form
   }
 }
 /**
- * Validation function to make sure that newsletters do not share the same path.
+ * Validation function to handle existing newsletter checks.
  */
 function cu_newsletter_path_validate(&$form, &$form_state) {
   $path = $form_state['values']['field_newsletter_path'][LANGUAGE_NONE][0]['value'];
-  $tid = $form_state['values']['tid'];
+  // If new term added, tid is null so set to -1 for query which is impossible for an entity to have.
+  $tid = $form_state['values']['tid'] != NULL ? $form_state['values']['tid'] : -1;
+
   // Make sure entered value is converted to be path friendly
   if (module_exists('pathauto')) {
     module_load_include('inc', 'pathauto', 'pathauto');
     $path = pathauto_cleanstring($path);
   }
 
+  // Need to check and see if any Newsletter is using this path so it can't be deleted.
   $query = db_select('field_data_field_newsletter_path', 'path');
+  $query->fields('path', array('field_newsletter_path_value', 'entity_id'));
   $query->condition('path.field_newsletter_path_value', $path, '=');
-  // Make sure the term id assigned to that path is not the term being edited
+  // Make sure the term id assigned to that path is not the term being edited.
   $query->condition('path.entity_id', $tid, '!=');
-  $results = $query->countQuery()->execute()->fetchField();
-  if ($results) {
+  $path_results = $query->execute()->fetchAll();
+  if ($path_results) {
     form_set_error('field_newsletter_path', t('A newsletter with this path already exists.'));
+    // List Newsletters to help user identify where those newsletters are.
+    $problem_newsletters = array();
+    foreach ($path_results as $result) {
+      $problem_newsletters[] = l('node/' . $result->entity_id, 'node/' . $result->entity_id . '/edit');
+    }
+    drupal_set_message(t('Newsletters with path: !newsletter_list.', array('!newsletter_list' => implode(', ', $problem_newsletters))), 'error');
   }
+  // Place formatted path back into form so user can see it.
   $form_state['values']['field_newsletter_path'][LANGUAGE_NONE][0]['value'] = $path;
+
+  // Need to check and see if any Newsletter is using this term so it can't be deleted.
+  $query = db_select('field_data_field_newsletter_type', 'type');
+  $query->fields('type', array('field_newsletter_type_tid', 'entity_id'));
+  $query->condition('type.field_newsletter_type_tid', $form_state['values']['tid'], '=');
+  $term_results = $query->execute()->fetchAll();
+  if ($term_results) {
+    form_set_error('name', t('This term cannot be deleted with existing newsletters.'));
+    // List Newsletters to help user identify where those newsletters are.
+    $problem_newsletters = array();
+    foreach ($term_results as $result) {
+      $problem_newsletters[] = l('node/' . $result->entity_id, 'node/' . $result->entity_id . '/edit');
+    }
+    drupal_set_message(t('Newsletters with name: !newsletter_list.', array('!newsletter_list' => implode(', ', $problem_newsletters))), 'error');
+  }
 }
 
 /**
@@ -494,7 +521,26 @@ function cu_newsletter_design_options() {
  *  Implements hook_form_FORM_ID_alter.
  */
 function cu_newsletter_form_newsletter_node_form_alter(&$form, &$form_state, $form_id) {
+  // Check to see if there are any newsletter type terms.
+  // Display warning if there is no terms.
+  if (count($form['field_newsletter_type'][LANGUAGE_NONE]['#options']) < 2) {
+    $link = l(t('create a newsletter type'), 'admin/structure/taxonomy/newsletter/add', array('query' => array('destination' => 'node/add/newsletter')));
+    $message = "You must first $link before creating a newsletter.";
+    drupal_set_message($message, 'warning');
+  }
+  // Select available term if there is only one term.
+  elseif (count($form['field_newsletter_type'][LANGUAGE_NONE]['#options']) == 2) {
+    $options = $form['field_newsletter_type'][LANGUAGE_NONE]['#options'];
+    $options = array_keys($options);
+    $form['field_newsletter_type'][LANGUAGE_NONE]['#default_value'] = $options[1];
+  }
+  // Add link to add type terms in type field description.
+  $link = l(t('Add a newsletter type'), 'admin/structure/taxonomy/newsletter/add', array('query' => array('destination' => 'node/add/newsletter')));
+  $message = "Select the type of newsletter. $link.";
+  $form['field_newsletter_type'][LANGUAGE_NONE]['#description'] = $message;
+  // Add confirmation on submit.
   $form['#submit'][] = 'cu_newsletter_publish_confirm';
+  drupal_add_js(drupal_get_path('module', 'cu_newsletter') . '/js/cu-newsletter.js');
 
 }
 
@@ -623,10 +669,15 @@ function cu_newsletter_archive_page($newsletter_path) {
  * Title callback function for newsletter/%.
  */
 function cu_newsletter_archive_page_title($newsletter_path) {
-  $term = cu_newsletter_load_by_path($newsletter_path);
-  $term = taxonomy_term_load($term->tid);
-  $output = $term->name . ' Archive';
-  return $output;
+  // This gets called when adding a term via admin/structure/taxonomy/newsletter/add.
+  // Not sure why that is, but to skip PHP notice, need to check for request path.
+  if (current_path() != 'admin/structure/taxonomy/newsletter/add') {
+    $term = cu_newsletter_load_by_path($newsletter_path);
+    $term = taxonomy_term_load($term->tid);
+    $output = $term->name . ' Archive';
+    return $output;
+  }
+
 }
 
 /**

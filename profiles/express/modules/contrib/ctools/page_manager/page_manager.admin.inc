@@ -1547,6 +1547,11 @@ function page_manager_handler_rearrange($form, &$form_state) {
 
   $form['handlers'] = array('#tree' => TRUE);
 
+  // Get the number of variants to be displayed in order to set the delta
+  // to the proper value.  This fixes problems in previous versions with sorting
+  // large numbers of variants.
+  $delta = count($page->handler_info)/2 + 1;
+
   foreach ($page->handler_info as $id => $info) {
     if ($info['changed'] & PAGE_MANAGER_CHANGED_DELETED) {
       continue;
@@ -1572,7 +1577,7 @@ function page_manager_handler_rearrange($form, &$form_state) {
     $form['handlers'][$id]['weight'] = array(
       '#type' => 'weight',
       '#default_value' => $info['weight'],
-      '#delta' => 30,
+      '#delta' => $delta,
     );
   }
 
@@ -1682,6 +1687,12 @@ function page_manager_handler_clone_submit(&$form, &$form_state) {
   ob_end_clean();
 
   page_manager_handler_add_to_page($form_state['page'], $handler, $form_state['values']['title']);
+
+  // Variant is cloned and added to the Page. Ensure the uuids are re-generated.
+  panels_panel_context_get_display($handler);
+  if (isset($handler->conf['display']) && method_exists($handler->conf['display'], 'clone_display')) {
+    $handler->conf['display'] = $handler->conf['display']->clone_display();
+  }
 
   $plugin = page_manager_get_task_handler($handler->handler);
   // It has no forms at all. Add the variant and go to its first operation.

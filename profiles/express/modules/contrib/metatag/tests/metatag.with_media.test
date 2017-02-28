@@ -1,9 +1,8 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module for Media integration.
  */
-
 class MetatagCoreWithMediaTest extends MetatagTestHelper {
 
   /**
@@ -14,6 +13,7 @@ class MetatagCoreWithMediaTest extends MetatagTestHelper {
       'name' => 'Metatag core tests with Media',
       'description' => 'Test Metatag integration with the Media module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'file_entity', 'media'),
     );
   }
 

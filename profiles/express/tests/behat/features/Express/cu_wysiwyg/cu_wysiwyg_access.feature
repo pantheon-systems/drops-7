@@ -5,7 +5,7 @@ I should be able to access the functionality of the WYSIWYG editor
 
   @api @wysiwyg
   Scenario Outline: An authenticated user should have WYSIWYG selected as the the default text format
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/page"
     Then I should see "WYSIWYG" in the "#edit-body-und-0-format--2" element
 
@@ -18,7 +18,7 @@ I should be able to access the functionality of the WYSIWYG editor
 
   @api @javascript @wysiwyg
   Scenario Outline: An authenticated user should have all the WYSIWYG shortcode and other buttons available
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/page"
     Then I should see the "Button Shortcode Generator" button
       And I should see the "Image Caption Shortcode Generator" button

@@ -1,18 +1,19 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module to ensure i18n integration doesn't break.
  */
+class MetatagCoreNodeWithI18nTest extends MetatagTestHelper {
 
-class MetatagCoreWithI18nNodeTest extends MetatagTestHelper {
   /**
    * {@inheritdoc}
    */
   public static function getInfo() {
     return array(
-      'name' => 'Metatag core tests with i18n: node',
+      'name' => 'Metatag core node tests with i18n',
       'description' => 'Test Metatag node config integration with the i18n module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
     );
   }
 
@@ -27,6 +28,9 @@ class MetatagCoreWithI18nNodeTest extends MetatagTestHelper {
     // Enable all of the modules that are needed.
     parent::setUp($modules);
 
+    // Add more locales.
+    $this->setupLocales();
+
     // Set up the locales.
     $perms = array(
       'administer languages',
@@ -36,7 +40,9 @@ class MetatagCoreWithI18nNodeTest extends MetatagTestHelper {
       'translate user-defined strings',
     );
     $this->adminUser = $this->createAdminUser($perms);
-    $this->setupLocales();
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
 
     // Reload the translations.
     drupal_flush_all_caches();

@@ -902,7 +902,8 @@ function ctools_export_object($table, $object, $indent = '', $identifier = NULL,
   $output = $indent . '$' . $identifier . ' = new ' . get_class($object) . "();\n";
 
   if ($schema['export']['can disable']) {
-    $output .= $indent . '$' . $identifier . '->disabled = FALSE; /* Edit this to true to make a default ' . $identifier . ' disabled initially */' . "\n";
+    $disabled = !isset($object->disabled) || $object->disabled != TRUE ? 'FALSE' : 'TRUE';
+    $output .= $indent . '$' . $identifier . '->disabled = ' . $disabled . '; /* Edit this to true to make a default ' . $identifier . ' disabled initially */' . "\n";
   }
   if (!empty($schema['export']['api']['current_version'])) {
     $output .= $indent . '$' . $identifier . '->api_version = ' . $schema['export']['api']['current_version'] . ";\n";

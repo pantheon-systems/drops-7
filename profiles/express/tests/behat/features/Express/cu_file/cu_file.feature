@@ -5,7 +5,7 @@ Feature: File Content Type
 
   @api
   Scenario Outline: An authenticated user should be able to access the form for adding a file
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "node/add/file"
     Then I should not see <message>
 
@@ -25,7 +25,7 @@ Feature: File Content Type
 
   @api @javascript
   Scenario: A content editor should be able to access the form for adding a file
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "node/add/file"
       And  I fill in "Title" with "My File"
       And I fill in "body[und][0][value]" with "Sample Description"

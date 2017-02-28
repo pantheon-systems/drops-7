@@ -1,0 +1,25 @@
+<?php
+/**
+ * @file
+ * Update scripts for the Metatag:Verification submodule.
+ */
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Remove the Alexa verification tag.
+ */
+function metatag_verification_update_7100() {
+  module_load_include('install', 'metatag');
+  metatag_update_delete_config('alexaVerifyID');
+}
+
+/**
+ * Remove the Yahoo verification tag.
+ */
+function metatag_verification_update_7101() {
+  module_load_include('install', 'metatag');
+  metatag_update_delete_config('y_key');
+}

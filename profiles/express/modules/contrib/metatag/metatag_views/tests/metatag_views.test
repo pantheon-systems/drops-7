@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module for the direct Views integration.
  */
-
 class MetatagViewsTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */

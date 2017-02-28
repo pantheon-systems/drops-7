@@ -3,7 +3,7 @@ Feature: Social Links Creation Feature
 
 @api @social_media
 Scenario: Create a Social Links Block.
-Given I am logged in as a user with the "content_editor" role
+Given  CU - I am logged in as a user with the "content_editor" role
 And I am on "block/add/social-links"
 And I fill in "Label" with "New Social Links Block"
 And I fill in "Title" with "Social Links Block Title"

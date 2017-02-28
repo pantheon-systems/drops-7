@@ -49,6 +49,44 @@ function cu_collections_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'bean-collection_grid-field_collection_filter_effect'.
+  $field_instances['bean-collection_grid-field_collection_filter_effect'] = array(
+    'bundle' => 'collection_grid',
+    'default_value' => array(
+      0 => array(
+        'value' => 'fade',
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => '',
+    'deleted' => 0,
+    'description' => 'Select how filtered items are displayed for desktop and tablet users. The remove option is applied for mobile users regardless of the setting.',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 5,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_collection_filter_effect',
+    'label' => 'Filter Effect',
+    'required' => 1,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 10,
+    ),
+  );
+
+  // Exported field_instance:
   // 'bean-collection_grid-field_collection_filter_type'.
   $field_instances['bean-collection_grid-field_collection_filter_type'] = array(
     'bundle' => 'collection_grid',
@@ -627,13 +665,18 @@ function cu_collections_field_default_field_instances() {
   t('Categories of collection type, such as major, minor, certificate, etc. A collection item can have multiple categories.');
   t('Category');
   t('Display Summary');
+  t('Filter Effect');
   t('Filter Type');
+  t('Links appear in a row above the grid as clickable buttons. Select list appears as a dropdown above the grid.');
   t('Photo');
   t('Preview');
+  t('Select how filtered items are displayed for desktop and tablet users. The remove option is applied for mobile users regardless of the setting.');
   t('Selecting more than one category will automatically add a filter for the displayed items');
   t('Thumbnail');
   t('Type');
   t('Type of collection, such as program, scholarship, resource, etc. An item can only have one type.');
+  t('You can choose whether or no to include a truncated version of body field text of the collection items.');
+  t('You must add all types of collections you want to display in the collection grid. If you leave a type off of the list, it won\'t display in the grid even if it is tagged with a category that is included.');
 
   return $field_instances;
 }

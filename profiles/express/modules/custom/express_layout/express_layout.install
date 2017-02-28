@@ -287,3 +287,17 @@ function express_layout_update_7002() {
 function express_layout_update_7003() {
   _express_layout_default_settings();
 }
+/**
+ * Add table for entity cache.
+ */
+function express_layout_update_7004() {
+  if (module_exists('entitycache')) {
+    $entity_type = 'express_layout';
+    $table = 'cache_entity_' . $entity_type;
+    if (!db_table_exists($table)) {
+      $schema = drupal_get_schema_unprocessed('system', 'cache');
+      $schema['description'] = 'Cache table used to store' . $entity_type . ' entity records.';
+      db_create_table($table, $schema);
+    }
+  }
+}

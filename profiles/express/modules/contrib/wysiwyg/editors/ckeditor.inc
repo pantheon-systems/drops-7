@@ -5,6 +5,10 @@
  * Editor integration functions for CKEditor.
  */
 
+define('WYSIWYG_CKEDITOR_ACF_DISABLED', 0);
+define('WYSIWYG_CKEDITOR_ACF_AUTOMATIC', 1);
+define('WYSIWYG_CKEDITOR_ACF_CUSTOM', 2);
+
 /**
  * Plugin implementation of hook_editor().
  */
@@ -28,20 +32,22 @@ function wysiwyg_ckeditor_editor() {
       ),
     ),
     'install note callback' => 'wysiwyg_ckeditor_install_note',
+    'verified version range' => array('3.0', '4.6.1.580bcaf'),
+    'migrate settings callback' => 'wysiwyg_ckeditor_migrate_settings',
     'version callback' => 'wysiwyg_ckeditor_version',
     'themes callback' => 'wysiwyg_ckeditor_themes',
     'settings form callback' => 'wysiwyg_ckeditor_settings_form',
     'init callback' => 'wysiwyg_ckeditor_init',
     'settings callback' => 'wysiwyg_ckeditor_settings',
-    'plugin callback' => 'wysiwyg_ckeditor_plugins',
-    'plugin settings callback' => 'wysiwyg_ckeditor_plugin_settings',
+    'plugin callback' => '_wysiwyg_ckeditor_plugins',
+    'plugin meta callback' => '_wysiwyg_ckeditor_plugin_meta',
     'proxy plugin' => array(
       'drupal' => array(
         'load' => TRUE,
         'proxy' => TRUE,
       ),
     ),
-    'proxy plugin settings callback' => 'wysiwyg_ckeditor_proxy_plugin_settings',
+    'proxy plugin settings callback' => '_wysiwyg_ckeditor_proxy_plugin_settings',
     'versions' => array(
       '3.0.0.3665' => array(
         'js files' => array('ckeditor-3.0.js'),
@@ -49,6 +55,90 @@ function wysiwyg_ckeditor_editor() {
     ),
   );
   return $editor;
+}
+
+/**
+ * Profile migration callback for CKEditor.
+ *
+ * Applies known changes to the editor settings as needed when the installed
+ * editor version is different from the one used to configure the profile.
+ * This fixes problems caused by settings, plugins or buttons being renamed,
+ * removed, or added between versions.
+ *
+ * Only changes needed up/down to and including the installed version from the
+ * profile version may be applied, in case the user did not install the latest
+ * supported version.
+ *
+ * @param $settings
+ *   The editor settings array as it was stored in the database.
+ * @param $editor
+ *   The editor definition from wysiwyg_get_editor().
+ * @param $profile_version
+ *   The editor version string from when the profile was last saved.
+ * @param $installed_version
+ *   The editor version currently installed on the system.
+ *
+ * @return
+ *   An editor version string telling Wysiwyg past which version the profile
+ *   could be migrated. If no changes were needed return TRUE.
+ *   Returning FALSE indicates migration failed and the profile is likely
+ *   unusable. Wysiwyg will recommend the user starts over with a new profile.
+ */
+function wysiwyg_ckeditor_migrate_settings(&$settings, $editor, $profile_version, $installed_version) {
+  $version_diff = version_compare($installed_version, $profile_version);
+  // Default to no changes needed.
+  $migrated_version = TRUE;
+  if ($version_diff === 1) {
+    // Upgrading, starting at the profile version going up.
+    // 3.x to 4.0.
+    if (version_compare($profile_version, '4.0', '<')
+      && version_compare($installed_version, '4.0', '>=')) {
+      // The default skin changed from "kama" to "moono".
+      if (isset($settings['skin']) && $settings['skin'] === 'kama') {
+        $settings['skin'] = 'moono';
+      }
+      $migrated_version = '4.0';
+    }
+    // Version 4.6.0.
+    if (version_compare($profile_version, '4.6.0', '<')
+      && version_compare($installed_version, '4.6.0', '>=')) {
+      // The default skin changed from "moono" to "moono-lisa".
+      if (isset($settings['skin']) && $settings['skin'] === 'moono') {
+        $settings['skin'] = 'moono-lisa';
+      }
+      $migrated_version = '4.6.0';
+    }
+  }
+  elseif ($version_diff === 0) {
+    // Same version. This function would never have been called.
+  }
+  // $version_diff === -1, an older version was installed.
+  else {
+    // Downgrading, starting at the profile version going down.
+    // 4.6.0 down to 4.x.
+    if (version_compare($profile_version, '4.6', '>=')
+      && version_compare($installed_version, '4.6', '<')) {
+      if (isset($settings['skin']) && $settings['skin'] === 'moono-lisa') {
+        $settings['skin'] = 'moono';
+      }
+      // Going down directly to 4.0 since no changes need to run anyway.
+      $migrated_version = '4.6';
+    }
+
+    // 4.x to 3.x.
+    if (version_compare($profile_version, '4.0', '>=')
+      && version_compare($installed_version, '4.0', '<')) {
+      // Change the default skin back "moono" to "kama".
+      if (isset($settings['skin']) && $settings['skin'] === 'moono') {
+        $settings['skin'] = 'kama';
+      }
+      $migrated_version = '4.0';
+    }
+  }
+  // Return the version which was possible to migrate to, or FALSE on fail. Must
+  // be within the verified range, but not necessarily match the exact version
+  // which is currently installed.
+  return $migrated_version;
 }
 
 /**
@@ -142,7 +232,21 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
     'resize_enabled' => TRUE,
     'simple_source_formatting' => FALSE,
     'toolbarLocation' => 'top',
+    'allowedContent' => TRUE,
   );
+
+  if (version_compare($installed_version, '3.1.0', '>=')) {
+    // Enabled by default.
+    $ckeditor_defaults['pasteFromWordRemoveFontStyles'] = TRUE;
+    $ckeditor_defaults['pasteFromWordRemoveStyles'] = TRUE;
+  }
+  if (version_compare($installed_version, '4.6.0', '>=')) {
+    // Disabled by default, deprecated.
+    $ckeditor_defaults['pasteFromWordRemoveFontStyles'] = FALSE;
+    // Dropped, no effect.
+    unset($ckeditor_defaults['pasteFromWordNumberedHeadingToList'],
+      $ckeditor_defaults['pasteFromWordRemoveStyles']);
+  }
 
   if (version_compare($installed_version, '3.2.1', '>=')) {
     $ckeditor_defaults['stylesSet'] = '';
@@ -177,7 +281,7 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
   $form['paste'] = array(
     '#type' => 'fieldset',
     '#title' => t('Paste plugin'),
-    '#description' => t('Settings for the paste plugin.'),
+    '#description' => t('Settings for the <a href="@url">@plugin</a> plugin.', array('@plugin' => 'paste', '@url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-forcePasteAsPlainText'))),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#group' => 'advanced',
@@ -188,8 +292,82 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
     '#title' => t('Force paste as plain text'),
     '#default_value' => !empty($settings['forcePasteAsPlainText']),
     '#return_value' => 1,
-    '#description' => t('If enabled, all pasting operations insert plain text into the editor, loosing any formatting information possibly available in the source text. Note: Paste from Word is not affected by this setting.') . ' ' . t('Uses the <a href="@url">@setting</a> setting internally.', array('@setting' => 'forcePasteAsPlainText', '@url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-forcePasteAsPlainText'))),
+    '#description' => t('If enabled, all pasting operations insert plain text into the editor, losing any formatting information possibly available in the source text. Note: Paste from Word is not affected by this setting.') . ' ' . t('Uses the <a href="@url">@setting</a> setting internally.', array('@setting' => 'forcePasteAsPlainText', '@url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-forcePasteAsPlainText'))),
   );
+
+  if (version_compare($installed_version, '3.1.0', '>=')) {
+    $form['paste']['pasteFromWord'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Paste from Word'),
+    );
+
+    $form['paste']['pasteFromWord']['pasteFromWordNumberedHeadingToList'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Numbered heading to list'),
+      '#default_value' => !empty($settings['pasteFromWordNumberedHeadingToList']),
+      '#return_value' => 1,
+      '#description' => t('If enabled, transforms MS Word outline numbered headings into lists.'),
+    );
+
+    $form['paste']['pasteFromWord']['pasteFromWordPromptCleanup'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Prompt on cleanup'),
+      '#default_value' => !empty($settings['pasteFromWordPromptCleanup']),
+      '#return_value' => 1,
+      '#description' => t('If enabled, prompts the user about the clean up of content being pasted from MS Word.'),
+    );
+
+    $form['paste']['pasteFromWord']['pasteFromWordRemoveFontStyles'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Remove font styles'),
+      '#default_value' => !empty($settings['pasteFromWordRemoveFontStyles']),
+      '#return_value' => 1,
+      '#description' => t('If enabled, removes all font related formatting styles, including font size, font family, font foreground/background color.'),
+    );
+
+    $form['paste']['pasteFromWord']['pasteFromWordRemoveStyles'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Remove styles'),
+      '#default_value' => !empty($settings['pasteFromWordRemoveStyles']),
+      '#return_value' => 1,
+      '#description' => t('If enabled, removes element styles that can not be managed with the editor, other than font specific styles.'),
+    );
+  }
+
+  if (version_compare($installed_version, '4.1.0', '>=')) {
+    $form['output']['acf'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced Content Filter'),
+      '#description' => t('ACF limits and adapts input data (HTML code added in source mode or by the editor.setData method, pasted HTML code, etc.) so it matches the editor configuration in the best possible way. It may also deactivate features which generate HTML code that is not allowed by the configuration. See <a href="@url">@url</a> for details.', array('@url' => url('http://docs.ckeditor.com/#!/guide/dev_advanced_content_filter'))),
+    );
+    $form['output']['acf']['acf_mode'] = array(
+      '#type' => 'select',
+      '#title' => t('Mode'),
+      '#options' => array(
+        WYSIWYG_CKEDITOR_ACF_AUTOMATIC => t('Automatic'),
+        WYSIWYG_CKEDITOR_ACF_CUSTOM => t('Custom'),
+        WYSIWYG_CKEDITOR_ACF_DISABLED => t('Disabled'),
+      ),
+      '#default_value' => isset($profile->settings['acf_mode']) ? $profile->settings['acf_mode'] : WYSIWYG_CKEDITOR_ACF_DISABLED,
+      '#description' => t('If set to <em>Automatic</em> or <em>Custom</em>, the editor will strip out any content not explicitely allowed <strong>when the editor loads</strong>.'),
+    );
+
+    $form['output']['acf']['acf_allowed_content'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Content Rules'),
+      '#default_value' => isset($profile->settings['acf_allowed_content']) ? $profile->settings['acf_allowed_content'] : '',
+      '#description' => t('Rules for whitelisting content for the advanced content filter. Both string and object formats accepted. Uses the <a href="@allowed_url">allowedContent</a> setting in <em>Custom</em> mode <strong>or</strong> the <a href="@extra_allwed_url">extraAllowedContent</a> settings in <em>Automatic</em> mode internally. See <a href="@info_url">@info_url</a> for details.', array('@info_url' => url('http://docs.ckeditor.com/#!/guide/dev_allowed_content_rules'), '@allowed_url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-allowedContent'), '@allowed_extra_url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-extraAllowedContent'))),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="acf_mode"]' => array(
+            array('value' => WYSIWYG_CKEDITOR_ACF_AUTOMATIC),
+            array('value' => WYSIWYG_CKEDITOR_ACF_CUSTOM),
+          ),
+        ),
+      ),
+      '#element_validate' => array('wysiwyg_ckeditor_settings_form_validate_allowed_content'),
+    );
+  }
 
   if (version_compare($installed_version, '3.6.0', '>=')) {
     $form['appearance']['default_toolbar_grouping'] = array(
@@ -200,6 +378,7 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
       '#description' => t('This option gives you the ability to enable/disable the usage of default groupings for toolbar buttons. If enabled, toolbar buttons will be placed into predetermined groups instead of all in a single group.'),
     );
   }
+
   if (version_compare($installed_version, '3.2.1', '>=')) {
     // Versions below 3.2.1 do not support Font styles at all.
     $form['css']['stylesSet'] = array(
@@ -216,6 +395,12 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
 
   }
 
+  if (version_compare($installed_version, '4.6.0', '>=')) {
+    $form['paste']['pasteFromWord']['pasteFromWordRemoveFontStyles']['#description'] .= '<br />' . t('This setting will be deprecated in the future. Use ACF to replicate the effect of enabling it.');
+    unset($form['paste']['pasteFromWord']['pasteFromWordNumberedHeadingToList'],
+      $form['paste']['pasteFromWord']['pasteFromWordRemoveStyles']);
+  }
+
   $form['css']['block_formats'] = array(
     '#type' => 'textfield',
     '#title' => t('Block formats'),
@@ -224,6 +409,15 @@ function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
     '#maxlength' => 250,
     '#description' => t('Comma separated list of HTML block formats. Possible values: <code>@format-list</code>.', array('@format-list' => 'p,h1,h2,h3,h4,h5,h6,div,blockquote,address,pre,code,dt,dd and other block elements')) . ' ' . t('Uses the <a href="@url">@setting</a> setting internally.', array('@setting' => 'block_formats', '@url' => url('http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-format_tags'))),
   );
+}
+
+/**
+ * #element_validate handler for ACF Allowed Content element altered by wysiwyg_ckeditor_settings_form().
+ */
+function wysiwyg_ckeditor_settings_form_validate_allowed_content($element, &$form_state) {
+  if (_wysiwyg_ckeditor_settings_acf_is_obj($element['#value']) && json_decode($element['#value']) === NULL) {
+    form_error($element, t('Allowed content is not valid JSON.'));
+  }
 }
 
 /**
@@ -279,14 +473,13 @@ EOL;
  *   Drupal.settings.wysiwyg.configs.{editor}
  */
 function wysiwyg_ckeditor_settings($editor, $config, $theme) {
-  $default_skin = (version_compare($editor['installed version'], '4.0.0', '<') ? 'kama' : 'mono');
+  $default_skin = (version_compare($editor['installed version'], '4.0.0', '<') ? 'kama' : (version_compare($editor['installed version'], '4.6.0', '<') ? 'moono' : 'moono-lisa'));
   $settings = array(
     // Needed to make relative paths work in the editor.
     'baseHref' => $GLOBALS['base_url'] . '/',
     'width' => 'auto',
     // For better compatibility with smaller textareas.
     'resize_minWidth' => 450,
-    'height' => 420,
     // @todo Do not use skins as themes and add separate skin handling.
     'theme' => 'default',
     'skin' => !empty($theme) ? $theme : $default_skin,
@@ -306,28 +499,57 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
     $predefined_formats = array('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'address', 'div');
     foreach (array_diff($block_formats, $predefined_formats) as $tag) {
       $tag = trim($tag);
-      $settings["format_$tag"] = array('element' => $tag);
+      $settings["format_$tag"] = array('element' => $tag, 'name' => strtoupper(substr($tag, 0, 1)) . substr($tag, 1));
     }
     $settings['format_tags'] = implode(';', $block_formats);
+  }
+
+  // Advanced Content Filter
+  // @see http://docs.ckeditor.com/#!/guide/dev_advanced_content_filter
+  if (!isset($config['acf_mode']) || WYSIWYG_CKEDITOR_ACF_DISABLED == $config['acf_mode']) {
+    $settings['allowedContent'] = TRUE;
+  }
+  else {
+    if (_wysiwyg_ckeditor_settings_acf_is_obj($config['acf_allowed_content'])) {
+      $acf_content = json_decode($config['acf_allowed_content']);
+    }
+    else {
+      $acf_content = $config['acf_allowed_content'];
+    }
+
+    if (WYSIWYG_CKEDITOR_ACF_CUSTOM == $config['acf_mode']) {
+      $settings['allowedContent'] = $acf_content;
+    }
+    elseif (WYSIWYG_CKEDITOR_ACF_AUTOMATIC == $config['acf_mode']) {
+      $settings['extraAllowedContent'] = $acf_content;
+    }
   }
 
   if (isset($config['css_setting'])) {
     // Versions below 3.0.1 could only handle one stylesheet.
     if (version_compare($editor['installed version'], '3.0.1.4391', '<')) {
       if ($config['css_setting'] == 'theme') {
-        $css = wysiwyg_get_css();
+        $css = wysiwyg_get_css(isset($config['css_theme']) ? $config['css_theme'] : '');
         $settings['contentsCss'] = reset($css);
       }
       elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-        $settings['contentsCss'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL))));
+        $settings['contentsCss'] = strtr($config['css_path'], array(
+          '%b' => base_path(),
+          '%t' => drupal_get_path('theme', variable_get('theme_default', NULL)),
+          '%q' => variable_get('css_js_query_string', ''),
+        ));
       }
     }
     else {
       if ($config['css_setting'] == 'theme') {
-        $settings['contentsCss'] = wysiwyg_get_css();
+        $settings['contentsCss'] = wysiwyg_get_css(isset($config['css_theme']) ? $config['css_theme'] : '');
       }
       elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-        $settings['contentsCss'] = explode(',', strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL)))));
+        $settings['contentsCss'] = explode(',', strtr($config['css_path'], array(
+          '%b' => base_path(),
+          '%t' => drupal_get_path('theme', variable_get('theme_default', NULL)),
+          '%q' => variable_get('css_js_query_string', ''),
+        )));
       }
     }
   }
@@ -335,7 +557,7 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
   // Parse and define the styles set for the Styles plugin (3.2.1+).
   // @todo This should be a plugin setting, but Wysiwyg does not support
   //   plugin-specific settings yet.
-  if (!empty($config['buttons']['default']['Styles']) && version_compare($editor['installed version'], '3.2.1', '>=')) {
+  if (!empty($config['buttons']['default']['Styles']) && version_compare($editor['installed version'], '3.2.1', '>=') && !empty($config['stylesSet'])) {
     if ($styles = wysiwyg_ckeditor_settings_parse_styles($config['stylesSet'])) {
       $settings['stylesSet'] = $styles;
     }
@@ -344,6 +566,10 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
   $check_if_set = array(
     'forcePasteAsPlainText',
     'language',
+    'pasteFromWordNumberedHeadingToList',
+    'pasteFromWordPromptCleanup',
+    'pasteFromWordRemoveFontStyles',
+    'pasteFromWordRemoveStyles',
     'simple_source_formatting',
     'toolbarLocation',
   );
@@ -476,45 +702,37 @@ function wysiwyg_ckeditor_settings_parse_styles($css_classes) {
 }
 
 /**
- * Build a JS settings array of native external plugins that need to be loaded separately.
+ * Build a JS settings array with global metadata for native external plugins.
  */
-function wysiwyg_ckeditor_plugin_settings($editor, $profile, $plugins) {
-  $settings = array();
-  foreach ($plugins as $name => $plugin) {
-    // Register all plugins that need to be loaded.
-    if (!empty($plugin['load'])) {
-      $settings[$name] = array();
-      // Add path for native external plugins.
-      if (empty($plugin['internal']) && isset($plugin['path'])) {
-        $settings[$name]['path'] = base_path() . $plugin['path'] . '/';
-      }
-      // Force native internal plugins to use the standard path.
-      else {
-        $settings[$name]['path'] = base_path() . $editor['library path'] . '/plugins/' . $name . '/';
-      }
-      // CKEditor defaults to 'plugin.js' on its own when filename is not set.
-      if (!empty($plugin['filename'])) {
-        $settings[$name]['fileName'] = $plugin['filename'];
-      }
+function _wysiwyg_ckeditor_plugin_meta($editor, $plugin) {
+  $meta = array();
+  $name = $plugin['name'];
+  // Register all plugins that need to be loaded.
+  if (!empty($plugin['load'])) {
+    // Add path for native external plugins.
+    if (empty($plugin['internal']) && isset($plugin['path'])) {
+      $meta['path'] = base_path() . $plugin['path'] . '/';
+    }
+    // Force native internal plugins to use the standard path.
+    else {
+      $meta['path'] = base_path() . $editor['library path'] . '/plugins/' . $name . '/';
+    }
+    // CKEditor defaults to 'plugin.js' on its own when filename is not set.
+    if (!empty($plugin['filename'])) {
+      $meta['fileName'] = $plugin['filename'];
     }
   }
-  return $settings;
+  return $meta;
 }
 
 /**
  * Build a JS settings array for Drupal plugins loaded via the proxy plugin.
  */
-function wysiwyg_ckeditor_proxy_plugin_settings($editor, $profile, $plugins) {
+function _wysiwyg_ckeditor_proxy_plugin_settings($editor, $profile, $plugins) {
   $settings = array();
   foreach ($plugins as $name => $plugin) {
-    // Populate required plugin settings.
-    $settings[$name] = $plugin['dialog settings'] + array(
-      'title' => $plugin['title'],
-      'icon' => base_path() . $plugin['icon path'] . '/' . $plugin['icon file'],
-      'iconTitle' => $plugin['icon title'],
-      // @todo These should only be set if the plugin defined them.
-      'css' => base_path() . $plugin['css path'] . '/' . $plugin['css file'],
-    );
+    // Just need a list of all enabled plugins for each instance.
+    $settings[$name] = TRUE;
   }
   return $settings;
 }
@@ -522,22 +740,22 @@ function wysiwyg_ckeditor_proxy_plugin_settings($editor, $profile, $plugins) {
 /**
  * Return internal plugins for this editor; semi-implementation of hook_wysiwyg_plugin().
  */
-function wysiwyg_ckeditor_plugins($editor) {
+function _wysiwyg_ckeditor_plugins($editor) {
   $plugins = array(
     'default' => array(
       'buttons' => array(
         'Bold' => t('Bold'), 'Italic' => t('Italic'), 'Underline' => t('Underline'),
-        'Strike' => t('Strike-through'),
-        'JustifyLeft' => t('Align left'), 'JustifyCenter' => t('Align center'), 'JustifyRight' => t('Align right'), 'JustifyBlock' => t('Justify'),
+        'Strike' => t('Strike through'),
+        'JustifyLeft' => t('Align left'), 'JustifyCenter' => t('Center'), 'JustifyRight' => t('Align right'), 'JustifyBlock' => t('Justify'),
+        'BulletedList' => t('Insert/Remove Bullet list'), 'NumberedList' => t('Insert/Remove Numbered list'),
         'BidiLtr' => t('Left-to-right'), 'BidiRtl' => t('Right-to-left'),
-        'BulletedList' => t('Bullet list'), 'NumberedList' => t('Numbered list'),
         'Outdent' => t('Outdent'), 'Indent' => t('Indent'),
         'Undo' => t('Undo'), 'Redo' => t('Redo'),
         'Link' => t('Link'), 'Unlink' => t('Unlink'), 'Anchor' => t('Anchor'),
         'Image' => t('Image'),
-        'TextColor' => t('Forecolor'), 'BGColor' => t('Backcolor'),
+        'TextColor' => t('Text color'), 'BGColor' => t('Background color'),
         'Superscript' => t('Superscript'), 'Subscript' => t('Subscript'),
-        'Blockquote' => t('Blockquote'), 'Source' => t('Source code'),
+        'Blockquote' => t('Block quote'), 'Source' => t('Source code'),
         'HorizontalRule' => t('Horizontal rule'),
         'Cut' => t('Cut'), 'Copy' => t('Copy'), 'Paste' => t('Paste'),
         'PasteText' => t('Paste Text'), 'PasteFromWord' => t('Paste from Word'),
@@ -549,11 +767,12 @@ function wysiwyg_ckeditor_plugins($editor) {
         'SelectAll' => t('Select all'), 'Find' => t('Search'), 'Replace' => t('Replace'),
         'Flash' => t('Flash'), 'Smiley' => t('Smiley'),
         'CreateDiv' => t('Div container'),
-        'Iframe' => t('iFrame'),
+        'Iframe' => t('IFrame'),
         'Maximize' => t('Maximize'),
-        'SpellChecker' => t('Check spelling'), 'Scayt' => t('Check spelling as you type'),
+        'SpellChecker' => t('Check spelling'), 'Scayt' => t('Spell check as you type'),
         'About' => t('About'),
         'Templates' => t('Templates'),
+        'CopyFormatting' => t('Copy Formatting'),
       ),
       'internal' => TRUE,
     ),
@@ -568,6 +787,9 @@ function wysiwyg_ckeditor_plugins($editor) {
   }
   if (version_compare($editor['installed version'], '3.5.0.6260', '<')) {
     unset($plugins['default']['buttons']['Iframe']);
+  }
+  if (version_compare($editor['installed version'], '4.6.0', '<')) {
+    unset($plugins['default']['CopyFormatting']);
   }
   return $plugins;
 }
@@ -605,8 +827,12 @@ function _wysiwyg_ckeditor_group($button) {
     case 'Strike':
     case 'Subscript':
     case 'Superscript':
-    case 'RemoveFormat':
       $group = 'basicstyles';
+      break;
+
+    case 'RemoveFormat':
+    case 'CopyFormatting':
+      $group = 'cleanup';
       break;
 
     case 'NumberedList':
@@ -663,4 +889,17 @@ function _wysiwyg_ckeditor_group($button) {
       $group = 'other';
   }
   return $group;
+}
+
+/**
+ * Determine if string is supposed to be ACF obj format.
+ *
+ * @see http://docs.ckeditor.com/#!/guide/dev_allowed_content_rules
+ */
+function _wysiwyg_ckeditor_settings_acf_is_obj($string) {
+  if (strstr($string, ':') === FALSE) {
+    return FALSE;
+  }
+
+  return TRUE;
 }

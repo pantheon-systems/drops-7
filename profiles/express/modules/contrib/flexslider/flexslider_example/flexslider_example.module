@@ -23,7 +23,6 @@ function flexslider_example_generate_content() {
   foreach ($images as $image) {
     // Add the images using the Drupal File API
     $path = drupal_get_path('module', 'flexslider') . '/assets/images/' . $image;
-    $filetitle = $image;
     $filename = $image;
     
     $file_temp = file_get_contents($path);

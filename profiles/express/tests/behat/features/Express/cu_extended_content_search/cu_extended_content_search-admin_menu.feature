@@ -5,7 +5,7 @@ Feature: CU Extended Content Search Menu
 
   @api @extended_search
   Scenario: As a developer I should see the complete menu
-    Given I am logged in as a user with the "developer" role
+    Given  CU - I am logged in as a user with the "developer" role
     When I go to "user"
     Then I should see the link "Content"
       And I should see the link "Structure"
@@ -20,7 +20,7 @@ Feature: CU Extended Content Search Menu
 
   @api @extended_search
   Scenario Outline: As a site_owner or an administrator I should see a partial menu
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "user"
     Then I should see the link "Content"
       And I should see the link "Structure"
@@ -36,7 +36,7 @@ Feature: CU Extended Content Search Menu
 
   @api @extended_search
   Scenario: As a content_editor I should see a limited menu
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "user"
     Then I should see the link "Express"
       And I should see the link "Shortcuts"
@@ -45,7 +45,7 @@ Feature: CU Extended Content Search Menu
 
   @api @extended_search
   Scenario Outline: As an authenticated user with a role I should see a partial menu
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "user"
     Then I should see the link "Add content"
     And I should see the link "Find content"
@@ -62,7 +62,7 @@ Feature: CU Extended Content Search Menu
 
   @api @extended_search
   Scenario: As a developer I should see extra links in the shortcuts menu
-    Given I am logged in as a user with the "developer" role
+    Given  CU - I am logged in as a user with the "developer" role
     When I go to "user"
     Then I should see the link "Theme"
 

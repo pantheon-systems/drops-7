@@ -509,7 +509,7 @@ class LdapUserConf {
     if (is_scalar($account)) {
       $username = $account;
       $account = new stdClass();
-      $acount->name = $username;
+      $account->name = $username;
     }
 
     list($account, $user_entity) = ldap_user_load_user_acct_and_entity($account->name);
@@ -594,17 +594,17 @@ class LdapUserConf {
 
         // need to store <sid>|<dn> in ldap_user_prov_entries field, which may contain more than one
         $ldap_user_prov_entry = $ldap_server->sid . '|' . $proposed_ldap_entry['dn'];
-        if (!isset($user_entity->ldap_user_prov_entries['und'])) {
-          $user_entity->ldap_user_prov_entries = array('und' => array());
+        if (!isset($user_entity->ldap_user_prov_entries[LANGUAGE_NONE])) {
+          $user_entity->ldap_user_prov_entries = array(LANGUAGE_NONE => array());
         }
         $ldap_user_prov_entry_exists = FALSE;
-        foreach ($user_entity->ldap_user_prov_entries['und'] as $i => $field_value_instance) {
+        foreach ($user_entity->ldap_user_prov_entries[LANGUAGE_NONE] as $i => $field_value_instance) {
           if ($field_value_instance == $ldap_user_prov_entry) {
             $ldap_user_prov_entry_exists = TRUE;
           }
         }
         if (!$ldap_user_prov_entry_exists) {
-          $user_entity->ldap_user_prov_entries['und'][] = array(
+          $user_entity->ldap_user_prov_entries[LANGUAGE_NONE][] = array(
             'value' =>  $ldap_user_prov_entry,
           );
 
@@ -867,9 +867,8 @@ class LdapUserConf {
     // determine server that is associated with user
 
     $boolean_result = FALSE;
-    $language = ($account->language) ? $account->language : 'und';
-    if (isset($account->ldap_user_prov_entries[$language][0])) {
-      foreach ($account->ldap_user_prov_entries[$language] as $i => $field_instance) {
+    if (isset($account->ldap_user_prov_entries[LANGUAGE_NONE][0])) {
+      foreach ($account->ldap_user_prov_entries[LANGUAGE_NONE] as $i => $field_instance) {
         $parts = explode('|', $field_instance['value']);
         if (count($parts) == 2) {
 

@@ -21,7 +21,7 @@ function metatag_hreflang_metatag_bundled_config_alter(array &$configs) {
       case 'node':
         // The x-default should default to the source language.
         $config->config += array(
-          'hreflang_xdefault' => array('value' => '[node:source:url]'),
+          'hreflang_xdefault' => array('value' => '[node:url-original]'),
         );
 
         // Add all of the other hreflang values.

@@ -2,6 +2,13 @@
 user_external_invite 7.x-1.x-dev
 ==================
 
+user_external_invite 7.x-1.2
+==================
+Issue #2828060 by darshi.addweb: Fixing typo in user_external_invite.admin.inc file
+Issue #2826585 by naresh.bavaskar, darshi.addweb: Code cleanup and coding standard
+Issue #2825931 by darshi.addweb, afinnarn: UI Improvement for Invite Screen
+Issue #2827185 by afinnarn, darshi.addweb: Add "Resend Invite" to Operations Screen
+Issue #2826588 by afinnarn, darshi.addweb: Non registered email ids can be invited
 
 user_external_invite 7.x-1.1
 ==================

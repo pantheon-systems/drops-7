@@ -38,11 +38,13 @@ function _cu_menu_icon_form_alter(array &$form, array &$complete_form, array $it
     '#default_value' => isset($item['options']['hide_text']) ? $item['options']['hide_text'] : 0,
     '#options' => array(0 => t('No'), 1 => t('Yes')),
   );
+  $options = array('none' => 'none');
+  $options = array_merge($options, cu_font_awesome_icon_list());
   $form['attributes']['icon_settings']['icon'] = array(
     '#type' => 'radios',
     '#title' => ' ',
-    '#options' => cu_font_awesome_icon_list(),
-    '#default_value' => isset($item['options']['icon']) ? $item['options']['icon'] : '',
+    '#options' => $options,
+    '#default_value' => isset($item['options']['icon']) ? $item['options']['icon'] : 'none',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );

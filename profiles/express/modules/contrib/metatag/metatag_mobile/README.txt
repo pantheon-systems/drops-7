@@ -4,11 +4,12 @@ This submodule of Metatag adds a number of new meta tags commonly used for
 tailoring the experience of people using mobile devices.
 
 Mobile:
-  <meta name="theme-color" value="[VALUE]" />
-  <meta name="MobileOptimized" value="[VALUE]" />
-  <meta name="HandheldFriendly" value="[VALUE]" />
-  <meta name="viewport" value="[VALUE]" />
+  <meta name="theme-color" content="[VALUE]" />
+  <meta name="MobileOptimized" content="[VALUE]" />
+  <meta name="HandheldFriendly" content="[VALUE]" />
+  <meta name="viewport" content="[VALUE]" />
   <meta http-equiv="cleartype" content="[VALUE]" />
+  <link rel="amphtml" href="[VALUE]" />
 
 iOS:
   <meta name="apple-itunes-app" content="[VALUE]" />
@@ -16,37 +17,37 @@ iOS:
   <meta name="apple-mobile-web-app-status-bar-style" content="[VALUE]" />
   <meta name="apple-mobile-web-app-title" content="[VALUE]" />
   <meta name="format-detection" content="[VALUE]" />
-  <link href="alternative" value="ios-app://[VALUE]" />
+  <link rel="alternate" href="ios-app://[VALUE]" />
 
 Android:
-  <link href="manifest" value="[VALUE]" />
-  <link href="alternative" value="android-app://[VALUE]" />
+  <link rel="manifest" href="[VALUE]" />
+  <link rel="alternate" href="android-app://[VALUE]" />
 
 Windows:
   <meta http-equiv="X-UA-Compatible" content="[VALUE]" />
-  <meta name="application-name" value="[VALUE]" />
-  <meta name="msapplication-allowDomainApiCalls" value="[VALUE]" />
-  <meta name="msapplication-allowDomainMetaTags" value="[VALUE]" />
-  <meta name="msapplication-badge" value="[VALUE]" />
-  <meta name="msapplication-config" value="[VALUE]" />
-  <meta name="msapplication-navbutton" value="[VALUE]" />
-  <meta name="msapplication-notification" value="[VALUE]" />
-  <meta name="msapplication-square150x150logo" value="[VALUE]" />
-  <meta name="msapplication-square310x310logo" value="[VALUE]" />
-  <meta name="msapplication-square70x70logo" value="[VALUE]" />
-  <meta name="msapplication-wide310x150logo" value="[VALUE]" />
-  <meta name="msapplication-starturl" value="[VALUE]" />
-  <meta name="msapplication-task" value="[VALUE]" />
-  <meta name="msapplication-task-separator" value="[VALUE]" />
-  <meta name="msapplication-tilecolor" value="[VALUE]" />
-  <meta name="msapplication-tileimage" value="[VALUE]" />
-  <meta name="msapplication-tooltip" value="[VALUE]" />
-  <meta name="msapplication-window" value="[VALUE]" />
+  <meta name="application-name" content="[VALUE]" />
+  <meta name="msapplication-allowDomainApiCalls" content="[VALUE]" />
+  <meta name="msapplication-allowDomainMetaTags" content="[VALUE]" />
+  <meta name="msapplication-badge" content="[VALUE]" />
+  <meta name="msapplication-config" content="[VALUE]" />
+  <meta name="msapplication-navbutton" content="[VALUE]" />
+  <meta name="msapplication-notification" content="[VALUE]" />
+  <meta name="msapplication-square150x150logo" content="[VALUE]" />
+  <meta name="msapplication-square310x310logo" content="[VALUE]" />
+  <meta name="msapplication-square70x70logo" content="[VALUE]" />
+  <meta name="msapplication-wide310x150logo" content="[VALUE]" />
+  <meta name="msapplication-starturl" content="[VALUE]" />
+  <meta name="msapplication-task" content="[VALUE]" />
+  <meta name="msapplication-task-separator" content="[VALUE]" />
+  <meta name="msapplication-tilecolor" content="[VALUE]" />
+  <meta name="msapplication-tileimage" content="[VALUE]" />
+  <meta name="msapplication-tooltip" content="[VALUE]" />
+  <meta name="msapplication-window" content="[VALUE]" />
 
 
 Configuration
 --------------------------------------------------------------------------------
-By default the two link alternative meta tags include a prefix - "android-app://" and "ios-app://". To remove this prefix just change the theme
+By default the two link alternate meta tags include a prefix - "android-app://" and "ios-app://". To remove this prefix just change the theme
 functions, e.g.:
 
 /**
@@ -56,7 +57,7 @@ functions, e.g.:
  */
 function MYTHEME_metatag_mobile_android_app($variables) {
   // Pass everything through to the normal 'link' tag theme.
-  $variables['element']['#name'] = 'alternative';
+  $variables['element']['#name'] = 'alternate';
 
   // Don't actually want this.
   // $variables['element']['#value'] = 'android-app://' . $variables['element']['#value'];
@@ -71,7 +72,7 @@ function MYTHEME_metatag_mobile_android_app($variables) {
  */
 function MYTHEME_metatag_mobile_ios_app($variables) {
   // Pass everything through to the normal 'link' tag theme.
-  $variables['element']['#name'] = 'alternative';
+  $variables['element']['#name'] = 'alternate';
 
   // Don't actually want this.
   // $variables['element']['#value'] = 'ios-app://' . $variables['element']['#value'];

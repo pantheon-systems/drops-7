@@ -10,18 +10,18 @@
 /**
  * Default theme implementation for flexslider_list
  */
-function theme_flexslider_list(&$vars) {
+function theme_flexslider_list(&$variables) {
   // Reference configuration variables
-  $optionset = &$vars['settings']['optionset'];
-  $items = &$vars['items'];
-  $attributes = &$vars['settings']['attributes'];
-  $type = &$vars['settings']['type'];
+  $optionset = &$variables['settings']['optionset'];
+  $items = &$variables['items'];
+  $attributes = &$variables['settings']['attributes'];
+  $type = &$variables['settings']['type'];
   $output = '';
 
   // Build the list
   if (!empty($items)) {
     $output .= "<$type" . drupal_attributes($attributes) . '>';
-    foreach ($items as $i => $item) {
+    foreach ($items as $item) {
 
       $caption = '';
       if (!empty($item['caption'])) {
@@ -45,19 +45,21 @@ function theme_flexslider_list(&$vars) {
 /**
  * Default theme implementation for flexslider_list_item
  */
-function theme_flexslider_list_item(&$vars) {
-  return '<li' . drupal_attributes($vars['settings']['attributes']) . '>' . $vars['item'] . $vars['caption'] . "</li>\n";
+function theme_flexslider_list_item(&$variables) {
+  return '<li' . drupal_attributes($variables['settings']['attributes']) . '>' . $variables['item'] . $variables['caption'] . "</li>\n";
 }
 
 /**
- * Template preprocess handler for 'flexslider' theme.
+ * Prepares variables for flexslider templates.
+ *
+ * @see flexslider.tpl.php.
  */
-function template_process_flexslider(&$vars) {
+function template_process_flexslider(&$variables) {
 
   // Reference configuration variables
-  $optionset = &$vars['settings']['optionset'];
-  $settings = &$vars['settings'];
-  $items = &$vars['items'];
+  $optionset = &$variables['settings']['optionset'];
+  $settings = &$variables['settings'];
+  $items = &$variables['items'];
 
   // Set the default container type
   if (empty($settings['type'])) {
@@ -100,19 +102,29 @@ function template_process_flexslider(&$vars) {
   // Add the flexslider class to be namespaced
   $attributes['class'][] = 'flexslider';
 
+  // Add the optionset name as a class to the container.
+  $attributes['class'][] = 'optionset-' . drupal_html_class($optionset->name);
+
+  // Add the image style name as a class to the container.
+  if (!empty($settings['image_style'])) {
+    $attributes['class'][] = 'imagestyle-' . drupal_html_class($settings['image_style']);
+  }
+
   // Add the attributes to the settings array.
   $settings['attributes'] = $attributes;
 
   // Finally, add the configuration to the page
-  flexslider_add($vars['settings']['attributes']['id'], $vars['settings']['optionset']);
+  flexslider_add($variables['settings']['attributes']['id'], $variables['settings']['optionset']);
 }
 
 /**
- * Process function for flexslider_list_item
+ * Prepares variables for flexslider list templates.
+ *
+ * @see flexslider-list.tpl.php.
  */
-function template_process_flexslider_list(&$vars) {
+function template_process_flexslider_list(&$variables) {
   // Reset the list of attributes
-  $vars['settings']['attributes'] = array(
+  $variables['settings']['attributes'] = array(
     // @todo find a way to detect the outter container class if possible
     'class' => array('slides'),
   );
@@ -120,27 +132,38 @@ function template_process_flexslider_list(&$vars) {
 }
 
 /**
- * Process function for flexslider_list_item
+ * Prepares variables for flexslider list item templates.
+ *
+ * @see flexslider-list-item.tpl.php.
  */
-function template_process_flexslider_list_item(&$vars) {
+function template_process_flexslider_list_item(&$variables) {
   // Reset the list of attributes
-  $vars['settings']['attributes'] = array();
+  $variables['settings']['attributes'] = array();
 
   // Reference configuration variables
-  $item = &$vars['item'];
-  $settings = &$vars['settings'];
-  $caption = &$vars['caption'];
-  $attributes = &$vars['settings']['attributes'];
+  $item = &$variables['item'];
+  $settings = &$variables['settings'];
+  $caption = &$variables['caption'];
+  $attributes = &$variables['settings']['attributes'];
 
   // Generated thumbnail support
   if (isset($settings['optionset']->options['controlNav']) and $settings['optionset']->options['controlNav'] === "thumbnails") {
     // If the thumbnails are enabled in the option set, scan for the first img
     // tag and extract the src attribute to set as the thumbnail data
     $src = array();
-    preg_match("<img.+?src=[\"'](.+?)[\"'].+?>", $item, $src);
+    preg_match("/<img.+?src=[\"'](.+?)[\"'].+?>/", $item, $src);
 
     if (!empty($src[1])) {
       $attributes['data-thumb'] = $src[1];
+    }
+
+    // Let's also get the alt attribute to apply to thumbnails.
+    // This only works in library version 2.6+.
+    $alt = array();
+    preg_match("/<img.+?alt=[\"'](.*?)[\"'].+?>/", $item, $alt);
+
+    if (!empty($alt)) {
+      $attributes['data-thumb-alt'] = $alt[1];
     }
   }
 
@@ -148,7 +171,7 @@ function template_process_flexslider_list_item(&$vars) {
     $attributes['data-thumbcaption'] = $caption;
     // Prevent captions from appearing in the slider as well
     if (isset($settings['optionset']->options['thumbCaptionsBoth']) and FALSE === $settings['optionset']->options['thumbCaptionsBoth']) {
-      $caption = '';      
+      $caption = '';
     }
   }
 

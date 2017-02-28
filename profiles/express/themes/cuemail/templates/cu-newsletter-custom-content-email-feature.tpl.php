@@ -3,14 +3,14 @@
     $content['image'][0]['#image_style'] = 'email_feature_thumbnail';
   }
 ?>
-<table class="row article-content">
+<table class="row article-content" role="presentation">
   <tr>
     <td class="wrapper last">
       <table class="twelve columns">
         <tr>
           <td class="text-pad padding-bottom">
             <?php if(!empty($content['image'])): ?>
-              <table>
+              <table role="presentation">
                 <td class="padding-bottom">
               <?php if(!empty($content['link'])): ?>
                 <a href="<?php print $content['link']; ?>"><?php print render($content['image']); ?></a>

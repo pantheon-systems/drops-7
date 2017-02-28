@@ -4,7 +4,7 @@ Feature: CU Image Styles
 
 @api @image-styles
 Scenario Outline: Image styles should be the correct dimensions
-  Given I am logged in as a user with the "developer" role
+  Given  CU - I am logged in as a user with the "developer" role
   When I go to "admin/config/media/image-styles/edit/<style>"
   Then I should see <message>
 

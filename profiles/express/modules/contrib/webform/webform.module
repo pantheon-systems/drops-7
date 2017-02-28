@@ -882,7 +882,7 @@ function webform_theme() {
       'file' => 'includes/webform.report.inc',
     ),
     'webform_results_table' => array(
-      'variables' => array('node' => NULL, 'components' => NULL, 'submissions' => NULL, 'node' => NULL, 'total_count' => NULL, 'pager_count' => NULL),
+      'variables' => array('node' => NULL, 'components' => NULL, 'submissions' => NULL, 'total_count' => NULL, 'pager_count' => NULL),
       'file' => 'includes/webform.report.inc',
     ),
     'webform_results_download_range' => array(
@@ -1539,11 +1539,18 @@ function webform_node_update($node) {
         webform_component_insert($node->webform['components'][$cid]);
       }
       elseif (in_array($cid, $deleted_cids)) {
-        webform_component_delete($node, $original->webform['components'][$cid]);
+        // Delete components only after all updates have been processed.
       }
       elseif ($node->webform['components'][$cid] != $original->webform['components'][$cid]) {
         webform_component_update($node->webform['components'][$cid]);
       }
+    }
+
+    // Delete components now that any parent changes have been saved. When
+    // components are moved and deleted in one operation in FormBuilder, this
+    // ensures that only the current children are deleted.
+    foreach ($deleted_cids as $cid) {
+      webform_component_delete($node, $original->webform['components'][$cid]);
     }
   }
 
@@ -1553,15 +1560,19 @@ function webform_node_update($node) {
 
     // Conditionals don't have unique site-wide IDs or configuration, so our
     // update here is a bit more aggressive than for components and e-mails.
+    // Delete any conditionals no longer in the webform or that have changed.
     foreach ($original->webform['conditionals'] as $rgid => $conditional) {
-      if (!isset($node->webform['conditionals'][$rgid]) || $original->webform['conditionals'][$rgid] != $node->webform['conditionals'][$rgid]) {
+      if (!isset($node->webform['conditionals'][$rgid]) || $conditional != $node->webform['conditionals'][$rgid]) {
         webform_conditional_delete($node, $conditional);
       }
     }
+    // Insert any conditionals not in the original or that have changed.
     foreach ($node->webform['conditionals'] as $rgid => $conditional) {
       $conditional['nid'] = $node->nid;
       $conditional['rgid'] = $rgid;
-      webform_conditional_insert($conditional);
+      if (!isset($original->webform['conditionals'][$rgid]) || $original->webform['conditionals'][$rgid] != $conditional) {
+       webform_conditional_insert($conditional);
+      }
     }
   }
 
@@ -2444,9 +2455,6 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $r
   $form['#attributes']['class'][] = 'webform-client-form';
   $form['#attributes']['class'][] = 'webform-client-form-' . $node->nid;
 
-  // Set the encoding type (necessary for file uploads).
-  $form['#attributes']['enctype'] = 'multipart/form-data';
-
   // Sometimes when displaying a webform as a teaser or block, a custom action
   // property is set to direct the user to the node page.
   if (!empty($node->webform['action'])) {
@@ -2731,6 +2739,8 @@ function webform_client_form_process($form, $form_state) {
  * This function assists in the building of the client form, as well as the
  * display of results, and the text of e-mails.
  *
+ * @param $node
+ *   The current webform node.
  * @param $component
  *   The component to be added to the form.
  * @param $component_value
@@ -2749,6 +2759,8 @@ function webform_client_form_process($form, $form_state) {
  *   - form: Show as an editable form.
  *   - html: Show as HTML results.
  *   - text: Show as plain text.
+ * @param $page_num
+ *   The page number. Defaults to 0.
  * @param $filter
  *   Whether the form element properties should be filtered. Only set to FALSE
  *   if needing the raw properties for editing.
@@ -3046,7 +3058,7 @@ function _webform_client_form_validate(&$elements, &$form_state, $form_id = NULL
     // #value data.
     elseif (isset($elements['#element_validate'])) {
       foreach ($elements['#element_validate'] as $function) {
-        if (function_exists($function))  {
+        if (is_callable($function))  {
           $function($elements, $form_state, $form_state['complete form']);
         }
       }
@@ -3650,18 +3662,18 @@ function theme_webform_element($variables) {
     case 'before':
     case 'invisible':
       $output .= ' ' . theme('form_element_label', $variables);
-      $output .= ' ' . $prefix . $description[$above] . $element['#children'] . $suffix . "\n";
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix . "\n";
       break;
 
     case 'after':
-      $output .= ' ' . $prefix . $description[$above] . $element['#children'] . $suffix;
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix;
       $output .= ' ' . theme('form_element_label', $variables) . "\n";
       break;
 
     case 'none':
     case 'attribute':
       // Output no label and no required marker, only the children.
-      $output .= ' ' . $prefix . $description[$above] . $element['#children'] . $suffix . "\n";
+      $output .= ' ' . $description[$above] . $prefix . $element['#children'] . $suffix . "\n";
       break;
   }
 
@@ -4118,7 +4130,7 @@ function webform_get_cid(&$node, $form_key, $pid) {
 /**
  * Find the label of a given page based on page breaks.
  *
- * @param $webform
+ * @param $node
  *   The webform node.
  * @param $form_state
  *   The form's state, if available
@@ -5230,15 +5242,15 @@ function _webform_submission_serial_next_value($nid) {
 }
 
 /**
- * Returns the next serial number to be used, based upon actual submissions in
- * the database.
+ * Returns the next submission serial number to be used, based on the
+ * submissions in the database.
  *
  * @param int $nid
  *   The Node ID of the Webform.
  *
  * $return int
- *   The largest serial number used by a submission for a given node, 1 when no
- *   submissions.
+ *   The largest serial number used by a submission plus 1 for the specified
+ *   node or 1 when there are no submissions.
  */
 function _webform_submission_serial_next_value_used($nid) {
   $max_serial = db_select('webform_submissions');
@@ -5284,7 +5296,7 @@ function webform_clone_node_alter(&$node, $context) {
  * @param string $detect_key
  *   A key that will always be present in the posted data when an actual form
  *   submission has been made.
- * @param string parent_key
+ * @param string $parent_key
  *   Omit to not preflight the form, or the array key for the parent of where
  *   the preflight warning should be inserted into the form.
  */
@@ -5398,7 +5410,7 @@ function webform_count_input_vars($element) {
  * Counts terminals in an array. Useful for counting how many input_vars were
  * returned in $_POST.
  *
- * @params $a
+ * @param $a
  *   Array or array element to be counted
  * @return integer
  *   Number of non-array elements within $a.

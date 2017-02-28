@@ -51,8 +51,9 @@ function cu_collections_field_group_info() {
     'label' => 'Display',
     'weight' => '12',
     'children' => array(
-      0 => 'field_collection_filter_type',
-      1 => 'field_collection_display_summary',
+      0 => 'field_collection_display_summary',
+      1 => 'field_collection_filter_type',
+      2 => 'field_collection_filter_effect',
     ),
     'format_type' => 'htab',
     'format_settings' => array(
@@ -79,8 +80,8 @@ function cu_collections_field_group_info() {
     'label' => 'Filter',
     'weight' => '11',
     'children' => array(
-      0 => 'field_collection_grid_type',
-      1 => 'field_collection_grid_category',
+      0 => 'field_collection_grid_category',
+      1 => 'field_collection_grid_type',
     ),
     'format_type' => 'htab',
     'format_settings' => array(
@@ -108,8 +109,8 @@ function cu_collections_field_group_info() {
     'label' => 'Settings',
     'weight' => '2',
     'children' => array(
-      0 => 'group_collection_grid_filter',
-      1 => 'group_collection_grid_display',
+      0 => 'group_collection_grid_display',
+      1 => 'group_collection_grid_filter',
     ),
     'format_type' => 'htabs',
     'format_settings' => array(

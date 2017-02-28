@@ -124,6 +124,54 @@
    * Processes all conditional.
    */
   Drupal.webform.doConditions = function ($form, settings) {
+
+    var stackPointer;
+    var resultStack;
+
+    /**
+     * Initializes an execution stack for a conditional group's rules and
+     * sub-conditional rules.
+     */
+    function executionStackInitialize(andor) {
+      stackPointer = -1;
+      resultStack = [];
+      executionStackPush(andor);
+    }
+
+    /**
+     * Starts a new subconditional for the given and/or operator.
+     */
+    function executionStackPush(andor) {
+      resultStack[++stackPointer] = {
+        results: [],
+        andor: andor,
+      };
+    }
+
+    /**
+     * Adds a rule's result to the current sub-condtional.
+     */
+    function executionStackAccumulate(result) {
+      resultStack[stackPointer]['results'].push(result);
+    }
+
+    /**
+     * Finishes a sub-conditional and adds the result to the parent stack frame.
+     */
+    function executionStackPop() {
+      // Calculate the and/or result.
+      var stackFrame = resultStack[stackPointer];
+      // Pop stack and protect against stack underflow.
+      stackPointer = Math.max(0, stackPointer - 1);
+      var $conditionalResults = stackFrame['results'];
+      var filteredResults = $.map($conditionalResults, function(val) {
+        return val ? val : null;
+      });
+      return stackFrame['andor'] === 'or'
+                ? filteredResults.length > 0
+                : filteredResults.length === $conditionalResults.length;
+    }
+
     // Track what has be set/shown for each target component.
     var targetLocked = [];
 
@@ -131,30 +179,24 @@
       var ruleGroup = settings.ruleGroups[rgid_key];
 
       // Perform the comparison callback and build the results for this group.
-      var conditionalResult = true;
-      var conditionalResults = [];
+      executionStackInitialize(ruleGroup['andor']);
       $.each(ruleGroup['rules'], function (m, rule) {
-        var elementKey = rule['source'];
-        var element = $form.find('.' + elementKey)[0];
-        var existingValue = settings.values[elementKey] ? settings.values[elementKey] : null;
-        conditionalResults.push(window['Drupal']['webform'][rule.callback](element, existingValue, rule['value']));
-      });
-
-      // Filter out false values.
-      var filteredResults = [];
-      for (var i = 0; i < conditionalResults.length; i++) {
-        if (conditionalResults[i]) {
-          filteredResults.push(conditionalResults[i]);
+        switch (rule['source_type']) {
+          case 'component':
+            var elementKey = rule['source'];
+            var element = $form.find('.' + elementKey)[0];
+            var existingValue = settings.values[elementKey] ? settings.values[elementKey] : null;
+            executionStackAccumulate(window['Drupal']['webform'][rule.callback](element, existingValue, rule['value']));
+            break;
+          case 'conditional_start':
+            executionStackPush(rule['andor']);
+            break;
+          case 'conditional_end':
+            executionStackAccumulate(executionStackPop());
+            break;
         }
-      }
-
-      // Calculate the and/or result.
-      if (ruleGroup['andor'] === 'or') {
-        conditionalResult = filteredResults.length > 0;
-      }
-      else {
-        conditionalResult = filteredResults.length === conditionalResults.length;
-      }
+      });
+      var conditionalResult = executionStackPop();
 
       $.each(ruleGroup['actions'], function (aid, action) {
         var $target = $form.find('.' + action['target']);

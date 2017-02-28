@@ -1,7 +1,7 @@
 Feature: CU Layout Creation
 
   Background:
-    Given I am logged in as a user with the "developer" role
+    Given  CU - I am logged in as a user with the "developer" role
     When I disable the "overlay" module
       And I go to "admin/config/content/express-layout"
       And I check the box "page[field_header]"

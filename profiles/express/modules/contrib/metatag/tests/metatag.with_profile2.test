@@ -1,11 +1,11 @@
 <?php
-/**
- * @file
- * Tests for the Metatag module for Profile2 integration.
- */
 
-// Inherit from the User test so that its tests can be confirmed to still work
-// when the Profile2 module is enabled.
+/**
+ * Tests for the Metatag module for Profile2 integration.
+ *
+ * Inherit from the User test so that its tests can be confirmed to still work
+ * when the Profile2 module is enabled.
+ */
 class MetatagCoreWithProfile2Test extends MetatagCoreUserTest {
 
   /**
@@ -16,6 +16,7 @@ class MetatagCoreWithProfile2Test extends MetatagCoreUserTest {
       'name' => 'Metatag core tests with Profile2',
       'description' => 'Test Metatag integration with the Profile2 module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'profile2'),
     );
   }
 
@@ -56,7 +57,7 @@ class MetatagCoreWithProfile2Test extends MetatagCoreUserTest {
 
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[user:name] ponies',
+      'metatags[und][abstract][value]' => '[user:name] ponies',
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -109,7 +110,7 @@ class MetatagCoreWithProfile2Test extends MetatagCoreUserTest {
 
     // Verify that it's possible to submit values to the form.
     $edit = array(
-      'metatags[und][dcterms.subject][value]' => '[user:name] ponies',
+      'metatags[und][abstract][value]' => '[user:name] ponies',
     );
     $this->drupalPost(NULL, $edit, t('Save'));
     $this->assertResponse(200);

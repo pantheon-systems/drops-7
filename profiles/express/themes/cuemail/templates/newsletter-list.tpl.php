@@ -1,7 +1,7 @@
-<table class="row">
+<table class="row" role="presentation">
   <tr>
     <td class="wrapper last">
-      <table class="twelve columns">
+      <table class="twelve columns" role="presentation">
         <tr>
           <td class="text-pad article-list-content">
             <p>

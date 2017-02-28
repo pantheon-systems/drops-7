@@ -173,14 +173,14 @@ td.webform-email-option {
   display: block;
   position: relative;
   padding-left: 1em;
-  padding-right: 8em;
+  padding-right: 9em;
   margin-left: 3em;
-  max-width: 600px;
+  max-width: 750px;
 }
 
 .webform-conditional-new {
   text-align: right;
-  margin-left: 11em;
+  margin-left: 12em;
   padding-right: 0;
 }
 
@@ -201,13 +201,30 @@ td.webform-email-option {
 .webform-conditional-operations {
   position: absolute;
   right: 0;
-  margin-top: .2em;
+  margin-top: .1em;
+}
+
+.webform-andor {
+  padding-left: 0.5em;
+}
+.webform-subconditional {
+  font-size: 1.5em;
+  line-height: 0;
+}
+
+.webform-indentation {
+  float: left;
+  width: 2em;
+}
+
+.webform-conditional-new input[disabled] {
+  visibility: hidden;
 }
 
 .webform-conditional-new input.form-submit,
 .webform-conditional-operations input.form-submit {
   margin: 0 2px;
-  padding: 2px 6px;
+  padding: 0 6px 2px 6px;
 }
 
 #webform-conditionals-table input.progress-disabled,

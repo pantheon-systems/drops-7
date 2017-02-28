@@ -2,7 +2,7 @@
 /**
  * @file
  * Functionality for migrating data from the Page Title module.
- */  
+ */
 
 /**
  * FormAPI callback for the Page Title importer.
@@ -70,7 +70,7 @@ function metatag_importer_for_page_title() {
         if (!empty($metatag_config_node_type) && isset($metatag_config_node_type->config['title'])) {
           $title_setting = $metatag_config_node_type->config['title']['value'];
         }
-        else if (isset($metatag_config_node->config['title'])) {
+        elseif (isset($metatag_config_node->config['title'])) {
           $title_setting = $metatag_config_node->config['title']['value'];
         }
         else {

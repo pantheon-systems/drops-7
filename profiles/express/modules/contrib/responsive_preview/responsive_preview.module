@@ -138,6 +138,7 @@ function responsive_preview_get_devices_list() {
       'data' => drupal_render($configlink),
     );
   }
+
   return $links;
 }
 

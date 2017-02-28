@@ -1,0 +1,85 @@
+<?php
+
+/**
+ * Tests that each of the Metatag App Links tags work correctly.
+ */
+class MetatagAppLinksTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: App Links',
+      'description' => 'Test the App Links meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'al:android:app_name',
+    'al:android:class',
+    'al:android:package',
+    'al:android:url',
+    'al:ios:app_name',
+    'al:ios:app_store_id',
+    'al:ios:url',
+    'al:ipad:app_name',
+    'al:ipad:app_store_id',
+    'al:ipad:url',
+    'al:iphone:app_name',
+    'al:iphone:app_store_id',
+    'al:iphone:url',
+    'al:web:should_fallback',
+    'al:web:url',
+    'al:windows:app_id',
+    'al:windows:app_name',
+    'al:windows:url',
+    'al:windows_phone:app_id',
+    'al:windows_phone:app_name',
+    'al:windows_phone:url',
+    'al:windows_universal:app_id',
+    'al:windows_universal:app_name',
+    'al:windows_universal:url',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'property';
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_app_links';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // All of the tags have their underlines replaced with colons.
+
+    // Start with the beginning of the string.
+    $tag_name = str_replace('al_', 'al:', $tag_name);
+
+    // The three-ish standard tag names.
+    $tag_name = str_replace('_app_id', ':app_id', $tag_name);
+    $tag_name = str_replace('_app_name', ':app_name', $tag_name);
+    $tag_name = str_replace('_app_store_id', ':app_store_id', $tag_name);
+    $tag_name = str_replace('_url', ':url', $tag_name);
+
+    // One-offs.
+    $tag_name = str_replace('_class', ':class', $tag_name);
+    $tag_name = str_replace('_package', ':package', $tag_name);
+    $tag_name = str_replace('_should_fallback', ':should_fallback', $tag_name);
+
+    return $tag_name;
+  }
+
+}

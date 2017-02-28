@@ -402,9 +402,18 @@ function theme_webform_date($variables) {
  * Element validation for Webform date fields.
  */
 function webform_validate_date($element, $form_state) {
-  if ($element['month']['#value'] !== '' || $element['day']['#value'] !== '' || $element['year']['#value'] !== '') {
+  $field_types = array('day', 'month', 'year');
+
+  // Determine if the user has specified a date. Hidden parts of the date will be submitted automatically.
+  foreach ($field_types as $field_type) {
+    if (!in_array($field_type, $element['#exclude']) && $element[$field_type]['#value'] !== '') {
+      $field_found = TRUE;
+    }
+  }
+
+  if (isset($field_found)) {
     // Check that each part of the date has been filled in.
-    foreach (array('day', 'month', 'year') as $field_type) {
+    foreach ($field_types as $field_type) {
       if (empty($element[$field_type]['#value'])) {
         form_error($element[$field_type], t('!part in !name is missing.', array('!name' => $element['#title'], '!part' => $element[$field_type]['#title'])));
         $missing_fields = TRUE;

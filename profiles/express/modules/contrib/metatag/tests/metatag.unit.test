@@ -1,18 +1,21 @@
 <?php
-/**
- * @file
- * Unit tests for the Metatag module.
- */
 
 /**
+ * Unit tests for the Metatag module.
+ *
  * @todo These aren't really unit tests, we might need to fix that.
  */
 class MetatagCoreUnitTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
   public static function getInfo() {
     return array(
       'name' => 'Metatag unit tests',
       'description' => 'Test basic meta tag functionality for entities.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -34,6 +37,9 @@ class MetatagCoreUnitTest extends MetatagTestHelper {
     $this->assertEqual($defaults, $new_values);
   }
 
+  /**
+   * Test the basic entity handling.
+   */
   public function testEntitySupport() {
     $test_cases[1] = array('type' => 'node', 'bundle' => 'article', 'expected' => TRUE);
     $test_cases[2] = array('type' => 'node', 'bundle' => 'page', 'expected' => TRUE);
@@ -59,6 +65,19 @@ class MetatagCoreUnitTest extends MetatagTestHelper {
     }
   }
 
+  /**
+   * Confirm an entity supports meta tags.
+   *
+   * @param string $entity_type
+   *   The name of the entity type to test.
+   * @param string $bundle
+   *   The name of the entity bundle to test.
+   * @param array $expected
+   *   The expected results.
+   *
+   * @return object
+   *   An assertion.
+   */
   function assertMetatagEntitySupportsMetatags($entity_type, $bundle, $expected) {
     $entity = entity_create_stub_entity($entity_type, array(0, NULL, $bundle));
     return $this->assertEqual(

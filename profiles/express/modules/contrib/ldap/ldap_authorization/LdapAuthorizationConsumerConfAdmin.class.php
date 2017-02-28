@@ -132,7 +132,7 @@ class LdapAuthorizationConsumerConfAdmin extends LdapAuthorizationConsumerConf {
 
     $form['status']['only_ldap_authenticated'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Only apply the following LDAP to !consumer_name configuration to users authenticated via LDAP.  On uncommon reason for disabling this is when you are using Drupal authentication, but want to leverage LDAP for authorization; for this to work the Drupal username still has to map to an LDAP entry.', $consumer_tokens),
+      '#title' => t('Only apply the following LDAP to !consumer_name configuration to users authenticated via LDAP.  One uncommon reason for disabling this is when you are using Drupal authentication, but want to leverage LDAP for authorization; for this to work the Drupal username still has to map to an LDAP entry.', $consumer_tokens),
       '#default_value' =>  $this->onlyApplyToLdapAuthenticated,
     );
 

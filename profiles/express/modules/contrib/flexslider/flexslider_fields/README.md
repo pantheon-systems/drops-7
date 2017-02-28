@@ -12,3 +12,7 @@ Ex: admin/structure/types/manage/article
 
 Select any field of type "image" or "media" and set the display options to "FlexSlider". Then select your option set in the display formatter settings. That's it!
 
+File Entity Integration
+=======================
+
+The module integrates with the [File Entity module](https://www.drupal.org/project/file_entity). Select "FlexSlider File Entity" formatter to use your file entity display modes for you slide layout.

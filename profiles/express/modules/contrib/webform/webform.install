@@ -847,6 +847,25 @@ function webform_uninstall() {
 }
 
 /**
+ * Implements hook_update_dependencies().
+ */
+function webform_update_dependencies() {
+  // Create the {filter_format} table before trying to use it.
+  $dependencies['webform'][7301] = array(
+    'filter' => 7000,
+  );
+  // Create the {file_managed} table before trying to use it.
+  $dependencies['webform'][7319] = array(
+    'system' => 7034,
+  );
+  // Create the {file_usage} table before trying to use it.
+  $dependencies['webform'][7320] = array(
+    'system' => 7059,
+  );
+  return $dependencies;
+}
+
+/**
  * Set the minimum upgrade version.
  *
  * Currently you cannot upgrade from 2.x in Drupal 6 to 3.x in Drupal 7. However
@@ -1594,7 +1613,13 @@ function webform_update_7403(&$sandbox) {
               'target' => $component['cid'],
               'weight' => 0,
             );
-            drupal_write_record('webform_conditional', $conditional);
+
+            // Cannot use drupal_write_record for webform_conditional because
+            // the current schema has fewer fields than the schema in use during
+            // this hook_update_N function.
+            db_insert('webform_conditional')
+              ->fields($conditional)
+              ->execute();
             foreach ($rules as $rule) {
               drupal_write_record('webform_conditional_rules', $rule);
             }

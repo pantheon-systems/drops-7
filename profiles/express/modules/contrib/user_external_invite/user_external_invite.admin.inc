@@ -98,7 +98,7 @@ function user_external_invite_settings_form() {
     '#cols' => 40,
     '#rows' => 5,
     '#default_value' => variable_get('user_external_invite_confirmation_template'),
-    '#description' => t('Confirmation message sent to user who initiated the invivation confirming the invitation was sent.'),
+    '#description' => t('Confirmation message sent to user who initiated the invitation confirming the invitation was sent.'),
   );
 
   $form['user_external_invite_accepted_template'] = array(

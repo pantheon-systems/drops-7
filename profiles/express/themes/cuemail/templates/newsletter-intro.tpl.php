@@ -1,14 +1,14 @@
-<table class="row article-intro">
+<table class="row article-intro" role="presentation">
   <tr>
     <td class="wrapper last">
-      <table class="twelve columns">
+      <table class="twelve columns" role="presentation">
         <tr>
           <td class="text-pad padding-top padding-bottom">
 
 
             <div class="content-padding">
               <div class="intro-image">
-                <table>
+                <table role="presentation">
                   <td class="padding-bottom">
                     <?php print render($content['field_newsletter_intro_image']); ?>
                   </td>

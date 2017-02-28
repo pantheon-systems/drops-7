@@ -1,0 +1,16 @@
+name = "Metatag: Google Custom Search Engine (CSE)"
+description = "Provides support for meta tags used for Google Custom Search Engine."
+package = SEO
+core = 7.x
+dependencies[] = metatag:metatag
+
+; Tests.
+files[] = tests/metatag_google_cse.test
+files[] = tests/metatag_google_cse.tags.test
+
+; Information added by Drupal.org packaging script on 2017-02-15
+version = "7.x-1.21"
+core = "7.x"
+project = "metatag"
+datestamp = "1487171290"
+

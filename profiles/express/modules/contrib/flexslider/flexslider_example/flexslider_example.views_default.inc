@@ -282,30 +282,6 @@ function flexslider_example_views_default_views() {
   $handler->display->display_options['menu']['weight'] = '0';
   $handler->display->display_options['menu']['name'] = 'menu-flexslider-example';
   $handler->display->display_options['menu']['context'] = 0;
-  $translatables['flexslider_views_example'] = array(
-    t('Master'),
-    t('FlexSlider Views Example'),
-    t('more'),
-    t('Apply'),
-    t('Reset'),
-    t('Sort by'),
-    t('Asc'),
-    t('Desc'),
-    t('Basic Slider'),
-    t('Slide with thumbnail controls'),
-    t('slider w/thumbnail controlnav pattern'),
-    t('Slide with thumbnail slider'),
-    t('Slider w/thumbnail slider'),
-    t('Slider controlled by another instance of FlexSlider'),
-    t('Thumbnail Controls'),
-    t('Controls another FlexSlider instance'),
-    t('Basic Carousel'),
-    t('Carousel with min and max ranges'),
-    t('carousel with min and max ranges'),
-    t('Basic Slider with Thumbnail Caption'),
-    t('Basic Slider with Thumbnail captions'),
-    t('To use thumbnail captions, use the "caption field" option in the style settings.'),
-  );
   $export['flexslider_views_example'] = $view;
 
   return $export;

@@ -12,7 +12,8 @@ function ldap_authentication_rules_event_info() {
     'ldap_user_created' => array(
       'label' => t('User created from LDAP entry'),
       'module' => 'ldap_authentication',
-      'arguments' => array(
+      'group' => t('User'),
+      'variables' => array(
         'user' => array(
           'type' => 'user',
           'label' => t('The user created.'),

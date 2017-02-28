@@ -3,7 +3,7 @@ Feature: Social Links Access Feature
 
   @api @social_media
   Scenario Outline: Certain user roles should be able to create Create Social Links block content.
-  Given I am logged in as a user with the <role> role
+  Given  CU - I am logged in as a user with the <role> role
   And I am on "block/add/social-links"
   Then I should see <message>
 
@@ -22,7 +22,7 @@ Feature: Social Links Access Feature
 
   @api @social_media @max_execution_time
   Scenario Outline: Users should be able to view Social Links block content.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I create a "social_links" block with the label "Social Links Block"
     Then I should see <message>
 

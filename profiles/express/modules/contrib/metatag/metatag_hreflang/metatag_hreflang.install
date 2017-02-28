@@ -34,3 +34,37 @@ function metatag_hreflang_uninstall() {
   // Delete any custom variables that are used.
   variable_del('metatag_hreflang_allow_dupe');
 }
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Clear the Metatag cache so the updated hreflang default is caught.
+ */
+function metatag_hreflang_update_7101() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  return t('All Metatag caches cleared.');
+}
+
+/**
+ * Fix hreflang=xdefault for config definitions.
+ */
+function metatag_hreflang_update_7102() {
+  module_load_include('install', 'metatag');
+  $meta_tag = 'hreflang_xdefault';
+  $old_value = '[node:source:url]';
+  $new_value = '[node:url-original]';
+  return metatag_update_replace_config_value($meta_tag, $old_value, $new_value);
+}
+
+/**
+ * Fix hreflang=xdefault for all entities.
+ */
+function metatag_hreflang_update_7103() {
+  module_load_include('install', 'metatag');
+  $meta_tag = 'hreflang_xdefault';
+  $old_value = '[node:source:url]';
+  $new_value = '[node:url-original]';
+  return metatag_update_replace_entity_value($sandbox, $meta_tag, $old_value, $new_value);
+}

@@ -4,6 +4,9 @@
  * Primary hook implementations for Metatag:hreflang.
  */
 
+// @todo Clear caches for all versions of an entity when a translation is edited
+// so that the hreflang meta tags update appropriately.
+
 /**
  * Implements hook_ctools_plugin_api().
  */
@@ -34,8 +37,8 @@ function theme_metatag_link_hreflang($variables) {
   $element['#name'] = 'alternate';
   $args = array(
     '#name' => 'rel',
-    '#value' => 'href',
     '#hreflang' => 'hreflang',
+    '#value' => 'href',
   );
   element_set_attributes($element, $args);
   unset($element['#value']);
@@ -55,25 +58,26 @@ function metatag_hreflang_form_metatag_admin_settings_form_alter(&$form, &$form_
 }
 
 /**
- * Implements hook_html_head_alter().
+ * Implements hook_metatag_metatags_view_alter().
  *
- * Remove any hreflang="LANGCODE" values that match hreflang="x-default".
+ * Remove any hreflang="LANGCODE" values that match hreflang="x-default". Using
+ * this hook instead of hook_html_head_alter() as it gets closer to Metatag's
+ * data structures, and the results are cached so this won't be executed on
+ * every page request.
  */
-function metatag_hreflang_html_head_alter(&$elements) {
+function metatag_hreflang_metatag_metatags_view_alter(&$output, $instance, $options) {
   // This behaviour may be disabled from the Metatag settings page.
   if (!variable_get('metatag_hreflang_allow_dupe', FALSE)) {
-    if (!empty($elements['metatag_hreflang_xdefault']['#value'])) {
-      $default = $elements['metatag_hreflang_xdefault']['#value'];
-
-      // Look for other hreflang meta tags.
-      foreach ($elements as $tag_name => &$element) {
+    if (!empty($output['hreflang_xdefault'])) {
+      $default = $output['hreflang_xdefault']['#attached']['drupal_add_html_head'][0][0]['#value'];
+      foreach ($output as $tag_name => &$tag) {
         // Skip the x-default tag.
-        if ($tag_name == 'metatag_hreflang_xdefault') {
+        if ($tag_name == 'hreflang_xdefault') {
           continue;
         }
-        if (strpos($tag_name, 'metatag_hreflang_') === 0) {
-          if ($element['#value'] == $default) {
-            $element['#access'] = FALSE;
+        if (strpos($tag_name, 'hreflang_') === 0) {
+          if ($tag['#attached']['drupal_add_html_head'][0][0]['#value'] == $default) {
+            $tag['#attached']['drupal_add_html_head'][0][0]['#access'] = FALSE;
           }
         }
       }

@@ -109,6 +109,11 @@ function cu_newsletter_bundle_express_help($variables) {
     'short_title' => 'Newsletter list block help',
     'url' => '/node/1372',
   );
+  $variables['admin/structure/taxonomy/newsletter/add'][] = array(
+    'title' => 'Newsletter Help',
+    'short_title' => 'Newsletter Help',
+    'url' => '/node/1370',
+  );
 
   return array_map(
     function ($a) {

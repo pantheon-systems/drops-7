@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * Tests that each of the Metatag Google CSE tags work correctly.
+ */
+class MetatagGoogleCSETagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Google CSE',
+      'description' => 'Test the Metatag:Google CSE meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'audience',
+    'department',
+    'doc_status',
+    'google_rating',
+    'thumbnail',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp(array $modules = array()) {
+    $modules[] = 'metatag_google_cse';
+    parent::setUp($modules);
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'google_rating'.
+   */
+  public function google_rating_test_tag_name() {
+    return 'rating';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'thumbnail'.
+   */
+  public function thumbnail_test_value() {
+    return $this->randomImageUrl();
+  }
+
+}

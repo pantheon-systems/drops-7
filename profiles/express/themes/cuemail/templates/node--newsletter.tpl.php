@@ -16,17 +16,17 @@
   <div class="emailteaser" style="display:none !important;">
 		<?php print render($content['teaser']); ?>
 	</div>
-	<table class="body">
+	<table class="body" role="presentation">
 		<tr>
 			<td class="center" align="center" valign="top">
-        <table class="row title">
+        <table class="row title" role="presentation">
           <tr>
             <td class="email-top">
               <center>
-                <table class="container">
+                <table class="container" role="presentation">
                   <tr>
                     <td>
-                      <table class=" full">
+                      <table class=" full" role="presentation">
                         <tr>
                           <?php if (!empty($newsletter_logo_url)): ?>
                             <td class="newsletter-name">
@@ -42,7 +42,7 @@
                           </td>
                         </tr>
                       </table>
-                      <table class="issue full">
+                      <table class="issue full" role="presentation">
       									<tr>
       										<td class="issue-date">
 
@@ -67,7 +67,7 @@
         </div>
 				<center>
           <?php if (isset($_GET['issue-contents']) && ($_GET['issue-contents'] == 1)): ?>
-            <table class="container content-top">
+            <table class="container content-top" role="presentation">
               <tr>
                 <td class="article-list">
                   <strong>In this issue:</strong>
@@ -82,7 +82,7 @@
           <?php if (!empty($content['field_newsletter_intro_image']) || !empty($content['body'][0]['#markup'])): ?>
             <?php $has_intro = TRUE; ?>
             <!-- Intro -->
-            <table class="container content-top">
+            <table class="container content-top" role="presentation">
               <tr>
                 <td class="hero-image">
                   <?php
@@ -97,7 +97,7 @@
 
 
 					<!-- start issue contents -->
-					<table class="container <?php if (!isset($has_intro) || !$has_intro) { print 'content-top'; } ?>">
+					<table class="container <?php if (!isset($has_intro) || !$has_intro) { print 'content-top'; } ?>" role="presentation">
 						<tr>
 							<td class="newsletter-sections">
                 <?php print render($content['field_newsletter_section']); ?>
@@ -107,7 +107,7 @@
 
           <!-- START AD 1 -->
           <?php if (!empty($content['field_newsletter_ad_promo'][0])) : ?>
-            <table class="container">
+            <table class="container" role="presentation">
   						<tr>
   							<td>
                   <?php
@@ -122,7 +122,7 @@
 
           <!-- START BLOCKS -->
           <?php if (!empty($content['field_newsletter_text_block'])): ?>
-            <table class="container email-blocks">
+            <table class="container email-blocks" role="presentation">
   						<tr>
   							<td>
                   <?php
@@ -137,7 +137,7 @@
 
           <!-- START AD 2 -->
           <?php if (!empty($content['field_newsletter_ad_promo'][1])) : ?>
-            <table class="container">
+            <table class="container" role="presentation">
   						<tr>
   							<td>
                   <?php
@@ -149,13 +149,13 @@
           <?php endif; ?>
           <!-- END AD 2 -->
 
-          <table class="container email-footer">
+          <table class="container email-footer" role="presentation">
             <tr>
               <td>
 
                 <table class="row footer">
                   <td class="wrapper last">
-                    <table class="twelve columns">
+                    <table class="twelve columns" role="presentation">
                       <tr>
                         <td class="footer-content text-pad padding-bottom">
                           <p><strong><a href="<?php print $base_url; ?>"><?php print variable_get('site_name', ''); ?></a></strong></p>

@@ -55,7 +55,6 @@ CKEDITOR.dialog.add( 'soundcloud_embedDialog', function( editor ) {
       embedCode = embedCode.replace('iframe', 'soundcloud');
       embedCode = embedCode.replace('<', '[');
       embedCode = embedCode.replace('>', ']');
-      alert(embedCode);
 
 			editor.insertHtml(embedCode);
 		}

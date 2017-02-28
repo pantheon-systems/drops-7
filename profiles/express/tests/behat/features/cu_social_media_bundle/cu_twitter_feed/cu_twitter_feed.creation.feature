@@ -3,7 +3,7 @@ Feature: Facebook Like Creation Feature
 
   @api @social_media @javascript
   Scenario: Create a Twitter Feed Block.
-  Given I am logged in as a user with the "content_editor" role
+  Given CU - I am logged in as a user with the "content_editor" role
   And I am on "block/add/twitter-block"
   And I fill in "Label" with "Twitter Block Label"
   And I fill in "Title" with "Twitter Block Title"

@@ -63,17 +63,15 @@ function cu_inventory_stats_process_site_stats($process = TRUE) {
   $all_types = $node_result->fetchAll();
   $type_counts = array();
   foreach ($all_types as $object) {
-    $type_count = 'node_type_' . $object->type;
-    $type_counts[$type_count] = $object->count_type;
+    $type_counts[$object->type] = $object->count_type;
   }
-  $site_data['statistics']['node_types'] = $type_counts;
 
   // Total up the number of nodes.
-  $number_nodes = array_sum($site_data['statistics']['node_types']);
+  $number_nodes = array_sum($type_counts);
   if (empty($number_nodes)) {
     $number_nodes = 0;
   }
-  $site_data['statistics']['num_nodes'] = $number_nodes;
+  $statistics_data['nodes_total'] = $number_nodes;
 
   // Days since last edit.
   $site_data['statistics']['num_days_since_last_edit'] = cu_inventory_days_since_last_edit();

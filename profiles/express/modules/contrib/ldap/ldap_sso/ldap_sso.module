@@ -302,7 +302,7 @@ function ldap_sso_user_login_sso() {
         }
         setcookie("seamless_login", 'auto login', time() + $auth_conf->cookieExpire, base_path(), "");
         ldap_servers_set_globals('_SESSION', 'seamless_login', 'auto login');
-        setcookie("seamless_login_attempted", '');
+        setcookie("seamless_login_attempted", '', time() - 3600, base_path(), "");
         ldap_servers_delete_globals('_SESSION', 'seamless_login_attempted');
         // Make sure we tell Drupal to create the session cookie for this
         // authenticated user.

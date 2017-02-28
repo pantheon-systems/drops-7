@@ -6,9 +6,9 @@ hidden = TRUE
 dependencies[] = wysiwyg
 files[] = wysiwyg_test.module
 
-; Information added by drupal.org packaging script on 2013-10-26
-version = "7.x-2.2+23-dev"
+; Information added by Drupal.org packaging script on 2016-12-31
+version = "7.x-2.3"
 core = "7.x"
 project = "wysiwyg"
-datestamp = "1382797351"
+datestamp = "1483223295"
 

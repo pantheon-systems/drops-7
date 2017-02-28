@@ -1,3 +1,11 @@
+@mixin transition($transition-property, $transition-time, $method) {
+  -webkit-transition: $transition-property $transition-time $method;
+  -moz-transition: $transition-property $transition-time $method;
+  -ms-transition: $transition-property $transition-time $method;
+  -o-transition: $transition-property $transition-time $method;
+  transition: $transition-property $transition-time $method;
+}
+
 .collection-view-mode-grid {
   h4 {
     font-size: 100%;
@@ -44,21 +52,54 @@ select.collection-filter {
   }
 }
 
-.collection-items {
+.collection-items .row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  .collection-item {
+    width: 100%;
+    padding: 0 20px;
+    img {
+      width:100%;
+      height: auto;
+    }
+  }
   @media (min-width: 1200px) {
-    .col-lg-4:nth-child(3n+1) {
-      clear:left;
+    .collection-item {
+      width:33.3333%;
     }
   }
   @media (min-width: 960px) and (max-width: 1199px){
-
-    .col-md-4:nth-child(3n+1) {
-      clear:left;
+    .collection-item {
+      width:33.3333%;
     }
   }
   @media (min-width: 768px) and (max-width: 959px){
-    .col-sm-6:nth-child(2n+1) {
-      clear:left;
+    .collection-item {
+      width:50%;
     }
+  }
+}
+.collection-item {
+  opacity: 1;
+  @include transition(opacity, .3s, linear);
+  display: block;
+  img {
+    filter: grayscale(0);
+    @include transition(filter, .3s, linear);
+  }
+}
+.collection-item.collection-item-disabled {
+  opacity: .25;
+  display: none;
+  img,a {
+    filter: grayscale(1);
+  }
+}
+
+@media screen and (min-width:768px) {
+  .collection-filter-effect-fade .collection-item.collection-item-disabled {
+    display: block;
   }
 }

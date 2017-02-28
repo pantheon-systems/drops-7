@@ -3,8 +3,6 @@ projects[context][patch][] = "https://www.drupal.org/files/issues/context-213065
 
 projects[jquery_update][patch][] = "https://www.drupal.org/files/issues/2531016-add-permissions-to-form-alter.patch"
 
-projects[webform][patch][] = "https://www.drupal.org/files/issues/2534098-surpress-calendar-icon-w-aria.patch"
-
 projects[quicktabs][patch][] = "https://www.drupal.org/files/issues/2534684-quicktab-accordion-autoheight-jqueryui.patch"
 
 projects[content_menu][patch][] = "https://www.drupal.org/files/issues/content_menu-bigmenu-support-2054745-6.patch"
@@ -17,15 +15,12 @@ projects[video_filter][patch][] = "https://www.drupal.org/files/issues/video_fil
 
 projects[navbar][patch][] = "https://www.drupal.org/files/issues/navbar-shortcut_switch_menu_display-2653122-2-7.patch"
 
-projects[ldap_servers][patch][] =  "https://www.drupal.org/files/issues/ldap-changed_ldap_servers_bind_method_field-1839798-17.patch"
-
 projects[video_embed_field][patch][] = "https://www.drupal.org/files/issues/video_embed_field-youtube_options_not_applied-2580459-7.patch"
 
 ; @see https://cuboulder.atlassian.net/browse/FIT-968
 projects[quicktabs][patch][] = "https://www.drupal.org/files/issues/quicktabs-invalid-argument-foreach-2661436-2-7.patch"
 
 ; @see https://cuboulder.atlassian.net/browse/FIT-1059
-projects[responsive_preview][patch][] = "https://www.drupal.org/files/issues/responsive_preview-file_pattern-2681461-2-7.patch"
 projects[responsive_preview][patch][] = "https://www.drupal.org/files/issues/responsive_preview-wrap_config_in_description-2688791.patch"
 
 ; @see https://cuboulder.atlassian.net/browse/FIT-1768
@@ -52,3 +47,9 @@ projects[module_missing_message_fixer][patch][] = file://modules/contrib/module_
 
 ; @see https://cuboulder.atlassian.net/browse/FIT-1474
 projects[field_reference_delete][patch][] = https://www.drupal.org/files/issues/bulk-delete-using-drush-2772589-2.patch
+
+; @see https://cuboulder.atlassian.net/browse/FIT-2363
+projects[ldap_servers][patch][] = "https://www.drupal.org/files/issues/2838389-skip-bind-test-when-using-user-cred-method.patch"
+
+; @see https://cuboulder.atlassian.net/browse/FIT-2466
+projects[views_slideshow][patch][] = "https://www.drupal.org/files/issues/drush-cli-check-remove-2854640-2.patch"

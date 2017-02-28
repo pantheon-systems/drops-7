@@ -5,7 +5,7 @@ Feature: CU Extended Content Search Views
 
   @api @extended_search
   Scenario Outline: An authenticated user should be able to access the form for finding content
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
     When I go to "admin/content"
     Then I should not see <message>
 
@@ -24,7 +24,7 @@ Feature: CU Extended Content Search Views
 
   @api @extended_search
   Scenario: As a content_editor I should be able to see the additional fields for finding content
-    Given I am logged in as a user with the "content_editor" role
+    Given  CU - I am logged in as a user with the "content_editor" role
     When I go to "admin/content"
     Then I should see the text "Title contains"
       And I should see the text "Node: Type"

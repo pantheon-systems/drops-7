@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module to ensure Locale integration doesn't break.
  */
-
 class MetatagCoreLocaleTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
       'name' => 'Metatag core tests for Locale',
       'description' => 'Test Metatag integration with the locale module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -37,6 +38,9 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
     // Create a content type.
     $this->createContentType($content_type, $label);
 
+    // Add more locales.
+    $this->setupLocales();
+
     // Create an admin user and log them in.
     $perms = array(
       // Needed for the content type.
@@ -49,10 +53,9 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
       'translate interface',
     );
     $this->adminUser = $this->createAdminUser($perms);
-    $this->drupalLogin($this->adminUser);
 
-    // Prep the locales.
-    $this->setupLocales();
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
 
     // Load the node form in each locale, confirm it has the fields. This also
     // preloads the field labels into the locale system.

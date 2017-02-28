@@ -81,7 +81,7 @@ function ldap_authentication_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'ldap_authentication.pages.inc',
   );
-  
+
   $items['admin/config/people/ldap/authentication'] = array(
     'title' => 'Authentication',
     'description' => 'Configure LDAP Authentication',
@@ -183,13 +183,13 @@ function ldap_authentication_help($path, $arg) {
 /**
  * Helper function that determines whether or not the user's profile
  * is valid or needs to be updated on login.
- * 
+ *
  * Currently this only checks if mail is valid or not according to the
  * authentication settings.
- * 
+ *
  * @return boolean
  *   TRUE if the user's profile is valid, otherwise FALSE.
- * 
+ *
  */
 function _ldap_authentication_verify_user_profile() {
   global $user;
@@ -262,17 +262,15 @@ function ldap_authentication_info($field = 0) {
 
 
 /**
+ * Determines if the passed user has a valid authmap record.
  *
  * @param object $user
+ *   A drupal user account.
+ *
  * @return boolean
  *    true if user is recorded as ldap authenticated and identified (ldap_authentified)
  */
-
 function ldap_authentication_ldap_authenticated($user) {
-
-  if (is_numeric($user)) {
-    $user = @user_load((int)$user);
-  }
   if (!is_object($user) || $user->uid == 0) {
     return FALSE;
   }
@@ -321,7 +319,7 @@ function ldap_authentication_ldap_server_in_use($sid, $server_name) {
 
   $use_warnings = array();
   $auth_conf = ldap_authentication_get_valid_conf();
-  if ($auth_conf && in_array($sid, array_keys($auth_conf->sids))) {
+  if ($auth_conf && in_array($sid, array_keys($auth_conf->sids)) && !empty($auth_conf->sids[$sid])) {
     $use_warnings[] = t('This server (%server_name) may not be deleted or
       disabled because it is being used for ldap authentication.',
       array('%server_name' => $server_name));
@@ -335,7 +333,9 @@ function ldap_authentication_show_reset_pwd($user = NULL) {
     global $user;
   }
   $auth_conf = ldap_authentication_get_valid_conf();
-  if (current_path() == 'user/password' || $user->uid == 1 || !$auth_conf) {
+  // Hide user/password form if ldap authentication is required and deny access
+  // to users without ldap authorizations is enabled
+  if ($user->uid == 1 || $auth_conf || (current_path() == 'user/password' && $auth_conf->authenticationMode != LDAP_AUTHENTICATION_EXCLUSIVE)) {
     return TRUE;
    // always show at user/passwordurl. otherwise user 1 will not be able to reset password.
   }

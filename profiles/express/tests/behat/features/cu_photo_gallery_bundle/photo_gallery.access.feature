@@ -3,7 +3,7 @@ Feature: Photo Gallery Access
 
   @api @max_execution_time
   Scenario Outline: Certain user roles should be able to create Photo Gallery content.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
       And I am on "node/add/photo-gallery"
     Then I should see <message>
 
@@ -22,7 +22,7 @@ Feature: Photo Gallery Access
 
   @api
   Scenario Outline: All users should be able to view a photo gallery node.
-    Given I am logged in as a user with the <role> role
+    Given  CU - I am logged in as a user with the <role> role
       And I create a "photo_gallery" node with the title "New Gallery"
     Then I should see <message>
 

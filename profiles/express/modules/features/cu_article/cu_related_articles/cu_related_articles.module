@@ -31,6 +31,7 @@ function cu_related_articles_block_view($delta = '') {
 }
 
 function cu_related_articles_block_output($view_mode) {
+  $block = array();
   $related_articles = array();
   // Get current node
   if (($node = menu_get_object()) && $node->type =='article') {
@@ -40,7 +41,11 @@ function cu_related_articles_block_output($view_mode) {
     if (!empty($node->field_article_categories[LANGUAGE_NONE])) {
       foreach ($node->field_article_categories[LANGUAGE_NONE] as $category_term) {
         $tid = $category_term['tid'];
-        $categories[$tid] = $tid;
+        // Load term, add to array if term is not hidden
+        $term = taxonomy_term_load($tid);
+        if ($term->field_category_display[LANGUAGE_NONE][0]['value'] == 'show') {
+          $categories[$tid] = $tid;
+        }
       }
     }
     // Get tags from current article
@@ -48,7 +53,11 @@ function cu_related_articles_block_output($view_mode) {
     if (!empty($node->field_tags[LANGUAGE_NONE])) {
       foreach ($node->field_tags[LANGUAGE_NONE] as $tag_term) {
         $tid = $tag_term['tid'];
-        $tags[$tid] = $tid;
+        // Load term, add to array if term is not hidden
+        $term = taxonomy_term_load($tid);
+        if ($term->field_tag_display[LANGUAGE_NONE][0]['value'] == 'show') {
+          $tags[$tid] = $tid;
+        }
       }
     }
 
@@ -61,7 +70,7 @@ function cu_related_articles_block_output($view_mode) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid', 'title'));
+      $query->fields('n', array('nid'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for categories
@@ -72,6 +81,9 @@ function cu_related_articles_block_output($view_mode) {
       $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
       $query->fields('tags', array('field_tags_tid'));
       $query->condition('tags.field_tags_tid', $tags, 'in');
+      // Sort newest articles first
+      // If two articles have the same related score, the most recent wins
+      $query->orderBy('created', 'DESC');
       // Get results
       $results = $query->execute()->fetchCol();
       // Count occurances of node id - more occurances = more related
@@ -89,13 +101,16 @@ function cu_related_articles_block_output($view_mode) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid', 'title'));
+      $query->fields('n', array('nid'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for categories
       $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
       $query->fields('cats', array('field_article_categories_tid'));
       $query->condition('cats.field_article_categories_tid', $categories, 'in');
+      // Sort newest articles first
+      // If two articles have the same related score, the most recent wins
+      $query->orderBy('created', 'DESC');
       // Get results
       $results = $query->execute()->fetchCol();
       // Count occurances of node id - more occurances = more related
@@ -113,13 +128,16 @@ function cu_related_articles_block_output($view_mode) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid', 'title'));
+      $query->fields('n', array('nid'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for tags
       $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
       $query->fields('tags', array('field_tags_tid'));
       $query->condition('tags.field_tags_tid', $tags, 'in');
+      // Sort newest articles first
+      // If two articles have the same related score, the most recent wins
+      $query->orderBy('created', 'DESC');
       // Get results
       $results = $query->execute()->fetchCol();
       // Count occurances of node id - more occurances = more related
@@ -136,9 +154,15 @@ function cu_related_articles_block_output($view_mode) {
       $top_related = array_slice($related_articles, 0, 3, TRUE);
       $nodes = node_load_multiple($top_related);
 
+      // Get date display setting
+      $date_display = variable_get('cu_related_articles_grid_date_display', 0);
+      $show_date = $date_display;
+      $date_display = ($date_display) ? 'related-articles-show-date' : 'related-articles-hide-date';
       if ($view_mode == 'grid') {
         foreach ($nodes as $key => $node) {
           $nodes[$key]->heading_tag['#tag'] = 'h3';
+          $nodes[$key]->grid_date['#show'] = TRUE;
+          $nodes[$key]->publish_date['#publish_date'] = ($show_date) ? format_date($node->created, 'cu_short_date') : NULL;
         }
         $block['content']['articles'] = node_view_multiple($nodes, 'grid');
         unset($block['content']['articles']['nodes']['#sorted']);
@@ -146,12 +170,12 @@ function cu_related_articles_block_output($view_mode) {
           $block['content']['articles']['nodes'][$key]['#prefix'] = '<div class="related-article col-lg-4 col-md-4 col-sm-4 col-xs-12">';
           $block['content']['articles']['nodes'][$key]['#suffix'] = '</div>';
         }
-        $block['content']['articles']['#prefix'] = '<div class="related-articles row">';
+        $block['content']['articles']['#prefix'] = '<div class="related-articles row ' . $date_display . '">';
       }
       else {
         $block['content']['articles'] = node_view_multiple($nodes, 'sidebar');
         unset($block['content']['articles']['nodes']['#sorted']);
-        $block['content']['articles']['#prefix'] = '<div class="related-articles">';
+        $block['content']['articles']['#prefix'] = '<div class="related-articles ' . $date_display . '">';
       }
 
       $block['content']['articles']['#suffix'] = '</div>';
@@ -159,4 +183,40 @@ function cu_related_articles_block_output($view_mode) {
     }
   }
   return $block;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function cu_related_articles_block_configure($delta = '') {
+  $form = array();
+  switch($delta) {
+    case 'related_articles_block_grid':
+      $form['cu_related_articles_grid_date_display'] = array(
+        '#type' => 'radios',
+        '#title' => t('Date display on related articles'),
+        '#default_value' => variable_get('cu_related_articles_grid_date_display', 0),
+        '#required' => TRUE,
+        '#options' => array(
+          '0' => 'Hide',
+          '1' => 'Show',
+        ),
+      );
+      break;
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function cu_related_articles_block_save($delta = '', $edit = array()) {
+  switch ($delta) {
+    case 'related_articles_block_grid':
+      // Have Drupal save the string to the database.
+      variable_set('cu_related_articles_grid_date_display', $edit['cu_related_articles_grid_date_display']);
+      break;
+  }
+  return;
 }

@@ -51,7 +51,7 @@ function _ldap_servers_encrypt_types($type = 'all') {
     ); */
 
     $encrypts = array(
-      LDAP_SERVERS_ENC_TYPE_CLEARTEXT => 'No Encyption'
+      LDAP_SERVERS_ENC_TYPE_CLEARTEXT => 'No Encryption'
     );
     if (function_exists('mcrypt_module_open')) {
       $encrypts[LDAP_SERVERS_ENC_TYPE_BLOWFISH] = 'Blowfish';

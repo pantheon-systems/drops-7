@@ -3,7 +3,7 @@ Feature: Facebook Like Creation Feature
 
 @api @social_media
 Scenario: Create an Facebook Like Block.
-Given I am logged in as a user with the "content_editor" role
+Given  CU - I am logged in as a user with the "content_editor" role
 And I am on "block/add/facebook-like-button"
 And I fill in "Label" with "Facebook Activity Label"
 And I fill in "Title" with "Facebook Activity Block Title"

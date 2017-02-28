@@ -225,6 +225,7 @@ function _webform_render_grid($component, $value = NULL, $filter = TRUE, $submis
     '#theme' => 'webform_grid',
     '#theme_wrappers' => array('webform_element'),
     '#process' => array('webform_expand_grid'),
+    '#element_validate' => array('webform_validate_grid'),
     '#translatable' => array('title', 'description', 'grid_options', 'grid_questions'),
   );
 
@@ -299,7 +300,9 @@ function webform_expand_grid($element) {
   if (!empty($element['#qrand'])) {
     _webform_shuffle_options($weights);
   }
-  $weight = min($weights);
+  if ($weights) {
+    $weight = min($weights);
+  }
   foreach ($weights as $key => $old_weight) {
     $element[$key]['#options'] = webform_grid_remove_options($options, $element[$key]['#options']);
     $element[$key]['#weight'] = $weight++;
@@ -489,7 +492,8 @@ function theme_webform_display_grid($variables) {
           }
         }
         $value = implode(', ', $values);
-      } else {
+      }
+      else {
         $element[$question_key]['#title'] = '';
         $value = drupal_render($element[$question_key]);
       }
@@ -776,4 +780,24 @@ function _webform_grid_right_titles($element) {
  */
 function _webform_grid_question_header($text) {
   return implode('/', array_filter(explode('|', $text)));
+}
+
+/**
+ * Element validation for Webform grid fields.
+ *
+ * Requires a component implementation because the default required validation
+ * passes when at least one value is supplied, rather than every value. This
+ * makes the server validation match the browser validation.
+ */
+function webform_validate_grid($element, $form_state) {
+  if ($element['#required']) {
+    $values = $form_state['input'];
+    foreach ($element['#parents'] as $key) {
+      $values = isset($values[$key]) ? $values[$key] : $values;
+    }
+    $nr_values = array_reduce($values, function($count, $item) { return $count + (int)!is_null($item); }, 0);
+    if (count($element['#grid_questions']) != $nr_values) {
+      form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+    }
+  }
 }

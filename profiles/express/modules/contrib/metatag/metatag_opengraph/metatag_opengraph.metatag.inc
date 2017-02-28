@@ -603,6 +603,7 @@ function _metatag_opengraph_type_options() {
       'city' => t('City'),
       'country' => t('Country'),
       'landmark' => t('Landmark'),
+      'place' => t('Place'),
       'state_province' => t('State or province'),
     ),
     t('Products and Entertainment') => array(
@@ -612,6 +613,7 @@ function _metatag_opengraph_type_options() {
       'food' => t('Food'),
       'game' => t('Game'),
       'product' => t('Product'),
+      'product.group' => t('Product group'),
       'song' => t('Song'),
       'video.movie' => t('Movie'),
       'video.tv_show' => t('TV show'),

@@ -107,14 +107,18 @@ $radius: 0px;
 .box-content {
   padding:20px;
 }
-
-.cu-box.float-right {
-  width:40%;
-  margin:0 0 20px 20px;
-  float: right;
+.cu-box {
+  margin-bottom: 20px;
 }
-.cu-box.float-left {
-  width:40%;
-  margin:0 20px 20px 0;
-  float: left;
+@media all and (min-width:768px) {
+  .cu-box.float-right {
+    width:40%;
+    margin:0 0 20px 20px;
+    float: right;
+  }
+  .cu-box.float-left {
+    width:40%;
+    margin:0 20px 20px 0;
+    float: left;
+  }
 }

@@ -41,7 +41,7 @@ LDAP User Data Structures in Drupal User Object
 
  'ldap_user_puid_sid' => 
   array (
-    'und' => 
+    LANGUAGE_NONE =>
     array (
       0 => 
       array (
@@ -53,7 +53,7 @@ LDAP User Data Structures in Drupal User Object
   ),
    'ldap_user_puid' => 
   array (
-    'und' => 
+    LANGUAGE_NONE =>
     array (
       0 => 
       array (
@@ -65,7 +65,7 @@ LDAP User Data Structures in Drupal User Object
   ),
    'ldap_user_puid_property' => 
   array (
-    'und' => 
+    LANGUAGE_NONE =>
     array (
       0 => 
       array (
@@ -77,7 +77,7 @@ LDAP User Data Structures in Drupal User Object
   ),
    'ldap_user_current_dn' => 
   array (
-    'und' => 
+    LANGUAGE_NONE =>
     array (
       0 => 
       array (

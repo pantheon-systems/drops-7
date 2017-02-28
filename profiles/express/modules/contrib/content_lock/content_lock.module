@@ -79,6 +79,7 @@ function content_lock_menu() {
     'page callback' => 'content_lock_release_own_item',
     'page arguments' => array(2, FALSE, FALSE),
     'access callback' => 'user_access',
+    'access arguments' => array('check out documents'),
   );
   $items['ajax/content_lock/%node/lock/%'] = array(
     'page callback' => 'content_lock_node_ajax_callback',
@@ -110,6 +111,20 @@ function content_lock_admin_paths() {
   );
 
   return $paths;
+}
+
+/**
+ * Implements hook_drupal_goto_alter().
+ */
+function content_lock_drupal_goto_alter(&$path, &$options, &$http_response_code) {
+  // Add content lock token.
+  if (module_exists('entity_translation') && fnmatch('node/*/edit/add/*/*', $path) && !isset($options['content_lock_token'])) {
+    $options = array(
+      'query' => array(
+        'content_lock_token' => drupal_get_token($path),
+      ),
+    );
+  }
 }
 
 /**
@@ -158,6 +173,7 @@ function content_lock_content_lock_path_protected($path) {
   if (strpos($path, 'node/') === 0) {
     $paths_patterns = array(
       'node/*/edit',
+      'node/*/edit/*',
       'node/*/revisions/*/revert',
     );
     foreach ($paths_patterns as $protected_pattern) {
@@ -553,7 +569,7 @@ function _content_lock_add_cancelbutton(&$form, $form_state, $form_id) {
         $form['actions']['cancel'] = array(
           '#type' => 'button',
           '#weight' => 2000,
-          '#value' => t('Cancel'),
+          '#value' => t('Cancel edit'),
           '#validate' => array('content_lock_cancel_submit'),
         );
 
@@ -707,7 +723,7 @@ function content_lock_node($nid, $uid, $quiet = FALSE) {
       );
 
       if (_content_lock_verbose() && !$quiet) {
-        drupal_set_message(t('This document is now locked against simultaneous editing. It will unlock when you navigate elsewhere.'), 'status', FALSE);
+        drupal_set_message(t('This document is now locked against simultaneous editing.'), 'status', FALSE);
       }
       module_invoke_all('content_lock_locked', $nid, $uid);
     }

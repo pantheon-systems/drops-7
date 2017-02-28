@@ -35,6 +35,7 @@ function hook_content_lock_path_protected($path) {
   if (strpos($path, 'node/') === 0) {
     $paths_patterns = array(
       'node/*/edit',
+      'node/*/edit/*',
       'node/*/revisions/*/revert',
     );
     foreach ($paths_patterns as $protected_pattern) {

@@ -165,7 +165,10 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
   public function tidyValue($value) {
     // Check for Media strings from the WYSIWYG submodule.
     if (module_exists('media_wysiwyg') && strpos($value, '[[{') !== FALSE) {
-      $value = media_wysiwyg_filter($value);
+      // In https://www.drupal.org/node/2129273 media_wysiwyg_filter() was
+      // changed to require several additional arguments.
+      $langcode = language_default('language');
+      $value = media_wysiwyg_filter($value, NULL, NULL, $langcode, NULL, NULL);
     }
 
     // Specifically replace encoded spaces, because some WYSIWYG editors are
@@ -199,8 +202,9 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
    */
   function convertUrlToAbsolute($url) {
     // Convert paths relative to the hostname, that start with a slash, to
-    // ones that are relative to the Drupal root path.
-    if (strpos($url, base_path()) === 0) {
+    // ones that are relative to the Drupal root path; ignore protocol-relative
+    // URLs.
+    if (strpos($url, base_path()) === 0 && strpos($url, '//') !== 0) {
       // Logic:
       // * Get the length of the base_path(), 
       // * Get a portion of the image's path starting from the position equal

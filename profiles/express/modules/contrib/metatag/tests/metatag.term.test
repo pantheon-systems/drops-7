@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module and taxonomy term entities.
  */
-
 class MetatagCoreTermTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagCoreTermTest extends MetatagTestHelper {
       'name' => 'Metatag core tests for terms',
       'description' => 'Test Metatag edit functionality for terms.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -58,6 +59,8 @@ class MetatagCoreTermTest extends MetatagTestHelper {
       'create url aliases',
     );
     $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
     $this->drupalLogin($this->adminUser);
 
     // Assign default values for the new vocabulary.
@@ -80,9 +83,7 @@ class MetatagCoreTermTest extends MetatagTestHelper {
 
     // Submit the form with some values.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[term:name]',
-      'metatags[und][dcterms.format][value]' => 'text/html',
-      'metatags[und][dcterms.identifier][value]' => '[current-page:url:absolute]',
+      'metatags[und][abstract][value]' => '[term:name]',
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -104,7 +105,7 @@ class MetatagCoreTermTest extends MetatagTestHelper {
 
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
-      'metatags[und][dcterms.subject][value]' => '[term:name] ponies',
+      'metatags[und][abstract][value]' => '[term:name] ponies',
       'name' => $term_name,
       'path[alias]' => $term_path,
     ), t('Save'));
@@ -144,7 +145,7 @@ class MetatagCoreTermTest extends MetatagTestHelper {
       // Only the non-default values are stored.
       $expected = array(
         'und' => array(
-          'dcterms.subject' => array(
+          'abstract' => array(
             'value' => '[term:name] ponies',
           ),
         ),
@@ -158,8 +159,8 @@ class MetatagCoreTermTest extends MetatagTestHelper {
     }
 
     // Verify the title is using the custom default for this vocabulary.
-    $xpath = $this->xpath("//meta[@name='dcterms.subject']");
-    $this->assertEqual(count($xpath), 1, 'Exactly one dcterms.subject meta tag found.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
     $this->assertEqual($xpath[0]['content'], "Who likes magic ponies");
   }
 }

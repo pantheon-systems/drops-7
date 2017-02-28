@@ -48,6 +48,7 @@ dependencies[] = entitycache
 dependencies[] = inline_entity_form
 dependencies[] = bean
 dependencies[] = bean_admin_ui
+dependencies[] = bean_entitycache
 dependencies[] = context
 
 ; Express Core Contrib Dependencies

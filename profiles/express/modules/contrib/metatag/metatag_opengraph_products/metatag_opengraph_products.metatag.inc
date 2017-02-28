@@ -11,7 +11,7 @@ function metatag_opengraph_products_metatag_info() {
   // Open Graph products.
   $info['groups']['open-graph-products'] = array(
     'label' => t('Open Graph - Products'),
-    'description' => t("These Open Graph meta tags for describing products.", array('@ogp' => 'http://ogp.me/')),
+    'description' => t("These Open Graph meta tags for describing products."),
     'form' => array(
       '#weight' => 51,
     ),

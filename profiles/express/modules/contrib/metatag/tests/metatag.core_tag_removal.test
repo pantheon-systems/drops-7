@@ -1,10 +1,10 @@
 <?php
+
 /**
- * @file
  * Tests for the Metatag module to ensure removal of core tags works correctly.
  */
-
 class MetatagCoreTagRemovalTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */
@@ -13,6 +13,7 @@ class MetatagCoreTagRemovalTest extends MetatagTestHelper {
       'name' => 'Metatag core tag handling',
       'description' => 'Test Metatag integration with the locale module.',
       'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
     );
   }
 
@@ -37,7 +38,7 @@ class MetatagCoreTagRemovalTest extends MetatagTestHelper {
     unset($config->config['generator']);
     metatag_config_save($config);
     // Dump out the current config, to aid with debugging.
-    $this->verbose('<pre>' . print_r($config, TRUE) . '</pre>');
+    $this->verbose($config);
 
     // Load the front page.
     $this->drupalGet('<front>');
