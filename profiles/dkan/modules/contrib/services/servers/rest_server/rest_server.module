@@ -55,7 +55,6 @@ function rest_server_request_parsers() {
     $parsers = array(
       'application/x-www-form-urlencoded' => 'ServicesParserURLEncoded',
       'application/json' => 'ServicesParserJSON',
-      'application/vnd.php.serialized' => 'ServicesParserPHP',
       'multipart/form-data' => 'ServicesParserMultipart',
       'application/xml' => 'ServicesParserXML',
       'text/xml' => 'ServicesParserXML',
@@ -181,7 +180,7 @@ function rest_server_libraries_info() {
     'name' => 'Spyc',
     'version' => '0.5.1',
     'vendor url' => 'https://github.com/mustangostang/spyc',
-    'download url' => 'https://raw2.github.com/mustangostang/spyc/master/Spyc.php',
+    'download url' => 'https://raw.github.com/mustangostang/spyc/0.5.1/Spyc.php',
     'version arguments' => array(
       'file' => 'Spyc.php',
       'pattern' => '@version\s+([0-9a-zA-Z\.-]+)@',

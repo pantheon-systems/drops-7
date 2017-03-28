@@ -1,4 +1,5 @@
 7.x-1.x
 -------
+- Removed dataproxy as an option from the Select backend source type field on charts.
 - Fixed 'edit/delete' paths used on 'edit/delete' links on visualization tables.
 - Fixed the Chart form to comply with Section 508 requirements for keyboard access.

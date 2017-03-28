@@ -57,6 +57,13 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
         $cleaned_data = $this->geocode($cleaned_data, $source_config['geolocate_addresses'], $source_config['geolocater']);
       }
 
+      // Empty values should be nullified CIVIC-5364
+      foreach ($cleaned_data as $key => $value) {
+        if (empty($value) && !is_numeric($value)) {
+          $cleaned_data[$key] = NULL;
+        }
+      }
+
       // We only save, never update, since there is only a flat table.
       $this->handler($source)->save($cleaned_data);
     }

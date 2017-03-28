@@ -70,6 +70,9 @@ class views_handler_field_taxonomy extends views_handler_field {
       $term->vocabulary_machine_name = $values->{$this->aliases['vocabulary_machine_name']};
       $this->options['alter']['make_link'] = TRUE;
       $uri = entity_uri('taxonomy_term', $term);
+      if (isset($uri['options'])) {
+        $this->options['alter'] = array_merge($this->options['alter'], $uri['options']);
+      }
       $this->options['alter']['path'] = $uri['path'];
     }
 

@@ -1,3 +1,9 @@
+
+7.x-1.13.2 2017-03-16
+---------------------
+- #86 Fix validation page permission check using wrong permission name.
+- #85 Add checks for property existance during odsm features rebuild.
+
 7.x-1.12.14
 -----------
 - Add support for validation of data.json files from sites with self-signed certificates.

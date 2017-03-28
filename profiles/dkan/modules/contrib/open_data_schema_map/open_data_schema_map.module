@@ -126,7 +126,7 @@ function open_data_schema_map_menu() {
       'title' => $data['title'],
       'page callback' => $data['page callback'],
       'page arguments' => array(),
-      'access arguments' => array('Administer Open Data Schema Mapper'),
+      'access arguments' => array('administer open data schema mapper'),
       'type' => MENU_NORMAL_ITEM,
       'file' => $data['file'],
       'file path' => $data['file path'],

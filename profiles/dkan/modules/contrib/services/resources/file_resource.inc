@@ -73,7 +73,7 @@ function _file_resource_definition() {
           'access arguments append' => TRUE,
           'args' => array(
             array(
-              'name' => 'cid',
+              'name' => 'fid',
               'type' => 'int',
               'description' => 'The id of the file to delete',
               'source' => array('path' => '0'),
