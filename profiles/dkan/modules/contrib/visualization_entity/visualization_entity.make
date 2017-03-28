@@ -21,7 +21,7 @@ libraries:
   chroma:
     download:
       type: file
-      url: https://github.com/gka/chroma.js/zipball/d2c6d917df4ba2b87d8a740de116a0656bcbdfd5
+      url: https://github.com/gka/chroma.js/zipball/d77c2d4fbde6701dfdf003400400972284b2cae7
   numeral:
     download:
       type: file
@@ -59,7 +59,7 @@ libraries:
       type: git
       url: https://github.com/bgrins/spectrum.git
       tag: 1.8.0
-      revision: 74ccb0e48f43a069b45c8b6cdf981a59ded3e271
+      revision: 9e04e5882de98cb9f909300b035d0f38c058c2fb
     destination: libraries
     directory_name: bgrins-spectrum
   reclineViewNvd3:

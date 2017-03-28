@@ -48,6 +48,13 @@ class RESTServer {
     }
     catch (ServicesException $e) {
       $result = $this->handleException($e, $controller, $arguments);
+
+      $no_body = variable_get('services_no_body_responses', array(204, 304));
+      $generate_body = variable_get('services_generate_error_body', TRUE);
+
+      if (in_array($e->getCode(), $no_body) && !$generate_body) {
+        return '';
+      }
     }
 
     return $this->render($formatter, $result);

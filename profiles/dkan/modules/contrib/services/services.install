@@ -106,6 +106,7 @@ function services_schema() {
         'default' => 0,
       ),
     ),
+    'primary key' => array('uid'),
   );
   return $schema;
 }
@@ -308,4 +309,15 @@ function services_update_7402() {
     ),
   );
   db_create_table('services_user', $schema['services_user']);
+}
+
+
+/**
+ * Add primary key to the services_user table, truncating it first
+ */
+function services_update_7403() {
+  // We have to truncate the table because the table was wrongly
+  // updating every single record
+  db_truncate('services_user')->execute();
+  db_add_primary_key('services_user', array('uid'));
 }

@@ -8,4 +8,4 @@ dependencies[] = features
 dependencies[] = token
 files[] = open_data_schema_map.features.inc
 files[] = test/open_data_schema_map_api.test
-version = 7.x-1.13.1
+version = 7.x-1.13.2

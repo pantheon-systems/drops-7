@@ -95,8 +95,8 @@ function open_data_schema_apis_features_rebuild($module) {
       $existing = open_data_schema_map_api_load($machine_name);
       // @todo add open_data_schema_map_schema_save() function to replace this
       $record = (object) $definition;
-      $record->id = $existing->id;
       if ($existing && isset($existing->id)) {
+        $record->id = $existing->id;
         drupal_write_record('open_data_schema_map', $record, 'id');
       }
       else {

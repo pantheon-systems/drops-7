@@ -31,3 +31,7 @@ Settings via variables
 
 'services_{$resource}_index_page_size' -- this variable controls maximum number of results that
 will be displayed by index query. See services_resource_build_index_query() for more information.
+
+'services_generate_error_body' -- boolean denoting whether a message body should be included with
+certain HTTP error-related status codes. (According to IETF's RFC2616, 204 and 304 responses must
+not include bodies.)

@@ -30,7 +30,7 @@ class Mimeparse {
           $full_type = '*/*';
       }
       list ($type, $subtype) = explode('/', $full_type);
-      if (!$subtype) throw (new Exception("malformed mime type"));
+      if (!$subtype) throw new Exception("malformed mime type");
     
       return array(trim($type), trim($subtype), $params);
     }

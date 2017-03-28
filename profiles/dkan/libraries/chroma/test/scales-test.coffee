@@ -54,6 +54,13 @@ vows
             'mid gray': (topic) -> assert.equal topic.f(50).hex(), '#ffffbf'
             'ends black': (topic) -> assert.equal topic.f(100).hex(), '#006837'
 
+        'colorbrewer scale - lowercase':
+            topic:
+                f: chroma.scale 'rdylgn'
+            'starts white': (topic) -> assert.equal topic.f(0).hex(), '#a50026'
+            'mid gray': (topic) -> assert.equal topic.f(0.5).hex(), '#ffffbf'
+            'ends black': (topic) -> assert.equal topic.f(1).hex(), '#006837'
+
         'colorbrewer scale - domained - classified':
             topic:
                 f: chroma.scale('RdYlGn').domain([0, 100]).classes(5)
@@ -112,6 +119,11 @@ vows
             'five hex colors': (topic) -> assert.deepEqual topic.f.colors(5), ['#ffff00', '#bfd800', '#7fb100', '#3f8a00', '#006400']
             'three css colors': (topic) -> assert.deepEqual topic.f.colors(3,'css'), ['rgb(255,255,0)', 'rgb(128,178,0)', 'rgb(0,100,0)' ]
 
+        'get colors from a scale with more than two colors':
+            topic:
+                f: chroma.scale(['yellow','orange', 'darkgreen'])
+            'just origianl colors': (topic) -> assert.deepEqual topic.f.colors(), ['#ffff00', '#ffa500', '#006400']
+
         'test example in readme':
             topic: 
                 f: chroma.scale('RdYlGn')
@@ -136,5 +148,11 @@ vows
             '0': (topic) -> assert.equal topic.f(0).hex(), '#fddcae'
             '0.5': (topic) -> assert.equal topic.f(0.5).hex(), '#f16c4b'
             '1': (topic) -> assert.equal topic.f(1).hex(), '#7f0000'
+
+        'colors return original colors':
+            topic:
+                f: chroma.scale(['red', 'white', 'blue'])
+            'same colors': (topic) -> assert.deepEqual topic.f.colors(), ['#ff0000', '#ffffff', '#0000ff']
+
 
     .export(module)

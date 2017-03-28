@@ -1,7 +1,7 @@
 name = Visualization Entity Visualization Contributor Role
 core = 7.x
 package = Data Visualization
-version = 7.x-1.0
+version = 7.x-1.x-dev
 
 dependencies[] = entity
 dependencies[] = features
@@ -15,3 +15,4 @@ features[rules_config][] = rules_nucivic_data_portal_administrator_gets_the_visu
 features[user_role][] = visualization contributor
 features_exclude[dependencies][role_export] = role_export
 project path = sites/all/modules/nucivic/visualization_entity/modules
+version = 7.x-1.1
