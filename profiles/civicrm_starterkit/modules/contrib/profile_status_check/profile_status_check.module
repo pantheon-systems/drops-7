@@ -1,0 +1,364 @@
+<?php
+/**
+ * @file
+ * Profile Module Check
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function profile_status_check_menu() {
+  $items = array();
+
+  $items['admin/modules/status'] = array(
+    'title' => 'Review Overrides',
+    'description' => '',
+    'page callback' => 'profile_status_check_system_listing',
+    'access arguments' => array('access administration pages'),
+    'weight' => 99,
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/modules/status/export/all'] = array(
+    'title' => 'Export Report',
+    'description' => '',
+    'page callback' => 'profile_status_check_export',
+    'access arguments' => array('access administration pages'),
+    'weight' => 0,
+    'type' => MENU_CALLBACK,
+  );
+  
+    // Administration settings.
+  
+  $items['admin/config/development/profile-status-check'] = array(
+    'title' => 'Profile Status Check',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_status_check_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer modules'),
+    'description' => t('Configure settings Profile Status Check'),
+  );
+    
+  return $items;
+
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function profile_status_check_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'file/add' on 'admin/content/file/thumbnails' page.
+  if ($root_path == 'admin/modules/status') {
+    $item = menu_get_item('admin/modules/status/export/all');
+    if (!empty($item['access'])) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+        '#weight' => $item['weight'],
+      );
+    }
+  }
+}
+
+/**
+ * Builds the admininstration settings form.
+ *
+ * @return $form
+ */
+function profile_status_check_admin_settings($form, &$form_state) {
+
+  $form['profile_status_check_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Orgnaization Prefix'),
+    '#default_value' => variable_get('profile_status_check_prefix', NULL),
+    '#description' => t('Lowercase text used in custom module and features names.  Examples would be pcm, ca, mnn, ecat, phillycam, amherst, retn, etc. If configured, any modules or features that begin with this text will be broken out in the report and the prefix will be added to the export filename'),
+  );
+
+  return system_settings_form($form);
+}
+
+function profile_status_check_export() {
+  // Add the headers needed to let the browser know this is a csv file download.
+  
+  $date = date("Y-m-d");
+  $prefix = variable_get('profile_status_check_prefix', NULL);
+  $file_prefix = isset($prefix) ? $prefix . '-' : NULL;
+  
+  drupal_add_http_header('Content-Type', 'text/csv; utf-8');
+  drupal_add_http_header('Content-Disposition', 'attachment; filename = '  . $file_prefix . $date . '-profile-status-check.csv');
+  
+  // $modules[$file_key]['title'] = $info['name'];
+  // $modules[$file_key]['value'] = $value;
+  // $modules[$file_key]['severity'] = $status; 
+  // $modules[$file_key]['description'] = $message; 
+  
+  $name = drupal_get_profile();
+  $path = drupal_get_path('module', $name) . '/' . $name . '.info';
+  $profile = drupal_parse_info_file($path);
+  
+  //print '<pre>';
+  //print_r($profile);  
+  
+  //print $profile['name'];
+  //print $profile['version'];
+  //print date("m/d/y", $profile['datestamp']);
+  
+  // $status = 2;
+  // $value = t('Overridden, Enabled');
+       
+  // $status = 1;
+  // $value = t('Overridden, Not Enabled');
+  
+  // $status = 1;
+  // $value = t('Added, Enabled');
+     
+  // $status = -1;
+  // $value = t('Added, Not Enabled');
+        
+  
+  $modules = profile_status_check_list_modules();
+  
+  // Instead of writing to a file, we write to the output stream.
+  $fh = fopen('php://output', 'w');
+ 
+  // Add a header row
+  fputcsv($fh, array('PROFILE', 'VERSIONS'));
+  fputcsv($fh, array($profile['name'], $profile['version'] . ' packaged on ' . date("m/d/y", $profile['datestamp'])));
+ 
+  // Add a header row
+  fputcsv($fh, array('OVERRIDDEN MODULES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  // Loop through our modules and write the csv data.
+  foreach($modules as $module) {
+    if ($module['value'] == 'Overridden, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));
+    }
+  }
+  
+  // Add a header row
+  fputcsv($fh, array('ADDED MODULES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  foreach($modules as $module) {
+    if ($module['value'] == 'Added, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));      
+    }
+  }
+ 
+  // Add a header row
+  fputcsv($fh, array('CUSTOM MODULES AND FEATURES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  foreach($modules as $module) {
+    if ($module['value'] == 'Custom, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));      
+    }
+  }
+ 
+  
+  // Close the output stream.
+  fclose($fh);
+
+}
+
+/**
+ * Themes alphabetical lists of modules and their status
+ *
+ */
+function profile_status_check_system_listing() {
+
+  $modules = profile_status_check_list_modules();
+  
+  if ($modules) {
+    ksort($modules);
+    return theme('status_report', array('requirements' => $modules)); 
+  } else {
+    return drupal_set_message(t('There are no overridden or additional modules.'), 'status');
+  }
+}
+
+/**
+ * Returns array of modules and their status
+ *
+ */
+function profile_status_check_list_modules() {
+
+  $modules = array();
+  $mask = '/^' . DRUPAL_PHP_FUNCTION_PATTERN . '\.module$/';
+  $directory = 'modules';
+  $key = 'name';
+  $min_depth = 1;
+  
+  $config = conf_path();
+
+  $searchdir = array($directory);
+  $files = array();
+
+  // The 'profiles' directory contains pristine collections of modules and
+  // themes as organized by a distribution. It is pristine in the same way
+  // that /modules is pristine for core; users should avoid changing anything
+  // there in favor of sites/all or sites/<domain> directories.
+  $profiles = array();
+  $profile = drupal_get_profile();
+  // For SimpleTest to be able to test modules packaged together with a
+  // distribution we need to include the profile of the parent site (in which
+  // test runs are triggered).
+  if (drupal_valid_test_ua()) {
+    $testing_profile = variable_get('simpletest_parent_profile', FALSE);
+    if ($testing_profile && $testing_profile != $profile) {
+      $profiles[] = $testing_profile;
+    }
+  }
+  // In case both profile directories contain the same extension, the actual
+  // profile always has precedence.
+  $profiles[] = $profile;
+  foreach ($profiles as $profile) {
+    if (file_exists("profiles/$profile/$directory")) {
+      $searchdir[] = "profiles/$profile/$directory";
+    }
+  }
+
+  // Always search sites/all/* as well as the global directories.
+  $searchdir[] = 'sites/all/' . $directory;
+
+  if (file_exists("$config/$directory")) {
+    $searchdir[] = "$config/$directory";
+  }
+
+  // Get current list of items.
+  if (!function_exists('file_scan_directory')) {
+    require_once DRUPAL_ROOT . '/includes/file.inc';
+  }
+  foreach ($searchdir as $dir) {
+    $files_to_add = file_scan_directory($dir, $mask, array('key' => $key, 'min_depth' => $min_depth));
+    
+    if ($dir == 'sites/all/modules' || $dir == 'sites/default/modules') {
+  
+      foreach ($files_to_add as $file_key => $file) {
+        if (file_exists($info_file = dirname($file->uri) . '/' . $file->name . '.info')) {
+          // Get the .info file for the module or theme this file belongs to.
+          $info = drupal_parse_info_file($info_file);
+          
+          if (module_exists($file_key)) {
+            // check to see if the module starts w/ the prefix.  Custom modules and features handled last.
+            $prefix = variable_get('profile_status_check_prefix', NULL);
+            if ( $prefix && strpos($file_key, $prefix) === 0) {
+              $message = 'Enabled from ' . dirname($file->uri);
+              $status = 1;
+              $value = t('Custom, Enabled');
+            } else {
+              $message = 'Enabled from ' . dirname($file->uri);
+              $status = 1;
+              $value = t('Added, Enabled');
+            }
+          } else {
+            $message = 'Not enabled, but exists in ' . dirname($file->uri);
+            $status = -1;
+            $value = t('Added, Not Enabled');
+          } 
+          
+          
+             
+          $modules[$file_key]['title'] = $info['name'];
+          $modules[$file_key]['value'] = $value;
+          $modules[$file_key]['severity'] = $status; 
+          $modules[$file_key]['description'] = $message; 
+        }
+      }
+    }
+    
+    
+    
+    // Duplicate files found in later search directories take precedence over
+    // earlier ones, so we want them to overwrite keys in our resulting
+    // $files array.
+    // The exception to this is if the later file is from a module or theme not
+    // compatible with Drupal core. This may occur during upgrades of Drupal
+    // core when new modules exist in core while older contrib modules with the
+    // same name exist in a directory such as sites/all/modules/.
+    foreach (array_intersect_key($files_to_add, $files) as $file_key => $file) {
+
+      // If it has no info file, then we just behave liberally and accept the
+      // new resource on the list for merging.
+      if (file_exists($info_file = dirname($file->uri) . '/' . $file->name . '.info')) {
+        // Get the .info file for the module or theme this file belongs to.
+        $info = drupal_parse_info_file($info_file);
+        $version = isset($info['version']) ? $info['version'] : 'NO VERSION';
+        $message = $info['name'] . ' - ' . $version . ' from ' . dirname($file->uri) . ' is overriding ' ;
+        
+        // get version info from the original version of the module in the profile dir
+        if (file_exists($info_file = dirname($files[$file->name]->uri) . '/' . $file->name . '.info')) {
+          // Get the .info file for the module or theme this file belongs to.
+          $info_old = drupal_parse_info_file($info_file);
+          $version = isset($info_old['version']) ? $info_old['version'] : 'NO VERSION';
+          $message .= 'version ' . $version . ' from ' . dirname($files[$file->name]->uri) . "\n"; 
+           
+        }
+        
+        // check for patches at root of module
+        $dir_base = dirname($file->uri);
+        $tmp_files = file_scan_directory($dir_base, '/.*\.patch$/');
+  
+        foreach ($tmp_files as $file) {
+          //first remove the .patch
+          $filename = str_replace('.patch', '', $file->filename);
+          $patch_parts = explode('-', $filename);
+          // this isn't perfect, but if the includes a number > 1,000 that is very likely the 
+          // Drupal.org node number and not the comment number
+          foreach ($patch_parts as $part) {
+						if (is_numeric($part) && $part > 1000) {
+							//link to the drupal node
+							$part_message[$file->filename] = "<p>" . 'PATCH: ' . l($file->filename, 'https://www.drupal.org/node/' . $part) . "<p>";
+							// @TODO: can we get the name of the node and status w/ wget?	  
+						} 
+          }
+          $message .= isset($part_message[$file->filename]) ? $part_message[$file->filename] :  "<p>" . 'PATCH: ' . $file->filename . "</p>";
+        }
+        
+        // check for patches in subdirectories
+        // foreach ($search as $directory) {
+        // $tmp_files = file_scan_directory($dir_base . $directory, '/.*\.patch$/');
+        // $files = array_merge($tmp_files, $files);
+        // }
+        
+        // If the module or theme is incompatible with Drupal core, remove it
+        // from the array for the current search directory, so it is not
+        // overwritten when merged with the $files array.
+        if (isset($info['core']) && $info['core'] != DRUPAL_CORE_COMPATIBILITY) {
+          unset($files_to_add[$file_key]);
+        }
+        if (module_exists($file_key)) {
+          $status = 2;
+          $value = t('Overridden, Enabled');
+        } else {
+          $status = 1;
+          $value = t('Overridden, Not Enabled');
+        }
+        
+        $modules[$file_key]['title'] = $info['name'];
+        $modules[$file_key]['value'] = $value;
+        $modules[$file_key]['severity'] = $status; 
+        $modules[$file_key]['description'] = $message; 
+  
+      }
+    }
+    
+    $files = array_merge($files, $files_to_add);
+  }
+  
+  if(!isset($message)) {
+    return FALSE;
+  } 
+  
+  return $modules;
+} 

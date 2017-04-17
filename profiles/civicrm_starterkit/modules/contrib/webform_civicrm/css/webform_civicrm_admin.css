@@ -1,0 +1,162 @@
+form .contact-type-select .form-item {
+  margin-bottom: 0;
+}
+
+form .web-civi-checkbox-set {
+  padding-left:0;
+  position:relative;
+}
+
+form .web-civi-checkbox-set .form-item,
+#wf-crm-configure-form .contact-type-select {
+  float:left;
+  width:200px;
+  padding-right:1.5em;
+}
+
+form .web-civi-checkbox-set .auto-width .form-item {
+  width:auto;
+}
+
+#wf-crm-configure-form .float-item {
+  padding: 0;
+  margin-right: 2em;
+  float: left;
+}
+
+#wf-crm-configure-form .float-item .form-item {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.web-civi-checkbox-set + div,
+.civicrm-ajax-wrapper {
+  clear:both;
+}
+
+form .hidden,
+.js #no-js-button-wrapper {
+  display:none;
+}
+
+#wf-crm-configure-form .form-type-checkbox label,
+#wf-crm-configure-form .number-of .form-item label,
+#wf-crm-configure-form .form-item-number-of-contacts label {
+  display:inline;
+}
+
+#wf-crm-configure-form .number-of .form-item select,
+#wf-crm-configure-form select[name=participant_reg_type] {
+  max-width: none;
+}
+
+th div.form-type-radio {
+  display:inline;
+  margin:0;
+  padding:0;
+}
+
+.web-civi-js-select {
+  font-size:0.8em;
+  position:absolute;
+  right:5px;
+  padding:0.2em 0.5em;
+  background-color:white;
+  top:-10px;
+  border:1px solid #CCCCCC;
+  display:none;
+}
+
+.js fieldset:hover > div > .web-civi-js-select,
+.js fieldset:hover > .web-civi-js-select {
+  display:block;
+}
+
+.web-civi-js-select a:hover {
+  cursor:pointer;
+}
+
+#wf-crm-configure-form select,
+#wf-crm-configure-form .form-type-textfield input {
+  max-width: 175px;
+  margin: 0;
+}
+
+#wf-crm-configure-form fieldset fieldset{
+  border: 1px solid #CCCCCC;
+  margin: 1em 0;
+  padding: 2.5em 0 0;
+}
+
+#wf-crm-configure-form fieldset fieldset legend{
+  display:block;
+}
+
+#wf-crm-options-fieldset .tabledrag-changed-warning {
+  display: none !important;
+}
+
+form .civi-icon {
+  background-image:url('../images/icons.png');
+  background-repeat:no-repeat;
+  display:inline-block;
+  width:16px;
+  height:16px;
+  margin: 0 4px 0 0;
+}
+
+form .wf-crm-change-select {
+  margin: 3px 0 0 6px;
+  vertical-align: top;
+  background-position: -220px -0px;
+}
+
+form .wf-crm-change-select.select-multiple {
+  background-position: -235px -0px;
+}
+
+form .civi-icon.individual {
+  background-position:-16px 0;
+}
+
+form .civi-icon.household {
+  background-position:-31px 0;
+}
+
+form .civi-icon.organization {
+  background-position:-48px 0;
+}
+
+form .civi-icon.activity {
+  background-position:-63px 0;
+}
+
+form .civi-icon.participant {
+  background-position:-80px 0;
+}
+
+form .civi-icon.prefs {
+  background-position:-98px 0;
+}
+
+form .civi-icon.message {
+  background-position:-118px 0;
+}
+
+form .civi-icon.text {
+  background-position:-137px 0;
+}
+
+form .civi-icon.contribution {
+  background-position:-154px 0;
+}
+
+form .civi-icon.membership {
+  background-position:-171px 0;
+}
+form .civi-icon.grant {
+  background-position:-187px 0;
+}
+form .civi-icon.case {
+  background-position:-203px 0;
+}

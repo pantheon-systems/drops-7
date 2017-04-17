@@ -30,8 +30,10 @@ class ModuleUpdater extends Updater implements DrupalUpdaterInterface {
     else {
       $relative_path = 'sites/all/modules';
     }
+    
     return DRUPAL_ROOT . '/' . $relative_path;
   }
+  
 
   public function isInstalled() {
     return (bool) drupal_get_filename('module', $this->name, NULL, FALSE);

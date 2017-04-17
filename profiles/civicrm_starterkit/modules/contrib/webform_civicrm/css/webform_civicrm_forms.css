@@ -1,0 +1,22 @@
+.civicrm-file-icon img {
+  max-width: 60px;
+  max-height: 60px;
+  border: 1px solid #aaa;
+}
+
+#wf-crm-billing-items caption {
+  background-color: #CDE8FE;
+  font-size: 1.2em;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  color: #121A2D;
+  padding: 4px 8px;
+}
+
+#wf-crm-billing-total {
+  font-weight: bold;
+}
+
+#wf-crm-billing-items td + td {
+  text-align: right;
+}
