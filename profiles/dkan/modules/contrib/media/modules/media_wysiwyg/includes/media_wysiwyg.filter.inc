@@ -158,7 +158,12 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       $file->{$key} = $value;
     }
 
-    $attributes = is_array($tag_info['attributes']) ? $tag_info['attributes'] : array();
+    if (array_key_exists('attributes', $tag_info) && is_array($tag_info['attributes'])) {
+      $attributes = $tag_info['attributes'];
+    }
+    else {
+      $attributes = array();
+    }
     $attribute_whitelist = media_wysiwyg_allowed_attributes();
     $settings['attributes'] = array_intersect_key($attributes, array_flip($attribute_whitelist));
     $settings['fields'] = $fields;
@@ -202,6 +207,18 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
     return '';
   }
 
+  // Remove any alignment classes from $settings, because it will be added later
+  // in this function to the media's wrapper, and we don't want to confuse CSS
+  // by having it on both the wrapper and the element.
+  if (isset($settings['attributes']['class'])) {
+    $alignment_classes = array(
+      'media-wysiwyg-align-left',
+      'media-wysiwyg-align-right',
+      'media-wysiwyg-align-center',
+    );
+    $settings['attributes']['class'] = array_diff($settings['attributes']['class'], $alignment_classes);
+  }
+
   // If the tag has link text stored with it, override the filename with it for
   // the rest of this function, so that if the file is themed as a link, the
   // desired text will be used (see, for example, theme_file_link()).
@@ -236,7 +253,7 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       'view_mode' => $tag_info['view_mode'],
       'link_text' => $tag_info['link_text'],
     );
-    drupal_add_js(array('mediaDataMap' => array($file->fid => $data), 'mediaDoLinkText' => (boolean)(variable_get('media_wysiwyg_use_link_text_for_filename', 1))), 'setting');
+    drupal_add_js(array('mediaDataMap' => array($file->fid => $data)), 'setting');
     $element['#attributes']['data-fid'] = $file->fid;
     $element['#attributes']['data-media-element'] = '1';
     $element['#attributes']['class'][] = 'media-element';
@@ -283,6 +300,14 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       $element['#pre_render'][] = 'media_wysiwyg_pre_render_cached_filter';
     }
   }
+  if (!empty($element['content']) && !empty($tag_info['fields']['alignment'])) {
+    // Set a CSS class if an alignment has been specified and is correct.
+    $alignment = $tag_info['fields']['alignment'];
+    if (in_array($alignment, array('left', 'right', 'center'))) {
+      $alignment_class = 'media-wysiwyg-align-' . $alignment;
+      $element['content']['#attributes']['class'][] = $alignment_class;
+    }
+  }
   drupal_alter('media_wysiwyg_token_to_markup', $element, $tag_info, $settings, $langcode);
   $output = drupal_render($element);
   unset($recursion_stop[$file->fid]);
@@ -323,7 +348,7 @@ function media_wysiwyg_filter_field_parser($tag_info) {
           }
         }
         // Multi-value select lists show up here with 3 array items.
-        elseif (count($parsed_field) == 3 && is_numeric($parsed_field[2])) {
+        elseif (count($parsed_field) == 3 && (empty($parsed_field[2]) || is_numeric($parsed_field[2]))) {
           $info = field_info_field($parsed_field[0]);
           // They just need the value column.
           $parsed_field[3] = key($info['columns']);

@@ -19,7 +19,7 @@ function media_views_plugins() {
   if (module_exists('search_api')) {
     // If the Search API module exists, also allow indices of the file-entity
     // that has the fid field indexed.
-    $indices = search_api_index_load_multiple(NULL);
+    $indices = search_api_index_load_multiple(FALSE);
     foreach ($indices as $machine_name => $index) {
       if ($index->item_type == 'file' && isset($index->options['fields']['fid'])) {
         $base[] = 'search_api_index_' . $machine_name;

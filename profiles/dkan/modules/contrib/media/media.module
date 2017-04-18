@@ -368,7 +368,7 @@ function media_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   // Add a validation function to any field instance which uses the media widget
   // to ensure that the upload destination scheme is one of the allowed schemes
   // if any defined by settings.
-  if ($form['instance']['widget']['type']['#value'] == 'media_generic' && isset($form['#field']['settings']['uri_scheme'])) {
+  if (isset($form['instance']['widget']) && $form['instance']['widget']['type']['#value'] == 'media_generic' && isset($form['#field']['settings']['uri_scheme'])) {
     $form['#validate'][] = 'media_field_instance_validate';
   }
 }
@@ -674,7 +674,7 @@ function media_element_info() {
     '#value_callback' => 'media_file_value',
     '#element_validate' => array('media_element_validate'),
     '#pre_render' => array('media_element_pre_render'),
-    '#theme' => 'media_element',
+    '#theme' => 'media_widget',
     '#theme_wrappers' => array('form_element'),
     '#size' => 22,
     '#extended' => FALSE,
@@ -714,7 +714,7 @@ function media_element_process($element, &$form_state, $form) {
 
   // Append the '-upload' to the #id so the field label's 'for' attribute
   // corresponds with the textfield element.
-  $original_id = $element['#original_id'] = $element['#id'];
+  $original_id = $element['#id'];
   $element['#id'] .= '-upload';
   $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
 
@@ -828,11 +828,19 @@ function media_element_process($element, &$form_state, $form) {
   // Media browser attach code.
   $element['#attached']['js'][] = drupal_get_path('module', 'media') . '/js/media.js';
 
-  // Add the media options to the page as JavaScript settings.
+  // IDs of form elements are 'unstable' in Drupal because of drupal_html_id
+  // add a class for our Javascript instead.
+  $element_js_class = drupal_html_class('js-media-element-' . $element['#id']);
+  $element['upload']['#attributes']['class'][] = $element_js_class;
+
+  // Cache the media options and pass the cache ID as a JavaScript setting.
+  $cid = drupal_get_token(drupal_random_bytes(32));
+  cache_set('media_options:' . $cid, $element['#media_options']['global'], 'cache_form', REQUEST_TIME + 21600);
+
   $element['browse_button']['#attached']['js'] = array(
     array(
       'type' => 'setting',
-      'data' => array('media' => array('elements' => array('#' . $element['#id'] => $element['#media_options'])))
+      'data' => array('media' => array('elements' => array('.' . $element_js_class => array('global' => array('options' => $cid))))),
     )
   );
 
@@ -1197,11 +1205,32 @@ function media_set_browser_params() {
   if (empty($params)) {
     // Build out browser settings. Permissions- and security-related behaviors
     // should not rely on these parameters, since they come from the HTTP query.
-    // @TODO make sure we treat parameters as user input.
-    $params = drupal_get_query_parameters() + array(
-        'types' => array(),
-        'multiselect' => FALSE,
-      );
+    // There are two ways of passing secure data:
+    // - Store the options in the 'cache_form' cache bin, using a random key
+    //   prefixed with 'media_options:'. Pass the random key in the 'options'
+    //   query argument.
+    // - Inject the options by altering the browser parameters.
+    //   @see hook_media_browser_params_alter()
+    $params = drupal_get_query_parameters();
+
+    $insecure_settings = array(
+      'file_directory',
+      'file_extensions',
+      'max_filesize',
+      'uri_scheme',
+    );
+
+    // Filter out insecure_settings.
+    foreach(array_keys($params) as $key) {
+      if (in_array($key, $insecure_settings)) {
+        unset($params[$key]);
+      }
+    }
+
+    // Retrieve the security sensitive options from the cache.
+    if (!empty($params['options']) && is_string($params['options']) && $options = cache_get('media_options:' . $params['options'], 'cache_form')) {
+      $params = array_merge($options->data, $params);
+    }
 
     // Transform text 'true' and 'false' to actual booleans.
     foreach ($params as $k => $v) {
@@ -1214,6 +1243,12 @@ function media_set_browser_params() {
     }
 
     array_walk_recursive($params, 'media_recursive_check_plain');
+
+    // Provide some default parameters.
+    $params += array(
+      'types' => array(),
+      'multiselect' => FALSE,
+    );
 
     // Allow modules to alter the parameters.
     drupal_alter('media_browser_params', $params);

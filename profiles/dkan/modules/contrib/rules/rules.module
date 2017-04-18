@@ -366,7 +366,6 @@ function &rules_get_cache($cid = 'data') {
       // Prevent stampeding by ensuring the cache is rebuilt just once at the
       // same time.
       while (!lock_acquire(__FUNCTION__ . $cid . $cid_suffix, 60)) {
-        rules_log('Cache rebuild lock hit: !cid', array('!cid' => $cid), RulesLog::WARN);
         // Now wait until the lock is released.
         lock_wait(__FUNCTION__ . $cid . $cid_suffix, 10);
         // If the lock is released it's likely the cache was rebuild. Thus check
@@ -1021,10 +1020,10 @@ function rules_invoke_event() {
   $event_name = $args[0];
   unset($args[0]);
   // We maintain a whitelist of configured events to reduces the number of cache
-  // reads. If the whitelist is empty we proceed and it is rebuilt.
+  // reads. If the whitelist is not in the cache we proceed and it is rebuilt.
   if (rules_event_invocation_enabled()) {
     $whitelist = rules_get_cache('rules_event_whitelist');
-    if ((empty($whitelist) || isset($whitelist[$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
+    if ((($whitelist === FALSE) || isset($whitelist[$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
       $event->executeByArgs($args);
     }
   }

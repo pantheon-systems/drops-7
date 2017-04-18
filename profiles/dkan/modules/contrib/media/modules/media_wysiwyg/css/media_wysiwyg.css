@@ -18,3 +18,20 @@
 #media-wysiwyg-format-form .form-item-format label {
   display: inline;
 }
+
+/* Styles for within the WYSIWYG, to support alignment. */
+.media-wysiwyg-align-left {
+  float: left;
+  margin-right: 20px;
+}
+.media-wysiwyg-align-right {
+  float: right;
+  margin-left: 20px;
+}
+.media-wysiwyg-align-center {
+  text-align: center;
+}
+img.media-wysiwyg-align-center {
+  margin: auto;
+  display: block;
+}

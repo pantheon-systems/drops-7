@@ -19,7 +19,7 @@ function media_file_edit_modal($form, &$form_state, $file, $js) {
     if (isset($languages[$_GET['media_parent_entity_form_langcode']])) {
       $langcode = $_GET['media_parent_entity_form_langcode'];
       $translation_handler = entity_translation_get_handler('file', $file);
-      $translation_handler->setFormLanguage($langcode);
+      $translation_handler->setActiveLanguage($langcode);
       $translations = $translation_handler->getTranslations();
       if (!isset($translations->data[$langcode])) {
         if (!empty($_GET['media_parent_entity_source_langcode']) && is_string($_GET['media_parent_entity_source_langcode']) && isset($translations->data[$_GET['media_parent_entity_source_langcode']])) {

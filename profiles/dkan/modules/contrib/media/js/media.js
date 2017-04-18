@@ -94,8 +94,6 @@ Drupal.media.openBrowser = function (event) {
     var mediaFileValue;
     // Process the value based on multiselect.
     if (mediaFiles.length > 1) {
-      // Reverse array to have files in correct order
-      mediaFiles.reverse();
       // Concatenate the array into a comma separated string.
       mediaFileValue = mediaFiles.map(function(file) {
         return file.fid;

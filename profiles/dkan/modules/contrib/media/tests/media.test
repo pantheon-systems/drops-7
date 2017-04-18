@@ -685,19 +685,22 @@ class MediaBrowserSettingsTestCase extends MediaFileFieldTestCase {
         foreach ($settings['extension'] as $extension) {
           $file = $this->createFileEntity(array('scheme' => $scheme, 'uid' => $this->admin_user->uid, 'type' => $type, 'filemime' => media_get_extension_mimetype($extension)));
 
+          // Some of the settings such as the scheme and extension are unsafe to
+          // pass as query arguments, cache them and pass the cache ID.
           $options = array(
-            'query' => array(
-              'enabledPlugins' => array(
-                'media_default--media_browser_1' => 'media_default--media_browser_1',
-              ),
-              'schemes' => array($scheme),
-              'types' => array($type),
-              'file_extensions' => $extension,
+            'enabledPlugins' => array(
+              'media_default--media_browser_1' => 'media_default--media_browser_1',
             ),
+          'schemes' => array($scheme),
+            'types' => array($type),
+            'file_extensions' => $extension,
           );
 
+          $cid = drupal_get_token(drupal_random_bytes(32));
+          cache_set('media_options:' . $cid, $options, 'cache_form', REQUEST_TIME + 21600);
+
           // Verify that the file is displayed.
-          $this->drupalGet('media/browser', $options);
+          $this->drupalGet('media/browser', array('query' => array('options' => $cid)));
           $this->assertResponse(200);
           $xpath = $this->buildXPathQuery('//ul[@class="media-list-thumbnails"]/li/div[@data-fid=:fid]/@data-fid', array(
             ':fid' => $file->fid,
@@ -714,28 +717,29 @@ class MediaBrowserSettingsTestCase extends MediaFileFieldTestCase {
     // Perform the tests with none and all of the restrictions.
     foreach (array('none', 'all') as $restrictions) {
       $options = array(
-        'query' => array(
-          'enabledPlugins' => array(
-            'media_default--media_browser_1' => 'media_default--media_browser_1',
-          ),
+        'enabledPlugins' => array(
+          'media_default--media_browser_1' => 'media_default--media_browser_1',
         ),
       );
 
       switch ($restrictions) {
         case 'none':
-          $options['query']['schemes'] = array();
-          $options['query']['types'] = array();
-          $options['query']['file_extensions'] = array();
+          $options['schemes'] = array();
+          $options['types'] = array();
+          $options['file_extensions'] = array();
           break;
         case 'all':
-          $options['query']['schemes'] = $settings['scheme'];
-          $options['query']['types'] = $settings['type'];
-          $options['query']['file_extensions'] = implode(' ', $settings['extension']);
+          $options['schemes'] = $settings['scheme'];
+          $options['types'] = $settings['type'];
+          $options['file_extensions'] = implode(' ', $settings['extension']);
           break;
       }
 
+      $cid = drupal_get_token(drupal_random_bytes(32));
+      cache_set('media_options:' . $cid, $options, 'cache_form', REQUEST_TIME + 21600);
+
       // Verify that all of the files are displayed.
-      $this->drupalGet('media/browser', $options);
+      $this->drupalGet('media/browser', array('query' => array('options' => $cid)));
       $this->assertResponse(200);
       $files = $this->xpath('//ul[@class="media-list-thumbnails"]/li/div[@data-fid]');
       $this->assertEqual(count($files), 8, format_string('All of the files were displayed when %restrictions of the restrictions were enabled.', array('%restrictions' => $restrictions)));
@@ -749,18 +753,19 @@ class MediaBrowserSettingsTestCase extends MediaFileFieldTestCase {
     $file = $this->createFileEntity(array('scheme' => $scheme, 'uid' => $this->admin_user->uid, 'type' => $type, 'filemime' => media_get_extension_mimetype($extension)));
 
     $options = array(
-      'query' => array(
-        'enabledPlugins' => array(
-          'media_default--media_browser_1' => 'media_default--media_browser_1',
-        ),
-        'schemes' => array($scheme, 'public'), // Include a local stream wrapper in order to trigger extension restrictions.
-        'types' => array($type),
-        'file_extensions' => 'fake', // Use an invalid file extension to ensure that it does not affect restrictions.
+      'enabledPlugins' => array(
+        'media_default--media_browser_1' => 'media_default--media_browser_1',
       ),
+      'schemes' => array($scheme, 'public'), // Include a local stream wrapper in order to trigger extension restrictions.
+      'types' => array($type),
+      'file_extensions' => 'fake', // Use an invalid file extension to ensure that it does not affect restrictions.
     );
 
+    $cid = drupal_get_token(drupal_random_bytes(32));
+    cache_set('media_options:' . $cid, $options, 'cache_form', REQUEST_TIME + 21600);
+
     // Verify that the file is displayed.
-    $this->drupalGet('media/browser', $options);
+    $this->drupalGet('media/browser', array('query' => array('options' => $cid)));
     $this->assertResponse(200);
     $xpath = $this->buildXPathQuery('//ul[@class="media-list-thumbnails"]/li/div[@data-fid=:fid]/@data-fid', array(
       ':fid' => $file->fid,
@@ -897,6 +902,32 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
   }
 
   /**
+   * Tests that the field widget does not contain the insecure settings.
+   */
+  function testInsecureSettings() {
+    // Use 'page' instead of 'article', so that the 'article' image field does
+    // not conflict with this test. If in the future the 'page' type gets its
+    // own default file or image field, this test can be made more robust by
+    // using a custom node type.
+    $type_name = 'page';
+    $field_name = strtolower($this->randomName());
+    $this->createFileField($field_name, $type_name);
+    $this->drupalGet("node/add/$type_name");
+
+    $insecure_settings = array(
+      'file_directory',
+      'file_extensions',
+      'max_filesize',
+      'uri_scheme',
+    );
+    foreach ($insecure_settings as $setting) {
+      $this->assertNoRaw($setting, format_string('Media file field widget does not contain the insecure element-specific setting @setting.', array(
+        '@setting' => $setting,
+      )));
+    }
+  }
+
+  /**
    * Tests the media file field widget settings.
    */
   function testWidgetSettings() {
@@ -915,7 +946,7 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
     $multiselect = ($field['cardinality'] > 1 || $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED);
     $field_widget = array(
         'elements' => array(
-          '#edit-' . $field_name . '-' . LANGUAGE_NONE . '-0-upload' => array(
+          '.js-media-element-edit-' . $field_name . '-' . LANGUAGE_NONE . '-0-upload' => array(
             'global' => array(
               'types' => array(
                 'image' => 'image',
@@ -934,7 +965,19 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
         ),
     );
     $settings = drupal_json_encode(drupal_array_merge_deep_array($field_widget));
-    $this->assertTrue(strpos($javascript, $settings) > 0, 'Media file field widget adds element-specific settings.');
+    $string_with_options = '-0-upload":{"global":{"options":"';
+    $index_of_cid = strpos($javascript, $string_with_options) + strlen($string_with_options);
+    $index_end_of_cid = strpos($javascript, '"', $index_of_cid + 1);
+    $cid = substr($javascript, $index_of_cid, ($index_end_of_cid - $index_of_cid));
+
+    // Retrieve the security sensitive options from the cache using the cid parsed out from the $javascript variable
+    $retrieved_settings = cache_get('media_options:' . $cid, 'cache_form');
+    $retrieved_settings = array('.js-media-element-edit-' . $field_name . '-' . LANGUAGE_NONE . '-0-upload' => array(
+                                  'global' => $retrieved_settings->data));
+    $retrieved_settings_json = drupal_json_encode($retrieved_settings);
+
+    $this->assertTrue($retrieved_settings_json == $settings, 'Media file field widget retrieved from cache and has element-specific settings.');
+    $this->assertTrue(strpos($javascript, $cid) > 0, 'Media file field widget is cached and its` cache id is found.');
   }
 }
 
