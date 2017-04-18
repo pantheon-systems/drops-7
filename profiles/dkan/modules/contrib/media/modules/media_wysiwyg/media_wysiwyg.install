@@ -5,7 +5,7 @@
  * Install, update and uninstall functions for the Media WYSIWYG module.
  */
 
- /**
+/**
  * Implements hook_schema().
  */
 function media_wysiwyg_schema() {
@@ -56,6 +56,9 @@ function media_wysiwyg_schema() {
  */
 function media_wysiwyg_install() {
   media_wysiwyg_update_7204();
+
+  // Start off with the alignment feature enabled.
+  variable_set('media_wysiwyg_alignment', TRUE);
 }
 
 /**
@@ -72,6 +75,7 @@ function media_wysiwyg_uninstall() {
   variable_del('media_wysiwyg_wysiwyg_browser_plugins');
   variable_del('media_wysiwyg_wysiwyg_override_field_types');
   variable_del('media_wysiwyg_use_link_text_for_filename');
+  variable_del('media_wysiwyg_alignment');
 }
 
 /**
@@ -121,6 +125,7 @@ function media_wysiwyg_update_7203() {
 
   return $output;
 }
+
 /**
  * Whitelists certain fields for WYSIWYG overriding.
  */
@@ -164,11 +169,41 @@ function media_wysiwyg_update_7204() {
 function media_wysiwyg_update_7205() {
   $schema = media_wysiwyg_schema();
 
+  // Create the new configuration tables.
   if (!db_table_exists('media_restrict_wysiwyg')) {
-    db_create_table('media_restrict_wysiwyg',  $schema['media_restrict_wysiwyg']);
+    db_create_table('media_restrict_wysiwyg', $schema['media_restrict_wysiwyg']);
     db_create_table('media_view_mode_wysiwyg', $schema['media_view_mode_wysiwyg']);
   }
 
+  // Migrate the configuration from the old variables into the new DB tables.
+  $types = file_type_load_all(TRUE);
+  foreach ($types as $type) {
+    $enabled = variable_get("media_wysiwyg_view_mode_" . $type->type . "_file_wysiwyg_restricted_view_modes_status", FALSE);
+    if ($enabled) {
+      $wysiwyg_restricted_view_modes = variable_get("media_wysiwyg_view_mode_" . $type->type . "_file_wysiwyg_restricted_view_modes", array());
+      foreach ($wysiwyg_restricted_view_modes as $wysiwyg_restricted_view_mode) {
+        db_insert('media_restrict_wysiwyg')
+          ->fields(array(
+            'type' => $type->type,
+            'display' => $wysiwyg_restricted_view_mode,
+          ))
+          ->execute();
+      }
+    }
+
+    $enabled = variable_get("media_wysiwyg_view_mode_" . $type->type . "_wysiwyg_view_mode_status", FALSE);
+    if ($enabled) {
+      $file_wysiwyg_view_mode = variable_get("media_wysiwyg_view_mode_" . $type->type . "_file_wysiwyg_view_mode", 'wysiwyg');
+      db_insert('media_view_mode_wysiwyg')
+        ->fields(array(
+          'type' => $type->type,
+          'view_mode' => $file_wysiwyg_view_mode,
+        ))
+        ->execute();
+    }
+  }
+
+  // Remove old configuration variables.
   db_delete('variable')->condition('name', "media_wysiwyg_view_mode_%", "LIKE")->execute();
 
   // Disable and uninstall View Mode module.Since the view mode module is
@@ -198,4 +233,12 @@ function media_wysiwyg_update_7205() {
   drupal_set_installed_schema_version($module, SCHEMA_UNINSTALLED);
 
   module_invoke_all('modules_uninstalled', array($module));
+}
+
+/**
+ * Notify upgraders that there's optional media alignment functionality that needs to be enabled.
+ */
+function media_wysiwyg_update_7206() {
+  $message = t('If you would like to be able to align your embedded media (left, right, or center), go to /admin/config/media/browser and check "Provide alignment option when embedding media", and save the settings.');
+  drupal_set_message($message, 'warning', TRUE);
 }

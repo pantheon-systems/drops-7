@@ -37,7 +37,7 @@ class MediaEntityTranslationHandler extends EntityTranslationDefaultHandler {
 
     if ($this->getPathScheme() == 'media') {
       $language = $GLOBALS[LANGUAGE_TYPE_CONTENT];
-      $form_langcode = $this->getFormLanguage();
+      $form_langcode = $this->getActiveLanguage();
       $source_langcode = $this->getSourceLanguage();
       $translations = $this->getTranslations();
 

@@ -22,9 +22,6 @@ function media_wysiwyg_media_plugin() {
     'css file' => 'media_wysiwyg.css',
     'settings' => array(
       'global' => array(
-        'enabledPlugins' => variable_get('media_wysiwyg_wysiwyg_browser_plugins', array()),
-        'file_directory' => variable_get('media_wysiwyg_wysiwyg_upload_directory', ''),
-        'types' => variable_get('media_wysiwyg_wysiwyg_allowed_types', array('audio', 'image', 'video', 'document')),
         'id' => 'media_wysiwyg',
       ),
     ),

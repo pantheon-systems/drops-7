@@ -122,6 +122,26 @@ function media_requirements($phase) {
     }
   }
 
+  if (module_exists('entity_translation')) {
+    if ($phase == 'update' || $phase == 'install' || $phase == 'runtime' ) {
+      $entity_translation_info = system_get_info('module', 'entity_translation');
+      $et_installed_version = $entity_translation_info['version'];
+      $et_installed_datestamp = $entity_translation_info['datestamp'];
+      $march3rd_entity_translation_timestamp = 1488530885;
+      if (!isset($entity_translation_info['version']) || !isset($entity_translation_info['datestamp'])) {
+        $et_installed_datestamp = 1488530884;
+      }
+
+      if ($et_installed_datestamp < $march3rd_entity_translation_timestamp) {
+        $description = $t('Your entity_translation installation version: %version is too old. media requires entity_translation at least beta6 from march 3 2017 or newer.  Your choice is to either upgrade entity_translation or to disable it.', array('%version' => $et_installed_version));
+        $requirements['entity_translation']['description'] = $description;
+        $requirements['entity_translation']['severity'] = REQUIREMENT_ERROR;
+        $requirements['entity_translation']['value'] = $et_installed_version;
+        $requirements['entity_translation']['title'] = $t('Entity translation (when installed) with Media');
+	drupal_set_message($description, 'error', TRUE);
+      }
+    }
+  }
   return $requirements;
 }
 
@@ -869,7 +889,12 @@ function media_update_7208() {
       // Merge existing type with new ones.
       if ($new_type = file_type_load($type->name)) {
         $new_type->mimetypes = array_merge($type->mimetypes, $new_type->mimetypes);
-        $new_type->streams = array_merge($type->streams, $new_type->streams);
+        if (!empty($new_type->streams)) {
+          $new_type->streams = array_merge($type->streams, $new_type->streams);
+        }
+        else{
+          $new_type->streams = $type->streams;
+        }
       }
       else {
         $new_type = $type;

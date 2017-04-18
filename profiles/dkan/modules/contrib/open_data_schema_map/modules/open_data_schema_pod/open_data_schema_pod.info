@@ -4,4 +4,7 @@ core = 7.x
 package = Open Data
 dependencies[] = features
 dependencies[] = open_data_schema_map
-version = 7.x-1.13.2
+
+; Information added by DKAN release script on 4/18/2017
+version = 7.x-1.13.3
+project = dkan

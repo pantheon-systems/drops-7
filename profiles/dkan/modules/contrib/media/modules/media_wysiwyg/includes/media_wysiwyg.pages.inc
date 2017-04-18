@@ -83,6 +83,28 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
       they are inserted into an editor.')
   );
 
+  // If necessary, display the alignment widget.
+  if (variable_get('media_wysiwyg_alignment', FALSE)) {
+    $align_default = empty($query_fields['alignment']) ? '' : $query_fields['alignment'];
+    $align_options = array(
+      '' => t('None'),
+      'left' => t('Left'),
+      'right' => t('Right'),
+      'center' => t('Center'),
+    );
+    if (!isset($align_options[$align_default])) {
+      // Safety code for a malformed token.
+      $align_default = '';
+    }
+    $form['options']['alignment'] = array(
+      '#type' => 'select',
+      '#title' => t('Alignment'),
+      '#options' => $align_options,
+      '#description' => t('Choose how you would like the media to be aligned with surrounding content.'),
+      '#default_value' => $align_default,
+    );
+  }
+
   // Add fields from the file, so that we can override them if necessary.
   $form['options']['fields'] = array();
   foreach ($fields as $field_name => $field_value) {
@@ -92,8 +114,12 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
   $instance = field_info_instances('file', $file->type);
   foreach ($instance as $field_name => $field_value) {
     $info = field_info_field($field_name);
-    // Only single valued fields can be overridden.
-    $allow = $info['cardinality'] == 1 && !empty($instance[$field_name]['settings']['wysiwyg_override']);
+    $allow = !empty($instance[$field_name]['settings']['wysiwyg_override']);
+    // Only single valued fields can be overridden normally, unless Media is
+    // configured otherwise with "media_wysiwyg_wysiwyg_override_multivalue".
+    if ($allow && $info['cardinality'] != 1) {
+      $allow = variable_get('media_wysiwyg_wysiwyg_override_multivalue', FALSE);
+    }
     $form['options']['fields'][$field_name]['#access'] = $allow;
   }
 

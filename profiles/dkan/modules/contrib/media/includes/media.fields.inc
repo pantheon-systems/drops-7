@@ -126,7 +126,7 @@ function media_field_widget_form(&$form, &$form_state, $field, $instance, $langc
   // on the elements for further usage in media_element_process().
   if (module_invoke('entity_translation', 'enabled', $element['#entity_type'], $element['#entity'])) {
     $translation_handler = entity_translation_get_handler($element['#entity_type'], $element['#entity']);
-    $element['#media_parent_entity_form_langcode'] = $translation_handler->getFormLanguage();
+    $element['#media_parent_entity_form_langcode'] = $translation_handler->getActiveLanguage();
     if ($source_langcode = $translation_handler->getSourceLanguage()) {
       $element['#media_parent_entity_source_langcode'] = $source_langcode;
     }
@@ -134,7 +134,7 @@ function media_field_widget_form(&$form, &$form_state, $field, $instance, $langc
   elseif (module_exists('translation') && $element['#entity_type'] == 'node' && translation_supported_type($element['#entity']->type)) {
     $element['#media_parent_entity_form_langcode'] = $element['#entity']->language;
     $element['#media_parent_entity_source_langcode'] = $element['#entity']->language;
-  } elseif ($element['#entity_type'] == 'field_collection_item') {
+  } elseif ($element['#entity_type'] == 'field_collection_item' && !empty($form['#entity']) && property_exists($form['#entity'], 'language')) {
     $element['#media_parent_entity_form_langcode'] = $form['#entity']->language;
   }
 
@@ -202,7 +202,7 @@ function media_field_widget_value($element, $input = FALSE, $form_state) {
     // If the display field is present make sure its unchecked value is saved.
     $field = field_widget_field($element, $form_state);
     if (empty($input['display'])) {
-      $input['display'] = intval(empty($field['settings']['display_field']));
+      $input['display'] = !empty($field['settings']['display_field']) ? 0 : 1;
     }
   }
 
@@ -309,7 +309,13 @@ function media_field_widget_process_multiple($element, &$form_state, $form) {
       // For each file selected, increment the field key to be processed.
       // field_mediafield_und_0 becomes field_mediafield_und_1, etc.
       $_POST['media'][$upload_name_prefix . ($element['#file_upload_delta'] + $i)] = $files[$i];
-      $element[] = $element[$element['#file_upload_delta']];
+
+      // Copy the default file element to each newly selected file position.
+      $default_element = $element[$element['#file_upload_delta']];
+      $element[] = array_merge(
+        $default_element,
+        array('#weight' => ($element['#file_upload_delta'] + $i + 1))
+      );
     }
   }
 
@@ -402,6 +408,7 @@ function media_field_widget_submit($form, &$form_state) {
     }
   }
 
+  ksort($submitted_values);
   // Re-index deltas after removing empty items.
   $submitted_values = array_values($submitted_values);
 
@@ -427,8 +434,20 @@ function theme_media_widget($variables) {
   $element = $variables['element'];
   $output = '';
 
+  // Merge provided attributes with existing ones.
   // The "form-media" class is required for proper Ajax functionality.
-  $output .= '<div id="' . $element['#original_id'] . '" class="media-widget form-media clearfix">';
+  $attributes = array(
+    'class' => array("media-widget", "form-media", "clearfix"),
+  );
+  if (!empty($element['#attributes'])) {
+    $attributes = array_merge_recursive($attributes, $element['#attributes']);
+  }
+  if (!empty($element['#id'])) {
+    $attributes = array_merge_recursive($attributes, array('id' => $element['#id'] . '--widget'));
+  }
+
+  // Render attributes into div in one go.
+  $output .= '<div ' . drupal_attributes($attributes) . '>';
   $output .= drupal_render_children($element);
   $output .= '</div>';
 
