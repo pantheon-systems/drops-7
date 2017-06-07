@@ -16,7 +16,7 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
       stream_context_create(
         array(
           'ssl' => array(
-            'local_cert' => '../certs/binding.pem',
+            'local_cert' => pantheon_apachesolr_client_cert(),
           )
         )
       )
@@ -190,7 +190,7 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       // WHY ARG WHY!?!?!
       $parts = explode('?', $url);
       $url = $parts[0] .'?'. $parts[1];
-      $client_cert = '../certs/binding.pem';
+      $client_cert = pantheon_apachesolr_client_cert();
       $port = variable_get('pantheon_index_port', 449);
       $ch = curl_init();
       curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);

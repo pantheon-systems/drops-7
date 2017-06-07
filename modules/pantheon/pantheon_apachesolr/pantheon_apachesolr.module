@@ -134,7 +134,7 @@ function pantheon_apachesolr_menu() {
  * Client library.
  */
 function pantheon_apachesolr_search_api_service_info_alter(array &$service_info) {
-  if (!function_exists('_search_api_solr_solrphpclient_path')) {
+  if (pantheon_apachesolr_platform_detected() && !function_exists('_search_api_solr_solrphpclient_path')) {
     // The Search API Solr service class is stored in a variable so that it can
     // be overridden if necessary to use the default SearchApiSolrService class.
     $service_info['search_api_solr_service']['class'] = variable_get('pantheon_apachesolr_search_api_solr_service_class', 'PantheonApachesolrSearchApiSolrService');
@@ -158,6 +158,43 @@ function pantheon_apachesolr_curlopts() {
 }
 
 /**
+ * Return 'true' if the Pantheon platform is detected.
+ * @return string
+ */
+function pantheon_apachesolr_platform_detected() {
+  return isset($_ENV['PANTHEON_ENVIRONMENT']);
+}
+
+/**
+ * Return the path to the directory containing the certificates.
+ */
+function pantheon_apachesolr_certs_dir() {
+  if (pantheon_apachesolr_platform_detected()) {
+    return $_ENV['HOME'] . '/certs';
+  }
+  return './';
+}
+
+/**
+ * Return the path to the client certificate.
+ * @return string
+ */
+function pantheon_apachesolr_client_cert() {
+  return pantheon_apachesolr_certs_dir() . '/binding.pem';
+}
+
+/**
+ * Display an error message if not running on the Pantheon platform.
+ */
+function pantheon_apachesolr_display_error_if_disabled() {
+  $platform_detected = pantheon_apachesolr_platform_detected();
+  if (!$platform_detected) {
+    drupal_set_message(t('Pantheon Platform not detected. The Pantheon Apache Solr module only runs in a Pantheon environment.'), 'error');
+  }
+  return $platform_detected;
+}
+
+/**
  * @param string $schema
  *   Path to local schema XML
  *
@@ -165,6 +202,9 @@ function pantheon_apachesolr_curlopts() {
  *   Response from Solr.
  */
 function pantheon_apachesolr_post_schema_exec($schema) {
+  if (!pantheon_apachesolr_platform_detected()) {
+    return false;
+  }
   // Check for empty schema.
   if (filesize($schema) < 1) {
     watchdog('pantheon_apachesolr', 'Empty schema !schema - not posting', array(
@@ -185,7 +225,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
-  $client_cert = '../certs/binding.pem';
+  $client_cert = pantheon_apachesolr_client_cert();
   $url = 'https://'. $host .'/'. $path;
 
   $file = fopen($schema, 'r');
@@ -264,6 +304,11 @@ function pantheon_apachesolr_form_apachesolr_environment_edit_form_alter(&$form,
 function pantheon_apachesolr_query($form, &$form_state) {
   $form = array();
 
+  $platform_detected = pantheon_apachesolr_display_error_if_disabled();
+  if (!$platform_detected) {
+    return array();
+  }
+
   if (isset($form_state['content'])) {
     if (isset($form_state['textarea']) && $form_state['textarea']) {
       $form['content'] = array(
@@ -333,7 +378,7 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   curl_setopt_array($ch, array(
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_SSLCERT => '../certs/binding.pem',
+    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_HEADER => 0,
   ));
 
@@ -375,6 +420,11 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
  */
 function pantheon_apachesolr_post_schema_form($form, &$form_state) {
   $form = array();
+
+  $platform_detected = pantheon_apachesolr_display_error_if_disabled();
+  if (!$platform_detected) {
+    return array();
+  }
 
   $files = drupal_system_listing('/schema.*\.xml$/', 'modules', 'uri', 0);
   $schemas = array();
@@ -458,6 +508,11 @@ function pantheon_apachesolr_post_schema_form_submit($form, &$form_state) {
 function pantheon_apachesolr_status($form, &$form_state) {
   $form = array();
 
+  $platform_detected = pantheon_apachesolr_display_error_if_disabled();
+  if (!$platform_detected) {
+    return array();
+  }
+
   $host = PANTHEON_APACHESOLR_HOST;
 
   // Determine what schema was used.
@@ -502,7 +557,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $url = 'https://'. $host . '/' . $path;
 
   $ch = curl_init();
-  curl_setopt($ch, CURLOPT_SSLCERT, '../certs/binding.pem');
+  curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
 
   $opts = pantheon_apachesolr_curlopts();
   $opts[CURLOPT_URL] = $url;
@@ -581,7 +636,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_SSLCERT => '../certs/binding.pem',
+    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_RETURNTRANSFER => 1,
   ));
 
@@ -678,7 +733,7 @@ function pantheon_apachesolr_requirements($phase) {
       $url = 'https://'. $host . '/' . $path;
 
       $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSLCERT, '../certs/binding.pem');
+      curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
 
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_URL] = $url;
