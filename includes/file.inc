@@ -477,7 +477,7 @@ function file_ensure_htaccess() {
  *   already present. Defaults to FALSE.
  */
 function file_create_htaccess($directory, $private = TRUE, $force_overwrite = FALSE) {
-  if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+  if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
     // Skip on Pantheon since we use nginx and this can hang.
     return;
   }
