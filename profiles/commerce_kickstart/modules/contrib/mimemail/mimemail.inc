@@ -112,7 +112,7 @@ function mimemail_headers($headers, $from = NULL) {
  *     )
  */
 function mimemail_extract_files($html) {
-  $pattern = '/(<link[^>]+href=[\'"]?|<object[^>]+codebase=[\'"]?|@import |[\s]src=[\'"]?)([^\'>"]+)([\'"]?)/mis';
+  $pattern = '/(<link[^>]+href=[\'"]?|<object[^>]+codebase=[\'"]?|@import (?:url\()?[\'"]?|[\s]src=[\'"]?)([^\'>")]+)([\'"]?)/mis';
   $content = preg_replace_callback($pattern, '_mimemail_replace_files', $html);
 
   $encoding = '8Bit';
@@ -177,7 +177,7 @@ function _mimemail_file($url = NULL, $content = NULL, $name = '', $type = '', $d
       $url = _mimemail_url($url, 'TRUE');
       // The $url is absolute, we're done here.
       $scheme = file_uri_scheme($url);
-      if ($scheme == 'http' || $scheme == 'https' || preg_match('!mailto:!', $url)) {
+      if ($scheme == 'http' || $scheme == 'https' || preg_match('!mailto:!', $url) || preg_match('!^data:!', $url)) {
         return $url;
       }
       // The $url is a non-local URI that needs to be converted to a URL.
@@ -209,11 +209,11 @@ function _mimemail_file($url = NULL, $content = NULL, $name = '', $type = '', $d
       $type = $is_file ? file_get_mimetype($file) : file_get_mimetype($name);
     }
 
-    $id = md5($file) .'@'. $_SERVER['HTTP_HOST'];
+    $id = md5($file) . '@' . $_SERVER['HTTP_HOST'];
 
     // Prevent duplicate items.
     if (isset($ids[$id])) {
-      return 'cid:'. $ids[$id];
+      return 'cid:' . $ids[$id];
     }
 
     $new_file = array(
@@ -449,7 +449,6 @@ function mimemail_html_body($body, $subject, $plain = FALSE, $plaintext = NULL, 
  *   A processed URL.
  */
 function _mimemail_url($url, $to_embed = NULL) {
-  global $base_url;
   $url = urldecode($url);
 
   $to_link = variable_get('mimemail_linkonly', 0);
@@ -541,7 +540,6 @@ function mimemail_address($address, $simplify = FALSE) {
   if (is_array($address)) {
     // It's an array containing 'mail' and/or 'name'.
     if (isset($address['mail'])) {
-      $output = '';
       if (empty($address['name']) || $simplify) {
         return $address['mail'];
       }

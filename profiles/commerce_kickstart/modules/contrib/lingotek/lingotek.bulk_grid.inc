@@ -633,7 +633,7 @@ function lingotek_grid_legend_form($form, $form_state) {
 
       . "<tr>"
         . '<td><div><a class="language-icon target-none" style="' . $css_style . ' background-color: #FFFFFF; border: 1px solid #999999; color: #999999;">lang</a></div></td>'
-        . '<td>' . t('This content has <i>No Tranlation</i>.') . '</td>'
+        . '<td>' . t('This content has <i>No Translation</i>.') . '</td>'
       . "</tr>"
 
       . "<tr>"
@@ -2259,7 +2259,7 @@ function lingotek_bulk_grid_parse_table_data($table_data_raw, $entity_properties
     $allow_source_overwriting = !empty($row->lingotek['allow_source_overwriting']);
     $allow_target_localization = !empty($row->lingotek['allow_target_localization']);
 
-    $translation_icons = lingotek_lang_icons($entity_properties['type'], $languages, $entity_id, $locales_statuses, $disabled, $row->language, $allow_source_overwriting, $allow_target_localization); // show translation statuses
+    $translation_icons = lingotek_lang_icons($entity_properties['type'], $languages, $entity_id, $row->lingotek['profile'], $locales_statuses, $disabled, $row->language, $allow_source_overwriting, $allow_target_localization, array()); // show translation statuses
     if (!empty($translation_icons['source'])) {
       $row->overridden_source_target_icon = $translation_icons['source'];
       unset($translation_icons['source']);
@@ -2629,7 +2629,7 @@ function lingotek_get_entity_edit_link($entity_properties, $entity_id, $url_only
   return $url_only ? url($edit_link, array('query' => $query)) : l('<i title="' . t('Edit') . '" class="fa fa-edit"></i>', $edit_link, array('html' => TRUE, 'attributes' => array('target' => '_blank'), 'query' => $query));
 }
 
-function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statuses = array(), $disabled = FALSE, $source_language = NULL, $allow_source_overwriting = FALSE, $allow_target_localization = FALSE, $non_lingotek_config_translations = array()) {
+function lingotek_lang_icons($entity_type, $languages, $entity_id, $entity_profile = NULL, $locale_statuses = array(), $disabled = FALSE, $source_language = NULL, $allow_source_overwriting = FALSE, $allow_target_localization = FALSE, $non_lingotek_config_translations = array()) {
 
   if ($entity_type == 'group') {
     $source_language = lingotek_get_group_source($entity_id);
@@ -2673,6 +2673,14 @@ function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statu
   );
 
   $lingotek_languages = Lingotek::getLanguages();
+
+  // Pull the desired target locales for the entity's current profile.
+  if (variable_get('lingotek_enable_language_specific_profiles', FALSE) && $entity_type != 'config') {
+    $profile = LingotekProfile::loadById($entity_profile);
+    $target_locales = $profile->filterTargetLocales(array_keys($locale_statuses));
+    $locale_statuses = array_intersect_key($locale_statuses, $target_locales);
+  }
+
   foreach ($locale_statuses as $locale => $locale_status) {
     // if it's lingotek enabled
     if (array_key_exists($locale, $lingotek_languages)) {

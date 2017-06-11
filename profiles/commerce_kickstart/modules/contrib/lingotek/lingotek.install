@@ -188,6 +188,12 @@ function lingotek_schema() {
       'id',
       'config_key',
     ),
+    'indexes' => array(
+      'idx_id' => array('id'),
+      'idx_config_key' => array('config_key'),
+      'idx_id_and_config_key_and_value' => array('id', 'config_key', 'value'),
+      'idx_config_key_and_value' => array('config_key', 'value')
+    ),
   );
 
   $schema['lingotek_translation_agent'] = array(
@@ -239,6 +245,10 @@ function lingotek_schema() {
     ),
     'primary key' => array(
       'lid',
+    ),
+    'indexes' => array(
+      'idx_lid_and_current' => array('lid', 'current'),
+      'idx_set_id' => array('set_id')
     ),
   );
 
@@ -1101,4 +1111,59 @@ function lingotek_update_7701(&$sandbox) {
   }
 
   return $output;
+}
+
+/**
+ * Adds indices to the lingotek_config_metadata and lingotek_config_map tables
+ */
+function lingotek_update_7721(&$sandbox) {
+  $output = '';
+
+  if (db_table_exists('lingotek_config_metadata')) {
+    if (db_field_exists('lingotek_config_metadata', 'id')) {
+      if (!db_index_exists('lingotek_config_metadata', 'idx_id')) {
+        db_add_index('lingotek_config_metadata', 'idx_id', array('id'));
+        $output .= 'Index added for id in lingotek_config_metadata table.' . "\r\n";
+      }
+    }
+    if (db_field_exists('lingotek_config_metadata', 'config_key')) {
+      if (!db_index_exists('lingotek_config_metadata', 'idx_config_key')) {
+        db_add_index('lingotek_config_metadata', 'idx_config_key', array('config_key'));
+        $output .= 'Index added for config_key in lingotek_config_metadata table.' . "\r\n";
+      }
+    }
+    if (db_field_exists('lingotek_config_metadata', 'id') && db_field_exists('lingotek_config_metadata', 'config_key') && db_field_exists('lingotek_config_metadata', 'value')) {
+      if (!db_index_exists('lingotek_config_metadata', 'idx_id_and_config_key_and_value')) {
+        db_add_index('lingotek_config_metadata', 'idx_id_and_config_key_and_value', array('id', 'config_key', 'value'));
+        $output .= 'Index added for id and config_key and value in lingotek_config_metadata table.' . "\r\n";
+      }
+    }
+    if (db_field_exists('lingotek_config_metadata', 'config_key') && db_field_exists('lingotek_config_metadata', 'value')) {
+      if (!db_index_exists('lingotek_config_metadata', 'idx_config_key_and_value')) {
+        db_add_index('lingotek_config_metadata', 'idx_config_key_and_value', array('config_key', 'value'));
+        $output .= 'Index added for config_key and value in lingotek_config_metadata table.' . "\r\n";
+      }
+    }
+  }
+
+  if (db_table_exists('lingotek_config_map')) {
+    if (db_field_exists('lingotek_config_map', 'lid') && db_field_exists('lingotek_config_map', 'current')) {
+      if (!db_index_exists('lingotek_config_map', 'idx_lid_and_current')) {
+        db_add_index('lingotek_config_map', 'idx_lid_and_current', array('lid', 'current'));
+        $output .= 'Index added for lid and current in lingotek_config_map table.' . "\r\n";
+      }
+    }
+    if (db_field_exists('lingotek_config_map', 'set_id')) {
+      if (!db_index_exists('lingotek_config_map', 'idx_set_id')) {
+        db_add_index('lingotek_config_map', 'idx_set_id', array('set_id'));
+        $output .= 'Index added for set_id in lingotek_config_map table.' . "\r\n";
+      }
+    }
+  }
+
+  if (empty($output)) {
+    $output = 'All indices already present. No action taken.';
+  }
+
+  return t($output);
 }

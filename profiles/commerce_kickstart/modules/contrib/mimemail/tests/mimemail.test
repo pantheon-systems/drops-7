@@ -31,7 +31,7 @@ class MimeMailUnitTestCase extends DrupalUnitTestCase {
     $chars = array('-', '.', '+', '_');
     $name = $this->randomString();
     $local = $this->randomName() . $chars[array_rand($chars)] . $this->randomName();
-    $domain = $this->randomName() . '-' . $this->randomName() . '.' . $this->randomName(rand(2,4));
+    $domain = $this->randomName() . '-' . $this->randomName() . '.' . $this->randomName(rand(2, 4));
     $headers = mimemail_headers(array(), "$name <$local@$domain>");
     $result = $headers['Return-Path'];
     $expected = "<$local@$domain>";
@@ -47,7 +47,7 @@ class MimeMailUnitTestCase extends DrupalUnitTestCase {
     $expected = 'sites/default/files/styles/thumbnail/public/image.jpg';
     $this->assertIdentical($result, $expected, 'Security token removed from styled image URL.');
 
-    $expected = $url = 'public://' . $this->randomName() . ' '. $this->randomName() . '.' . $this->randomName(3);
+    $expected = $url = 'public://' . $this->randomName() . ' ' . $this->randomName() . '.' . $this->randomName(3);
     $result = _mimemail_url($url, TRUE);
     $this->assertIdentical($result, $expected, 'Space in the filename of the attachment left intact.');
   }
@@ -89,7 +89,7 @@ class MimeMailWebTestCase extends DrupalWebTestCase {
       array('mimemail_linkonly' => TRUE),
       t('Save configuration'));
 
-    $url = 'public://' . $this->randomName() . ' '. $this->randomName() . '.jpg';
+    $url = 'public://' . $this->randomName() . ' ' . $this->randomName() . '.jpg';
     $result = _mimemail_url($url, TRUE);
     $expected = str_replace(' ', '%20', file_create_url($url));
     $message = 'Stream wrapper converted to web accessible URL for linked image.';

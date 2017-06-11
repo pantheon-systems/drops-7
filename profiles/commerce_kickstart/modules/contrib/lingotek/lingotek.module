@@ -1104,6 +1104,11 @@ function lingotek_entity_save($entity, $entity_type) {
     }
   }
 
+  if (!isset($entity->lingotek['profile'])) {
+    drupal_set_message(t('Unable to load Lingotek profile for @entity_type. Make sure user has Lingotek permission when manipulating entities.', array('@entity_type' => $entity_type)), 'error');
+    return;
+  }
+
   lingotek_keystore($entity_type, $id, 'profile', $entity->lingotek['profile']);
   // If the hash changed, handle upload status and target statuses
   $entity_changed = lingotek_entity_changed($entity_type, $entity, $id);
@@ -1203,7 +1208,6 @@ function lingotek_sync_target_locales($entity, $entity_type) {
     $item = (array) $targetObject;
     $tms_target_locales[$item['language']] = 1;
   }
-  $remove = array();
   foreach ($drupal_target_locales as $dtl => $val1) {
     if (LingotekSync::getTargetStatus($document_id, $dtl) == LingotekSync::STATUS_UNTRACKED) {
       LingotekSync::setTargetStatus($ln->getEntityType(), $ln->getId(), $dtl, LingotekSync::STATUS_NONE);
@@ -1515,6 +1519,16 @@ function lingotek_entity_load_single($entity_type, $entity_id) {
 }
 
 /**
+ * Implements hook_entitycache_load().
+ *
+ * Entity cache might not trigger hook_entity_load()
+ * so Lingotek passes on $entities to lingotek_entity_load()
+ */
+function lingotek_entitycache_load($entities, $type) {
+  lingotek_entity_load($entities, $type);
+}
+
+/**
  * Implements hook_entity_load().
  */
 function lingotek_entity_load($entities, $entity_type) {
@@ -1533,14 +1547,15 @@ function lingotek_entity_load($entities, $entity_type) {
   $is_anonymous = user_is_anonymous();
   $dest_url     = drupal_get_destination();
   $dest_str     = $dest_url['destination'];
-
-  $is_cron      = FALSE;
-  $is_cron_var  = FALSE;
-  $is_lingotek  = FALSE;
-  $is_admin_url = FALSE;
-  $is_drush     = FALSE;
-  $has_permissions = user_access('administer lingotek') || user_access('manage projects') || user_access('translation') || user_access('use lingotek developer tools') ? TRUE : FALSE;
+  $is_cron                = FALSE;
+  $is_cron_var            = FALSE;
+  $is_lingotek            = FALSE;
+  $is_admin_url           = FALSE;
+  $is_drush               = FALSE;
+  $is_entitycache_enabled = FALSE;
+  $has_permissions = user_access('administer lingotek') || user_access('manage projects') || user_access('translation') || user_access('use lingotek developer tools')? TRUE : FALSE;
   global $locks;
+
   if ($is_anonymous) {
     if (isset($locks['cron'])) {
       $is_cron_var = TRUE;
@@ -1557,9 +1572,12 @@ function lingotek_entity_load($entities, $entity_type) {
     if (php_sapi_name() == "cli") {
       $is_drush = TRUE;
     }
+    if (module_exists('entitycache')) {
+      $is_entitycache_enabled = TRUE;
+    }
   }
 
-  if ($is_anonymous === TRUE && $is_cron === FALSE && $is_lingotek === FALSE && $is_admin_url === FALSE && $is_cron_var === FALSE && $has_permissions === FALSE && $is_drush === FALSE) {
+  if ($is_anonymous && !$is_cron && !$is_lingotek && !$is_admin_url && !$is_cron_var && !$has_permissions && !$is_drush && !$is_entitycache_enabled) {
     return;
   }
 

@@ -33,7 +33,7 @@ function i18n_sync($status = NULL) {
 function i18n_sync_help($path, $arg) {
   switch ($path) {
     case 'admin/help#i18n_sync' :
-      $output = '<p>' . t('This module synchronizes content taxonomy and fields accross translations:') . '</p>';
+      $output = '<p>' . t('This module synchronizes content taxonomy and fields across translations:') . '</p>';
       $output .= '<p>' . t('First you need to select which fields should be synchronized. Then, after a node has been updated, all enabled vocabularies and fields will be synchronized as follows:') . '</p>';
       $output .= '<ul>';
       $output .= '<li>' . t('All the node fields selected for synchronization will be set to the same value for all translations.') . '</li>';

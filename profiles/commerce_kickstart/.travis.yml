@@ -15,6 +15,8 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.45
+  - UPGRADE=7.x-2.44
   - UPGRADE=7.x-2.43
   - UPGRADE=7.x-2.42
   - UPGRADE=7.x-2.41
@@ -26,8 +28,6 @@ env:
   - UPGRADE=7.x-2.35
   - UPGRADE=7.x-2.34
   - UPGRADE=7.x-2.33
-  - UPGRADE=7.x-2.32
-  - UPGRADE=7.x-2.31
 
 matrix:
   fast_finish: true

@@ -366,9 +366,8 @@ function &rules_get_cache($cid = 'data') {
       // Prevent stampeding by ensuring the cache is rebuilt just once at the
       // same time.
       while (!lock_acquire(__FUNCTION__ . $cid . $cid_suffix, 60)) {
-        rules_log('Cache rebuild lock hit: !cid', array('!cid' => $cid), RulesLog::WARN);
         // Now wait until the lock is released.
-        lock_wait(__FUNCTION__ . $cid . $cid_suffix, 10);
+        lock_wait(__FUNCTION__ . $cid . $cid_suffix, 30);
         // If the lock is released it's likely the cache was rebuild. Thus check
         // again if we can fetch it from the persistent cache.
         if ($get = cache_get($cid . $cid_suffix, 'cache_rules')) {

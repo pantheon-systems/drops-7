@@ -85,7 +85,7 @@ function mimemail_admin_settings() {
     '#access' => count($formats) > 1,
     '#attributes' => array('class' => array('filter-list')),
     '#description' => t('The filter set that will be applied to the message body.
-      If you are using Mime Mail as default mail sytem, make sure to enable
+      If you are using Mime Mail as default mail system, make sure to enable
       "Convert line breaks into HTML" and "Convert URLs into links" with a long
       enough maximum length for e.g. password reset URLs!'),
   );

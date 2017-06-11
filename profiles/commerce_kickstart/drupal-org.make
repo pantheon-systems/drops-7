@@ -7,9 +7,9 @@ defaults[projects][subdir] = contrib
 ; Basic contributed modules.
 projects[ctools][version] = 1.12
 projects[entity][version] = 1.8
-projects[entityreference][version] = 1.2
-projects[rules][version] = 2.9
-projects[views][version] = 3.15
+projects[entityreference][version] = 1.4
+projects[rules][version] = 2.10
+projects[views][version] = 3.16
 projects[views_bulk_operations][version] = 3.4
 projects[addressfield][version] = 1.2
 projects[features][version] = 2.10
@@ -68,7 +68,7 @@ projects[commerce_firstdata_gge4][version] = 1.1
 ; Other contribs.
 projects[countries][version] = 2.3
 projects[remote_stream_wrapper][version] = 1.0-rc1
-projects[colorbox][version] = 2.12
+projects[colorbox][version] = 2.13
 projects[physical][version] = 1.0
 projects[crumbs][version] = 1.10
 projects[http_client][version] = 2.4
@@ -85,7 +85,7 @@ projects[service_links]download][branch] = 7.x-2.x
 projects[advanced_help][version] = 1.3
 projects[mailsystem][version] = 2.34
 projects[mailsystem][patch][1534706] = "https://www.drupal.org/files/mailsystem.1534706.6.patch"
-projects[mimemail][version] = 1.0-beta4
+projects[mimemail][version] = 1.0
 projects[token][version] = 1.7
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
 projects[eva][version] = 1.3
@@ -94,14 +94,14 @@ projects[message_notify][version] = 2.5
 projects[migrate][version] = 2.8
 projects[migrate_extras][version] = 2.5
 projects[migrate_extras][patch][] = "http://drupal.org/files/migrate_extras-fix-destid2-array-1951904-4.patch"
-projects[date][version] = 2.9
+projects[date][version] = 2.10
 projects[yottaa][version] = 1.2
 projects[menu_attributes][version] = 1.0
 projects[fences][version] = 1.2
 projects[title][version] = 1.0-alpha9
 projects[kameleoon][version] = 1.1
 projects[mailup][version] = 1.4
-projects[mailjet][version] = 2.12
+projects[mailjet][version] = 2.13
 
 ; Search related modules.
 projects[search_api][version] = 1.21
@@ -123,17 +123,14 @@ projects[cloud_zoom][download][type] = git
 projects[cloud_zoom][download][revision] = 3cff30f
 projects[cloud_zoom][download][branch] = 7.x-1.x
 projects[special_menu_items][version] = 2.0
-projects[chosen][version] = 2.x-dev
-projects[chosen][download][type] = git
-projects[chosen][download][revision] = e7a0d22
-projects[chosen][download][branch] = 7.x-2.x
+projects[chosen][version] = 2.1
 projects[admin_views][version] = 1.6
 projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5
-projects[i18n][version] = 1.15
-projects[lingotek][version] = 7.19
+projects[i18n][version] = 1.17
+projects[lingotek][version] = 7.21
 
 ; Base theme.
 projects[omega][version] = 3.1

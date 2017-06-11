@@ -1613,7 +1613,7 @@ function lingotek_admin_prefs_form_submit($form, &$form_state) {
     }
 
     if (!db_table_exists('entity_translation')) {
-      drupal_set_message(t('For Paragraphs translation, make sure you\'ve installed the <i>Entity Translation</i> module.'), 'warning', FALSE);
+      drupal_set_message(t('For File Entity translation, make sure you\'ve installed the <i>Entity Translation</i> module.'), 'warning', FALSE);
     }
   }
   if (!module_exists('entity_menu_links') && $form_state['values']['lingotek_advanced_menu_links'] == TRUE) {
@@ -2696,6 +2696,13 @@ function lingotek_admin_cleanup_form($form, &$form_state, $show_fieldset = FALSE
     $cleanup_functions['lingotek_cleanup_field_languages_for_groups'] = array(
       'title' => t('Prepare group fields'),
       'desc' => t('Sets all <i>language neutral</i> group fields to be @lang.', array('@lang' => language_default('name'))),
+    );
+  }
+
+  if (module_exists('paragraphs') && variable_get('lingotek_translate_paragraphs', FALSE)) {
+    $cleanup_functions['lingotek_cleanup_field_languages_for_paragraphs'] = array(
+      'title' => t('Prepare paragraph fields'),
+      'desc' => t('Sets all <i>language neutral</i> paragraph fields to be @lang.', array('@lang' => language_default('name'))),
     );
   }
 

@@ -29,7 +29,6 @@ class MimeMailSystem implements MailSystemInterface {
     }
 
     $engine = variable_get('mimemail_engine', 'mimemail');
-    $mailengine = $engine . '_mailengine';
     $engine_prepare_message = $engine . '_prepare_message';
 
     if (function_exists($engine_prepare_message)) {

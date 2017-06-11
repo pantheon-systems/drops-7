@@ -1,6 +1,24 @@
 Mime Mail 7.x-1.x, xxxx-xx-xx
 -----------------------
 
+Mime Mail 7.x-1.0, 2017-05-14
+-----------------------
+- #2743229 by Bird-Kid, AdamPS: CSS doesn't get attached in PHP7
+- #2858390 by Munavijayalakshmi, Jigar.addweb: Fix coding standard issues
+- #2594743 by skipyT: Theme function called for plain messages also
+- #2374673 by smokris: Prevent processing of already embedded images
+- #1532352 by sgabe, Matt B: Add permission to view user specific settings
+- #2783815 by argiepiano: Add 'Reply-to' field to "Send HTML mail to all users of a role" action
+- #2796993 by Cauliflower: Return send status in Rules actions
+- #2796965 by Cauliflower: Allow NULL values in Rules actions
+- #1568680 by jamsilver: Use $message for themeing
+- #2721799 by igorik, sgabe: Minor typo
+- #2146513 by torotil, Anybody: Scan theme for other *css* file types
+- #2678818 by hoebekewim, das-peter: Mime Mail Compress has a deprecated constructor
+- #2553815 by nitrocad, anthonys: Imported font generates empty attachment
+- #2562181 by rrfegade: Remove unused varibles
+- #2562177 by rrfegade: Spelling errors
+
 Mime Mail 7.x-1.0-beta4, 2015-08-02
 -----------------------
 - #2413495 by sgabe, siggi_kid: Public images not embedded when file default scheme is private

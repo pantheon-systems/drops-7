@@ -1166,10 +1166,17 @@ class i18n_string_object_wrapper extends i18n_object_wrapper {
       $info = is_array($info) ? $info : array('title' => $info);
       $field_name = isset($info['field']) ? $info['field'] : $field;
       $value = $this->get_field($field_name);
+      if (is_array($value) && isset($value['value'])) {
+        $format = isset($value['format']) ? $value['format'] : NULL;
+        $value = $value['value'];
+      }
+      else {
+        $format = isset($info['format']) ? $this->get_field($info['format']) : NULL;
+      }
       $strings[$this->get_textgroup()][$string_type][$object_id][$field] = array(
         'string' => is_array($value) || isset($info['empty']) && $value === $info['empty'] ? NULL : $value,
         'title' => $info['title'],
-        'format' => isset($info['format']) ? $this->get_field($info['format']) : NULL,
+        'format' => $format,
         'name' => array_merge($object_keys, array($field)),
       );
     }

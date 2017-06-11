@@ -146,7 +146,7 @@ function lingotek_config_start_query($form_state, $union_part_desc) {
   $query = db_select('locales_source', 's');
 
   // Gets sync statuses for each language.
-  $query->addExpression("(SELECT COUNT(*) FROM {locales_target} target LEFT JOIN {lingotek_config_map} map ON map.lid = target.lid WHERE map.lid = s.lid AND map.current = 1 AND target.i18n_status = 0)", 'current_target_count');
+  $query->addExpression("(SELECT COUNT(*) FROM {locales_target} WHERE i18n_status = 0 AND lid = (SELECT lid FROM {lingotek_config_map} WHERE lid = s.lid AND current = 1))", 'current_target_count');
   $query->addExpression("(SELECT GROUP_CONCAT(SUBSTRING(config_key, 20, 10)) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key LIKE 'target_sync_status_%' AND value='PENDING')", 'pending');
   $query->addExpression("(SELECT GROUP_CONCAT(SUBSTRING(config_key, 20, 10)) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key LIKE 'target_sync_status_%' AND value='READY')", 'ready');
   $query->addExpression("(SELECT GROUP_CONCAT(SUBSTRING(config_key, 20, 10)) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key LIKE 'target_sync_status_%' AND value='CURRENT')", 'current');
@@ -163,14 +163,11 @@ function lingotek_config_start_query($form_state, $union_part_desc) {
   $query->addExpression("(SELECT set_id FROM {lingotek_config_map} lcm WHERE lcm.lid = s.lid)", 'config_set_id');
 
   // Lingotek Document ID
-  $query->leftJoin('lingotek_config_metadata', 'lingo_document_id', 'lingo_document_id.id = (SELECT set_id FROM lingotek_config_map WHERE lid = s.lid) AND lingo_document_id.config_key = \'document_id\'');
-  $query->addField('lingo_document_id', 'value', 'document_id');
+  $query->addExpression("(SELECT GROUP_CONCAT(value) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key = 'document_id')", 'document_id');
   //Config Workflow ID
-  $query->leftJoin('lingotek_config_metadata', 'lingo_workflow_id', 'lingo_workflow_id.id = (SELECT set_id FROM lingotek_config_map WHERE lid = s.lid) AND lingo_workflow_id.config_key = \'workflow_id\'');
-  $query->addField('lingo_workflow_id', 'value', 'workflow_id');
+  $query->addExpression("(SELECT GROUP_CONCAT(value) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key = 'workflow_id')", 'workflow_id');
   // Entity Upload Status
-  $query->leftJoin('lingotek_config_metadata', 'lingo_upload_status', 'lingo_upload_status.id = (SELECT set_id FROM lingotek_config_map WHERE lid = s.lid) AND lingo_upload_status.config_key = \'upload_status\' AND lingo_upload_status.value <> \'' . LingotekSync::STATUS_TARGET . '\' and lingo_upload_status.value <> \'' . LingotekSync::STATUS_DELETED . '\'');
-  $query->addField('lingo_upload_status', 'value', 'upload_status');
+  $query->addExpression("(SELECT GROUP_CONCAT(value) FROM {lingotek_config_metadata} WHERE id = (SELECT set_id FROM {lingotek_config_map} WHERE lid = s.lid) AND config_key = 'upload_status' AND value <> '" . LingotekSync::STATUS_TARGET . "' AND value <> '" . LingotekSync::STATUS_DELETED . "')", 'upload_status');
   $query->fields('s', array('source', 'location', 'context', 'lid', 'textgroup'));
   // Only show items in textgroups that are selected for translation on Config Settings page.
   $translatable_textgroups = LingotekConfigSet::getTextgroupsForTranslation() ? : array('no textgroups selected');
@@ -282,7 +279,7 @@ function lingotek_config_add_query_filters($query) {
       $query->condition('lt.i18n_status', '1');
     }
     else {
-      $query->condition('lingo_upload_status.value', $filters['upload_status']);
+      $query->havingCondition('upload_status', $filters['upload_status']);
       // Do not include items with a source marked as edited in locales_target (1 == edited).
       $query->condition('lt.i18n_status', '0');
     }
@@ -406,7 +403,7 @@ function lingotek_bulk_grid_parse_config_data($table_data_raw, $entity_type, $st
     $escaped_source = htmlentities($row->{'source'});
     $source_text = lingotek_truncate_grid_text($escaped_source, 55);
 
-    $translation_icons = lingotek_lang_icons($entity_type, $languages, $lid, $locale_statuses, FALSE, $row->language, FALSE, FALSE, $non_lingotek_config_translations); // show translation statuses
+    $translation_icons = lingotek_lang_icons($entity_type, $languages, $lid, NULL, $locale_statuses, FALSE, $row->language, FALSE, FALSE, $non_lingotek_config_translations); // show translation statuses
     $target_icons_str = implode('', array_values($translation_icons));
     $source_uploaded = lingotek_render_source($entity_type, $row, $languages, 'language');
     $set_id = LingotekConfigSet::getSetId($lid, FALSE);

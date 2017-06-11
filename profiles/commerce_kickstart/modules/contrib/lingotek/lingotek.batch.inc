@@ -45,6 +45,7 @@ function lingotek_field_language_data_cleanup_batch_create($entity_type, $autose
   $query2 = new EntityFieldQuery();
   $entities2 = $query2->entityCondition('entity_type', $entity_type)
       ->execute();
+
   unset($query2);
   if (isset($entities2[$entity_type])) {
     foreach ($entities2[$entity_type] as $entity) {
@@ -550,7 +551,13 @@ function lingotek_field_language_data_cleanup_update_entity($entity_type, $entit
     return $edited;
   }
   $info = entity_get_info($entity_type);
-  $label_field = $info['entity keys']['label'];
+
+  if ($entity_type === 'paragraphs_item') {
+    $label_field = $info['entity keys']['field_name'];
+  } else {
+    $label_field = $info['entity keys']['label'];
+  }
+
   // Use 'language' as a fallback in case the entity doesn't give lang field.
   $language_field = isset($info['entity keys']['language']) ? $info['entity keys']['language'] : 'language';
   $context['message'] = t('Preparing translatable content for @entity_type: @entity_title', array('@entity_type' => $entity_type, '@entity_title' => $entity->$label_field));
@@ -574,7 +581,11 @@ function lingotek_field_language_data_cleanup_update_entity($entity_type, $entit
 
   if ($edited) {
     $entity->lingotek_upload_override = FALSE;
-    entity_save($entity_type, $entity);
+    if ($entity_type === 'paragraphs_item') {
+      $entity->save(TRUE);
+    } else {
+      entity_save($entity_type, $entity);
+    }
   }
 
   return $edited;

@@ -57,24 +57,26 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
-    // If the PHPMailer class is not yet auto-loaded, try to load the library
-    // using Libraries API, if present.
-    if (!class_exists('PHPMailer') && function_exists('libraries_load')) {
-      $library = libraries_load('phpmailer');
-      if (empty($library) || empty($library['loaded'])) {
-        watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', array(), WATCHDOG_ERROR);
+    if(!class_exists('PHPMailer')) {
+      // If the PHPMailer class is not yet auto-loaded, try to load the library
+      // using Libraries API, if present.
+      if (function_exists('libraries_load')) {
+        $library = libraries_load('phpmailer');
+        if (empty($library) || empty($library['loaded'])) {
+          watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', array(), WATCHDOG_ERROR);
+          drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+          return FALSE;
+        }
+      }
+      // Libraries API not present, try manually loading the class file.
+      elseif (file_exists('sites/all/libraries/phpmailer/PHPMailerAutoload.php')) {
+        require_once 'sites/all/libraries/phpmailer/PHPMailerAutoload.php';
+      }
+      else {
         drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+        watchdog('mailjet', 'Unable to send mail : Libraries API and PHPMailer library does not exist .', array(), WATCHDOG_ERROR);
         return FALSE;
       }
-    }
-    // Libraries API not present, try manually loading the class file.
-    elseif (file_exists('sites/all/libraries/phpmailer/PHPMailerAutoload.php')) {
-      require_once 'sites/all/libraries/phpmailer/PHPMailerAutoload.php';
-    }
-    else {
-      drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
-      watchdog('mailjet', 'Unable to send mail : Libraries API and PHPMailer library does not exist .', array(), WATCHDOG_ERROR);
-      return FALSE;
     }
 
     // Create a new PHPMailer object - autoloaded from registry.

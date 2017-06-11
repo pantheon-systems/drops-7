@@ -1226,6 +1226,10 @@ function lingotek_cleanup_field_languages_for_groups() {
   lingotek_cleanup_field_languages('group');
 }
 
+function lingotek_cleanup_field_languages_for_paragraphs() {
+  lingotek_cleanup_field_languages('paragraphs_item');
+}
+
 /**
  * Report all Lingotek translations to the Entity Translation module
  */
@@ -2657,27 +2661,35 @@ function lingotek_get_advanced_vocabularies() {
  */
 function lingotek_get_paragraphs_item_source($entity_id) {
   if (!module_exists('entity_translation')) {
-    drupal_set_message(t('The Entity Translation module is required for translation of Paragraphs module types.'), 'warning', FALSE);
+    if (variable_get('lingotek_translate_paragraphs', FALSE)) {
+      drupal_set_message(t('The Entity Translation module is required for translation of Paragraphs module types.'), 'warning', FALSE);
+    }
     return language_default()->language;
   }
 
-  $row = db_select('entity_translation', 'et')
-    ->fields('et')
+  $source = db_select('entity_translation', 'et')
+    ->fields('et', array('language'))
     ->condition('entity_type', 'paragraphs_item')
     ->condition('entity_id', $entity_id)
     ->condition('source', '')
     ->execute()
-    ->fetch(PDO::FETCH_ASSOC);
+    ->fetchField();
 
-    return $row['language'];
+  if (!$source) {
+    return language_default()->language;
   }
+
+  return $source;
+}
 
   /*
  * Loads a source language for a file entity
  */
 function lingotek_get_file_source($entity_id) {
   if (!module_exists('entity_translation')) {
-    drupal_set_message(t('The Entity Translation module is required for translation of Paragraphs module types.'), 'warning', FALSE);
+    if (variable_get('lingotek_translate_files', FALSE)) {
+      drupal_set_message(t('The Entity Translation module is required for translation of File Entity module types.'), 'warning', FALSE);
+    }
     return language_default()->language;
   }
 

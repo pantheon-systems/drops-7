@@ -35,6 +35,10 @@ function mimemail_menu() {
  */
 function mimemail_permission() {
   return array(
+    'view mimemail user settings' => array(
+      'title' => t('View Mime Mail user settings'),
+      'description' => t('View user specific settings for Mime Mail.'),
+    ),
     'edit mimemail user settings' => array(
       'title' => t('Edit Mime Mail user settings'),
       'description' => t('Edit user specific settings for Mime Mail.'),
@@ -85,6 +89,7 @@ function mimemail_user_view($account, $view_mode, $langcode) {
   $account->content['mimemail'] = array(
     '#type' => 'user_profile_category',
     '#title' => t('Email'),
+    '#access' => user_access('view mimemail user settings'),
   );
 
   $account->content['mimemail']['textonly'] = array(
@@ -359,7 +364,7 @@ function mimemail_prepare_message($message) {
 
   $hook = array(
     'mimemail_message__' . $key,
-    'mimemail_message__' . $module .'__'. $key,
+    'mimemail_message__' . $module . '__' . $key,
   );
 
   $variables = array(
@@ -367,10 +372,13 @@ function mimemail_prepare_message($message) {
     'key' => $key,
     'recipient' => $to,
     'subject' => $subject,
-    'body' => $body
+    'body' => $body,
+    'message' => $message
   );
 
-  $body = theme($hook, $variables);
+  if (!$plain) {
+    $body = theme($hook, $variables);
+  }
 
   foreach (module_implements('mail_post_process') as $module) {
     $function = $module . '_mail_post_process';

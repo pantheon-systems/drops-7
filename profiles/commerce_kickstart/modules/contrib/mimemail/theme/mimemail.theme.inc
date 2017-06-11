@@ -10,7 +10,7 @@ function mimemail_theme_theme() {
 
   return array(
     'mimemail_message' => array(
-      'variables' => array('module' => NULL, 'key' => NULL, 'recipient' => NULL, 'subject' => NULL, 'body' => NULL),
+      'variables' => array('module' => NULL, 'key' => NULL, 'recipient' => NULL, 'subject' => NULL, 'body' => NULL, 'message' => array()),
       'template' => 'mimemail-message',
       'pattern' => 'mimemail_message__',
       'file' => 'mimemail.theme.inc',
@@ -36,7 +36,7 @@ function template_preprocess_mimemail_message(&$variables) {
   $themepath = drupal_get_path('theme', $theme);
 
   $sitestyle = variable_get('mimemail_sitestyle', 1);
-  $mailstyles = file_scan_directory($themepath, '#^mail\.css*$#');
+  $mailstyles = file_scan_directory($themepath, '#^mail(-.+)?\.(c|le|sc|sa)ss$#');
 
   // Check recursively for the existence of a mail.css file in the theme folder.
   if (!empty($mailstyles)) {

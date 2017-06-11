@@ -198,7 +198,6 @@ function i18n_menu_menu_link_alter(&$item) {
   // We just make sure every link has a valid language property.
   if (!i18n_object_langcode($item)) {
     $item['language'] = LANGUAGE_NONE;
-    $item['i18n_tsid'] = 0;
   }
 }
 
@@ -398,7 +397,7 @@ function i18n_menu_localize_tree($tree, $langcode = NULL) {
     if (_i18n_menu_link_process($item['link'])) {
       if (!_i18n_menu_link_is_visible($item['link'], $langcode)) {
         // Remove links for other languages than current.
-        // Links with language wont be localized.
+        // Links with language won't be localized.
         unset($tree[$index]);
         // @todo Research whether the above has any advantage over:
         // $item['hidden'] = TRUE;
@@ -600,7 +599,7 @@ function _i18n_menu_link_is_visible($link, $langcode = NULL) {
 }
 
 /**
- * Get localizable properties for menu link checking agains the router item.
+ * Get localizable properties for menu link checking against the router item.
  */
 function _i18n_menu_link_localizable_properties($link) {
   $props = array();

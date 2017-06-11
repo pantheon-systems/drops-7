@@ -4,10 +4,9 @@ package = User interface
 configure = admin/config/user-interface/chosen
 core = 7.x
 
-
-; Information added by drush on 2017-02-24
-version = "7.x-2.0-beta4+1-dev"
+; Information added by Drupal.org packaging script on 2017-03-23
+version = "7.x-2.1"
 core = "7.x"
 project = "chosen"
-datestamp = "1487976289"
+datestamp = "1490260386"
 

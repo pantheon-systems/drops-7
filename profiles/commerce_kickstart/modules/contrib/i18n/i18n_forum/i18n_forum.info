@@ -7,9 +7,9 @@ package = Multilingual - Internationalization
 core = 7.x
 files[] = i18n_forum.test
 
-; Information added by Drupal.org packaging script on 2017-01-31
-version = "7.x-1.15"
+; Information added by Drupal.org packaging script on 2017-04-18
+version = "7.x-1.17"
 core = "7.x"
 project = "i18n"
-datestamp = "1485834792"
+datestamp = "1492537747"
 

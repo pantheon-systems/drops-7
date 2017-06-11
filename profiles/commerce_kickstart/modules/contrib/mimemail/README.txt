@@ -2,7 +2,7 @@
 -- SUMMARY --
 
   This is a Mime Mail component module (for use by other modules).
-    * It permits users to recieve HTML email and can be used by other modules. The mail
+    * It permits users to receieve HTML email and can be used by other modules. The mail
       functionality accepts an HTML message body, mime-endcodes it and sends it.
     * If the HTML has embedded graphics, these graphics are MIME-encoded and included
       as a message attachment.
