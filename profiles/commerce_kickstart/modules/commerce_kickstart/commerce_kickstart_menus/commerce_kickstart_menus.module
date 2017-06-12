@@ -492,26 +492,28 @@ function commerce_kickstart_menus_views_api() {
  * Implements hook_menu_breadcrumb_alter().
  */
 function commerce_kickstart_menus_menu_breadcrumb_alter(&$active_trail, $item) {
-  // Home > Administration > Content > Settings > Content types
-  if (drupal_match_path($item['path'], "admin/structure/types") || drupal_match_path($item['path'], "admin/structure/types/*")) {
-    if (drupal_match_path($item['path'], "admin/structure/types/add")) {
-      return;
+  if (isset($item['path'])) {
+    // Home > Administration > Content > Settings > Content types
+    if (drupal_match_path($item['path'], "admin/structure/types") || drupal_match_path($item['path'], "admin/structure/types/*")) {
+      if (drupal_match_path($item['path'], "admin/structure/types/add")) {
+        return;
+      }
+      $active_trail_end = array_slice($active_trail, 6);
+      $active_trail = array_slice($active_trail, 0, 1);
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin');
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content');
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/settings');
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/settings/content-types');
+      $active_trail = array_merge($active_trail, $active_trail_end);
     }
-    $active_trail_end = array_slice($active_trail, 6);
-    $active_trail = array_slice($active_trail, 0, 1);
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin');
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content');
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/settings');
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/settings/content-types');
-    $active_trail = array_merge($active_trail, $active_trail_end);
-  }
-  // Set the breadcrumb for the "Add content" tab of node/add.
-  else if (drupal_match_path($item['path'], 'node/add')) {
-    $active_trail = array_slice($active_trail, 0, 1);
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin');
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content');
-    $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/actions');
-    $active_trail[] = _commerce_kickstart_menus_get_item('node/add/add-content');
+    // Set the breadcrumb for the "Add content" tab of node/add.
+    else if (drupal_match_path($item['path'], 'node/add')) {
+      $active_trail = array_slice($active_trail, 0, 1);
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin');
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content');
+      $active_trail[] = _commerce_kickstart_menus_get_item('admin/commerce/manage-content/actions');
+      $active_trail[] = _commerce_kickstart_menus_get_item('node/add/add-content');
+    }
   }
 }
 
