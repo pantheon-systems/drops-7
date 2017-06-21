@@ -350,13 +350,13 @@ function commerce_paypal_wps_paypal_ipn_process($order, $payment_method, &$ipn) 
         // Create the new profile now.
         $profile = commerce_customer_profile_new('billing', $order->uid);
 
-        // Add the address value.
-        $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
-
         // Prepare an addressfield array to set to the customer profile.
         $field = field_info_field('commerce_customer_address');
         $instance = field_info_instance('commerce_customer_profile', 'commerce_customer_address', 'billing');
         $address = addressfield_default_values($field, $instance);
+
+        // Add the address value.
+        $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
 
         $profile_wrapper->commerce_customer_address = array_merge($address, array(
           'country' => $ipn['residence_country'],
@@ -477,7 +477,7 @@ function commerce_paypal_wps_order_form($form, &$form_state, $order, $settings) 
   $form['#action'] = commerce_paypal_wps_server_url($settings['server']);
 
   foreach ($data as $name => $value) {
-    if (!empty($value)) {
+    if (isset($value)) {
       $form[$name] = array('#type' => 'hidden', '#value' => $value);
     }
   }

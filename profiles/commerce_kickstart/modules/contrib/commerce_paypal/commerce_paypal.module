@@ -91,18 +91,42 @@ function commerce_paypal_process_ipn($payment_method = NULL, $debug_ipn = array(
       $host = 'https://www.paypal.com/cgi-bin/webscr';
     }
 
-    // Process the HTTP request to validate the IPN.
-    $response = drupal_http_request($host, array('method' => 'POST', 'data' => implode('&', $variables)));
+    // Setup the cURL request.
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $host);
+    curl_setopt($ch, CURLOPT_VERBOSE, 0);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, implode('&', $variables));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
 
-    // If an error occurred during processing, log the message and exit.
-    if (property_exists($response, 'error')) {
-      watchdog('commerce_paypal', 'Attempt to validate IPN failed with error @code: @error', array('@code' => $response->code, '@error' => $response->error), WATCHDOG_ERROR);
-      return FALSE;
+    // Commerce PayPal requires SSL peer verification, which may prevent out of
+    // date servers from successfully processing API requests. If you get an error
+    // related to peer verification, you may need to download the CA certificate
+    // bundle file from http://curl.haxx.se/docs/caextract.html, place it in a
+    // safe location on your web server, and update your settings.php to set the
+    // commerce_paypal_cacert variable to contain the absolute path of the file.
+    // Alternately, you may be able to update your php.ini to point to the file
+    // with the curl.cainfo setting.
+    if (variable_get('commerce_paypal_cacert', FALSE)) {
+      curl_setopt($ch, CURLOPT_CAINFO, variable_get('commerce_paypal_cacert', ''));
     }
 
-    // If the IPN was invalid, log a message and exit.
-    if ($response->data == 'INVALID') {
-      watchdog('commerce_paypal', 'Invalid IPN received and ignored.', array(), WATCHDOG_ALERT);
+    $response = curl_exec($ch);
+
+    // If an error occurred during processing, log the message and exit.
+    if ($error = curl_error($ch)) {
+      watchdog('commerce_paypal', 'Attempt to validate IPN failed with cURL error: @error', array('@error' => $error), WATCHDOG_ERROR);
+      return FALSE;
+    }
+    curl_close($ch);
+
+    // inspect IPN validation result and act accordingly
+    if (strcmp ($response, "INVALID") == 0) {
+      // If the IPN was invalid, log a message and exit.
+      watchdog('commerce_paypal', 'Invalid IPN received and ignored. Response: @response', array('@response' => $response), WATCHDOG_ALERT);
       return FALSE;
     }
   }

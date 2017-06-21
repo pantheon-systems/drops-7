@@ -98,10 +98,21 @@ function commerce_paypal_wpp_capture_form_submit($form, &$form_state) {
   $order = $form_state['order'];
   $payment_method = $form_state['payment_method'];
   $authorization_valid = TRUE;
+  $reauth_needed = TRUE;
+
+  // Find a previous successful reauthorization. This is needed in edge cases
+  // where reauthorization was successful but capture failed.
+  foreach ($transaction->payload as $key => $payload) {
+    $is_reauth = strpos($key, 'reauthorization');
+    if ($is_reauth && $payload['ACK'] == 'Success') {
+      $reauth_needed = FALSE;
+      break;
+    }
+  }
 
   // If the original authorization was more than 3 days ago, PayPal's honor
   // period is over and a reauthorization is required before capturing.
-  if (REQUEST_TIME - $transaction->created > 86400 * 3) {
+  if (REQUEST_TIME - $transaction->created > 86400 * 3 && $reauth_needed) {
     // Build a name-value pair array for the reauthorization.
     $nvp = array(
       'METHOD' => 'DoReauthorization',
@@ -112,7 +123,7 @@ function commerce_paypal_wpp_capture_form_submit($form, &$form_state) {
 
     // Submit the reauthorization request.
     $response = commerce_paypal_api_request($payment_method, $nvp, $order);
-    $transaction->payload[REQUEST_TIMESTAMP . '-reauthorization'] = $response;
+    $transaction->payload[REQUEST_TIME . '-reauthorization'] = $response;
 
     // If the response contains an authorization ID...
     if (!empty($response['AUTHORIZATIONID'])) {

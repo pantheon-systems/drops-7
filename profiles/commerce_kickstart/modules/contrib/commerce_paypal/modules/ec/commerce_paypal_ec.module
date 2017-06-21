@@ -875,7 +875,7 @@ function commerce_paypal_ec_paypal_ipn_process($order, $payment_method, &$ipn) {
   }
 
   // Exit when we don't get a payment status we recognize.
-  if (!in_array($ipn['payment_status'], array('Failed', 'Voided', 'Pending', 'Completed', 'Refunded'))) {
+  if (!in_array($ipn['payment_status'], array('Failed', 'Voided', 'Pending', 'Completed', 'Refunded', 'Denied'))) {
     commerce_payment_redirect_pane_previous_page($order);
     return FALSE;
   }
@@ -907,6 +907,24 @@ function commerce_paypal_ec_paypal_ipn_process($order, $payment_method, &$ipn) {
     // payment transaction to log it to the order.
     $transaction = commerce_payment_transaction_new('paypal_ec', $order->order_id);
     $transaction->instance_id = $payment_method['instance_id'];
+  }
+  elseif (in_array($ipn['payment_status'], array('Completed','Denied')) && $ipn['payment_type'] === 'echeck') {
+    // E-checks use the same ipn transaction id, with an updated status. Check
+    // for existing transaction with a status that's not the same.
+    // Ensure there is an existing transaction.
+    $transaction = commerce_paypal_payment_transaction_load($ipn['txn_id']);
+    if (! $transaction) {
+      watchdog('commerce_paypal_ec', 'IPN for Order @order_number ignored: transaction not found.', array('@order_number' => $order->order_number), WATCHDOG_NOTICE);
+      return FALSE;
+    }
+
+    // The e-check status has updated, so change the transaction details.
+    if ($ipn['payment_status'] == 'Completed') {
+      $transaction->message = '<strong>' . t('eCheck payment successful') . '</strong>';
+    }
+    else {
+      $transaction->message = '<strong>' . t('eCheck payment denied') . '</strong>';
+    }
   }
   else {
     // In other circumstances, exit the processing, because we handle those
@@ -952,6 +970,11 @@ function commerce_paypal_ec_paypal_ipn_process($order, $payment_method, &$ipn) {
     case 'Refunded':
       $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $transaction->message .= t('Refund for transaction @txn_id', array('@txn_id' => $ipn['parent_txn_id']));
+      break;
+
+    case 'Denied' :
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->message .= t("The payment has been denied. This happens only if the payment was previously pending.");
       break;
   }
 
@@ -1049,7 +1072,7 @@ function commerce_paypal_ec_set_express_checkout($payment_method, $order, $flow)
   if (module_exists('commerce_shipping')) {
     // If we have a shipping address, pass it to PayPal and do not allow the
     // customer to set a new one at PayPal.
-    if (!empty($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
+    if (isset($order_wrapper->commerce_customer_shipping) && !empty($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
       $shipping_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
 
       // Ensure there's a name_line.

@@ -1447,6 +1447,7 @@ function commerce_payflow_link_result_message($result) {
     case 0:
       return t('Transaction approved.');
     case 1:
+      return t('Account authentication error. Please contact an administrator to resolve this issue.');
     case 5:
     case 26:
       return t('The Payflow hosted checkout page is not configured for use. Please contact an administrator to resolve this issue.');
