@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Install file for Menu Badges.
+ */
+
+/**
  * Updates existing badges to new specification format.
  */
 function menu_badges_update_7102(&$sandbox = NULL) {
@@ -12,7 +17,7 @@ function menu_badges_update_7102(&$sandbox = NULL) {
     }
   }
   variable_set('menu_badges_tab_callbacks', $tab_badges);
-  
+
   // Update normal menu links to the new format.
   $results = db_select('menu_links', 'ml')
               ->fields('ml', array('mlid', 'options'))
@@ -27,11 +32,11 @@ function menu_badges_update_7102(&$sandbox = NULL) {
   cache_clear_all(NULL, 'cache_menu');
   cache_clear_all('variables', 'cache_bootstrap');
   menu_rebuild();
-  return $ret;
+  return;
 }
 
 /**
- * Update to array-based format for version 7.x-1.2
+ * Update to array-based format for version 7.x-1.2.
  * @param $callback
  * @param $arguments
  */
@@ -45,18 +50,22 @@ function _menu_badges_7102_fix_deprecated_callback($callback, $arguments = array
       $callback = 'menu_badges_ur_pending';
       $arguments += array('role' => 'requestee');
       break;
+
     case 'menu_badges_ur_pending_incoming_uid':
       $callback = 'menu_badges_ur_pending';
       $arguments += array('role' => 'requestee', 'menu_arg' => 1);
       break;
+
     case 'menu_badges_ur_pending_outgoing_current':
       $callback = 'menu_badges_ur_pending';
       $arguments += array('role' => 'requester');
       break;
+
     case 'menu_badges_ur_pending_outgoing_uid':
       $callback = 'menu_badges_ur_pending';
       $arguments += array('role' => 'requester', 'menu_arg' => 1);
       break;
+
     case 'menu_badges_privatemsg_unread_count_uid':
       $callback = 'menu_badges_privatemsg_unread_count';
       $arguments += array('menu_arg' => 1);
@@ -67,4 +76,17 @@ function _menu_badges_7102_fix_deprecated_callback($callback, $arguments = array
     'callback' => $callback,
     'arguments' => $arguments,
   );
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function menu_badges_uninstall() {
+  // Remove link badges from menu_links table.
+  $result = db_query("SELECT mlid, options FROM {menu_links} WHERE options LIKE '%\"link_badge\"%'");
+  foreach ($result as $record) {
+    $options = unserialize($record->options);
+    unset($options['link_badge']);
+    db_query("UPDATE {menu_links} SET options = :options WHERE mlid = :mlid", array(':options' => serialize($options), ':mlid' => $record->mlid));
+  }
 }

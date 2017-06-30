@@ -1719,11 +1719,11 @@ function file_entity_access($op, $file = NULL, $account = NULL) {
         return $rights[$account->uid][$cache_id][$op] = TRUE;
       }
     }
-    elseif ($file->uid == $account->uid && user_access('view own files', $account)) {
+    elseif ($file->status == FILE_STATUS_PERMANENT && $file->uid == $account->uid && user_access('view own files', $account)) {
       // For non-private files, allow to see if user owns the file.
       return $rights[$account->uid][$cache_id][$op] = TRUE;
     }
-    elseif (user_access('view files', $account)) {
+    elseif ($file->status == FILE_STATUS_PERMANENT && user_access('view files', $account)) {
       // For non-private files, users can view if they have the 'view files'
       // permission.
       return $rights[$account->uid][$cache_id][$op] = TRUE;
@@ -1794,7 +1794,7 @@ function file_entity_query_file_access_alter(QueryAlterableInterface $query) {
  * access conditions are added for field values belonging to files only.
  */
 function file_entity_query_entity_field_access_alter(QueryAlterableInterface $query) {
-  //_file_entity_query_file_entity_access_alter($query, 'entity');
+  _file_entity_query_file_entity_access_alter($query, 'entity');
 }
 
 /**
@@ -1822,6 +1822,12 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
 
   $tables = $query->getTables();
   $base_table = $query->getMetaData('base_table');
+  // Do not use the base table for general entity queries unless this is
+  // querying the file_managed table directly.
+  if ($base_table && $type == 'entity' && $base_table != 'file_managed') {
+    $base_table = '';
+  }
+
   // If no base table is specified explicitly, search for one.
   if (!$base_table) {
     $fallback = '';
@@ -1853,6 +1859,10 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
               $fallback = $table;
             }
           }
+          elseif (isset($schema['fields']['entity_id']) && isset($schema['fields']['entity_type']) && isset($schema['fields']['deleted']) && isset($schema['fields']['delta'])) {
+            // The table is a field data table, use it as fallback.
+            $base_table = $table;
+          }
         }
       }
     }
@@ -1863,6 +1873,11 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         $base_table = $fallback;
       }
       else {
+        // Ignore this query as it was a general field query and no
+        // relationships were found to the file_managed table.
+        if ($type == 'entity') {
+          return;
+        }
         throw new Exception(t('Query tagged for file access but there is no fid. Add foreign keys to file_managed.fid in schema to fix.'));
       }
     }
@@ -1925,33 +1940,36 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         }
       }
 
-      if ($subquery_conditions->count()) {
+      // If there is no subquery conditions, the query is likely for file usage.
+      // Or user can only access public files.
+      // If there are subquery conditions then add them to the subquery.
+      if ($subquery_conditions->count() >= 1) {
         $subquery->condition($subquery_conditions);
+      }
 
-        $field = 'fid';
-        // Now handle entities.
-        if ($type == 'entity') {
-          // Set a common alias for entities.
-          $base_alias = $falias;
-          $field = 'entity_id';
-        }
-        $subquery->where("$falias.$field = fm_access.fid");
+      $field = 'fid';
+      // Now handle entities.
+      if ($type == 'entity') {
+        // Set a common alias for entities.
+        $base_alias = $falias;
+        $field = ($falias == 'file_managed' ? 'fid' : 'entity_id');
+      }
+      $subquery->where("$falias.$field = fm_access.fid");
 
-        // For an entity query, attach the subquery to entity conditions.
-        if ($type == 'entity') {
-          $file_conditions->exists($subquery);
-        }
-        // Otherwise attach it to the node query itself.
-        elseif ($table == 'file_managed') {
-          // Fix for https://drupal.org/node/2073085
-          $db_or = db_or();
-          $db_or->exists($subquery);
-          $db_or->isNull($falias . '.' . $field);
-          $query->condition($db_or);
-        }
-        else {
-          $query->exists($subquery);
-        }
+      // For an entity query, attach the subquery to entity conditions.
+      if ($type == 'entity') {
+        $file_conditions->exists($subquery);
+      }
+      // Otherwise attach it to the node query itself.
+      elseif ($table == 'file_managed') {
+        // Fix for https://drupal.org/node/2073085
+        $db_or = db_or();
+        $db_or->exists($subquery);
+        $db_or->isNull($falias . '.' . $field);
+        $query->condition($db_or);
+      }
+      else {
+        $query->exists($subquery);
       }
     }
   }
@@ -1959,14 +1977,19 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
   if ($type == 'entity' && $file_conditions->count()) {
     // All the file access conditions are only for field values belonging to
     // files.
-    $file_conditions->condition("$base_alias.entity_type", 'file');
-    $or = db_or();
-    $or->condition($file_conditions);
-    // If the field value belongs to a non-file entity type then this function
-    // does not do anything with it.
-    $or->condition("$base_alias.entity_type", 'file', '<>');
-    // Add the compiled set of rules to the query.
-    $query->condition($or);
+    if ($base_alias !== 'file_managed') {
+      $file_conditions->condition("$base_alias.entity_type", 'file');
+      $or = db_or();
+      $or->condition($file_conditions);
+      // If the field value belongs to a non-file entity type then this function
+      // does not do anything with it.
+      $or->condition("$base_alias.entity_type", 'file', '<>');
+      // Add the compiled set of rules to the query.
+      $query->condition($or);
+    }
+    else {
+      $query->condition($file_conditions);
+    }
   }
 }
 
@@ -2113,6 +2136,10 @@ function file_entity_file_default_types() {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'application/x-7z-compressed',
+      'application/x-tar',
+      'application/gzip',
     ),
   );
 
@@ -2479,6 +2506,9 @@ function file_entity_download_uri($file) {
 }
 
 function file_entity_file_get_mimetype_type($file) {
+  if (is_array($file)) {
+    $file = (object) $file;
+  }
   list($type, $subtype) = explode('/', $file->filemime, 2);
   return $type;
 }
@@ -2600,3 +2630,4 @@ function file_entity_features_pipe_file_type_alter(&$pipe, $data, $export) {
     $pipe['variable'][] = "pathauto_file_{$file_type}_pattern";
   }
 }
+

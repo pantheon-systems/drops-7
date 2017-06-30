@@ -363,16 +363,32 @@ function &rules_get_cache($cid = 'data') {
       $cache[$cid] = $get->data;
     }
     else {
-      // Prevent stampeding by ensuring the cache is rebuilt just once at the
-      // same time.
-      while (!lock_acquire(__FUNCTION__ . $cid . $cid_suffix, 60)) {
-        // Now wait until the lock is released.
-        lock_wait(__FUNCTION__ . $cid . $cid_suffix, 10);
-        // If the lock is released it's likely the cache was rebuild. Thus check
-        // again if we can fetch it from the persistent cache.
-        if ($get = cache_get($cid . $cid_suffix, 'cache_rules')) {
-          $cache[$cid] = $get->data;
-          return $cache[$cid];
+      $stampede_protection = variable_get('rules_stampede_protection', TRUE);
+      $stampede_semaphore = variable_get('rules_stampede_semaphore', 15);
+      $stampede_wait_limit = variable_get('rules_stampede_wait_limit', 3);
+      $stampede_wait_time = variable_get('rules_stampede_wait_time', 5);
+      $log_lock_hit = variable_get('rules_log_cache_rebuild_lock_hit', TRUE);
+      $lock_name = __FUNCTION__ . ':' . $cid . $cid_suffix;
+      $lock = FALSE;
+
+      if ($stampede_protection) {
+        $lock_count = 0;
+        // Prevent stampeding by ensuring the cache is rebuilt just once at the
+        // same time.
+        while ($lock_count < $stampede_wait_limit && !($lock = lock_acquire($lock_name, $stampede_semaphore))) {
+          $lock_count ++;
+          if ($log_lock_hit) {
+            $log_args = array('!cid' => $cid, '!count' => $lock_count);
+            rules_log('Cache rebuild lock hit: !cid - lock_count: !count', $log_args, RulesLog::WARN);
+          }
+          // Now wait until the lock is released.
+          lock_wait($lock_name, $stampede_wait_time);
+          // If the lock is released it's likely the cache was rebuilt. Thus
+          // check again if we can fetch it from the persistent cache.
+          if ($get = cache_get($cid . $cid_suffix, 'cache_rules')) {
+            $cache[$cid] = $get->data;
+            return $cache[$cid];
+          }
         }
       }
       if ($cid === 'data') {
@@ -393,7 +409,9 @@ function &rules_get_cache($cid = 'data') {
         $cache[$cid] = FALSE;
       }
       // Ensure a set lock is released.
-      lock_release(__FUNCTION__ . $cid . $cid_suffix);
+      if ($stampede_protection && $lock) {
+        lock_release($lock_name);
+      }
     }
   }
   return $cache[$cid];

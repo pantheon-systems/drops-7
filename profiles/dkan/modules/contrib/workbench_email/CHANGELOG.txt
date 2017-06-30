@@ -1,3 +1,7 @@
+Workbench Email 7.x-3.11, 2017-01-31
+-----------------------------------
+by TheGentleman, frosev: Issue 2829761: Sending Emails by Section and Role not just by Role
+
 Workbench Email 7.x-3.11, 2016-08-19
 -----------------------------------
 by jstoller, frosev: Issue 2758079: Invalid argument supplied for foreach() workbench_email.features.inc:94

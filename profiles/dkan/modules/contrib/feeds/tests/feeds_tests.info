@@ -3,13 +3,9 @@ description = "Support module for Feeds related testing."
 package = Testing
 version = VERSION
 core = 7.x
-test_dependencies[] = date
-test_dependencies[] = feeds_xpathparser
-test_dependencies[] = link
-test_dependencies[] = i18n_taxonomy
 hidden = TRUE
 
-; Information added by drush on 2015-11-01
-version = "7.x-2.0-beta1+17-dev"
+; Information added by drush on 2017-06-07
+version = "7.x-2.0-beta3+36-dev"
 project = "feeds"
-datestamp = "1446372284"
+datestamp = "1496840847"

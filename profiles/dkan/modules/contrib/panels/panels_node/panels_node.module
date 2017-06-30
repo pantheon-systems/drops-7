@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * @file panels_node.module
  *
@@ -10,8 +8,7 @@
  */
 
 // ---------------------------------------------------------------------------
-// General Drupal hooks
-
+// General Drupal hooks.
 /**
  * Implementation of hook_permission().
  */
@@ -81,7 +78,7 @@ function panels_node_menu() {
 }
 
 /**
- * Access callback to determine if a user has edit access
+ * Access callback to determine if a user has edit access.
  */
 function panels_node_edit_node($node) {
   if (!isset($node->panels_node)) {
@@ -113,8 +110,7 @@ function panels_node_add() {
 }
 
 // ---------------------------------------------------------------------------
-// Node hooks
-
+// Node hooks.
 /**
  * Implementation of hook_node_info().
  */
@@ -202,7 +198,7 @@ function panels_node_hook_form(&$node, &$form_state) {
   );
 
   // Support for different rendering pipelines
-  // Mostly borrowed from panel_context.inc
+  // Mostly borrowed from panel_context.inc.
   $pipelines = panels_get_renderer_pipelines();
 
   $options = array();
@@ -257,7 +253,7 @@ function panels_node_hook_insert(&$node) {
 
   // Special handling for nodes being imported from an export.module data dump.
   if (!empty($node->export_display)) {
-    // This works by overriding the $display set above
+    // This works by overriding the $display set above.
     eval($node->export_display);
     unset($node->export_display);
   }
@@ -336,8 +332,7 @@ function panels_node_hook_view($node, $view_mode) {
 }
 
 // ---------------------------------------------------------------------------
-// Administrative pages
-
+// Administrative pages.
 /**
  * Settings for panel nodes.
  */
@@ -347,8 +342,7 @@ function panels_node_settings() {
 }
 
 // ---------------------------------------------------------------------------
-// Meat of the Panels API; almost completely passing through to panels.module
-
+// Meat of the Panels API; almost completely passing through to panels.module.
 /**
  * Pass through to the panels layout editor.
  */
@@ -385,7 +379,7 @@ function panels_node_get_context(&$node) {
 }
 
 /**
- * Implementation of hook_export_node_alter()
+ * Implementation of hook_export_node_alter().
  *
  * Integrate with export.module for saving panel_nodes into code.
  */
@@ -423,13 +417,12 @@ function panels_node_panels_ipe_access($display) {
     // Only allow access to use the IPE if the user has 'update' access to
     // the underlying node.
     $node = $display->context['panel-node']->data;
-    return node_access('update', $node); 
+    return node_access('update', $node);
   }
 }
 
 // ---------------------------------------------------------------------------
 // Callbacks for panel caching.
-
 /**
  * Get display edit cache for a panel node being edited.
  *
@@ -451,7 +444,7 @@ function panels_node_panels_cache_get($nid) {
     $cache->display->css_id = $node->panels_node['css_id'];
     $cache->display->context = panels_node_get_context($node);
     $cache->display->cache_key = 'panels_node:' . $node->nid;
-    $cache->content_types =   panels_common_get_allowed_types('panels_node', $cache->display->context);
+    $cache->content_types = panels_common_get_allowed_types('panels_node', $cache->display->context);
     $cache->allwed_layouts = panels_common_get_allowed_layouts('panels_node');
   }
 

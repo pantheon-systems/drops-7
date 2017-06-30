@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * @file
+ */
+
+/**
  * The standard render pipeline for a Panels display object.
  *
  * Given a fully-loaded panels_display object, this class will turn its
@@ -47,6 +51,9 @@
  * The system is almost functionally identical to the old procedural approach,
  * with some exceptions (@see panels_renderer_legacy for details). The approach
  * here differs primarily in its friendliness to tweaking in subclasses.
+ */
+/**
+ *
  */
 class panels_renderer_standard {
   /**
@@ -209,9 +216,9 @@ class panels_renderer_standard {
    * method via parent::prepare(), or manually set $this->prep_run = TRUE.
    *
    * @param mixed $external_settings
-   *  An optional parameter allowing external code to pass in additional
-   *  settings for use in the preparation process. Not used in the default
-   *  renderer, but included for interface consistency.
+   *   An optional parameter allowing external code to pass in additional
+   *   settings for use in the preparation process. Not used in the default
+   *   renderer, but included for interface consistency.
    */
   function prepare($external_settings = NULL) {
     $this->prepare_panes($this->display->content);
@@ -232,22 +239,24 @@ class panels_renderer_standard {
    * regularly make additions to the set of panes that will be rendered.
    *
    * @param array $panes
-   *  An associative array of pane data (stdClass objects), keyed on pane id.
+   *   An associative array of pane data (stdClass objects), keyed on pane id.
+   *
    * @return array
    *  An associative array of panes to be rendered, keyed on pane id and sorted
    *  into proper rendering order.
    */
   function prepare_panes($panes) {
     ctools_include('content');
-    // Use local variables as writing to them is very slightly faster
+    // Use local variables as writing to them is very slightly faster.
     $first = $normal = $last = array();
 
-    // Prepare the list of panes to be rendered
+    // Prepare the list of panes to be rendered.
     foreach ($panes as $pid => $pane) {
       if (empty($this->admin)) {
-        // TODO remove in 7.x and ensure the upgrade path weeds out any stragglers; it's been long enough
-        $pane->shown = !empty($pane->shown); // guarantee this field exists.
-        // If this pane is not visible to the user, skip out and do the next one
+        // TODO remove in 7.x and ensure the upgrade path weeds out any stragglers; it's been long enough.
+        $pane->shown = !empty($pane->shown);
+        // Guarantee this field exists.
+        // If this pane is not visible to the user, skip out and do the next one.
         if (!$pane->shown || !panels_pane_access($pane, $this->display)) {
           continue;
         }
@@ -272,7 +281,7 @@ class panels_renderer_standard {
       // If it wants to render first, add it to the $first array. This is used
       // by panes that need to do some processing before other panes are
       // rendered.
-      else if (!empty($content_type['render first'])) {
+      elseif (!empty($content_type['render first'])) {
         $first[$pid] = $pane;
       }
       // Otherwise, render it in the normal order.
@@ -318,6 +327,7 @@ class panels_renderer_standard {
    * @param array $settings
    *   All known region style settings, including both the top-level display's
    *   settings (if any) and all region-specific settings (if any).
+   *
    * @return array
    *   An array of regions prepared for rendering.
    */
@@ -497,9 +507,10 @@ class panels_renderer_standard {
       case 'standard':
         drupal_add_css($filename);
         break;
+
       case 'inline':
         $url = base_path() . $filename;
-        $this->prefix .= '<link type="text/css" rel="stylesheet" href="' . file_create_url($url) . '" />'."\n";
+        $this->prefix .= '<link type="text/css" rel="stylesheet" href="' . file_create_url($url) . '" />' . "\n";
         break;
     }
   }
@@ -533,8 +544,8 @@ class panels_renderer_standard {
    * an individual pane can be bubbled up to take over the title for the entire
    * display.
    *
-   * @param stdClass $pane
-   *  A Panels pane object, as loaded from the database.
+   * @param object $pane
+   *   A Panels pane object, as loaded from the database.
    */
   function render_pane(&$pane) {
     module_invoke_all('panels_pane_prerender', $pane);
@@ -567,7 +578,7 @@ class panels_renderer_standard {
         }
       }
 
-      // fallback
+      // Fallback.
       return theme('panels_pane', array('content' => $content, 'pane' => $pane, 'display' => $this->display));
     }
   }
@@ -578,8 +589,9 @@ class panels_renderer_standard {
    * This method retrieves pane content and produces a ready-to-render content
    * object. It also manages pane-specific caching.
    *
-   * @param stdClass $pane
+   * @param object $pane
    *   A Panels pane object, as loaded from the database.
+   *
    * @return stdClass $content
    *   A renderable object, containing a subject, content, etc. Based on the
    *   renderable objects used by the block system.
@@ -693,4 +705,5 @@ class panels_renderer_standard {
     $output = theme($style['render region'], array('display' => $this->display, 'owner_id' => $owner_id, 'panes' => $panes, 'settings' => $style_settings, 'region_id' => $region_id, 'style' => $style));
     return $output;
   }
+
 }

@@ -25,18 +25,23 @@ function menu_badges_tabs_admin_form($form, $form_state) {
   $form['search']['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Menu Path'),
-  	'#size' => 30,
+    '#size' => 30,
   );
   $form['search']['type'] = array(
     '#type' => 'select',
     '#title' => t('Menu Type'),
-    '#options' => array('' => '', MENU_LOCAL_TASK => t('Tab (MENU_LOCAL_TASK)'), MENU_LOCAL_ACTION => t('Action Link (MENU_LOCAL_ACTION)')),
+    '#options' => array(
+      '' => '',
+      MENU_DEFAULT_LOCAL_TASK => t('Tab (MENU_DEFAULT_LOCAL_TASK)'),
+      MENU_LOCAL_TASK => t('Tab (MENU_LOCAL_TASK)'),
+      MENU_LOCAL_ACTION => t('Action Link (MENU_LOCAL_ACTION)'),
+    ),
   );
   $form['search']['search'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
   );
-  
+
   $query = db_select('menu_router', 'mr')
              ->fields('mr', array('path', 'type', 'title'));
   if (!empty($form_state['input']['search']['title'])) {
@@ -49,13 +54,13 @@ function menu_badges_tabs_admin_form($form, $form_state) {
     $query->condition('type', $form_state['input']['search']['type'], '=');
   }
   else {
-    $query->condition('type', array(MENU_LOCAL_TASK, MENU_LOCAL_ACTION), 'IN');
+    $query->condition('type', array(MENU_DEFAULT_LOCAL_TASK, MENU_LOCAL_TASK, MENU_LOCAL_ACTION), 'IN');
   }
   $results = $query->extend('PagerDefault')->limit(25)->execute();
   $menu_badge_options = array('' => t('None')) + menu_badges_get_badge_options();
   $tab_badges = variable_get('menu_badges_tab_callbacks', array());
   $form['results'] = array();
-  
+
   foreach ($results as $record) {
     $form['results'][$record->path] = array();
     $form['results'][$record->path]['path'] = array(
@@ -89,7 +94,7 @@ function menu_badges_tabs_admin_form($form, $form_state) {
  * @param $form_state
  */
 function menu_badges_tabs_admin_form_submit(&$form, &$form_state) {
-  
+
   if ($form_state['values']['op'] == $form_state['values']['search']['search']) {
     $form_state['rebuild'] = TRUE;
   }
@@ -100,7 +105,7 @@ function menu_badges_tabs_admin_form_submit(&$form, &$form_state) {
       if (!empty($form_state['values']['results'][$path]['menu_badges_callback'])) {
         $tab_badges[$path] = array(
           'callback' => $badges[$form_state['values']['results'][$path]['menu_badges_callback']]['callback'],
-        	'key' => $badges[$form_state['values']['results'][$path]['menu_badges_callback']]['key'],
+          'key' => $badges[$form_state['values']['results'][$path]['menu_badges_callback']]['key'],
         );
         if (!empty($badges[$form_state['values']['results'][$path]['menu_badges_callback']]['arguments'])) {
           $tab_badges[$path]['arguments'] = $badges[$form_state['values']['results'][$path]['menu_badges_callback']]['arguments'];
@@ -122,11 +127,11 @@ function menu_badges_tabs_admin_form_submit(&$form, &$form_state) {
  */
 function theme_menu_badges_tabs_admin_form($variables) {
   $form =& $variables['form'];
-  
+
   $output = '';
   $output .= drupal_render($form['search']);
   $rows = array();
-  $types = array(MENU_LOCAL_TASK => t('Tab (MENU_LOCAL_TASK)'), MENU_LOCAL_ACTION => t('Action Link (MENU_LOCAL_ACTION)'));
+  $types = array(MENU_DEFAULT_LOCAL_TASK => t('Tab (MENU_DEFAULT_LOCAL_TASK)'), MENU_LOCAL_TASK => t('Tab (MENU_LOCAL_TASK)'), MENU_LOCAL_ACTION => t('Action Link (MENU_LOCAL_ACTION)'));
   foreach ($form['results'] as $path => $path_info) {
     if (is_array($path_info) && !empty($path_info['path']['#value'])) {
       $row = array();

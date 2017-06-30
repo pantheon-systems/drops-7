@@ -134,7 +134,7 @@ class FeedsState {
       $this->progress = FEEDS_BATCH_COMPLETE;
     }
     elseif ($total) {
-      $this->progress = $progress / $total;
+      $this->progress = (float) $progress / $total;
       if ($this->progress == FEEDS_BATCH_COMPLETE && $total != $progress) {
         $this->progress = 0.99;
       }
@@ -284,7 +284,7 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
-   * Schedule all periodic tasks for this source.
+   * Schedule all periodic tasks for this source, even when scheduled before.
    */
   public function schedule() {
     $this->scheduleImport();
@@ -292,9 +292,21 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
-   * Schedule periodic or background import tasks.
+   * Schedule all periodic tasks for this source if not already scheduled.
    */
-  public function scheduleImport() {
+  public function ensureSchedule() {
+    $this->scheduleImport(FALSE);
+    $this->scheduleExpire(FALSE);
+  }
+
+  /**
+   * Schedule periodic or background import tasks.
+   *
+   * @param bool $force
+   *   (optional) force scheduling to happen.
+   *   Defaults to true.
+   */
+  public function scheduleImport($force = TRUE) {
     // Check whether any fetcher is overriding the import period.
     $period = $this->importer->config['import_period'];
     $fetcher_period = $this->importer->fetcher->importPeriod($this);
@@ -311,9 +323,18 @@ class FeedsSource extends FeedsConfigurable {
       JobScheduler::get('feeds_source_import')->remove($job);
     }
     elseif ($this->progressImporting() === FEEDS_BATCH_COMPLETE) {
-      JobScheduler::get('feeds_source_import')->set($job);
+      // Check for an existing job first.
+      $existing = JobScheduler::get('feeds_source_import')->check($job);
+      if (!$existing || $force) {
+        // If there is no existing job, schedule a new job.
+        JobScheduler::get('feeds_source_import')->set($job);
+      }
+      elseif ($existing['scheduled']) {
+        // If the previous job is still marked as 'running', reschedule it.
+        JobScheduler::get('feeds_source_import')->reschedule($existing);
+      }
     }
-    else {
+    elseif (!$this->isQueued()) {
       // Feed is not fully imported yet, so we put this job back in the queue
       // immediately for further processing.
       $queue = DrupalQueue::get('feeds_source_import');
@@ -323,8 +344,12 @@ class FeedsSource extends FeedsConfigurable {
 
   /**
    * Schedule background expire tasks.
+   *
+   * @param bool $force
+   *   (optional) force scheduling to happen.
+   *   Defaults to true.
    */
-  public function scheduleExpire() {
+  public function scheduleExpire($force = TRUE) {
     // Schedule as soon as possible if a batch is active.
     $period = $this->progressExpiring() === FEEDS_BATCH_COMPLETE ? 3600 : 0;
 
@@ -338,7 +363,16 @@ class FeedsSource extends FeedsConfigurable {
       JobScheduler::get('feeds_source_expire')->remove($job);
     }
     else {
-      JobScheduler::get('feeds_source_expire')->set($job);
+      // Check for an existing job first.
+      $existing = JobScheduler::get('feeds_source_expire')->check($job);
+      if (!$existing || $force) {
+        // If there is no existing job, schedule a new job.
+        JobScheduler::get('feeds_source_expire')->set($job);
+      }
+      elseif ($existing['scheduled']) {
+        // If the previous job is still marked as 'running', reschedule it.
+        JobScheduler::get('feeds_source_expire')->reschedule($existing);
+      }
     }
   }
 
@@ -349,16 +383,13 @@ class FeedsSource extends FeedsConfigurable {
     $job = array(
       'type' => $this->id,
       'id' => $this->feed_nid,
-      'period' => 0,
-      'periodic' => TRUE,
     );
-    // Remove job if batch is complete.
-    if ($this->progressClearing() === FEEDS_BATCH_COMPLETE) {
-      JobScheduler::get('feeds_source_clear')->remove($job);
-    }
-    // Schedule as soon as possible if batch is not complete.
-    else {
-      JobScheduler::get('feeds_source_clear')->set($job);
+
+    if ($this->progressClearing() !== FEEDS_BATCH_COMPLETE) {
+      // Feed is not fully cleared yet, so we put this job back in the queue
+      // immediately for further processing.
+      $queue = DrupalQueue::get('feeds_source_clear');
+      $queue->createItem($job);
     }
   }
 
@@ -381,6 +412,9 @@ class FeedsSource extends FeedsConfigurable {
       // If fetcher result is empty, we are starting a new import, log.
       if (empty($this->fetcher_result)) {
         module_invoke_all('feeds_before_import', $this);
+        if (module_exists('rules')) {
+          rules_invoke_event('feeds_before_import', $this);
+        }
         $this->state[FEEDS_START] = time();
       }
 
@@ -412,13 +446,10 @@ class FeedsSource extends FeedsConfigurable {
     // Clean up.
     $result = $this->progressImporting();
     if ($result == FEEDS_BATCH_COMPLETE || isset($e)) {
-      $this->imported = time();
-      $this->log('import', 'Imported in @s seconds.', array('@s' => $this->imported - $this->state[FEEDS_START]), WATCHDOG_INFO);
-      module_invoke_all('feeds_after_import', $this);
-      unset($this->fetcher_result, $this->state);
+      $this->finishImport();
     }
-    $this->save();
 
+    $this->save();
     $this->releaseLock();
 
     if (isset($e)) {
@@ -444,7 +475,7 @@ class FeedsSource extends FeedsConfigurable {
     }
 
     $this->acquireLock();
-    $start = time();
+    $this->state[FEEDS_START] = time();
 
     try {
       module_invoke_all('feeds_before_import', $this);
@@ -466,20 +497,33 @@ class FeedsSource extends FeedsConfigurable {
       $this->exception = $e;
     }
 
-    module_invoke_all('feeds_after_import', $this);
-
-    $this->imported = time();
-    $this->log('import', 'Imported in @s seconds.', array('@s' => $this->imported - $start), WATCHDOG_INFO);
-
-    unset($this->fetcher_result, $this->state);
+    $this->finishImport();
 
     $this->save();
-
     $this->releaseLock();
 
     if (isset($e)) {
       throw $e;
     }
+  }
+
+  /**
+   * Cleans up after an import.
+   */
+  protected function finishImport() {
+    $this->imported = time();
+    $this->log('import', 'Imported in @s seconds.', array('@s' => $this->imported - $this->state[FEEDS_START]), WATCHDOG_INFO);
+
+    // Allow fetcher to react on finishing importing.
+    $this->importer->fetcher->afterImport($this);
+
+    // Allow other modules to react upon finishing importing.
+    module_invoke_all('feeds_after_import', $this);
+    if (module_exists('rules')) {
+      rules_invoke_event('feeds_after_import', $this);
+    }
+
+    $this->clearStates();
   }
 
   /**
@@ -512,7 +556,7 @@ class FeedsSource extends FeedsConfigurable {
     $result = $this->progressClearing();
     if ($result == FEEDS_BATCH_COMPLETE || isset($e)) {
       module_invoke_all('feeds_after_clear', $this);
-      unset($this->state);
+      $this->clearStates();
     }
     $this->save();
     if (isset($e)) {
@@ -604,10 +648,184 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
+   * Clears states.
+   */
+  protected function clearStates() {
+    $this->state = array();
+    $this->fetcher_result = NULL;
+  }
+
+  /**
    * Count items imported by this source.
    */
   public function itemCount() {
     return $this->importer->processor->itemCount($this);
+  }
+
+  /**
+   * Returns the next time that the feed will be imported.
+   *
+   * @return int|null
+   *   The next time the feed will be imported as a UNIX timestamp.
+   *   NULL if not known.
+   */
+  public function getNextImportTime() {
+    $details = $this->getNextImportTimeDetails();
+    if (isset($details['time'])) {
+      return $details['time'];
+    }
+  }
+
+  /**
+   * Returns the next time that the feed will be imported.
+   *
+   * @param array $methods
+   *   (optional) Methods to check.
+   *
+   * @return array|null
+   *   Information about when the next time the feed will be imported:
+   *   - time: the next time the feed will be imported as a UNIX timestamp.
+   *   - method: via which scheduler the job will ran.
+   *   - message: If set, time and method should be ignored.
+   *   Null if no information is available.
+   */
+  public function getNextImportTimeDetails(array $methods = array()) {
+    if (empty($methods)) {
+      $methods = array(
+        'queue',
+        'feeds_reschedule',
+        'job_scheduler',
+      );
+    }
+
+    if (in_array('queue', $methods)) {
+      // Check queue.
+      $serialized_job_type = db_like(strtr('s:4:"type";s:!length:"!type";', array(
+        '!length' => strlen($this->id),
+        '!type' => $this->id,
+      )));
+      $serialized_job_id_as_string = db_like(strtr('s:2:"id";s:!length:"!id";', array(
+        '!length' => strlen($this->feed_nid),
+        '!id' => $this->feed_nid,
+      )));
+      $serialized_job_id_as_integer = db_like(strtr('s:2:"id";i:!id;', array(
+        '!id' => $this->feed_nid,
+      )));
+
+      $queue_created = db_select('queue')
+        ->fields('queue', array('created'))
+        ->condition('name', 'feeds_source_import')
+        ->condition('data', '%' . $serialized_job_type . '%', 'LIKE')
+        ->condition(db_or()
+          ->condition('data', '%' . $serialized_job_id_as_string . '%', 'LIKE')
+          ->condition('data', '%' . $serialized_job_id_as_integer . '%', 'LIKE')
+        )
+        ->condition('expire', 0)
+        ->execute()
+        ->fetchField();
+
+      if ($queue_created) {
+        return array(
+          'time' => $queue_created,
+          'method' => t('Queue'),
+        );
+      }
+
+      // Special case for PostgreSQL: if using that database type, we cannot
+      // search in the data column of the queue table, because the Drupal database
+      // layer adds '::text' to bytea columns, which results into the data column
+      // becoming unreadable in conditions. So instead, we check for the first 10
+      // records in the queue to see if the given importer ID + feed NID is
+      // amongst them.
+      if (Database::getConnection()->databaseType() == 'pgsql') {
+        $items = db_query("SELECT data, created FROM {queue} WHERE name = :name AND expire = 0 LIMIT 10", array(
+          ':name' => 'feeds_source_import',
+        ));
+        foreach ($items as $item) {
+          if (is_string($item->data)) {
+            $item->data = unserialize($item->data);
+          }
+          if ($item->data['type'] == $this->id && $item->data['id'] == $this->feed_nid) {
+            return array(
+              'time' => $item->created,
+              'method' => t('Queue'),
+            );
+          }
+        }
+
+        // If not found by now, count how many items there are in the
+        // feeds_source_import queue. We use this number later to indicate that
+        // the job *could* be in the queue.
+        $number_of_queue_items = db_query('SELECT COUNT(name) FROM {queue} WHERE name = :name AND expire = 0', array(
+          ':name' => 'feeds_source_import',
+        ))->fetchField();
+      }
+    }
+
+    if (in_array('feeds_reschedule', $methods)) {
+      // Check if the importer is in the process of being rescheduled.
+      $importers = feeds_reschedule();
+      if (isset($importers[$this->id])) {
+        return array(
+          'time' => NULL,
+          'method' => NULL,
+          'message' => t('to be rescheduled'),
+        );
+      }
+    }
+
+    if (in_array('job_scheduler', $methods)) {
+      // Check job scheduler.
+      $job = db_select('job_schedule')
+        ->fields('job_schedule', array('next', 'scheduled'))
+        ->condition('name', 'feeds_source_import')
+        ->condition('type', $this->id)
+        ->condition('id', $this->feed_nid)
+        ->execute()
+        ->fetch();
+
+      if (isset($job->next)) {
+        $details = array(
+          'time' => $job->next,
+          'method' => t('Job scheduler'),
+        );
+        if (!empty($job->scheduled)) {
+          if (isset($number_of_queue_items) && $number_of_queue_items > 10) {
+            // When using PostgreSQL we were not able to efficiently search the
+            // queue table, so it could still be in that table.
+            $details['message'] = t('unknown, could still be in the queue');
+          }
+          else {
+            $details['message'] = t('possibly stuck');
+          }
+        }
+        return $details;
+      }
+    }
+  }
+
+  /**
+   * Checks if a source is queued for import.
+   *
+   * @return bool
+   *   True if the source is queued to be imported.
+   *   False otherwise.
+   */
+  public function isQueued() {
+    $details = $this->getNextImportTimeDetails(array('queue'));
+    if ($details) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Unlocks a feed.
+   */
+  public function unlock() {
+    $this->clearStates();
+    $this->save();
+    $this->releaseLock();
   }
 
   /**
@@ -622,7 +840,7 @@ class FeedsSource extends FeedsConfigurable {
 
     // Store the source property of the fetcher in a separate column so that we
     // can do fast lookups on it.
-    // Only save if there is a source so they can be optional on enities.
+    // Only save if there is a source so they can be optional on entities.
     $source = '';
     if (isset($config[get_class($this->importer->fetcher)]['source']) &&
       $source = $config[get_class($this->importer->fetcher)]['source']) {
@@ -635,7 +853,13 @@ class FeedsSource extends FeedsConfigurable {
         'state' => isset($this->state) ? $this->state : FALSE,
         'fetcher_result' => isset($this->fetcher_result) ? $this->fetcher_result : FALSE,
       );
-      if (db_query_range("SELECT 1 FROM {feeds_source} WHERE id = :id AND feed_nid = :nid", 0, 1, array(':id' => $this->id, ':nid' => $this->feed_nid))->fetchField()) {
+      if (db_query_range("SELECT 1 FROM {feeds_source} WHERE id = :id AND feed_nid = :nid",
+        0, 1,
+        array(
+          ':id' => $this->id,
+          ':nid' => $this->feed_nid,
+        )
+      )->fetchField()) {
         drupal_write_record('feeds_source', $object, array('id', 'feed_nid'));
       }
       else {
@@ -693,21 +917,52 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
+   * Checks whether or not the source configuration is valid.
+   *
+   * @return bool
+   *   True if it is valid.
+   *   False otherwise.
+   */
+  public function hasValidConfiguration() {
+    // If there is no feed nid given, there must be no content type specified.
+    $standalone = empty($this->feed_nid) && empty($this->importer->config['content_type']);
+
+    // If there is a feed nid given, there must be a content type specified.
+    $attached = !empty($this->feed_nid) && !empty($this->importer->config['content_type']);
+
+    if ($standalone || $attached) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Overrides FeedsConfigurable::doesExist().
+   *
+   * Checks the following:
+   * - If the importer is persistent (= defined in code or DB).
+   * - If the source is persistent (= defined in DB).
+   */
+  public function doesExist() {
+    return $this->importer->doesExist() && parent::doesExist();
+  }
+
+  /**
    * Only return source if configuration is persistent and valid.
    *
    * @see FeedsConfigurable::existing().
    */
   public function existing() {
-    // If there is no feed nid given, there must be no content type specified.
-    // If there is a feed nid given, there must be a content type specified.
-    // Ensure that importer is persistent (= defined in code or DB).
-    // Ensure that source is persistent (= defined in DB).
-    if ((empty($this->feed_nid) && empty($this->importer->config['content_type'])) ||
-        (!empty($this->feed_nid) && !empty($this->importer->config['content_type']))) {
-      $this->importer->existing();
-      return parent::existing();
+    // Ensure that the source configuration is valid.
+    if (!$this->hasValidConfiguration()) {
+      throw new FeedsNotExistingException(t('Source configuration not valid.'));
     }
-    throw new FeedsNotExistingException(t('Source configuration not valid.'));
+
+    // Ensure that the importer is persistent (= defined in code or DB).
+    $this->importer->existing();
+
+    // Ensure that the source is persistent (= defined in DB).
+    return parent::existing();
   }
 
   /**
@@ -790,32 +1045,39 @@ class FeedsSource extends FeedsConfigurable {
   }
 
   /**
-   * Background job helper. Starts a background job using Job Scheduler.
-   *
-   * Execute the first batch chunk of a background job on the current page load,
-   * moves the rest of the job processing to a cron powered background job.
-   *
-   * Executing the first batch chunk is important, otherwise, when a user
-   * submits a source for import or clearing, we will leave her without any
-   * visual indicators of an ongoing job.
+   * Background job helper. Starts a background job using the Drupal queue.
    *
    * @see FeedsSource::startImport().
    * @see FeedsSource::startClear().
    *
-   * @param $method
+   * @param string $method
    *   Method to execute on importer; one of 'import' or 'clear'.
-   *
-   * @throws Exception $e
    */
   protected function startBackgroundJob($method) {
-    if (FEEDS_BATCH_COMPLETE != $this->$method()) {
-      $job = array(
-        'type' => $this->id,
-        'id' => $this->feed_nid,
-        'period' => 0,
-        'periodic' => FALSE,
-      );
-      JobScheduler::get("feeds_source_{$method}")->set($job);
+    $job = array(
+      'type' => $this->id,
+      'id' => $this->feed_nid,
+    );
+    $queue = DrupalQueue::get('feeds_source_' . $method);
+    $queue->createItem($job);
+
+    switch ($method) {
+      case 'import':
+        $state = $this->state(FEEDS_PARSE);
+        break;
+
+      case 'clear':
+        $state = $this->state(FEEDS_PROCESS_CLEAR);
+        break;
+
+      case 'expire':
+        $state = $this->state(FEEDS_PROCESS_EXPIRE);
+        break;
+    }
+
+    if (isset($state)) {
+      $state->progress = 0;
+      $this->save();
     }
   }
 

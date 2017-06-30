@@ -16,4 +16,5 @@ INSTALLATION:
 CONFIGURATION:
 
   * There are lots of configurable options.
-  * Go to admin/structure/types to add or edit double fields for your content types.
+  * Go to admin/structure/types to add or edit double fields for
+    your content types.

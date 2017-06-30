@@ -1,6 +1,6 @@
 <?php
 /**
- * @file callbacks.inc
+ * @file Callbacks.inc
  * Minor menu callbacks for Panels helpers.
  */
 
@@ -46,7 +46,7 @@ function panels_panels_dashboard_blocks(&$vars) {
     'description' => t('Custom layouts can add more, site-specific layouts that you can use in your panels.'),
   );
 
-   // Load all mini panels and their displays.
+  // Load all mini panels and their displays.
   ctools_include('export');
   $items = ctools_export_crud_load_all('panels_layout');
   $count = 0;
@@ -97,7 +97,7 @@ function template_preprocess_panels_dashboard(&$vars) {
     $function($vars);
   }
 
-  // Add in any default links for modules that are not active
+  // Add in any default links for modules that are not active.
   panels_dashboard_final_blocks($vars);
 
   // If page manager module is enabled, add a very low eight block to
@@ -138,7 +138,7 @@ function template_preprocess_panels_dashboard(&$vars) {
     'class' => 'dashboard-create',
   );
 
-  // Turn the links into a block
+  // Turn the links into a block.
   foreach ($vars['links'] as $link) {
     $vars['blocks']['links']['content'] .= theme('panels_dashboard_link', array('link' => $link));
   }
@@ -148,7 +148,7 @@ function template_preprocess_panels_dashboard(&$vars) {
   $vars['left'] = '';
   $vars['right'] = '';
 
-  // Render all the blocks
+  // Render all the blocks.
   foreach ($vars['blocks'] as $block) {
     $section = !empty($block['section']) ? $block['section'] : 'left';
     $vars[$section] .= theme('panels_dashboard_block', array('block' => $block));
@@ -202,4 +202,3 @@ function panels_admin_panel_context_page() {
   ctools_include('common', 'panels');
   return drupal_get_form('panels_common_settings', 'panels_page');
 }
-

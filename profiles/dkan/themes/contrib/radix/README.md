@@ -17,15 +17,14 @@ Open Academy is a Drupal distribution that brings the best in web publishing for
 ##### [Open Berkeley](http://open.berkeley.edu)
 Open Berkeley is a turnkey web platform solution for UC Berkeley campus websites.
 
-##### [Open Restaurant](http://drupal.org/project/restaurant)
+##### [Open Restaurant](http://drupal.org/project/openrestaurant)
 The Open Restaurant distribution has everything you need to kickstart your restaurant website. It comes with a menu management system, a reservation system, a customizable blog and events management.
 
 ##Features
 1. Components and plugins from Bootstrap.
-2. Responsive Panels with [Radix Layouts](http://drupal.org/project/radix_layouts).
-5. Sass, Gulp, BrowserSync and Font Awesome built-in.
-6. Drush intergration: drush radix "My Subtheme".
-8. Works with Bootswatch themes: drush radix "My Subtheme" --bootswatch=cerulean".
+2. Sass, Gulp, BrowserSync and Font Awesome built-in.
+3. Drush intergration: drush radix "My Subtheme".
+4. Works with Bootswatch themes: drush radix "My Subtheme" --bootswatch=cerulean".
 
 ## Links
 * Project Page:   http://www.radixtheme.org

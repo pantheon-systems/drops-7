@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Internationalization (i18n) hooks
+ * Internationalization (i18n) hooks.
  */
 
 /**

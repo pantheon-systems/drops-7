@@ -18,15 +18,12 @@ projects[menu_block][subdir] = contrib
 
 ; Panopoly - Contrib - Files & Media
 
-projects[file_entity][version] = 2.0-beta2
+projects[file_entity][version] = 2.0-beta3
 projects[file_entity][subdir] = contrib
 
-projects[media][version] = 2.0-beta1
+projects[media][version] = 2.1
 projects[media][subdir] = contrib
-projects[media][patch][2126697] = https://www.drupal.org/files/issues/media_wysiwyg_2126697-53.patch
-projects[media][patch][2308487] = https://www.drupal.org/files/issues/media-alt-title-double-encoded-2308487-2.patch
-projects[media][patch][2084287] = http://www.drupal.org/files/issues/media-file-name-focus-2084287-2.patch
-projects[media][patch][2534724] = https://www.drupal.org/files/issues/media-browser_opens_twice-2534724-53.patch
+projects[media][patch][2272567] = https://www.drupal.org/files/issues/media_dialog_appears_2272567-32.patch
 
 projects[media_youtube][version] = 3.0
 projects[media_youtube][subdir] = contrib

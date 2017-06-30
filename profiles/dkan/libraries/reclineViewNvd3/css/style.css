@@ -80,6 +80,9 @@
   margin-top: 0px;
   margin-bottom: 0px;
 }
+#chart-with-controls .checkbox-without-margin:last-child {
+  margin-bottom: 1em;
+}
 /* Colorpicker */
 label[for=control-chart-color-picker] {margin-right:10px; margin-bottom:20px;}
 

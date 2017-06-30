@@ -165,6 +165,7 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
    */
   public function configDefaults() {
     return array(
+      'bundle' => NULL,
       'update_existing' => FEEDS_SKIP_EXISTING,
        // Don't expire items by default.
       'expire' => FEEDS_EXPIRE_NEVER,

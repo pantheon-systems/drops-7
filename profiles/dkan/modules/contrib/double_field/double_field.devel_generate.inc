@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Functions needed for devel_generate integration.
@@ -33,7 +34,7 @@ function double_field_devel_generate($object, $field, $instance, $bundle) {
             $maxlength = $field['settings'][$subfield]['maxlength'];
             if ($maxlength > 64) {
               // Average length of a word in devel_create_greeking()
-              // is about 7 charaters.
+              // is about 7 characters.
               $word_count = (int) ($maxlength / 7);
               $object_field[$subfield] = rtrim(substr(devel_create_greeking($word_count), 0, $maxlength - 1), ' .') . '.';
             }

@@ -124,6 +124,7 @@ function panopoly_widgets_ctools_content_subtype_alter(&$subtype, &$plugin) {
     $subtype['icon'] = drupal_get_path('module', 'panopoly_widgets') . '/images/icon_submenu.png';
     $subtype['admin css'] = array(drupal_get_path('module', 'menu_block') . '/menu-block-admin.css');
     $subtype['admin js'] = array(drupal_get_path('module', 'menu_block') . '/menu-block.js');
+    $subtype['defaults']['expanded_max_depth'] = 0;
   }
 
   // Modify the general content item to appear in the generic content sidebar area
@@ -175,6 +176,36 @@ function panopoly_widgets_form_alter(&$form, &$form_state, $form_id) {
 
     // Disable some options since they appear busted or confusing in Menu Block
     $form['sort']['#access'] = FALSE;
+
+    // Add configuration for max expanded depth.
+    $form['expanded_max_depth'] = array(
+      '#type' => 'select',
+      '#title' => t('Maximum expanded depth'),
+      '#weight' => 9,
+      '#options' => array(
+        '1' => t('Only 1 level'),
+        '2' => t('Only 2 levels'),
+        '3' => t('Only 3 levels'),
+        '4' => t('Only 4 levels'),
+        '5' => t('Only 5 levels'),
+        '6' => t('Only 6 levels'),
+        '7' => t('Only 7 levels'),
+        '8' => t('Only 8 levels'),
+        '9' => t('Only 9 levels'),
+        '0' => t('Expand all children'),
+      ),
+      '#default_value' => isset($form_state['conf']['expanded_max_depth']) ? $form_state['conf']['expanded_max_depth'] : 0,
+      '#states' => array(
+        'visible' => array(
+          ':input[name="expanded"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    // Modify the 'expanded' checkbox so it appears right above the max depth
+    // and makes sense with that option.
+    $form['expanded']['#weight'] = 8;
+    $form['expanded']['#title'] = t('<strong>Expand children</strong> of this tree.');
   }
 
   if ($form_id == 'fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form') {
@@ -463,14 +494,33 @@ function panopoly_widgets_file_type_alter(&$types, $file) {
 
 /**
  * Implements hook_menu_block_tree_alter().
- *
- * Updates menu block settings in case of IPE callback magic. This will only
- * work in limited cases but will be fixed when the page refreshes.
  */
-function panopoly_widgets_menu_block_tree_alter($tree, $config) {
+function panopoly_widgets_menu_block_tree_alter(&$tree, $config) {
+  // Only alter if 'expanded' is enabled and the max isn't 'Expand all children'
+  if ($config['expanded'] && isset($config['expanded_max_depth']) && $config['expanded_max_depth'] > 0) {
+    _panopoly_widgets_menu_block_tree_expanded_max_depth_alter($tree, $config);
+  }
+
+  // Updates menu block settings in case of IPE callback magic. This will only
+  // work in limited cases but will be fixed when the page refreshes.
   if (arg(0) == 'panels' && arg(1) == 'ajax') {
     foreach ($tree as $key => $value) {
       $tree[$key]['link']['in_active_trail'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Remove items from tree which are below the 'expanded_max_depth'.
+ */
+function _panopoly_widgets_menu_block_tree_expanded_max_depth_alter(&$tree, $config) {
+  // Remove all items above the max depth.
+  foreach ($tree as $name => &$item) {
+    if (!$item['link']['in_active_trail'] && $item['link']['depth'] > $config['expanded_max_depth']) {
+      unset($tree[$name]);
+    }
+    else {
+      _panopoly_widgets_menu_block_tree_expanded_max_depth_alter($item['below'], $config);
     }
   }
 }
@@ -487,6 +537,25 @@ function panopoly_widgets_fieldable_panels_pane_view($entity, $view_mode, $langc
       );
     }
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function panopoly_widgets_form_fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form_alter(&$form, &$form_state) {
+  if (isset($form['widget_settings']['link'])) {
+    // For when panopoly_magic is enabled.
+    $element =& $form['widget_settings']['link'];
+  }
+  else {
+    $element =& $form['link'];
+  }
+
+  $element['path']['#linkit'] = array(
+    'enable' => TRUE,
+    'profile' => 'content_fields',
+    'button_text' => t('Search for existing content'),
+  );
 }
 
 /**

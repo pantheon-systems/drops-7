@@ -1,0 +1,16 @@
+name = Media YouTube Test
+description = Provides hooks for testing Media YouTube module functionality.
+package = Media
+core = 7.x
+dependencies[] = media_youtube
+hidden = TRUE
+
+files[] = includes/MediaYouTubeTestStreamWrapper.inc
+files[] = includes/MediaYouTubeTestHandler.inc
+
+; Information added by Drupal.org packaging script on 2017-06-09
+version = "7.x-3.4"
+core = "7.x"
+project = "media_youtube"
+datestamp = "1497020345"
+

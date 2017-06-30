@@ -19,87 +19,61 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
   }
 
   /**
-   * Test scheduling on cron.
+   * Test scheduling of disabled import on cron.
    */
-  public function testScheduling() {
-    // Create importer configuration.
-    $this->createImporterConfiguration();
-    $this->addMappings('syndication',
-      array(
-        0 => array(
-          'source' => 'title',
-          'target' => 'title',
-          'unique' => FALSE,
-        ),
-        1 => array(
-          'source' => 'description',
-          'target' => 'body',
-        ),
-        2 => array(
-          'source' => 'timestamp',
-          'target' => 'created',
-        ),
-        3 => array(
-          'source' => 'url',
-          'target' => 'url',
-          'unique' => TRUE,
-        ),
-        4 => array(
-          'source' => 'guid',
-          'target' => 'guid',
-          'unique' => TRUE,
-        ),
-      )
-    );
+  public function testSchedulingWithDisabledImporter() {
+    // Initialize scheduling.
+    $init = $this->initSyndication();
 
-    // Create 10 feed nodes. Turn off import on create before doing that.
+    // Disable syndication feed so cron doesn't import nodes.
+    $this->drupalLogin($this->admin_user);
     $edit = array(
-      'import_on_create' => FALSE,
+      'syndication' => FALSE,
     );
-    $this->drupalPost('admin/structure/feeds/syndication/settings', $edit, 'Save');
-    $this->assertText('Do not import on submission');
-
-    $nids = $this->createFeedNodes();
-    // This implicitly tests the import_on_create node setting being 0.
-    $this->assertTrue($nids[0] == 1 && $nids[1] == 2, 'Node ids sequential.');
-
-    // Check whether feed got properly added to scheduler.
-    foreach ($nids as $nid) {
-      $this->assertEqual(1, db_query("SELECT COUNT(*) FROM {job_schedule} WHERE type = 'syndication' AND id = :nid AND name = 'feeds_source_import' AND last <> 0 AND scheduled = 0 AND period = 1800 AND periodic = 1", array(':nid' => $nid))->fetchField());
-    }
-
-    // Take time for comparisons.
-    $time = time();
-    sleep(1);
-
-    // Log out and run cron, no changes.
+    $this->drupalPost('admin/structure/feeds', $edit, 'Save');
     $this->drupalLogout();
     $this->cronRun();
-    $count = db_query("SELECT COUNT(*) FROM {job_schedule} WHERE last > :time", array(':time' => $time))->fetchField();
-    $this->assertEqual($count, 0, '0 feeds refreshed on cron.');
-
-    // Set next time to 0 to simulate updates.
-    // There should be 2 x job_schedule_num (= 10) feeds updated now.
-    db_query("UPDATE {job_schedule} SET next = 0");
-    $this->cronRun();
     $this->cronRun();
 
+    // There should be 0 article nodes in the database.
+    $count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article' AND status = 1")->fetchField();
+    $this->assertEqual($count, 0, 'There are 0 article nodes aggregated.');
+  }
+
+  /**
+   * Test scheduling of enabled import on cron.
+   */
+  public function testScheduling() {
+    // Initialize scheduling.
+    $init = $this->initSyndication();
+    $time = $init['time'];
+    $nids = $init['nids'];
+    $count = $init['count'];
+
+    $this->cronRun();
+    $this->cronRun();
     // There should be feeds_schedule_num X 2 (= 20) feeds updated now.
     $schedule = array();
     $rows = db_query("SELECT id, last, scheduled FROM {job_schedule} WHERE last > :time", array(':time' => $time));
     foreach ($rows as $row) {
       $schedule[$row->id] = $row;
     }
-    $this->assertEqual(count($schedule), 20, '20 feeds refreshed on cron.' . $count);
+    $this->assertEqual(count($schedule), 20, format_string('20 feeds refreshed on cron (actual: @actual).', array(
+      '@actual' => count($schedule),
+    )));
 
     // There should be 200 article nodes in the database.
     $count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article' AND status = 1")->fetchField();
-    $this->assertEqual($count, 200, 'There are 200 article nodes aggregated.' . $count);
+    $this->assertEqual($count, 200, format_string('There are 200 article nodes aggregated (actual: @actual).', array(
+      '@actual' => $count,
+    )));
 
     // There shouldn't be any items with scheduled = 1 now, if so, this would
     // mean they are stuck.
     $count = db_query("SELECT COUNT(*) FROM {job_schedule} WHERE scheduled = 1")->fetchField();
-    $this->assertEqual($count, 0, 'All items are unscheduled (schedule flag = 0).' . $count);
+    $this->assertEqual($count, 0, format_string('All items are unscheduled (schedule flag = 0) (actual: @actual).', array(
+      '@actual' => $count,
+    )));
 
     // Hit cron again twice.
     $this->cronRun();
@@ -196,6 +170,148 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
   }
 
   /**
+   * Test if existing feed nodes get rescheduled upon save.
+   */
+  public function testRescheduling() {
+    $this->initSyndication();
+    $this->drupalLogin($this->admin_user);
+
+    // Configure to import as often as possible.
+    $this->setSettings('syndication', NULL, array(
+      'import_period' => 0,
+    ));
+
+    // Remove all jobs to simulate the situation that no feed nodes are
+    // scheduled.
+    db_truncate('job_schedule')->execute();
+    // Also prevent feeds from rescheduling by itself as the import_period
+    // setting was changed.
+    variable_del('feeds_reschedule');
+
+    // Run cron.
+    $this->cronRun();
+
+    // Assert that no nodes were created yet.
+    $count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField();
+    $this->assertEqual(0, $count, format_string('There are no articles yet (actual: @count).', array(
+      '@count' => $count,
+    )));
+
+    // Now reschedule the first feed node by resaving the node.
+    $this->drupalPost('node/1/edit', array(), t('Save'));
+
+    // And run cron again.
+    $this->cronRun();
+
+    // Assert that 10 articles were created.
+    $count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField();
+    $this->assertEqual(10, $count, format_string('10 articles have been created (actual: @count).', array(
+      '@count' => $count,
+    )));
+  }
+
+  /**
+   * Tests if the expected next import time is shown for scheduled imports.
+   */
+  public function testNextImportTime() {
+    $this->initSyndication();
+    $this->drupalLogin($this->admin_user);
+
+    // Set schedule to be 25 minutes in the future.
+    $next = REQUEST_TIME + 1500;
+    db_query("UPDATE {job_schedule} SET next = :time", array(
+      ':time' => $next,
+    ));
+    $this->drupalGet('node/1/import');
+    $this->assertText(format_date($next));
+
+    // Set schedule to import on next cron run.
+    db_query("UPDATE {job_schedule} SET next = :time", array(
+      ':time' => REQUEST_TIME,
+    ));
+    $this->drupalGet('node/1/import');
+    $this->assertText('Next import: on next cron run');
+
+    // Now remove all jobs.
+    db_truncate('job_schedule')->execute();
+
+    // Assert that the import is not scheduled now.
+    $this->drupalGet('node/1/import');
+    $this->assertText('Next import: not scheduled');
+  }
+
+  /**
+   * Tests if the expected next import time is shown when the import is queued
+   * via background job.
+   */
+  public function testNextImportTimeWhenQueuedViaBackgroundJob() {
+    // Create an importer that uses a background job to import.
+    $this->createImporterConfiguration('Node import', 'node');
+    $edit = array(
+      'content_type' => '',
+      'import_on_create' => TRUE,
+      'process_in_background' => TRUE,
+    );
+    $this->drupalPost('admin/structure/feeds/node/settings', $edit, 'Save');
+    $this->setPlugin('node', 'FeedsFileFetcher');
+    $this->setPlugin('node', 'FeedsCSVParser');
+    $mappings = array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+    );
+    $this->addMappings('node', $mappings);
+
+    // Specify a file with many nodes.
+    $this->importFile('node', $this->absolutePath() . '/tests/feeds/many_nodes.csv', 'Schedule import');
+
+    // Verify that a queue item is created.
+    $count = db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_import'")->fetchField();
+    $this->assertEqual(1, $count, format_string('One import item is queued (actual: @count).', array(
+      '@count' => $count,
+    )));
+
+    // The page should say that import happens on next cron.
+    $this->assertText('Next import: on next cron run');
+  }
+
+  /**
+   * Tests if the expected next import time is shown when the import is queued
+   * via Job Scheduler.
+   */
+  public function testNextImportTimeWhenQueuedViaJobScheduler() {
+    $this->initSyndication();
+    $this->drupalLogin($this->admin_user);
+
+    // Manually dispatch a job.
+    $job = db_select('job_schedule', NULL, array('fetch' => PDO::FETCH_ASSOC))
+      ->fields('job_schedule')
+      ->condition('type', 'syndication')
+      ->condition('id', 18)
+      ->execute()
+      ->fetch();
+    try {
+      JobScheduler::get($job['name'])->dispatch($job);
+      $this->pass('No exceptions occurred while dispatching a feeds job.');
+    }
+    catch (Exception $e) {
+      watchdog_exception('feeds', $e);
+      $this->fail('No exceptions occurred while dispatching a feeds job.');
+    }
+
+    // Verify that a queue item is created.
+    $count = db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_import'")->fetchField();
+    $this->assertEqual(1, $count, format_string('One import item is queued (actual: @count).', array(
+      '@count' => $count,
+    )));
+
+    // The page should say that import happens on next cron.
+    $this->drupalGet('node/18/import');
+    $this->assertText('Next import: on next cron run');
+  }
+
+  /**
    * Test batching on cron.
    */
   function testBatching() {
@@ -220,6 +336,9 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     $this->importFile('node', $this->absolutePath() . '/tests/feeds/many_nodes.csv');
     $this->assertText('Created 86 nodes');
 
+    // Set queue time to a minimum.
+    variable_set('feeds_tests_feeds_source_import_queue_time', 1);
+
     // Run batch twice with two different process limits.
     // 50 = FEEDS_PROCESS_LIMIT.
     foreach (array(10, 50) as $limit) {
@@ -230,18 +349,28 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
       $node_count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField();
       $this->assertEqual(0, $node_count);
 
-      // Hit cron for importing, until we have all items.
-      while ($node_count < 86) {
+      // Hit cron for importing, until we have all items or when we are running
+      // out of cron runs.
+      $max_runs = ceil(86 / $limit);
+      $ran = 0;
+      while ($node_count < 86 && $ran < $max_runs) {
         $this->cronRun();
         $node_count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField();
+        $ran++;
       }
-      $this->assertEqual(86, db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField(), 'Number of nodes is correct after batched importing via cron.');
+
+      // Assert that 86 nodes exist now.
+      $node_count = db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField();
+      $this->assertEqual(86, $node_count, format_string('86 nodes exist after batched importing via cron (actual: @actual).', array(
+        '@actual' => $node_count,
+      )));
+
       // Import should be rescheduled for 1800 seconds.
       $this->assertEqual(1800, db_query("SELECT period FROM {job_schedule} WHERE type = 'node' AND id = 0")->fetchField());
     }
 
-    // Delete a couple of nodes, then hit cron again. They should not be replaced
-    // as the minimum update time is 30 minutes.
+    // Delete a couple of nodes, then hit cron again. They should not be
+    // replaced as the minimum update time is 30 minutes.
     $nodes = db_query_range("SELECT nid FROM {node} WHERE type = 'article'", 0, 2);
     foreach ($nodes as $node) {
       $this->drupalPost("node/{$node->nid}/delete", array(), 'Delete');
@@ -250,4 +379,100 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     $this->cronRun();
     $this->assertEqual(84, db_query("SELECT COUNT(*) FROM {node} WHERE type = 'article'")->fetchField());
   }
+
+  /**
+   * Tests if jobs are removed for feeds sources that no longer exist.
+   */
+  public function testCleanUpJobsForNonExistingFeeds() {
+    // Create a fake job.
+    $job = array(
+      'type' => 'non_existing_importer',
+      'id' => 12,
+      'period' => 0,
+      'periodic' => TRUE,
+    );
+    JobScheduler::get('feeds_source_import')->set($job);
+
+    // Assert that a job exist.
+    $count = db_query("SELECT COUNT(*) FROM {job_schedule} WHERE type = 'non_existing_importer'")->fetchField();
+    $this->assertEqual(1, $count, 'The fake job was created.');
+
+    // Run cron.
+    $this->cronRun();
+
+    // Assert that the job has been cleaned up.
+    $count = db_query("SELECT COUNT(*) FROM {job_schedule} WHERE type = 'non_existing_importer'")->fetchField();
+    $this->assertEqual(0, $count, 'The fake job no longer exists.');
+  }
+
+  /**
+   * Initialize scheduling.
+   */
+  protected function initSyndication() {
+    // Create importer configuration.
+    $this->createImporterConfiguration();
+    $this->addMappings('syndication',
+      array(
+        0 => array(
+          'source' => 'title',
+          'target' => 'title',
+          'unique' => FALSE,
+        ),
+        1 => array(
+          'source' => 'description',
+          'target' => 'body',
+        ),
+        2 => array(
+          'source' => 'timestamp',
+          'target' => 'created',
+        ),
+        3 => array(
+          'source' => 'url',
+          'target' => 'url',
+          'unique' => TRUE,
+        ),
+        4 => array(
+          'source' => 'guid',
+          'target' => 'guid',
+          'unique' => TRUE,
+        ),
+      )
+    );
+
+    // Create 10 feed nodes. Turn off import on create before doing that.
+    $edit = array(
+      'import_on_create' => FALSE,
+    );
+    $this->drupalPost('admin/structure/feeds/syndication/settings', $edit, 'Save');
+    $this->assertText('Do not import on submission');
+
+    $nids = $this->createFeedNodes();
+    // This implicitly tests the import_on_create node setting being 0.
+    $this->assertTrue($nids[0] == 1 && $nids[1] == 2, 'Node ids sequential.');
+
+    // Check whether feed got properly added to scheduler.
+    foreach ($nids as $nid) {
+      $this->assertEqual(1, db_query("SELECT COUNT(*) FROM {job_schedule} WHERE type = 'syndication' AND id = :nid AND name = 'feeds_source_import' AND last <> 0 AND scheduled = 0 AND period = 1800 AND periodic = 1", array(':nid' => $nid))->fetchField());
+    }
+
+    // Take time for comparisons.
+    $time = time();
+    sleep(1);
+
+    // Log out and run cron, no changes.
+    $this->drupalLogout();
+    $this->cronRun();
+    $count = db_query("SELECT COUNT(*) FROM {job_schedule} WHERE last > :time", array(':time' => $time))->fetchField();
+    $this->assertEqual($count, 0, '0 feeds refreshed on cron.'. $count);
+
+    // Set next time to 0 to simulate updates.
+    db_query("UPDATE {job_schedule} SET next = 0");
+
+    return array(
+      'time' => $time,
+      'nids' => $nids,
+      'count' => $count,
+    );
+  }
+
 }

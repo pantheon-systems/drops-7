@@ -181,6 +181,11 @@ function radix_preprocess_page(&$variables) {
     // we set it to the default.
     $main_menu_parameters['max_depth'] = 2;
   }
+  $active_trail_items = menu_get_active_trail();
+  foreach($active_trail_items as $key => $item) {
+    $active_trail[$key] = isset($item['mlid']) ? $item['mlid'] : 0;
+  }
+  $main_menu_parameters['active_trail'] = $active_trail;
   $variables['main_menu'] = _radix_dropdown_menu_tree(variable_get('menu_main_links_source', 'main-menu'), $main_menu_parameters);
 
   // Add a copyright message.

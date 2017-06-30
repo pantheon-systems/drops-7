@@ -5,7 +5,7 @@
  * Definition of the 'naked' panel style.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('No markup at all'),
   'description' => t('Display the pane or region with no markup, not even a title.'),
@@ -31,4 +31,3 @@ function theme_panels_naked_style_render_region($vars) {
 function theme_panels_naked_style_render_pane($vars) {
   return render($vars['content']->content);
 }
-

@@ -1,5 +1,6 @@
 <?php
 /**
+ * @file
  * Create a simple renderer plugin that renders a layout but the content is
  * already rendered, not in panes.
  */

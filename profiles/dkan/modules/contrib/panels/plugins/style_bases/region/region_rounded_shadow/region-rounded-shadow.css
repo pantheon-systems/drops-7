@@ -1,12 +1,16 @@
 /* Show only to IE7 */
 *:first-child+html .rounded-shadow-background,
 /* Show only to IE6 */
-* html .rounded-shadow-background  {
+* html .rounded-shadow-background {
   margin: 0 -10px 0 0 !important;
   padding: 10px 0 5px 0 !important;
 }
 
-.rounded-shadow-top-edge, .rounded-shadow-bottom-edge, .rounded-shadow-left-edge, .rounded-shadow-right-edge, .rounded-shadow-wrap-corner {
+.rounded-shadow-top-edge,
+.rounded-shadow-bottom-edge,
+.rounded-shadow-left-edge,
+.rounded-shadow-right-edge,
+.rounded-shadow-wrap-corner {
   position: relative;
   /* hasLayout -1 ? For IE only */
   zoom: 1;

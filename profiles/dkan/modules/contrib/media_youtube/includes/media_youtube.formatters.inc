@@ -147,7 +147,7 @@ function media_youtube_file_formatter_video_settings($form, &$form_state, $setti
     '#default_value' => $settings['loop'],
   );
 
-  // Note: make sure the positive/negitive language lines up with option
+  // Note: make sure the positive/negative language lines up with option
   // processing in media_youtube.theme.inc.
   $element['showinfo'] = array(
     '#title' => t('Display video title and uploader'),
@@ -173,7 +173,7 @@ function media_youtube_file_formatter_video_settings($form, &$form_state, $setti
     '#title' => t('Specify an http protocol'),
     '#type' => 'checkbox',
     '#default_value' => $settings['protocol_specify'],
-    '#description' => t('An explicit protocol may be neccesary for videos embedded in RSS feeds and emails. If no protocol is specified, iframes will be protocol relative.'),
+    '#description' => t('An explicit protocol may be necessary for videos embedded in RSS feeds and emails. If no protocol is specified, iframes will be protocol relative.'),
   );
   $element['protocol'] = array(
     '#title' => t('Iframe protocol'),
@@ -246,7 +246,7 @@ function media_youtube_file_formatter_image_view($file, $display, $langcode) {
     if (empty($image_style) || !isset($valid_image_styles[$image_style])) {
       $element = array(
         '#theme' => 'image',
-        '#path' => str_replace('http:', '', $wrapper->getOriginalThumbnailPath()),
+        '#path' => str_replace('http:', '', $wrapper->getLocalThumbnailPath()),
         '#alt' => isset($file->override['attributes']['alt']) ? $file->override['attributes']['alt'] : $file->filename,
       );
     }

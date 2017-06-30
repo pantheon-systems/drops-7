@@ -20,6 +20,7 @@ chroma.scale = (colors, positions) ->
     _max = 1
     _correctLightness = false
     _colorCache = {}
+    _useCache = true
 
     # private methods
 
@@ -86,7 +87,7 @@ chroma.scale = (colors, positions) ->
 
         k = Math.floor(t * 10000)
 
-        if _colorCache[k]
+        if _useCache && _colorCache[k]
             col = _colorCache[k]
         else
             if type(_colors) == 'array'
@@ -104,7 +105,7 @@ chroma.scale = (colors, positions) ->
                         break
             else if type(_colors) == 'function'
                 col = _colors t
-            _colorCache[k] = col
+            _colorCache[k] = col if _useCache
         col
 
     resetCache = () ->
@@ -135,7 +136,7 @@ chroma.scale = (colors, positions) ->
 
     f.domain = (domain) ->
         if not arguments.length
-            return _domain
+            return _domain     
         _min = domain[0]
         _max = domain[domain.length-1]
         _pos = []
@@ -210,37 +211,41 @@ chroma.scale = (colors, positions) ->
         else
             _padding
 
-    f.colors = () ->
-        numColors = 0
-        out = 'hex'
-
+    f.colors = (numColors, out) ->
         # If no arguments are given, return the original colors that were provided
+        out = 'hex' if arguments.length < 2
+        result = []
+        
         if arguments.length == 0
-          return _colors.map (c) -> c[out]()
+            result = _colors.slice 0
 
-        if arguments.length == 1
-            if type(arguments[0]) == 'string'
-                out = arguments[0]
-            else
-                numColors = arguments[0]
-        if arguments.length == 2
-            [numColors, out] = arguments
+        else if numColors == 1
+            result = [f(0.5)]
 
-        if numColors
+        else if numColors > 1
             dm = _domain[0]
             dd = _domain[1] - dm
-            return [0...numColors].map (i) -> f( dm + i/(numColors-1) * dd )[out]()
+            result = [0...numColors].map (i) -> f( dm + i/(numColors-1) * dd )
 
-        # returns all colors based on the defined classes
-        colors = []
-        samples = []
-        if _classes and _classes.length > 2
-            for i in [1..._classes.length]
-                samples.push (_classes[i-1]+_classes[i])*0.5
+        else # returns all colors based on the defined classes
+            colors = []
+            samples = []
+            if _classes and _classes.length > 2
+                for i in [1..._classes.length]
+                    samples.push (_classes[i-1]+_classes[i])*0.5
+            else
+                samples = _domain
+            result = samples.map (v) -> f(v)
+    
+        if chroma[out]
+            result = result.map (c) -> c[out]()
+        result 
+
+    f.cache = (c) ->
+        if c?
+            _useCache = c
         else
-            samples = _domain
-
-        samples.map (v) -> f(v)[out]()
+            _useCache
 
     f
 

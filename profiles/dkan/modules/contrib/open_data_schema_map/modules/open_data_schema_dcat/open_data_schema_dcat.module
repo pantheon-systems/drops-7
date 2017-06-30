@@ -151,6 +151,22 @@ function open_data_schema_dcat_open_data_schema_map_xml_output_render_data_alter
           $dataset['dcat:distribution'] = $distribution_url;
           unset($dataset['dcat:Distribution']);
         }
+
+        if (!empty($dataset['dct:language'])) {
+          if (function_exists('dkan_dataset_content_types_allowed_language_values')) {
+            $values = dkan_dataset_content_types_allowed_language_values();
+            $languages = array();
+            foreach ($dataset['dct:language'] as $delta => $value) {
+              $key = array_search($dataset['dct:language'][$delta], $values);
+              if ($key) {
+                $languages[] = $key;
+              }
+            }
+            if ($languages) {
+              $dataset['dct:language'] = $languages;
+            }
+          }
+        }
       }
     }
 

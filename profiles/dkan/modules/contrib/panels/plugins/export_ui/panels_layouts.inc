@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ */
+
 $plugin = array(
   'schema' => 'panels_layout',
   'access' => 'administer panels layouts',
@@ -20,4 +24,3 @@ $plugin = array(
     'class' => 'panels_layouts_ui',
   ),
 );
-

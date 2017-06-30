@@ -29,6 +29,16 @@ class ParserCSVIterator implements Iterator {
     }
   }
 
+  /**
+   * Closes the current file.
+   */
+  public function releaseHandler() {
+    if ($this->handle) {
+      fclose($this->handle);
+      $this->handle = NULL;
+    }
+  }
+
   public function rewind($pos = 0) {
     if ($this->handle) {
       fseek($this->handle, $pos);
@@ -66,6 +76,8 @@ class ParserCSVIterator implements Iterator {
  */
 class ParserCSV {
   private $delimiter;
+  private $fromEncoding;
+  private $toEncoding;
   private $skipFirstLine;
   private $columnNames;
   private $timeout;
@@ -73,11 +85,12 @@ class ParserCSV {
   private $startByte;
   private $lineLimit;
   private $lastLinePos;
+  private $useMbString;
 
   public function __construct() {
     $this->delimiter = ',';
-    $this->from_encoding = 'UTF-8';
-    $this->to_encoding = 'UTF-8';
+    $this->fromEncoding = 'UTF-8';
+    $this->toEncoding = 'UTF-8';
     $this->skipFirstLine = FALSE;
     $this->columnNames = FALSE;
     $this->timeout = FALSE;
@@ -86,6 +99,9 @@ class ParserCSV {
     $this->lineLimit = 0;
     $this->lastLinePos = 0;
     ini_set('auto_detect_line_endings', TRUE);
+    if (extension_loaded('mbstring') && variable_get('feeds_use_mbstring', TRUE)) {
+      $this->useMbString = TRUE;
+    }
   }
 
   /**
@@ -97,11 +113,15 @@ class ParserCSV {
   }
 
   /**
-   * Set the source file encoding.
-   * By default, UTF-8.
+   * Sets the source file encoding.
+   *
+   * By default, the encoding is UTF-8.
+   *
+   * @param string $encoding
+   *   The encoding to set.
    */
   public function setEncoding($encoding) {
-    $this->from_encoding = $encoding;
+    $this->fromEncoding = $encoding;
   }
 
   /**
@@ -161,7 +181,7 @@ class ParserCSV {
   /**
    * Get the byte number where the parser left off after last parse() call.
    *
-   * @return
+   * @return int
    *  0 if all lines or no line has been parsed, the byte position of where a
    *  timeout or the line limit has been reached otherwise. This position can be
    *  used to set the start byte for the next iteration after parse() has
@@ -188,11 +208,8 @@ class ParserCSV {
    *
    * @param Iterator $lineIterator
    *   An Iterator object that yields line strings, e.g. ParserCSVIterator.
-   * @param $start
-   *   The byte number from where to start parsing the file.
-   * @param $lines
-   *   The number of lines to parse, 0 for all lines.
-   * @return
+   *
+   * @return array
    *   Two dimensional array that contains the data in the CSV file.
    */
   public function parse(Iterator $lineIterator) {
@@ -337,28 +354,36 @@ class ParserCSV {
   }
 
   /**
-   * Converts encoding of input data
+   * Converts encoding of input data.
    *
-   * @param $data
-   *   A chunk of data
-   * @return
-   *   Data in correct encoding or throws exceptions if
-   *   detected encoding doesn't match.
+   * @param string $data
+   *   A chunk of data.
+   *
+   * @return string
+   *   The encoded data.
+   *
+   * @throws ParserCSVEncodingException
+   *   Thrown when a given encoding does not match.
    */
-  private function fixEncoding($data) {
-
-    if (extension_loaded('mbstring')) {
-      $detected_encoding = mb_detect_encoding($data, $this->from_encoding);
-
-      if ($detected_encoding) {
-        // Always convert encoding to UTF-8 protect from SQL errors.
-        $data = mb_convert_encoding($data, $this->to_encoding, $detected_encoding);
+  public function fixEncoding($data) {
+    if ($this->useMbString) {
+      if (mb_check_encoding($data, $this->fromEncoding)) {
+        if ($this->toEncoding != $this->fromEncoding) {
+          // Convert encoding. The conversion is to UTF-8 by default to prevent
+          // SQL errors.
+          $data = mb_convert_encoding($data, $this->toEncoding, $this->fromEncoding);
+        }
       }
       else {
-        throw new Exception(t('Source file is not in %encoding encoding.', array('%encoding' => $this->from_encoding)));
+        throw new ParserCSVEncodingException(t('Source file is not in %encoding encoding.', array('%encoding' => $this->fromEncoding)));
       }
     }
 
     return $data;
   }
 }
+
+/**
+ * Exception thrown when an encoding error occurs during parsing.
+ */
+class ParserCSVEncodingException extends Exception {}

@@ -185,6 +185,40 @@ function rules_admin_settings($form, &$form_state) {
     '#description' => t('Evaluations errors are logged to the system log.'),
   );
 
+  $form['stampede'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Stampede Protection'),
+  );
+  $form['stampede']['rules_stampede_protection'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Protection'),
+    '#description' => t('Prevent stampeding by ensuring the cache is rebuilt just once at the same time.'),
+    '#default_value' => variable_get('rules_stampede_protection', TRUE),
+  );
+  $form['stampede']['rules_stampede_semaphore'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Semaphore'),
+    '#description' => t('Seconds before the lock expires.'),
+    '#default_value' => variable_get('rules_stampede_semaphore', 15),
+  );
+  $form['stampede']['rules_stampede_wait_limit'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Wait Limit'),
+    '#description' => t('Maximum amount of times to check again after waiting.'),
+    '#default_value' => variable_get('rules_stampede_wait_limit', 3),
+  );
+  $form['stampede']['rules_stampede_wait_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Wait Time'),
+    '#description' => t('Seconds to wait until the lock is released.'),
+    '#default_value' => variable_get('rules_stampede_wait_time', 5),
+  );
+  $form['stampede']['rules_log_cache_rebuild_lock_hit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Log Lock Hit'),
+    '#default_value' => variable_get('rules_log_cache_rebuild_lock_hit', TRUE),
+  );
+
   $form['debug'] = array(
     '#type' => 'fieldset',
     '#title' => t('Debugging'),

@@ -35,4 +35,7 @@ features[field_instance][] = visualization-choropleth_visualization-field_ve_geo
 features[field_instance][] = visualization-choropleth_visualization-field_ve_map_column
 mtime = 1420866437
 project path = sites/all/modules/nucivic/visualization_entity/modules
-version = 7.x-1.1
+
+; Information added by DKAN release script on 6/21/2017
+version = 7.x-1.2
+project = dkan

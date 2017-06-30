@@ -19,7 +19,7 @@ features[views_view][] = feeds_defaults_feed_items
 files[] = feeds_news.module
 files[] = feeds_news.test
 
-; Information added by drush on 2015-11-01
-version = "7.x-2.0-beta1+17-dev"
+; Information added by drush on 2017-06-07
+version = "7.x-2.0-beta3+36-dev"
 project = "feeds"
-datestamp = "1446372284"
+datestamp = "1496840847"

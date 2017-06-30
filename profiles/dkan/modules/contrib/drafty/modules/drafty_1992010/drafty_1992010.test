@@ -1,14 +1,20 @@
 <?php
 
+// Show test if Entity Translation module is active.
+if (!class_exists('EntityTranslationTestCase')) {
+  return;
+}
+
 /**
  * Test draft revisions with entity translation.
  */
-class Drafty1992010Test extends  EntityTranslationTestCase {
+class Drafty1992010Test extends EntityTranslationTestCase {
   public static function getInfo() {
     return array(
       'name' => 'Drafty Entity Translation #1992010',
       'description' => 'Tests for the existence of the core bug this module works around',
       'group' => 'Drafty',
+      'dependencies' => array('entity_translation'),
     );
   }
 
@@ -19,6 +25,22 @@ class Drafty1992010Test extends  EntityTranslationTestCase {
     $this->addLanguage('es');
     $this->configureContentType();
     $this->login($this->getTranslatorUser());
+  }
+
+  /**
+   * Temporary Field UI access fix.
+   *
+   * @todo Remove when Entity Translation reach 7.x-1.0-beta6 or higher.
+   * @see http://cgit.drupalcode.org/entity_translation/commit/?id=a8ae1e78c57c6dd917d611dc1b956f289a8e2f31
+   *
+   * @param array $permissions
+   * @return false|object
+   */
+  function getAdminUser(array $permissions = array()) {
+    $permissions = array(
+      'administer fields',
+    );
+    return parent::getAdminUser($permissions);
   }
 
   /**

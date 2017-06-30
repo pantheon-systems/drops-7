@@ -1,4 +1,3 @@
-
 .layout-link {
   float: left;
   padding: 1em;
@@ -141,12 +140,12 @@ table .argument-operation input {
 }
 
 tr.changed td {
-  background-color: #FFFFDD !important;
+  background-color: #ffffdd !important;
 }
 
 tr.changed td span.star {
   font-weight: bold;
-  color: #E09010;
+  color: #e09010;
 }
 
 td select {

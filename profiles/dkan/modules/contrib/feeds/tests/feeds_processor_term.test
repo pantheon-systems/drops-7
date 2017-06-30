@@ -348,4 +348,32 @@ class FeedsCSVtoTermsTest extends FeedsWebTestCase {
     }
   }
 
+  /**
+   * Test replacing terms on subsequent imports.
+   */
+  public function testReplaceTerms() {
+    $mappings = array(
+      0 => array(
+        'source' => 'name',
+        'target' => 'name',
+        'unique' => 1,
+      ),
+    );
+    $this->addMappings('term_import', $mappings);
+
+    // Configure the processor to "Replace existing terms".
+    $this->setSettings('term_import', 'FeedsTermProcessor', array(
+      'skip_hash_check' => TRUE,
+      'update_existing' => 1,
+    ));
+
+    // Import first time.
+    $this->importFile('term_import', $this->absolutePath() . '/tests/feeds/users.csv');
+    $this->assertText('Created 5 terms');
+
+    // Import again to replace terms.
+    $this->importFile('term_import', $this->absolutePath() . '/tests/feeds/users.csv');
+    $this->assertText('Updated 5 terms.');
+  }
+
 }

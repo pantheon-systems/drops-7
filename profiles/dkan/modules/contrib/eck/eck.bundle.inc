@@ -143,7 +143,6 @@ function eck__bundle__menu($entity_type) {
  *   The name of the entity type.
  */
 function eck__bundle__list($entity_type) {
-  $path = eck__entity_type__path();
   $entity_type = entity_type_load($entity_type);
 
   // Check that the user has permissions to view bundle lists.
@@ -157,7 +156,7 @@ function eck__bundle__list($entity_type) {
       )
     )) {
 
-    $header = array(t('Type'), array(
+    $header = array(t('Bundle'), array(
       'data' => t('Operations'),
       'colspan' => '1'));
 

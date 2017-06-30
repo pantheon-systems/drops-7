@@ -5,7 +5,7 @@
  * Provides a simple time-based caching option for panel panes.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t("Simple cache"),
   'description' => t('Simple caching is a time-based cache. This is a hard limit, and once cached it will remain that way until the time limit expires.'),
@@ -128,7 +128,7 @@ function panels_simple_cache_get_id($conf, $display, $args, $contexts, $pane) {
     $id .= ':' . $language->language;
   }
 
-  if(!empty($pane->configuration['use_pager']) && !empty($_GET['page'])) {
+  if (!empty($pane->configuration['use_pager']) && !empty($_GET['page'])) {
     $id .= ':p' . check_plain($_GET['page']);
   }
 
@@ -158,4 +158,3 @@ function panels_simple_cache_settings_form($conf, $display, $pid) {
 
   return $form;
 }
-

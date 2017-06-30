@@ -44,6 +44,14 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
 
 
   /**
+   * Stat array for remote file
+   *
+   * @var Integer
+   */
+  protected $stat;
+
+
+  /**
    * Base implementation of setUri().
    */
   function setUri($uri) {
@@ -56,6 +64,7 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
   function getUri() {
     return $this->uri;
   }
+
 
   /**
    * Performs a GET request without transfer the content.
@@ -313,21 +322,20 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
    * @see http://php.net/manual/en/streamwrapper.stream-stat.php
    */
   public function stream_stat() {
-    $stat = array();
-    $headers = DrupalRemoteStreamWrapper::getHeaders($this->getUri());
-    if (!empty($headers)) {
-      if (isset($headers['content-length'])) {
-        $stat['size'] = $headers['content-length'];
-      }
-      elseif ($size = strlen($this->getStreamContent())) {
-        // If the HEAD request does not return a Content-Length header, fall
-        // back to performing a full request of the file to determine its file
-        // size.
-        $stat['size'] = $size;
+    if (!isset($this->stat)) {
+      $this->stat = array();
+      $headers = DrupalRemoteStreamWrapper::getHeaders($this->getUri());
+      if (!empty($headers)) {
+        if (isset($headers['content-length'])) {
+          $this->stat['size'] = $headers['content-length'];
+        }
+        else {
+          $this->stat = $this->getStatDownload();
+        }
       }
     }
 
-    return !empty($stat) ? $this->getStat($stat) : FALSE;
+    return !empty($this->stat) ? $this->getStat($this->stat) : FALSE;
   }
 
   /**
@@ -587,5 +595,29 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
     }
 
     return $this->stream_content;
+  }
+
+  /**
+   * Get an fstat array by temporarily downloading the file.
+   */
+  protected function getStatDownload() {
+    $ch = curl_init($this->uri);
+    $filename = basename($this->uri);
+    $file = fopen("temporary://$filename", 'w');
+
+    curl_setopt($ch, CURLOPT_URL, $this->uri);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_FAILONERROR,1);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_FILE, $file);
+    curl_exec($ch);
+    curl_close($ch);
+
+    $stat = fstat($file);
+    fclose($file);
+    unlink("temporary://$filename");
+    return $stat;
   }
 }

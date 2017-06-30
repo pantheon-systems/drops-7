@@ -1,9 +1,10 @@
 <?php
 
 /**
- * implementation of hook_panels_layouts()
+ * @file
+ * Implementation of hook_panels_layouts().
  */
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('Single column'),
   'category' => t('Columns: 1'),

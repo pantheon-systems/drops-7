@@ -112,7 +112,22 @@ class FeedsMapperDateMultipleTestCase extends FeedsMapperTestCase {
     foreach ($values as $v => $key) {
       $this->drupalGet("node/$v/edit");
       foreach ($key as $delta => $value) {
-        $this->assertFieldById('edit-field-date-und-' . $delta . '-value-date', $value);
+        $id = 'edit-field-date-und-' . $delta . '-value-date';
+
+        // Find actual value.
+        $xpath = $this->constructFieldXpath('id', $id);
+        $fields = $this->xpath($xpath);
+        $field = reset($fields);
+        $actual = (string) $field['value'];
+
+        // Compose assert message.
+        $message = format_string('Found field by id @id with value @value (actual: @actual).', array(
+          '@id' => $id,
+          '@value' => $value,
+          '@actual' => $actual,
+        ));
+
+        $this->assertFieldById($id, $value, $message);
       }
     }
   }

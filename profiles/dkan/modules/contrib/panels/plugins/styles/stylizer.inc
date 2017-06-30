@@ -6,7 +6,7 @@
  */
 
 if (module_exists('stylizer')) {
-  // Plugin definition
+  // Plugin definition.
   $plugin = array(
     'title' => t('Custom style'),
     'weight' => -10,
@@ -22,7 +22,7 @@ if (module_exists('stylizer')) {
     'get child' => 'panels_stylizer_get_substyle',
     'get children' => 'panels_stylizer_get_substyles',
 
-    // Set up an AJAX callback for the style
+    // Set up an AJAX callback for the style.
     'ajax' => array(
       'custom' => 'panels_stylizer_pane_add_style',
     ),
@@ -140,13 +140,13 @@ function theme_panels_stylizer_stylizer_style_render_region($vars) {
     return theme($plugin['theme'], array('settings' => $settings, 'class' => ctools_stylizer_get_css_class($plugin, $settings), 'content' => $output));
   }
   else {
-    // if the style is gone, just display the output.
+    // If the style is gone, just display the output.
     return $output;
   }
 }
 
 /**
- * Pane render theme
+ * Pane render theme.
  */
 function theme_panels_stylizer_stylizer_style_render_pane($vars) {
   $content = $vars['content'];
@@ -174,7 +174,7 @@ function theme_panels_stylizer_stylizer_style_render_pane($vars) {
     }
   }
 
-  // if the style is gone or has no theme of its own, just display the output.
+  // If the style is gone or has no theme of its own, just display the output.
   return theme('panels_pane', array('content' => $content, 'pane' => $pane, 'display' => $display));
 }
 
@@ -257,7 +257,7 @@ function panels_stylizer_pane_add_style(&$renderer, $plugin, &$conf, $type, $pid
     if ($type == 'pane') {
       $renderer->command_update_pane($pid);
     }
-    else if ($type == 'region') {
+    elseif ($type == 'region') {
       $renderer->command_update_region_links($pid);
     }
     else {
@@ -308,7 +308,7 @@ function panels_stylizer_edit_pane_style_form(&$form, &$form_state) {
     '#dependency' => array('edit-preconfigured' => array(1)),
   );
 
-  // Add the checkbox, set the weight early
+  // Add the checkbox, set the weight early.
   $form['panels']['preconfigured'] = array(
     '#type' => 'checkbox',
     '#title' => t('Make this style available to other regions or panes'),
@@ -365,7 +365,7 @@ function panels_stylizer_edit_pane_style_form_submit(&$form, &$form_state) {
     $form_state['owner info']['owner settings']['admin_title'] = $form_state['values']['admin_title'];
     $form_state['owner info']['owner settings']['admin_description'] = $form_state['values']['admin_description'];
 
-    // Clean up preview files before we set the name
+    // Clean up preview files before we set the name.
     ctools_stylizer_cleanup_style($form_state['plugin'], $form_state['settings']);
 
     $form_state['settings']['name'] = $form_state['values']['name'];

@@ -110,6 +110,7 @@
     border-width: 0;
     padding: 0em;
     background: none;
+    min-height: 10em;
 }
 
 /**
@@ -124,6 +125,8 @@
     bottom: 0px;
     display: inline-block;
     max-width: 85%;
+    max-height: 75%;
+    overflow: hidden;
 }
 .pane-bundle-spotlight .panopoly-spotlight-wrapper h2 {
     margin: 0;
@@ -135,23 +138,28 @@
 .pane-bundle-spotlight .panopoly-spotlight-wrapper p {
     font-size: .8em;
     margin: 0;
-    line-height: 1.2em;
+    line-height: 1.2;
     margin-top: 5px;
 }
 .pane-bundle-spotlight .panopoly-spotlight-label {
-    display: inline-block;
-    background-color: #FFF;
-    opacity: .75;
-}
-.pane-bundle-spotlight .panopoly-spotlight-label {
+    box-sizing: content-box;
+    max-height: 2.9em;
+    line-height: 1.5;
+    overflow: hidden;
     padding: .3em .7em;
     margin: 0 50px 0 0;
+    background-color: #FFF;
+    opacity: .75;
 }
 .pane-bundle-spotlight .panopoly-spotlight-info {
     padding: .7em;
     background-color: #000000;
     color: #FFFFFF;
     opacity: .75;
+}
+.pane-bundle-spotlight .panopoly-spotlight-info p {
+    max-height: 2.4em;
+    overflow: hidden;
 }
 .pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li {
     background: none;

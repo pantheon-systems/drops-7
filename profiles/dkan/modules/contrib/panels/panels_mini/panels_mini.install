@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * @file
+ */
+
+/**
  * Implementation of hook_schema().
  */
 function panels_mini_schema() {
@@ -105,7 +109,7 @@ function panels_mini_uninstall() {
   foreach ($result as $panel_mini) {
     // Delete all associated displays.
     if (!function_exists('panels_delete_display')) {
-      require_once drupal_get_path('module', 'panels') .'/panels.module';
+      require_once drupal_get_path('module', 'panels') . '/panels.module';
     }
     if ($panels_exists) {
       panels_delete_display($panel_mini->did);
@@ -127,7 +131,7 @@ function panels_mini_uninstall() {
  * Implements hook_update_dependencies().
  */
 function panels_mini_update_dependencies() {
-  // Update 7301 requires panels storage support
+  // Update 7301 requires panels storage support.
   $dependencies['panels_mini'][7301] = array(
     'panels' => 7305,
   );
@@ -140,19 +144,19 @@ function panels_mini_update_dependencies() {
  */
 function panels_mini_update_7301() {
   if (!isset($sandbox['progress'])) {
-     // Initialize batch update information.
-     $sandbox['progress'] = (float)0;
-     $sandbox['current_did'] = -1;
-     $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+    // Initialize batch update information.
+    $sandbox['progress'] = (float) 0;
+    $sandbox['current_did'] = -1;
+    $sandbox['max'] = db_query("SELECT COUNT(pd.did)
          FROM {panels_display} pd
            JOIN {panels_mini} pm ON pm.did = pd.did
          WHERE pd.storage_type = ''")->fetchField();
-   }
+  }
 
   // Set a limit of how many rows to process per batch.
   $limit = 1000;
 
-  // Run the query
+  // Run the query.
   $result = db_query_range("SELECT pd.did, pm.name
       FROM {panels_display} pd
         JOIN {panels_mini} pm ON pm.did = pd.did

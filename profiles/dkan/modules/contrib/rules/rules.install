@@ -122,7 +122,7 @@ function rules_schema() {
       'name' => array('name'),
     ),
     'indexes' => array(
-      'plugin' => array('plugin'),
+      'plugin' => array('plugin', 'active'),
     ),
   );
   $schema['rules_trigger'] = array(
@@ -525,4 +525,14 @@ function rules_update_7214() {
   rules_get_cache();
   _rules_rebuild_component_cache();
   RulesEventSet::rebuildEventCache();
+}
+
+/**
+ * Add an index for retrieving active config of a certain plugin.
+ */
+function rules_update_7215() {
+  if (db_index_exists('rules_config', 'plugin')) {
+    db_drop_index('rules_config', 'plugin');
+  }
+  db_add_index('rules_config', 'plugin', array('plugin', 'active'));
 }

@@ -104,3 +104,11 @@ ul.container-actions li form input {
 #center table form {
   margin: 0;
 }
+
+div.feeds-container-body .feeds-target-config div.item-list ul li {
+  list-style: outside none disc;
+  margin: 0 0 0.25em 1.5em;
+}
+.feeds-target-config .description {
+  white-space: normal;
+}

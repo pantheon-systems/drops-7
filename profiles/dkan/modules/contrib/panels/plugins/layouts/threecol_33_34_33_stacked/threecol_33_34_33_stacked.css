@@ -1,11 +1,10 @@
-
-.panel-3col-33-stacked { 
+.panel-3col-33-stacked {
 /*  overflow: hidden;  */
 }
 
 .panel-3col-33-stacked .panel-col-top,
-.panel-3col-33-stacked .panel-col-bottom { 
-  width: 100%; 
+.panel-3col-33-stacked .panel-col-bottom {
+  width: 100%;
   clear: both;
 }
 
@@ -13,30 +12,30 @@
   margin-bottom: 1em;
 }
 
-.panel-3col-33-stacked .panel-col-first { 
-  float: left; 
-  width: 33%; 
+.panel-3col-33-stacked .panel-col-first {
+  float: left;
+  width: 33%;
 }
 
-.panel-3col-33-stacked .panel-col-first .inside { 
+.panel-3col-33-stacked .panel-col-first .inside {
   margin: 0 .5em 1em 0;
 }
 
-.panel-3col-33-stacked .panel-col { 
-  float: left; 
-  width: 33%; 
+.panel-3col-33-stacked .panel-col {
+  float: left;
+  width: 33%;
 }
 
-.panel-3col-33-stacked .panel-col .inside { 
+.panel-3col-33-stacked .panel-col .inside {
   margin: 0 .5em 1em .5em;
 }
 
-.panel-3col-33-stacked .panel-col-last { 
-  float: left; 
-  width: 33%; 
+.panel-3col-33-stacked .panel-col-last {
+  float: left;
+  width: 33%;
 }
 
-.panel-3col-33-stacked .panel-col-last .inside { 
+.panel-3col-33-stacked .panel-col-last .inside {
   margin: 0 0 1em .5em;
 }
 

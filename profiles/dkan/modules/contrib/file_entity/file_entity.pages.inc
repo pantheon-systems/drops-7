@@ -35,10 +35,12 @@ function file_entity_download_page($file) {
   if (!is_file($file->uri)) {
     return MENU_NOT_FOUND;
   }
-
+  // @todo Remove this once drupal_basename is fixed for PHP versions greater
+  //  than '5.3.29'.
+  $basename_function = version_compare(PHP_VERSION,'5.3.29','>') ? 'basename' : 'drupal_basename';
   $headers = array(
     'Content-Type' => mime_header_encode($file->filemime),
-    'Content-Disposition' => 'attachment; filename="' . mime_header_encode(drupal_basename($file->uri)) . '"',
+    'Content-Disposition' => 'attachment; filename="' . mime_header_encode($basename_function($file->uri)) . '"',
     'Content-Length' => $file->filesize,
     'Content-Transfer-Encoding' => 'binary',
     'Pragma' => 'no-cache',
@@ -77,7 +79,10 @@ function file_entity_download_page($file) {
  * - Edit fields
  *   Skip this step if there are no fields on this entity type.
  */
-function file_entity_add_upload($form, &$form_state, array $options = array()) {
+function file_entity_add_upload($form, &$form_state, $options = array()) {
+  if (!is_array($options)) {
+    $options = array($options);
+  }
   $step = (isset($form_state['step']) && in_array($form_state['step'], array(1, 2, 3, 4))) ? $form_state['step'] : 1;
   $form['#step'] = $step;
   $form['#options'] = $options;
@@ -398,6 +403,7 @@ function file_entity_add_upload_submit($form, &$form_state) {
   // We have the filetype, check if we can skip step 4.
   if (($form['#step'] == 3 && $trigger == 'edit-next')) {
     $file = file_load($form_state['storage']['upload']);
+    $form_state['file'] = $file;
     if (!field_info_instances('file', $form_state['storage']['type'])) {
       // This filetype doesn't have fields, save the file.
       $save = TRUE;
@@ -800,21 +806,25 @@ function file_entity_edit_submit($form, &$form_state) {
   if (!empty($form_state['values']['replace_upload'])) {
     $replacement = $form_state['values']['replace_upload'];
     // Move file from temp to permanent home.
-    $destination_uri = rtrim($file->uri, drupal_basename($file->uri)) . drupal_basename($replacement->uri);
-    $replace_mode = $destination_uri == $file->uri ? FILE_EXISTS_REPLACE : FILE_EXISTS_RENAME;
-    if ($new_file_uri = file_unmanaged_copy($replacement->uri, $destination_uri, $replace_mode)) {
-      // @todo Add watchdog() about replaced file here?
+    if (pathinfo($replacement->uri, PATHINFO_EXTENSION) == pathinfo($file->uri, PATHINFO_EXTENSION)) {
+        file_unmanaged_copy($replacement->uri, $file->uri, FILE_EXISTS_REPLACE);
+    } else {
+      $destination_uri = rtrim($file->uri, drupal_basename($file->uri)) . drupal_basename($replacement->uri);
+      $replace_mode = $destination_uri == $file->uri ? FILE_EXISTS_REPLACE : FILE_EXISTS_RENAME;
+      if ($new_file_uri = file_unmanaged_copy($replacement->uri, $destination_uri, $replace_mode)) {
+        // @todo Add watchdog() about replaced file here?
 
-      // Remove temporary file.
-      file_delete($replacement);
+        // Remove temporary file.
+        file_delete($replacement);
 
-      // Update if the uri target has changed.
-      if ($new_file_uri != $file->uri) {
-       // Store the original file uri to delete if save is successful.
-       $orphaned_uri = $file->uri;
+        // Update if the uri target has changed.
+        if ($new_file_uri != $file->uri) {
+         // Store the original file uri to delete if save is successful.
+         $orphaned_uri = $file->uri;
 
-        // Update file entity uri.
-        $file->uri = $new_file_uri;
+          // Update file entity uri.
+          $file->uri = $new_file_uri;
+        }
       }
     }
   }

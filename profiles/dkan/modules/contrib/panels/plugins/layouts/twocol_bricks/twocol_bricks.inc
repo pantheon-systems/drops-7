@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Implementation for the two column bricked layout
+ * Implementation for the two column bricked layout.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('Two column bricks'),
   'category' => t('Columns: 2'),
@@ -22,4 +22,3 @@ $plugin = array(
     'bottom' => t('Bottom'),
   ),
 );
-

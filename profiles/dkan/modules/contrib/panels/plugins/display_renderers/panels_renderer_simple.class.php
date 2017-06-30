@@ -23,10 +23,11 @@ class panels_renderer_simple extends panels_renderer_standard {
   }
 
   function render_panes() {
-    // NOP
+    // NOP.
   }
 
   function prepare($external_settings = NULL) {
     $this->prep_run = TRUE;
   }
+
 }

@@ -44,16 +44,13 @@ function feeds_rules_event_info() {
         $entity_type => array(
           'label' => t('Imported @label', array('@label' => $label)),
           'type' => $entity_type,
+          'bundle' => $processor->bundle(),
           // Saving is handled by feeds anyway (unless the skip action is used).
           'skip save' => TRUE,
         ),
       ),
       'access callback' => 'feeds_rules_access_callback',
     );
-    // Add bundle information if the node processor is used.
-    if ($processor instanceof FeedsNodeProcessor) {
-      $info['feeds_import_'. $importer->id]['variables'][$entity_type]['bundle'] = $processor->bundle();
-    }
   }
   return $info;
 }

@@ -11,7 +11,7 @@
  * @param string $argument
  *   The second half of the cache key. Full key module:TASK_NAME:HANDLER_NAME
  *   passed part: TASK_NAME:HANDLER_NAME
- * @param stdClass $cache
+ * @param object $cache
  *   The display to cache.
  */
 function hook_panels_cache_set($argument, $cache) {
@@ -56,7 +56,7 @@ function hook_panels_cache_get($argument) {
  * @param string $argument
  *   The second half of the cache key. Full key module:TASK_NAME:HANDLER_NAME
  *   passed part: TASK_NAME:HANDLER_NAME
- * @param stdClass $cache
+ * @param object $cache
  *   The display to cache.
  *
  * @return stdClass
@@ -78,7 +78,7 @@ function hook_panels_cache_save($argument, $cache) {
  * @param string $argument
  *   The second half of the cache key. Full key module:TASK_NAME:HANDLER_NAME
  *   passed part: TASK_NAME:HANDLER_NAME
- * @param stdClass $cache
+ * @param object $cache
  *   The cached display.
  */
 function hook_panels_cache_clear($argument, $cache) {
@@ -105,9 +105,9 @@ function hook_panels_dashboard_blocks(&$vars) {
  *
  * This happens after the keyword substitution.
  *
- * @param stdClass $content
+ * @param object $content
  *   The content block to render.
- * @param stdClass $pane
+ * @param object $pane
  *   The pane object.
  * @param array $args
  *   The display arguments.
@@ -125,7 +125,7 @@ function hook_panels_pane_content_alter($content, $pane, $args, $contexts) {
  * @param string $argument
  *   The second half of the cache key. Full key module:TASK_NAME:HANDLER_NAME
  *   passed part: TASK_NAME:HANDLER_NAME
- * @param stdClass $cache
+ * @param object $cache
  *   The cached display.
  */
 function hook_panels_edit_cache_break_lock($argument, $cache) {
@@ -140,7 +140,7 @@ function hook_panels_edit_cache_break_lock($argument, $cache) {
  *
  * @param panels_display $panels_display
  *   The panels display that will be rendered.
- * @param stdClass $renderer
+ * @param object $renderer
  *   The renderer object that will be used to render.
  *
  * @return string
@@ -158,7 +158,7 @@ function hook_panels_pre_render($panels_display, $renderer) {
  *
  * @param panels_display $panels_display
  *   The rendered panels display.
- * @param stdClass $renderer
+ * @param object $renderer
  *   The used renderer object.
  *
  * @return string
@@ -171,7 +171,7 @@ function hook_panels_post_render($panels_display, $renderer) {
 /**
  * Fired before a new pane is inserted in the storage.
  *
- * @param stdClass $pane
+ * @param object $pane
  *   Pane that will be rendered.
  */
 function hook_panels_pane_insert($pane) {
@@ -188,7 +188,7 @@ function hook_panels_pane_insert($pane) {
 /**
  * Fired before a changed pane is updated in the storage.
  *
- * @param stdClass $pane
+ * @param object $pane
  *   Pane that will be rendered.
  */
 function hook_panels_pane_update($pane) {
@@ -208,7 +208,7 @@ function hook_panels_pane_update($pane) {
  * Last chance to modify the pane before the keyword substitution runs and the
  * pane is rendered.
  *
- * @param stdClass $pane
+ * @param object $pane
  *   Pane that will be rendered.
  */
 function hook_panels_pane_prerender($pane) {
@@ -250,7 +250,7 @@ function hook_panels_display_save($display) {
 /**
  * Fired before a display is deleted.
  *
- * @param integer $did
+ * @param int $did
  *   Id of the display to delete.
  */
 function hook_panels_delete_display($did) {

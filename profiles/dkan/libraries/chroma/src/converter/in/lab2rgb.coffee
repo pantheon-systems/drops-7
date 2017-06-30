@@ -16,15 +16,11 @@ lab2rgb = () ->
     g = xyz_rgb -0.9692660 * x + 1.8760108 * y + 0.0415560 * z
     b = xyz_rgb 0.0556434 * x - 0.2040259 * y + 1.0572252 * z
 
-    r = limit r,0,255
-    g = limit g,0,255
-    b = limit b,0,255
-  
     [r,g,b,if args.length > 3 then args[3] else 1]
 
 
 xyz_rgb = (r) ->
-    round(255 * (if r <= 0.00304 then 12.92 * r else 1.055 * pow(r, 1 / 2.4) - 0.055))
+    255 * (if r <= 0.00304 then 12.92 * r else 1.055 * pow(r, 1 / 2.4) - 0.055)
 
 lab_xyz = (t) ->
     if t > LAB_CONSTANTS.t1 then t * t * t else LAB_CONSTANTS.t2 * (t - LAB_CONSTANTS.t0)

@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Alters Media: YouTube video handling to make it suitable for local testing.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function media_youtube_test_menu() {
+  $items['media-youtube-test/oembed'] = array(
+    'title' => 'Drupal Goto',
+    'page callback' => 'media_youtube_test_oembed',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Provides a fake oEmbed endpoint for local testing.
+ */
+function media_youtube_test_oembed() {
+  $query_parameters = drupal_get_query_parameters();
+  $query = parse_url($query_parameters['url'], PHP_URL_QUERY);
+  parse_str($query, $params);
+
+  $data = array(
+    'thumbnail_url' => 'https://i.ytimg.com/vi/' . $params['v'] . '/hqdefault.jpg',
+    'thumbnail_width' => 480,
+    'author_name' => 'YouTube Help',
+    'height' => 270,
+    'provider_url' => 'http://www.youtube.com/',
+    'html' => '<iframe width="480" height="270" src="https://www.youtube.com/embed/' . $params['v'] . '?feature=oembed" frameborder="0" allowfullscreen></iframe>',
+    'thumbnail_height' => 360,
+    'title' => 'YouTube Content ID',
+    'provider_name' => 'YouTube',
+    'type' => 'video',
+    'width' => 480,
+    'version' => '1.0',
+    'author_url' => 'http://www.youtube.com/user/YouTubeHelp',
+  );
+
+  drupal_json_output($data);
+}
+
+/**
+ * Implements hook_media_internet_providers_alter().
+ */
+function media_youtube_test_media_internet_providers_alter(&$providers) {
+  $provider = $providers['MediaInternetYouTubeHandler'];
+  unset($providers['MediaInternetYouTubeHandler']);
+  $providers['MediaYouTubeTestHandler'] = $provider;
+}
+
+/**
+ * Implements hook_stream_wrappers_alter().
+ */
+function media_youtube_test_stream_wrappers_alter(&$wrappers) {
+  $wrappers['youtube']['class'] = 'MediaYouTubeTestStreamWrapper';
+}
+
+/**
+ * Implements hook_media_parse_alter().
+ */
+function media_youtube_test_media_parse_alter(&$success, $context) {
+  if ($context['module'] == 'media_youtube') {
+    $handler = new MediaYouTubeTestHandler($context['url']);
+    $success = $handler->parse($context['url']);
+  }
+}

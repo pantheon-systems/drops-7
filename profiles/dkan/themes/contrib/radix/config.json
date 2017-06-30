@@ -1,0 +1,36 @@
+{
+  "name": "radix",
+  "description": "Radix is a base theme for Drupal. It has Bootstrap, Sass, Gulp, BrowserSync and Font Awesome built-in.",
+  "browserSyncProxy" : "http://drupal7.dev",
+  "bowerDir": "./bower_components",
+  "css": {
+    "file" : "radix.style.scss",
+    "src": [
+      "assets/scss/**/*.scss"
+    ],
+    "dest": "assets/css",
+    "includePaths": [
+      "./bower_components/bootstrap-sass/assets/stylesheets",
+      "./bower_components/font-awesome/scss"
+    ]
+  },
+  "js": {
+    "file" : "radix.script.js",
+    "src": [
+      "assets/js/**/*.js"
+    ],
+    "dest": "assets/js"
+  },
+  "images": {
+    "src": [
+      "assets/images/**/*"
+    ],
+    "dest": "assets/images/"
+  },
+  "fonts": {
+    "src": [
+      "./bower_components/font-awesome/fonts/**.*"
+    ],
+    "dest": "./assets/fonts/"
+  }
+}

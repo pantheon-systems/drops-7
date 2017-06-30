@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Simple Google Maps module
+ * Simple Google Maps module.
  *
  * Provides a Google Maps link/map formatter for simple Text fields. Note that
  * this is just a field formatter for Text fields, not a field. See README.txt
@@ -19,7 +19,7 @@ function simple_gmap_field_formatter_info() {
 
   $formatters['simple_gmap'] = array(
     'label' => t('Google Map from one-line address'),
-    'field types' => array('text'),
+    'field types' => array('text', 'computed'),
     'settings' => array(
       'include_map' => 1,
       'include_static_map' => 0,
@@ -80,7 +80,7 @@ function simple_gmap_field_formatter_view($entity_type, $entity, $field, $instan
 
   // Figure out what to display for each item we have here.
   $embed = (int) $display['settings']['include_map'] ? TRUE : FALSE;
-  $static = (isset($display['settings']['include_static_map']) && (int) $display['settings']['include_static_map'] ) ? TRUE : FALSE;
+  $static = (isset($display['settings']['include_static_map']) && (int) $display['settings']['include_static_map']) ? TRUE : FALSE;
   $link = (int) $display['settings']['include_link'] ? TRUE : FALSE;
   $text = (int) $display['settings']['include_text'] ? TRUE : FALSE;
 
@@ -101,7 +101,12 @@ function simple_gmap_field_formatter_view($entity_type, $entity, $field, $instan
   }
 
   // For some reason, static gmaps accepts a different value for map type.
-  $static_map_types = array('m' => 'roadmap', 'k' => 'satellite', 'h' => 'hybrid', 'p' => 'terrain');
+  $static_map_types = array(
+    'm' => 'roadmap',
+    'k' => 'satellite',
+    'h' => 'hybrid',
+    'p' => 'terrain',
+  );
 
   $map_type = isset($display['settings']['map_type']) ? check_plain($display['settings']['map_type']) : 'm';
   // Default to standard map if not recognized.
@@ -109,8 +114,8 @@ function simple_gmap_field_formatter_view($entity_type, $entity, $field, $instan
     $map_type = 'm';
   }
 
-  foreach($items as $delta => $item) {
-    $url_value = urlencode(check_plain($item['value']));
+  foreach ($items as $delta => $item) {
+    $url_value = urlencode($item['value']);
     $address_value = check_plain($item['value']);
     $address = $text ? $address_value : '';
 
@@ -192,7 +197,7 @@ function simple_gmap_field_formatter_settings_form($field, $instance, $view_mode
       2 => t('Yes'),
     ),
     '#default_value' => (int) $settings['static_scale'],
-   );
+  );
 
   $element['link_label'] = array(
     '#type' => 'markup',
@@ -287,10 +292,10 @@ function simple_gmap_field_formatter_settings_summary($field, $instance, $view_m
   }
 
   $map_types = array(
-      'm' => t('Map'),
-      'k' => t('Satellite'),
-      'h' => t('Hybrid'),
-      'p' => t('Terrain'),
+    'm' => t('Map'),
+    'k' => t('Satellite'),
+    'h' => t('Hybrid'),
+    'p' => t('Terrain'),
   );
   $map_type = isset($settings['map_type']) ? check_plain($settings['map_type']) : 'm';
   $map_type = isset($map_types[$map_type]) ? $map_types[$map_type] : $map_types['m'];
@@ -301,7 +306,12 @@ function simple_gmap_field_formatter_settings_summary($field, $instance, $view_m
     $summary[] = t('Embedded map: @width x @height', array('@width' => $settings['iframe_width'], '@height' => $settings['iframe_height']));
   }
   if ($settings['include_static_map']) {
-    $summary[] = t('Static map: @width x @height, Scale: @static_scale', array('@width' => $settings['iframe_width'], '@height' => $settings['iframe_height'], '@static_scale' => $settings['static_scale']));
+    $summary[] = t('Static map: @width x @height, Scale: @static_scale',
+      array(
+        '@width' => $settings['iframe_width'],
+        '@height' => $settings['iframe_height'],
+        '@static_scale' => $settings['static_scale'],
+      ));
   }
   if ($settings['include_link']) {
     $summary[] = t('Map link: @link_text', array('@link_text' => $settings['link_text']));

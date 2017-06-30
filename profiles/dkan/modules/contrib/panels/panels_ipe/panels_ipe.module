@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * @file
+ */
+
+/**
  * Implementation of hook_ctools_plugin_directory().
  */
 function panels_ipe_ctools_plugin_directory($module, $plugin) {
@@ -90,12 +94,12 @@ function template_preprocess_panels_ipe_pane_wrapper(&$vars) {
       'attributes' => array(
         'class' => array('ctools-use-modal', 'panels-ipe-hide-bar'),
         'title' => isset($content_type['edit text']) ? $content_type['edit text'] : t('Settings'),
-        // 'id' => "pane-edit-panel-pane-$pane->pid",
+        // 'id' => "pane-edit-panel-pane-$pane->pid",.
       ),
     );
   }
 
-  // Add option to configure style in IPE
+  // Add option to configure style in IPE.
   if (user_access('administer panels pane styles')) {
     $vars['links']['style'] = array(
       'title' => '<span>' . t('Style') . '</span>',
@@ -108,8 +112,21 @@ function template_preprocess_panels_ipe_pane_wrapper(&$vars) {
     );
   }
 
+  // Add option to configure CSS.
+  if (user_access('administer advanced pane settings')) {
+    $vars['links']['css'] = array(
+      'title' => '<span>' . t('CSS') . '</span>',
+      'href' => $renderer->get_url('pane-css', $pane->pid),
+      'html' => TRUE,
+      'attributes' => array(
+        'class' => array('ctools-use-modal', 'panels-ipe-hide-bar'),
+        'title' => t('CSS'),
+      ),
+    );
+  }
+
   // Deleting is managed entirely in the js; this is just an attachment point
-  // for it
+  // for it.
   $vars['links']['delete'] = array(
     'title' => '<span>' . t('Delete') . '</span>',
     'href' => '#',
@@ -124,7 +141,7 @@ function template_preprocess_panels_ipe_pane_wrapper(&$vars) {
   $context = array(
     'pane' => $pane,
     'display' => $display,
-    'renderer' => $renderer
+    'renderer' => $renderer,
   );
   drupal_alter('panels_ipe_pane_links', $vars['links'], $context);
 
@@ -140,12 +157,12 @@ function theme_panels_ipe_pane_wrapper($vars) {
   );
 
   $type = ctools_get_content_type($pane->type);
-  $title ='<span class = "panels-ipe-dragbar-admin-title">' . ctools_content_admin_title($type, $pane->subtype, $pane->configuration, $display->context) . '</span>';
+  $title = '<span class = "panels-ipe-dragbar-admin-title">' . ctools_content_admin_title($type, $pane->subtype, $pane->configuration, $display->context) . '</span>';
 
   $links = theme('links', array('links' => $vars['links'], 'attributes' => $attributes));
 
   if (!empty($pane->locks['type']) && $pane->locks['type'] == 'immovable') {
-    $links = '<div class="panels-ipe-dragbar panels-ipe-nodraghandle clearfix">' . $links .$title .'</div>';
+    $links = '<div class="panels-ipe-dragbar panels-ipe-nodraghandle clearfix">' . $links . $title . '</div>';
   }
   else {
     $links = '<div class="panels-ipe-dragbar panels-ipe-draghandle clearfix">' . $links . $title . '<span class="panels-ipe-draghandle-icon"><span class="panels-ipe-draghandle-icon-inner"></span></span></div>';
@@ -164,9 +181,9 @@ function template_preprocess_panels_ipe_add_pane_button(&$vars) {
   $region_id = $vars['region_id'];
   $display = $vars['display'];
   $renderer = $vars['renderer'];
-  $vars['links'] = '';
+  $vars['links'] = array();
 
-  // Add option to configure style in IPE
+  // Add option to configure style in IPE.
   if (user_access('administer panels region styles')) {
     $vars['links']['style'] = array(
       'title' => '<span>' . t('Region style') . '</span>',
@@ -179,7 +196,7 @@ function template_preprocess_panels_ipe_add_pane_button(&$vars) {
     );
   }
 
-  // Add option to add items in the IPE
+  // Add option to add items in the IPE.
   $vars['links']['add-pane'] = array(
     'title' => '<span>' . t('Add new pane') . '</span>',
     'href' => $renderer->get_url('select-content', $region_id),
@@ -226,7 +243,7 @@ function panels_ipe_toolbar_add_button($cache_key, $id, $button) {
 }
 
 /**
- * Implementation of hook_footer()
+ * Implementation of hook_footer().
  *
  * Adds the IPE control container.
  *

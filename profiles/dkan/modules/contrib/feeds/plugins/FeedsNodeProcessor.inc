@@ -33,14 +33,32 @@ class FeedsNodeProcessor extends FeedsProcessor {
   }
 
   /**
+   * Overrides parent::languageOptions().
+   */
+  public function languageOptions() {
+    // Content types can have "extended" language enabled, allowing all
+    // available languages, not just enabled. Account for this here.
+    if (module_exists('i18n_node')) {
+      $node = new stdClass();
+      $node->type = $this->bundle();
+      $node->is_new = TRUE;
+      node_object_prepare($node);
+      $languages = array(LANGUAGE_NONE => t('Language neutral')) + i18n_node_language_list($node);
+      return $languages;
+    }
+
+    // If i18n_node is not enabled, default to enabled languages.
+    return parent::languageOptions();
+  }
+
+  /**
    * Creates a new node in memory and returns it.
    */
   protected function newEntity(FeedsSource $source) {
-    $node = new stdClass();
+    $node = parent::newEntity($source);
     $node->type = $this->bundle();
     $node->changed = REQUEST_TIME;
     $node->created = REQUEST_TIME;
-    $node->language = LANGUAGE_NONE;
     $node->is_new = TRUE;
     node_object_prepare($node);
     // Populate properties that are set by node_object_prepare().
@@ -127,6 +145,8 @@ class FeedsNodeProcessor extends FeedsProcessor {
    * Validates a node.
    */
   protected function entityValidate($entity) {
+    parent::entityValidate($entity);
+
     if (!isset($entity->uid) || !is_numeric($entity->uid)) {
        $entity->uid = $this->config['author'];
     }
@@ -244,9 +264,23 @@ class FeedsNodeProcessor extends FeedsProcessor {
       // See feeds_node_insert().
       $target_node->feeds['suppress_import'] = TRUE;
     }
+    if (substr($target_element, 0, 13) == 'feeds_source_') {
+      foreach ($target_node->feeds as $key => $feed) {
+        if ($target_element == 'feeds_source_' . $key) {
+          $class = get_class(feeds_importer($id)->fetcher);
+          $target_node->feeds[$key][$class]['source'] = $value;
+        }
+      }
+    }
     switch ($target_element) {
       case 'created':
         $target_node->created = feeds_to_unixtime($value, REQUEST_TIME);
+        break;
+      case 'changed':
+        // The 'changed' value will be set on the node in feeds_node_presave().
+        // This is because node_save() always overwrites this value (though
+        // before invoking hook_node_presave()).
+        $target_node->feeds_item->node_changed = feeds_to_unixtime($value, REQUEST_TIME);
         break;
       case 'user_name':
         if ($user = user_load_by_name($value)) {
@@ -302,6 +336,10 @@ class FeedsNodeProcessor extends FeedsProcessor {
     $targets['created'] = array(
       'name' => t('Published date'),
       'description' => t('The UNIX time when a node has been published.'),
+    );
+    $targets['changed'] = array(
+      'name' => t('Updated date'),
+      'description' => t('The Unix timestamp when a node has been last updated.'),
     );
     $targets['promote'] = array(
       'name' => t('Promoted to front page'),
@@ -360,14 +398,17 @@ class FeedsNodeProcessor extends FeedsProcessor {
         case 'nid':
           $nid = db_query("SELECT nid FROM {node} WHERE nid = :nid", array(':nid' => $value))->fetchField();
           break;
+
         case 'title':
           $nid = db_query("SELECT nid FROM {node} WHERE title = :title AND type = :type", array(':title' => $value, ':type' => $this->bundle()))->fetchField();
           break;
       }
-      if (isset($this->config['content_type']) && $ids = feeds_get_importer_ids($this->config['content_type'])) {
+      if (isset($this->config['content_type']) &&
+        $ids = feeds_get_importer_ids($this->config['content_type'])) {
         foreach ($ids as $id) {
           if ($target == 'feeds_source_' . $id) {
-            $nid = db_query("SELECT fs.feed_nid FROM {node} n JOIN {feeds_source} fs ON n.nid = fs.feed_nid WHERE fs.id = :id AND fs.source = :source", array(':id' => $id, ':source' => $value))->fetchField();
+            $nid = db_query("SELECT fs.feed_nid FROM {node} n JOIN {feeds_source} fs ON n.nid = fs.feed_nid WHERE fs.id = :id AND fs.source = :source",
+              array(':id' => $id, ':source' => $value))->fetchField();
           }
         }
       }

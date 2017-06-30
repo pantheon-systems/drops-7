@@ -58,7 +58,7 @@ function eck__entity_type__menu() {
  */
 function eck__entity_type__list() {
   $path = eck__entity_type__path();
-  $header = array(t('Name'), array('data' => t('Operations'), 'colspan' => '1'));
+  $header = array(t('Entity type'), array('data' => t('Operations'), 'colspan' => '1'));
   $rows = array();
 
   $entity_types = EntityType::loadAll();

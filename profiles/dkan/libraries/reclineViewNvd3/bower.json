@@ -34,6 +34,7 @@
     "csv.js": "https://github.com/okfn/csv.js.git#976b61384a1808eb464aca5876e5ea46c98deaee",
     "spectrum": "~1.8.0",
     "recline.backend.cartodb": "https://raw.githubusercontent.com/starsinmypockets/recline-cartodb-backend-public/es6-1/bundle.js",
-    "es2sql": "~1.0.9"
+    "es2sql": "~1.0.9",
+    "numeral": "2.0.6"
   }
 }

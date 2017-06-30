@@ -6,7 +6,7 @@
  * Definition of the 'list' panel style.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('List'),
   'description' => t('Presents the panes in the form of an HTML list.'),
@@ -55,4 +55,3 @@ function panels_list_style_settings_form($style_settings) {
 
   return $form;
 }
-

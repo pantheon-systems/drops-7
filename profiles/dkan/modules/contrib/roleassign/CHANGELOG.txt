@@ -5,11 +5,16 @@ CHANGELOG for RoleAssign for Drupal 7
 roleassign 7.x-1.x-dev:
 
 
+roleassign 7.x-1.2 (2017-03-25):
+
+  Add self-evident warning to the README.txt file.
+  #2796079 by tame4tex, nicrodgers: Form ajax and Assignable roles bug.
+
+
 roleassign 7.x-1.1 (2016-06-04):
 
   #1954332: Add test to check for the loss of unassignable roles.
   #2050711: Update README.txt to clarify the risk posed by the 'administer users' permission.
-
 
 roleassign 7.x-1.0 (2012-11-04):
 

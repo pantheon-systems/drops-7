@@ -98,10 +98,10 @@ function visualization_entity_charts_libraries_info() {
     'dependencies' => array('d3'),
     'files' => array(
       'js' => array(
-        'nv.d3.min.js',
+        'build/nv.d3.min.js',
       ),
       'css' => array(
-        'nv.d3.min.css',
+        'build/nv.d3.min.css',
       ),
     ),
   );

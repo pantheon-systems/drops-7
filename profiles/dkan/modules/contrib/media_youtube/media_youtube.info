@@ -5,12 +5,15 @@ core = 7.x
 
 dependencies[] = media_internet
 
+test_dependencies[] = media_internet (2.x)
+
+files[] = media_youtube.test
 files[] = includes/MediaYouTubeStreamWrapper.inc
 files[] = includes/MediaInternetYouTubeHandler.inc
 
-; Information added by Drupal.org packaging script on 2015-05-28
-version = "7.x-3.0"
+; Information added by Drupal.org packaging script on 2017-06-09
+version = "7.x-3.4"
 core = "7.x"
 project = "media_youtube"
-datestamp = "1432800182"
+datestamp = "1497020345"
 

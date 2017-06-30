@@ -943,7 +943,7 @@ function services_resource_build_index_query($query, $page, $fields, $parameters
   }
   if (isset($options['orderby'])) {
     foreach($options['orderby'] as $column => $sort) {
-      $query->orderBy($column, $sort);
+      $query->orderBy(db_escape_field($column), $sort);
     }
   }
 }

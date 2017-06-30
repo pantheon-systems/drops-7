@@ -96,4 +96,3 @@ function panels_pane_rounded_shadow_style_base_build($plugin, $settings, &$css, 
   ctools_stylizer_font_apply_style($css, '%style .pane-content', $settings['text_font']);
   ctools_stylizer_padding_apply_style($css, '%style', $settings['padding']);
 }
-

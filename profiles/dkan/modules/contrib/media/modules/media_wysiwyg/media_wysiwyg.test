@@ -58,9 +58,11 @@ abstract class MediaWYSIWYGTestHelper extends DrupalWebTestCase {
     );
 
     // Create the file usage markup.
+    $markup .= '<p>Intro paragraph</p>';
     for ($i = 1; $i <= $count; $i++) {
       $markup .= '<p>[[' . drupal_json_encode($data) . ']]</p>';
     }
+    $markup .= '<p>Finish paragraph</p>';
 
     return $markup;
   }
