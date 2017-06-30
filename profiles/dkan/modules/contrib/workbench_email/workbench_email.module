@@ -956,13 +956,6 @@ function workbench_email_scheme_menu_get_parents($sections) {
 function workbench_email_get_editors($role, $sections) {
   $editors = array();
 
-  $section_rids = workbench_email_get_rid_for_section_id($sections);
-
-  // Short circuit if the selected sections aren't within the current role.
-  if (!empty($section_rids) && !in_array($role->rid, $section_rids)) {
-    return $editors;
-  }
-
   // Get the editors individually specified in workbench access
   // editoral assignments by editor. Filter by the roles specified
   // in workbench notify settings.
@@ -980,6 +973,13 @@ function workbench_email_get_editors($role, $sections) {
     $editors[$record->uid]['mail'] = $record->mail;
     $editors[$record->uid]['name'] = $record->name;
     $editors[$record->uid]['roles'] = $roles;
+  }
+
+  $section_rids = workbench_email_get_rid_for_section_id($sections);
+
+  // Short circuit if the selected sections aren't within the current role.
+  if (!empty($section_rids) && !in_array($role->rid, $section_rids)) {
+    return $editors;
   }
 
   // Get all the editors specified by their role.

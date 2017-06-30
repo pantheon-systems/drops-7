@@ -3,7 +3,7 @@ core: 7.x
 api: '2'
 projects:
   eck:
-    version: 2.0-rc8
+    version: 2.0-rc9
     subdir: contrib
   geo_file_entity:
     subdir: contrib
@@ -21,11 +21,11 @@ libraries:
   chroma:
     download:
       type: file
-      url: https://github.com/gka/chroma.js/zipball/d77c2d4fbde6701dfdf003400400972284b2cae7
+      url: https://github.com/gka/chroma.js/zipball/1b311f3a45d26086eacfe2d4bae69365c1388e27
   numeral:
     download:
       type: file
-      url: https://github.com/adamwdraper/Numeral-js/zipball/a7a2dedde724ee6c74cf3370b958c06d19c54659
+      url: https://github.com/adamwdraper/Numeral-js/zipball/7de892ffb438af6e63b9c4f6aff0c9bc3932f09f
   recline_choropleth:
     download:
       type: file
@@ -38,7 +38,7 @@ libraries:
     download:
       type: git
       url: https://github.com/novus/nvd3.git
-      revision: 7ebd54ca09061022a248bec9a050a4dec93e2b28
+      tag: v1.8.5
   d3:
     download:
       type: git
@@ -66,4 +66,4 @@ libraries:
     download:
       type: git
       url: https://github.com/NuCivic/recline.view.nvd3.js.git
-      revision: 8456b415e7eb2383bedeb3e3810d52d93b24b871
+      revision: 18d75592120af4ba16f9b071ea78975b4f050fd8

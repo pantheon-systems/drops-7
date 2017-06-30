@@ -875,6 +875,46 @@ class SearchApiDbTest extends DrupalWebTestCase {
     );
     usort($results['search_api_facets']['body'], array($this, 'facetCompare'));
     $this->assertEqual($results['search_api_facets']['body'], $expected, 'Correct facets were returned for a fulltext field.');
+
+    // Regression tests for #2511860.
+    $query = $this->buildSearch();
+    $query->condition('body', 'ab xy');
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 5, 'Fulltext filters on short words do not change the result.');
+
+    $query = $this->buildSearch();
+    $query->condition('body', 'ab ab');
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 5, 'Fulltext filters on duplicate short words do not change the result.');
+
+    // Regression test for #2632426.
+    $query = $this->buildSearch();
+    $query->condition('type', 'unknown_type');
+    $query->setOption('skip result count', TRUE);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], FALSE, 'Search for unknown type returned correct result count.');
+    $this->assertEqual($results['results'], array(), 'Search for unknown type returned an empty result set.');
+
+    // Regression tests for #2566329.
+    $query = $this->buildSearch();
+    $query->condition('id', 5, '<>');
+    $facets['body'] = array(
+      'field' => 'body',
+      'limit' => 0,
+      'min_count' => 0,
+      'missing' => FALSE,
+    );
+    $query->setOption('search_api_facets', $facets);
+    $query->range(0, 0);
+    $results = $query->execute();
+    $expected = array(
+      array('count' => 4, 'filter' => '"test"'),
+      array('count' => 1, 'filter' => '"bar"'),
+      array('count' => 1, 'filter' => '"foobar"'),
+      array('count' => 0, 'filter' => '"foo"'),
+    );
+    usort($results['search_api_facets']['body'], array($this, 'facetCompare'));
+    $this->assertEqual($results['search_api_facets']['body'], $expected, 'Correct facets were returned for a fulltext field with minimum count 0.');
   }
 
   /**
@@ -911,8 +951,10 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $this->indexItems();
 
     $this->drupalGet('search_api_test/insert');
+    $mb_string = 'äöüßáŧæøðđŋħĸµäöüßáŧæøðđŋħĸµ';
     $this->insertItem(array(
       'id' => 6,
+      'body' => $mb_string,
       'prices' => '3.5,3.25,3.75,3.5',
     ));
 
@@ -926,6 +968,60 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $results = $query->execute();
     $this->assertEqual($results['result count'], 1, 'Filter on decimal field returned correct number of results.');
     $this->assertEqual(array_keys($results['results']), array(6), 'Filter on decimal field returned correct result.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    // Regression test for #2616804.
+    // The word has 28 Unicode characters but 56 bytes. Verify that it was still
+    // indexed correctly.
+    $query = $this->buildSearch($mb_string);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 1, 'Search for word with 28 multi-byte characters returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(6), 'Search for word with 28 multi-byte characters returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $query = $this->buildSearch($mb_string . 'ä');
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 0, 'Search for unknown word with 29 multi-byte characters returned no results.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    // Regression tests for #2745655.
+    $results = $this->buildSearch()
+      ->condition('title', NULL)
+      ->execute();
+    // "Minimum chars" is 3 at this point, so all items with no longer words in
+    // their titles will be returned, too.
+    $this->assertEqual($results['result count'], 4, 'Search for items without title returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(3, 4, 5, 6), 'Search for items without title returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $results = $this->buildSearch()
+      ->condition('title', NULL, '<>')
+      ->execute();
+    $this->assertEqual($results['result count'], 2, 'Search for items with title returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2), 'Search for items with title returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    // Regression tests for #2795245.
+    // Make sure changing a field's type from something else to "text" works
+    // correctly.
+    $index->options['fields']['type']['type'] = 'text';
+    $index->save();
+    search_api_index_items($index);
+
+    $results = $this->buildSearch()->condition('type', NULL)->execute();
+    $this->assertEqual($results['result count'], 2, 'Search for items without type returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(3, 6), 'Search for items without type returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $results = $this->buildSearch()->condition('type', NULL, '<>')->execute();
+    $this->assertEqual($results['result count'], 4, 'Search for items with type returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2, 4, 5), 'Search for items with type returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
     $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
   }
 

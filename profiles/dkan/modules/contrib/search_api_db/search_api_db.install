@@ -11,7 +11,8 @@ function search_api_db_uninstall() {
  * Implements hook_update_dependencies().
  */
 function search_api_db_update_dependencies() {
-  // This update should run after primary IDs have been changed to machine names in the framework.
+  // This update should run after primary IDs have been changed to machine names
+  // in the framework.
   $dependencies['search_api_db'][7101] = array(
     'search_api' => 7102,
   );
@@ -19,8 +20,7 @@ function search_api_db_update_dependencies() {
 }
 
 /**
- * Re-arranges the $server->options['indexes'] array to be keyed by machine_name
- * instead of by id.
+ * Replace numeric index IDs with machine names in the server options.
  */
 function search_api_db_update_7101() {
   $query = db_select('search_api_server', 's');
@@ -56,7 +56,7 @@ function search_api_db_update_7101() {
 }
 
 /**
- * Solves index problems with umlauts, accented characters, etc. on MySQL servers.
+ * Solve index problems with non-ASCII characters on MySQL servers.
  */
 function search_api_db_update_7102() {
   global $databases;
@@ -83,7 +83,7 @@ function search_api_db_update_7102() {
 }
 
 /**
- * Changes date fields from int to big int.
+ * Change date fields from int to big int.
  *
  * The purpose is to support historical dates.
  */
@@ -253,7 +253,7 @@ function search_api_db_update_7106() {
             'not null' => TRUE,
             'default' => 0,
           );
-          // Add new field and poplate data.
+          // Add new field and populate data.
           $connection->schema()->addField($field['table'], 'score_int', $spec);
           $connection->update($field['table'])
             ->expression('score_int', 'score * 1000')
@@ -262,6 +262,51 @@ function search_api_db_update_7106() {
           $connection->schema()->dropField($field['table'], 'score');
           $connection->schema()->changeField($field['table'], 'score_int', 'score', $spec);
           break;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Eliminates the use of low-standard hashes.
+ */
+function search_api_db_update_7107() {
+  $spec = array(
+    'description' => "The name of the field in which the token appears, or a base-64 encoded sha-256 hash of the field.",
+    'not null' => TRUE,
+    'type' => 'varchar',
+    'length' => 255,
+  );
+
+  $server_options = db_select('search_api_server', 's')
+    ->fields('s', array('id', 'options'))
+    ->condition('class', 'search_api_db_service')
+    ->execute()
+    ->fetchAllKeyed();
+
+  foreach ($server_options as $id => $options) {
+    $options = unserialize($options);
+
+    if (!empty($options['indexes'])) {
+      foreach ($options['indexes'] as $index_id => $fields) {
+        $text_table = NULL;
+
+        foreach ($fields as $field_id => $field) {
+          if (search_api_is_text_type($field['type'])) {
+            $text_table = $field['table'];
+            if (strlen($field_id) > 255) {
+              db_update($text_table)
+                ->fields(array('field_name' => drupal_hash_base64($field_id)))
+                ->condition('field_name', md5($field_id))
+                ->execute();
+            }
+          }
+        }
+
+        // If there is a text table for this index, update its description.
+        if ($text_table) {
+          db_change_field($text_table, 'field_name', 'field_name', $spec);
         }
       }
     }

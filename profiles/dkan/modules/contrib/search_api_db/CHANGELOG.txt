@@ -1,3 +1,29 @@
+Search API Database Search 1.6 (2017-02-23):
+--------------------------------------------
+- #2840261 by alan-ps, drunken monkey: Fixed usage of outdated hash functions.
+- #2844192 by drunken monkey: Fixed switching field boost from zero to other
+  value.
+- #2566329 by drunken monkey: Fixed calculation of fulltext facets.
+- #2848199 by renat, drunken monkey: Fixed code style issues and a typo in the
+  .install file.
+- #2841169 by trrroy, drunken monkey: Fixed problems with giant scores in DB
+  backend.
+- #2795245 by drunken monkey: Fixed changing of a field's type to "Fulltext".
+- #2807111 by SpadXIII, drunken monkey: Added performance improvements for
+  multi-field autocompletion.
+- #2775627 by cosolom, drunken monkey: Fixed altering of all search-related DB
+  queries.
+- #2745655 by drunken monkey: Fixed "not empty" condition on fulltext fields.
+- #2717393 by drunken monkey: Fixed altering of database query for creating a
+  temporary table.
+- #2446741 by drunken monkey: Fixed partial matching on MS SQL Server.
+- #2616804 by drunken monkey, mfb: Fixed indexing of words with multi-byte
+  characters.
+- #2632426 by drunken monkey: Fixed "results" key sometimes missing in search
+  results.
+- #2621430 by SpaghettiBolognese: Added "random sorting" feature.
+- #2511860 by drunken monkey: Fixed error when search for multiple short words.
+
 Search API Database Search 1.5 (2015-08-30):
 --------------------------------------------
 - #2469547 by drunken monkey: Fixed facets on fulltext fields.

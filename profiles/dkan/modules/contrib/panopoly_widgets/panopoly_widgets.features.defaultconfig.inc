@@ -25,6 +25,13 @@ function panopoly_widgets_defaultconfig_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'media_wysiwyg_alignment';
+  $strongarm->value = 0;
+  $export['media_wysiwyg_alignment'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'media_wysiwyg_default_render';
   $strongarm->value = 'field_attach';
   $export['media_wysiwyg_default_render'] = $strongarm;

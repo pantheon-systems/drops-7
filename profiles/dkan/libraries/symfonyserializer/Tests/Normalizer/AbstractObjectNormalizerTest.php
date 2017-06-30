@@ -26,9 +26,6 @@ class AbstractObjectNormalizerTest extends TestCase
         $this->assertSame('baz', $normalizedData->baz);
     }
 
-    /**
-     * @group legacy
-     */
     public function testInstantiateObjectDenormalizer()
     {
         $data = array('foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz');
@@ -76,7 +73,7 @@ class AbstractObjectNormalizerDummy extends AbstractObjectNormalizer
         return in_array($attribute, array('foo', 'baz'));
     }
 
-    public function instantiateObject(array &$data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes, $format = null)
+    public function instantiateObject(array &$data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes, string $format = null)
     {
         return parent::instantiateObject($data, $class, $context, $reflectionClass, $allowedAttributes, $format);
     }

@@ -35,7 +35,7 @@ function panels_page_wizard_add_layout(&$form, &$form_state) {
     '#value' => '</fieldset>',
   );
 
-//  $form_state['cache'] = FALSE;
+  // $form_state['cache'] = FALSE;.
 }
 
 /**
@@ -52,7 +52,6 @@ function panels_page_wizard_add_content(&$form, &$form_state) {
 
   // Panels provides this caching mechanism to make it easy to use the
   // wizard to cache the display.
-
   $cache = panels_edit_cache_get('panels_page_wizard:' . $form_state['plugin']['name']);
 
   $form_state['renderer'] = panels_get_renderer_handler('editor', $cache->display);
@@ -68,14 +67,14 @@ function panels_page_wizard_add_content(&$form, &$form_state) {
 }
 
 /**
- * Add content form submit handler
+ * Add content form submit handler.
  *
  * This is not a proper submit handler, it is meant to be called by a form's
  * submit handler to handle submission.
  */
 function panels_page_wizard_add_content_submit(&$form, &$form_state) {
   // Call the normal panels edit form submit to make sure values are stored
-  // on the display
+  // on the display.
   panels_edit_display_form_submit($form, $form_state);
   $cache = &$form_state['wizard cache'];
 
@@ -83,4 +82,3 @@ function panels_page_wizard_add_content_submit(&$form, &$form_state) {
   $cache->display = &$form_state['display'];
   unset($cache->display_cache);
 }
-

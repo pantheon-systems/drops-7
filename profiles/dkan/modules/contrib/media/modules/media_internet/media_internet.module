@@ -111,6 +111,7 @@ function media_internet_get_providers() {
  */
 function media_internet_get_provider($embed_string) {
   foreach (media_internet_get_providers() as $class_name => $nothing) {
+    module_load_include('inc', $nothing['module'], 'includes/' . $class_name);
     $p = new $class_name($embed_string);
     if ($p->claim($embed_string)) {
       return $p;

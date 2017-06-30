@@ -36,4 +36,13 @@ class FeedsOPMLParser extends FeedsParser {
       ),
     ) + parent::getMappingSources();
   }
+
+  /**
+   * Overrides FeedsParser::providesSourceTitle().
+   *
+   * This parser supports retrieving a title from the source.
+   */
+  public function providesSourceTitle() {
+    return TRUE;
+  }
 }

@@ -1,6 +1,9 @@
 <?php
 
-// Plugin definition
+/**
+ * @file
+ * Plugin definition.
+ */
 $plugin = array(
   'title' => t('Three column 33/34/33 stacked'),
   'category' => t('Columns: 3'),
@@ -12,6 +15,6 @@ $plugin = array(
     'left' => t('Left side'),
     'middle' => t('Middle column'),
     'right' => t('Right side'),
-    'bottom' => t('Bottom')
+    'bottom' => t('Bottom'),
   ),
 );

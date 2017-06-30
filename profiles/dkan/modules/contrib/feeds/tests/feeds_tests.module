@@ -34,6 +34,11 @@ function feeds_tests_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['testing/feeds/nodes.csv'] = array(
+    'page callback' => 'feeds_tests_nodes',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -58,6 +63,33 @@ function feeds_tests_theme() {
       'template' => 'feeds-tests-files-empty',
     ),
   );
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function feeds_tests_node_load($nodes) {
+  // Eventually keep track of nodes that get loaded.
+  if (variable_get('feeds_track_node_loads', FALSE)) {
+    $loads = variable_get('feeds_loaded_nodes', array());
+    $loads = array_merge($loads, array_keys($nodes));
+    variable_set('feeds_loaded_nodes', $loads);
+  }
+}
+
+/**
+ * Implements hook_cron_queue_alter().
+ *
+ * Changes runtime limit for feeds_source_import queue.
+ *
+ * @see FeedsFileFetcherTestCase::testRemoveFileAfterImportInBackground()
+ * @see FeedsFileHTTPTestCase::testImportSourceWithMultipleCronRuns()
+ */
+function feeds_tests_cron_queue_info_alter(&$queues) {
+  $feeds_source_import_queue_time = variable_get('feeds_tests_feeds_source_import_queue_time', FALSE);
+  if ($feeds_source_import_queue_time && isset($queues['feeds_source_import'])) {
+    $queues['feeds_source_import']['time'] = $feeds_source_import_queue_time;
+  }
 }
 
 /**
@@ -155,6 +187,53 @@ function feeds_tests_files_empty() {
 }
 
 /**
+ * Page callback. Generates a test feed and simulates last-modified.
+ *
+ * This is used to test the following:
+ * - Ensure that the source is not refetched on a second import when the
+ *   source did not change.
+ * - Ensure that the source *is* refetched on a second import when the
+ *   source *did* change.
+ *
+ * @see FeedsFileHTTPTestCase::testHttpRequestUsingFileCache()
+ * @see FeedsFileHTTPTestCase::testSourceCaching()
+ * @see FeedsFileHTTPTestCase::testChangedSource()
+ * @see FeedsFileHTTPTestCase::testImportSourceWithMultipleCronRuns()
+ */
+function feeds_tests_nodes() {
+  if (variable_get('feeds_tests_nodes_changed', FALSE)) {
+    $file = 'nodes_changes2.csv';
+    $last_modified = strtotime('Sun, 30 Mar 2016 10:19:55 GMT');
+  }
+  else {
+    $file = 'nodes.csv';
+    $last_modified = strtotime('Sun, 19 Nov 1978 05:00:00 GMT');
+  }
+
+  $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : FALSE;
+  $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? stripslashes($_SERVER['HTTP_IF_NONE_MATCH']) : FALSE;
+
+  // Set header with last modified date.
+  drupal_add_http_header('Last-Modified', gmdate(DATE_RFC7231, $last_modified));
+
+  // Return 304 not modified if last modified.
+  if ($last_modified == $if_modified_since) {
+    drupal_add_http_header('Status', '304 Not Modified');
+    return;
+  }
+
+  // The following headers force validation of cache:
+  drupal_add_http_header('Expires', $last_modified);
+  drupal_add_http_header('Cache-Control', 'must-revalidate');
+  drupal_add_http_header('Content-Type', 'text/plain; charset=utf-8');
+
+  // Read actual feed from file.
+  $csv = file_get_contents(drupal_get_path('module', 'feeds') . '/tests/feeds/' . $file);
+
+  print $csv;
+}
+
+/**
  * Implements hook_feeds_processor_targets().
  */
 function feeds_tests_feeds_processor_targets($entity_type, $bundle) {
@@ -209,7 +288,7 @@ function feeds_tests_feeds_processor_targets_alter(array &$targets, $entity_type
  *
  * @see feeds_tests_feeds_processor_targets()
  */
-function feeds_tests_preprocess_callback(FeedsSource $source, $target_item, $target, array &$mapping) {
+function feeds_tests_preprocess_callback(array $target, array &$mapping) {
   $mapping['required_value'] = TRUE;
 }
 
@@ -351,6 +430,52 @@ function feeds_tests_mapper_unique(FeedsSource $source, $entity_type, $bundle, $
 }
 
 /**
+ * Implements hook_feeds_after_parse().
+ */
+function feeds_tests_feeds_after_parse(FeedsSource $source, FeedsParserResult $result) {
+  // Empties the list of items to import in case the test says that there are
+  // items in there with encoding issues. These items can not be processed
+  // during tests without having a test failure because in < PHP 5.4 that would
+  // produce the following warning:
+  //   htmlspecialchars(): Invalid multibyte sequence in argument
+  // @see FeedsCSVParserTestCase::testMbstringExtensionDisabled()
+  if (variable_get('feeds_tests_feeds_after_parse_empty_items', FALSE)) {
+    // Remove all items. No items will be processed.
+    $result->items = array();
+  }
+
+  if ($source->id == 'user_import') {
+    foreach ($result->items as &$item) {
+      if (!empty($item['roles']) && strpos($item['roles'], '|')) {
+        // Convert roles value to multiple values.
+        // @see FeedsCSVtoUsersTest::testRoleTargetWithoutRoleCreation()
+        // @see FeedsCSVtoUsersTest::testRoleTargetWithRoleCreation()
+        // @see FeedsCSVtoUsersTest::testRoleTargetWithAllowedRoles()
+        $item['roles'] = explode('|', $item['roles']);
+      }
+      if (!empty($item['rids']) && strpos($item['rids'], '|')) {
+        // Convert roles value to multiple values.
+        // @see FeedsCSVtoUsersTest::testRoleTargetRids()
+        $item['rids'] = explode('|', $item['rids']);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_feeds_after_save().
+ *
+ * @see FeedsFileFetcherTestCase::testRemoveFileAfterImportInBackground()
+ * @see FeedsFileHTTPTestCase::testImportSourceWithMultipleCronRuns()
+ */
+function feeds_tests_feeds_after_save() {
+  $sleep = variable_get('feeds_tests_feeds_after_save_sleep', FALSE);
+  if ($sleep) {
+    sleep($sleep);
+  }
+}
+
+/**
  * Helper class to ensure callbacks can be objects.
  */
 class FeedsTestsPreprocess {
@@ -360,7 +485,7 @@ class FeedsTestsPreprocess {
  *
  * @see feeds_tests_feeds_processor_targets()
  */
-  public static function callback(FeedsSource $source, $target_item, $target, array &$mapping) {
+  public static function callback(array $target, array &$mapping) {
     $mapping['required_value'] = TRUE;
   }
 

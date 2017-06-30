@@ -356,7 +356,8 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
 
     // Create a feed node.
     $edit = array(
-      'files[syndication_standalone]' => $this->absolutePath() . '/tests/feeds/drupalplanet.rss2',
+      'files[syndication_standalone]' => $this->absolutePath() .
+      '/tests/feeds/drupalplanet.rss2',
     );
     $this->drupalPost('import/syndication_standalone', $edit, 'Import');
     $this->assertText('Created 25 nodes');
@@ -424,9 +425,12 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $schemes = array('feed', 'webcal');
     $item_count = 0;
     foreach ($schemes as $scheme) {
-      $feed_url = strtr($url, array('http://' => $scheme . '://', 'https://' => $scheme . '://'));
+      $feed_url = strtr($url, array(
+        'http://' => $scheme . '://',
+        'https://' => $scheme . '://',
+      ));
 
-      $edit['feeds[' . $id  . '][FeedsHTTPFetcher][source]'] = $feed_url;
+      $edit['feeds[' . $id . '][FeedsHTTPFetcher][source]'] = $feed_url;
       $this->drupalPost('node/add/page', $edit, 'Save');
       $this->assertText('Basic page Development Seed - Technological Solutions for Progressive Organizations has been created.');
       $this->assertText('Created 10 nodes.');
@@ -548,9 +552,6 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     // Just remove the mappings rather than creating a new importer.
     $this->removeMappings('syndication', $this->getCurrentMappings('syndication'));
 
-    // Set our process limit to something simple.
-    variable_set('feeds_process_limit', 5);
-
     $this->setPlugin('syndication', 'FeedsFileFetcher');
     $this->setPlugin('syndication', 'FeedsCSVParser');
 
@@ -572,13 +573,85 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
       ),
     ));
 
-    $this->importFile('syndication', $this->absolutePath() . '/tests/feeds/many_nodes_ordered.csv');
-    $this->assertEqual(5, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+    $this->importFile('syndication', $this->absolutePath() . '/tests/feeds/many_nodes_ordered.csv', 'Schedule import');
+    $this->assertEqual(0, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+
+    // Assert that the import button is disabled.
+    $this->assertFieldDisabled('op');
+
+    // Assert that there is one import task in the queue.
+    $this->assertEqual(1, db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_import'")->fetchField());
 
     // The feed should still be scheduled because it is being processed.
     // @see https://drupal.org/node/2275893
     $this->cronRun();
     $this->assertEqual(86, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+
+    // Assert that the import button is no longer disabled.
+    $this->drupalGet('import/syndication');
+    $this->assertFieldEnabled('op');
+
+    // Assert that there are no more import tasks in the queue.
+    $this->assertEqual(0, db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_import'")->fetchField());
+  }
+
+  /**
+   * Tests clearing items in background.
+   */
+  public function testClearInBackground() {
+    // Just remove the mappings rather than creating a new importer.
+    $this->removeMappings('syndication', $this->getCurrentMappings('syndication'));
+
+    $this->setSettings('syndication', NULL, array(
+      'content_type' => '',
+    ));
+
+    $this->setPlugin('syndication', 'FeedsFileFetcher');
+    $this->setPlugin('syndication', 'FeedsCSVParser');
+
+    $this->addMappings('syndication', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+      1 => array(
+        'source' => 'GUID',
+        'target' => 'guid',
+        'unique' => TRUE,
+      ),
+    ));
+
+    // Import 86 nodes.
+    $this->importFile('syndication', $this->absolutePath() . '/tests/feeds/many_nodes_ordered.csv');
+    $this->assertEqual(86, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+
+    // Turn on "Process in background option" and turn off periodic import.
+    $this->setSettings('syndication', NULL, array(
+      'process_in_background' => TRUE,
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+
+    // Now schedule clearing in background.
+    $this->drupalPost('import/syndication/delete-items', array(), t('Schedule delete'));
+    $this->assertEqual(86, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+
+    // Assert that the delete button is disabled.
+    $this->drupalGet('import/syndication/delete-items');
+    $this->assertFieldDisabled('op');
+
+    // Assert that there is one clear task in the queue.
+    $this->assertEqual(1, db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_clear'")->fetchField());
+
+    // And run cron.
+    $this->cronRun();
+    $this->assertEqual(0, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+
+    // Assert that the delete button is no longer disabled.
+    $this->drupalGet('import/syndication/delete-items');
+    $this->assertFieldEnabled('op');
+
+    // Assert that there are no more clear tasks in the queue.
+    $this->assertEqual(0, db_query("SELECT COUNT(*) FROM {queue} WHERE name = 'feeds_source_clear'")->fetchField());
   }
 
   /**
@@ -657,6 +730,46 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
   }
 
   /**
+   * Tests if the target "changed" works as expected.
+   */
+  public function testChangedTarget() {
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array('content_type' => '', 'import_period' => FEEDS_SCHEDULE_NEVER));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+      // Borrow the timestamp value from the "created" column in the csv.
+      1 => array(
+        'source' => 'created',
+        'target' => 'changed',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content.csv');
+    $this->assertText('Created 2 nodes');
+
+    // Assert changed date of nodes.
+    $expected_values = array(
+      1 => array(
+        'changed' => 1251936720,
+      ),
+      2 => array(
+        'changed' => 1251932360,
+      ),
+    );
+    for ($i = 1; $i <= 2; $i++) {
+      $node = node_load($i);
+      $this->assertEqual($expected_values[$i]['changed'], $node->changed);
+    }
+  }
+
+  /**
    * Tests the FeedsSource::pushImport() method.
    */
   public function testPushImport() {
@@ -666,6 +779,26 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
     $raw = file_get_contents(dirname(__FILE__) . '/feeds/developmentseed.rss2');
     feeds_source('syndication', 0)->pushImport(new FeedsFetcherResult($raw));
     $this->assertEqual(10, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
+  }
+
+  /**
+   * Tests the FeedsSource::pushImport() method with a CSV file.
+   */
+  public function testPushImportWithCSV() {
+    // Attach to standalone importer and configure.
+    $this->setSettings('syndication', NULL, array('content_type' => ''));
+    $this->setPlugin('syndication', 'FeedsCSVParser');
+    $this->removeMappings('syndication', $this->getCurrentMappings('syndication'));
+    $this->addMappings('syndication', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+    ));
+
+    $raw = file_get_contents($this->absolutePath() . '/tests/feeds/many_nodes.csv');
+    feeds_source('syndication', 0)->pushImport(new FeedsFetcherResult($raw));
+    $this->assertEqual(86, db_query("SELECT COUNT(*) FROM {node}")->fetchField());
   }
 
   /**

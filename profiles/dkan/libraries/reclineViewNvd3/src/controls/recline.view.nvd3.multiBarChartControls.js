@@ -13,11 +13,15 @@ this.recline.View = this.recline.View || {};
                   '<label for="control-chart-stagger-labels">' +
                     '<input type="checkbox" id="control-chart-stagger-labels" {{#options.staggerLabels}}checked{{/options.staggerLabels}}/> Stagger Labels' +
                   '</label>' +
+                  '<a class="help" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" ' +
+                  'title="Stagger Labels" data-content="Alternate the vertical position of labels if the spacing is tight along the x-axis."><i class="fa fa-question-circle-o" aria-hidden="true"></i></a>' +
                 '</div>' +
                 '<div class="form-group checkbox">' +
                   '<label for="control-chart-stacked">' +
                     '<input type="checkbox" id="control-chart-stacked" {{#options.stacked}}checked{{/options.stacked}}/> Stacked' +
                   '</label>' +
+                  '<a class="help" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" ' +
+                  'title="Stack series display" data-content="Allow users to switch between Grouped and Stacked mode."><i class="fa fa-question-circle-o" aria-hidden="true"></i></a>' +
                 '</div>' +
               '</fieldset>',
     events: function(){

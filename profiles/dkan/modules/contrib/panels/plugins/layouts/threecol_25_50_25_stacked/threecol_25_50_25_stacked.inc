@@ -1,6 +1,9 @@
 <?php
 
-// Plugin definition
+/**
+ * @file
+ * Plugin definition.
+ */
 $plugin = array(
   'title' => t('Three column 25/50/25 stacked'),
   'category' => t('Columns: 3'),

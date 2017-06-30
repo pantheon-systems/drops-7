@@ -10,7 +10,7 @@
 /**
  * Implements hook_hook_info().
  *
- * hook_hook_info() doesn't work for field related hooks.
+ * Unfortunately hook_hook_info() does not work for field related hooks.
  * See http://drupal.org/node/977052
  */
 function double_field_hook_info() {
@@ -18,6 +18,19 @@ function double_field_hook_info() {
     'group' => 'feeds',
   );
   return $hooks;
+}
+
+/**
+ * Implements hook_i18n_string_info().
+ */
+function double_field_i18n_string_info() {
+  $groups['double_field'] = array(
+    'title' => t('Double field'),
+    'description' => t('Translatable Double field settings.'),
+    'format' => FALSE,
+    'list' => TRUE,
+  );
+  return $groups;
 }
 
 /**
@@ -310,7 +323,16 @@ function double_field_field_presave($entity_type, $entity, $field, $instance, $l
 }
 
 /**
- * Implements hook_field_field_update_instance().
+ * Implements hook_field_create_instance().
+ */
+function double_field_field_create_instance($instance) {
+  if (module_exists('i18n_string')) {
+    double_field_i18n_strings_update($instance);
+  }
+}
+
+/**
+ * Implements hook_field_update_instance().
  */
 function double_field_field_update_instance($instance, $prior_instance) {
   // Update widget settings when widget type has been changed.
@@ -318,6 +340,62 @@ function double_field_field_update_instance($instance, $prior_instance) {
     $instance['widget']['settings'] = field_info_widget_settings($instance['widget']['type']);
     field_update_instance($instance);
   }
+
+  if (module_exists('i18n_string')) {
+    double_field_i18n_strings_update($instance);
+  }
+}
+
+/**
+ * Update/create translation sources for a given field instance.
+ */
+function double_field_i18n_strings_update($instance) {
+
+  // Collect keys of all translatable settings.
+  foreach (array('first', 'second') as $subfield) {
+    $widget_prefix = "widget-settings-$subfield-";
+    $i18n_keys[] = $widget_prefix . 'general-prefix';
+    $i18n_keys[] = $widget_prefix . 'general-suffix';
+    $i18n_keys[] = $widget_prefix . 'checkbox-on_value';
+    $i18n_keys[] = $widget_prefix . 'checkbox-off_value';
+    $i18n_keys[] = $widget_prefix . 'textfield-placeholder';
+    $i18n_keys[] = $widget_prefix . 'textarea-placeholder';
+    $i18n_keys[] = $widget_prefix . 'select-allowed_values';
+    if (isset($instance['display'])) {
+      foreach ($instance['display'] as $display_name => $display) {
+        $formatter_prefix = "display-$display_name-settings-";
+        $i18n_keys[] = $formatter_prefix . $subfield . '-prefix';
+        $i18n_keys[] = $formatter_prefix . $subfield . '-suffix';
+        $i18n_keys[] = $formatter_prefix . "table-$subfield-column_label";
+        $i18n_keys[] = $formatter_prefix . "table-number_column_label";
+      }
+    }
+  }
+
+  foreach ($i18n_keys as $i18n_key) {
+    $parents = explode('-', $i18n_key);
+    if ($value = drupal_array_get_nested_value($instance, $parents)) {
+      i18n_string_update('double_field:' . double_field_i18n_strings_prefix($instance) . ':' . $i18n_key, $value);
+    }
+  }
+
+}
+
+/**
+ * Returns a unique prefix for each field instance.
+ */
+function double_field_i18n_strings_prefix($instance) {
+  return $instance['entity_type'] . '-' . $instance['bundle'] . '-' . $instance['field_name'];
+}
+
+/**
+ * Translates double field settings.
+ *
+ * @see i18n_string_translate()
+ */
+function double_field_i18n_strings_translate($context, $string) {
+  return function_exists('i18n_string_translate') ?
+    i18n_string_translate('double_field:' . $context, $string) : $string;
 }
 
 /**
@@ -437,12 +515,10 @@ function double_field_field_widget_settings_form($field, $instance) {
           '#element_validate' => array('double_field_validate_number'),
         );
         $form[$subfield]['checkbox']['off_value'] = array(
-          // '#type' => 'textfield',
           '#type' => 'hidden',
           '#title' => t('Off value'),
           '#default_value' => $settings[$subfield]['checkbox']['off_value'],
           '#subfield_settings' => $field['settings'][$subfield],
-          // '#element_validate' => array('double_field_validate_number'),
         );
         if ($field['settings'][$subfield]['type'] == 'varchar') {
           $form[$subfield]['checkbox']['on_value']['#maxlength'] = $field['settings'][$subfield]['maxlength'];
@@ -564,8 +640,9 @@ function double_field_allowed_values_setting_validate($element, &$form_state) {
  * Implements hook_field_widget_form().
  */
 function double_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-
   $settings = $instance['widget']['settings'];
+  $i18n_context_prefix = double_field_i18n_strings_prefix($instance) . ':widget-settings-';
+
   $subfield_types = explode('_&_', $instance['widget']['type']);
   $double_field = array(
     '#theme_wrappers' => array('container', 'form_element'),
@@ -573,10 +650,21 @@ function double_field_field_widget_form(&$form, &$form_state, $field, $instance,
   );
 
   foreach (array('first', 'second') as $key => $subfield) {
+
+    $prefix = double_field_i18n_strings_translate(
+      $i18n_context_prefix . $subfield . '-general-prefix',
+      $settings[$subfield]['general']['prefix']
+    );
+
+    $suffix = double_field_i18n_strings_translate(
+      $i18n_context_prefix . $subfield . '-general-suffix',
+      $settings[$subfield]['general']['suffix']
+    );
+
     $double_field[$subfield] = array(
       '#type' => $subfield_types[$key],
-      '#prefix' => $settings[$subfield]['general']['prefix'],
-      '#suffix' => $settings[$subfield]['general']['suffix'],
+      '#prefix' => $prefix,
+      '#suffix' => $suffix,
       '#default_value' => isset($items[$delta][$subfield]) ? $items[$delta][$subfield] : NULL,
       '#title' => $instance['label'],
       '#title_display' => 'invisible',
@@ -596,20 +684,35 @@ function double_field_field_widget_form(&$form, &$form_state, $field, $instance,
       case 'textfield':
         $double_field[$subfield]['#size'] = $settings[$subfield]['textfield']['size'];
         if ($settings[$subfield]['textfield']['placeholder']) {
-          $double_field[$subfield]['#attributes']['placeholder'] = $settings[$subfield]['textfield']['placeholder'];
+          $double_field[$subfield]['#attributes']['placeholder'] = double_field_i18n_strings_translate(
+            $i18n_context_prefix . $subfield . '-textfield-placeholder',
+            $settings[$subfield]['textfield']['placeholder']
+          );
         }
         break;
 
       case 'checkbox':
         $double_field[$subfield]['#element_validate'][] = 'double_field_checkbox_to_storage';
-        $double_field[$subfield]['#on_value'] = $settings[$subfield]['checkbox']['on_value'];
+        $double_field[$subfield]['#on_value'] = double_field_i18n_strings_translate(
+          $i18n_context_prefix . $subfield . '-checkbox-on_value',
+          $settings[$subfield]['checkbox']['on_value']
+        );
+        $double_field[$subfield]['#off_value'] = double_field_i18n_strings_translate(
+          $i18n_context_prefix . $subfield . '-checkbox-off_value',
+          $settings[$subfield]['checkbox']['off_value']
+        );
         $double_field[$subfield]['#off_value'] = $settings[$subfield]['checkbox']['off_value'];
         $double_field[$subfield]['#default_value'] = $double_field[$subfield]['#default_value'] == $double_field[$subfield]['#on_value'];
         break;
 
       case 'select':
+        $allowed_values = double_field_i18n_strings_translate(
+          $i18n_context_prefix . $subfield . '-select-allowed_values',
+          $settings[$subfield]['select']['allowed_values']
+        );
+
         $label = $settings[$subfield]['general']['required'] ? t('- Select a value -') : t('- None -');
-        $double_field[$subfield]['#options'] = array('' => $label) + $settings[$subfield]['select']['allowed_values'];
+        $double_field[$subfield]['#options'] = array('' => $label) + $allowed_values;
         break;
 
       case 'textarea':
@@ -617,7 +720,10 @@ function double_field_field_widget_form(&$form, &$form_state, $field, $instance,
         $double_field[$subfield]['#rows'] = $settings[$subfield]['textarea']['rows'];
         $double_field[$subfield]['#resizable'] = $settings[$subfield]['textarea']['resizable'];
         if ($settings[$subfield]['textarea']['placeholder']) {
-          $double_field[$subfield]['#attributes']['placeholder'] = $settings[$subfield]['textarea']['placeholder'];
+          $double_field[$subfield]['#attributes']['placeholder'] = double_field_i18n_strings_translate(
+            $i18n_context_prefix . $subfield . '-textarea-placeholder',
+            $settings[$subfield]['textarea']['placeholder']
+          );
         }
         break;
     }
@@ -936,6 +1042,7 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
   }
 
   $settings = $display['settings'];
+  $i18n_context_prefix = double_field_i18n_strings_prefix($instance) . ':display-default-settings-';
   $element = array();
 
   foreach ($items as $delta => $item) {
@@ -946,16 +1053,27 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
       else {
         // Show value pair of allowed values on instead of their key value.
         if (isset($instance['widget']['settings'][$subfield]['select']['allowed_values'])) {
-          $allowed_values = $instance['widget']['settings'][$subfield]['select']['allowed_values'];
+          $allowed_values = double_field_i18n_strings_translate(
+            double_field_i18n_strings_prefix($instance) . ':widget-settings-' . $subfield . '-select-allowed_values',
+            $instance['widget']['settings'][$subfield]['select']['allowed_values']
+          );
           $item[$subfield] = empty($allowed_values[$item[$subfield]]) ?
-          $item[$subfield] : $allowed_values[$item[$subfield]];
+            $item[$subfield] : $allowed_values[$item[$subfield]];
         }
         $item[$subfield] = $settings[$subfield]['format'] == '_none' ?
-        check_plain($item[$subfield]) : check_markup($item[$subfield], $settings[$subfield]['format']);
+          check_plain($item[$subfield]) : check_markup($item[$subfield], $settings[$subfield]['format']);
 
         // Do not display prefix and suffix for empty subfields.
         if ($item[$subfield] != '') {
-          $item[$subfield] = $settings[$subfield]['prefix'] . $item[$subfield] . $settings[$subfield]['suffix'];
+          $prefix = double_field_i18n_strings_translate(
+            $i18n_context_prefix . $subfield . '-prefix',
+            $settings[$subfield]['prefix']
+          );
+          $suffix = double_field_i18n_strings_translate(
+            $i18n_context_prefix . $subfield . '-suffix',
+            $settings[$subfield]['suffix']
+          );
+          $item[$subfield] = $prefix . $item[$subfield] . $suffix;
         }
       }
     }
@@ -1037,10 +1155,19 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
       $header = array();
       if ($settings['table']['first']['column_label'] || $settings['table']['second']['column_label']) {
         if ($settings['table']['number_column']) {
-          $header[] = $settings['table']['number_column_label'];
+          $header[] = double_field_i18n_strings_translate(
+            $i18n_context_prefix . 'table-number_column_label',
+            $settings['table']['number_column_label']
+          );
         }
-        $header[] = $settings['table']['first']['column_label'];
-        $header[] = $settings['table']['second']['column_label'];
+
+        foreach (array('first', 'second') as $subfield) {
+          $header[] = double_field_i18n_strings_translate(
+            $i18n_context_prefix . "table-$subfield-column_label",
+            $settings['table'][$subfield]['column_label']
+          );
+        }
+
       }
 
       // Display all values in a single element.
@@ -1156,7 +1283,7 @@ function theme_double_field_dialog($vars) {
   drupal_add_library('system', 'ui.dialog');
   drupal_add_js('jQuery(document).ready(function(){jQuery(".double-field-dialog").dialog();});', 'inline');
   $output = '';
-  foreach (array_reverse($vars['element']['#items']) as $delta => $item) {
+  foreach (array_reverse($vars['element']['#items']) as $item) {
     $output .= '<div class="double-field-dialog" title="' . $item['first'] . '">' . $item['second'] . '</div>';
   }
   return $output;

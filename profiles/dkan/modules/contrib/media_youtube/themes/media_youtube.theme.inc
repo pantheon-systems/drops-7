@@ -13,10 +13,25 @@ function media_youtube_preprocess_media_youtube_video(&$variables) {
   // Build the URI.
   $wrapper = file_stream_wrapper_get_instance_by_uri($variables['uri']);
   $parts = $wrapper->get_parameters();
-  $variables['video_id'] = check_plain($parts['v']);
+  if (isset($parts['v'])) {
+    $variables['embed_type'] = 'video';
+    $variables['video_id'] = check_plain($parts['v']);
+    $embed_path = '/embed/' . $variables['video_id'];
+  }
+  elseif (isset($parts['l'])) {
+    $variables['embed_type'] = 'playlist';
+    $variables['video_id'] = check_plain($parts['l']);
+    $embed_path = '/embed/videoseries';
+  }
 
-  // Make the file object available.
-  $file_object = file_uri_to_object($variables['uri']);
+  // Checked existing function.
+  if(function_exists('file_uri_to_object')) {
+    // Make the file object available.
+    $file_object = file_uri_to_object($variables['uri']);
+  }
+  else {
+    $file_object = media_youtube_file_uri_to_object($variables['uri']);
+  }
 
   // Parse options and build the query string. Only add the option to the query
   // array if the option value is not default. Be careful, depending on the
@@ -85,19 +100,19 @@ function media_youtube_preprocess_media_youtube_video(&$variables) {
     }
   }
 
+  if ($variables['options']['protocol_specify']) {
+    $protocol = $variables['options']['protocol'];
+  }
+  else {
+    $protocol = 'https:';
+  }
+
   // Non-query options.
   if ($variables['options']['nocookie']) {
     $url_base = 'youtube-nocookie.com';
   }
   else {
     $url_base = 'youtube.com';
-  }
-
-  if ($variables['options']['protocol_specify']) {
-    $protocol = $variables['options']['protocol'];
-  }
-  else {
-    $protocol = '';
   }
 
   // Add some options as their own template variables.
@@ -123,6 +138,31 @@ function media_youtube_preprocess_media_youtube_video(&$variables) {
   // to use for the alternative content.
   $variables['alternative_content'] = t('Video of @title', array('@title' => $variables['title']));
 
+  if (isset($parts['l'])) {
+    $query['list'] = $parts['l'];
+  }
   // Build the iframe URL with options query string.
-  $variables['url'] = url($protocol . '//www.' . $url_base . '/embed/' . $variables['video_id'], array('query' => $query, 'external' => TRUE));
+  $variables['url'] = url($protocol . '//www.' . $url_base . $embed_path, array('query' => $query, 'external' => TRUE));
+}
+
+/**
+ * Helping function.
+ */
+function media_youtube_file_uri_to_object($uri) {
+  $uri = file_stream_wrapper_uri_normalize($uri);
+  $files = entity_load('file', FALSE, array('uri' => $uri));
+  $file = !empty($files) ? reset($files) : FALSE;
+  if (!$file) {
+    global $user;
+    $file = new stdClass();
+    $file->uid = $user->uid;
+    $file->filename = basename($uri);
+    $file->uri = $uri;
+    $file->filemime = file_get_mimetype($uri);
+    // This is gagged because some uris will not support it.
+    $file->filesize = @filesize($uri);
+    $file->timestamp = REQUEST_TIME;
+    $file->status = FILE_STATUS_PERMANENT;
+  }
+  return $file;
 }

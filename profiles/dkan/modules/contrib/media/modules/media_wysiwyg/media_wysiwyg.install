@@ -76,6 +76,7 @@ function media_wysiwyg_uninstall() {
   variable_del('media_wysiwyg_wysiwyg_override_field_types');
   variable_del('media_wysiwyg_use_link_text_for_filename');
   variable_del('media_wysiwyg_alignment');
+  variable_del('media_wysiwyg_external_link');
 }
 
 /**
@@ -240,5 +241,13 @@ function media_wysiwyg_update_7205() {
  */
 function media_wysiwyg_update_7206() {
   $message = t('If you would like to be able to align your embedded media (left, right, or center), go to /admin/config/media/browser and check "Provide alignment option when embedding media", and save the settings.');
+  drupal_set_message($message, 'warning', TRUE);
+}
+
+/**
+ * Notify upgraders that there's optional media linking functionality that needs to be enabled.
+ */
+function media_wysiwyg_update_7207() {
+  $message = t('If you would like to be able to link images to a page got o /admin/config/media/browser and check "Provide the ability to link media to pages", and save the settings.');
   drupal_set_message($message, 'warning', TRUE);
 }

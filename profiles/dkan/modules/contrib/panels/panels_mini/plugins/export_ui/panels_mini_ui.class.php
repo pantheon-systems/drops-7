@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @file
+ */
 class panels_mini_ui extends ctools_export_ui {
   function init($plugin) {
     parent::init($plugin);
@@ -62,23 +65,28 @@ class panels_mini_ui extends ctools_export_ui {
   }
 
   function list_build_row($item, &$form_state, $operations) {
-    // Set up sorting
+    // Set up sorting.
     switch ($form_state['values']['order']) {
       case 'disabled':
         $this->sorts[$item->name] = empty($item->disabled) . $item->admin_title;
         break;
+
       case 'title':
         $this->sorts[$item->name] = $item->admin_title;
         break;
+
       case 'name':
         $this->sorts[$item->name] = $item->name;
         break;
+
       case 'category':
         $this->sorts[$item->name] = ($item->category ? $item->category : t('Mini panels')) . $item->admin_title;
         break;
+
       case 'layout':
         $this->sorts[$item->name] = $item->display->layout . $item->admin_title;
         break;
+
       case 'storage':
         $this->sorts[$item->name] = $item->type . $item->admin_title;
         break;
@@ -115,7 +123,7 @@ class panels_mini_ui extends ctools_export_ui {
   }
 
   function edit_form(&$form, &$form_state) {
-    // Get the basic edit form
+    // Get the basic edit form.
     parent::edit_form($form, $form_state);
 
     // Set the admin title machine name length.
@@ -295,4 +303,5 @@ class panels_mini_ui extends ctools_export_ui {
     panels_edit_display_form_submit($form, $form_state);
     $form_state['item']->display = $form_state['display'];
   }
+
 }

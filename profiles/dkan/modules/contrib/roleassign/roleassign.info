@@ -7,9 +7,9 @@ files[] = roleassign.test
 configure = admin/people/permissions/roleassign
 
 
-; Information added by Drupal.org packaging script on 2016-06-04
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2017-03-25
+version = "7.x-1.2"
 core = "7.x"
 project = "roleassign"
-datestamp = "1465042440"
+datestamp = "1490464686"
 

@@ -29,6 +29,7 @@ function radix_drush_command() {
       'drush radix "My Theme"' => 'Creates a Radix subtheme called "My Theme", using the default options.',
       'drush radix "My Theme" --machine_name=my_theme' => 'Creates a Radix subtheme called "My Theme" with a specific machine name.',
       'drush radix "My Theme" --bootswatch=cerulean' => 'Creates a Radix subtheme called "My Theme" using Cerulean Bootswatch theme.',
+      'drush radix "My Theme" --kit="https://github.com/radix-kit-KITNAME/archive/BRANCH.zip"' => 'Creates a Radix subtheme called "My Theme" using a remote kit source. See http://docs.radixtheme.org/en/latest/drupal/#custom-kit.',
     ),
   );
 
@@ -132,11 +133,14 @@ function drush_radix($name = NULL, $machine_name = NULL) {
     )));
     if ($filepath = drush_download_file($kit_url)) {
       $filename = basename($filepath);
-      $dirname =  basename($filepath, '.zip');
 
       // Decompress the zip archive.
-      drush_tarball_extract($filename, $dirname, TRUE);
-      $kit_path = getcwd() . '/' . $dirname . '/radix-kit-' . $kit_name . '-master';
+      $files = drush_tarball_extract($filename, getcwd(), TRUE);
+
+      // Re-index array.
+      // This fixes an issue where a .tag.gz tarball returns a non-zero array.
+      $files = array_values($files);
+      $kit_path = getcwd() . '/' . $files[0];
 
       // Set working directory back to the previous working directory.
       chdir($current_dir);
@@ -190,6 +194,13 @@ function drush_radix($name = NULL, $machine_name = NULL) {
     'package.json',
     'scss/' . $kit . '.style.scss',
   );
+
+  // Also make alterations in the include files.
+  $include_files = array_diff(scandir($subtheme_path . '/includes'), array('..', '.'));
+  foreach ($include_files as $include) {
+    $files_to_replace[] = 'includes/' . $include;
+  }
+
   foreach ($files_to_replace as $file_to_replace) {
     drush_op('radix_file_str_replace', $subtheme_path . '/' . $file_to_replace, array_keys($alterations), $alterations);
   }

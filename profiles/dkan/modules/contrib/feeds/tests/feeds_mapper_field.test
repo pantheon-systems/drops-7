@@ -230,4 +230,253 @@ class FeedsMapperFieldTestCase extends FeedsMapperTestCase {
     $this->assertNoText('delta_number_float_label');
   }
 
+  /**
+   * Tests text field validation.
+   */
+  public function testTextFieldValidation() {
+    // Create a field with settings to validate.
+    $max_length = 5;
+    $typename = $this->createContentType(array(), array(
+      'alpha' => array(
+        'type' => 'text',
+        'settings' => array(
+          'field[settings][max_length]' => $max_length,
+        ),
+      ),
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->setSettings('csv', 'FeedsNodeProcessor', array('bundle' => $typename));
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+      1 => array(
+        'source' => 'alpha',
+        'target' => 'field_alpha',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content.csv');
+    $this->assertText('Created 1 node');
+    $this->assertText('Failed importing 1 node.');
+    $this->assertText("Field validation errors in item 'Ut wisi enim ad minim veniam'");
+    $this->assertText('alpha_text_label: the text may not be longer than 5 characters.');
+  }
+
+  /**
+   * Tests text field validation for nodes without a title.
+   *
+   * The error message should refer the GUID of an item if the entity has no
+   * label.
+   */
+  public function testTextFieldValidationWithoutNodeTitle() {
+    // Create a field with settings to validate.
+    $max_length = 5;
+    $typename = $this->createContentType(array(), array(
+      'alpha' => array(
+        'type' => 'text',
+        'settings' => array(
+          'field[settings][max_length]' => $max_length,
+        ),
+      ),
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->setSettings('csv', 'FeedsNodeProcessor', array('bundle' => $typename));
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'guid',
+        'target' => 'guid',
+      ),
+      1 => array(
+        'source' => 'alpha',
+        'target' => 'field_alpha',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content.csv');
+    $this->assertText('Created 1 node');
+    $this->assertText('Failed importing 1 node.');
+    $this->assertText("Field validation errors in item '2'");
+    $this->assertText('alpha_text_label: the text may not be longer than 5 characters.');
+  }
+
+  /**
+   * Tests text field validation for taxonomy terms.
+   */
+  public function testTextFieldValidationForTaxonomyTerms() {
+    // Create vocabulary.
+    $edit = array(
+      'name' => 'Addams vocabulary',
+      'machine_name' => 'addams',
+    );
+    $this->drupalPost('admin/structure/taxonomy/add', $edit, t('Save'));
+
+    // Create a field with settings to validate.
+    field_create_field(array(
+      'field_name' => 'field_alpha',
+      'type' => 'text',
+      'settings' => array(
+        'max_length' => 5,
+      ),
+    ));
+    field_create_instance(array(
+      'field_name' => 'field_alpha',
+      'entity_type' => 'taxonomy_term',
+      'label' => 'alpha_text_label',
+      'bundle' => 'addams',
+      'widget' => array(
+        'type' => 'textfield',
+      ),
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->setPlugin('csv', 'FeedsTermProcessor');
+    $this->setSettings('csv', 'FeedsTermProcessor', array('bundle' => 'addams'));
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'name',
+      ),
+      1 => array(
+        'source' => 'alpha',
+        'target' => 'field_alpha',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content.csv');
+    $this->assertText('Created 1 taxonomy term.');
+    $this->assertText('Failed importing 1 taxonomy term.');
+    $this->assertText("Field validation errors in item 'Ut wisi enim ad minim veniam'");
+    $this->assertText('alpha_text_label: the text may not be longer than 5 characters.');
+  }
+
+  /**
+   * Tests text field validation for users.
+   */
+  public function testTextFieldValidationForUsers() {
+    // Create a field with settings to validate.
+    field_create_field(array(
+      'field_name' => 'field_alpha',
+      'type' => 'text',
+      'settings' => array(
+        'max_length' => 5,
+      ),
+    ));
+    field_create_instance(array(
+      'field_name' => 'field_alpha',
+      'entity_type' => 'user',
+      'label' => 'alpha_text_label',
+      'bundle' => 'user',
+      'widget' => array(
+        'type' => 'textfield',
+      ),
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->setPlugin('csv', 'FeedsUserProcessor');
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'name',
+      ),
+      1 => array(
+        'source' => 'alpha',
+        'target' => 'field_alpha',
+      ),
+    ));
+
+    // Import CSV file. Users should fail to import because mail address is
+    // missing.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content.csv');
+    $this->assertText('Failed importing 2 users.');
+    $this->assertText('User name missing or email not valid.');
+    $this->assertText("Field validation errors in item 'Ut wisi enim ad minim veniam'");
+    $this->assertText('alpha_text_label: the text may not be longer than 5 characters.');
+  }
+
+  /**
+   * Tests cardinality validation.
+   */
+  public function testCardinalityValidation() {
+    // Create a field with settings to validate.
+    $cardinality = 6;
+    $typename = $this->createContentType(array(), array(
+      'alpha' => array(
+        'type' => 'text',
+        'instance_settings' => array(
+          'field[cardinality]' => $cardinality,
+        ),
+      ),
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Syndication', 'syndication');
+    $this->setSettings('syndication', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('syndication', 'FeedsHTTPFetcher');
+    $this->setPlugin('syndication', 'FeedsSyndicationParser');
+    $this->setSettings('syndication', 'FeedsNodeProcessor', array('bundle' => $typename));
+    $this->addMappings('syndication', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+      1 => array(
+        'source' => 'tags',
+        'target' => 'field_alpha',
+      ),
+    ));
+
+    // Import RSS.
+    // Three items of the RSS contain more than 6 categories. Because categories
+    // are mapped to field_alpha and field_alpha may only hold 6 values, they
+    // should fail to import.
+    $edit = array(
+      'feeds[FeedsHTTPFetcher][source]' => $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds') . '/tests/feeds/developmentseed.rss2',
+    );
+    $this->drupalPost('import/syndication', $edit, 'Import');
+    $this->assertText('Created 7 nodes');
+    $this->assertText('Failed importing 3 nodes.');
+    $this->assertText("Field validation errors in item 'Open Atrium Translation Workflow: Two Way Translation Updates'");
+    $this->assertText("Field validation errors in item 'Mapping Innovation at the World Bank with Open Atrium'");
+    $this->assertText("Field validation errors in item 'Open Data for Microfinance: The New MIXMarket.org'");
+    $this->assertText('alpha_text_label: this field cannot hold more than 6 values.');
+  }
+
 }

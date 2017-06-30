@@ -1169,7 +1169,10 @@ function open_data_schema_map_tokens_alter(array &$replacements, array $context)
     $replacements['[node:field-frequency]'] = open_data_schema_map_accrual_iso_8601_value($replacements['[node:field-frequency]']);
   }
   if (isset($replacements['[node:field-data-dictionary]'])) {
-    $replacements['[node:field-data-dictionary]'] = check_url($context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value']);
+    //Check if is a url.
+    $url = check_url($context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value']);
+    $output = valid_url($url, TRUE) ? $url : $context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value'];
+    $replacements['[node:field-data-dictionary]'] = $output;
   }
 }
 

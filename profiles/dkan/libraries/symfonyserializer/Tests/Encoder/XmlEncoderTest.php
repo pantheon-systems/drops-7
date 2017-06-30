@@ -244,6 +244,68 @@ XML;
         $this->assertEquals('foo', $this->encoder->decode($source, 'xml'));
     }
 
+    public function testDecodeBigDigitAttributes()
+    {
+        $source = <<<XML
+<?xml version="1.0"?>
+<document index="182077241760011681341821060401202210011000045913000000017100">Name</document>
+XML;
+
+        $this->assertSame(array('@index' => 182077241760011681341821060401202210011000045913000000017100, '#' => 'Name'), $this->encoder->decode($source, 'xml'));
+    }
+
+    public function testDecodeNegativeIntAttribute()
+    {
+        $source = <<<XML
+<?xml version="1.0"?>
+<document index="-1234">Name</document>
+XML;
+
+        $this->assertSame(array('@index' => -1234, '#' => 'Name'), $this->encoder->decode($source, 'xml'));
+    }
+
+    public function testDecodeFloatAttribute()
+    {
+        $source = <<<XML
+<?xml version="1.0"?>
+<document index="-12.11">Name</document>
+XML;
+
+        $this->assertSame(array('@index' => -12.11, '#' => 'Name'), $this->encoder->decode($source, 'xml'));
+    }
+
+    public function testDecodeNegativeFloatAttribute()
+    {
+        $source = <<<XML
+<?xml version="1.0"?>
+<document index="-12.11">Name</document>
+XML;
+
+        $this->assertSame(array('@index' => -12.11, '#' => 'Name'), $this->encoder->decode($source, 'xml'));
+    }
+
+    public function testNoTypeCastAttribute()
+    {
+        $source = <<<XML
+<?xml version="1.0"?>
+<document a="018" b="-12.11">
+    <node a="018" b="-12.11"/>
+</document>
+XML;
+
+        $data = $this->encoder->decode($source, 'xml', array('xml_type_cast_attributes' => false));
+        $expected = array(
+            '@a' => '018',
+            '@b' => '-12.11',
+            'node' => array(
+                '@a' => '018',
+                '@b' => '-12.11',
+                '#' => '',
+            ),
+        );
+        $this->assertSame($expected, $data);
+    }
+
     public function testEncode()
     {
         $source = $this->getXmlSource();

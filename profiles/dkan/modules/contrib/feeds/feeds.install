@@ -55,11 +55,44 @@ function feeds_requirements($phase) {
 }
 
 /**
-  * Implement hook_uninstall()
-  */
+ * Implements hook_install().
+ */
+function feeds_install() {
+  // Activate our custom cache handler for the HTTP cache.
+  variable_set('cache_class_cache_feeds_http', 'FeedsHTTPCache');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
 function feeds_uninstall() {
-  variable_del('http_request_timeout');
+  variable_del('cache_class_cache_feeds_http');
+  variable_del('cache_flush_cache_feeds_http');
+  variable_del('default_feeds_importer');
+  variable_del('feeds_debug');
+  variable_del('feeds_http_file_cache_dir');
+  variable_del('feeds_importer_class');
+  variable_del('feeds_in_progress_dir');
+  variable_del('feeds_library_dir');
+  variable_del('feeds_never_use_curl');
+  variable_del('feeds_process_limit');
   variable_del('feeds_reschedule');
+  variable_del('feeds_source_class');
+  variable_del('feeds_sync_cache_feeds_http_interval');
+  variable_del('feeds_sync_cache_feeds_http_last_check');
+  variable_del('feeds_use_mbstring');
+  variable_del('http_request_timeout');
+
+  // Remove Feeds related jobs from job scheduler.
+  $names = db_or()
+    ->condition('name', 'feeds_source_import')
+    ->condition('name', 'feeds_source_clear')
+    ->condition('name', 'feeds_source_expire')
+    ->condition('name', 'feeds_push_unsubscribe');
+
+  db_delete('job_schedule')
+    ->condition($names)
+    ->execute();
 }
 
 /**
@@ -704,4 +737,24 @@ function feeds_update_7212() {
     $schema['description'] = 'Cache table for Feeds downloads.';
     db_create_table('cache_feeds_http', $schema);
   }
+}
+
+/**
+ * Set cache class for Feeds HTTP cache.
+ */
+function feeds_update_7213() {
+  // Perform a registry rebuild so the system hopefully discovers the
+  // FeedsHTTPCache class.
+  if (function_exists('registry_rebuild')) {
+    registry_rebuild();
+  }
+
+  // Abort when the FeedsHTTPCache class is not yet found to avoid fatal errors
+  // in _cache_get_object().
+  if (!class_exists('FeedsHTTPCache')) {
+    throw new DrupalUpdateException('Setting the cache class for the cache_feeds_http bin failed because the FeedsHTTPCache class could not be found. Please rebuild the Drupal class registry and perform database updates again.');
+  }
+
+  // Activate our custom cache handler for the HTTP cache.
+  variable_set('cache_class_cache_feeds_http', 'FeedsHTTPCache');
 }

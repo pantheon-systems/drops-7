@@ -19,17 +19,21 @@ use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\Mapping\AttributeMetadataInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\SerializerAwareInterface;
+use Symfony\Component\Serializer\SerializerAwareTrait;
 
 /**
  * Normalizer implementation.
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-abstract class AbstractNormalizer extends SerializerAwareNormalizer implements NormalizerInterface, DenormalizerInterface, SerializerAwareInterface
+abstract class AbstractNormalizer implements NormalizerInterface, DenormalizerInterface, SerializerAwareInterface
 {
+    use SerializerAwareTrait;
+
     const CIRCULAR_REFERENCE_LIMIT = 'circular_reference_limit';
     const OBJECT_TO_POPULATE = 'object_to_populate';
     const GROUPS = 'groups';
+    const ATTRIBUTES = 'attributes';
 
     /**
      * @var int
@@ -240,13 +244,13 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
             return false;
         }
 
-        if (isset($context['attributes'][$attribute])) {
+        if (isset($context[self::ATTRIBUTES][$attribute])) {
             // Nested attributes
             return true;
         }
 
-        if (isset($context['attributes']) && is_array($context['attributes'])) {
-            return in_array($attribute, $context['attributes'], true);
+        if (isset($context[self::ATTRIBUTES]) && is_array($context[self::ATTRIBUTES])) {
+            return in_array($attribute, $context[self::ATTRIBUTES], true);
         }
 
         return true;
@@ -301,21 +305,8 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      *
      * @throws RuntimeException
      */
-    protected function instantiateObject(array &$data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes/*, $format = null*/)
+    protected function instantiateObject(array &$data, $class, array &$context, \ReflectionClass $reflectionClass, $allowedAttributes, string $format = null)
     {
-        if (func_num_args() >= 6) {
-            $format = func_get_arg(5);
-        } else {
-            if (__CLASS__ !== get_class($this)) {
-                $r = new \ReflectionMethod($this, __FUNCTION__);
-                if (__CLASS__ !== $r->getDeclaringClass()->getName()) {
-                    @trigger_error(sprintf('Method %s::%s() will have a 6th `$format = null` argument in version 4.0. Not defining it is deprecated since 3.2.', get_class($this), __FUNCTION__), E_USER_DEPRECATED);
-                }
-            }
-
-            $format = null;
-        }
-
         if (
             isset($context[static::OBJECT_TO_POPULATE]) &&
             is_object($context[static::OBJECT_TO_POPULATE]) &&
@@ -338,7 +329,7 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
 
                 $allowed = $allowedAttributes === false || in_array($paramName, $allowedAttributes);
                 $ignored = !$this->isAllowedAttribute($class, $paramName, $format, $context);
-                if (method_exists($constructorParameter, 'isVariadic') && $constructorParameter->isVariadic()) {
+                if ($constructorParameter->isVariadic()) {
                     if ($allowed && !$ignored && (isset($data[$key]) || array_key_exists($key, $data))) {
                         if (!is_array($data[$paramName])) {
                             throw new RuntimeException(sprintf('Cannot create an instance of %s from serialized data because the variadic parameter %s can only accept an array.', $class, $constructorParameter->name));
@@ -396,8 +387,8 @@ abstract class AbstractNormalizer extends SerializerAwareNormalizer implements N
      */
     protected function createChildContext(array $parentContext, $attribute)
     {
-        if (isset($parentContext['attributes'][$attribute])) {
-            $parentContext['attributes'] = $parentContext['attributes'][$attribute];
+        if (isset($parentContext[self::ATTRIBUTES][$attribute])) {
+            $parentContext[self::ATTRIBUTES] = $parentContext[self::ATTRIBUTES][$attribute];
         }
 
         return $parentContext;

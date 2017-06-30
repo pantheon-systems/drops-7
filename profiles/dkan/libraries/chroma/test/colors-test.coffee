@@ -19,14 +19,14 @@ vows
             'but hue is defined': (topic) -> assert topic[0]?
 
         'toString':
-            topic: chroma '#adff2f'
-            'explicit': (topic) -> assert.equal topic.toString(), 'greenyellow'
-            'implicit': (topic) -> assert.equal ''+topic, 'greenyellow'
-            'implicit2': (topic) -> assert.equal String(topic), 'greenyellow'
+            topic: chroma 'greenyellow'
+            'explicit': (topic) -> assert.equal topic.toString(), '#adff2f'
+            'implicit': (topic) -> assert.equal ''+topic, '#adff2f'
+            'implicit2': (topic) -> assert.equal String(topic), '#adff2f'
 
         'constructing numeric color':
-            topic: chroma.num 0xff0000
-            'color is red': (topic) -> assert.equal topic.name(), 'red'
+            topic: chroma.num 0xadff2f
+            'color is red': (topic) -> assert.equal topic.name(), 'greenyellow'
             'alpha is 100%': (topic) -> assert.equal topic.alpha(), 1
 
         'normalize hue':
@@ -66,5 +66,12 @@ vows
             'gray': (topic) -> assert.isNaN topic[1].hcl()[0]
             'white': (topic) -> assert.isNaN topic[2].hcl()[0]
             
+        'lab-rgb precision':
+            topic: [74, 24, 78],
+            'to_rgb_to_lab': (topic) -> assert.deepEqual chroma.rgb(chroma.lab(topic).rgb(false)).lab().map(round(3)), topic
+
+        'cmyk-rgb precision':
+            topic: [0, 1, 1, 0.02],
+            'to_rgb_to_cmyk': (topic) -> assert.deepEqual chroma.rgb(chroma.cmyk(topic).rgb(false)).cmyk().map(round(3)), topic
 
     .export(module)

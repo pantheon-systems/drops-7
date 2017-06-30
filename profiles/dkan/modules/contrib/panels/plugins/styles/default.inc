@@ -5,7 +5,7 @@
  * Definition of the 'default' panel style.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('No style'),
   'description' => t('The default panel rendering style; displays each pane with a separator.'),
@@ -24,4 +24,3 @@ function theme_panels_default_style_render_region($vars) {
 //  $output .= '</div>';
   return $output;
 }
-

@@ -12,9 +12,9 @@ files[] = tests/double_field_field.inc
 files[] = tests/double_field_widget.inc
 files[] = tests/double_field_formatter.inc
 
-; Information added by Drupal.org packaging script on 2015-02-18
-version = "7.x-2.4"
+; Information added by Drupal.org packaging script on 2017-03-23
+version = "7.x-2.5"
 core = "7.x"
 project = "double_field"
-datestamp = "1424237290"
+datestamp = "1490269990"
 

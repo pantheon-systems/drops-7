@@ -1,3 +1,26 @@
+7.x-1.45, 2017-05-11
+-------------------
+- Update of Media to 2.1 for security issue DRUPAL-SA-CONTRIB-2017-044.
+- Add option to Submenu widget to control how many levels down to expand
+  children, when using the "Expand all children" option.
+
+7.x-1.44, 2017-04-13
+-------------------
+- Update to Media 2.0.
+- Incorrect image style used in WYSIWYG on updated sites.
+
+7.x-1.43, 2017-02-22
+-------------------
+- No changes since last release.
+
+7.x-1.42, 2017-02-17
+-------------------
+- Update Media module to 7.x-2.0-rc3.
+- Spotlight title display problems at mobile width.
+- Use linkit on path for "Make title a link" for all FPP widgets.
+- Use linkit on Spotlight.
+- URLs truncated on Image widgets.
+
 Panopoly Widgets 7.x-1.41, 2016-11-17
 ------------------------------
 - Switch Image widget to use Media Browser.

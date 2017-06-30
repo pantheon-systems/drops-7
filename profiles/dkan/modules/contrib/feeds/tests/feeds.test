@@ -90,6 +90,7 @@ class FeedsWebTestCase extends DrupalWebTestCase {
     $permissions[] = 'administer users';
     $permissions[] = 'administer feeds';
     $permissions[] = 'administer filters';
+    $permissions[] = 'administer fields';
 
     // Create an admin user and log in.
     $this->admin_user = $this->drupalCreateUser($permissions);
@@ -261,7 +262,7 @@ class FeedsWebTestCase extends DrupalWebTestCase {
     // Create a feed node.
     $edit = array(
       'title' => $title,
-      'feeds[' . $id  . '][FeedsHTTPFetcher][source]' => $feed_url,
+      'feeds[FeedsHTTPFetcher][source]' => $feed_url,
     );
     $this->drupalPost('node/add/' . str_replace('_', '-', $content_type), $edit, 'Save');
     $this->assertText('has been created.');
@@ -335,7 +336,7 @@ class FeedsWebTestCase extends DrupalWebTestCase {
       $feed_url = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds') . '/tests/feeds/developmentseed.rss2';
     }
     $edit = array(
-      'feeds[FeedsHTTPFetcher][source]' => $feed_url,
+      'feeds[' . $id  . '][FeedsHTTPFetcher][source]' => $feed_url,
     );
     $nid = $this->drupalPost('import/' . $id, $edit, 'Import');
 
@@ -358,14 +359,48 @@ class FeedsWebTestCase extends DrupalWebTestCase {
 
   /**
    * Import a file through the import form. Assumes FeedsFileFetcher in place.
+   *
+   * @param string $id
+   *   The ID of the importer.
+   * @param string $file
+   *   The absolute path to the file.
+   * @param string $submit
+   *   (optional) The button to press.
+   *   Defaults to the button "Import".
    */
-  public function importFile($id, $file) {
-
+  public function importFile($id, $file, $submit = NULL) {
     $this->assertTrue(file_exists($file), 'Source file exists');
     $edit = array(
       "files[$id]" => $file,
     );
-    $this->drupalPost('import/' . $id, $edit, 'Import');
+    if (empty($submit)) {
+      $submit = 'Import';
+    }
+    $this->drupalPost('import/' . $id, $edit, $submit);
+  }
+
+  /**
+   * Asserts that the given number of nodes exist.
+   *
+   * @param int $expected_node_count
+   *   The expected number of nodes in the node table.
+   * @param string $message
+   *   (optional) The message to assert.
+   */
+  protected function assertNodeCount($expected_node_count, $message = '') {
+    if (!$message) {
+      $message = '@expected nodes have been created (actual: @count).';
+    }
+
+    $node_count = db_select('node')
+      ->fields('node', array())
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+    $this->assertEqual($expected_node_count, $node_count, format_string($message, array(
+      '@expected' => $expected_node_count,
+      '@count' => $node_count,
+    )));
   }
 
   /**
@@ -429,17 +464,49 @@ class FeedsWebTestCase extends DrupalWebTestCase {
     return $this->assertTrue($fields && $found, $message, $group);
   }
 
-   /**
-    * Adds mappings to a given configuration.
-    *
-    * @param string $id
-    *   ID of the importer.
-    * @param array $mappings
-    *   An array of mapping arrays. Each mapping array must have a source and
-    *   an target key and can have a unique key.
-    * @param bool $test_mappings
-    *   (optional) TRUE to automatically test mapping configs. Defaults to TRUE.
-    */
+  /**
+   * Asserts that a field in the current page is enabled.
+   *
+   * @param string $name
+   *   Name of field to assert.
+   * @param string $message
+   *   (optional) A message to display with the assertion.
+   *
+   * @return bool
+   *   TRUE on pass, FALSE on fail.
+   */
+  protected function assertFieldEnabled($name, $message = '') {
+    $elements = $this->xpath($this->constructFieldXpath('name', $name));
+    return $this->assertTrue(isset($elements[0]) && empty($elements[0]['disabled']), $message ? $message : t('Field %name is enabled.', array('%name' => $name)), t('Browser'));
+  }
+
+  /**
+   * Asserts that a field in the current page is disabled.
+   *
+   * @param string $name
+   *   Name of field to assert.
+   * @param string $message
+   *   (optional) A message to display with the assertion.
+   *
+   * @return bool
+   *   TRUE on pass, FALSE on fail.
+   */
+  protected function assertFieldDisabled($name, $message = '') {
+    $elements = $this->xpath($this->constructFieldXpath('name', $name));
+    return $this->assertTrue(isset($elements[0]) && !empty($elements[0]['disabled']), $message ? $message : t('Field %name is disabled.', array('%name' => $name)), t('Browser'));
+  }
+
+  /**
+   * Adds mappings to a given configuration.
+   *
+   * @param string $id
+   *   ID of the importer.
+   * @param array $mappings
+   *   An array of mapping arrays. Each mapping array must have a source and
+   *   an target key and can have a unique key.
+   * @param bool $test_mappings
+   *   (optional) TRUE to automatically test mapping configs. Defaults to TRUE.
+   */
   public function addMappings($id, array $mappings, $test_mappings = TRUE) {
 
     $path = "admin/structure/feeds/$id/mapping";
@@ -468,7 +535,14 @@ class FeedsWebTestCase extends DrupalWebTestCase {
         // Set some settings.
         $edit = array();
         foreach ($config as $key => $value) {
-          $edit["config[$i][settings][$key]"] = $value;
+          if (is_array($value)) {
+            foreach ($value as $subkey => $subvalue) {
+              $edit["config[$i][settings][$key][$subkey]"] = $subvalue;
+            }
+          }
+          else {
+            $edit["config[$i][settings][$key]"] = $value;
+          }
         }
         $this->drupalPostAJAX(NULL, $edit, 'mapping_settings_update_' . $i);
         $this->drupalPost(NULL, array(), t('Save'));
@@ -583,12 +657,23 @@ class FeedsWebTestCase extends DrupalWebTestCase {
 
   /**
    * Copies a directory.
+   *
+   * @param string $source
+   *   The path of the source directory, from which files should be copied.
+   * @param string $dest
+   *   The path of the destination directory, where files should be copied to.
+   * @param array $mapping
+   *   (optional) The files to rename in the process.
+   *   To skip files from being copied, map filename to FALSE.
    */
-  public function copyDir($source, $dest) {
+  public function copyDir($source, $dest, array $mapping = array()) {
     $result = file_prepare_directory($dest, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
     foreach (@scandir($source) as $file) {
       if (is_file("$source/$file")) {
-        $file = file_unmanaged_copy("$source/$file", "$dest/$file");
+        $new_name = isset($mapping[$file]) ? $mapping[$file] : $file;
+        if ($new_name !== FALSE) {
+          $file = file_unmanaged_copy("$source/$file", "$dest/$new_name");
+        }
       }
     }
   }

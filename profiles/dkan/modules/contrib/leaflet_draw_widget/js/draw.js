@@ -293,7 +293,7 @@
 
     } else if (L.Polygon && (layer instanceof L.Polygon)) {
       type = 'Polygon';
-      latlngs = LatLngsToCoords(layer._latlngs, 1);
+      latlngs = LatLngsToCoords(layer._latlngs[0], 1);
       return JSON.stringify({"type": type, "coordinates": [latlngs]});
 
     } else if (L.Polyline && (layer instanceof L.Polyline)) {

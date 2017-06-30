@@ -4,7 +4,7 @@
  * @file
  * Tests for Double Field module.
  *
- * Some field settings are initializated by random values.
+ * Some field settings are initialized by random values.
  * So it is recommended to run these tests several times.
  * @code
  * for i in {1..10};
@@ -80,6 +80,7 @@ class DoubleFieldTestCase extends DrupalWebTestCase {
       array(
         'access administration pages',
         'administer content types',
+        'administer fields',
         'administer nodes',
         'access content overview',
         'administer site configuration',

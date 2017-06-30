@@ -206,6 +206,7 @@ function i18n_panels_panels_delete_display($did) {
  *
  * This function must not rely on the passed $renderer parameter. The parameter
  * could be empty because this function is reused in i18n_ctools_render_alter().
+ *
  * @todo Check if a drupal_alter() in panels_display::get_title() is applicable.
  *
  * @see i18n_ctools_render_alter()
@@ -234,6 +235,7 @@ function i18n_panels_panels_pre_render(&$display, $renderer) {
  *
  * Under some circumstances the title of the panel page is set before
  * hook_panels_pre_render() is fired. Such cases can be handled with this hook.
+ *
  * @todo Check if a drupal_alter() in panels_display::get_title() is applicable.
  */
 function i18n_ctools_render_alter(&$info, $page, $context) {
@@ -250,7 +252,6 @@ function i18n_ctools_render_alter(&$info, $page, $context) {
  * Implements hook_ctools_plugin_post_alter().
  *
  * Register some translatable configuration settings for plugins.
- *
  */
 function i18n_panels_ctools_plugin_post_alter(&$plugin, $plugin_type_info) {
   if ($plugin_type_info['type'] == 'content_types') {
@@ -322,7 +323,7 @@ function i18n_panels_i18n_string_list($group) {
         if (empty($pane->uuid)) {
           // Fetch exported uuid and validate it.
           $uuid = str_replace('new-', '', $pane->pid);
-          if (!panels_uuid_is_valid($uuid)) {
+          if (!ctools_uuid_is_valid($uuid)) {
             drupal_set_message(t('The pane %pane has no uuid, please resave or re-export it.', array('%pane' => $pane->pid)), 'warning');
             continue;
           }
@@ -366,7 +367,7 @@ function _18n_panels_is_exported_panels_display($display) {
  *
  * @todo I bet there are better ways to solve this mess.
  *
- * @param boolean $reset
+ * @param bool $reset
  *   Reset the static cache.
  *
  * @return array

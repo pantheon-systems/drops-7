@@ -5,7 +5,7 @@
  * Definition of the 'rounded_corners' panel style.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('Rounded corners'),
   'description' => t('Presents the panes or panels with a rounded corner box around them'),

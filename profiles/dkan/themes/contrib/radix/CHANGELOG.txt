@@ -1,3 +1,17 @@
+Radix 7.x-3.6, 2017-02-01
+-------------------
+- Add styles to Radix base theme.
+- Add support for Yarn package manager.
+- Update the default browserSyncProxy.
+- Update bower packages in the default kit.
+- Update devDependencies in default kit.
+- Allow kits to be created from any branch.
+- Fix active-trail class disappears when updating to 3.0-rc4.
+- Fix call to undefined function _radix_process_element (Issue with include files).
+- Fix unable to create sub-theme from remote source.
+- Fix search includes during drush subtheme creation.
+- Fix Sass output style option.
+
 Radix 7.x-3.5, 2016-08-03
 -------------------
 - Issue #2223365 by dsnopek, barraponto: Use input group component for Input Format Widget

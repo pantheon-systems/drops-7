@@ -4,7 +4,6 @@
  * @file
  * Contains the administrative UI for reusable layouts.
  */
-
 class panels_layouts_ui extends ctools_export_ui {
   var $lipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam egestas congue nibh, vel dictum ante posuere vitae. Cras gravida massa tempor metus eleifend sed elementum tortor scelerisque. Vivamus egestas, tortor quis luctus tristique, sem velit adipiscing risus, et tempus enim felis in massa. Morbi viverra, nisl quis rhoncus imperdiet, turpis massa vestibulum turpis, egestas faucibus nibh metus vel nunc. In hac habitasse platea dictumst. Nunc sit amet nisi quis ipsum tincidunt semper. Donec ac urna enim, et placerat arcu. Morbi eu laoreet justo. Nullam nec velit eu neque mattis pulvinar sed non libero. Sed sed vulputate erat. Fusce sit amet dui nibh.";
 
@@ -18,7 +17,7 @@ class panels_layouts_ui extends ctools_export_ui {
     // Change the item to a tab on the Panels page.
     $this->plugin['menu']['items']['list callback']['type'] = MENU_LOCAL_TASK;
 
-    // Establish a base for adding plugins
+    // Establish a base for adding plugins.
     $base = $this->plugin['menu']['items']['add'];
     // Remove the default 'add' menu item.
     unset($this->plugin['menu']['items']['add']);
@@ -27,7 +26,7 @@ class panels_layouts_ui extends ctools_export_ui {
     $this->builders = panels_get_layout_builders();
     asort($this->builders);
     foreach ($this->builders as $name => $builder) {
-      // Create a new menu item for the builder
+      // Create a new menu item for the builder.
       $item = $base;
       $item['title'] = !empty($builder['builder tab title']) ? $builder['builder tab title'] : 'Add ' . $builder['title'];
       $item['page arguments'][] = $name;
@@ -78,6 +77,8 @@ class panels_layouts_ui extends ctools_export_ui {
       $display->layout_settings = $form_state['item']->settings;
       $display->cache_key = $cache_key;
       $display->editing_layout = TRUE;
+      $display->storage_type = 'panels_layouts_ui';
+      $display->storage_id = 'panels_layouts_ui';
 
       $cache->display = $display;
       $cache->content_types = $content_types;
@@ -193,23 +194,28 @@ class panels_layouts_ui extends ctools_export_ui {
   }
 
   function list_build_row($item, &$form_state, $operations) {
-    // Set up sorting
+    // Set up sorting.
     switch ($form_state['values']['order']) {
       case 'disabled':
         $this->sorts[$item->name] = empty($item->disabled) . $item->admin_title;
         break;
+
       case 'title':
         $this->sorts[$item->name] = $item->admin_title;
         break;
+
       case 'name':
         $this->sorts[$item->name] = $item->name;
         break;
+
       case 'category':
         $this->sorts[$item->name] = ($item->category ? $item->category : t('Miscellaneous')) . $item->admin_title;
         break;
+
       case 'plugin':
         $this->sorts[$item->name] = $item->plugin;
         break;
+
       case 'storage':
         $this->sorts[$item->name] = $item->type . $item->admin_title;
         break;
@@ -242,4 +248,5 @@ class panels_layouts_ui extends ctools_export_ui {
       array('data' => t('Operations'), 'class' => array('ctools-export-ui-operations')),
     );
   }
+
 }

@@ -1137,7 +1137,9 @@ function media_get_thumbnail_preview($file, $link = FALSE, $view_mode = 'preview
  */
 function media_file_validate_types($file, $types) {
   $errors = array();
-  if (!in_array(file_get_type($file), $types)) {
+
+  $file_candidates = array_keys(file_entity_get_filetype_candidates($file));
+  if (!array_intersect($file_candidates, $types)) {
     $errors[] = t('Only the following types of files are allowed to be uploaded: %types-allowed', array('%types-allowed' => implode(', ', $types)));
   }
 
@@ -1213,23 +1215,24 @@ function media_set_browser_params() {
     //   @see hook_media_browser_params_alter()
     $params = drupal_get_query_parameters();
 
-    $insecure_settings = array(
-      'file_directory',
-      'file_extensions',
-      'max_filesize',
-      'uri_scheme',
+    // Filter out everything except a whitelist of known safe options.
+    $safe_options = array(
+      'activePlugins',
+      'fid',
+      'id',
+      'multiselect',
+      'field',
+      'options',
+      'plugins',
+      'render',
+      'types',
+      'render_multi_edit_form',
     );
+    $params = array_intersect_key($params, array_flip($safe_options));
 
-    // Filter out insecure_settings.
-    foreach(array_keys($params) as $key) {
-      if (in_array($key, $insecure_settings)) {
-        unset($params[$key]);
-      }
-    }
-
-    // Retrieve the security sensitive options from the cache.
+    // If the cache is present, use its values instead of the GET parameters.
     if (!empty($params['options']) && is_string($params['options']) && $options = cache_get('media_options:' . $params['options'], 'cache_form')) {
-      $params = array_merge($options->data, $params);
+      $params = $options->data;
     }
 
     // Transform text 'true' and 'false' to actual booleans.

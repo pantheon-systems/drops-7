@@ -1,4 +1,3 @@
-
 #panels-dnd-main .panel-flexible-edit-layout div.panels-display .pane-add-link,
 .panel-flexible-edit-layout .panel-pane {
   display: none;
@@ -54,8 +53,8 @@
   float: left;
   margin-left: -7px;
   margin-right: -6px;
-	cursor: e-resize;	/* in case col-resize isn't supported */
-	cursor: col-resize;
+  cursor: e-resize;    /* in case col-resize isn't supported */
+  cursor: col-resize;
   height: 30px;
   position: relative;
   z-index: 1;
@@ -84,4 +83,3 @@
 #panels-edit-display .helperclass {
   margin: .5em;
 }
-

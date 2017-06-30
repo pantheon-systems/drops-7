@@ -97,6 +97,7 @@
         $(document).ajaxComplete(function(e, xhr, settings) {
           if(settings.url && settings.url.search('/file/ajax/field_file') !== -1){
             var url = $('.file-widget a').prop('href');
+            var url = url.replace(/.*\/\/[^\/]*/, '');
             var source = {backend:'csv', url: url};
             sharedObject.state.set('source', source);
             msv.gotoStep(0);

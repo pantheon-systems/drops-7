@@ -397,3 +397,48 @@ function panopoly_widgets_update_7018() {
   features_revert(array('panopoly_widgets' => array('field_instance')));
 }
 
+/**
+ * Make sure the image widget disables URL truncating.
+ */
+function panopoly_widgets_update_7019() {
+  features_revert(array('panopoly_widgets' => array('field_instance')));
+}
+
+/**
+ * Attempt to clean-up from bad Media upgrade.
+ */
+function panopoly_widgets_update_7020() {
+  if (db_table_exists('media_view_mode_wysiwyg')) {
+    $wysiwyg_view_modes = db_select('media_view_mode_wysiwyg', 'vm')
+      ->fields('vm', array('type', 'view_mode'))
+      ->execute()
+      ->fetchAllKeyed();
+
+    $probably_bad_upgrade = TRUE;
+    foreach ($wysiwyg_view_modes as $file_type => $view_mode) {
+      // If the view_mode isn't the default value, then the user certainly
+      // has configured this manually.
+      if ($view_mode != 'wysiwyg') {
+        $probably_bad_upgrade = FALSE;
+        break;
+      }
+
+      // If the file displays aren't the same as the 'default' view_mode,
+      // then the user certainly has configured this manually.
+      $default_displays = file_displays($file_type, 'default');
+      $wysiwyg_displays = file_displays($file_type, 'wysiwyg');
+      if ($default_displays !== $wysiwyg_displays) {
+        $probably_bad_upgrade = FALSE;
+        break;
+      }
+
+      // Otherwise, this is probably a bad upgrade (not 100%, though).
+    }
+
+    if ($probably_bad_upgrade) {
+      // Delete all the entries from the 'media_view_mode_wysiwyg' table.
+      db_delete('media_view_mode_wysiwyg')
+        ->execute();
+    }
+  }
+}

@@ -4,7 +4,6 @@
  * @file
  * Class file to control the main Panels editor.
  */
-
 class panels_renderer_editor extends panels_renderer_standard {
 
   /**
@@ -20,8 +19,10 @@ class panels_renderer_editor extends panels_renderer_standard {
    * builder that do not actually have real content.
    */
   var $no_edit_links = FALSE;
-  // -------------------------------------------------------------------------
-  // Display edit rendering.
+  // -------------------------------------------------------------------------.
+  /**
+   * Display edit rendering.
+   */
 
   function edit() {
     $form_state = array(
@@ -119,7 +120,6 @@ class panels_renderer_editor extends panels_renderer_standard {
     $buttons = $this->get_pane_links($pane, $content_type);
 
     // Render administrative buttons for the pane.
-
     $block = new stdClass();
     if (empty($content_type)) {
       $block->title = '<em>' . t('Missing content type') . '</em>';
@@ -136,7 +136,7 @@ class panels_renderer_editor extends panels_renderer_standard {
         $settings['Panels']['RegionLock'][$pane->pid] = $pane->locks['regions'];
         drupal_add_js($settings, 'setting');
       }
-      else if ($pane->locks['type'] == 'immovable') {
+      elseif ($pane->locks['type'] == 'immovable') {
         $grabber_class = 'grab-title not-grabber';
       }
     }
@@ -163,15 +163,15 @@ class panels_renderer_editor extends panels_renderer_standard {
       $output .= '<span class="buttons">' . $buttons . '</span>';
     }
     $output .= '<span class="text" title="' . check_plain($title) . '">' . $title . '</span>';
-    $output .= '</div>'; // grabber
-
+    $output .= '</div>';
+    // Grabber.
     $output .= '<div class="panel-pane-collapsible">';
     $output .= '<div class="pane-title">' . $block->title . '</div>';
     $output .= '<div class="pane-content">' . filter_xss_admin(render($block->content)) . '</div>';
-    $output .= '</div>'; // panel-pane-collapsible
-
-    $output .= '</div>'; // panel-pane
-
+    $output .= '</div>';
+    // panel-pane-collapsible.
+    $output .= '</div>';
+    // panel-pane.
     return $output;
   }
 
@@ -360,7 +360,7 @@ class panels_renderer_editor extends panels_renderer_standard {
 
     if (user_access('administer pane access')) {
       $contexts = $this->display->context;
-      // Make sure we have the logged in user context
+      // Make sure we have the logged in user context.
       if (!isset($contexts['logged-in-user'])) {
         $contexts['logged-in-user'] = ctools_access_get_loggedin_context();
       }
@@ -408,9 +408,11 @@ class panels_renderer_editor extends panels_renderer_standard {
         case 'immovable':
           $lock_method = t('Immovable');
           break;
+
         case 'regions':
           $lock_method = t('Regions');
           break;
+
         case 'none':
         default:
           $lock_method = t('No lock');
@@ -464,7 +466,7 @@ class panels_renderer_editor extends panels_renderer_standard {
     );
 
     // Allow others to add/remove links from pane context menu.
-    // Grouped by 'top', 'style', 'visibility', 'lock', 'cache' and 'bottom'
+    // Grouped by 'top', 'style', 'visibility', 'lock', 'cache' and 'bottom'.
     drupal_alter('get_pane_links', $links, $pane, $content_type);
 
     $dropdown_links = $links['top'];
@@ -499,7 +501,6 @@ class panels_renderer_editor extends panels_renderer_standard {
 
   // -----------------------------------------------------------------------
   // Display edit AJAX callbacks and helpers.
-
   /**
    * Generate a URL path for the AJAX editor.
    */
@@ -612,7 +613,7 @@ class panels_renderer_editor extends panels_renderer_standard {
     if (!empty($content_type['top level'])) {
       $category = 'root';
     }
-    else if (isset($content_type['category'])) {
+    elseif (isset($content_type['category'])) {
       if (is_array($content_type['category'])) {
         list($category, $weight) = $content_type['category'];
       }
@@ -668,7 +669,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       }
     }
 
-    // Now sort
+    // Now sort.
     natcasesort($category_names);
     foreach ($category_names as $category => $name) {
       $output[$category] = $categories[$category];
@@ -733,17 +734,17 @@ class panels_renderer_editor extends panels_renderer_standard {
       $pane = $form_state['pane'];
       unset($this->cache->new_pane);
 
-      // Add the pane to the display
+      // Add the pane to the display.
       $this->display->add_pane($pane, $region);
       panels_edit_cache_set($this->cache);
 
-      // Tell the client to draw the pane
+      // Tell the client to draw the pane.
       $this->command_add_pane($pane);
 
       // Dismiss the modal.
       $this->commands[] = ctools_modal_command_dismiss();
     }
-    else if (!empty($form_state['cancel'])) {
+    elseif (!empty($form_state['cancel'])) {
       // If cancelling, return to the activity.
       list($category_key, $category) = $this->get_category($subtype);
       $this->ajax_select_content($region, $category_key);
@@ -786,14 +787,14 @@ class panels_renderer_editor extends panels_renderer_standard {
       'cancel callback' => 'panels_ajax_edit_pane_cancel',
     );
 
-    $output = ctools_content_form('edit', $form_info, $form_state, $content_type, $pane->subtype,  $subtype, $pane->configuration, $step);
+    $output = ctools_content_form('edit', $form_info, $form_state, $content_type, $pane->subtype, $subtype, $pane->configuration, $step);
 
     // If $rc is FALSE, there was no actual form.
     if ($output === FALSE || !empty($form_state['cancel'])) {
       // Dismiss the modal.
       $this->commands[] = ctools_modal_command_dismiss();
     }
-    else if (!empty($form_state['complete'])) {
+    elseif (!empty($form_state['complete'])) {
       // References get blown away with AJAX caching. This will fix that.
       $this->cache->display->content[$pid] = $form_state['pane'];
 
@@ -852,7 +853,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       $conf = &$this->display->cache;
       $title = t('Cache method for this display');
     }
-    else if (!empty($this->display->content[$pid])) {
+    elseif (!empty($this->display->content[$pid])) {
       $pane = &$this->display->content[$pid];
       $subtype = ctools_content_get_subtype($pane->type, $pane->subtype);
       $conf = &$pane->cache;
@@ -896,7 +897,7 @@ class panels_renderer_editor extends panels_renderer_standard {
     else {
       $this->cache->method = $form_state['method'];
       panels_edit_cache_set($this->cache);
-      // send them to next form.
+      // Send them to next form.
       return $this->ajax_cache_settings($pid);
     }
   }
@@ -917,7 +918,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       $conf = &$this->display->cache;
       $title = t('Cache settings for this display');
     }
-    else if (!empty($this->display->content[$pid])) {
+    elseif (!empty($this->display->content[$pid])) {
       $pane = &$this->display->content[$pid];
       $subtype = ctools_content_get_subtype($pane->type, $pane->subtype);
 
@@ -979,7 +980,8 @@ class panels_renderer_editor extends panels_renderer_standard {
         break;
 
       case 'region':
-        $style = isset($this->display->panel_settings[$pid]['style']) ? $this->display->panel_settings[$pid]['style'] : '-1'; // -1 signifies to use the default setting.
+        $style = isset($this->display->panel_settings[$pid]['style']) ? $this->display->panel_settings[$pid]['style'] : '-1';
+        // -1 signifies to use the default setting.
         $title = t('Panel style for region "!region"', array('!region' => $this->plugins['layout']['regions'][$pid]));
         break;
 
@@ -1032,7 +1034,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       }
 
       // If there's no settings form, just change the style and exit.
-      switch($type) {
+      switch ($type) {
         case 'display':
           $this->display->panel_settings['style'] = $form_state['style'];
           if (isset($this->display->panel_settings['style_settings']['default'])) {
@@ -1062,7 +1064,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       if ($type == 'pane') {
         $this->command_update_pane($pane);
       }
-      else if ($type == 'region') {
+      elseif ($type == 'region') {
         $this->command_update_region_links($pid);
       }
       else {
@@ -1075,7 +1077,7 @@ class panels_renderer_editor extends panels_renderer_standard {
         panels_edit_cache_set($this->cache);
       }
 
-      // send them to next form.
+      // Send them to next form.
       return $this->ajax_style_settings($type, $pid);
     }
   }
@@ -1214,11 +1216,11 @@ class panels_renderer_editor extends panels_renderer_standard {
     }
 
     // Copy settings from form state back into the cache.
-    if(!empty($form_state['values']['settings'])) {
+    if (!empty($form_state['values']['settings'])) {
       if ($type == 'pane') {
         $this->cache->display->content[$pid]->style['settings'] = $form_state['values']['settings'];
       }
-      else if($type == 'region') {
+      elseif ($type == 'region') {
         $this->cache->display->panel_settings['style_settings'][$pid] = $form_state['values']['settings'];
       }
     }
@@ -1230,7 +1232,7 @@ class panels_renderer_editor extends panels_renderer_standard {
     if ($type == 'pane') {
       $this->command_update_pane($pane);
     }
-    else if ($type == 'region') {
+    elseif ($type == 'region') {
       $this->command_update_region_links($pid);
     }
     else {
@@ -1354,12 +1356,12 @@ class panels_renderer_editor extends panels_renderer_standard {
 
     $output = ctools_modal_form_wrapper('panels_edit_add_access_test_form', $form_state);
     if (!empty($form_state['executed'])) {
-      // Set up the plugin in cache
+      // Set up the plugin in cache.
       $plugin = ctools_get_access_plugin($form_state['values']['type']);
       $this->cache->new_plugin = ctools_access_new_test($plugin);
       panels_edit_cache_set($this->cache);
 
-      // go to the next step.
+      // Go to the next step.
       return $this->ajax_access_configure_test($pid, 'add');
     }
 
@@ -1387,7 +1389,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       $pane->access['plugins'][] = $this->cache->new_plugin;
       $id = max(array_keys($pane->access['plugins']));
     }
-    else if (empty($pane->access['plugins'][$id])) {
+    elseif (empty($pane->access['plugins'][$id])) {
       ctools_modal_render(t('Error'), t('Invalid test id.'));
     }
 
@@ -1407,7 +1409,7 @@ class panels_renderer_editor extends panels_renderer_standard {
       return;
     }
 
-    // Unset the new plugin
+    // Unset the new plugin.
     if (isset($this->cache->new_plugin)) {
       unset($this->cache->new_plugin);
     }
@@ -1483,7 +1485,6 @@ class panels_renderer_editor extends panels_renderer_standard {
   //
   // These are used to make sure that child implementations can control their
   // own AJAX commands as needed.
-
   /**
    * Create a command array to redraw a pane.
    */
@@ -1527,6 +1528,7 @@ class panels_renderer_editor extends panels_renderer_standard {
   function command_update_region_links($id) {
     $this->commands[] = ajax_command_replace('.panels-region-links-' . $id, $this->get_region_links($id));
   }
+
 }
 
 /**
@@ -1559,10 +1561,9 @@ function panels_ajax_edit_pane_cancel(&$form_state) {
 }
 
 // --------------------------------------------------------------------------
-// Forms for the editor object
-
+// Forms for the editor object.
 /**
- * Choose cache method form
+ * Choose cache method form.
  */
 function panels_edit_cache_method_form($form, &$form_state) {
   ctools_form_include($form_state, 'plugins', 'panels');
@@ -1612,7 +1613,7 @@ function panels_edit_cache_method_form_submit($form, &$form_state) {
 }
 
 /**
- * Cache settings form
+ * Cache settings form.
  */
 function panels_edit_cache_settings_form($form, &$form_state) {
   ctools_form_include($form_state, 'plugins', 'panels');
@@ -1674,7 +1675,7 @@ function panels_edit_cache_settings_form_submit($form, &$form_state) {
 }
 
 /**
- * Choose style form
+ * Choose style form.
  */
 function panels_edit_style_type_form($form, &$form_state) {
   ctools_form_include($form_state, 'plugins', 'panels');
@@ -1726,7 +1727,7 @@ function panels_edit_style_type_form_submit($form, &$form_state) {
 }
 
 /**
- * Style settings form
+ * Style settings form.
  */
 function panels_edit_style_settings_form($form, &$form_state) {
   ctools_form_include($form_state, 'plugins', 'panels');
@@ -1754,7 +1755,6 @@ function panels_edit_style_settings_form($form, &$form_state) {
     '#type' => 'submit',
     '#value' => t('Save'),
   );
-
 
   // Need a cancel button since the style cache can persist and impact the wrong
   // pane (or region, or display).
@@ -2038,7 +2038,7 @@ function panels_edit_configure_access_test_form($form, &$form_state) {
 }
 
 /**
- * Validate handler for visibility rule settings
+ * Validate handler for visibility rule settings.
  */
 function panels_edit_configure_access_test_form_validate(&$form, &$form_state) {
   if (!empty($form_state['clicked_button']['#remove'])) {
@@ -2051,7 +2051,7 @@ function panels_edit_configure_access_test_form_validate(&$form, &$form_state) {
 }
 
 /**
- * Submit handler for visibility rule settings
+ * Submit handler for visibility rule settings.
  */
 function panels_edit_configure_access_test_form_submit(&$form, &$form_state) {
   if (!empty($form_state['clicked_button']['#remove'])) {
@@ -2069,4 +2069,3 @@ function panels_edit_configure_access_test_form_submit(&$form, &$form_state) {
   }
   $form_state['test']['not'] = !empty($form_state['values']['not']);
 }
-

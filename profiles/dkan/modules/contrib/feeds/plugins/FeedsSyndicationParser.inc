@@ -76,6 +76,23 @@ class FeedsSyndicationParser extends FeedsParser {
         'name' => t('Geo Locations'),
         'description' => t('An array of geographic locations with a name and a position.'),
       ),
+      'source:url' => array(
+        'name' => t('Source: URL'),
+        'description' => t('The URL of the RSS channel that the item came from.'),
+      ),
+      'source:title' => array(
+        'name' => t('Source: Title'),
+        'description' => t('The title of the RSS channel that the item came from.'),
+      ),
     ) + parent::getMappingSources();
+  }
+
+  /**
+   * Overrides FeedsParser::providesSourceTitle().
+   *
+   * This parser supports retrieving a title from the source.
+   */
+  public function providesSourceTitle() {
+    return TRUE;
   }
 }

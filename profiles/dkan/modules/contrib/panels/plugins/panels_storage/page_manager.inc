@@ -5,7 +5,7 @@
  * Provides a panels_storage plugin for page_manager.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'access callback' => 'page_manager_panels_storage_access',
 );

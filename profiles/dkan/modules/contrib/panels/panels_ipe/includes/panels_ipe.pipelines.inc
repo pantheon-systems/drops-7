@@ -11,7 +11,7 @@
 function panels_ipe_default_panels_renderer_pipeline() {
   $pipelines = array();
 
-  $pipeline = new stdClass;
+  $pipeline = new stdClass();
   $pipeline->disabled = FALSE; /* Edit this to true to make a default pipeline disabled initially */
   $pipeline->api_version = 1;
   $pipeline->name = 'ipe';

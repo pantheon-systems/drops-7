@@ -33,6 +33,7 @@ function media_views_plugins() {
     'help' => t('Display as a tab in the media browser.'),
     'handler' => 'media_views_plugin_display_media_browser',
     'theme' => 'views_view',
+    'theme path' => drupal_get_path('module', 'views') . '/theme',
     'base' => $base,
     'use ajax' => TRUE,
     'use pager' => TRUE,

@@ -447,7 +447,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
-    $client_cert = '../certs/binding.pem';
+    $client_cert = pantheon_apachesolr_client_cert();
     $port = variable_get('pantheon_index_port', 449);
 
     if (!isset($ch)) {
@@ -888,7 +888,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       throw new Exception("Unsupported method '$method' for search(), use GET or POST");
     }
   }
-  
+
   /**
    * Get the current solr version.
    *

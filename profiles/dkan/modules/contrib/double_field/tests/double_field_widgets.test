@@ -118,7 +118,7 @@ class DoubleFieldWidgetsTestCase extends DoubleFieldTestCase {
       'A required select list has a "None" choice.'
     );
 
-    // Verify error maping.
+    // Verify error mapping.
     $this->assertTrue(
       $this->xpath('//input[@name=:name and contains(@class, "error")]', array(':name' => $this->getSubfieldName('first'))),
       'First subfield has error class.'
@@ -157,7 +157,7 @@ class DoubleFieldWidgetsTestCase extends DoubleFieldTestCase {
       'Required select list has a "Select a value" choice.'
     );
 
-    // Verify error maping.
+    // Verify error mapping.
     $this->assertFalse(
       $this->xpath('//input[@name=:name and contains(@class, "error")]', array(':name' => $this->getSubfieldName('first'))),
       t('First subfield has not the error class.')
@@ -176,7 +176,7 @@ class DoubleFieldWidgetsTestCase extends DoubleFieldTestCase {
     unset($input[$this->getSubfieldName('second')]);
     $this->drupalPost('node/add/' . $this->type_name, $input, t('Save'));
 
-    // Verify error maping.
+    // Verify error mapping.
     $this->assertTrue(
       $this->xpath('//input[@name=:name and contains(@class, "error")]', array(':name' => $this->getSubfieldName('first'))),
       t('First subfield has the error class.')
@@ -196,6 +196,5 @@ class DoubleFieldWidgetsTestCase extends DoubleFieldTestCase {
     );
 
   }
-
 
 }

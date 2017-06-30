@@ -1,7 +1,7 @@
 {
   "name": "{{machine_name}}",
   "description": "{{Description}}",
-  "browserSyncProxy" : "http://panopoly.dev",
+  "browserSyncProxy" : "http://drupal7.dev",
   "bowerDir": "./bower_components",
   "css": {
     "file" : "{{machine_name}}.style.scss",

@@ -863,6 +863,11 @@ function eck__entity_access($op, $entity_or_bundle, $account, $entity_type_name)
  * Implements hook_entity_view_alter().
  */
 function eck_entity_view_alter(&$build, $entity_type) {
+  // Return early if we don't have to add contextual links.
+  if (!module_exists('contextual') || !user_access('access contextual links')) {
+    return;
+  }
+
   $entity_types = EntityType::loadAll();
 
   foreach ($entity_types as $et) {
@@ -975,4 +980,39 @@ function eck_system_info_alter(&$info, $file, $type) {
       }
     }
   }
+}
+
+/**
+ * Implements hook_bundle_copy_info().
+ */
+function eck_bundle_copy_info() {
+  $entity_info = array();
+  foreach (EntityType::loadAll() as $k => $entity_type) {
+    $entity_info[$k] = array(
+      'bundle_export_callback' => 'eck_bundle_copy_get_type',
+      'bundle_save_callback' => 'eck_bundle_copy_save',
+      'export_menu' => array(
+        'path' => "admin/structure/entity-type/$k/export",
+        'access arguments' => "manage $k properties",
+      ),
+      'import_menu' => array(
+        'path' => "admin/structure/entity-type/$k/import",
+        'access arguments' => "manage $k properties",
+      )
+    );
+  }
+
+  return $entity_info;
+}
+
+/**
+ * Placeholder callback for eck implementation of hook_bundle_copy_info().
+ */
+function eck_bundle_copy_get_type() {
+}
+
+/**
+ * Placeholder callback for eck implementation of hook_bundle_copy_info().
+ */
+function eck_bundle_copy_save() {
 }

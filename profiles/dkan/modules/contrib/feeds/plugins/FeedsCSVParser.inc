@@ -20,9 +20,12 @@ class FeedsCSVParser extends FeedsParser {
     // Load and configure parser.
     feeds_include_library('ParserCSV.inc', 'ParserCSV');
     $parser = new ParserCSV();
-    $delimiter = $source_config['delimiter'] == 'TAB' ? "\t" : $source_config['delimiter'];
+    $delimiter = $this->getDelimiterChar($source_config);
     $parser->setDelimiter($delimiter);
-    $parser->setEncoding($source_config['encoding']);
+    if (isset($source_config['encoding'])) {
+      // Encoding can only be set when the mbstring extension is loaded.
+      $parser->setEncoding($source_config['encoding']);
+    }
 
     $iterator = new ParserCSVIterator($fetcher_result->getFilePath());
     if (empty($source_config['no_headers'])) {
@@ -53,24 +56,34 @@ class FeedsCSVParser extends FeedsParser {
   /**
    * Get first line and use it for column names, convert them to lower case.
    * Be aware that the $parser and iterator objects can be modified in this
-   * function since they are passed in by reference
+   * function since they are passed in by reference.
    *
    * @param ParserCSV $parser
    * @param ParserCSVIterator $iterator
-   * @return
-   *   An array of lower-cased column names to use as keys for the parsed items.
+   *
+   * @return array|false
+   *   An array of lower-cased column names to use as keys for the parsed items
+   *   or FALSE if the document was empty.
    */
   protected function parseHeader(ParserCSV $parser, ParserCSVIterator $iterator) {
-    $parser->setLineLimit(1);
-    $rows = $parser->parse($iterator);
-    if (!count($rows)) {
-      return FALSE;
+    try {
+      $parser->setLineLimit(1);
+      $rows = $parser->parse($iterator);
+      if (!count($rows)) {
+        return FALSE;
+      }
+      $header = array_shift($rows);
+      foreach ($header as $i => $title) {
+        $header[$i] = trim(drupal_strtolower($title));
+      }
+      return $header;
     }
-    $header = array_shift($rows);
-    foreach ($header as $i => $title) {
-      $header[$i] = trim(drupal_strtolower($title));
+    catch (Exception $e) {
+      // Make sure that the file on the iterator gets properly closed when
+      // exceptions occur during parsing.
+      $iterator->releaseHandler();
+      throw $e;
     }
-    return $header;
   }
 
   /**
@@ -78,14 +91,27 @@ class FeedsCSVParser extends FeedsParser {
    *
    * @param ParserCSV $parser
    * @param ParserCSVIterator $iterator
-   * @return
-   *   An array of rows of the CSV keyed by the column names previously set
+   * @param int $start
+   *   The byte number from where to start parsing the file.
+   * @param int $limit
+   *   The number of lines to parse, 0 for all lines.
+   *
+   * @return array
+   *   An array of rows of the CSV keyed by the column names previously set.
    */
   protected function parseItems(ParserCSV $parser, ParserCSVIterator $iterator, $start = 0, $limit = 0) {
-    $parser->setLineLimit($limit);
-    $parser->setStartByte($start);
-    $rows = $parser->parse($iterator);
-    return $rows;
+    try {
+      $parser->setLineLimit($limit);
+      $parser->setStartByte($start);
+      $rows = $parser->parse($iterator);
+      return $rows;
+    }
+    catch (Exception $e) {
+      // Make sure that the file on the iterator gets properly closed when
+      // exceptions occur during parsing.
+      $iterator->releaseHandler();
+      throw $e;
+    }
   }
 
   /**
@@ -135,10 +161,10 @@ class FeedsCSVParser extends FeedsParser {
       if (strpos($mapping['source'], ',') !== FALSE) {
         $sources[] = '"' . $mapping['source'] . '"';
       }
-      else {
+      elseif (strlen(trim($mapping['source']))) {
         $sources[] = $mapping['source'];
       }
-      if (!empty($mapping['unique'])) {
+      if (!empty($mapping['unique']) && strlen(trim($mapping['source']))) {
         $uniques[] = $mapping['source'];
       }
     }
@@ -146,7 +172,18 @@ class FeedsCSVParser extends FeedsParser {
 
     $output = t('Import !csv_files with one or more of these columns: @columns.', array('!csv_files' => l(t('CSV files'), 'http://en.wikipedia.org/wiki/Comma-separated_values'), '@columns' => implode(', ', $sources)));
     $items = array();
-    $items[] = format_plural(count($uniques), 'Column <strong>@columns</strong> is mandatory and considered unique: only one item per @columns value will be created.', 'Columns <strong>@columns</strong> are mandatory and values in these columns are considered unique: only one entry per value in one of these column will be created.', array('@columns' => implode(', ', $uniques)));
+    if ($uniques) {
+      $items[] = format_plural(count($uniques),
+        'Column <strong>@columns</strong> is mandatory and considered unique: only one item per @columns value will be created.',
+        'Columns <strong>@columns</strong> are mandatory and values in these columns are considered unique: only one entry per value in one of these column will be created.',
+        array(
+          '@columns' => implode(', ', $uniques),
+        )
+      );
+    }
+    else {
+      $items[] = t('No columns are unique. The import will only create new items, no items will be updated.');
+    }
     $items[] = l(t('Download a template'), 'import/' . $this->id . '/template');
     $form['help'] = array(
       '#prefix' => '<div class="help">',
@@ -165,13 +202,7 @@ class FeedsCSVParser extends FeedsParser {
       '#type' => 'select',
       '#title' => t('Delimiter'),
       '#description' => t('The character that delimits fields in the CSV file.'),
-      '#options'  => array(
-        ',' => ',',
-        ';' => ';',
-        'TAB' => 'TAB',
-        '|' => '|',
-        '+' => '+',
-      ),
+      '#options' => $this->getAllDelimiterTypes(),
       '#default_value' => isset($source_config['delimiter']) ? $source_config['delimiter'] : ',',
     );
     $form['no_headers'] = array(
@@ -181,6 +212,9 @@ class FeedsCSVParser extends FeedsParser {
       '#default_value' => isset($source_config['no_headers']) ? $source_config['no_headers'] : 0,
     );
     $form['encoding'] = $this->configEncodingForm();
+    if (isset($source_config['encoding'])) {
+      $form['encoding']['#default_value'] = $source_config['encoding'];
+    }
     return $form;
   }
 
@@ -204,13 +238,7 @@ class FeedsCSVParser extends FeedsParser {
       '#type' => 'select',
       '#title' => t('Default delimiter'),
       '#description' => t('Default field delimiter.'),
-      '#options' => array(
-        ',' => ',',
-        ';' => ';',
-        'TAB' => 'TAB',
-        '|' => '|',
-        '+' => '+',
-      ),
+      '#options' => $this->getAllDelimiterTypes(),
       '#default_value' => $this->config['delimiter'],
     );
     $form['no_headers'] = array(
@@ -223,8 +251,17 @@ class FeedsCSVParser extends FeedsParser {
     return $form;
   }
 
+  /**
+   * Builds configuration field for setting file encoding.
+   *
+   * If the mbstring extension is not available a markup render array
+   * will be returned instead.
+   *
+   * @return array
+   *   A renderable array.
+   */
   public function configEncodingForm() {
-    if (extension_loaded('mbstring')) {
+    if (extension_loaded('mbstring') && variable_get('feeds_use_mbstring', TRUE)) {
       // Get the system's list of available encodings.
       $options = mb_list_encodings();
       // Make the key/values the same in the array.
@@ -241,15 +278,15 @@ class FeedsCSVParser extends FeedsParser {
     }
     else {
       return array(
-        '#markup' => '<em>' . t('PHP <em>mbstring</em> extension must be available for character encoding conversion.') . '</em>',
+        '#markup' => '<em>' . t('PHP mbstring extension must be available for character encoding conversion.') . '</em>',
       );
     }
-    return $form;
   }
 
   public function getTemplate() {
     $mappings = feeds_importer($this->id)->processor->config['mappings'];
     $sources = $uniques = array();
+
     foreach ($mappings as $mapping) {
       if (in_array($mapping['source'], $uniques) || in_array($mapping['source'], $sources)) {
         // Skip columns we've already seen.
@@ -263,18 +300,112 @@ class FeedsCSVParser extends FeedsParser {
         $sources[] = $mapping['source'];
       }
     }
-    $sep = $this->config['delimiter'];
+
+    $sep = $this->getDelimiterChar($this->config);
     $columns = array();
+
     foreach (array_merge($uniques, $sources) as $col) {
       if (strpos($col, $sep) !== FALSE) {
         $col = '"' . str_replace('"', '""', $col) . '"';
       }
-      $columns[] = $col;
+
+      // Prevent columns without headers from being added to the template.
+      if (strlen(trim($col))) {
+        $columns[] = $col;
+      }
     }
-    drupal_add_http_header('Cache-Control', 'max-age=60, must-revalidate');
-    drupal_add_http_header('Content-Disposition', 'attachment; filename="' . $this->id . '_template.csv"');
-    drupal_add_http_header('Content-type', 'text/csv; charset=utf-8');
+
+    $template_file_details = $this->getTemplateFileDetails($this->config);
+
+    $filename = "{$this->id}_template.{$template_file_details['extension']}";
+    $cache_control = 'max-age=60, must-revalidate';
+    $content_disposition = 'attachment; filename="' . $filename . '"';
+    $content_type = "{$template_file_details['mime_type']}; charset=utf-8";
+
+    drupal_add_http_header('Cache-Control', $cache_control);
+    drupal_add_http_header('Content-Disposition', $content_disposition);
+    drupal_add_http_header('Content-type', $content_type);
+
     print implode($sep, $columns);
-    return;
+  }
+
+  /**
+   * Gets an associative array of the delimiters supported by this parser.
+   *
+   * The keys represent the value that is persisted into the database, and the
+   * value represents the text that is shown in the admins UI.
+   *
+   * @return array
+   *   The associative array of delimiter types to display name.
+   */
+  protected function getAllDelimiterTypes() {
+    $delimiters = array(
+      ',',
+      ';',
+      'TAB',
+      '|',
+      '+',
+    );
+
+    return array_combine($delimiters, $delimiters);
+  }
+
+  /**
+   * Gets the appropriate delimiter character for the delimiter in the config.
+   *
+   * @param array $config
+   *   The configuration for the parser.
+   *
+   * @return string
+   *   The delimiter character.
+   */
+  protected function getDelimiterChar(array $config) {
+    $config_delimiter = $config['delimiter'];
+
+    switch ($config_delimiter) {
+      case 'TAB':
+        $delimiter = "\t";
+        break;
+
+      default:
+        $delimiter = $config_delimiter;
+        break;
+    }
+
+    return $delimiter;
+  }
+
+  /**
+   * Gets details about the template file, for the delimiter in the config.
+   *
+   * The resulting details indicate the file extension and mime type for the
+   * delimiter type.
+   *
+   * @param array $config
+   *   The configuration for the parser.
+   *
+   * @return array
+   *   An array with the following information:
+   *     - 'extension': The file extension for the template ('tsv', 'csv', etc).
+   *     - 'mime-type': The mime type for the template
+   *       ('text/tab-separated-values', 'text/csv', etc).
+   */
+  protected function getTemplateFileDetails(array $config) {
+    switch ($config['delimiter']) {
+      case 'TAB':
+        $extension = 'tsv';
+        $mime_type = 'text/tab-separated-values';
+        break;
+
+      default:
+        $extension = 'csv';
+        $mime_type = 'text/csv';
+        break;
+    }
+
+    return array(
+      'extension' => $extension,
+      'mime_type' => $mime_type,
+    );
   }
 }

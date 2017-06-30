@@ -59,7 +59,7 @@ class DoubleFieldField {
           'small' => array(-32768, 32767),
           'medium' => array(-8388608, 8388607),
           'normal' => array(-mt_getrandmax(), -mt_getrandmax()),
-          'big' => array(-mt_getrandmax(),  mt_getrandmax()),
+          'big' => array(-mt_getrandmax(), mt_getrandmax()),
         );
         $value = mt_rand($sizes[$subfield_settings['size']][0], $sizes[$subfield_settings['size']][1]);
         break;
@@ -181,7 +181,7 @@ class DoubleFieldField {
   }
 
   /**
-   * Get all suported widget types.
+   * Get all supported widget types.
    */
   public static function getAllFieldTypes() {
     $subfields = array(
@@ -189,10 +189,6 @@ class DoubleFieldField {
       'text' => t('Text'),
       'int' => t('Integer'),
       'float'  => t('Float'),
-      // Decimal values get rounded values and may differ
-      // from original values.
-      // See DoubleFieldField::getValue().
-      // 'decimal' => t('Decimal'),
     );
     foreach ($subfields as $first_subfield => $first_subfield_label) {
       foreach ($subfields as $second_subfield => $second_subwfield_label) {

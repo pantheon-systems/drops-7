@@ -108,3 +108,24 @@ function media_query_media_browser_alter($query) {
     $query->condition($or);
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function media_form_views_exposed_form_alter(&$form, &$form_state, $form_id) {
+  $view = $form_state['view'];
+  $display = $form_state['display'];
+
+  if ($view->name == 'media_default' && $display->id == 'media_browser_1') {
+    $params = media_get_browser_params();
+
+    // Remove any unsupported types from the 'Type' filter.
+    if (!empty($form['type']) && !empty($params['types'])) {
+      foreach (array_keys($form['type']['#options']) as $type) {
+        if ($type != 'All' && !in_array($type, $params['types'])) {
+          unset($form['type']['#options'][$type]);
+        }
+      }
+    }
+  }
+}

@@ -1,11 +1,11 @@
 {
   "name": "radix",
+  "description": "Radix is a base theme for Drupal. It has Bootstrap, Sass, Gulp, BrowserSync and Font Awesome built-in.",
   "homepage": "http://radixtheme.org",
   "version": "7.3.3",
   "authors": [
     "Arshad Chummun <arshad@chummun.com>"
   ],
-  "description": "Base theme for Drupal and BackdropCMS.",
   "moduleType": "globals",
   "main": [
     "assets/scss/_radix.scss",
@@ -33,5 +33,9 @@
     "screenshot.png",
     "template.php",
     "THEMING.md"
-  ]
+  ],
+  "dependencies": {
+    "bootstrap-sass": "^3.3.7",
+    "font-awesome": "^4.7.0"
+  }
 }

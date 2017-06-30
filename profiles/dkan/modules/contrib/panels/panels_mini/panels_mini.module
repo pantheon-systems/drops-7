@@ -39,7 +39,7 @@ function panels_mini_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  // Also provide settings on the main panel UI
+  // Also provide settings on the main panel UI.
   $items['admin/structure/panels/settings/panels-mini'] = array(
     'title' => 'Mini panels',
     'page callback' => 'panels_mini_settings',
@@ -59,8 +59,7 @@ function panels_mini_settings() {
 }
 
 // ---------------------------------------------------------------------------
-// Allow the rest of the system access to mini panels
-
+// Allow the rest of the system access to mini panels.
 /**
  * Implementation of hook_block_info().
  */
@@ -91,7 +90,7 @@ function panels_mini_block_info() {
  * @see panels_mini_panels_mini_content_type_render().
  */
 function panels_mini_block_view($delta = 0) {
-  // static recursion protection.
+  // Static recursion protection.
   static $viewing = array();
   if (!empty($viewing[$delta])) {
     return;
@@ -114,7 +113,7 @@ function panels_mini_block_view($delta = 0) {
   }
   drupal_alter('panels_mini_block_contexts', $contexts, $panel_mini);
 
-  $panel_mini->context = $panel_mini->display->context =  ctools_context_load_contexts($panel_mini, FALSE, $contexts);
+  $panel_mini->context = $panel_mini->display->context = ctools_context_load_contexts($panel_mini, FALSE, $contexts);
   $panel_mini->display->css_id = panels_mini_get_id($panel_mini->name);
   $panel_mini->display->owner = $panel_mini;
 
@@ -133,7 +132,7 @@ function panels_mini_block_view($delta = 0) {
 function panels_mini_block_configure($delta = 0) {
   return array(
     'admin_shortcut' => array(
-      '#markup' => l(t('Manage this mini-panel'), 'admin/structure/mini-panels/list/' . $delta . '/edit')
+      '#markup' => l(t('Manage this mini-panel'), 'admin/structure/mini-panels/list/' . $delta . '/edit'),
     ),
   );
 }
@@ -241,7 +240,6 @@ function panels_mini_get_id($name) {
 
 // ---------------------------------------------------------------------------
 // Database functions.
-
 /**
  * Create a new page with defaults appropriately set from schema.
  */
@@ -331,7 +329,7 @@ function panels_mini_load_all($reset = FALSE) {
           $dids[$mini->did] = $mini->name;
         }
         else {
-        // Translate old style titles into new titles.
+          // Translate old style titles into new titles.
           if (!empty($mini->title) && empty($mini->display->title)) {
             $mini->display->title = $mini->title;
           }
@@ -400,7 +398,7 @@ function panels_mini_delete($mini) {
 function panels_mini_export($mini, $indent = '') {
   ctools_include('export');
   $output = ctools_export_object('panels_mini', $mini, $indent);
-  // Export the primary display
+  // Export the primary display.
   $display = !empty($mini->display) ? $mini->display : panels_load_display($mini->did);
   $output .= panels_export_display($display, $indent);
   $output .= $indent . '$mini->display = $display' . ";\n";
@@ -462,7 +460,7 @@ function _panels_mini_panels_cache_get($key) {
 }
 
 /**
- * Get display edit cache for the panels mini export UI
+ * Get display edit cache for the panels mini export UI.
  *
  * The key is the second half of the key in this form:
  * panels_mini:TASK_NAME:HANDLER_NAME;

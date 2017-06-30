@@ -175,7 +175,8 @@
       Drupal.media.filter.ensure_tagmap();
 
       // Locate and process all the media placeholders in the WYSIWYG content.
-      var contentElements = $('<div/>').html(content);  // TODO: once baseline jQuery is 1.8+, switch to using $.parseHTML(content)
+      var contentElements = $('<div/>');  // TODO: once baseline jQuery is 1.8+, switch to using $.parseHTML(content)
+      contentElements.get(0).innerHTML = content;
       var mediaElements = contentElements.find('.media-element');
       if (mediaElements) {
         $(mediaElements).each(function (i) {
@@ -299,7 +300,7 @@
       // Attempt to override the link_title if the user has chosen to do this.
       info.link_text = this.overrideLinkTitle(info);
       // Apply link_text if present.
-      if (info.link_text) {
+      if ((info.link_text) && (!info.fields || !info.fields.external_url || info.fields.external_url.length === 0)) {
         $('a', element).html(info.link_text);
       }
 
@@ -351,8 +352,7 @@
           });
 
           // Extract the link text, if there is any.
-          file_info.link_text = (Drupal.settings.mediaDoLinkText) ? element.find('a').html() : false;
-
+          file_info.link_text = (Drupal.settings.mediaDoLinkText) ? element.find('a:not(:has(img))').html() : false;
           // When a file is embedded, its fields can be overridden. To allow for
           // the edge case where the same file is embedded multiple times with
           // different field overrides, we look for a data-delta attribute on

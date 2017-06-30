@@ -27,9 +27,9 @@ files[] = includes/handler_sort.inc
 files[] = includes/plugin_cache.inc
 files[] = includes/query.inc
 
-; Information added by Drupal.org packaging script on 2016-07-21
-version = "7.x-1.20"
+; Information added by Drupal.org packaging script on 2017-02-23
+version = "7.x-1.21"
 core = "7.x"
 project = "search_api"
-datestamp = "1469117342"
+datestamp = "1487844493"
 

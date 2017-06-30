@@ -11,7 +11,7 @@ require_once 'double_field_test_case.inc';
 
 /**
  * Test integration with contrib modules.
- * 
+ *
  * Simpletest doesn't resolve module dependencies.
  * So we need to download the modules manually.
  * @code
@@ -48,11 +48,10 @@ class DoubleFieldContribTestCase extends DoubleFieldTestCase {
   }
 
   /**
-   * Test Devel Generate intergation.
+   * Test Devel generate integration.
    */
   public function testDevelGenerateIntegration() {
 
-    $field_settings_page = "admin/structure/types/manage/{$this->type_name}/fields/{$this->field_name}";
     $widget_types = array(
       'checkbox_&_select',
       'textfield_&_textarea',
@@ -71,9 +70,11 @@ class DoubleFieldContribTestCase extends DoubleFieldTestCase {
       $this->instance['widget']['settings'] = $widget->getSettings();
       field_update_instance($this->instance);
 
-      $input['num_nodes'] = 100;
+      // This should be 50 or less to avoid batch operations.
+      $input['num_nodes'] = 50;
       $input['node_types[page]'] = FALSE;
       $input['node_types[article]'] = FALSE;
+      $input['node_types[' . $this->type_name . ']'] = TRUE;
       $input['kill_content'] = TRUE;
       $this->drupalPost('admin/config/development/generate/content', $input, t('Generate'));
 
@@ -121,14 +122,14 @@ class DoubleFieldContribTestCase extends DoubleFieldTestCase {
   }
 
   /**
-   * Test Feeds intergation.
+   * Test Feeds integration.
    */
   public function testFeedsIntegration() {
 
   }
 
   /**
-   * Test Entity API intergation.
+   * Test Entity API integration.
    */
   public function testEntityIntegration() {
 

@@ -242,6 +242,11 @@ function panopoly_widgets_field_widget_form(&$form, &$form_state, $field, $insta
       '#title' => t('Link'),
       '#type' => 'textfield',
       '#default_value' => isset($items[$delta]['link']) ? $items[$delta]['link'] : NULL,
+      '#linkit' => array(
+        'enable' => TRUE,
+        'profile' => 'content_fields',
+        'button_text' => t('Search for existing content'),
+      ),
     );
 
     $element['fid'] = array(

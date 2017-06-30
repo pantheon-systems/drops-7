@@ -20,8 +20,11 @@
     luminance
     temperature
     contrast
+    distance
+    delta-e
 
     get set
+    clipped
 
     alpha darken saturate premultiply blend    
 

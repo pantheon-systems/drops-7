@@ -13,4 +13,7 @@ features[features_api][] = api:2
 features[field_base][] = field_uuid_resource
 mtime = 1426610294
 project path = profiles/dkan/modules/contrib
-version = 7.x-1.1
+
+; Information added by DKAN release script on 6/21/2017
+version = 7.x-1.2
+project = dkan

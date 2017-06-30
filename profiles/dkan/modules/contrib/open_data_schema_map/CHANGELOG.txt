@@ -1,4 +1,9 @@
 
+7.x-1.13.4
+----------
+- #89 Fixed handling of dataset language setting to pass DCAT validation.
+- #88 Fixed bug: multiple urls cause data.json describedBy field to be truncated.
+
 7.x-1.13.2 2017-03-16
 ---------------------
 - #86 Fix validation page permission check using wrong permission name.

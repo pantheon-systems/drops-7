@@ -928,6 +928,47 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
   }
 
   /**
+   * Tests that insecure settings are not processed when sent via query parameters.
+   */
+  function testBrowserInsecureQueryParameters() {
+    // Test file directory override.
+    $path = file_unmanaged_save_data('directorytest', 'temporary://directorytest.txt');
+    $data = array('files[upload]' => drupal_realpath($path));
+    $this->drupalPost('media/browser', $data, t('Upload'), array('query' => array('file_directory' => 'insecure_upload')));
+    // Verify that the file was placed in the normal public:// path instead of the folder we specified.
+    $this->assertFalse(is_file('public://insecure_upload/directorytest.txt'), 'File was not uploaded to the directory specified in the query parameters.');
+    $this->assertTrue(is_file('public://directorytest.txt'), 'File was uploaded to the default public directory.');
+
+    // Test file_extensions override.
+    $path = file_unmanaged_save_data('extensiontest', 'temporary://extensiontest.exe');
+    $data = array('files[upload]' => drupal_realpath($path));
+    $this->drupalPost('media/browser', $data, t('Upload'), array('query' => array('file_extensions' => 'exe')));
+    $this->assertFalse(is_file('public://extensiontest.exe'), 'File with extension passed via query parameter was not uploaded.');
+
+    // Test max_filesize override.
+    variable_set('file_entity_max_filesize', '8 bytes');
+    $path = file_unmanaged_save_data('maxfilesize', 'temporary://maxfilesize.txt');
+    $data = array('files[upload]' => drupal_realpath($path));
+    $this->drupalPost('media/browser', $data, t('Upload'), array('query' => array('max_filesize' => '100 bytes')));
+    $this->assertFalse(is_file('public://maxfilesize.txt'), 'File larger than max file size was not uploaded with larger query parameter.');
+    variable_del('file_entity_max_filesize');
+
+    // Test uri_scheme override.
+    $path = file_unmanaged_save_data('urischeme', 'temporary://urischeme.txt');
+    $data = array('files[upload]' => drupal_realpath($path));
+    $this->drupalPost('media/browser', $data, t('Upload'), array('query' => array('uri_scheme' => 'private')));
+    $this->assertFalse(is_file('private://urischeme.txt'), 'File was not uploaded to scheme set in URL.');
+    $this->assertTrue(is_file('public://urischeme.txt'), 'File was uploaded to default scheme instead of scheme set in URL.');
+
+    // Test upload_validators override.
+    $path = file_unmanaged_save_data('uploadvalidators', 'temporary://uploadvalidators.txt');
+    $data = array('files[upload]' => drupal_realpath($path));
+    $this->drupalPost('media/browser', $data, t('Upload'), array('query' => array('upload_validators' => array('file_move' => array('public://exploit.php')))));
+    $this->assertFalse(is_file('public://exploit.php'), 'file_move() was not triggered by upload_validators parameter.');
+    $this->assertTrue(is_file('public://uploadvalidators.txt'), 'File was uploaded without triggering file_move().');
+  }
+
+  /**
    * Tests the media file field widget settings.
    */
   function testWidgetSettings() {
@@ -960,6 +1001,7 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
               'max_filesize' => '',
               'uri_scheme' => 'public',
               'multiselect' => $multiselect,
+              'field' => $field_name,
             ),
           ),
         ),

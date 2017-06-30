@@ -116,6 +116,7 @@ function media_field_widget_form(&$form, &$form_state, $field, $instance, $langc
         'max_filesize' => isset($field_settings['max_filesize']) ? $field_settings['max_filesize'] : 0,
         'uri_scheme' => !empty($field['settings']['uri_scheme']) ? $field['settings']['uri_scheme'] : file_default_scheme(),
         'multiselect' => $multiselect,
+        'field' => $field['field_name'],
       ),
     ),
     // Allows this field to return an array instead of a single value.
@@ -136,6 +137,13 @@ function media_field_widget_form(&$form, &$form_state, $field, $instance, $langc
     $element['#media_parent_entity_source_langcode'] = $element['#entity']->language;
   } elseif ($element['#entity_type'] == 'field_collection_item' && !empty($form['#entity']) && property_exists($form['#entity'], 'language')) {
     $element['#media_parent_entity_form_langcode'] = $form['#entity']->language;
+  }
+  else if ($element['#entity_type'] == 'paragraphs_item' && !empty($form['#entity'])) {
+    $host = $element['#entity']->hostEntity();
+    if (isset($host->language)) {
+      $element['#media_parent_entity_form_langcode'] = $host->language;
+      $element['#media_parent_entity_source_langcode'] = $host->language;
+    }
   }
 
   // Add image field specific validators.
@@ -551,10 +559,14 @@ function theme_media_widget_multiple($variables) {
     );
   }
 
+  $table = array('header' => $headers, 'rows' => $rows, 'attributes' => array('id' => $table_id));
+
+  drupal_alter('media_widget_multiple', $table, $element);
+
   drupal_add_tabledrag($table_id, 'order', 'sibling', $weight_class);
 
   $output = '';
-  $output = empty($rows) ? '' : theme('table', array('header' => $headers, 'rows' => $rows, 'attributes' => array('id' => $table_id)));
+  $output = empty($rows) ? '' : theme('table', $table);
   $output .= drupal_render_children($element);
   return $output;
 }

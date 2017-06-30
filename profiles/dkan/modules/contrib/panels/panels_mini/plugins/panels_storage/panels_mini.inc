@@ -5,7 +5,7 @@
  * Provides a panels_storage plugin for mini panels.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'access callback' => 'panels_mini_panels_storage_access',
 );

@@ -85,16 +85,44 @@ function feeds_import_form(array $form, array &$form_state, FeedsImporter $impor
     ) + $source_form;
   }
 
+  // Set submit button label based on settings.
+  if ($source->importer->config['import_on_create']) {
+    $submit = t('Import');
+    if ($source->importer->config['process_in_background']) {
+      // When processing the import in background, the import job is put in the queue.
+      $submit = t('Schedule import');
+    }
+  }
+  elseif ($source->importer->config['import_period'] != FEEDS_SCHEDULE_NEVER) {
+    // The import would be scheduled according to the periodic import setting.
+    $submit = t('Schedule import');
+  }
+  else {
+    drupal_set_message(t('For this importer both "@import_period" and "@import_on_create" are turned off. It is possible that Feeds will not import the provided source.', array(
+      '@import_period' => t('Periodic import'),
+      '@import_on_create' => t('Import on submission'),
+    )), 'warning', FALSE);
+    $submit = t('Save');
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Import'),
+    '#value' => $submit,
   );
+
+  // Disable submit button if import is initiated.
   $progress = $source->progressImporting();
   if ($progress !== FEEDS_BATCH_COMPLETE) {
     $form['submit']['#disabled'] = TRUE;
     $form['submit']['#value'] =
       t('Importing (@progress %)', array('@progress' => number_format(100 * $progress, 0)));
+
+    // Check if import task is queued.
+    if ($source->isQueued()) {
+      $form['source_status']['#value'] .= t('Run cron to continue the import.');
+    }
   }
+
   return $form;
 }
 
@@ -121,10 +149,19 @@ function feeds_import_form_submit($form, &$form_state) {
   // Refresh feed if import on create is selected.
   if ($source->importer->config['import_on_create']) {
     $source->startImport();
+    if ($source->importer->config['process_in_background']) {
+      drupal_set_message(t('Import scheduled.'));
+    }
   }
 
   // Add to schedule, make sure importer is scheduled, too.
-  $source->schedule();
+  $source->ensureSchedule();
+
+  // Check if the importer is about to be rescheduled.
+  $importers = feeds_reschedule();
+  if (isset($importers[$form['#importer_id']])) {
+    drupal_set_message(t('Rescheduling the import will happen on the next cron run.'), 'status');
+  }
 }
 
 /**
@@ -139,15 +176,20 @@ function feeds_import_tab_form($form, &$form_state, $node) {
   if ($importer_ids) {
     $form['#feed_nid'] = $node->nid;
     $form['#redirect'] = 'node/' . $node->nid;
-    $form = confirm_form($form, t('Import all content from source?'), 'node/' . $node->nid, '', t('Import'), t('Cancel'), 'confirm feeds update');
+    $form = confirm_form($form, t('Import all content from source?'),
+      'node/' . $node->nid, '', t('Import'), t('Cancel'),
+      'confirm feeds update');
     foreach ($importer_ids as $importer_id => $weight) {
       $source = feeds_source($importer_id, $node->nid);
       $form[$importer_id]['source_status'] = array(
         '#type' => 'fieldset',
-        '#title' => t('@source_name: Status', array('@source_name' => $source->importer->config['name'])),
+        '#title' => t('@source_name: Status', array(
+          '@source_name' => $source->importer->config['name'],
+        )),
         '#tree' => TRUE,
         '#value' => feeds_source_status($source),
       );
+      // Disable submit button if import is initiated.
       $progress = $source->progressImporting();
       $total_progress += $progress;
     }
@@ -176,8 +218,12 @@ function feeds_import_tab_form($form, &$form_state, $node) {
       $progress = $total_progress / count($importer_ids);
       if ($progress !== FEEDS_BATCH_COMPLETE) {
         $form['actions']['submit']['#disabled'] = TRUE;
-        $form['actions']['submit']['#value'] =
-          t('Importing (@progress %)', array('@progress' => number_format(100 * $progress, 0)));
+        $form['actions']['submit']['#value'] = t('Importing (@progress %)',
+          array('@progress' => number_format(100 * $progress, 0)));
+        // Check if import task is queued.
+        if ($source->isQueued()) {
+          $form[$importer_id]['source_status']['#value'] .= t('Run cron to continue the import.');
+        }
       }
     }
   }
@@ -186,6 +232,7 @@ function feeds_import_tab_form($form, &$form_state, $node) {
       '#markup' => t('No feeds sources added to node.'),
     );
   }
+
   return $form;
 }
 
@@ -194,8 +241,22 @@ function feeds_import_tab_form($form, &$form_state, $node) {
  */
 function feeds_import_tab_form_submit($form, &$form_state) {
   $form_state['redirect'] = $form['#redirect'];
-  foreach (array_filter($form_state['values']['importer_ids']) as $importer_id) {
-    feeds_source($importer_id, $form['#feed_nid'])->startImport();
+  $selected_importers = array_filter($form_state['values']['importer_ids']);
+  foreach ($selected_importers as $importer_id) {
+    $source = feeds_source($importer_id, $form['#feed_nid']);
+    $source->startImport();
+    $source->ensureSchedule();
+    if ($source->importer->config['process_in_background']) {
+      drupal_set_message(t('%importer import scheduled.', array(
+        '%importer' => $source->importer->id
+      )));
+    }
+  }
+
+  // Check if the importer is about to be rescheduled.
+  $importers = feeds_reschedule();
+  if (array_intersect($selected_importers, array_keys($importers))) {
+    drupal_set_message(t('Rescheduling the import will happen on the next cron run.'), 'status');
   }
 }
 
@@ -216,34 +277,25 @@ function feeds_delete_tab_form(array $form, array &$form_state, FeedsImporter $i
     $importer_ids = feeds_get_importer_ids($node->type, $node->nid);
     $form['#redirect'] = 'node/' . $node->nid;
   }
-
   if ($importer_ids) {
     // Form cannot pass on source object.
     $form['#feed_nid'] = empty($node) ? '' : $node->nid;
     foreach ($importer_ids as $import_id => $weight) {
       $source = empty($node) ? $source : feeds_source($import_id, $node->nid);
-      if (!empty($node)) {
-        $form[$import_id]['source_status'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('@source_name: Status', array('@source_name' => $source->importer->config['name'])),
-          '#tree' => TRUE,
-          '#value' => feeds_source_status($source),
-        );
-      }
-      else {
-        $form['source_status'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('@source_name: Status', array('@source_name' => $source->importer->config['name'])),
-          '#tree' => TRUE,
-          '#value' => feeds_source_status($source),
-        );
-      }
+      $form[$import_id]['source_status'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('@source_name: Status', array(
+          '@source_name' => $source->importer->config['name'],
+        )),
+        '#tree' => TRUE,
+        '#value' => feeds_source_status($source),
+      );
       $progress = $source->progressClearing();
       $total_progress += $progress;
     }
 
-    // Set importer ids. If this is a stand-alone form then importer will be
-    // passed.
+    // Set importer ids.
+    // If this is a stand-alone form then importer will be passed.
     if ($importer) {
       $form['importer_ids'] = array(
         '#type' => 'value',
@@ -265,14 +317,23 @@ function feeds_delete_tab_form(array $form, array &$form_state, FeedsImporter $i
       );
     }
 
-    $form = confirm_form($form, t('Delete all items from source?'), $form['#redirect'], '', t('Delete'), t('Cancel'), 'confirm feeds update');
+    $form = confirm_form($form, t('Delete all items from source?'),
+      $form['#redirect'], '', t('Delete'), t('Cancel'), 'confirm feeds update');
+
+    // Change submit button label if processing in background.
+    if ($source->importer->config['process_in_background']) {
+      $form['actions']['submit']['#value'] = t('Schedule delete');
+    }
 
     if (count($importer_ids)) {
       $progress = $total_progress / count($importer_ids);
       if ($progress !== FEEDS_BATCH_COMPLETE) {
         $form['actions']['submit']['#disabled'] = TRUE;
-        $form['actions']['submit']['#value'] =
-          t('Deleting (@progress %)', array('@progress' => number_format(100 * $progress, 0)));
+        $form['actions']['submit']['#value'] = t('Deleting (@progress %)',
+          array(
+            '@progress' => number_format(100 * $progress, 0),
+          ));
+        $form[$import_id]['source_status']['#value'] .= t('Run cron to continue the deletion of items.');
       }
     }
   }
@@ -281,6 +342,7 @@ function feeds_delete_tab_form(array $form, array &$form_state, FeedsImporter $i
       '#markup' => t('No feeds sources added to node.'),
     );
   }
+
   return $form;
 }
 
@@ -291,7 +353,13 @@ function feeds_delete_tab_form_submit($form, &$form_state) {
   $form_state['redirect'] = $form['#redirect'];
   $feed_nid = empty($form['#feed_nid']) ? 0 : $form['#feed_nid'];
   foreach (array_filter($form_state['values']['importer_ids']) as $importer_id) {
-    feeds_source($importer_id, $feed_nid)->startClear();
+    $source = feeds_source($importer_id, $feed_nid);
+    $source->startClear();
+    $source->ensureSchedule();
+
+    if ($source->importer->config['process_in_background']) {
+      drupal_set_message(t('Deletion of items scheduled.'));
+    }
   }
 }
 
@@ -341,17 +409,13 @@ function feeds_unlock_tab_form($form, &$form_state, FeedsImporter $importer = NU
  * Form submit handler. Resets all feeds state.
  */
 function feeds_unlock_tab_form_submit($form, &$form_state) {
-  drupal_set_message(t('Import Unlocked'));
   $form_state['redirect'] = $form['#redirect'];
   $feed_nid = empty($form['#feed_nid']) ? 0 : $form['#feed_nid'];
   $importer_id = $form['#importer_id'];
 
-  //Is there a more API-friendly way to set the state?
-  db_update('feeds_source')
-    ->condition('id', $importer_id)
-    ->condition('feed_nid', $feed_nid)
-    ->fields(array('state' => FALSE))
-    ->execute();
+  feeds_source($importer_id, $feed_nid)
+    ->unlock();
+  drupal_set_message(t('Importer unlocked.'));
 }
 
 /**
@@ -394,6 +458,7 @@ function feeds_source_status($source) {
   }
   $v['imported'] = $source->imported;
   $v['count'] = $source->itemCount();
+  $v['next'] = $source->getNextImportTimeDetails();
   if (!empty($v)) {
     return theme('feeds_source_status', $v);
   }
@@ -423,6 +488,32 @@ function theme_feeds_source_status($v) {
     else {
       $items[] = t('No imported items.');
     }
+  }
+
+  if ($v['next']) {
+    // Check if medium date format contains hours/minutes.
+    $date_format = variable_get('date_format_medium');
+    $use_custom_date_format = $date_format && !strpos($date_format, 'H:i');
+
+    if (!empty($v['next']['message'])) {
+      $items[] = t('Next import: @message.', array(
+        '@message' => $v['next']['message'],
+      ));
+    }
+    elseif ($v['next']['time'] > REQUEST_TIME) {
+      $items[] = t('Next import: @date (via @method)', array(
+        '@date' => $use_custom_date_format ? format_date($v['next']['time'], 'custom', 'Y/m/d H:i:s') : format_date($v['next']['time']),
+        '@method' => $v['next']['method'],
+      ));
+    }
+    else {
+      $items[] = t('Next import: on next cron run (via @method).', array(
+        '@method' => $v['next']['method'],
+      ));
+    }
+  }
+  else {
+    $items[] = t('Next import: not scheduled.');
   }
   $output .= theme('item_list', array('items' => $items));
   $output .= '</div>';

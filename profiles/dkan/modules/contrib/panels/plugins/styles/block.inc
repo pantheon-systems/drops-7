@@ -5,7 +5,7 @@
  * Definition of the 'block' panel style.
  */
 
-// Plugin definition
+// Plugin definition.
 $plugin = array(
   'title' => t('System block'),
   'description' => t('Display the pane as a system block; this is more restrictive than the default.'),
@@ -56,4 +56,3 @@ function theme_panels_block_style_render_pane($vars) {
   // might want to utilize.
   return drupal_render($build);
 }
-

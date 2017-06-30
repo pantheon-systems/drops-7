@@ -13,7 +13,7 @@ http://drupal.org/node/109782
 Installation
 ============
 If you are using the rest server you will need to download the latest version of SPYC:
-wget https://raw.github.com/mustangostang/spyc/79f61969f63ee77e0d9460bc254a27a671b445f3/spyc.php -O  servers/rest_server/lib/spyc.php
+wget https://raw.github.com/mustangostang/spyc/0.5.1/Spyc.php -O sites/all/libraries/spyc/spyc.php
 
 Once downloaded you need to add spyc.php to the rest_server/lib folder which exists under
 the location you have installed services in.
