@@ -1,7 +1,12 @@
 <?php
 
-/*
- * Update block styles list to include subnav style 5
+/**
+ * @file
+ * cu_block_theme.install
+ */
+
+/**
+ * Update block styles list to include subnav style 5.
  */
 
 function cu_block_theme_update_7010() {

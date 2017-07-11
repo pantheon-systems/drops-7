@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function cu_feature_callout_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -35,7 +35,7 @@ function cu_feature_callout_field_group_info() {
       ),
     ),
   );
-  $export['group_callout_content|field_collection_item|field_callouts|form'] = $field_group;
+  $field_groups['group_callout_content|field_collection_item|field_callouts|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -62,7 +62,7 @@ function cu_feature_callout_field_group_info() {
       ),
     ),
   );
-  $export['group_callout_image|field_collection_item|field_callouts|form'] = $field_group;
+  $field_groups['group_callout_image|field_collection_item|field_callouts|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -89,7 +89,7 @@ function cu_feature_callout_field_group_info() {
       ),
     ),
   );
-  $export['group_callout_text|field_collection_item|field_callouts|form'] = $field_group;
+  $field_groups['group_callout_text|field_collection_item|field_callouts|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -116,7 +116,14 @@ function cu_feature_callout_field_group_info() {
       ),
     ),
   );
-  $export['group_callout_title|field_collection_item|field_callouts|form'] = $field_group;
+  $field_groups['group_callout_title|field_collection_item|field_callouts|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Callout Content');
+  t('Image');
+  t('Text');
+  t('Title & Link');
+
+  return $field_groups;
 }

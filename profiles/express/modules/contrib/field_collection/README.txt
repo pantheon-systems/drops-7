@@ -1,4 +1,3 @@
-
 Field collection
 -----------------
 Provides a field collection field, to which any number of fields can be attached.
@@ -28,9 +27,20 @@ field collection item may also be viewed and edited separately.
     module might provide such widgets itself too.
 
 
-Restrictions
--------------
+ Using field collection with entity translation
+ -----------------------------------------------
 
-  * As of now, the field collection field does not properly respect field
-    translation. Thus, for now it is suggested to only use the field for
-    entities that are not translatable.
+  * Field collection items must be selected as a translatable entity type at
+    Admin -> Config -> Regional -> Entity Translation.
+
+  * The common use case is to leave the field collection field untranslatable
+    and set the necessary fields inside it to translatable.  There is currently
+    a known issue where a host can not be translated unless it has at least
+    one other field that is translatable, even if some fields inside one of
+    its field collections are translatable.
+
+  * The alternate use case is to make the field collection field in the host
+    translatable.  If this is done it does not matter whether the inner fields
+    are set to translatable or not, they will all be translatable as every
+    language for the host will have a completely separate copy of the field
+    collection item(s).

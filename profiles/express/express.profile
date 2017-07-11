@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * @file
+ * Configure Express.
+ */
+
+const MINIMUM_CORE = '7.54';
+
 /**
  * Implements hook_form_FORM_ID_alter().
  *
@@ -125,7 +133,7 @@ function express_final() {
   // Rebuild list of content types for disable_node_menu_item.
   $types = node_type_get_names();
   variable_set('dnmi_content_types', array_flip($types));
-    
+
   drupal_flush_all_caches();
   secure_permissions_rebuild();
 }
@@ -191,4 +199,22 @@ function express_menu_alter(&$items) {
   //@TODO: move to express_settings?
   // tried but didn't work.  Not sure why, but out of time.
   $items['admin/people']['title'] = 'Users';
+}
+
+/**
+ * Returns the image style url, image style uri, and image info
+ * for a given node/field.
+ */
+function express_get_node_thumbnail($node, $field, $image_style = 'medium') {
+  $node_field = $node->$field;
+  if (!empty($node_field)) {
+    $image['alt'] = $node_field[LANGUAGE_NONE][0]['alt'];
+    $image['path'] = image_style_url($image_style, $node_field[LANGUAGE_NONE][0]['uri']);
+    $image['uri'] = image_style_path($image_style, $node_field[LANGUAGE_NONE][0]['uri']);
+    if (!file_exists($image['uri'])) {
+      image_style_create_derivative(image_style_load('medium'), $node_field[LANGUAGE_NONE][0]['uri'], $image['uri']);
+    }
+    $image['info'] = image_get_info($image['uri']);
+  }
+  return $image;
 }

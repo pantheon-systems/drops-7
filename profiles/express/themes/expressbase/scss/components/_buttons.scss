@@ -24,10 +24,12 @@ a.button,
   font-family: $base_font;
   @include rounded($radius: $radius_small);
   transition: background-color 0.5s ease;
-  @include shadowtransition;
   @include rgbashadow(0, 1px, 2px, #000000, .20);
   margin-bottom: 5px;
   text-decoration: none !important;
+}
+a.button:link, a.button:visited {
+  @include shadowtransition;
 }
 a.button-blue,
 .button-blue {
@@ -141,8 +143,9 @@ a.button-small {
 
 .buttongroup {
   display: block;
-
-  @include rounded($radius: $radius_small);
+  position: relative;
+  overflow: hidden;
+  //@include rounded($radius: $radius_small);
   a.button {
     display: block;
     @include rounded($radius: 0px);
@@ -151,18 +154,37 @@ a.button-small {
   }
 }
 @media screen and (min-width:768px) {
-  .buttongroup {
+  .buttongroup .button-group-content {
     display: table;
-    border-collapse: separate;
-    border-spacing: 1px;
-    layout: fixed;
+    //border-collapse: separate;
+    //border-spacing: 1px;
+    table-layout: fixed;
+    width: 100%;
+    position: relative;
     a.button {
       display: table-cell;
       @include rounded($radius: 0px);
       text-align: center;
       vertical-align: middle;
-      border-width: 1px;
+      //border-width: 1px;
       border-style: solid;
+      position: relative;
+      border:none;
+      overflow: hidden;
+    }
+    a.button:after {
+      bottom: 0;
+      content: "";
+      left: 0;
+      //opacity: 0.25;
+      position: absolute;
+      right: 0;
+      top: 0;
+      z-index: 0;
+      //-webkit-box-shadow: 40px 0 40px 0 rgba(0, 0, 0, 0.25) inset;
+      //box-shadow: 40px 0 40px 0 rgba(0, 0, 0, 0.25) inset;
+      -webkit-box-shadow: 0px 0 1px 0 rgba(0, 0, 0, 0.25) inset;
+      box-shadow: 0px 0 1px 0 rgba(0, 0, 0, 0.25) inset;
     }
   }
 }
@@ -174,14 +196,22 @@ a.button-small {
 }
 .buttongroup-size-large {
   font-size: 115%;
+  a.button {
+    padding: 20px;
+    font-weight: bold;
+  }
 }
 .buttongroup-color-blue {
+  background-color: darken($blue, 5%);
   border-color: $blue;
   a.button {
     @include buttons($color: $blue);
+    color:#fff !important;
   }
 }
 .buttongroup-color-gold {
+  background-color: $cugold;
+  background-color: darken($cugold, 5%);
   border-color: $cugold;
   a.button {
     @include buttons($color: $cugold);
@@ -189,25 +219,34 @@ a.button-small {
   }
 }
 .buttongroup-color-black {
+  background-color: $black;
+  background-color: #000;
   border-color: $black;
   a.button {
     @include buttons($color: $black);
+    color:#fff !important;
   }
 }
 .buttongroup-color-gray {
+  background-color: $gray;
+  background-color: darken($gray, 5%);
   border-color: $gray;
   a.button {
     @include buttons($color: $gray);
+    color:#fff !important;
   }
 }
 .buttongroup-color-white {
-  border-color: #e0e0e0;
+  //background-color: #fff;
+  background-color: darken(#fff, 10%);
+  //border-color: #e0e0e0;
   a.button {
     @include buttons($color: $white);
     color:#363636 !important;
     border:1px solid #e0e0e0;
   }
 }
+
 
 /* GIVE BUTTONS from cu_give_buttons module */
 

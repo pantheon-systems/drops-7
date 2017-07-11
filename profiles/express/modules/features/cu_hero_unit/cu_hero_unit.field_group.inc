@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function cu_hero_unit_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -34,7 +34,7 @@ function cu_hero_unit_field_group_info() {
       ),
     ),
   );
-  $export['group_hero_unit_content|bean|hero_unit|form'] = $field_group;
+  $field_groups['group_hero_unit_content|bean|hero_unit|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -53,9 +53,10 @@ function cu_hero_unit_field_group_info() {
       1 => 'field_hero_unit_image',
       2 => 'field_hero_unit_link_color',
       3 => 'field_hero_unit_size',
-      4 => 'field_hero_unit_text_align',
-      5 => 'field_hero_unit_text_color',
-      6 => 'field_hero_unit_size_priority',
+      4 => 'field_hero_unit_size_priority',
+      5 => 'field_hero_unit_text_align',
+      6 => 'field_hero_unit_text_color',
+      7 => 'field_hero_unit_overlay',
     ),
     'format_type' => 'htab',
     'format_settings' => array(
@@ -67,7 +68,7 @@ function cu_hero_unit_field_group_info() {
       ),
     ),
   );
-  $export['group_hero_unit_design|bean|hero_unit|form'] = $field_group;
+  $field_groups['group_hero_unit_design|bean|hero_unit|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -96,7 +97,13 @@ function cu_hero_unit_field_group_info() {
       ),
     ),
   );
-  $export['group_hero_unit_text|bean|hero_unit|form'] = $field_group;
+  $field_groups['group_hero_unit_text|bean|hero_unit|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Content');
+  t('Design');
+  t('Text');
+
+  return $field_groups;
 }

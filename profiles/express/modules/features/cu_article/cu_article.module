@@ -887,33 +887,23 @@ function cu_article_preprocess_node(&$vars) {
       }
       // Add thumbnail to OpenGraph meta for facebook sharing
       if ($vars['view_mode'] == 'full' && !empty($vars['field_article_thumbnail'])) {
-        if (!empty($vars['field_article_thumbnail'][LANGUAGE_NONE])) {
-          $thumbnail_uri = $vars['field_article_thumbnail'][LANGUAGE_NONE][0]['uri'];
-        }
-        else {
-          $thumbnail_uri = $vars['field_article_thumbnail'][0]['uri'];
-        }
 
-        $thumbnail_path = image_style_url('medium', $thumbnail_uri);
-        $image_style_uri = image_style_path('medium', $thumbnail_uri);
-        if (!file_exists($image_style_uri)) {
-          image_style_create_derivative(image_style_load('medium'), $thumbnail_uri, $image_style_uri);
-        }
-        $image_info = image_get_info($image_style_uri);
+        // Get node thumbnail
+        $image = express_get_node_thumbnail($vars['node'], 'field_article_thumbnail', 'medium');
 
         // build and add meta element
         $element = array(
           '#tag' => 'meta', // The #tag is the html tag -
           '#attributes' => array( // Set up an array of attributes inside the tag
             'property' => 'og:image',
-            'content' => $thumbnail_path,
+            'content' => $image['path'],
           ),
         );
         drupal_add_html_head($element, 'open_graph_image');
         $og_parameters = array(
-          'width' => $image_info['width'],
-          'height' => $image_info['height'],
-          'type' => $image_info['mime_type'],
+          'width' => $image['info']['width'],
+          'height' => $image['info']['height'],
+          'type' => $image['info']['mime_type'],
         );
         foreach ($og_parameters as $key => $param) {
           $element = array(
@@ -925,24 +915,6 @@ function cu_article_preprocess_node(&$vars) {
           );
           drupal_add_html_head($element, 'open_graph_image_' . $key);
         }
-
-        $element = array(
-          '#tag' => 'meta', // The #tag is the html tag -
-          '#attributes' => array( // Set up an array of attributes inside the tag
-            'property' => 'og:url',
-            'content' => url(current_path(), array('absolute' => TRUE)),
-          ),
-        );
-        drupal_add_html_head($element, 'open_graph_url');
-
-        $element = array(
-          '#tag' => 'meta', // The #tag is the html tag -
-          '#attributes' => array( // Set up an array of attributes inside the tag
-            'property' => 'og:title',
-            'content' => drupal_get_title(),
-          ),
-        );
-        drupal_add_html_head($element, 'open_graph_title');
       }
     }
 
@@ -1363,7 +1335,7 @@ function cu_article_node_view($node, $view_mode) {
         if (user_access("edit any article content")) {
           drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
             array('!redirect' => l($redirect, $redirect))),
-            'notice');
+            'status');
         }
         else {
           drupal_goto($redirect);

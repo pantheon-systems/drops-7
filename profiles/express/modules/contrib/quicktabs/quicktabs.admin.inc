@@ -553,6 +553,15 @@ function quicktabs_get_blocks() {
   $blocksarray = &drupal_static(__FUNCTION__, array());
   if (empty($blocksarray)) {
     $blocks = _block_rehash();
+
+    // Sort blocks alphabetically by info label.
+    uasort($blocks, function ($a, $b) {
+      if ($a == $b) {
+        return 0;
+      }
+      return ($a['info'] < $b['info']) ? -1 : 1;
+    });
+
     $blocksarray = array();
     foreach ($blocks as $block) {
       if ($block['module'] != 'quicktabs') {

@@ -23,6 +23,9 @@ function atlas_statistics_get_statistics() {
 function atlas_statistics_atlas_statistics() {
   $statistics_data = array();
 
+  $statistics_data['name'] = variable_get('site_name', NULL);
+  $statistics_data['status'] = variable_get('atlas_status', NULL);
+
   // Count Nodes.
   $node_query = db_select('node', 'n');
   $node_query->addExpression('COUNT(type)', 'count_type');
@@ -80,6 +83,16 @@ function atlas_statistics_atlas_statistics() {
     $statistics_data['overridden_features'] = $overridden;
   }
 
+  // Returns system status boolean.
+  module_load_include('inc', 'system', 'system.admin');
+  $statistics_data['drupal_system_status'] = system_status(TRUE);
+
+  // If webform is enabled then gather its statistics.
+  $webform_stats = _atlas_statistics_get_webform_statistics();
+  if (module_exists('webform')) {
+    $statistics_data['webforms'] = $webform_stats;
+  }
+
   return $statistics_data;
 }
 
@@ -109,4 +122,61 @@ function _atlas_statistics_get_features_statuses() {
     }
   }
   return $overridden_features;
+}
+
+/**
+ * Get count of total submissions, active forms, and inactive forms.
+ *
+ * @return array
+ *   An array of webform statistics.
+ */
+function _atlas_statistics_get_webform_statistics() {
+  $webform_stats = array(
+    'total_submissions' => 0,
+    'active_forms' => 0,
+    'inactive_forms' => 0,
+  );
+
+  // Load all webforms.
+  $webforms = node_load_multiple(array(), array(
+    'type' => 'webform',
+  ));
+
+  // Loop through webforms and tally the statistic totals.
+  module_load_include('inc', 'webform', 'includes/webform.submissions');
+  foreach ($webforms as $webform) {
+    // Tally submission count.
+    $webform_stats['total_submissions'] += webform_get_submission_count($webform->nid);
+
+    // Set active/inactive bit and tally.
+    $is_active = atlas_statistics_webform_is_active($webform->nid);
+    $webform_stats['active_forms'] += $is_active == TRUE ? 1 : 0;
+    $webform_stats['inactive_forms'] += $is_active == FALSE ? 1 : 0;
+  }
+
+  return $webform_stats;
+}
+
+/**
+ * Determines if the webform is active based upon the date of last submission.
+ *
+ * @param int $nid
+ *   Webform node id.
+ * @param string $date
+ *   A human readable date. Defaults to '13 months ago'.
+ *
+ * @return bool
+ *   TRUE if last submission was within the provided date. FALSE otherwise.
+ */
+function atlas_statistics_webform_is_active($nid, $date = '13 months ago') {
+  $submissions = webform_get_submissions(array('nid' => $nid));
+  if (empty($submissions)) {
+    // If there are no submissions, then consider the webform inactive.
+    return FALSE;
+  }
+  else {
+    // Get last submission; check that it was submitted since the provided date.
+    $last_submission = end($submissions);
+    return $last_submission->submitted > strtotime($date);
+  }
 }

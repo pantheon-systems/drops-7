@@ -91,7 +91,7 @@ function atlas_admin_settings() {
     '#collapsible' => TRUE,
   );
 
-  $core_options = _get_code_options('core','drupal');
+  $core_options = _get_code_options('core', 'drupal');
   $active_core = $site_array['code']['core'];
 
   $form['atlas_code']['atlas_core'] = array(
@@ -101,7 +101,7 @@ function atlas_admin_settings() {
     '#default_value' => $active_core,
   );
 
-  $profile_options = _get_code_options('profile','express');
+  $profile_options = _get_code_options('profile', 'express');
   $active_profile = $site_array['code']['profile'];
 
   $form['atlas_code']['atlas_profile'] = array(
@@ -134,7 +134,7 @@ function atlas_admin_settings() {
   // Set the options and description. Override if status is not 'Launched'.
   $update_group_options = range(0, 14);
   $update_group_description = 'Groups 0-10 are considered "normal" and can be arbitrarily reassigned. Groups 11-14 should only be used for sites that need special attention.';
-  if($site_array['status'] != 'launched'){
+  if ($site_array['status'] != 'launched') {
     $update_group_options = range(0, 2);
     $update_group_description = 'Installed sites can be put into groups 0-2. These groups can be arbitrarily reassigned.';
   }
@@ -224,7 +224,12 @@ function atlas_admin_settings_submit($form, &$form_state) {
       $packages_diff = array_diff($form_state['values']['atlas_packages'], $site_array['code']['package']);
     }
     // Check for First added package, Remove all packages, or Change packages.
-    if (!array_key_exists('package', $site_array['code']) || (array_key_exists('package', $site_array['code']) &&  empty($form_state['values']['atlas_packages'])) || !empty($packages_diff)) {
+    if (!empty($packages_diff)
+      || (array_key_exists('package', $site_array['code']) && empty($form_state['values']['atlas_packages']))
+    ) {
+      $request_data['code']['package'] = $form_state['values']['atlas_packages'];
+    }
+    elseif (!array_key_exists('package', $site_array['code']) && !empty($form_state['values']['atlas_packages'])) {
       $request_data['code']['package'] = $form_state['values']['atlas_packages'];
     }
   }
@@ -255,7 +260,7 @@ function atlas_admin_settings_submit($form, &$form_state) {
  *   $site_data: A partial PATCH to the site item in Atlas.
  */
 function atlas_process_core_schema_version($version) {
- $data = array();
+  $data = array();
 
   // We need to know the 'atlas_id' to get the 'statistics_id'.
   $atlas_id = variable_get('atlas_id', FALSE);
@@ -450,13 +455,14 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
  *   libraries.
  * @param string $name optional
  *   All versions of a specifically named code item. *
+ *
  * @return array option list
  *   Form ready list of options with '_id' field as the key.
  */
 function _get_code_options($type = NULL, $name = NULL) {
 
   if ($name && $type) {
-    if($type == 'packages') {
+    if ($type == 'packages') {
       $query = 'where={"meta.name":"' . $name . '","meta.code_type":{"$in":["module","theme","library"]}}';
     }
     else {
@@ -464,7 +470,7 @@ function _get_code_options($type = NULL, $name = NULL) {
     }
   }
   elseif ($type) {
-    if($type == 'packages') {
+    if ($type == 'packages') {
       $query = 'where={"meta.code_type":{"$in":["module","theme","library"]}}';
     }
     else {
@@ -483,9 +489,9 @@ function _get_code_options($type = NULL, $name = NULL) {
   $options_data = $options_data['_items'];
 
   $options = array();
-  foreach($options_data as $option) {
+  foreach ($options_data as $option) {
     $option_label = $option['meta']['name'] . ' ' . $option['meta']['version'];
-    if($option['meta']['is_current']) {
+    if ($option['meta']['is_current']) {
       $option_label = $option_label . ' - Current';
     }
     $options[$option['_id']] = $option_label;

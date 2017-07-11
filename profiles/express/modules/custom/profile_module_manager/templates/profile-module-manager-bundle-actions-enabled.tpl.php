@@ -1,1 +1,1 @@
-<span class="bundle-enabled">Enabled</span>
+<span class="alakazaam bundle-enabled">Ready to use</span>

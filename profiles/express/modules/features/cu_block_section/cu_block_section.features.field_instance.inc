@@ -10,6 +10,45 @@
 function cu_block_section_field_default_field_instances() {
   $field_instances = array();
 
+  // Exported field_instance:
+  // 'bean-block_section-field_block_section_bg_effect'.
+  $field_instances['bean-block_section-field_block_section_bg_effect'] = array(
+    'bundle' => 'block_section',
+    'default_value' => array(
+      0 => array(
+        'value' => 'fixed',
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => FALSE,
+    'deleted' => 0,
+    'description' => 'Choose an effect for the background image.',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_key',
+        'weight' => 10,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_block_section_bg_effect',
+    'label' => 'Background Effect',
+    'required' => 1,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 11,
+    ),
+  );
+
   // Exported field_instance: 'bean-block_section-field_block_section_bg_image'.
   $field_instances['bean-block_section-field_block_section_bg_image'] = array(
     'bundle' => 'block_section',
@@ -108,6 +147,230 @@ function cu_block_section_field_default_field_instances() {
   );
 
   // Exported field_instance:
+  // 'bean-block_section-field_block_section_bg_image_m'.
+  $field_instances['bean-block_section-field_block_section_bg_image_m'] = array(
+    'bundle' => 'block_section',
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'image_url_formatter',
+        'settings' => array(
+          'image_link' => '',
+          'image_style' => 'medium',
+          'url_type' => 0,
+        ),
+        'type' => 'image_url',
+        'weight' => 12,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_block_section_bg_image_m',
+    'label' => 'Mobile Background Image',
+    'required' => 0,
+    'settings' => array(
+      'alt_field' => 0,
+      'default_image' => 0,
+      'file_directory' => '',
+      'file_extensions' => 'png gif jpg jpeg',
+      'max_filesize' => '',
+      'max_resolution' => '',
+      'min_resolution' => '',
+      'title_field' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'image',
+      'settings' => array(
+        'insert' => 0,
+        'insert_absolute' => FALSE,
+        'insert_class' => '',
+        'insert_default' => 'auto',
+        'insert_styles' => array(
+          'auto' => 'auto',
+          'colorbox__backstretch' => 0,
+          'colorbox__el_hero' => 0,
+          'colorbox__email_ad' => 0,
+          'colorbox__email_ad_large' => 0,
+          'colorbox__email_feature_thumbnail' => 0,
+          'colorbox__email_feature_thumbnail_large' => 0,
+          'colorbox__email_large' => 0,
+          'colorbox__email_medium' => 0,
+          'colorbox__email_teaser_thumbnail' => 0,
+          'colorbox__flexslider_full' => 0,
+          'colorbox__flexslider_thumbnail' => 0,
+          'colorbox__focal_point_preview' => 0,
+          'colorbox__hero' => 0,
+          'colorbox__large' => 0,
+          'colorbox__large_square_thumbnail' => 0,
+          'colorbox__large_wide_thumbnail' => 0,
+          'colorbox__linkit_thumb' => 0,
+          'colorbox__medium' => 0,
+          'colorbox__preview' => 0,
+          'colorbox__slider' => 0,
+          'colorbox__slider-large' => 0,
+          'colorbox__small' => 0,
+          'colorbox__small_square_thumbnail' => 0,
+          'colorbox__small_thumbnail' => 0,
+          'colorbox__square' => 0,
+          'colorbox__square_thumbnail' => 0,
+          'colorbox__thumbnail' => 0,
+          'icon_link' => 0,
+          'image' => 0,
+          'image_backstretch' => 0,
+          'image_el_hero' => 0,
+          'image_email_ad' => 0,
+          'image_email_ad_large' => 0,
+          'image_email_feature_thumbnail' => 0,
+          'image_email_feature_thumbnail_large' => 0,
+          'image_email_large' => 0,
+          'image_email_medium' => 0,
+          'image_email_teaser_thumbnail' => 0,
+          'image_flexslider_full' => 0,
+          'image_flexslider_thumbnail' => 0,
+          'image_focal_point_preview' => 0,
+          'image_hero' => 0,
+          'image_large' => 0,
+          'image_large_square_thumbnail' => 0,
+          'image_large_wide_thumbnail' => 0,
+          'image_linkit_thumb' => 0,
+          'image_medium' => 0,
+          'image_preview' => 0,
+          'image_slider' => 0,
+          'image_slider-large' => 0,
+          'image_small' => 0,
+          'image_small_square_thumbnail' => 0,
+          'image_small_thumbnail' => 0,
+          'image_square' => 0,
+          'image_square_thumbnail' => 0,
+          'image_thumbnail' => 0,
+          'link' => 0,
+        ),
+        'insert_width' => '',
+        'preview_image_style' => 'thumbnail',
+        'progress_indicator' => 'throbber',
+      ),
+      'type' => 'image_image',
+      'weight' => 10,
+    ),
+  );
+
+  // Exported field_instance:
+  // 'bean-block_section-field_block_section_bg_image_t'.
+  $field_instances['bean-block_section-field_block_section_bg_image_t'] = array(
+    'bundle' => 'block_section',
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'image_url_formatter',
+        'settings' => array(
+          'image_link' => '',
+          'image_style' => 'large',
+          'url_type' => 0,
+        ),
+        'type' => 'image_url',
+        'weight' => 11,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_block_section_bg_image_t',
+    'label' => 'Tablet Background Image',
+    'required' => 0,
+    'settings' => array(
+      'alt_field' => 0,
+      'default_image' => 0,
+      'file_directory' => '',
+      'file_extensions' => 'png gif jpg jpeg',
+      'max_filesize' => '',
+      'max_resolution' => '',
+      'min_resolution' => '',
+      'title_field' => 0,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'image',
+      'settings' => array(
+        'insert' => 0,
+        'insert_absolute' => FALSE,
+        'insert_class' => '',
+        'insert_default' => 'auto',
+        'insert_styles' => array(
+          'auto' => 'auto',
+          'colorbox__backstretch' => 0,
+          'colorbox__el_hero' => 0,
+          'colorbox__email_ad' => 0,
+          'colorbox__email_ad_large' => 0,
+          'colorbox__email_feature_thumbnail' => 0,
+          'colorbox__email_feature_thumbnail_large' => 0,
+          'colorbox__email_large' => 0,
+          'colorbox__email_medium' => 0,
+          'colorbox__email_teaser_thumbnail' => 0,
+          'colorbox__flexslider_full' => 0,
+          'colorbox__flexslider_thumbnail' => 0,
+          'colorbox__focal_point_preview' => 0,
+          'colorbox__hero' => 0,
+          'colorbox__large' => 0,
+          'colorbox__large_square_thumbnail' => 0,
+          'colorbox__large_wide_thumbnail' => 0,
+          'colorbox__linkit_thumb' => 0,
+          'colorbox__medium' => 0,
+          'colorbox__preview' => 0,
+          'colorbox__slider' => 0,
+          'colorbox__slider-large' => 0,
+          'colorbox__small' => 0,
+          'colorbox__small_square_thumbnail' => 0,
+          'colorbox__small_thumbnail' => 0,
+          'colorbox__square' => 0,
+          'colorbox__square_thumbnail' => 0,
+          'colorbox__thumbnail' => 0,
+          'icon_link' => 0,
+          'image' => 0,
+          'image_backstretch' => 0,
+          'image_el_hero' => 0,
+          'image_email_ad' => 0,
+          'image_email_ad_large' => 0,
+          'image_email_feature_thumbnail' => 0,
+          'image_email_feature_thumbnail_large' => 0,
+          'image_email_large' => 0,
+          'image_email_medium' => 0,
+          'image_email_teaser_thumbnail' => 0,
+          'image_flexslider_full' => 0,
+          'image_flexslider_thumbnail' => 0,
+          'image_focal_point_preview' => 0,
+          'image_hero' => 0,
+          'image_large' => 0,
+          'image_large_square_thumbnail' => 0,
+          'image_large_wide_thumbnail' => 0,
+          'image_linkit_thumb' => 0,
+          'image_medium' => 0,
+          'image_preview' => 0,
+          'image_slider' => 0,
+          'image_slider-large' => 0,
+          'image_small' => 0,
+          'image_small_square_thumbnail' => 0,
+          'image_small_thumbnail' => 0,
+          'image_square' => 0,
+          'image_square_thumbnail' => 0,
+          'image_thumbnail' => 0,
+          'link' => 0,
+        ),
+        'insert_width' => '',
+        'preview_image_style' => 'thumbnail',
+        'progress_indicator' => 'throbber',
+      ),
+      'type' => 'image_image',
+      'weight' => 9,
+    ),
+  );
+
+  // Exported field_instance:
   // 'bean-block_section-field_block_section_content_bg'.
   $field_instances['bean-block_section-field_block_section_content_bg'] = array(
     'bundle' => 'block_section',
@@ -142,7 +405,7 @@ function cu_block_section_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 11,
+      'weight' => 15,
     ),
   );
 
@@ -159,7 +422,7 @@ function cu_block_section_field_default_field_instances() {
     'description' => '',
     'display' => array(
       'default' => array(
-        'label' => 'above',
+        'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
         'type' => 'text_default',
@@ -182,7 +445,7 @@ function cu_block_section_field_default_field_instances() {
         'size' => 60,
       ),
       'type' => 'text_textfield',
-      'weight' => 14,
+      'weight' => 18,
     ),
   );
 
@@ -226,7 +489,7 @@ function cu_block_section_field_default_field_instances() {
         'size' => 60,
       ),
       'type' => 'text_textfield',
-      'weight' => 12,
+      'weight' => 16,
     ),
   );
 
@@ -243,7 +506,7 @@ function cu_block_section_field_default_field_instances() {
     'description' => '',
     'display' => array(
       'default' => array(
-        'label' => 'above',
+        'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
         'type' => 'text_default',
@@ -266,7 +529,7 @@ function cu_block_section_field_default_field_instances() {
         'size' => 60,
       ),
       'type' => 'text_textfield',
-      'weight' => 13,
+      'weight' => 17,
     ),
   );
 
@@ -344,7 +607,47 @@ function cu_block_section_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 9,
+      'weight' => 13,
+    ),
+  );
+
+  // Exported field_instance: 'bean-block_section-field_hero_unit_overlay'.
+  $field_instances['bean-block_section-field_hero_unit_overlay'] = array(
+    'bundle' => 'block_section',
+    'default_value' => array(
+      0 => array(
+        'value' => 0,
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => FALSE,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 13,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_hero_unit_overlay',
+    'label' => 'Add overlay to improve readability',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(
+        'display_label' => 1,
+      ),
+      'type' => 'options_onoff',
+      'weight' => 12,
     ),
   );
 
@@ -382,20 +685,25 @@ function cu_block_section_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 10,
+      'weight' => 14,
     ),
   );
 
   // Translatables
   // Included for use with string extractors like potx.
+  t('Add overlay to improve readability');
   t('Background Color');
+  t('Background Effect');
   t('Background Image');
   t('Blocks');
+  t('Choose an effect for the background image.');
   t('Content Background');
   t('Customize the padding of each block section. (Top, Right, Bottom, Left)');
   t('Displays background for your content so it is easier to read.');
+  t('Mobile Background Image');
   t('Mobile Padding');
   t('Padding');
+  t('Tablet Background Image');
   t('Tablet Padding');
   t('Text Color');
 

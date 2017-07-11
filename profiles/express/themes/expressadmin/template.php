@@ -370,7 +370,7 @@ function expressadmin_preprocess_admin_block(&$vars) {
     'advanced-content' => 'th-list',
     'search-engine-optimization' => 'line-chart',
     'social-media' => 'share-alt',
-    'administrator' => 'fire-extinguisher'
+    'cache' => 'refresh'
   );
   $key = strtolower(str_replace(' ','-', $vars['block']['link_title']));
   if (array_key_exists($key, $titles)) {

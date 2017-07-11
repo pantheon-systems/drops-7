@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for cu_update_ping module.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function cu_update_ping_enable() {
+  // Set time variable to check for on cron run.
+  variable_set('cu_update_ping_time', REQUEST_TIME);
+}

@@ -1,0 +1,71 @@
+@import 'modules/_global.scss';
+
+
+/* Styles for Express Block Designer */
+
+.block-bean-type-feature-callout {
+  &.content-grid-style--cards {
+    .block-inner {
+      padding:0;
+      background:none;
+      color: inherit;
+    }
+    .block-title {
+      margin-bottom:10px;
+    }
+    &.blockdarkgray {
+      .content-grid-style-cards {
+        .content-grid-item-inner {
+          background:#222;
+          .content-grid-content {
+            color:#fff;
+            a:link,
+            a:visited {
+              color:$cugold;
+            }
+          }
+        }
+      }
+    }
+  }
+  &.content-grid-style--tiles,
+  &.content-grid-style--tiles_alt {
+    // Remove background, color applied by block designer
+    .block-inner {
+      padding:0;
+      background:none;
+      color: inherit;
+    }
+    .block-title {
+      margin-bottom:10px;
+    }
+    &.blockgray {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#f4f4f4;
+      }
+    }
+    &.lightblue {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#EBF7FF;
+      }
+    }
+    &.blockdarkgray {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#222;
+        color:#fff;
+        a:link,
+        a:visited {
+          color:$cugold;
+        }
+      }
+    }
+  }
+}
+.block-bean-type-feature-callout.lightblue,
+.block-bean-type-feature-callout.blockgray,
+.block-bean-type-feature-callout.blockdarkgray {
+
+}

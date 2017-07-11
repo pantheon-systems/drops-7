@@ -3,7 +3,7 @@ name = "Express"
 description = "Express installation profile"
 exclusive = "1"
 core = "7.x"
-version = 7.x-2.3
+version = 7.x-2.5
 
 ; ----------
 ; Dependencies
@@ -48,7 +48,6 @@ dependencies[] = entitycache
 dependencies[] = inline_entity_form
 dependencies[] = bean
 dependencies[] = bean_admin_ui
-dependencies[] = bean_entitycache
 dependencies[] = context
 
 ; Express Core Contrib Dependencies
@@ -93,6 +92,7 @@ dependencies[] = jquery_update
 dependencies[] = cu_accessibility
 
 dependencies[] = profile_module_manager
+dependencies[] = cu_profile_module_manager
 
 ; ============ CU AUTHENTICATION AND PERMISSIONS ============
 dependencies[] = administerusersbyrole

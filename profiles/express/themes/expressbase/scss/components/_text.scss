@@ -46,7 +46,7 @@ body.layout-responsive {
 a:link, a:visited {
   color: $link_blue;
   text-decoration: none;
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, -webkit-box-shadow 0.25s ease, -moz-box-shadow 0.25s ease, box-shadow 0.25s ease;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 a:hover {
   color: $red;
@@ -203,11 +203,9 @@ h6 {
 // List Styles
 ol {
   list-style: decimal;
-  overflow: hidden;
 }
 ul {
   list-style: disc;
-  overflow: hidden;
 }
 .item-list,
 .field-type-text-with-summary,

@@ -13,11 +13,11 @@ include_once 'cu_block_theme.features.inc';
  * This will be used to alter the block bean creation/modification to add
  *  a style selection.
  */
-function cu_block_theme_form_bean_form_alter(&$form, &$form_state, $form_id) { 
+function cu_block_theme_form_bean_form_alter(&$form, &$form_state, $form_id) {
 
   $delta = $form['bean']['#value']->delta;
 
-  if(isset($delta)) {  
+  if(isset($delta)) {
     $form['module'] = array(
       '#type' => 'hidden',
       '#value' => 'bean',
@@ -59,7 +59,7 @@ function cu_block_theme_form_bean_form_alter(&$form, &$form_state, $form_id) {
     $form['#submit'][] = 'blocktheme_update';
     $form['custom_block_theme']['examples']['#markup'] = '<div id="blocktheme-examples">';
     $form['custom_block_theme']['examples']['#markup'] .= _cu_block_theme_examples();
-    $form['custom_block_theme']['examples']['#markup'] .= '</div>';    
+    $form['custom_block_theme']['examples']['#markup'] .= '</div>';
   }
 }
 
@@ -81,13 +81,13 @@ function cu_block_theme_form_block_admin_configure_alter(&$form, &$form_state, $
       $form['regions']['#access'] = FALSE;
       $form['visibility_title']['#access'] = FALSE;
       $form['visibility']['#access'] = FALSE;
-      
+
       // COLLAPSING FOR BETTER UX
       $form['custom_block_theme']['#collapsible'] = TRUE;
       $form['custom_block_theme']['#collapsed'] = TRUE;
     break;
   }
-  
+
   if( ($form['module']['#value'] == 'menu') || ($form['module']['#value'] == 'menu_block') || ($form['delta']['#value'] == 'main-menu') ) {
 
   } else {
@@ -99,7 +99,7 @@ function cu_block_theme_form_block_admin_configure_alter(&$form, &$form_state, $
     unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav5']);
     unset($form['custom_block_theme']['blocktheme']['#options']['sidebarnav6']);
   }
-  
+
     $form['custom_block_theme']['examples']['#markup'] .= '</div>';
 }
 
@@ -107,20 +107,25 @@ function _cu_block_theme_examples() {
    $path = base_path() . drupal_get_path('module', 'cu_block_theme') . '/examples/';
    $output = '<table cellspacing="0" cellpadding="10" border="0" class="block-style-examples">
     <thead>
-      <td colspan="4"><strong>Block Style Examples</strong></td>
+      <td colspan="6"><strong>Block Style Examples</strong></td>
     </thead>
 
     <tr>
       <td><div class="blockgray-example">Gray</div></td>
       <td><div class="blockdarkgray-example">Dark Gray</div></td>
+      <td><div class="blocktan-example">Tan</div></td>
+      <td><div class="blocklightblue-example">Light Blue</div></td>
       <td><div class="blockoutline-example">Outline</div></td>
       <td><div class="blockunderline-example">Underline</div></td>
     </tr>
     </table><br />';
-    
+
     return $output;
 }
 
+/**
+ * Implements hook_page_alter().
+ */
 function cu_block_theme_page_alter(&$vars) {
   //drupal_add_js(drupal_get_path('module', 'cu_block_theme') . '/cu_block_theme.js');
   drupal_add_css(drupal_get_path('module', 'cu_block_theme') . '/css/cu_block_theme.css');

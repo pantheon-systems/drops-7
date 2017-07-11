@@ -215,9 +215,20 @@ class FieldCollectionItemEntity extends Entity {
    *
    * @param object $entity
    *   Host entity.
+   * @param string $host_entity_type
+   *   The entity type of the entity the field collection is attached to.
    */
-  public function updateHostEntity($entity) {
+  public function updateHostEntity($entity, $host_entity_type = NULL) {
     $this->fetchHostDetails();
+    // If it isn't possible to retrieve hostEntityType due to the fact that it's
+    // not saved in the DB yet then fill in info about the hostEntity manually.
+    // This happens when creating a new revision of a field collection entity
+    // and it needs to relate to the new revision of the host entity.
+    if (!$this->hostEntityType) {
+      $this->hostEntityType = $host_entity_type;
+      $this->hostEntity = $entity;
+      list($this->hostEntityId, $this->hostEntityRevisionId) = entity_extract_ids($this->hostEntityType, $this->hostEntity);
+    }
     list($recieved_id) = entity_extract_ids($this->hostEntityType, $entity);
 
     if ($this->isInUse()) {
@@ -231,8 +242,8 @@ class FieldCollectionItemEntity extends Entity {
     if ($current_id == $recieved_id) {
       $this->hostEntity = $entity;
       $delta = $this->delta();
-      if (isset($entity->{$this->field_name}[$this->langcode][$delta]['entity'])) {
-        $entity->{$this->field_name}[$this->langcode][$delta]['entity'] = $this;
+      if (isset($entity->{$this->field_name}[$this->langcode()][$delta]['entity'])) {
+        $entity->{$this->field_name}[$this->langcode()][$delta]['entity'] = $this;
       }
     }
     else {
@@ -289,7 +300,7 @@ class FieldCollectionItemEntity extends Entity {
   }
 
   protected function fetchHostDetails() {
-    if (!isset($this->hostEntityId)) {
+    if (!isset($this->hostEntityId) || (!$this->hostEntityId && $this->hostEntityRevisionId)) {
       if ($this->item_id) {
         // For saved field collections, query the field data to determine the
         // right host entity.
@@ -299,16 +310,24 @@ class FieldCollectionItemEntity extends Entity {
           $query->age(FIELD_LOAD_REVISION);
         }
         $result = $query->execute();
-        list($this->hostEntityType, $data) = each($result);
+        if ($result) {
+          list($this->hostEntityType, $data) = each($result);
 
-        if ($this->isInUse()) {
-          $this->hostEntityId = $data ? key($data) : FALSE;
-          $this->hostEntityRevisionId = FALSE;
+          if ($this->isInUse()) {
+            $data_array_keys = array_keys($data);
+            $this->hostEntityId = $data ? end($data_array_keys) : FALSE;
+            $this->hostEntityRevisionId = FALSE;
+          }
+          // If we are querying for revisions, we get the revision ID.
+          else {
+            $data_array_keys = array_keys($data);
+            $this->hostEntityId = FALSE;
+            $this->hostEntityRevisionId = $data ? end($data_array_keys) : FALSE;
+          }
         }
-        // If we are querying for revisions, we get the revision ID.
         else {
+          // No host entity available yet.
           $this->hostEntityId = FALSE;
-          $this->hostEntityRevisionId = $data ? key($data) : FALSE;
         }
       }
       else {
@@ -326,14 +345,34 @@ class FieldCollectionItemEntity extends Entity {
   public function delta() {
     if (($entity = $this->hostEntity()) && isset($entity->{$this->field_name})) {
       foreach ($entity->{$this->field_name} as $langcode => &$data) {
-        foreach ($data as $delta => $item) {
-          if (isset($item['value']) && $item['value'] == $this->item_id) {
-            $this->langcode = $langcode;
-            return $delta;
+        if (!empty($data)) {
+          foreach ($data as $delta => $item) {
+            if (isset($item['value']) && $item['value'] == $this->item_id) {
+              $this->langcode = $langcode;
+              return $delta;
+            }
+            elseif (isset($item['entity']) && $item['entity'] === $this) {
+              $this->langcode = $langcode;
+              return $delta;
+            }
           }
-          elseif (isset($item['entity']) && $item['entity'] === $this) {
-            $this->langcode = $langcode;
-            return $delta;
+        }
+      }
+      // If we don't find the delta in the current values (cause the item
+      // is being deleted, for example), we search the delta in the originalcontent.
+      if (!empty($entity->original)) {
+        foreach ($entity->original->{$this->field_name} as $langcode => &$data) {
+          if (!empty($data)) {
+            foreach ($data as $delta => $item) {
+              if (isset($item['value']) && $item['value'] == $this->item_id) {
+                $this->langcode = $langcode;
+                return $delta;
+              }
+              elseif (isset($item['entity']) && $item['entity'] === $this) {
+                $this->langcode = $langcode;
+                return $delta;
+              }
+            }
           }
         }
       }
@@ -344,9 +383,15 @@ class FieldCollectionItemEntity extends Entity {
    * Determines the language code under which the item is stored.
    */
   public function langcode() {
-    if ($this->delta() !== NULL) {
-      return $this->langcode;
+    if ($this->delta() === NULL || empty($this->langcode)) {
+      $this->langcode = field_collection_entity_language('field_collection_item', $this);
     }
+
+    if (empty($this->langcode) || ($this->langcode != LANGUAGE_NONE && (!module_exists('entity_translation') || !entity_translation_enabled('field_collection_item')))) {
+      $this->langcode = LANGUAGE_NONE;
+    }
+
+    return $this->langcode;
   }
 
   /**
@@ -388,6 +433,11 @@ class FieldCollectionItemEntity extends Entity {
       throw new Exception("Unable to create a field collection item without a given host entity.");
     }
 
+    // Copy the values of translatable fields for a new field collection item.
+    if (field_collection_item_is_translatable() && !empty($this->is_new) && $this->langcode() == LANGUAGE_NONE) {
+      $this->copyTranslations();
+    }
+
     // Only save directly if we are told to skip saving the host entity. Else,
     // we always save via the host as saving the host might trigger saving
     // field collection items anyway (e.g. if a new revision is created).
@@ -410,11 +460,12 @@ class FieldCollectionItemEntity extends Entity {
       // @see field_collection_field_presave()
       $delta = $this->delta();
       if (isset($delta)) {
-        $host_entity->{$this->field_name}[$this->langcode][$delta] = array('entity' => $this);
+        $host_entity->{$this->field_name}[$this->langcode()][$delta] = array('entity' => $this);
       }
       else {
-        $host_entity->{$this->field_name}[$this->langcode][] =  array('entity' => $this);
+        $host_entity->{$this->field_name}[$this->langcode()][] = array('entity' => $this);
       }
+
       return entity_save($this->hostEntityType, $host_entity);
     }
   }
@@ -422,9 +473,54 @@ class FieldCollectionItemEntity extends Entity {
   /**
    * Deletes the field collection item and the reference in the host entity.
    */
-  public function delete() {
+  public function delete($skip_host_save = FALSE) {
     parent::delete();
-    $this->deleteHostEntityReference();
+    if (!$skip_host_save) {
+      $this->deleteHostEntityReference();
+    }
+  }
+
+  /**
+   * Copies text to all languages the collection item has a translation for.
+   *
+   * @param $source_language
+   *   Language code to copy the text from.
+   */
+  public function copyTranslations($source_language = NULL) {
+    // Get a handler for Entity Translation if there is one.
+    $host_et_handler = NULL;
+    if (module_exists('entity_translation')) {
+      $host_et_handler = entity_translation_get_handler($this->hostEntityType(), $this->hostEntity());
+    }
+    if (is_null($host_et_handler)) {
+      return;
+    }
+
+    $host_languages = array_keys($host_et_handler->getTranslations()->data);
+    if (empty($host_languages)) {
+      $host_languages = array(entity_language($this->hostEntityType(), $this->hostEntity()));
+    }
+    $source_language = isset($source_language) ? $source_language : $host_et_handler->getLanguage();
+    $target_languages = array_diff($host_languages, array($source_language));
+    $fields_instances = array_keys(field_info_instances('field_collection_item', $this->field_name));
+    $fields = field_info_fields();
+
+    foreach ($fields_instances as $translatable_field) {
+      if ($fields[$translatable_field]['translatable'] == 1) {
+        foreach ($target_languages as $langcode) {
+          if (isset($this->{$translatable_field}[$source_language])) {
+            //Source (translatable_field) is set, therefore continue processing.
+            if(!isset($this->{$translatable_field}[$langcode])) {
+              //Destination (translatable_field) is not set, therefore safe to copy the translation.
+              $this->{$translatable_field}[$langcode] = $this->{$translatable_field}[$source_language];
+            }
+          }
+        }
+        if ($source_language == LANGUAGE_NONE && count($this->{$translatable_field}) > 1) {
+          $this->{$translatable_field}[$source_language] = NULL;
+        }
+      }
+    }
   }
 
   /**
@@ -433,11 +529,11 @@ class FieldCollectionItemEntity extends Entity {
   protected function deleteHostEntityReference() {
     $delta = $this->delta();
     if ($this->item_id && isset($delta)) {
-      unset($this->hostEntity->{$this->field_name}[$this->langcode][$delta]);
+      unset($this->hostEntity->{$this->field_name}[$this->langcode()][$delta]);
       // Do not save when the host entity is being deleted. See
       // field_collection_field_delete().
       if (empty($this->hostEntity->field_collection_deleting)) {
-        entity_save($this->hostEntityType, $this->hostEntity);
+        entity_save($this->hostEntityType(), $this->hostEntity());
       }
     }
   }
@@ -449,7 +545,6 @@ class FieldCollectionItemEntity extends Entity {
    * a field collection item on the default revision of the host should not
    * delete the collection item from archived revisions too. Instead, we delete
    * the current default revision and archive the field collection.
-   *
    */
   public function deleteRevision($skip_host_update = FALSE) {
     if (!$this->revision_id) {
@@ -473,11 +568,8 @@ class FieldCollectionItemEntity extends Entity {
         ->condition('revision_id', $this->revision_id, '<>')
         ->execute()
         ->fetchAssoc();
-      // If no other revision is left, delete. Else archive the item.
-      if (!$row) {
-        $this->delete();
-      }
-      else {
+
+      if ($row) {
         // Make the other revision the default revision and archive the item.
         db_update('field_collection_item')
           ->fields(array('archived' => 1, 'revision_id' => $row['revision_id']))
@@ -485,6 +577,10 @@ class FieldCollectionItemEntity extends Entity {
           ->execute();
         entity_get_controller('field_collection_item')->resetCache(array($this->item_id));
         entity_revision_delete('field_collection_item', $this->revision_id);
+      }
+      if (!$row && !isset($this->hostEntity()->{$this->field_name}[$this->langcode()][$this->delta()])) {
+        // Delete if there is no existing revision or translation to be saved.
+        $this->delete($skip_host_update);
       }
     }
   }
@@ -504,6 +600,15 @@ class FieldCollectionItemEntity extends Entity {
     $export .= addcslashes(parent::export(), '\\\'');
     $export .= "')";
     return $export;
+  }
+
+  /**
+   * Generate an array for rendering the field collection item.
+   */
+  public function view($view_mode = 'full', $langcode = NULL, $page = NULL) {
+    // Allow modules to change the view mode.
+    $view_mode = key(entity_view_mode_prepare($this->entityType, array($this->item_id => $this), $view_mode, $langcode));
+    return parent::view($view_mode, $langcode, $page);
   }
 
   /**

@@ -19,7 +19,7 @@ function cu_hero_unit_field_default_field_instances() {
       ),
     ),
     'default_value_function' => '',
-    'default_value_php' => '',
+    'default_value_php' => FALSE,
     'deleted' => 0,
     'description' => '',
     'display' => array(
@@ -275,6 +275,46 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_overlay'.
+  $field_instances['bean-hero_unit-field_hero_unit_overlay'] = array(
+    'bundle' => 'hero_unit',
+    'default_value' => array(
+      0 => array(
+        'value' => 0,
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => FALSE,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 10,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_hero_unit_overlay',
+    'label' => 'Add overlay to improve readability',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(
+        'display_label' => 1,
+      ),
+      'type' => 'options_onoff',
+      'weight' => 50,
+    ),
+  );
+
   // Exported field_instance: 'bean-hero_unit-field_hero_unit_size'.
   $field_instances['bean-hero_unit-field_hero_unit_size'] = array(
     'bundle' => 'hero_unit',
@@ -464,6 +504,7 @@ function cu_hero_unit_field_default_field_instances() {
 
   // Translatables
   // Included for use with string extractors like potx.
+  t('Add overlay to improve readability');
   t('Background Color');
   t('Background Image');
   t('Headline');

@@ -197,6 +197,30 @@ function cu_help_express_help($variables) {
     'url' => '/node/656',
   );
 
+  $variables['admin/settings/cache/clear'][] = array(
+    'title' => 'Understanding Cache Clearing',
+    'short_title' => 'Cache Clearing',
+    'url' => 'node/1486',
+  );
+
+  $variables['admin/settings/cache/clear/varnish-path'][] = array(
+    'title' => 'Understanding Cache Clearing',
+    'short_title' => 'Cache Clearing',
+    'url' => 'node/1486',
+  );
+
+  $variables['admin/settings/cache/clear/drupal-full'][] = array(
+    'title' => 'Understanding Cache Clearing',
+    'short_title' => 'Cache Clearing',
+    'url' => 'node/1486',
+  );
+
+  $variables['admin/settings/cache/clear/varnish-full'][] = array(
+    'title' => 'Understanding Cache Clearing',
+    'short_title' => 'Cache Clearing',
+    'url' => 'node/1486',
+  );
+
   return array_map(
     function ($a) {
       $a[0]['module'] = 'cu_help';

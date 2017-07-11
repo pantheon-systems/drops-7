@@ -5,4 +5,4 @@ package = CU-Tests
 version = 7.x-1.0
 project = cu_test_content_admin_bundle
 
-
+bundle_group = 'admin_bundles'

@@ -5,8 +5,6 @@
  * Install file for Express and Express-based profiles.
  */
 
-
-
 /**
  * Implements hook_requirements().
  */
@@ -16,14 +14,29 @@ function express_version_requirements($phase) {
   if ($phase == 'runtime') {
     $t = get_t();
 
-    // space in array pushes this to the top
+    // Space in array pushes this to the top.
     $requirements['express_version'] = array(
       'title' => $t('Express Version'),
       'value' => express_version_get_version(),
       'severity' => REQUIREMENT_INFO,
-      'weight' => -9
+      'weight' => -9,
     );
 
+    // Check to ensure we're using a supported Drupal version.
+    $requirements['minimum_core'] = array(
+      'title' => $t('Minimum Core Version'),
+      'weight' => -8,
+    );
+    // If the current version is less than the pinned version for this release,
+    // thrown an error.
+    if (VERSION < MINIMUM_CORE) {
+      $requirements['minimum_core']['severity'] = REQUIREMENT_ERROR;
+      $requirements['minimum_core']['value'] = 'Please update Drupal to version ' . MINIMUM_CORE . ' or higher.';
+    }
+    else {
+      $requirements['minimum_core']['severity'] = REQUIREMENT_OK;
+      $requirements['minimum_core']['value'] = 'You are using a supported version of Drupal core.';
+    }
   }
 
   return $requirements;
