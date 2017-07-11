@@ -1,9 +1,0 @@
-name = CU Inventory Statistics
-description = Provides data about the site and it's content to the CU Inventory.
-core = 7.x
-version = 7.x-1.0
-package = CU-Core
-
-dependencies[] = cu_inventory
-dependencies[] = cu_users
-dependencies[] = express_version

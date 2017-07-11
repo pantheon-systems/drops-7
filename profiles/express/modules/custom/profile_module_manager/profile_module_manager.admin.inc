@@ -1,7 +1,9 @@
 <?php
 
 /**
- * Page callback for admin/config/development/module-manager/settings
+ * Page callback for admin/config/development/module-manager/settings.
+ *
+ * @return mixed
  */
 function profile_module_manager_admin_settings() {
   $form = array();
@@ -53,100 +55,57 @@ function profile_module_manager_admin_settings() {
 }
 
 /**
- * Callback for admin/settings/bundles/list
+ * Callback for admin/settings/bundles/list.
+ *
+ * @return string
  */
 function profile_module_manager_bundle_list() {
-  $output = array();
-  $bundle_page = array();
-  // Check to see if bundle enabling has been disabled.
-  if (variable_get('profile_module_manager_disable_enabling', 0) == 1) {
-    $output = '<p>' . variable_get('profile_module_manager_disable_enabling_text', 'The ability to enable bundles has been turned off.') . '</p>';
-    return $output;
-  }
+  $page = '';
 
-  // Get all bundles
-  $bundles = profile_module_manager_get_bundles('all');
-  $admin_bundles = array();
-  // Get hidden bundles to compare to $bundles array.
-  $hidden_bundles = array();
-  $hidden_bundles_list = variable_get('profile_module_manager_bundle_ignore');
-  foreach ($hidden_bundles_list as $bundle) {
-    if ($bundle !== 0) {
-      $hidden_bundles[] = $bundle;
-    }
-  }
-  // check for _bundle in the machine name, but also look for something in the info
-  // to avoid false positives from contrib?
-  foreach ($bundles as $key => $bundle) {
-    if (!strpos($bundle->name, '_bundle')) {
-      unset($bundles[$key]);
-    }
-    // Remove bundles if set to hidden in config form.
-    if (in_array($bundle->name, $hidden_bundles)) {
-      unset($bundles[$key]);
-    }
-    // Separate admin bundles from list.
-    if (strpos($bundle->name, '_admin_bundle')) {
-      unset($bundles[$key]);
-      $admin_bundles[$key] = $bundle;
-    }
-  }
-
-  // Put admin bundles last in bundle array for separating during display.
-  foreach ($admin_bundles as $key => $bundle) {
-    $bundles[$key] = $bundle;
-  }
-
-  // Step through bundles
-  $first_admin_bundle = TRUE;
+  // Get the bundles' info array.
+  $bundles = profile_module_manager_get_bundles($status = 'all');
   foreach ($bundles as $key => $bundle) {
     $info_file = str_replace(".module", ".info", $bundle->filename);
-    if (file_exists($info_file)) {
-      $info = drupal_parse_info_file($info_file);
-      $enabled = module_exists($bundle->name) ? 1 : 0;
-      // Set bundle group
-      $group = strpos($bundle->name, '_admin_bundle') ? 'group_admin_bundle' : 'group_bundle';
+    $info = drupal_parse_info_file($info_file);
+    $bundle_info[$key] = $info;
 
-      // Add classes for bundle wrapper
-      $classes_array = array();
-      $classes_array[] = 'module-bundle-wrapper';
-      $classes_array[] = $enabled ? 'bundle-enabled' : 'bundle-disabled';
+    $bundle_machine_name = $bundle->name;
+    $bundle_name = $info['name'];
+    $bundle_group = (isset($info['bundle_group']) ? $info['bundle_group'] : '');
+    $bundle_group_set = array('addon_bundles', 'request_bundles', 'beta_bundles', 'admin_bundles');
+    $bundle_description = (isset($info['description']) ? $info['description'] : '');
 
-      // Bundle title
-      $vars['title'] = $info['name'];
-
-      // Bundle description
-      $vars['description'] = $info['description'];
-
-      // Bundle actions
-      $actions = array();
+    if (isset($bundle_group) && (!in_array($bundle_group, $bundle_group_set))) {
+      $page .= '<div class="bundle-enable" id="edit-' . $bundle_machine_name . '">';
+      $page .= '<h2>' . $bundle_name . '</h2>';
+      $page .= '<p>' . $bundle_description . '</p>';
+      foreach ($bundle_info as $key => $value) {
+        $enabled = module_exists($key) ? 1 : 0;
+      }
+      foreach ($info as $key => $value) {
+        //$page .= '<p>' . $key . ': ' . $value . '</p>';
+      }
       $action_vars = array();
       if ($enabled) {
-        $vars['actions'] = theme('profile_module_manager_bundle_actions_enabled', array('actions' => $action_vars));
-      }
-      else {
-        $action_vars['enable_url'] = current_path() . '/confirm/' . $bundle->name;
+        $page .= theme('profile_module_manager_bundle_actions_enabled', array('actions' => $action_vars));
+      } else {
+        $action_vars['enable_url'] = current_path() . '/confirm/' . $bundle_machine_name;
         if (isset($info['project_demo_url'])) {
           $action_vars['demo_url'] = $info['project_demo_url'];
         }
-        $vars['actions'] = theme('profile_module_manager_bundle_actions_disabled', $action_vars);
+        $page .= theme('profile_module_manager_bundle_actions_disabled', $action_vars);
       }
-      $vars['classes'] = join(' ', $classes_array);
-
-      // Build bundle output
-      $single_bundle['#markup'] = theme('profile_module_manager_bundle', array('bundle' => $vars));
-      $all_bundles[$group][] = $single_bundle;
+      $page .= '</div>';
     }
   }
-  // Build bundle groups
-  foreach ($all_bundles as $group_key => $group) {
-    $bundle_page['bundle_groups'][]['#markup'] = theme('profile_module_manager_bundle_group', array('group' => $group_key, 'bundles' => $group));
-  }
-  return theme('profile_module_manager_bundle_page', array('content' => $bundle_page));
+  return $page;
 }
 
 /**
- * Callback function for admin/settings/bundles/list/confirm/%
+ * Callback function for admin/settings/bundles/list/confirm/%.
+ *
+ * @param $bundle_name
+ * @return string
  */
 function profile_module_manager_bundle_confirm($bundle_name) {
   $output = '';
@@ -183,7 +142,10 @@ function profile_module_manager_bundle_confirm($bundle_name) {
 }
 
 /**
- * Callback function for admin/settings/bundles/list/enable/%
+ * Callback function for admin/settings/bundles/list/enable/%.
+ *
+ * @param $bundle
+ * @return string
  */
 function profile_module_manager_bundle_enable($bundle) {
 

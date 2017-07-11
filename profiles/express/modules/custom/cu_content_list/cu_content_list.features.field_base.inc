@@ -60,6 +60,7 @@ function cu_content_list_field_default_field_bases() {
         ),
         'target_bundles' => array(
           'article' => 'article',
+          'collection_item' => 'collection_item',
           'issue' => 'issue',
           'page' => 'page',
           'person' => 'person',

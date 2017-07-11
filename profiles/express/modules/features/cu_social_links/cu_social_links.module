@@ -102,7 +102,7 @@ function cu_social_links_preprocess_entity(&$vars) {
         );
         $icon_classes = join(' ' , $icon_classes);
         $text_classes = join(' ', $text_classes);
-        $link_text = '<span class="' . $icon_classes . '"></span>';
+        $link_text = '<span class="' . $icon_classes . '" aria-hidden="true"></span>';
         $link_text .= '<span class="' . $text_classes . '">' . $link_name  .'</span>';
         $link_options = array(
           'html' => TRUE,

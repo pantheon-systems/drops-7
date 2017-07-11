@@ -147,5 +147,13 @@ I should be able to use the full functionality of the WYSIWYG editor
       And I press the "Save" button
     Then I should see a ".video-filter.video-youtube.vf-yfkxpedpqxi" element
 
-
-
+  @api @wysiwyg
+  Scenario: A content editor should be able to add a countup shortcode
+    Given  CU - I am logged in as a user with the "content_editor" role
+    When I go to "node/add/page"
+      And I fill in "Title" with "Countup Shortcode"
+      And I fill in "Body" with "[countup]5000[/countup]"
+      And I press the "Save" button
+      And I wait for 4 seconds
+    Then I should see "5000"
+      And I should not see "[countup]5000[/countup]"

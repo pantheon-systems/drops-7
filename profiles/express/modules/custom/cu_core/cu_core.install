@@ -130,11 +130,11 @@ The Web Express Team
 http://www.colorado.edu/webcentral
 websupport@colorado.edu');
 
-  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following:
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following users:
 
 [user_external_invite:invited_emails]
 
-An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent.
+An email invitation has been sent requesting the user to login to [site:url] and accept the invitation. Upon completion, a confirmation email will be sent.
 
 If you did not submit this request or need to modify it, please contact us at websupport@colorado.edu.
 
@@ -677,10 +677,44 @@ function cu_core_update_7019() {
 }
 
 /**
- * Enable bean_entitycache module
+ * Core Update 7021 for Express 2.4.0.
+ *
+ * Revert cu_block_theme feature.
  */
-function cu_core_update_7020() {
-  module_enable(array('bean_entitycache'));
+function cu_core_update_7021() {
+  cu_core_revert_features(array('cu_block_theme' => 'cu_block_theme'));
+}
+
+/**
+ * Core Update 7022 for Express 2.4.0.
+ *
+ * Rebuild perms for varnish button.
+ */
+function cu_core_update_7022() {
+  secure_permissions_rebuild();
+}
+
+/**
+ * Enable cu_profile_module_manager module
+ */
+function cu_core_update_7023() {
+  module_enable(array('cu_profile_module_manager'));
+}
+
+/**
+ * Revert Features.
+ */
+function cu_core_update_7024() {
+  cu_core_revert_features();
+}
+
+/**
+ * Express 2.5.0 Update.
+ *
+ * Revert Features.
+ */
+function cu_core_update_7025() {
+  cu_core_revert_features();
 }
 
 /**

@@ -10,16 +10,11 @@
 function cu_wysiwyg_wysiwyg_default_profiles() {
   $profiles = array();
 
-  // Exported profile: wysiwyg
+  // Exported profile: wysiwyg.
   $profiles['wysiwyg'] = array(
     'format' => 'wysiwyg',
     'editor' => 'ckeditor',
     'settings' => array(
-      'default' => 1,
-      'user_choose' => 0,
-      'show_toggle' => 1,
-      'theme' => 'advanced',
-      'language' => 'en',
       'buttons' => array(
         'default' => array(
           'Bold' => 1,
@@ -87,11 +82,16 @@ function cu_wysiwyg_wysiwyg_default_profiles() {
           'Link' => 1,
         ),
       ),
+      'theme' => 'advanced',
+      'language' => 'en',
       'toolbarLocation' => 'top',
       'resize_enabled' => 1,
       'default_toolbar_grouping' => 1,
       'simple_source_formatting' => 0,
+      'acf_mode' => 0,
+      'acf_allowed_content' => '',
       'css_setting' => 'self',
+      'css_theme' => '',
       'css_path' => '%bprofiles/express/modules/features/cu_wysiwyg/ckeditor-wysiwyg.css',
       'stylesSet' => 'Small=small
 Lead=p.lead
@@ -116,9 +116,21 @@ Small Table=table.table-small
 Columns=table.table-vertical
 Rows=table.table-horizontal',
       'block_formats' => 'p,h2,h3,h4,h5,h6,div,blockquote',
-      'advanced__active_tab' => 'edit-basic',
       'forcePasteAsPlainText' => 0,
+      'pasteFromWordNumberedHeadingToList' => 0,
+      'pasteFromWordPromptCleanup' => 0,
+      'pasteFromWordRemoveFontStyles' => 1,
+      'pasteFromWordRemoveStyles' => 1,
+      'url' => '',
     ),
+    'preferences' => array(
+      'default' => 1,
+      'user_choose' => 0,
+      'show_toggle' => 1,
+      'add_to_summaries' => 0,
+      'version' => '4.5.3.6c70c82',
+    ),
+    'name' => 'formatwysiwyg',
   );
 
   return $profiles;

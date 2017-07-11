@@ -37,6 +37,26 @@ function cu_shortcodes_menu() {
 }
 
 /**
+ * Implements hook_libraries_info().
+ */
+function cu_shortcodes_libraries_info() {
+  $libraries = array();
+  $libraries['waypoints'] = array(
+    'name' => t('Waypoints'),
+    'vendor url' => 'http://imakewebthings.com/waypoints/',
+    'download url' => 'https://github.com/imakewebthings/waypoints',
+    'version' => '0.7.0',
+    'files' => array(
+      'js' => array(
+        'waypoint.js' => array(),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
  * Shortcode demo.
  *
  * @return string
@@ -69,6 +89,18 @@ function cu_shortcodes_page_alter(&$page) {
   drupal_add_css(drupal_get_path('module', 'cu_shortcodes') . '/css/cu-shortcodes-columns.css');
   // Add shortcode js.
   drupal_add_js(drupal_get_path('module', 'cu_shortcodes') . '/js/cu_shortcodes.js');
+  drupal_add_js(drupal_get_path('module', 'cu_shortcodes') . '/js/counter.js');
+
+  $path = libraries_get_path('waypoints') . '/waypoint.js';
+  $installed = file_exists($path);
+  if (!$installed) {
+    return;
+  }
+  // Add the library reference.
+  drupal_add_js($path, array(
+    'group' => JS_LIBRARY,
+    'every_page' => TRUE,
+  ));
 }
 
 
@@ -157,6 +189,13 @@ function cu_shortcodes_shortcode_info() {
     'description' => t('Divide list content into columns'),
     'process callback' => 'cu_shortcodes_columnlist',
     'tips callback' => 'cu_shortcodes_columnlist_tips',
+    'default settings' => array(),
+  );
+  $shortcodes['countup'] = array(
+    'title' => t('Count Up'),
+    'description' => t('Have a number count up to a set value when it comes into view.'),
+    'process callback' => 'cu_shortcodes_countup',
+    'tips callback' => 'cu_shortcodes_countup_tips',
     'default settings' => array(),
   );
   $shortcodes['expand'] = array(
@@ -400,7 +439,7 @@ function cu_shortcodes_buttongroup($attrs, $content = NULL) {
     'size' => 'regular',
   ), $attrs));
   $content = str_replace(array('<p>&nbsp;</p>','<p>', '</p>'), array('','',''), $content);
-  $output = '<div class="buttongroup buttongroup-color-' . $color . ' buttongroup-size-' . $size . '">' . $content . '</div>';
+  $output = '<div class="buttongroup buttongroup-color-' . $color . ' buttongroup-size-' . $size . '"><div class="element-max-width-padding"><div class="button-group-content">' . $content . '</div></div></div>';
   return $output;
 }
 
@@ -418,8 +457,16 @@ function cu_shortcodes_buttongroup_tips($format, $long) {
 function cu_shortcodes_callout($attrs, $content = NULL) {
   extract(shortcode_attrs(array(
     'size' => 'small',
+    'float' => 'right',
   ), $attrs));
-  $output = '<div class="feature-layout-callout feature-layout-callout-' . $size . ' clearfix">' . $content . '</div>';
+  $classes = array();
+  $classes[] = 'feature-layout-callout';
+  $classes[] = 'feature-layout-callout-' . $size;
+  $classes[] = 'feature-layout-callout-float-' . $float;
+  $classes[] = 'clearfix';
+
+  $classes = join(' ', $classes);
+  $output = '<div class="' . $classes . '">' . $content . '</div>';
   return $output;
 }
 /**
@@ -532,6 +579,24 @@ function cu_shortcodes_columnlist_tips($format, $long) {
  */
 function cu_shortcodes_column_demo() {
   $output = '<div class="content-column column-one-half">your content here</div><div class"content-column column-one-half last">your content here</div><div class="clear"></div>';
+  return $output;
+}
+
+/**
+ * Countup shortcode.
+ */
+function cu_shortcodes_countup($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+
+  $output = '<span class="counter">' . $content . '</span>';
+  return $output;
+}
+
+/**
+ * Columnlist tips.
+ */
+function cu_shortcodes_countup_tips($format, $long) {
+  $output = '[countup]5000[/countup]';
   return $output;
 }
 
@@ -671,18 +736,36 @@ function cu_shortcodes_imagecaption($attrs, $content = NULL) {
  */
 function cu_shortcodes_map($attrs, $content = NULL) {
   extract(shortcode_attrs(array(
-        'type'       => 1,
-      ), $attrs));
+    'type' => 1,
+    'size' => 'small',
+  ), $attrs));
+  $size = 'map-' . check_plain($size);
   if ((strpos($content, 'maps.google.com') !== FALSE) || (strpos($content, 'google.com/map') !== FALSE) || (strpos($content, 'mapsengine.google.com') !== FALSE)){
     $mapurl = $content . "&amp;ie=UTF8&amp;output=embed";
-    $map = '<iframe width="100%" height="325" src="' . $mapurl . '"></iframe>';
+    $map = '<iframe width="100%" class="' . $size . '" src="' . $mapurl . '"></iframe>';
   }
   elseif (strpos($content, 'colorado.edu/map') !== FALSE) {
     $mapurl = str_replace('map/?', 'map/?embed=true&', $content);
-    $map = '<iframe width="100%" height="325" src="' . $mapurl . '"></iframe><br /><a href="' . $mapurl . '">View Larger Map</a>';
+    $map = '<iframe width="100%" class="' . $size . '" src="' . $mapurl . '"></iframe><br /><a href="' . $mapurl . '" class="map-link">View Larger Map</a>';
   }
   elseif (strpos($content, 'google.com/fusiontables') !== FALSE) {
-    $map = '<iframe width="100%" height="480" src="' . $content . '"></iframe>';
+    $map = '<iframe width="100%" class="' . $size . '" src="' . $content . '"></iframe>';
+  }
+  elseif ((strpos($content, 'myatlascms.com') !== FALSE) || (strpos($content, 'map.colorado.edu') !== FALSE)){
+    // Parse url
+    $url = parse_url($content);
+    // Hide print link for embeded map
+    //$url['query'] .= '&ph=1';
+    // Close the sidebar on embeded maps
+    if (!empty($url['fragment'])) {
+      $url['fragment'] .= '?sbc';
+    }
+    else {
+      $url['fragment'] = '?sbc';
+    }
+    // Build the map url
+    $mapurl = cu_shortcodes_join_url($url, FALSE);
+    $map = '<iframe width="100%" class="' . $size . '" src="' . $mapurl . '"></iframe><br /><a href="' . $mapurl . '" class="map-link">View Larger Map</a>';
   }
   else {
     $map = '';
@@ -814,4 +897,58 @@ function cu_shortcodes_tweet($attrs, $content = NULL) {
 function cu_shortcodes_tweet_tips() {
   $output = '[tweet]https://twitter.com/cubouldernews/status/391253532722360320[/tweet]';
   return $output;
+}
+
+/**
+ * Builds a url from a parse_url generated array.
+ */
+function cu_shortcodes_join_url( $parts, $encode=TRUE )
+{
+    if ( $encode )
+    {
+        if ( isset( $parts['user'] ) )
+            $parts['user']     = rawurlencode( $parts['user'] );
+        if ( isset( $parts['pass'] ) )
+            $parts['pass']     = rawurlencode( $parts['pass'] );
+        if ( isset( $parts['host'] ) &&
+            !preg_match( '!^(\[[\da-f.:]+\]])|([\da-f.:]+)$!ui', $parts['host'] ) )
+            $parts['host']     = rawurlencode( $parts['host'] );
+        if ( !empty( $parts['path'] ) )
+            $parts['path']     = preg_replace( '!%2F!ui', '/',
+                rawurlencode( $parts['path'] ) );
+        if ( isset( $parts['query'] ) )
+            $parts['query']    = rawurlencode( $parts['query'] );
+        if ( isset( $parts['fragment'] ) )
+            $parts['fragment'] = rawurlencode( $parts['fragment'] );
+    }
+
+    $url = '';
+    if ( !empty( $parts['scheme'] ) )
+        $url .= $parts['scheme'] . ':';
+    if ( isset( $parts['host'] ) )
+    {
+        $url .= '//';
+        if ( isset( $parts['user'] ) )
+        {
+            $url .= $parts['user'];
+            if ( isset( $parts['pass'] ) )
+                $url .= ':' . $parts['pass'];
+            $url .= '@';
+        }
+        if ( preg_match( '!^[\da-f]*:[\da-f.:]+$!ui', $parts['host'] ) )
+            $url .= '[' . $parts['host'] . ']'; // IPv6
+        else
+            $url .= $parts['host'];             // IPv4 or name
+        if ( isset( $parts['port'] ) )
+            $url .= ':' . $parts['port'];
+        if ( !empty( $parts['path'] ) && $parts['path'][0] != '/' )
+            $url .= '/';
+    }
+    if ( !empty( $parts['path'] ) )
+        $url .= $parts['path'];
+    if ( isset( $parts['query'] ) )
+        $url .= '?' . $parts['query'];
+    if ( isset( $parts['fragment'] ) )
+        $url .= '#' . $parts['fragment'];
+    return $url;
 }

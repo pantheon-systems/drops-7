@@ -3,10 +3,10 @@
     <div class="hero-unit-content-wrapper element-max-width">
       <div class="hero-unit-content">
         <div class="hero-unit-content-inner">
-        <h2><?php print render($content['field_hero_unit_headline']); ?></h2>
-        <?php if(!empty($content['field_hero_unit_text'])): ?>
-          <p><?php print render($content['field_hero_unit_text']); ?></p>
-        <?php endif; ?>
+          <h2><?php print render($content['field_hero_unit_headline']); ?></h2>
+          <?php if(!empty($content['field_hero_unit_text'])): ?>
+            <p><?php print render($content['field_hero_unit_text']); ?></p>
+          <?php endif; ?>
         <?php if(!empty($content['field_hero_unit_link'])): ?>
           <div class="hero-unit-links clearfix"><?php print render($content['field_hero_unit_link']); ?></div>
         <?php endif; ?>

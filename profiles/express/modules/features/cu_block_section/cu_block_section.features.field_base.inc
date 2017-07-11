@@ -10,6 +10,32 @@
 function cu_block_section_field_default_field_bases() {
   $field_bases = array();
 
+  // Exported field_base: 'field_block_section_bg_effect'.
+  $field_bases['field_block_section_bg_effect'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_block_section_bg_effect',
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'scroll' => 'Scroll',
+        'fixed' => 'Fixed',
+      ),
+      'allowed_values_function' => 'cu_block_section_bg_effect_options',
+      'allowed_values_php' => FALSE,
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+
   // Exported field_base: 'field_block_section_bg_image'.
   $field_bases['field_block_section_bg_image'] = array(
     'active' => 1,
@@ -17,6 +43,50 @@ function cu_block_section_field_default_field_bases() {
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_block_section_bg_image',
+    'indexes' => array(
+      'fid' => array(
+        0 => 'fid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'image',
+    'settings' => array(
+      'default_image' => 0,
+      'uri_scheme' => 'public',
+    ),
+    'translatable' => 0,
+    'type' => 'image',
+  );
+
+  // Exported field_base: 'field_block_section_bg_image_m'.
+  $field_bases['field_block_section_bg_image_m'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_block_section_bg_image_m',
+    'indexes' => array(
+      'fid' => array(
+        0 => 'fid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'image',
+    'settings' => array(
+      'default_image' => 0,
+      'uri_scheme' => 'public',
+    ),
+    'translatable' => 0,
+    'type' => 'image',
+  );
+
+  // Exported field_base: 'field_block_section_bg_image_t'.
+  $field_bases['field_block_section_bg_image_t'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_block_section_bg_image_t',
     'indexes' => array(
       'fid' => array(
         0 => 'fid',

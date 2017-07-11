@@ -15,11 +15,11 @@ function cu_feature_callout_field_default_field_instances() {
     'bundle' => 'feature_callout',
     'default_value' => array(
       0 => array(
-        'value' => 1,
+        'value' => 2,
       ),
     ),
     'default_value_function' => '',
-    'default_value_php' => '',
+    'default_value_php' => FALSE,
     'deleted' => 0,
     'description' => '',
     'display' => array(
@@ -28,7 +28,7 @@ function cu_feature_callout_field_default_field_instances() {
         'module' => 'list',
         'settings' => array(),
         'type' => 'list_default',
-        'weight' => 1,
+        'weight' => 2,
       ),
     ),
     'entity_type' => 'bean',
@@ -44,7 +44,7 @@ function cu_feature_callout_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 2,
+      'weight' => 3,
     ),
   );
 
@@ -66,7 +66,7 @@ function cu_feature_callout_field_default_field_instances() {
         'module' => 'list',
         'settings' => array(),
         'type' => 'list_key',
-        'weight' => 2,
+        'weight' => 3,
       ),
     ),
     'entity_type' => 'bean',
@@ -82,7 +82,45 @@ function cu_feature_callout_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_select',
-      'weight' => 3,
+      'weight' => 4,
+    ),
+  );
+
+  // Exported field_instance: 'bean-feature_callout-field_callout_style'.
+  $field_instances['bean-feature_callout-field_callout_style'] = array(
+    'bundle' => 'feature_callout',
+    'default_value' => array(
+      0 => array(
+        'value' => 'columns',
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => '',
+    'deleted' => 0,
+    'description' => 'Choose a style of grid. Some style options, such as feature, may not display all grid cells.',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_key',
+        'weight' => 4,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_callout_style',
+    'label' => 'Style',
+    'required' => 1,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_buttons',
+      'weight' => 2,
     ),
   );
 
@@ -104,7 +142,7 @@ function cu_feature_callout_field_default_field_instances() {
           'view_mode' => 'full',
         ),
         'type' => 'field_collection_view',
-        'weight' => 0,
+        'weight' => 1,
       ),
     ),
     'entity_type' => 'bean',
@@ -120,7 +158,7 @@ function cu_feature_callout_field_default_field_instances() {
       'module' => 'field_collection',
       'settings' => array(),
       'type' => 'field_collection_embed',
-      'weight' => 4,
+      'weight' => 5,
     ),
   );
 
@@ -357,10 +395,12 @@ function cu_feature_callout_field_default_field_instances() {
   // Translatables
   // Included for use with string extractors like potx.
   t('Cells');
+  t('Choose to display the grid item title below the image, or overlay the title on the image. Overlay setting requires columns to be set to at least 2.');
   t('Columns');
   t('Image');
   t('Image Size');
   t('Section Title');
+  t('Style');
   t('Text');
 
   return $field_instances;

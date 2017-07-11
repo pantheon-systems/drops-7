@@ -1,5 +1,0 @@
-name = CU Inventory
-description = Used to make calls to and from the CU Inventory.
-package = CU-Core
-core = 7.x
-version = 7.x-1.0

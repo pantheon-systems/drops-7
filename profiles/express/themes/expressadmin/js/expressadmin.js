@@ -11,5 +11,23 @@
           $(this).addClass('express-field-columns');
         }
      });
+
+     // Select links
+     $('.express-select-links').each(function(){
+       var target = $('ul', this).attr('id');
+       $('button', this).attr('aria-controls', target);
+     });
+     $('.express-select-links > ul').hide().attr('tabindex', '-1');
+     $('.express-select-links > button').attr('aria-expanded', 'false');
+     $('.express-select-links > button').click(function(event){
+       event.preventDefault();
+       if ($(this).attr('aria-expanded') == 'true') {
+        $(this).attr('aria-expanded', 'false');
+        $(this).next().slideUp().attr('aria-expanded', 'false');
+      } else {
+          $(this).attr('aria-expanded', 'true');
+          $(this).next().slideDown().attr('aria-expanded', 'true');
+      }
+     });
   });
 })(jQuery);

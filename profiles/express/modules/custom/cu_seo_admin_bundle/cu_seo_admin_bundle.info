@@ -7,3 +7,5 @@ dependencies[] = cu_tracking_pixel
 dependencies[] = cu_tracking_pixel_overview
 
 bundle_cache_clear = 1
+
+bundle_group = 'admin_bundles'

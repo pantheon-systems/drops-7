@@ -1,0 +1,4 @@
+name = Update Ping
+description = Pings Drupal's update endpoint to report module useage.
+package = System
+core = 7.x

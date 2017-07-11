@@ -90,7 +90,7 @@ function tracking_pixel_form_submit($form, &$form_state) {
     'status' => $form_state['values']['status'],
   );
   // See if the entity exists
-  if ($tracking_pixel = entity_load_single('tracking_pixel', $form['#entity']->id)) {
+  if (isset($form['#entity']) && $tracking_pixel = entity_load_single('tracking_pixel', $form['#entity']->id)) {
     // Entity exists, add values just in case they have changed
     foreach ($values as $key => $value) {
       $tracking_pixel->$key = $value;

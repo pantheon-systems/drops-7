@@ -7,6 +7,17 @@
   -moz-background-clip: padding;
   background-clip: padding-box;
 }
+
+@mixin transparentGradient($color, $alpha, $direction) {
+  $rgba1: rgba($color,$alpha);
+  $rgba2: rgba($color,0);
+  background-image: -webkit-linear-gradient($direction, $rgba1, $rgba2);
+  background-image: -moz-linear-gradient($direction, $rgba1, $rgba2);
+  background-image: -o-linear-gradient($direction, $rgba1, $rgba2);
+  background-image: -ms-linear-gradient($direction, $rgba1, $rgba2);
+  background-image: linear-gradient($direction, $rgba1, $rgba2);
+}
+
 $radius_small: 3px;
 
 .hero-unit {
@@ -35,11 +46,11 @@ $radius_small: 3px;
 }
 
 .hero-unit-links {
-  line-height: 100%;
-  font-size: 75%;
+  //line-height: 100%;
+  //font-size: 75%;
 }
 .hero-unit p {
-  line-height: 125%;
+  //line-height: 125%;
 }
 .hero-unit {
   h2 {
@@ -128,6 +139,7 @@ $radius_small: 3px;
   -webkit-transform: translateY(-50%);
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
+  z-index: 2;
 }
 
 
@@ -217,7 +229,12 @@ $radius_small: 3px;
 .hero-background-dark_gray {
   background-color: #363636;
 }
-
+.hero-background-tan {
+  background-color: #fffbf0;
+}
+.hero-background-light_blue {
+  background-color:#EBF7FF;
+}
 
 /* BUTTONS */
 
@@ -295,8 +312,45 @@ $radius_small: 3px;
 }
 
 
-.hero-unit video {
-  position: fixed; right: 0; bottom: 0;
-  min-width: 100%; min-height: 100%;
-  width: auto; height: auto; z-index: -100;
+.hero-unit-overlay {
+  position: relative;
+  .hero-unit-content-wrapper {
+    z-index: 2;
+    position: relative;
+  }
+}
+
+.hero-unit-overlay:after {
+  content: ' ';
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  position: absolute;
+  z-index: 1;
+}
+// White text overlays
+.hero-align-center.hero-unit-overlay:after {
+  background:rgba(0,0,0,.5);
+}
+.hero-align-left.hero-unit-overlay:after,
+.hero-align-left-half.hero-unit-overlay:after {
+  @include transparentGradient(#000000, .6, left);
+}
+.hero-align-right.hero-unit-overlay:after,
+.hero-align-right-half.hero-unit-overlay:after {
+  @include transparentGradient(#000000, .6, right);
+}
+
+// Black text overlays
+.hero-text-black.hero-align-center.hero-unit-overlay:after {
+  background:rgba(#fff,.75);
+}
+.hero-text-black.hero-align-left.hero-unit-overlay:after,
+.hero-text-black.hero-align-left-half.hero-unit-overlay:after {
+  @include transparentGradient(#fff, .75, left);
+}
+.hero-text-black.hero-align-right.hero-unit-overlay:after,
+.hero-text-black.hero-align-right-half.hero-unit-overlay:after {
+  @include transparentGradient(#fff, .75, right);
 }

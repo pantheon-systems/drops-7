@@ -39,12 +39,3 @@ function hook_express_help_fields($variables) {
 
   return $variables;
 }
-
-/**
- * Hook for providing custom paths which include wildcards for help links.
- */
-function hook_express_help_custom_paths($variables) {
-  $variables['path/to/custom/%/page'] = 'callback-function';
-
-  return $variables;
-}

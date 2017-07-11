@@ -61,10 +61,35 @@
   margin-bottom: 20px;
 }
 
-/* Examples css */
+.lightblue > .block-inner,
+.blocklightblue-example {
+  @include block($color: #EBF7FF);
+  //color:$text_black;
+  a:link, a:visited {
+    color:$dark_link_blue;
+  }
+  a:hover, a:focus {
+    color: $red;
+  }
+}
 
+.tan > .block-inner,
+.blocktan-example {
+  @include block($color: #fffbf0);
+  //color:$text_black;
+  a:link, a:visited {
+    color:$dark_link_blue;
+  }
+  a:hover, a:focus {
+    color: $red;
+  }
+}
+
+/* Examples css */
+table.block-style-examples {
+  table-layout: fixed;
+}
 table.block-style-examples td {
-  width:25%;
   ul {
     margin: 0;
     padding: 0;
