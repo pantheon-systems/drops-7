@@ -170,8 +170,6 @@ function _express_help_list_admin() {
  * Implements hook_preprocess_page().
  */
 function express_help_preprocess_page(&$vars) {
-  $custom['admin/settings/feeds/rss/manage/%/edit'] = 'cu_rss_express_help_callback';
-  // variable_set('express_help_custom_paths', $custom);
 
   // Get help paths from cache.
   if ($cache = cache_get('express_help_links')) {
@@ -182,49 +180,29 @@ function express_help_preprocess_page(&$vars) {
     // Save this for 30 days - it should only be cleared on a code update.
     cache_set('express_help_links', $express_help, 'cache', time() + 60 * 60 * 24 * 30);
   }
-  // Get current path and change it to reflect help links.
-  $current_path = current_path();
+
+  // Match router items to correct help links.
+  $router_item = menu_get_item(current_path());
+  $current_path = $router_item['path'];
+
+  // Need to deal with node/%/edit paths.
   if ((arg(0) == 'node') && (arg(2) == 'edit')) {
     $node_type = str_replace('_', '-', $vars['node']->type);
     $current_path = 'node/add/' . $node_type;
   }
-  elseif (arg(0) == 'node' && arg(2) == 'webform-results') {
-    $current_path = 'node/%/webform-results';
-  }
-  elseif (arg(0) == 'admin' && arg(1) == 'structure' && arg(2) == 'quicktabs') {
-    $current_path = 'admin/structure/quicktabs/%';
-  }
-  elseif (arg(0) == 'node' && is_numeric(arg(1))) {
-    $current_path = explode('/', $current_path);
-    $current_path[1] = '%';
-    $current_path = implode('/', $current_path);
-  }
-  elseif (arg(0) == 'block' && arg(2) == 'edit') {
+
+  // Need to deal with block%/edit paths.
+  if (arg(0) == 'block' && arg(2) == 'edit') {
     $bean_type = str_replace('_', '-', $vars['page']['content']['system_main']['bean']['#value']->type);
     $current_path = 'block/edit/' . $bean_type;
   }
-  // Call custom functions for checking help paths.
-  else {
-    if ($cache = cache_get('express_help_custom_paths')) {
-      $express_help_custom_paths = $cache->data;
-    }
-    else {
-      $express_help_custom_paths = module_invoke_all('express_help_custom_paths', $variables = NULL);
-      // Save this for 30 days - it should only be cleared on a code update.
-      cache_set('express_help_custom_paths', $express_help_custom_paths, 'cache', time() + 60 * 60 * 24 * 30);
-    }
-    foreach ($express_help_custom_paths as $custom_path_key => $custom_path_callback) {
-      if (function_exists($custom_path_callback)) {
-        $current_path = $custom_path_callback($custom_path_key, $current_path);
-      }
-    }
-  }
+
   // If there is a $key for the current path, add the help link variable.
-  if (!empty($express_help[$current_path])) {
+  if (array_key_exists($current_path, $express_help)) {
     $vars['express_help'] = '';
     foreach ($express_help[$current_path] as $key => $value) {
-      $title = $express_help[$current_path][$key]['title'];
-      $url = $express_help[$current_path][$key]['url'];
+      $title = $value['title'];
+      $url = $value['url'];
 
       // Add base url if url is a fragment/relative.
       $parsed_url = parse_url($url);

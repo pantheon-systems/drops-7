@@ -40,7 +40,7 @@ function cu_block_row_field_default_field_instances() {
       'module' => 'field_collection',
       'settings' => array(),
       'type' => 'field_collection_embed',
-      'weight' => 31,
+      'weight' => 2,
     ),
   );
 
@@ -76,7 +76,47 @@ function cu_block_row_field_default_field_instances() {
       'module' => 'options',
       'settings' => array(),
       'type' => 'options_buttons',
-      'weight' => 32,
+      'weight' => 3,
+    ),
+  );
+
+  // Exported field_instance: 'bean-block_row-field_block_row_match_height'.
+  $field_instances['bean-block_row-field_block_row_match_height'] = array(
+    'bundle' => 'block_row',
+    'default_value' => array(
+      0 => array(
+        'value' => 0,
+      ),
+    ),
+    'default_value_function' => '',
+    'default_value_php' => '',
+    'deleted' => 0,
+    'description' => 'Force all blocks to be the same height (works well when blocks have background colors applied and there is only one block per column)',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 2,
+      ),
+    ),
+    'entity_type' => 'bean',
+    'fences_wrapper' => 'no_wrapper',
+    'field_name' => 'field_block_row_match_height',
+    'label' => 'Match Heights',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(
+        'display_label' => 1,
+      ),
+      'type' => 'options_onoff',
+      'weight' => 4,
     ),
   );
 
@@ -127,6 +167,8 @@ function cu_block_row_field_default_field_instances() {
   t('Column');
   t('Distribution');
   t('Distribution assigns more importance to the first or last block by making that column wider than the rest. For example, this allows you to create a 2 column layout where the first column is 2/3 of the total width and the second column is 1/3 of the total width.');
+  t('Force all blocks to be the same height (works well when blocks have background colors applied and there is only one block per column)');
+  t('Match Heights');
 
   return $field_instances;
 }

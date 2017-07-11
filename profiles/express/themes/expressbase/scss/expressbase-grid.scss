@@ -890,32 +890,37 @@ $padding: 20px;
 }
 
 /* Other column sizes */
-
-.col-xs-5c, .col-sm-5c, .col-md-5c, .col-lg-5c {
-  position: relative;
-  min-height: 1px;
-  padding-right: $padding;
-  padding-left: $padding;
-}
-.col-xs-5c, .col-sm-5c, .col-md-5c, .col-lg-5c {
-  float: left;
-}
-.col-xs-5c {
-  width: 100%;
-}
-@media (min-width: 768px) {
-  .col-sm-5c {
-    width: 20%;
+.layout-responsive,
+.layout-fixed {
+  .col-xs-5c, .col-sm-5c, .col-md-5c, .col-lg-5c {
+    position: relative;
+    min-height: 1px;
+    padding-right: $padding;
+    padding-left: $padding;
+  }
+  .col-xs-5c, .col-sm-5c, .col-md-5c, .col-lg-5c {
+    float: left;
+  }
+  .col-xs-5c {
+    width: 100%;
   }
 }
-@media (min-width: 960px) {
-  .col-md-5c {
-    width: 20%;
+.layout-responsive,
+.layout-fixed {
+  @media (min-width: 768px) {
+    .col-sm-5c {
+      width: 20%;
+    }
   }
-}
-@media (min-width: 1200px) {
-  .col-lg-5c {
-    width: 20%;
+  @media (min-width: 960px) {
+    .col-md-5c {
+      width: 20%;
+    }
+  }
+  @media (min-width: 1200px) {
+    .col-lg-5c {
+      width: 20%;
+    }
   }
 }
 

@@ -23,6 +23,8 @@ function cu_block_theme_strongarm() {
   $strongarm->name = 'blocktheme_themes';
   $strongarm->value = 'blockgray|Gray
 blockdarkgray|Dark Gray
+tan|Tan
+lightblue|Light Blue
 blockoutline|Outline
 blockunderline|Underline';
   $export['blocktheme_themes'] = $strongarm;

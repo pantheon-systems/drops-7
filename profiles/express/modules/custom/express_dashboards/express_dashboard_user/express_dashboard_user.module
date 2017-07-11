@@ -1,20 +1,24 @@
 <?php
 
 /**
+ * @file
+ * Contains Drupal hooks for express_dashboards_user module.
+ */
+
+/**
  * Implements hook_user_login().
  *
  * Send user to dashboard after logging in.
  */
-function express_dashboard_user_user_login(&$edit, $account)
-{
+function express_dashboard_user_user_login(&$edit, $account) {
   // Your logic will set $redirection to the desired location
   $redirection = 'admin/dashboard/user';
 
   // Unless there is already a redirection going, or the user is trying to reset his password, we redirect to $redirection.
   if (empty($_GET['destination'])
     && !is_null($redirection)
-    && (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset'))
-  {
+    && (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset')
+  ) {
     $edit['redirect'] = $redirection;
   }
 }
@@ -61,13 +65,18 @@ function express_dashboard_user_content() {
     }
   }
 
+  // Add status.
+  $express_status = module_invoke('express_status', 'block_view', 'express_status');
+  $output['right']['widgets']['status']['title'] = 'System Status';
+  $output['right']['widgets']['status']['content']['#markup'] = $express_status['content'];
+
   // Add who's online block content to user tab of dashboard.
   $users_online = module_invoke('user', 'block_view', 'online');
-  $output['whos_online']['widgets']['user']['title'] = 'Who\'s online';
-  $output['whos_online']['widgets']['user']['content']['#markup'] = $users_online['content'];
+  $output['left']['widgets']['online']['title'] = 'Who\'s online';
+  $output['left']['widgets']['online']['content']['#markup'] = $users_online['content'];
 
-  $output['user_profile']['widgets']['user']['title'] = $user->name;
-  $output['user_profile']['widgets']['user']['content']['#markup'] = theme('express_dashboard_user_profile', (array) $vars);
+  $output['left']['widgets']['user']['title'] = $user->name;
+  $output['left']['widgets']['user']['content']['#markup'] = theme('express_dashboard_user_profile', (array) $vars);
 
   return $output;
 }
@@ -126,5 +135,23 @@ function express_dashboard_user_secure_permissions($role) {
 
   if (isset($permissions[$role])) {
     return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Make site aware that we have templates.
+ */
+function express_dashboard_user_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'express_dashboard_user');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'dashboard', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
   }
 }

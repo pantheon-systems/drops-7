@@ -7,8 +7,8 @@
 
 // Our dialog definition.
 CKEDITOR.dialog.add( 'map_sc_generatorDialog', function( editor ) {
-  
-    
+
+
 	return {
 
 		// Basic properties of the dialog window: title, minimum size.
@@ -33,9 +33,17 @@ CKEDITOR.dialog.add( 'map_sc_generatorDialog', function( editor ) {
 						label: 'Map Embed Code',
 						// Validation checking whether the field is not empty.
 						validate: CKEDITOR.dialog.validate.notEmpty( "Map URL field cannot be empty" )
-					},					
-					
-					
+					},
+          {
+						// Select input for map size(height).
+						type: 'select',
+						id: 'map-size',
+						label: 'Map Size',
+						items: [ [ 'Small', 'small' ], [ 'Medium', 'medium' ], [ 'Large', 'large' ] ],
+    'default': 'small',
+					},
+
+
 				]
 			},
 
@@ -48,15 +56,17 @@ CKEDITOR.dialog.add( 'map_sc_generatorDialog', function( editor ) {
 			// http://docs.ckeditor.com/#!/api/CKEDITOR.dialog
 			var dialog = this;
 
-			// Get Fields	
+			// Get Fields
 			var mapURL = dialog.getValueOf( 'tab-settings', 'map-url' );
 			var re1='.*?';	// Non-greedy match on filler
       var re2='((?:http|https)(?::\\/{2}[\\w]+)(?:[\\/|\\.]?)(?:[^\\s"]*))';	// HTTP URL 1
 
       var p = new RegExp(re1+re2,["i"]);
       var m = p.exec(mapURL);
-      var httpurl1=m[1];			 
-			editor.insertHtml( '[map]' + httpurl1 + '[/map]');
+      var httpurl1=m[1];
+      // Map size
+      var mapSize = dialog.getValueOf( 'tab-settings', 'map-size' );
+			editor.insertHtml( '[map size="' + mapSize + '"]' + httpurl1 + '[/map]');
 		}
 	};
 });

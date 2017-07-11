@@ -366,3 +366,26 @@ ul.bullet-list ul > li { list-style: circle; }
 .module-bundle { margin-bottom: 20px; border-top: 1px solid #e7e7e7; padding: 20px 0; }
 
 .bundle-enabled .module-bundle h3:before { font-family: 'FontAwesome'; content: '\f00c'; margin-right: 5px; color: #1d881a; }
+
+.navbar-tab a { transition: background 1mpasss ease, background-color 1s ease; }
+
+/* Colors & Backgrounds */
+.success-color { color: #1d881a; }
+
+.success-background { background: rgba(29, 136, 26, 0.1); }
+
+.warning-color { color: #e51c23; }
+
+.warning-background { background: rgba(229, 28, 35, 0.1); }
+
+.express-cards, .express-columns { display: flex; flex-direction: row; flex-wrap: wrap; margin: 0 -20px; margin-bottom: 20px; }
+.express-cards .express-card, .express-cards .express-column, .express-columns .express-card, .express-columns .express-column { padding: 0 20px; margin-bottom: 20px; }
+.express-cards .express-card, .express-columns .express-card { display: flex; align-items: stretch; }
+.express-cards .express-card .content, .express-columns .express-card .content { padding: 20px; border: 1px solid #e7e7e7; }
+.express-cards .express-card .content > *:last-child, .express-columns .express-card .content > *:last-child { margin-bottom: 0; }
+.express-cards .title-center, .express-columns .title-center { text-align: center; }
+
+.express-select-links > button { border: none; font-size: 100%; display: block; width: 100%; text-align: left; max-width: 240px; padding: 10px 30px 10px 10px; background: #007bc8; color: #fff; position: relative; }
+.express-select-links > button:after { content: '\f078'; font-family: FontAwesome; position: absolute; top: 0; right: 0; padding: 10px; }
+.express-select-links > ul { max-width: 480px; }
+.express-select-links > ul a { display: block; padding: 10px; border: 1px solid #e7e7e7; margin-bottom: -1px; }

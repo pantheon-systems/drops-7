@@ -315,21 +315,19 @@ function cu_users_update_7024() {
 }
 
 /**
- * Add Tommy Cox as a developer.
+ * Update user_external_invite email template for when invite is first sent.
  */
 function cu_users_update_7025() {
-  // If thco6272 user does not exist.
-  $account = user_load_by_name('thco6272');
-  if (!isset($account->uid)) {
-    // Create new user.
-    $account = new stdClass();
-    $account->name = 'thco6272';
-    $account->mail = 'thomas.h.cox@colorado.edu';
-    $account->status = 1;
-    $account = user_save($account);
-  }
-  $developer_role = user_role_load_by_name('developer');
-  $query = db_insert('users_roles')->fields(array('uid', 'rid'));
-  $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
-  $query->execute();
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following users:
+
+[user_external_invite:invited_emails]
+
+An email invitation has been sent requesting the user to login to [site:url] and accept the invitation. Upon completion, a confirmation email will be sent.
+
+If you did not submit this request or need to modify it, please contact us at websupport@colorado.edu.
+
+--
+The Web Express Team
+http://www.colorado.edu/webcentral
+websupport@colorado.edu');
 }

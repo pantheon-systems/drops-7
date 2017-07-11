@@ -68,7 +68,6 @@ function express_dashboards_menu() {
 function express_dashboards_dashboard_output($dashboard, $id) {
   $dashboard_sections = $dashboard();
   $dashboard_output = array();
-
   // Check for missing section weights and then sort
   foreach ($dashboard_sections as $key => $section) {
     $dashboard_sections[$key]['weight'] = isset($dashboard_sections[$key]['weight']) ? $dashboard_sections[$key]['weight'] : 0;
@@ -102,7 +101,6 @@ function express_dashboards_dashboard_output($dashboard, $id) {
 
   // Adding dashboard id for making template suggestions
   $dashboard_output['dashboard_id'] = $id;
-
   // Return dashboard output
   return theme('express_dashboard', $dashboard_output);
 }

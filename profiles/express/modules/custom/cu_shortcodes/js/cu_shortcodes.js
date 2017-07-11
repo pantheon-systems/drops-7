@@ -19,7 +19,7 @@
       $(this).attr('aria-expanded', 'false');
       return false;
     });
-    
+
     $(".small-expand-content, .tooltip-expand-content").hide();
     $("a.small-expand-title").toggle(function(){
       var t = $(this).attr("href");
@@ -53,8 +53,11 @@
       $("." + r).attr('aria-expanded', 'false');
       return false;
     });
-  
-  	
+    // Countup
+    $('.counter').counterUp({
+      delay: 10,
+      time: 2000,
+    });
   });
 })( jQuery );
 
@@ -68,15 +71,15 @@ function cu_shortcodes_achors_js(selector) {
 		thisText = jQuery.trim(thisText);
 		var anchorTextURL = thisText.replace(/ /g, "-");
 		var anchorLink = '<a name="' + anchorTextURL + '" id="' + anchorTextURL + '"></a>';
-		anchorText += '<li><i class="fa fa-arrow-down arrow"></i> <a href="#' + anchorTextURL + '">' + thisText + '</a></li>'; 
+		anchorText += '<li><i class="fa fa-arrow-down arrow"></i> <a href="#' + anchorTextURL + '">' + thisText + '</a></li>';
 		jQuery(this).before(anchorLink);
 	});
 	anchorText = '<div class="auto-anchor"><ul>' + anchorText + '</ul><div>';
-  if (count > 0) { 
-    jQuery(".anchors-links").html(anchorText); 
+  if (count > 0) {
+    jQuery(".anchors-links").html(anchorText);
     jQuery(".anchors").fadeIn();
   }
-  
+
   jQuery('.anchors a').click(function(){
     var scrollTarget = jQuery(this).attr("href");
     jQuery("html, body").animate({scrollTop: (jQuery(scrollTarget).offset().top)-100}, 300);

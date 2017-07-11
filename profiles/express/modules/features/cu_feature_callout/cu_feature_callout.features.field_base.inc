@@ -32,8 +32,8 @@ function cu_feature_callout_field_default_field_bases() {
         4 => 4,
         5 => 5,
       ),
-      'allowed_values_function' => '',
-      'allowed_values_php' => '',
+      'allowed_values_function' => 'cu_feature_callout_column_options',
+      'allowed_values_php' => FALSE,
     ),
     'translatable' => 0,
     'type' => 'list_integer',
@@ -81,6 +81,32 @@ function cu_feature_callout_field_default_field_bases() {
         'large_square_thumbnail' => 'Square',
       ),
       'allowed_values_function' => '',
+      'allowed_values_php' => '',
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+
+  // Exported field_base: 'field_callout_style'.
+  $field_bases['field_callout_style'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_callout_style',
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'stacked' => 'Stacked',
+        'overlay' => 'Overlay',
+      ),
+      'allowed_values_function' => 'cu_feature_callout_style',
       'allowed_values_php' => '',
     ),
     'translatable' => 0,
@@ -146,11 +172,15 @@ function cu_feature_callout_field_default_field_bases() {
       'revision_id' => array(
         0 => 'revision_id',
       ),
+      'value' => array(
+        0 => 'value',
+      ),
     ),
     'locked' => 0,
     'module' => 'field_collection',
     'settings' => array(
       'hide_blank_items' => 1,
+      'hide_initial_item' => FALSE,
       'path' => '',
     ),
     'translatable' => 0,

@@ -40,6 +40,7 @@ function cu_seo_bundle_secure_permissions($role) {
       'administer linkchecker',
       'edit link settings',
       'administer site verify',
+      'administer site verify uploads',
       'view seo dashboard',
     ),
     'edit_my_content' => array(
@@ -138,4 +139,40 @@ function cu_seo_bundle_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function cu_seo_bundle_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['cu_seo_bundle'])) {
+    $group = $implementations['cu_seo_bundle'];
+    unset($implementations['cu_seo_bundle']);
+    $implementations['cu_seo_bundle'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Changes the Twitter Card Metatag form element title to not interfere with Behat tests.
+ *
+ * @param array $form
+ *   Form definition.
+ * @param array $form_state
+ *   Current values/state of the form being altered.
+ * @param string $form_id
+ *   ID of form being altered.
+ */
+function cu_seo_bundle_form_alter(&$form, &$form_state, $form_id) {
+  // We check by the form keys instead of hook_form_FORM_ID_alter() since we
+  // can't assume this field only shows up on page_node_form().
+  if (isset($form['metatags'][LANGUAGE_NONE]['twitter-cards']['twitter:title'])) {
+    $form['metatags'][LANGUAGE_NONE]['twitter-cards']['twitter:title']['value']['#title'] = 'Page Title';
+  }
 }

@@ -215,7 +215,7 @@ function cu_advanced_content_bundle_secure_permissions($role) {
  * @return $variables
  */
 function cu_advanced_content_bundle_express_help($variables) {
-  $variables['admin/structure/quicktabs/%'][] = array(
+  $variables['admin/structure/quicktabs/manage/%/edit'][] = array(
     'title' => 'Quicktabs help',
     'short_title' => 'Quicktabs help',
     'url' => '/node/948',

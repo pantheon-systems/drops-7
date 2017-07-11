@@ -1,1 +1,1 @@
-<span class="bundle-enabled btn btn-default btn-disabled">Enabled</span>
+<span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span>

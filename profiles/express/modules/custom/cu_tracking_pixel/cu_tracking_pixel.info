@@ -5,3 +5,5 @@ dependencies[] = entity
 dependencies[] = cu_tracking_pixel_overview
 
 stylesheets[all][] = cu-tracking-pixel.css
+
+bundle_group = Admin Bundles

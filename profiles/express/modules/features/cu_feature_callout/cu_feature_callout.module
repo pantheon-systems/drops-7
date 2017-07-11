@@ -14,15 +14,129 @@ include_once 'cu_feature_callout.features.inc';
  * directory.
  */
 function cu_feature_callout_theme_registry_alter(&$theme_registry) {
-
+  $module_path = drupal_get_path('module', 'cu_feature_callout');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
 }
 
 /**
  * TODO: Write doco.
  */
 function cu_feature_callout_page_alter(&$page) {
-  // Add cu slider css.
+  // Add css.
   drupal_add_css(drupal_get_path('module', 'cu_feature_callout') . '/css/cu_feature_callout.css');
+  drupal_add_css(drupal_get_path('module', 'cu_feature_callout') . '/css/feature-callout-block-designer.css');
+}
+
+/**
+ * Implements hook_theme().
+ */
+
+function cu_feature_callout_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'cu_feature_callout') . '/templates';
+  $registry['cu_feature_callout_item__columns_1'] = array(
+    'template' => 'cu-feature-callout-item--columns-1',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__columns'] = array(
+    'template' => 'cu-feature-callout-item--columns',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__columns_overlay'] = array(
+    'template' => 'cu-feature-callout-item--columns-overlay',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__large_teaser'] = array(
+    'template' => 'cu-feature-callout-item--large-teaser',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__large_teaser_alt'] = array(
+    'template' => 'cu-feature-callout-item--large-teaser-alt',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__overlay'] = array(
+    'template' => 'cu-feature-callout-item--overlay',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__feature'] = array(
+    'template' => 'cu-feature-callout-item--feature',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__tiles'] = array(
+    'template' => 'cu-feature-callout-item--tiles',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__teaser'] = array(
+    'template' => 'cu-feature-callout-item--teaser',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['cu_feature_callout_item__tiles_large'] = array(
+    'template' => 'cu-feature-callout-item--tiles-large',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  return $registry;
+}
+
+function cu_feature_callout_style_themes($style) {
+  $themes = array();
+  $themes['columns'] = 'cu_feature_callout_item__columns';
+  $themes['large_teaser'] = 'cu_feature_callout_item__large_teaser';
+  $themes['large_teaser_alt'] = 'cu_feature_callout_item__large_teaser';
+  $themes['feature'] = 'cu_feature_callout_item__feature';
+  $themes['offset'] = 'cu_feature_callout_item__columns';
+  $themes['cards'] = 'cu_feature_callout_item__columns';
+  $themes['overlay'] = 'cu_feature_callout_item__overlay';
+  $themes['tiles'] = 'cu_feature_callout_item__tiles';
+  $themes['tiles_alt'] = 'cu_feature_callout_item__tiles';
+  $themes['teaser'] = 'cu_feature_callout_item__teaser';
+  $themes['tiles_large'] = 'cu_feature_callout_item__tiles_large';
+
+  return $themes[$style];
+}
+
+function cu_feature_callout_column_classes($columns = NULL) {
+  $classes = array();
+  $classes['1'] = 'col-lg-12 col-md-12 col-sm-12 col-xs-12';
+  $classes['2'] = 'col-lg-6 col-md-6 col-sm-6 col-xs-12';
+  $classes['3'] = 'col-lg-4 col-md-4 col-sm-4 col-xs-12';
+  $classes['4'] = 'col-lg-3 col-md-3 col-sm-6 col-xs-12';
+  $classes['5'] = 'col-lg-5c col-md-5c col-sm-5c col-xs-12';
+  $classes['6'] = 'col-lg-2 col-md-2 col-sm-4 col-xs-12';
+  if ($columns) {
+    return $classes[$columns];
+  }
+  return '';
+}
+
+function cu_feature_callout_offset_classes($count) {
+  $classes = array();
+  $classes[1] = 'col-lg-6 col-md-6 col-sm-6 col-xs-12';
+  $classes[2] = 'col-lg-3 col-md-3 col-sm-3 col-xs-12';
+  $classes[3] = 'col-lg-3 col-md-3 col-sm-3 col-xs-12';
+  $classes[4] = 'col-lg-3 col-md-3 col-sm-3 col-xs-12';
+  $classes[5] = 'col-lg-3 col-md-3 col-sm-3 col-xs-12';
+  $classes[6] = 'col-lg-6 col-md-6 col-sm-6 col-xs-12';
+
+  return $classes[$count];
 }
 
 /**
@@ -34,24 +148,67 @@ function cu_feature_callout_preprocess_entity(&$vars) {
   $entity_type = $vars['elements']['#entity_type'];
   $bundle = $vars['elements']['#bundle'];
 
-  // Only preprocess social_link beans.
+  // Only preprocess feature callout field collections.
+
   if ($entity_type == 'bean' && $bundle == 'feature_callout') {
+    $cells = array();
+    // Get bean values ready for theming
+    $item_vars = array();
+    // Use h3 for title tag if block has a title, otherwise h2
     $grid_header = !empty($vars['elements']['#entity']->title) ? 'h3' : 'h2';
     // Get the number of columns for formatting.
     $columns = $vars['content']['field_callout_columns']['#items'][0]['value'];
-    $size = $vars['content']['field_callout_image_size']['#items'][0]['value'];
+
+    // Grid style
+    $style = $vars['content']['field_callout_style']['#items'][0]['value'];
+
+    // Image Size
+    $size = ($style == 'columns' || $style == 'cards' || $style == 'tiles') ? $vars['content']['field_callout_image_size']['#items'][0]['value'] : 'large_wide_thumbnail';
+    if ($style == 'overlay') {
+      $size = 'large_rectangle_thumbnail';
+    }
+    $default_size = $size;
+
+
+
     // Find all the field_collection_items.
     $children = element_children($vars['content']['field_callouts']);
     $i = 0;
     $column_count = 1;
-    foreach (element_children($vars['content']['field_callouts']) as $child) {
+    $callout_items = array_intersect_key($vars['content']['field_callouts'], element_children($vars['content']['field_callouts']));
+    $total_items = count($callout_items);
+
+    // Theme suggestions for styles
+    $vars['theme_hook_suggestions'][] = 'bean__feature_callout__' . $style;
+
+
+    // Limit feature to 3 items
+    if ($style == 'feature') {
+      $callout_items = array_slice($callout_items, 0, 3);
+    }
+    if ($style == 'tiles_large') {
+      $callout_items = array_slice($callout_items, 0, 9);
+    }
+    else if ($style == 'offset') {
+      $remainder = $total_items % 3;
+      if ($remainder) {
+        $remove = ($total_items - $remainder);
+        $callout_items = array_slice($callout_items, 0, $remove);
+      }
+    }
+    $item_count = 0;
+    foreach ($callout_items as $key => $item) {
+      $item_count++;
+      $item_vars['content'] = array();
+
       $title = NULL;
       $image = NULL;
+      $image_url = NULL;
       $text = NULL;
       $url = NULL;
-      $count = $i + 1;
+
       // Grab the field_collection_item entity.
-      $fc_item = array_pop($vars['content']['field_callouts'][$child]['entity']['field_collection_item']);
+      $fc_item = array_pop($item['entity']['field_collection_item']);
 
       // Get title.
       if (!empty($fc_item['field_callout_title']['#items'])) {
@@ -70,6 +227,25 @@ function cu_feature_callout_preprocess_entity(&$vars) {
         $text = $fc_item['field_callout_text'][0]['#markup'];
       }
       // Build image.
+
+      // change size if feature
+
+      if (($key == 0) && ($style == 'feature')) {
+        $size = 'large_rectangle_thumbnail';
+      }
+      else {
+        $size = $default_size;
+      }
+
+      if ($style == 'teaser') {
+        $size = 'square';
+      }
+
+      if ($style == 'tiles_large') {
+        $size = 'widescreen';
+      }
+
+
       if (isset($fc_item['field_callout_image']['#items'][0]['uri'])) {
         // Get image uri.
         $image_uri = $fc_item['field_callout_image']['#items'][0]['uri'];
@@ -80,7 +256,10 @@ function cu_feature_callout_preprocess_entity(&$vars) {
           '#alt' => $fc_item['field_callout_image']['#items'][0]['alt'],
         );
         $image = drupal_render($build);
+        $image_url = image_style_url($size, $image_uri);
       }
+      // Placeholder image
+      $place_holder = '<img src="' . drupal_get_path('module', 'cu_feature_callout') . '/images/widescreen-black.png" alt />';
 
       // Remove title if link url field was used but link title field was not.
       // Leaving title field blank results in url being inserted as the title.
@@ -112,40 +291,144 @@ function cu_feature_callout_preprocess_entity(&$vars) {
           $image = l($image, $url['url'], array('html' => TRUE, 'query' => $url['query'], 'fragment' => $url['fragment']));
         } else {
           $image = '';
+          $place_holder = l($place_holder, $url['url'], array('html' => TRUE, 'query' => $url['query'], 'fragment' => $url['fragment']));
         }
       }
       else {
         if (isset($title)) {
-          $title = '<' . $grid_header . ' class="feature-callout-title">' . $title . '</' . $grid_header . '>';
+          $title = '<' . $grid_header . ' class="feature-callout-title"><span>' . $title . '</span></' . $grid_header . '>';
         } else {
           $title = '';
         }
       }
+      $item_vars['content']['title'] = $title;
+      $item_vars['content']['image'] = $image;
+      $item_vars['content']['place_holder'] = $place_holder;
+      $item_vars['content']['image_url'] = $image_url;
+      $item_vars['content']['text'] = $text;
+      if ($style == 'columns' || $style == 'cards' || $style == 'overlay' || $style == 'tiles') {
+        $item_vars['content']['classes'][] = cu_feature_callout_column_classes($columns);
+        $item_vars['content']['classes'][] = 'content-grid-columns-' . $columns;
 
-      // Create an array of items.
-      $items[$i]['#markup'] = '<div class="feature-callout-item feature-callout-column-' . $column_count . ' clearfix">' . $image . '<div class="feature-callout-text clearfix">' . $title . '<div class="field-type-text-long">' . $text . '</div></div></div>';
-
-      if ($column_count == $columns) {
-        $column_count = 0;
       }
-      $i++;
-      $column_count++;
+      else if ($style == 'offset') {
+        if ($item_count == 1 || $item_count == 6) {
+          $item_vars['content']['classes'][] = cu_feature_callout_offset_classes(1);
+        }
+        else {
+          $item_vars['content']['classes'][] = cu_feature_callout_offset_classes(2);
+        }
+        if ($item_count == 6) {
+          $item_count = 0;
+        }
+      }
+      if (!empty($item_vars['content']['classes'])) {
+        $item_vars['content']['classes'] = join(' ', $item_vars['content']['classes']);
+      }
+      else {
+        $item_vars['content']['classes'] = '';
+      }
+      // Get theme function to use
+      $theme_function = cu_feature_callout_style_themes($style);
+
+      // Get item markup from theme function
+      $cells[]['#markup'] = theme($theme_function, array('content' => $item_vars['content']));
     }
+    $classes = array();
+    $classes[] = 'content-grid-style-' . $style;
+    $vars['grid_classes'] = join(' ', $classes);
+    $vars['content'] = $cells;
+  }
+}
 
-    // Remove the current field collection from display.
-    unset($vars['content']['field_callouts']);
-    unset($vars['content']['field_callout_columns']);
-    unset($vars['content']['field_callout_image_size']);
-    $classes[] = 'feature-callout';
-    $classes[] = 'feature-callout-columns-' . $columns;
-    $classes[] = 'clearfix';
-    $classes = join(' ', $classes);
-    if (isset($items)) {
-      // Generate an item_list of our items and add to $content.
-      $vars['content']['field_callouts'] = $items;
-      $vars['content']['field_callouts']['#prefix'] = '<div class="' . $classes . '">';
-      $vars['content']['field_callouts']['#suffix'] = '</div>';
+function cu_feature_callout_style() {
+  $options = array(
+    'columns' => 'Columns',
+    'overlay' => 'Overlay',
+    'large_teaser' => 'Large Teaser',
+    'large_teaser_alt' => 'Large Teaser Alternate',
+    'feature' => 'Feature (3 cells only)',
+    'offset' => 'Offset (Groups of 3 cells)',
+    'cards' => 'Cards',
+    'teaser' => 'Teaser',
+    'tiles_alt' => 'Tiles',
+  );
+  return $options;
+}
 
+function cu_feature_callout_column_options() {
+  $options = array(
+    '2' => '2',
+    '3' => '3',
+    '4' => '4',
+    '5' => '5',
+    '6' => '6',
+  );
+  return $options;
+}
+
+function cu_feature_callout_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if (($form['bean']['#value']->type == 'feature_callout')) {
+
+    //
+    $form['field_callout_columns']['#states'] = array(
+     'visible' => array(
+       array(':input[name="field_callout_style[und]"]' => array('value' => 'columns')),
+       'or',
+       array(':input[name="field_callout_style[und]"]' => array('value' => 'cards')),
+       'or',
+       array(':input[name="field_callout_style[und]"]' => array('value' => 'overlay')),
+     ),
+    );
+    $form['field_callout_image_size']['#states'] = array(
+     'visible' => array(
+       array(':input[name="field_callout_style[und]"]' => array('value' => 'columns')),
+       'or',
+       array(':input[name="field_callout_style[und]"]' => array('value' => 'cards')),
+     ),
+    );
+  }
+}
+
+function cu_feature_callout_preprocess_radio (&$vars) {
+  $element = &$variables['element'];
+
+  if ($vars['element']['#name'] == 'field_callout_style[und]') {
+    //$variables['theme_hook_suggestion'] = 'radio__imglayout';
+  }
+}
+
+function cu_feature_callout_backgrounds() {
+  $colors = array(
+    'f7f7f7',
+    'e7e7e7',
+    'f5f5f5',
+    'e5e5e5',
+    'f3f3f3',
+    'e3e3e3',
+  );
+  return $colors;
+}
+
+function cu_feature_callout_preprocess_block(&$vars) {
+  if (!empty($vars['elements']['bean'])) {
+    $element = $vars['elements']['bean'];
+    $children = element_children($element);
+    if (!empty($children)) {
+      $key = current(element_children($element));
+      if ($element[$key]['#bundle'] == 'feature_callout') {
+        $style = $element[$key]['field_callout_style'][0]['#markup'];
+        $vars['classes_array'][] = 'content-grid-style--' . $style;
+      }
+    }
+  }
+  elseif (!empty($vars['elements']['content']['bean'])) {
+
+    $element = $vars['elements']['content']['bean'];
+    $key = current(element_children($element));
+    if ($element[$key]['#bundle'] == 'feature_callout') {
+      $style = $element[$key]['field_callout_style'][0]['#markup'];
+      $vars['classes_array'][] = 'content-grid-style--' . $style;
     }
   }
 }

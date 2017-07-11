@@ -114,12 +114,20 @@ function fitvids_form($form, &$form_state) {
     '#description' => t('Older versions of the media_youtube and media_vimeo modules wrap videos in HTML which may stop FitVids working properly. Enable this to remove the unneccesary markup.'),
   );
 
+  $form['fitvids_ignore_selectors'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Ignore these videos'),
+    '#default_value' => variable_get('fitvids_ignore_selectors', ''),
+    '#rows' => 3,
+    '#description' => t('Enter some jQuery selectors for any videos or containers that you want to ignore. Use a new line for each selector.'),
+  );
+
   return system_settings_form($form);
 }
 
 /**
  * Implements hook_page_build().
- * 
+ *
  * Include the FitVids.js script on every page
  */
 function fitvids_page_build(&$page) {
@@ -159,15 +167,20 @@ function fitvids_page_build(&$page) {
   // Get fitvids containers
   $fitvids_selectors = variable_get('fitvids_selectors', FITVIDS_DEFAULT_REGIONS);
   $fitvids_selectors_array = explode(PHP_EOL, $fitvids_selectors);
-  
+
+  // Get ignored containers
+  $ignore_selectors = variable_get('fitvids_ignore_selectors', '');
+  $ignore_selectors_array = implode(',', explode(PHP_EOL, $ignore_selectors));
+
   // Simplify markup?
   $simplifymarkup = variable_get('fitvids_simplifymarkup', TRUE);
-  
+
   // Export the variables to Drupal.settings
   drupal_add_js(array('fitvids' => array(
     'custom_domains' => $fitvids_customselectors_array,
     'selectors' => $fitvids_selectors_array,
     'simplifymarkup' => $simplifymarkup,
+    'ignore' => $ignore_selectors_array,
   )), 'setting');
 }
 

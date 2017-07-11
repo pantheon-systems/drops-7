@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * cu_block_to_bean.install
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Default settings.
+ */
+function cu_block_to_bean_install() {
+  $settings = array();
+
+  $included_modules = array(
+    'cu_article' => 'cu_article',
+    'cu_related_articles' => 'cu_related_articles',
+    'menu' => 'menu',
+    'webform' => 'webform',
+  );
+  $excluded_deltas = 'devel,features';
+
+  variable_set('cu_block_to_bean_module_include', $included_modules);
+  variable_set('cu_block_to_bean_delta_exclude', $excluded_deltas);
+}
