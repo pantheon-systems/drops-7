@@ -3,9 +3,9 @@ api: '2'
 core: 7.x
 includes:
 - https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.2/visualization_entity.make
-- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.13.4/open_data_schema_map.make
+- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.13.5/open_data_schema_map.make
 - https://raw.githubusercontent.com/NuCivic/leaflet_draw_widget/5a5f8faf664aeca02371f6692307580d9fab9116/leaflet_widget.make
-- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.13.4/recline.make
+- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.13.5/recline.make
 projects:
   admin_menu:
     version: 3.0-rc5
@@ -58,6 +58,8 @@ projects:
     version: '2.10'
   defaultconfig:
     version: 1.0-alpha11
+  devel:
+    version: '1.5'
   diff:
     version: '3.3'
   double_field:
@@ -111,7 +113,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/feeds_flatstore_processor.git
-      revision: 3be870461b80a9709cd30d6ab44578515f97cf4e
+      revision: 82b2a05bd133dbf870bdf09f1c0a45711f1432e3
   field_group:
     version: '1.5'
     patch:
@@ -244,7 +246,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/open_data_schema_map.git
-      tag: 7.x-1.13.4
+      tag: 7.x-1.13.5
   panelizer:
     version: '3.4'
   panels:
@@ -274,7 +276,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/recline.git
-      tag: 7.x-1.13.4
+      tag: 7.x-1.13.5
   ref_field:
     download:
       type: git
