@@ -265,6 +265,10 @@ function feeds_flatstore_processor_get_csv_results($filepath, $separator = ",", 
     drupal_set_message(t('Could not open !filename', array('!filename' => $filepath)));
     return FALSE;
   }
+  // If the field delimiter is a TAB, then use the tab character.
+  if ($separator == 'TAB') {
+    $separator = "\t";
+  }
 
   $parsed_results = array();
   $rowcount = 0;

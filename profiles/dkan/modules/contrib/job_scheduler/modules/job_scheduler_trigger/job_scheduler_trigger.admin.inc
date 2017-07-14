@@ -2,7 +2,11 @@
 
 /**
  * @file
- * Job Scheduler Trigger admin pages
+ * Job Scheduler Trigger admin pages.
+ */
+
+/**
+ * Admin Overview.
  */
 function job_scheduler_trigger_admin_overview() {
   $base_path = 'admin/config/system/job_scheduler';
@@ -52,13 +56,18 @@ function job_scheduler_trigger_admin_overview() {
   return $form;
 }
 
-
 /**
- * Edit form for a trigger
+ * Edit form for a trigger.
  */
 function job_scheduler_trigger_edit_form($form, &$form_state, $trigger) {
   if (!$trigger) {
-    $trigger = (object)array('trid' => NULL, 'title' => t('New trigger'), 'crontab' => '* * * * *', 'status' => 0, 'last' => 0);
+    $trigger = (object) array(
+      'trid' => NULL,
+      'title' => t('New trigger'),
+      'crontab' => '* * * * *',
+      'status' => 0,
+      'last' => 0,
+    );
   }
   $form['trigger'] = array('#tree' => TRUE);
   $form['trigger']['trid'] = array('#type' => 'value', '#value' => $trigger->trid);
@@ -84,16 +93,16 @@ function job_scheduler_trigger_edit_form($form, &$form_state, $trigger) {
     '#description' => t('When enabled, a trigger will be created with this crontab and jobs will be scheduled for it. Check everything is OK before enabling the trigger.'),
   );
   $form['trigger']['last'] = array(
-     '#type' => 'item',
-     '#title' => t('Last triggered'),
-     '#markup' => format_date($trigger->last),
+    '#type' => 'item',
+    '#title' => t('Last triggered'),
+    '#markup' => format_date($trigger->last),
   );
   if ($trigger->trid && $trigger->crontab) {
     $next = job_scheduler_trigger_next_time($trigger->crontab);
     $form['trigger']['next'] = array(
-       '#type' => 'item',
-       '#title' => t('Next trigger'),
-       '#markup' => $next ? format_date($next) : t('Never in the next year.'),
+      '#type' => 'item',
+      '#title' => t('Next trigger'),
+      '#markup' => $next ? format_date($next) : t('Never in the next year.'),
     );
   }
   $form['buttons']['update'] = array('#type' => 'submit', '#value' => t('Save'));
@@ -106,7 +115,7 @@ function job_scheduler_trigger_edit_form($form, &$form_state, $trigger) {
 }
 
 /**
- * Validate trigger
+ * Validate trigger.
  */
 function job_scheduler_trigger_edit_form_validate($form, &$form_state) {
   $trigger = $form_state['values']['trigger'];
@@ -118,14 +127,14 @@ function job_scheduler_trigger_edit_form_validate($form, &$form_state) {
 }
 
 /**
- * Submit trigger
+ * Submit trigger.
  */
 function job_scheduler_trigger_edit_form_submit($form, &$form_state) {
   $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
   $trigger = $form_state['values']['trigger'];
   if ($op == t('Save')) {
     if (empty($trigger['trid'])) {
-      // Create and then assign trigger name and create trigger
+      // Create and then assign trigger name and create trigger.
       drupal_write_record('job_scheduler_trigger', $trigger);
       $trigger['hook'] = 'job_scheduler_' . $trigger['trid'];
       drupal_write_record('job_scheduler_trigger', $trigger, 'trid');
@@ -149,7 +158,7 @@ function job_scheduler_trigger_edit_form_submit($form, &$form_state) {
 }
 
 /**
- * Quick calculate next time cron
+ * Quick calculate next time cron.
  */
 function job_scheduler_trigger_next_time($crontab) {
   $crontab = new JobSchedulerCronTab($crontab);
