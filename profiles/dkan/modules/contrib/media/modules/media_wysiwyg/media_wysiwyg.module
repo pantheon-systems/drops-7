@@ -120,7 +120,7 @@ function media_wysiwyg_pre_render_text_format($element) {
   $tagmap = array();
 
   foreach (array('value', 'summary') as $column) {
-    if (isset($element[$column])) {
+    if (isset($element[$column]['#value'])) {
       $tagmap += _media_wysiwyg_generate_tagMap($element[$column]['#value']);
     }
   }
@@ -281,7 +281,7 @@ function media_wysiwyg_form_media_admin_config_browser_alter(&$form, &$form_stat
 
   $options = array();
   foreach(field_info_field_types() as $key => $type) {
-    $options[$key] = $type['label'];
+    $options[$key] = (!empty($type['label']))? $type['label'] : ucfirst(str_replace("_"," ",$key));
   }
   asort($options);
   $form['wysiwyg']['media_wysiwyg_wysiwyg_override_field_types'] = array(
@@ -319,6 +319,14 @@ function media_wysiwyg_form_media_admin_config_browser_alter(&$form, &$form_stat
     '#default_value' => variable_get('media_wysiwyg_external_link', FALSE),
     '#description' => t('If checked there will be a new field when embedding that will allow users to link to the media to urls'),
   );
+
+  $form['wysiwyg']['media_wysiwyg_remove_media_class'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remove the ".media" class from embedded media'),
+    '#description' => t('If checked, the ".media" class will be removed from embedded media. Particularlly for sites using Bootstrap, the ".media" class can cause CSS to be unexpectedly applied to embedded media.'),
+    '#default_value' => variable_get('media_wysiwyg_remove_media_class', FALSE),
+  );
+
   $form['#submit'][] = 'media_wysiwyg_admin_config_browser_pre_submit';
 }
 

@@ -111,7 +111,7 @@ Drupal.media.popups.mediaBrowser.getDefaults = function () {
   return {
     global: {
       types: [], // Types to allow, defaults to all.
-      activePlugins: [] // If provided, a list of plugins which should be enabled.
+      enabledPlugins: [] // If provided, a list of plugins which should be enabled.
     },
     widget: { // Settings for the actual iFrame which is launched.
       src: Drupal.settings.media.browserUrl, // Src of the media browser (if you want to totally override it)

@@ -1103,6 +1103,11 @@ function search_api_search_api_alter_callback_info() {
     'description' => t('Exclude unpublished nodes from the index. <strong>Caution:</strong> This only affects the indexed nodes themselves. If an enabled node has references to disabled nodes, those will still be indexed (or displayed) normally.'),
     'class' => 'SearchApiAlterNodeStatus',
   );
+  $callbacks['search_api_alter_user_content'] = array(
+    'name' => t('Add user content'),
+    'description' => t('Allows indexing of nodes (and their fields) created by the indexed user. (Caution: This might lead to performance problems, or even errors during indexing, on larger sites.)'),
+    'class' => 'SearchApiAlterAddUserContent',
+  );
   $callbacks['search_api_alter_user_status'] = array(
     'name' => t('Exclude blocked users'),
     'description' => t('Exclude blocked users from the index. <strong>Caution:</strong> This only affects the indexed users themselves. If an active user account includes a reference to a disabled user, that reference will still be indexed (or displayed) normally.'),

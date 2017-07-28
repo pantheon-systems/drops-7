@@ -9,9 +9,9 @@ files[] = plugins/facetapi/adapter.inc
 files[] = plugins/facetapi/query_type_term.inc
 files[] = plugins/facetapi/query_type_date.inc
 
-; Information added by Drupal.org packaging script on 2017-02-23
-version = "7.x-1.21"
+; Information added by Drupal.org packaging script on 2017-07-18
+version = "7.x-1.22"
 core = "7.x"
 project = "search_api"
-datestamp = "1487844493"
+datestamp = "1500368049"
 

@@ -77,6 +77,7 @@ function media_wysiwyg_uninstall() {
   variable_del('media_wysiwyg_use_link_text_for_filename');
   variable_del('media_wysiwyg_alignment');
   variable_del('media_wysiwyg_external_link');
+  variable_del('media_wysiwyg_remove_media_class');
 }
 
 /**

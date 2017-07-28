@@ -108,7 +108,7 @@ class SearchApiAlterAddHierarchy extends SearchApiAbstractAlterCallback {
         $this->extractHierarchy($child, $prop, $values[$key]);
       }
       foreach ($values as $key => $value) {
-        $item->$key = $value;
+        $item->$key = array_values($value);
       }
     }
   }
