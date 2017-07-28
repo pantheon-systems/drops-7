@@ -273,6 +273,18 @@ function file_entity_field_formatter_settings_summary($field, $instance, $view_m
 }
 
 /**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function file_entity_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  // File and image fields set item values to NULL if a file cannot be loaded.
+  // Remove those empty items so we can simply iterate through $items normally
+  // in file_entity_field_formatter_view().
+  foreach (array_keys($entities) as $id) {
+    $items[$id] = array_filter($items[$id]);
+  }
+}
+
+/**
  * Implements hook_field_formatter_view().
  */
 function file_entity_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
@@ -356,9 +368,6 @@ function file_entity_field_formatter_view($entity_type, $entity, $field, $instan
     case 'file_audio':
       $multiple_file_behavior = $settings['multiple_file_behavior'];
 
-      // Prevent 'empty' fields from causing a WSOD.
-      $items = array_filter($items);
-
       // Build an array of sources for each <audio> element.
       $source_lists = array();
       if ($multiple_file_behavior == 'tags') {
@@ -391,9 +400,6 @@ function file_entity_field_formatter_view($entity_type, $entity, $field, $instan
 
     case 'file_video':
       $multiple_file_behavior = $settings['multiple_file_behavior'];
-
-      // Prevent 'empty' fields from causing a WSOD.
-      $items = array_filter($items);
 
       // Build an array of sources for each <video> element.
       $source_lists = array();

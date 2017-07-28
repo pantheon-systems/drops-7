@@ -52,7 +52,9 @@ function media_bulk_upload_permission() {
  * Implements hook_media_browser_plugin_info_alter().
  */
 function media_bulk_upload_media_browser_plugin_info_alter(&$info) {
+  $info['upload']['title'] = t('Upload');
   $info['upload']['class'] = 'MediaBrowserBulkUpload';
+
 }
 
 /**

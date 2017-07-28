@@ -342,6 +342,10 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
         'media-element-container',
         'media-' . $element['content']['file']['#view_mode'],
       );
+      if (variable_get('media_wysiwyg_remove_media_class', FALSE)) {
+        $classes = $element['content']['#attributes']['class'];
+        $element['content']['#attributes']['class'] = array_diff($classes, array('media'));
+      }
     }
 
     // Conditionally add a pre-render if the media filter output is be cached.

@@ -31,9 +31,9 @@ Terms as used in this module.
   Sphinx or any other professional or simple indexing mechanism. Takes care of
   the details of all operations, especially indexing or searching content.
 - Server:
-  One specific place for indexing data, using a set service class. Can
-  e.g. be some tables in a database, a connection to a Solr server or other
-  external services, etc.
+  One specific place for indexing data, using a specific service class. For
+  example this could be some tables in a database, a connection to a Solr server
+  or other external services, etc.
 - Index:
   A configuration object for indexing data of a specific type. What and how data
   is indexed is determined by its settings. Also keeps track of which items

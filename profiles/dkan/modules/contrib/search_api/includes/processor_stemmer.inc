@@ -24,12 +24,11 @@ class SearchApiPorterStemmer extends SearchApiAbstractProcessor {
     $form = parent::configurationForm();
 
     $args = array(
-      '!algorithm' => url('https://github.com/markfullmer/porter2'),
-      '!exclusions' => url('https://github.com/markfullmer/porter2#user-content-custom-exclusions'),
+      '@algorithm' => url('http://snowball.tartarus.org/algorithms/english/stemmer.html'),
     );
     $form += array(
       'help' => array(
-        '#markup' => '<p>' . t('Optionally, provide an exclusion list to override the stemmer algorithm. Read about the <a href="@algorithm">algorithm</a> and <a href="@exclusions">exclusions</a>.', $args) . '</p>',
+        '#markup' => '<p>' . t('Optionally, provide an exclusion list to override the stemmer algorithm. (<a href="@algorithm">Read about the algorithm</a>.)', $args) . '</p>',
       ),
       'exceptions' => array(
         '#type' => 'textarea',

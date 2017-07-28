@@ -85,7 +85,15 @@ function file_entity_add_upload($form, &$form_state, $options = array()) {
   }
   $step = (isset($form_state['step']) && in_array($form_state['step'], array(1, 2, 3, 4))) ? $form_state['step'] : 1;
   $form['#step'] = $step;
-  $form['#options'] = $options;
+  $form['#options'] = $options + array(
+    'types' => array(),
+    'enabledPlugins' => array(),
+    'schemes' => array(),
+    'max_filesize' => '',
+    'uri_scheme' => 'public',
+    'plugins' => ''
+  );
+
   switch ($step) {
     case 1:
       return file_entity_add_upload_step_upload($form, $form_state, $options);
@@ -133,11 +141,12 @@ function file_entity_add_upload_step_upload($form, &$form_state, array $options 
  */
 function file_entity_add_upload_step_filetype($form, &$form_state, array $options = array()) {
   $file = file_load($form_state['storage']['upload']);
+  $selected_files = $form['#options']['types'];
 
   $form['type'] = array(
     '#type' => 'radios',
     '#title' => t('File type'),
-    '#options' => file_entity_get_filetype_candidates($file),
+    '#options' => file_entity_get_filetype_candidates($file, $selected_files),
     '#default_value' => isset($form_state['storage']['type']) ? $form_state['storage']['type'] : NULL,
     '#required' => TRUE,
   );
@@ -312,9 +321,17 @@ function file_entity_usage_page($file) {
  * @return array
  *   An array of file type bundles that support the file's mime type.
  */
-function file_entity_get_filetype_candidates($file) {
+function file_entity_get_filetype_candidates($file, $selected_files = array()) {
   $types = module_invoke_all('file_type', $file);
   drupal_alter('file_type', $types, $file);
+
+  // If no file types are selected in field instance settings, allow all
+  // available types.
+  if (!empty($selected_files)) {
+    // Limit file type candidates to field allowed types.
+    $types = array_intersect($types, $selected_files);
+  }
+
   $candidates = array();
   foreach ($types as $type) {
     $file->type = $type;
@@ -331,6 +348,9 @@ function file_entity_get_filetype_candidates($file) {
 function file_entity_add_upload_submit($form, &$form_state) {
   $form_state['storage'] = isset($form_state['storage']) ? $form_state['storage'] : array();
   $form_state['storage'] = array_merge($form_state['storage'], $form_state['values']);
+
+  // Field selected allowed types.
+  $selected_files = $form['#options']['types'];
 
   // This var is set to TRUE when we are ready to save the file.
   $save = FALSE;
@@ -349,7 +369,7 @@ function file_entity_add_upload_submit($form, &$form_state) {
       $file = file_load($form_state['storage']['upload']);
       if ($step == 2) {
         // Check if we can skip step 2.
-        $candidates = file_entity_get_filetype_candidates($file);
+        $candidates = file_entity_get_filetype_candidates($file, $selected_files);
         if (count($candidates) == 1) {
           $candidates_keys = array_keys($candidates);
           // There is only one possible filetype for this file.
@@ -853,6 +873,9 @@ function file_entity_edit_submit($form, &$form_state) {
   if (file_uri_scheme($file->uri) != $form_state['values']['scheme']) {
     $file_destination = $form_state['values']['scheme'] . '://' . file_uri_target($file->uri);
     $file_destination = file_stream_wrapper_uri_normalize($file_destination);
+    $file_destination_dirname = drupal_dirname($file_destination);
+    // Create the directory in case it doesn't exist.
+    file_prepare_directory($file_destination_dirname, FILE_CREATE_DIRECTORY);
     if ($moved_file = file_move($file, $file_destination, FILE_EXISTS_RENAME)) {
       // Only re-assign the file object if file_move() did not fail.
       $file = $moved_file;

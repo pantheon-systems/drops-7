@@ -135,7 +135,9 @@ class SearchApiViewsQuery extends views_plugin_query {
    *   The order to sort items in - either 'ASC' or 'DESC'. Defaults to 'ASC'.
    */
   public function add_selector_orderby($selector, $order = 'ASC') {
-    $this->query->sort($selector, $order);
+    if (!$this->errors) {
+      $this->query->sort($selector, $order);
+    }
   }
 
   /**
@@ -213,7 +215,7 @@ class SearchApiViewsQuery extends views_plugin_query {
       '#default_value' => $this->options['search_api_bypass_access'],
     );
 
-    if ($this->index->getEntityType()) {
+    if ($this->index && $this->index->getEntityType()) {
       $form['entity_access'] = array(
         '#type' => 'checkbox',
         '#title' => t('Additional access checks on result entities'),

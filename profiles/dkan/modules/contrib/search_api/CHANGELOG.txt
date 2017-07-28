@@ -1,3 +1,20 @@
+Search API 1.22 (2017-07-18):
+-----------------------------
+- #1710212 by drunken monkey: Added a data alteration for indexing a user's
+  content.
+- #2879892 by blacklabel_tom, drunken monkey: Fixed link in description of
+  "Stemmer" processor.
+- #2788593 by drunken monkey: Fixed error in Views query settings for specific
+  setups.
+- #2749963 by drunken monkey: Fixed "Index hierarchy" not having values
+  numerically indexed.
+- #2875793 by drunken monkey: Fixed buggy error handling in Views.
+- #2860624 by drunken monkey: Fixed problem with empty words in Views fulltext
+  filter.
+- #2855447 by mparker17, drunken monkey: Added "Separator" option for
+  aggregated fields of type "Fulltext".
+- #2863445 by dbjpanda, drunken monkey: Fixed phrasing in README.txt.
+
 Search API 1.21 (2017-02-23):
 -----------------------------
 - #2780341 by Berdir: Fixed passing of custom ranges to date facets.
