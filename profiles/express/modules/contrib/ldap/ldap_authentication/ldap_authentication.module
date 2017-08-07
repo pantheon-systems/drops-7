@@ -212,7 +212,7 @@ function _ldap_authentication_verify_user_profile() {
       );
     }
   }
-  return TRUE;
+  return $result;
 }
 
 /**
@@ -335,7 +335,7 @@ function ldap_authentication_show_reset_pwd($user = NULL) {
   $auth_conf = ldap_authentication_get_valid_conf();
   // Hide user/password form if ldap authentication is required and deny access
   // to users without ldap authorizations is enabled
-  if ($user->uid == 1 || $auth_conf || (current_path() == 'user/password' && $auth_conf->authenticationMode != LDAP_AUTHENTICATION_EXCLUSIVE)) {
+  if ($user->uid == 1 || !$auth_conf || (current_path() == 'user/password' && $auth_conf->authenticationMode != LDAP_AUTHENTICATION_EXCLUSIVE)) {
     return TRUE;
    // always show at user/passwordurl. otherwise user 1 will not be able to reset password.
   }

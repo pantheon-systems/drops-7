@@ -70,12 +70,18 @@ function profile_module_manager_bundle_list() {
     $bundle_info[$key] = $info;
 
     $bundle_machine_name = $bundle->name;
-    $bundle_name = $info['name'];
+
+    if (isset($info['name'])) {
+      $bundle_name = $info['name'];
+    } else {
+      $bundle_name = NULL;
+    }
+
     $bundle_group = (isset($info['bundle_group']) ? $info['bundle_group'] : '');
     $bundle_group_set = array('addon_bundles', 'request_bundles', 'beta_bundles', 'admin_bundles');
-    $bundle_description = (isset($info['description']) ? $info['description'] : '');
+    $bundle_description = (isset($info['description']) ? $info['description'] : 'No description available.');
 
-    if (isset($bundle_group) && (!in_array($bundle_group, $bundle_group_set))) {
+    if (isset($bundle_group) && (!in_array($bundle_group, $bundle_group_set)) && isset($bundle_name)) {
       $page .= '<div class="bundle-enable" id="edit-' . $bundle_machine_name . '">';
       $page .= '<h2>' . $bundle_name . '</h2>';
       $page .= '<p>' . $bundle_description . '</p>';
@@ -98,6 +104,67 @@ function profile_module_manager_bundle_list() {
       $page .= '</div>';
     }
   }
+  return $page;
+}
+
+/**
+ * Builds out the admin bundles page.
+ *
+ * @return string
+ */
+function profile_module_manager_admin_page() {
+  $page = '';
+
+  // Get the bundles' info array.
+  $bundles = profile_module_manager_get_bundles($status = 'all');
+  foreach ($bundles as $key => $bundle) {
+    $info_file = str_replace(".module", ".info", $bundle->filename);
+    $info = drupal_parse_info_file($info_file);
+    $bundle_info[$key] = $info;
+
+    $bundle_machine_name = $bundle->name;
+
+    if (isset($info['name'])) {
+      $bundle_name = $info['name'];
+    } else {
+      $bundle_name = NULL;
+    }
+
+    $bundle_group = (isset($info['bundle_group']) ? $info['bundle_group'] : '');
+    $bundle_description = (isset($info['description']) ? $info['description'] : 'No description available.');
+
+    if (strpos('_admin_bundle', $bundle_machine_name) || (isset($bundle_group) && $bundle_group == 'admin_bundles')) {
+      $page .= '<div class="bundle-enable" id="edit-' . $bundle_machine_name . '">';
+      $page .= '<h2>' . $bundle_name . '</h2>';
+      $page .= '<p>' . $bundle_description . '</p>';
+      foreach ($bundle_info as $key => $value) {
+        $enabled = module_exists($key) ? 1 : 0;
+      }
+      foreach ($info as $key => $value) {
+        //$page .= '<p>' . $key . ': ' . $value . '</p>';
+      }
+      $action_vars = array();
+      if ($enabled) {
+        $page .= theme('profile_module_manager_bundle_actions_enabled', array('actions' => $action_vars));
+      } else {
+        $action_vars['enable_url'] = 'admin/settings/bundles/list/confirm/' . $bundle->name;
+        if (isset($info['project_demo_url'])) {
+          $action_vars['demo_url'] = $info['project_demo_url'];
+        }
+        $page .= theme('profile_module_manager_bundle_actions_disabled', $action_vars);
+      }
+      $page .= '</div>';
+    }
+  }
+
+  $page .= '<div class="enabled-modules-admin"><h2>Enabled Bundles</h2>';
+  foreach ($bundles as $bundle) {
+    if (module_exists($bundle->name)) {
+      $page .= '<span>' . $bundle->name . '</span><br>';
+    }
+  }
+  $page .= '</div>';
+
   return $page;
 }
 

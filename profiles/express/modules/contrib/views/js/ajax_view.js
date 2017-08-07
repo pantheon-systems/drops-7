@@ -57,8 +57,11 @@ Drupal.views.ajaxView = function(settings) {
   this.settings = settings;
 
   // Add the ajax to exposed forms.
-  this.$exposed_form = $('#views-exposed-form-'+ settings.view_name.replace(/_/g, '-') + '-' + settings.view_display_id.replace(/_/g, '-'), this.$view);
+  this.$exposed_form = $('#views-exposed-form-'+ settings.view_name.replace(/_/g, '-') + '-' + settings.view_display_id.replace(/_/g, '-'));
   this.$exposed_form.once(jQuery.proxy(this.attachExposedFormAjax, this));
+
+  // Store Drupal.ajax objects here for all pager links.
+  this.links = [];
 
   // Add the ajax to pagers.
   this.$view
@@ -123,6 +126,7 @@ Drupal.views.ajaxView.prototype.attachPagerLinkAjax = function(id, link) {
 
   this.element_settings.submit = viewData;
   this.pagerAjax = new Drupal.ajax(false, $link, this.element_settings);
+  this.links.push(this.pagerAjax);
 };
 
 Drupal.ajax.prototype.commands.viewsScrollTop = function (ajax, response, status) {

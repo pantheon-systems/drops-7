@@ -483,7 +483,6 @@ function _ldap_authorization_ldap_authorization_maps_alter(&$user, &$user_ldap_e
 
   // traditional groups (dns)
   $group_dns = $consumer_conf->server->groupMembershipsFromUser($user, 'group_dns');
- // debug("groupMembershipsFromUser, group_dns"); debug($group_dns);
   if (!$group_dns) {
     $group_dns = array();
   }

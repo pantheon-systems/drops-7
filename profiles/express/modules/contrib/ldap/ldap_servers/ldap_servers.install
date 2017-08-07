@@ -703,6 +703,10 @@ function ldap_servers_update_7201() {
   //5. ldap_authentication and ldap_user changes are in variables, not tables
 
   $ldap_authentication_conf_data = variable_get('ldap_authentication_conf', array());
+  if (!is_array($ldap_authentication_conf_data['sids'])) {
+    $ldap_authentication_conf_data['sids'] = array();
+  }
+
   $ldap_user_conf_data = variable_get('ldap_user_conf', array());
 
   $ldap_authentication_sids = array_keys($ldap_authentication_conf_data['sids']);
@@ -757,7 +761,7 @@ function ldap_servers_update_7201() {
       'title' => 'Changes in 7.x-1.x to 7.x-2.x update')
     );
 
-  watchdog('ldap_servers', $summary, WATCHDOG_INFO);
+  watchdog('ldap_servers', $summary, array(), WATCHDOG_INFO);
   return $summary;
 
 

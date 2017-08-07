@@ -173,14 +173,17 @@ function _ldap_servers_decrypt($cipher_txt, $enc_type = NULL) {
         $key = substr($key, 0, $key_length);
         // Determine the algorithm IV.
         $ivsize = mcrypt_enc_get_iv_size($td);
-        // Split apart IV and text.
-        $iv = substr($cipher_txt, 0, $ivsize);
-        $cipher_txt = substr($cipher_txt, $ivsize);
-        // If the IV exists, decrypt the text.
-        if ($iv) {
-          mcrypt_generic_init($td, $key, $iv);
-          $clear_txt = mdecrypt_generic($td, $cipher_txt);
-          mcrypt_generic_deinit($td);
+        // Process if the decoded cipher text is sufficient.
+        if (strlen($cipher_txt) > $ivsize) {
+          // Split apart IV and text.
+          $iv = substr($cipher_txt, 0, $ivsize);
+          $cipher_txt = substr($cipher_txt, $ivsize);
+          // If the IV exists, decrypt the text.
+          if ($iv) {
+            mcrypt_generic_init($td, $key, $iv);
+            $clear_txt = mdecrypt_generic($td, $cipher_txt);
+            mcrypt_generic_deinit($td);
+          }
         }
         // Close the module.
         mcrypt_module_close($td);

@@ -172,7 +172,6 @@ class LdapServer {
           $server_record->{$db_field_name} = $value;
         }
       }
-      //debug('ctools record'); debug($server_record);
     }
     else {
       $select = db_select('ldap_servers')
@@ -327,7 +326,7 @@ class LdapServer {
       return LDAP_CONNECT_ERROR;
     }
 
-    if ($anon_bind !== FALSE && $userdn === NULL && $pass === NULL && $this->bind_method == LDAP_SERVERS_BIND_METHOD_ANON) {
+    if ($anon_bind === FALSE && $userdn === NULL && $pass === NULL && $this->bind_method == LDAP_SERVERS_BIND_METHOD_ANON) {
       $anon_bind = TRUE;
     }
     if ($anon_bind === TRUE) {
@@ -471,7 +470,6 @@ class LdapServer {
     if (!$result) {
       $error = "LDAP Server ldap_add(%dn) Error Server ID = %sid, LDAP Err No: %ldap_errno LDAP Err Message: %ldap_err2str ";
       $tokens = array('%dn' => $dn, '%sid' => $this->sid, '%ldap_errno' => ldap_errno($this->connection), '%ldap_err2str' => ldap_err2str(ldap_errno($this->connection)));
-      debug(t($error, $tokens));
       watchdog('ldap_server', $error, $tokens, WATCHDOG_ERROR);
     }
 
@@ -1324,8 +1322,6 @@ class LdapServer {
    */
   public function groupAddGroup($group_dn, $attributes = array()) {
 
-    //debug("this->dnExists(   $group_dn, boolean)"); debug($this->dnExists($group_dn, 'boolean'));
-   // debug("this->dnExists(   $group_dn, boolean)"); debug($this->dnExists($group_dn));
     if ($this->dnExists($group_dn, 'boolean')) {
       return FALSE;
     }
@@ -1451,7 +1447,6 @@ class LdapServer {
    * @return FALSE on error otherwise array of group members (could be users or groups)
    */
   public function groupAllMembers($group_dn) {
-   // debug("groupAllMembers $group_dn, this->groupMembershipsAttr=". $this->groupMembershipsAttr . 'this->groupGroupEntryMembershipsConfigured=' . $this->groupGroupEntryMembershipsConfigured);
     if (!$this->groupGroupEntryMembershipsConfigured) {
       return FALSE;
     }
@@ -1504,7 +1499,6 @@ class LdapServer {
     };
 
     foreach ($current_member_entries as $i => $member_entry) {
-      //dpm("groupMembersResursive:member_entry $i, level=$level < max_levels=$max_levels"); dpm($member_entry);
       // 1.  Add entry itself if of the correct type to $all_member_dns
       $objectClassMatch = (!$object_classes || (count(array_intersect(array_values($member_entry['objectclass']), $object_classes)) > 0));
       $objectIsGroup = in_array($this->groupObjectClass, array_values($member_entry['objectclass']));
@@ -1674,7 +1668,6 @@ class LdapServer {
         $query_for_parent_groups = '(&(objectClass=' . $this->groupObjectClass . ')' . $or . ')';
 
         foreach ($this->basedn as $base_dn) {  // need to search on all basedns one at a time
-          // debug("query for parent groups, base_dn=$base_dn, $query_for_parent_groups");
           $group_entries = $this->search($base_dn, $query_for_parent_groups);  // no attributes, just dns needed
           if ($group_entries !== FALSE  && $level < LDAP_SERVER_LDAP_QUERY_RECURSION_LIMIT) {
             $this->groupMembershipsFromEntryRecursive($group_entries, $all_group_dns, $tested_group_ids, $level + 1, LDAP_SERVER_LDAP_QUERY_RECURSION_LIMIT);

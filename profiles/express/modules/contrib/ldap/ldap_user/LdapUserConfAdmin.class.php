@@ -527,7 +527,6 @@ EOT;
           $row_descriptor = t("server %sid row mapping to ldap attribute %ldap_attr", $tokens);
           $tokens['!row_descriptor'] = $row_descriptor;
           $ldap_attribute_maps_in_token = array();
-         // debug('calling ldap_servers_token_extract_attributes from validate, mapping='); debug($mapping['ldap_attr']);
           ldap_servers_token_extract_attributes($ldap_attribute_maps_in_token, $mapping['ldap_attr']);
 
           if ($mapping['direction'] == LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER) {
@@ -998,23 +997,7 @@ EOT;
 
     );
 
-    $values['orphanedDrupalAcctBehaviorDescription'] = '<ul>' .
-       '<li style="color: red">' . t('This is a new feature as of 11/7/2012!
-        It is highly recommended to use the "Perform no action,
-        but email list of orphaned accounts" for some time before using the
-        "Disable the account" options.') . '</li>' .
-
-      '<li>' . t('These actions will only occur if the query to server is successful
-      and does not return a user entry.  If the ldap server is down or otherwise
-      cannot be connected to, no actions
-      will be performed.') . '</li>' .
-
-      '<li>' .
-      t('When initially using this option, its best to simply check email and
-        delete the accounts by hand.  When you are happy with the
-      behavior, switch to one of the automated options.') . '</li>' .
-
-      '</ul>';
+    $values['orphanedDrupalAcctBehaviorDescription'] = t('It is highly recommended to use the "Perform no action, but email list of orphaned accounts" for some time before considering switching to "Disable the account" options.');
 
 
     $values['manualAccountConflictOptions'] =  array(

@@ -250,6 +250,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_sidebar_print',
     'default settings' => array(),
   );
+  $shortcodes['responsive-table'] = array(
+    'title' => t('Responsive Table'),
+    'description' => t('Offset, or callout content'),
+    'process callback' => 'cu_shortcodes_responsive_table',
+    'tips callback' => 'cu_shortcodes_resposnive_table_tips',
+    'default settings' => array(),
+  );
   $shortcodes['sidebar'] = array(
     'title' => t('Sidebar'),
     'description' => t('Offset, or callout content'),
@@ -744,14 +751,10 @@ function cu_shortcodes_map($attrs, $content = NULL) {
     $mapurl = $content . "&amp;ie=UTF8&amp;output=embed";
     $map = '<iframe width="100%" class="' . $size . '" src="' . $mapurl . '"></iframe>';
   }
-  elseif (strpos($content, 'colorado.edu/map') !== FALSE) {
-    $mapurl = str_replace('map/?', 'map/?embed=true&', $content);
-    $map = '<iframe width="100%" class="' . $size . '" src="' . $mapurl . '"></iframe><br /><a href="' . $mapurl . '" class="map-link">View Larger Map</a>';
-  }
   elseif (strpos($content, 'google.com/fusiontables') !== FALSE) {
     $map = '<iframe width="100%" class="' . $size . '" src="' . $content . '"></iframe>';
   }
-  elseif ((strpos($content, 'myatlascms.com') !== FALSE) || (strpos($content, 'map.colorado.edu') !== FALSE)){
+  elseif ((strpos($content, 'myatlascms.com') !== FALSE) || (strpos($content, 'colorado.edu/map') !== FALSE)){
     // Parse url
     $url = parse_url($content);
     // Hide print link for embeded map
@@ -813,6 +816,38 @@ function cu_shortcodes_print($attrs, $content = NULL) {
  */
 function cu_shortcodes_print_tips($format, $long) {
   $output = '[print]Print this page[/print]';
+  return $output;
+}
+
+/**
+ * Responsive Table shortcode.
+ */
+function cu_shortcodes_responsive_table($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+    'breakpoint'  => NULL,
+  ), $attrs));
+  $style = '';
+  $class = '';
+  if ($breakpoint) {
+    $breakpoint = $breakpoint . 'px';
+    $class = 'responsive-table-' . $breakpoint;
+    $style = "@media screen and (max-width:$breakpoint) {
+      .$class:before,
+      .$class:after {
+        display: block;
+      }
+    }";
+  }
+
+  $output = '<div class="responsive-table-wrapper ' . $class . '"><div class="responsive-table-wrapper-inner">' . $content . '</div></div><style>' . $style . '</style>';
+  return $output;
+}
+
+/**
+ * Responsive Table tips.
+ */
+function cu_shortcodes_responsive_table_tips($format, $long) {
+  $output = '[responsive-table breakpoint="800"]HTML Table Here[/responsive-table] (Breakpoint attribute is optional)';
   return $output;
 }
 

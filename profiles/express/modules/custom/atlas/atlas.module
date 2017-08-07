@@ -395,6 +395,19 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
   // Make the request.
   $response = drupal_http_request($request_url, $request_options);
 
+  if ($request_options['method'] != 'GET') {
+    watchdog(
+      'atlas',
+      '%method sent to %resource',
+      array(
+        '%method' => $request_options['method'],
+        '%resource' => $resource
+      ),
+      WATCHDOG_INFO,
+      NULL
+    );
+  }
+
   if (in_array($response->code, array(200, 201))) {
     // Clear the Drupal cache for $site_array because we just updated something.
     cache_clear_all('atlas_site_array', 'cache', TRUE);
@@ -406,6 +419,7 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
   }
   // If error property exists in the response object.
   elseif (property_exists($response, 'error')) {
+
     if (property_exists($response, 'data') && $response->code != 500) {
       $response_json = drupal_json_decode($response->data);
       if (array_key_exists('_error', $response_json)) {
@@ -418,30 +432,14 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
     else {
       $error_message = 'Atlas response: ' . $response->error;
     }
-
-    //drupal_set_message($error_message, 'error');
+    drupal_set_message($error_message, 'warning');
     watchdog(
       'atlas',
       'API Request Error - %error',
       array(
-        '%error' => $response->error,
+        '%error' => $error_message,
       ),
       WATCHDOG_WARNING,
-      NULL
-    );
-  }
-
-  if ($method != 'GET') {
-    $sid = variable_get('sid');
-    watchdog(
-      'atlas',
-      '%method sent to %resource for %sid',
-      array(
-        '%method' => $method,
-        '%resource' => $resource,
-        '%sid' => $sid,
-      ),
-      WATCHDOG_INFO,
       NULL
     );
   }

@@ -189,7 +189,6 @@ class LdapUserUnitTests extends LdapTestCase {
       $array_diff = array_diff($user_edit, $desired_result);
     }
     //@todo need better diff, this will give false positives in most cases
-  //  debug('user_edit,desired_result,diff'); debug( array($user_edit, $desired_result, $array_diff));
     $this->assertTrue(count($array_diff) == 0, t('ldapUserConf::entryToUserEdit retrieved correct property, field, and data values.'), $this->testId('ldapUserConf::entryToUserEdit'));
     if (count($array_diff) != 0) {
       debug('ldapUserConf::entryToUserEdit failed.  resulting user edit array:'); debug($user_edit); debug('desired result:'); debug($desired_result); debug('array_diff:'); debug($array_diff);
@@ -212,7 +211,6 @@ class LdapUserUnitTests extends LdapTestCase {
       foreach ($tests as $boolean_result => $attribute_tokens) {
         foreach ($attribute_tokens as $attribute_token) {
           $is_synched = $ldap_user_conf->isSynched($attribute_token, array($prov_event), LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER);
-          // debug("is_synched_tests: is_synched=$is_synched, attribute_token=$attribute_token, prov_event=$prov_event");
           if ((int)$is_synched !== (int)$boolean_result) {
             $fail = TRUE;
             $debug[$attribute_token] = "isSynched($attribute_token, array($prov_event),
@@ -250,7 +248,6 @@ class LdapUserUnitTests extends LdapTestCase {
     $account->name = 'hpotter';
     $params = array('ldap_context' => 'ldap_user_prov_to_drupal', 'direction' => LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER);
     list($ldap_entry, $error) = $ldap_user_conf->drupalUserToLdapEntry($account, 'activedirectory1', $params);
-  //  debug('ldap_entry'); debug($ldap_entry);
 
     $account = NULL;
     $user_edit = array('name' => 'hpotter');
@@ -580,7 +577,6 @@ class LdapUserUnitTests extends LdapTestCase {
         if ($field_name) {
           $token_attributes = array();
           ldap_servers_token_extract_attributes($token_attributes,  $test['mapping']['ldap_attr']);
-          //debug('token_attributes'); debug($token_attributes);
           foreach ($token_attributes as $attr_name => $attr_parts ) {
             $this->testFunctions->setFakeServerUserAttribute(
               'activedirectory1',
@@ -595,7 +591,6 @@ class LdapUserUnitTests extends LdapTestCase {
 
         $ldap_user_conf->save();
         $ldap_user_conf = ldap_user_conf('admin', TRUE);
-       // debug("ldap_user_conf in prep field_token=$field_token"); debug($ldap_user_conf->synchMapping); debug($ldap_user_conf->ldapUserSynchMappings);
         ldap_user_ldap_provision_semaphore(NULL, NULL, NULL, TRUE);
         ldap_servers_flush_server_cache();
 
@@ -620,12 +615,8 @@ class LdapUserUnitTests extends LdapTestCase {
               debug('field fail,' . $property_name); debug($user_entity->{$property_name}); debug($test['property_results'][0]); //debug($user_entity);
             }
           }
-          else {
-          // debug("property_name=$property_name not configured to provisionDrupalAccount on drupal user create for direction=$direction and prov_event=$prov_event");
-          }
         }
         if ($field_name) {
-          // debug("property_name=$property_name, prov_event=$prov_event, direction=$direction, field_token=$field_token, sid=$sid, ldap_user_conf->ldapUserSynchMappings $direction - $sid"); debug($ldap_user_conf->ldapUserSynchMappings[$direction][$sid]);
 
           if (in_array($prov_event, $ldap_user_conf->ldapUserSynchMappings[$direction][$field_token]['prov_events'])) { // if intended to synch
             $field_success = isset($user_entity->{$field_name}[LANGUAGE_NONE][0]['value']) &&
@@ -872,7 +863,6 @@ class LdapUserIntegrationTests extends LdapTestCase {
 
       $ldap_user_conf->save();
       $ldap_user_conf = ldap_user_conf('default', TRUE);
-     // debug('ldap_user_conf after provisionToLdapEmailVerification setup'); debug($ldap_user_conf);
 
       variable_set('user_email_verification', TRUE);
       variable_set('user_register', USER_REGISTER_VISITORS); // or USER_REGISTER_ADMINISTRATORS_ONLY, USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL
@@ -1053,10 +1043,8 @@ class LdapUserIntegrationTests extends LdapTestCase {
     $account_options = $drupal_form['basic_to_drupal']['orphanedDrupalAcctBehavior']['#options'];
     $cn_to_account = array();
     $ldap_server = ldap_servers_get_servers('activedirectory1', NULL, TRUE, TRUE);
-   // debug("ldap_server"); debug(is_object($ldap_server));
 
     foreach ($account_options as $account_option => $account_option_text) {
-     // debug("$account_option - $account_option_text");
       $sids = array('activedirectory1');
       $this->prepTestData('hogwarts', $sids, 'provisionToDrupal', 'default');
       $ldap_user_conf->orphanedDrupalAcctBehavior = $account_option;
@@ -1070,17 +1058,13 @@ class LdapUserIntegrationTests extends LdapTestCase {
       $last_clone_username= 'clone' . (LDAP_TEST_USER_ORPHAN_CLONE_COUNT - 1);
       for ($i = 0; $i < LDAP_TEST_USER_ORPHAN_CLONE_COUNT; $i++) { // 70
         $name = "clone" . $i;
-        //debug("create clone $name, activedirectory1");
         $account = $this->createLdapIdentifiedDrupalAccount(
           $ldap_user_conf,
           $name,
           'activedirectory1'
         );
         $cn_to_account[$name] = $account;
-        //debug("new account"); debug($account);
       }
-    //  debug($cn_to_account['clone0']);
-    //  debug($cn_to_account[$last_clone_username]);
 
       // delete 10 ldap entries
       // @FIXME: Wrapper for broken test.
@@ -1091,23 +1075,19 @@ class LdapUserIntegrationTests extends LdapTestCase {
         $clone_last = user_load($clone_last_uid, TRUE);
       }
 
-      //debug("pre ldap delete, clone0 and cloneN $first_clone_username and $last_clone_username"); debug($clone_first);debug($clone_last); //debug($ldap_server->entries);
       $delete = LDAP_TEST_USER_ORPHAN_CLONE_COUNT - LDAP_TEST_USER_ORPHAN_CLONE_REMOVE_COUNT;
       for ($i = 0; $i < $delete; $i++) {
         $name = "clone" . $i;
         $account = $cn_to_account[$name];
-        //debug("delete ldap entry: ". $account->ldap_user_current_dn[LANGUAGE_NONE][0]['value']);
-      //  ?? is it possible the ldap delete hook is causing the drupal user to get populated with empty values?
+        // ?? is it possible the ldap delete hook is causing the drupal user to get populated with empty values?
         $ldap_server->delete($account->ldap_user_current_dn[LANGUAGE_NONE][0]['value']);
       }
 
       $clone_first = user_load($clone_first_uid, TRUE);
       $clone_last = user_load($clone_last_uid, TRUE);
-      //debug("post ldap delete and pre cron, clone0 and cloneN"); debug($clone_first->status);debug($clone_last->status);// debug($ldap_server->entries);
       drupal_cron_run();
       $clone_first = user_load($clone_first_uid, TRUE);
       $clone_last = user_load($clone_last_uid, TRUE);
-      //debug("post cron, clone0 and cloneN"); debug($clone_first->status);debug($clone_last->status); //debug($ldap_server->entries);
       switch ($account_option) {
 
         case 'ldap_user_orphan_do_not_check':
@@ -1115,12 +1095,9 @@ class LdapUserIntegrationTests extends LdapTestCase {
           for ($i = 0; $i < LDAP_TEST_USER_ORPHAN_CLONE_COUNT; $i++) { // 70
             $name = "clone" . $i;
             $test_uids[] = @$cn_to_account[$name]->uid;
-
-            //debug($account);
           }
           $success = TRUE;
           $accounts = user_load_multiple($test_uids);
-         // debug("accounts for $test_id"); debug($accounts);
           foreach ($accounts as $uid => $account) {
             if ($account->status != 1) {
               $success = FALSE;
@@ -1129,16 +1106,11 @@ class LdapUserIntegrationTests extends LdapTestCase {
           }
           if ($success) {
             $success = ($clone_last && $clone_last->status == 1);
-            if (!$success) {
-             // debug("success = $success, status=" . $clone_last->status);
-            }
           }
-
 
         break;
 
         case 'ldap_user_orphan_email' :
-         // debug('ldap_user_orphan_email');
           // test is if email has 10 users and was sent
           $emails = $this->drupalGetMails();
           if (count($emails)) {
@@ -1153,7 +1125,6 @@ class LdapUserIntegrationTests extends LdapTestCase {
 
         case 'user_cancel_block':
         case 'user_cancel_block_unpublish':
-          //debug('user_cancel_block');
           // test is if clone0-clone9 have a status of 0
           // and clone12,11... have a status of 1
           $test_uids = array();
@@ -1183,8 +1154,6 @@ class LdapUserIntegrationTests extends LdapTestCase {
           for ($i = 0; $i < $delete; $i++) { // 70
             $name = "clone" . $i;
             $test_uids[] = @$cn_to_account[$name]->uid;
-
-            //debug($account);
           }
           $success = TRUE;
           $accounts = user_load_multiple($test_uids);
@@ -1276,8 +1245,6 @@ class LdapUserUITests extends LdapTestCase {
     $this->drupalLogin($this->privileged_user);
 
     $ldap_user_conf = ldap_user_conf();
-  //  debug('ldap_user_conf before form submission'); debug($ldap_user_conf);
-
 
     $this->drupalGet('admin/config/people/ldap/user');
 
@@ -1343,7 +1310,6 @@ class LdapUserUITests extends LdapTestCase {
     $this->drupalPost('admin/config/people/ldap/user', $edit, t('Save'));
 
     $ldap_user_conf = ldap_user_conf(NULL, TRUE);
-   // debug('edit'); debug($edit); debug('user conf object after save'); debug($ldap_user_conf);
 
     foreach ($edit_direct_map as $property => $value) {
       $this->assertTrue($ldap_user_conf->{$property} == $value, $property . ' ' . t('field set correctly'), $this->testId('user interface tests'));
