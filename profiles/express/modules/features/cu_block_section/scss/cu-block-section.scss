@@ -20,6 +20,12 @@
   //background-image: none !important;
   //position:relative;
 }
+@media screen and (max-width:767px) {
+  .block-section.parallax-window {
+    background-attachment: scroll !important;
+    background-position: center center !important;
+  }
+}
 
 // Overlay
 .block-section-overlay {

@@ -341,7 +341,6 @@ class LdapAuthorizationConsumerAbstract {
         $log .= "revoking existing consumer object, ";
         if ($user_has_authorization) {
           // revoke case 1: user has authorization, revoke it.  revokeSingleAuthorization will remove $user_auth_data[$consumer_id]
-          //debug("op=revoke, consumer_id=$consumer_id, calling revokeSingleAuthorization");
           $results[$consumer_id] = $this->revokeSingleAuthorization($user, $consumer_id, $consumer, $user_auth_data, $user_save);  // defer to default for $user_save param
           $log .= t(',result=') . (boolean)($results[$consumer_id]);
         }
@@ -364,7 +363,6 @@ class LdapAuthorizationConsumerAbstract {
     }
     $watchdog_tokens['%consumer_ids_log'] = (count($consumer_ids_log)) ? join('<hr/>', $consumer_ids_log) : t('no actions');
 
-   // debug("user->data and user_auth_data"); debug($user->data); debug($user_auth_data);
     if ($user_save) {
       $user = user_load($user->uid, TRUE);
       $user_edit = $user->data;

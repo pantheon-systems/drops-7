@@ -58,15 +58,21 @@ CKEDITOR.dialog.add( 'map_sc_generatorDialog', function( editor ) {
 
 			// Get Fields
 			var mapURL = dialog.getValueOf( 'tab-settings', 'map-url' );
+			var url;
 			var re1='.*?';	// Non-greedy match on filler
       var re2='((?:http|https)(?::\\/{2}[\\w]+)(?:[\\/|\\.]?)(?:[^\\s"]*))';	// HTTP URL 1
 
       var p = new RegExp(re1+re2,["i"]);
       var m = p.exec(mapURL);
-      var httpurl1=m[1];
+			if (m == undefined) {
+				url = mapURL;
+			}
+      else {
+				url = httpurl1=m[1];
+			}
       // Map size
       var mapSize = dialog.getValueOf( 'tab-settings', 'map-size' );
-			editor.insertHtml( '[map size="' + mapSize + '"]' + httpurl1 + '[/map]');
+			editor.insertHtml( '[map size="' + mapSize + '"]' + url + '[/map]');
 		}
 	};
 });

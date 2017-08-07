@@ -228,8 +228,12 @@ function ldap_user_ldap_attributes_needed_alter(&$attributes, $params) {
       case 'all':
         $attributes[$ldap_server->user_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->user_attr]); // array($ldap_server->user_attr, 0, NULL);
         $attributes[$ldap_server->mail_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->mail_attr]);
-        $attributes[$ldap_server->picture_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->picture_attr]);
-        $attributes[$ldap_server->unique_persistent_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->unique_persistent_attr]);
+        if ($ldap_server->picture_attr) {
+          $attributes[$ldap_server->picture_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->picture_attr]);
+        }
+        if ($ldap_server->unique_persistent_attr) {
+          $attributes[$ldap_server->unique_persistent_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->unique_persistent_attr]);
+        }
         if ($ldap_server->mail_template) {
           ldap_servers_token_extract_attributes($attributes,  $ldap_server->mail_template);
         }
@@ -961,7 +965,6 @@ function ldap_user_user_insert(&$user_edit, $account, $category) {
  */
 
 function ldap_user_user_update(&$user_edit, $account, $category) {
-  //debug("ldap_user_user_update, category=$category"); debug($user_edit); debug($account); // ldap_user_user_insert, category='. $category . 'account->status = ' . $account->status);
   if (ldap_user_ldap_exclude($account, $user_edit)) {
     return;
   }
@@ -1007,7 +1010,6 @@ function ldap_user_user_update(&$user_edit, $account, $category) {
  */
 
 function ldap_user_user_presave(&$user_edit, $account, $category) {
- //debug("ldap_user_user_presave, category=$category"); debug($user_edit); debug($account); // ldap_user_user_insert, category='. $category . 'account->status = ' . $account->status);
 
   if (ldap_user_ldap_exclude($account, $user_edit)) {
     return;
@@ -1056,34 +1058,6 @@ function ldap_user_user_delete($account) {
   }
 }
 
-
-
-/**
- * @return default value for field user->ldap_user_provisioned_sid
- */
-function ldap_user_provisioned_sid_default($entity_type, $entity, $field, $instance, $langcode) {
-  return NULL;
-}
-
-/**
- * @return default value for field user->ldap_user_provisioned_sid
- */
-function ldap_user_puid_default($entity_type, $entity, $field, $instance, $langcode) {
-  return NULL;
-}
-/**
- * @return default value for field user->ldap_user_puid
- */
-function ldap_user_puid_property_default($entity_type, $entity, $field, $instance, $langcode) {
-  return NULL;
-}
-/**
- * @return default value for field user->ldap_user_dn
- */
-function ldap_user_dn_default($entity_type, $entity, $field, $instance, $langcode) {
-  return NULL;
-}
-
 /**
  * Implements hook_field_widget_info().
  * to provide field type for LDAP fields
@@ -1115,8 +1089,8 @@ function ldap_user_field_widget_form(&$form, &$form_state, $field, $instance, $l
   switch ($instance['widget']['type']) {
     case 'ldap_user_hidden':
       $element['value'] = $element + array(
-        '#type' => 'hidden',
-        '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
+        '#type' => 'value',
+        '#value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
       );
       break;
   }

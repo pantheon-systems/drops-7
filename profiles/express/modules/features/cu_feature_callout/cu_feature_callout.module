@@ -245,6 +245,10 @@ function cu_feature_callout_preprocess_entity(&$vars) {
         $size = 'widescreen';
       }
 
+      if ($style == 'tiles_alt') {
+        $size = 'large';
+      }
+
 
       if (isset($fc_item['field_callout_image']['#items'][0]['uri'])) {
         // Get image uri.

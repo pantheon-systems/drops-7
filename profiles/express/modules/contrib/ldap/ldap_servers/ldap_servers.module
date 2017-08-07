@@ -320,11 +320,14 @@ function ldap_servers_theme() {
       if (!isset($attributes[$ldap_server->mail_attr])) {
         $attributes[$ldap_server->mail_attr] = ldap_servers_set_attribute_map();
       }
-      if (!isset($attributes[$ldap_server->picture_attr])) {
+      if ($ldap_server->picture_attr && !isset($attributes[$ldap_server->picture_attr])) {
         $attributes[$ldap_server->picture_attr] = ldap_servers_set_attribute_map();
       }
       if ($ldap_server->unique_persistent_attr && !isset($attributes[$ldap_server->unique_persistent_attr])) {
         $attributes[$ldap_server->unique_persistent_attr] = ldap_servers_set_attribute_map();
+      }
+      if ($ldap_server->groupUserMembershipsAttr && !isset($attributes[$ldap_server->groupUserMembershipsAttr])) {
+        $attributes[$ldap_server->groupUserMembershipsAttr] = ldap_servers_set_attribute_map();
       }
       if ($ldap_server->user_dn_expression) {
         ldap_servers_token_extract_attributes($attributes, $ldap_server->user_dn_expression, TRUE);
@@ -344,7 +347,6 @@ function ldap_servers_theme() {
  */
 
 function ldap_servers_ldap_user_attrs_list_alter(&$available_user_attrs, &$params) {
-  //debug('ldap_servers_ldap_user_attrs_list_alter'); debug($available_user_attrs); debug($params);
 
   if (isset($params['ldap_server']) && $params['ldap_server']) {
     $ldap_server = $params['ldap_server'];
@@ -484,8 +486,6 @@ function ldap_servers_ldap_user_attrs_list_alter(&$available_user_attrs, &$param
       }
     }
   }
- // debug('available_user_attrs2'); debug($available_user_attrs);
-
 }
 
 /**
@@ -535,7 +535,6 @@ function ldap_servers_get_servers($sid = NULL, $type = NULL, $flatten = FALSE, $
  * see ldap_servers_get_servers()
  */
 function _ldap_servers_get_servers($sid, $type, $flatten, $reset) {
- // dpm('_ldap_servers_get_servers params'); dpm(array($sid, $type, $flatten, $reset));
   ldap_servers_module_load_include('php', 'ldap_servers', 'LdapServerAdmin.class');
   static $servers;
   $type = ($type) ? $type : 'all';
@@ -811,7 +810,7 @@ function ldap_servers_convert_attribute($value, $conversion = NULL) {
  */
 function ldap_servers_disable_http_check(&$form) {
 
-  if (variable_get('ldap_servers_require_ssl_for_credentials', 0) == 1 && @$_SERVER['HTTPS'] != 'on') {
+  if (variable_get('ldap_servers_require_ssl_for_credentials', 0) == 1 && !drupal_is_https()) {
 
     $tokens = array(
       'site_name' => variable_get('site_name', 'this site'),

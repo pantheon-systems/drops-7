@@ -437,7 +437,6 @@ function testFlags() {
       'error_message' => '',
       );
   $this->consumerAdminConf['drupal_role']->save();
-//  debug('mappings'); debug($this->consumerAdminConf['drupal_role']->mappings);
 
   $edit = array(
     'name' => 'hpotter',
@@ -446,7 +445,6 @@ function testFlags() {
   $this->drupalPost('user', $edit, t('Log in'));
 
   $new_role_created = in_array($new_role, array_values(user_roles()));
- // debug("roles"); debug(user_roles());
   $roles_by_name = array_flip(user_roles());
   $hpotter = user_load_by_name('hpotter');
   $hpotter = user_load($hpotter->uid, TRUE);
@@ -548,7 +546,6 @@ function testFlags() {
           if (count($mismatches)) {
             debug('mismatches between ldap server properties and form submitted values');
             debug($mismatches);
-           // debug($ldap_consumer);  // throw recursion
             debug($consumer_form_data);
           }
           $this->assertTrue(count($mismatches) == 0, 'Add form for ldap consumer properties match values submitted.',  $this->ldapTestId . ' Add consumer conf');
@@ -574,7 +571,6 @@ function testFlags() {
           if (count($mismatches)) {
             debug('mismatches between ldap server properties and form submitted values');
             debug($mismatches);
-           // debug($ldap_consumer); // throw recursion
             debug($consumer_form_data);
           }
           $this->assertTrue(count($mismatches) == 0, 'Update form for ldap server properties match values submitted.',  $this->ldapTestId . '.Update consumer conf');

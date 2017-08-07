@@ -35,51 +35,74 @@ function cu_people_administration_override_views_default_views() {
   $handler->display->display_options['pager']['options']['items_per_page'] = '20';
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
+    'mail' => 'mail',
     'views_bulk_operations' => 'views_bulk_operations',
     'name' => 'name',
     'status' => 'status',
-    'created' => 'created',
     'rid' => 'rid',
+    'field_ldap_primary_affiliation' => 'field_ldap_primary_affiliation',
+    'created' => 'created',
     'access' => 'access',
     'edit_node' => 'edit_node',
   );
   $handler->display->display_options['style_options']['default'] = '-1';
   $handler->display->display_options['style_options']['info'] = array(
+    'mail' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
     'views_bulk_operations' => array(
       'align' => '',
       'separator' => '',
+      'empty_column' => 0,
     ),
     'name' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
       'align' => '',
       'separator' => '',
+      'empty_column' => 0,
     ),
     'status' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
       'align' => '',
       'separator' => '',
+      'empty_column' => 0,
+    ),
+    'rid' => array(
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'field_ldap_primary_affiliation' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
     ),
     'created' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
       'align' => '',
       'separator' => '',
-    ),
-    'rid' => array(
-      'align' => '',
-      'separator' => '',
+      'empty_column' => 0,
     ),
     'access' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
       'align' => '',
       'separator' => '',
+      'empty_column' => 0,
     ),
     'edit_node' => array(
       'align' => '',
       'separator' => '',
+      'empty_column' => 0,
     ),
   );
   /* Field: User: E-mail */
@@ -135,6 +158,14 @@ function cu_people_administration_override_views_default_views() {
   $handler->display->display_options['fields']['rid']['table'] = 'users_roles';
   $handler->display->display_options['fields']['rid']['field'] = 'rid';
   $handler->display->display_options['fields']['rid']['type'] = 'ul';
+  /* Field: User: Primary Affiliation */
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['id'] = 'field_ldap_primary_affiliation';
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['table'] = 'field_data_field_ldap_primary_affiliation';
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['field'] = 'field_ldap_primary_affiliation';
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['element_type'] = '0';
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['element_wrapper_type'] = '0';
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['element_default_classes'] = FALSE;
+  $handler->display->display_options['fields']['field_ldap_primary_affiliation']['field_api_classes'] = TRUE;
   /* Field: User: Created date */
   $handler->display->display_options['fields']['created']['id'] = 'created';
   $handler->display->display_options['fields']['created']['table'] = 'users';

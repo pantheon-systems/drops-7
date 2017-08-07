@@ -44,7 +44,7 @@ class FeedsLdapEntryParser extends FeedsParser {
           }
         }
         else {
-          $parsed_item[$source] = ' ';
+          $parsed_item[$source] = '';
         }
       }
       $parsed_items[] = $parsed_item;

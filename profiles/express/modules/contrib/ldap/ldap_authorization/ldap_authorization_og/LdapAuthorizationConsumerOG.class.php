@@ -429,12 +429,10 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
         unset($diff[$i]);
       }
     }
-   // dpm("diff"); dpm($diff); dpm("existing"); dpm($existing);  dpm("desired"); dpm($desired); dpm("final diff"); dpm($diff);
     return $diff;
   }
 
   protected function grantsAndRevokes($op, &$user, &$user_auth_data, $consumers, &$ldap_entry = NULL, $user_save = TRUE) {
-   // debug("grantsAndRevokes, op=$op, user_save=$user_save"); debug($user_auth_data); debug($consumers);
 
     if (!is_array($user_auth_data)) {
       $user_auth_data = array();
@@ -468,7 +466,6 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
     $consumer_ids_log = "";
     $log = "";
 
-    //dpm('consumers');dpm($consumers); dpm('users_authorization_consumer_ids'); dpm($users_authorization_consumer_ids);
     foreach ($consumers as $consumer_id => $consumer) {
       if ($detailed_watchdog_log) {
         watchdog('ldap_authorization', "consumer_id=$consumer_id, user_save=$user_save, op=$op", $watchdog_tokens, WATCHDOG_DEBUG);
@@ -573,7 +570,6 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
      * - remove and grant og roles
      * - flush appropriate caches
      */
-    //debug("og_actions"); debug($og_actions); debug("user_auth_data"); debug($user_auth_data);
     if ($this->ogVersion == 1) {
       $this->og1Grants($og_actions, $user, $user_auth_data);
       $this->og1Revokes($og_actions, $user, $user_auth_data);
@@ -639,8 +635,7 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
         $users_group_rids = array_keys(og_get_user_roles($group_entity_type, $gid, $user->uid, TRUE)); // users current rids w/authen or anon roles returned
         $users_group_rids = array_diff($users_group_rids, array($anonymous_rid));
         $new_rids = array_diff($granting_rids, $users_group_rids, array($anonymous_rid)); // rids to be added without anonymous rid
-      //  debug("new rids"); debug($new_rids);debug("granting_rids"); debug($granting_rids);debug("users_group_rids"); debug($users_group_rids);
-        
+
         // if adding OG_AUTHENTICATED_ROLE or any other role and does not currently have OG_AUTHENTICATED_ROLE, group
         if (!in_array($authenticated_rid, $users_group_rids) && count($new_rids) > 0) {
           $values = array(
@@ -650,7 +645,6 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
             'state' => OG_STATE_ACTIVE,
           );
           $og_membership = og_group($group_entity_type, $gid, $values);
-          // debug("consumer_id=$consumer_id, og group called( $group_entity_type, $gid, values:"); debug($values); debug("response og_membership"); debug($og_membership);
           $consumer_id = join(':', array($group_entity_type, $gid, $authenticated_rid));
           $user_auth_data[$consumer_id] = array(
             'date_granted' => time(),
@@ -660,7 +654,6 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
          
         }
         foreach ($new_rids as $i => $rid) {
-        //  debug("role grant $group_entity_type $gid $user->uid $rid");
           og_role_grant($group_entity_type, $gid, $user->uid, $rid);
         }
         foreach ($granting_rids as $i => $rid) {
@@ -886,28 +879,26 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
 
       if (!empty($og_fields['bundles'])) {
         foreach ($og_fields['bundles'] as $entity_type => $bundles) {
-
           foreach ($bundles as $i => $bundle) {
-
             $query = new EntityFieldQuery();
             $query->entityCondition('entity_type', $entity_type)
               ->entityCondition('bundle', $bundle)
               ->range(0, 5)
               ->addMetaData('account', user_load(1)); // run the query as user 1
             $result = $query->execute();
-            $entities = entity_load($entity_type, array_keys($result[$entity_type]));
-            $i=0;
-            foreach ($entities as $entity_id => $entity) {
-              $i++;
-              $rid = ldap_authorization_og2_rid_from_role_name($entity_type, $bundle, $entity_id, OG_AUTHENTICATED_ROLE);
-              $title = (is_object($entity) && property_exists($entity, 'title')) ? $entity->title : '';
-              $middle = ($title && $i < 3) ? $title : $entity_id;
-              $group_role_identifier = ldap_authorization_og_authorization_id($middle, $rid, $entity_type);
-              $example = "<code>ou=IT,dc=myorg,dc=mytld,dc=edu|$group_role_identifier</code>";
-              $rows[] = array("$entity_type $title - $role_name", $example);
-
+            if (!empty($result)) {
+              $entities = entity_load($entity_type, array_keys($result[$entity_type]));
+              $i=0;
+              foreach ($entities as $entity_id => $entity) {
+                $i++;
+                $rid = ldap_authorization_og2_rid_from_role_name($entity_type, $bundle, $entity_id, OG_AUTHENTICATED_ROLE);
+                $title = (is_object($entity) && property_exists($entity, 'title')) ? $entity->title : '';
+                $middle = ($title && $i < 3) ? $title : $entity_id;
+                $group_role_identifier = ldap_authorization_og_authorization_id($middle, $rid, $entity_type);
+                $example = "<code>ou=IT,dc=myorg,dc=mytld,dc=edu|$group_role_identifier</code>";
+                $rows[] = array("$entity_type $title - $role_name", $example);
+              }
             }
-
           }
         }
       }

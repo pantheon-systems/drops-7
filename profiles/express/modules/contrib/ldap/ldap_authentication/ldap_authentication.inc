@@ -81,7 +81,7 @@ function _ldap_authentication_form_user_profile_form_alter(&$form, $form_state) 
   $auth_conf = ldap_authentication_get_valid_conf();
   if ($auth_conf && ldap_authentication_ldap_authenticated($form['#user'])) {
     if ($auth_conf->emailOption == LDAP_AUTHENTICATION_EMAIL_FIELD_REMOVE) {
-      $form['account']['mail']['#type'] = 'hidden';
+      $form['account']['mail']['#access'] = FALSE;
     }
     elseif ($auth_conf->emailOption == LDAP_AUTHENTICATION_EMAIL_FIELD_DISABLE) {
       $form['account']['mail']['#disabled'] = TRUE;
@@ -237,6 +237,7 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
    * IV. test credentials and if available get corresponding ldap user and ldap server
    */
   list($authentication_result, $ldap_user, $ldap_server_authenticated_on) = ldap_authentication_test_credentials($auth_conf, $sso_login, $authname, $form_state['values']['pass'], $watchdog_tokens);
+  drupal_alter('ldap_entry', $ldap_user);
   if ($authentication_result != LDAP_AUTHENTICATION_RESULT_SUCCESS) {
     ldap_authentication_fail_response($authentication_result, $auth_conf, $detailed_watchdog_log, $watchdog_tokens);
     return;
@@ -658,6 +659,14 @@ function ldap_authentication_test_credentials($auth_conf, $sso_login, $authname,
         * server authentication.
         */
       $credentials_pass = (boolean)($ldap_user);
+    }
+    elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER) {
+       /**
+        * With user bind method, the only way we can reach this part of the
+        * code is when the pw has already been checked and $ldap_user could be
+        * loaded, so we're good to go.
+        */
+      $credentials_pass = true;
     }
     else {
       $credentials_pass = ($ldap_server->bind($ldap_user['dn'], $password, FALSE) == LDAP_SUCCESS);

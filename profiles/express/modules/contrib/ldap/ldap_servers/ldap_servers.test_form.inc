@@ -277,7 +277,9 @@ function ldap_servers_test_form_submit($form, &$form_state) {
     $group_dn = $values['grp_test_grp_dn'];
 
     $result = @ldap_read($ldap_server->connection, $group_dn, 'objectClass=*');
-    $group_entry = ldap_get_entries($ldap_server->connection, $result);
+    if (is_array($result)) {
+      $group_entry = ldap_get_entries($ldap_server->connection, $result);
+    }
     $user = isset($values['testing_drupal_username']) ? $values['testing_drupal_username'] : NULL;
 
     foreach (array(FALSE, TRUE) as $nested) { //FALSE
@@ -347,7 +349,7 @@ function ldap_servers_test_form_submit($form, &$form_state) {
     $form_state['ldap_server_test_data']['ldap_user'] = $ldap_user;
   }
 
-  if ( isset($group_entry) ) {
+  if (isset($group_entry) ) {
     $form_state['ldap_server_test_data']['group_entry'] = $group_entry;
   }
   

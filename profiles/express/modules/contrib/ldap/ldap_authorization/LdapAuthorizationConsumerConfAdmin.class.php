@@ -45,7 +45,6 @@ class LdapAuthorizationConsumerConfAdmin extends LdapAuthorizationConsumerConf {
         $values->export_type = NULL;
         $result = ctools_export_crud_save('ldap_authorization', $values);
       } catch (Exception $e) {
-        //  debug($e); Integrity constraint violation: 1062 Duplicate entry
         $values->export_type = EXPORT_IN_DATABASE;
         $result = ctools_export_crud_save('ldap_authorization', $values);
       }

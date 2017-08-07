@@ -711,10 +711,80 @@ function cu_core_update_7024() {
 /**
  * Express 2.5.0 Update.
  *
- * Revert Features.
+ * Revert All Features.
  */
 function cu_core_update_7025() {
   cu_core_revert_features();
+}
+
+/**
+ * Express 2.5.3 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7026() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.4 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7027() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.5 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7028() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.6 Update.
+ *
+ * Enable Realname. Revert LDAP and People Administration Override Features.
+ */
+function cu_core_update_7029() {
+  module_enable(array('realname'));
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap', 'cu_people_administration_override' => 'cu_people_administration_override'));
+  cu_core_scramble_admin();
+}
+
+/**
+ * Express 2.5.6 Update.
+ *
+ * Attempt to set Realname for all users in authoring roles.
+ */
+function cu_core_update_7030() {
+
+  $roles = array('content_editor', 'site_owner', 'edit_my_content');
+  $query = db_select('users_roles', 'ur');
+  $query->join('users', 'u', 'u.uid = ur.uid');
+  $query->join('role', 'r', 'r.rid = ur.rid');
+  $query->fields('u',array('name'));
+  $query->condition('r.name', $roles, 'IN');
+  $users = $query->execute();
+
+  foreach ($users as $user) {
+
+    //skip osr test users?
+    $ldap = cu_ldap_lookup($user->name);
+    $account = user_load_by_name($user->name);
+
+    //Check to see that LDAP is returned a value.  There are no display names for acconts like OSR-TEST-OWNER
+    if (isset($ldap[0]) && ($account->field_ldap_display_name != $ldap[0]['displayname'][0] || $account->field_ldap_primary_affiliation != $ldap[0]['edupersonprimaryaffiliation'][0])) {
+      // update account fields
+      $edit = array();
+      $edit['field_ldap_display_name'][LANGUAGE_NONE][0]['value'] = $ldap[0]['displayname'][0];
+      $edit['field_ldap_primary_affiliation'][LANGUAGE_NONE][0]['value'] = $ldap[0]['edupersonprimaryaffiliation'][0];
+      user_save($account, $edit);
+    }
+  }
 }
 
 /**
