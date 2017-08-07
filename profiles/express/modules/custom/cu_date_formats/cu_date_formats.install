@@ -1,0 +1,15 @@
+<?php
+
+function cu_date_formats_install() {
+  $formats = cu_date_formats_date_formats();
+  foreach ($formats as $format) {
+    variable_set('date_format_' . $format['type'], $format['format']);
+  }
+}
+
+function cu_date_formats_update_7010() {
+  $formats = cu_date_formats_date_formats();
+  foreach ($formats as $format) {
+    variable_set('date_format_' . $format['type'], $format['format']);
+  }
+}

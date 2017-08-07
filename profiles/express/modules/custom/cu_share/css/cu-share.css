@@ -1,0 +1,24 @@
+.cu-share-sidebar { position: fixed; top: 40%; left: 0; z-index: 1; display: none; }
+
+.cu-share-sidebar ul, .cu-share-sidebar ul li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+
+.cu-share-sidebar ul li { display: block; }
+
+.cu-share-sidebar .socicon { transition: all 0.5s ease; }
+
+.cu-share-sidebar a:hover .socicon { width: 60px; }
+
+.cu-share-inline, .cu-share-inline-mobile { display: block; }
+.cu-share-inline .soc li, .cu-share-inline-mobile .soc li { display: inline-block; }
+.cu-share-inline .soc li .socicon, .cu-share-inline-mobile .soc li .socicon { color: #666 !important; }
+.cu-share-inline .soc-twitter, .cu-share-inline .soc-facebook, .cu-share-inline .soc-googleplus, .cu-share-inline .soc-linkedin, .cu-share-inline .soc-email, .cu-share-inline-mobile .soc-twitter, .cu-share-inline-mobile .soc-facebook, .cu-share-inline-mobile .soc-googleplus, .cu-share-inline-mobile .soc-linkedin, .cu-share-inline-mobile .soc-email { background-color: #f5f5f5; }
+.cu-share-inline .soc li a:hover, .cu-share-inline-mobile .soc li a:hover { background: #f5f5f5; }
+.cu-share-inline .soc li a:hover .soc-twitter, .cu-share-inline-mobile .soc li a:hover .soc-twitter { background-color: #4ca5e0; color: #fff !important; }
+.cu-share-inline .soc li a:hover .soc-facebook, .cu-share-inline-mobile .soc li a:hover .soc-facebook { background-color: #3f5899; color: #fff !important; }
+.cu-share-inline .soc li a:hover .soc-googleplus, .cu-share-inline-mobile .soc li a:hover .soc-googleplus { background-color: #da3f29; color: #fff !important; }
+.cu-share-inline .soc li a:hover .soc-linkedin, .cu-share-inline-mobile .soc li a:hover .soc-linkedin { background-color: #346eb9; color: #fff !important; }
+.cu-share-inline .soc li a:hover .soc-email, .cu-share-inline-mobile .soc li a:hover .soc-email { background-color: #5887d8; color: #fff !important; }
+.cu-share-inline .soc li .social-links-text, .cu-share-inline .soc li .social-links-text, .cu-share-inline-mobile .soc li .social-links-text, .cu-share-inline-mobile .soc li .social-links-text { color: #666; background: #f5f5f5; margin: 0; padding: 0 10px; font-size: 85%; display: block; float: left; }
+
+@media all and (min-width: 1260px) { .cu-share-sidebar { display: block; }
+  .cu-share-inline-mobile { display: none; } }

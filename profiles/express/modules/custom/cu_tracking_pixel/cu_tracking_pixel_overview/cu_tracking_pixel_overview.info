@@ -1,0 +1,9 @@
+name = CU Tracking Pixel Overview
+core = 7.x
+package = CU_SEO
+dependencies[] = cu_tracking_pixel
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = manage_tracking_pixels
+features_exclude[dependencies][ctools] = ctools

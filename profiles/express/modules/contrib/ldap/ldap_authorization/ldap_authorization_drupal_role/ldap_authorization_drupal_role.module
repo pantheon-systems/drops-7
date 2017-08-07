@@ -1,0 +1,59 @@
+<?php
+
+/** @file
+ *
+ *  maps ldap data to drupal roles
+ *
+ */
+
+/**
+ * Implements hook_ldap_authorization_consumer().
+ */
+function ldap_authorization_drupal_role_ldap_authorization_consumer() {
+
+  $types['drupal_role'] =  array(
+    'consumer_name' => t('drupal role'),
+    'consumer_name_plural' => t('drupal roles'),
+    'consumer_short_name' => t('role'),
+    'consumer_short_name_plural' => t('roles'),
+    'consumer_description' => t('A Drupal Role.'),
+    'consumer_class_name' => 'LdapAuthorizationConsumerDrupalRole',
+    'consumer_class_file' => 'LdapAuthorizationConsumerRole.class.php',
+    'consumer_module' => 'ldap_authorization_drupal_role',
+    'consumer_mapping_directions' => '<p>Mappings should be of form:<br/>
+<code>[ldap group representation]|[role name]</code>
+<br/>such as:<br/>
+<code>cn=students,ou=groups,dc=hogwarts,dc=edu|students<br/>
+cn=faculty,ou=groups,dc=hogwarts,dc=edu|administrator
+</code><br/>
+or if "Convert full dn" is selected below, they should look like:
+<br/>
+<code>students|students<br/>
+faculty|administrator
+</code><br/>',
+  );
+
+  return $types;
+}
+
+/**
+ * Implements hook_ldap_user_attrs_list_alter().
+ *
+ */
+
+function ldap_authorization_drupal_role_ldap_user_attrs_list_alter(&$available_user_attrs, &$params) {
+
+  $available_user_attrs['[property.role]'] = array(
+    'name' => 'Property: Drupal Roles',
+    'source' => 'depends on configuration',
+    'configurable_to_drupal' => 0,
+    'configurable_to_ldap' => 0,
+    'notes' => t('configure at:') . 'admin/config/people/ldap/authorization',
+    'direction' => LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER,
+    'enabled' => TRUE,
+    'config_module' => 'ldap_authorization_drupal_role',
+    'prov_events' => array(LDAP_USER_EVENT_SYNCH_TO_DRUPAL_USER, LDAP_USER_EVENT_CREATE_DRUPAL_USER),
+    'prov_module' => 'ldap_authorization_drupal_role',
+  );
+
+}

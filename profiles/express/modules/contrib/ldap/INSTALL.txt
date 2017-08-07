@@ -1,0 +1,41 @@
+
+==================================================================================
+LDAP Installation instructions:
+==================================================================================
+
+Note:  This does not automatically upgrade for Drupal 6 LDAP Integration Modules.
+	This functionality may be developed. Some notes are below.
+
+1) Download the whole package of files from
+   http://drupal.org/project/ldap
+
+2) Upload the LDAP files to the modules directory.
+
+3) Go to admin/build/modules and enable the needed modules from the
+   Lightweight Directory Access Protocal group.
+
+4) Enable and configure ldap servers and configure at least one server.
+
+5) Enable the other LDAP modules you need.
+
+6) LDAP Help is just for debugging and administrator help.  Use it if you have problems.
+Disable it in production; it adds no functionality or end user help.
+
+==================================================================================
+Older PHP versions
+==================================================================================
+These modules will NOT work If you are using PHP 4 or any other version less
+than 5.1.
+
+==================================================================================
+More documentation is available at:
+
+ http://drupal.org/project/ldap -- project homepage
+ http://drupal.org/node/997082 - project documentation
+==================================================================================
+
+Crossgrading:
+
+Drupal 6 ldapauth -> ldap_authentication
+- get rid of authmap records associated with ldapauth with the following sql:
+DELETE FROM authmap WHERE module = 'ldapauth'

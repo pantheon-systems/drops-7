@@ -1,0 +1,624 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function cu_share_menu() {
+  $items = array();
+
+  $items['admin/settings/social/share'] = array(
+    'title' => 'Social Share Settings',
+    'description' => 'Configure social share settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_share_settings_form'),
+    'access arguments' => array('administer cu share'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_share_page_alter(&$page) {
+  if (variable_get('cu_share_advanced_settings', NULL)) {
+    // Define empty array to be passed to execute function.
+    $op = array();
+
+    // If social share context reaction was set, do that first
+    if ($plugin = context_get_plugin('reaction', 'cu_share')) {
+      if ($plugin->execute($page, $op)) {
+        cu_share_output($page);
+      }
+    }
+  }
+  else {
+    $settings = variable_get('cu_share_basic_settings', NULL);
+    // Don't add share links on admin paths
+    if ($settings && !path_is_admin(current_path()) && !drupal_is_front_page()) {
+      // Get current node
+      if ($node = menu_get_object()) {
+        $type = $node->type;
+        // Need to do more checking here since adding bundles can throw error.
+        // $settings['type'] is set to zero if sharing is not enabled on content type.
+        if (isset($settings[$type]) && $settings[$type]) {
+          cu_share_output($page);
+        }
+      }
+    }
+  }
+}
+
+function cu_share_output(&$page) {
+  // Load settings
+  $settings = variable_get('cu_share_settings', '');
+  $position = variable_get('cu_share_position', 'none');
+  if ($position == 'none') {
+    return;
+  }
+  $share_services = _cu_share_services();
+
+  // Get current url
+  $current_url = url(current_path(), array('absolute' => TRUE));
+
+  if ($settings) {
+    // Assign weights to form services
+    foreach ($settings as $key => $setting) {
+      $share_services[$key]['#weight'] = $settings[$key]['weight'];
+    }
+    // Sort services by weight
+    uasort($share_services, function($a, $b) {
+      return $a['#weight'] - $b['#weight'];
+    });
+  }
+
+  $output = '';
+  // Loop through services
+  foreach ($share_services as $key => $share_service) {
+    // If service is enabled build the link and list item
+    if ($settings[$key]['enabled']) {
+      // Build sharing url
+      $url = $share_service['url'] . urlencode($current_url);
+      $output .= '<li class="social-share-item">';
+      $output .= '<a href="' . $url . '" target="_blank"><span class="socicon soc-' . $key . '"></span><span class="element-invisible">Share via ' . $share_service['name'] . '</span></a>';
+      $output .= '</li>';
+    }
+  }
+  $output .= '</ul>';
+
+  // Add to sidebar for desktop view
+  if (($position == 'side_top') || ($position == 'side_bottom')) {
+    $page['page_bottom']['cu_share']['#markup'] = '<ul class="soc social-links-48">' . $output;
+    $page['page_bottom']['cu_share']['#prefix'] = '<div class="cu-share-sidebar">';
+    $page['page_bottom']['cu_share']['#suffix'] =  '</div>';
+  }
+
+  // Add to content for non-desktop view
+  $page['content']['share']['#markup'] = '<ul class="soc social-links-24"><li>
+  <span class="social-links-text"><i class="fa fa-share-alt"></i> Share </li></span>' . $output;
+
+  // if side position was set, add mobile inline links class
+  if (($position == 'side_top') || ($position == 'side_bottom')) {
+    $page['content']['share']['#prefix'] = '<div class="cu-share-inline-mobile block">';
+  } else {
+    $page['content']['share']['#prefix'] = '<div class="cu-share-inline block">';
+  }
+  $page['content']['share']['#suffix'] =  '</div>';
+
+  // Set position of inline links
+  if (($position == 'side_bottom') || ($position == 'below_content')) {
+    $page['content']['share']['#weight'] = 100;
+  }
+  else {
+    $page['content']['share']['#weight'] = -100;
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_share_permission() {
+  return array(
+    'administer cu share' => array(
+      'title' => 'Configure Social Sharing',
+      'description' => 'Choose which content types and sharing services will be used.',
+    ),
+  );
+}
+
+function cu_share_settings_form($form, &$form_state) {
+  $form = array();
+
+  $form['description'] = array(
+    '#markup' => '<p>Add links for your visitors to share your sites pages with others via email and social media.</p> <p>These links should be displayed on content that your visitors will share with others. They should not be added to the site home page.</p>',
+    '#weight' => -100,
+  );
+  $form['position'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Position Settings',
+  );
+  $form['position']['cu_share_position'] = array(
+    '#type' => 'radios',
+    '#title' => 'Position',
+    '#description' => 'Choose where sharing icons will appear.',
+    '#options' => array(
+      'none' => 'None',
+      'side_top' => 'Left Side (desktop)/ Below Title (mobile)',
+      'side_bottom' => 'Left Side (desktop)/ Below Content (mobile)',
+      'content' => 'Below Title',
+      'below_content' => 'Below Content',
+    ),
+    '#default_value' => variable_get('cu_share_position', 'none'),
+  );
+
+  $form['pages'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Pages',
+    '#description' => 'Choose which pages the social share links display on.',
+  );
+  // Build options of node types
+  $types = node_type_get_types();
+  $options = array();
+  foreach ($types as $type) {
+    $options[$type->type] = $type->name;
+  }
+  // Sort types aphabetically
+  asort($options);
+  $form['pages']['basic_settings'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Basic Settings',
+    '#description' => 'Choose which content types the sharing icons will appear.',
+    '#options' => $options,
+    '#default_value' => variable_get('cu_share_basic_settings', NULL),
+    '#states' => array(
+      'disabled' => array(   // action to take.
+        ':input[name="advanced_settings"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  // Change advanced description if context_ui is enabled.
+  if (module_exists('context_ui')) {
+    // Link to social_sharing_links context
+    $description = l('Use context to choose what pages the social share links will display.', 'admin/structure/context/list/social_sharing_links/edit');
+  }
+  else {
+    // Link to bundle screen
+    $description = 'Use context to choose what pages the social share links will display. ' . l('<strong>Requires the Advanced Layout Bundle</strong>', 'admin/settings/bundles/list', array('html' => TRUE)) . '.';
+  }
+  $form['pages']['advanced_settings'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Advanced Settings',
+    '#description' => $description,
+    '#default_value' => variable_get('cu_share_advanced_settings', NULL),
+  );
+
+  // Get services
+  $share_services = _cu_share_services();
+  // Get saved settings
+  $settings = variable_get('cu_share_settings', '');
+  if ($settings) {
+    // Assign weights to form services
+    foreach ($settings as $key => $setting) {
+      $share_services[$key]['#weight'] = $settings[$key]['weight'];
+    }
+    // Sort services by weight
+    uasort($share_services, function($a, $b) {
+      return $a['#weight'] - $b['#weight'];
+    });
+  }
+
+  // Build sortable services
+  $form['cu_share_settings']['#tree'] = TRUE;
+  $form['services'] = array(
+    '#weight' => -90,
+    '#type' => 'fieldset',
+    '#title' => t('Services'),
+    '#description' => t('Choose the order and which social media links to display.'),
+  );
+  $weight = 1;
+  foreach ($share_services as $key => $service) {
+    $form['cu_share_settings'][$key] = array(
+      'name' => array(
+        '#markup' => $service['name'],
+      ),
+      'enabled' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Enabled'),
+        '#title_display' => 'invisible',
+        '#default_value' => isset($settings[$key]) ? $settings[$key]['enabled'] : NULL,
+      ),
+      'weight' => array(
+        '#type' => 'weight',
+        '#title' => t('Weight'),
+        '#default_value' => isset($settings[$key]) ? $settings[$key]['weight'] : $weight,
+        '#delta' => 10,
+        '#title_display' => 'invisible',
+      ),
+    );
+    $weight++;
+  }
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save Sharing Settings'));
+  $form['#submit'][] = 'cu_share_settings_form_submit';
+
+  // Add warning message if configurations have not been saved.
+  if (!cu_share_status()) {
+    drupal_set_message('Social sharing links must be configured to display.', 'warning');
+  }
+
+  return $form;
+}
+
+function cu_share_status() {
+  $status = 0;
+  if ($settings = variable_get('cu_share_settings', NULL)) {
+    foreach ($settings as $setting) {
+      if ($setting['enabled']) {
+        $status = 1;
+      }
+    }
+  }
+  $position = variable_get('cu_share_position', NULL);
+  $basic = variable_get('cu_share_basic_settings', NULL);
+  $advanced = variable_get('cu_share_advanced_settings', NULL);
+
+  if ($position && ($basic || $advanced)) {
+    $status = 1;
+  }
+  return $status;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cu_share_theme() {
+  return array(
+    'cu_share_settings_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Theme function for cu_share_settings_form()
+ */
+function theme_cu_share_settings_form($variables) {
+  $form = $variables['form'];
+
+  // Initialize the variable which will store our table rows.
+  $rows = array();
+
+  // Iterate over each element in our $form['cu_share_settings'] array.
+  foreach (element_children($form['cu_share_settings']) as $id) {
+
+    // Before we add our 'weight' column to the row, we need to give the
+    // element a custom class so that it can be identified in the
+    // drupal_add_tabledrag call.
+    $form['cu_share_settings'][$id]['weight']['#attributes']['class'] = array('cu-share-item-weight');
+
+    // We are now ready to add each element of our $form data to the $rows
+    // array, so that they end up as individual table cells when rendered
+    // in the final table.  We run each element through the drupal_render()
+    // function to generate the final html markup for that element.
+    $rows[] = array(
+      'data' => array(
+        // Add our 'name' column.
+        drupal_render($form['cu_share_settings'][$id]['name']),
+        // Add our 'enabled' column.
+        drupal_render($form['cu_share_settings'][$id]['enabled']),
+        // Add our 'weight' column.
+        drupal_render($form['cu_share_settings'][$id]['weight']),
+      ),
+      // To support the tabledrag behaviour, we need to assign each row of the
+      // table a class attribute of 'draggable'. This will add the 'draggable'
+      // class to the <tr> element for that row when the final table is
+      // rendered.
+      'class' => array('draggable'),
+    );
+  }
+
+  // We now define the table header values.  Ensure that the 'header' count
+  // matches the final column count for your table.
+  $header = array(t('Name'), t('Enabled'), t('Weight'));
+
+  // We also need to pass the drupal_add_tabledrag() function an id which will
+  // be used to identify the <table> element containing our tabledrag form.
+  // Because an element's 'id' should be unique on a page, make sure the value
+  // you select is NOT the same as the form ID used in your form declaration.
+  $table_id = 'cu-share-settings-table';
+
+  // We can render our tabledrag table for output.
+  $output = theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'attributes' => array('id' => $table_id),
+    'caption' => isset($form['cu_share_settings']['#description']) ? $form['cu_share_settings']['#description'] : '',
+  ));
+
+  // Insert table back into form
+  $form['services']['services_order']['#markup'] = $output;
+  // And then render any remaining form elements (such as our submit button).
+  $output = drupal_render_children($form);
+
+  // We now call the drupal_add_tabledrag() function in order to add the
+  // tabledrag.js goodness onto our page.
+  //
+  // For a basic sortable table, we need to pass it:
+  // - the $table_id of our <table> element,
+  // - the $action to be performed on our form items ('order'),
+  // - a string describing where $action should be applied ('siblings'),
+  // - and the class of the element containing our 'weight' element.
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'cu-share-item-weight');
+
+  return $output;
+}
+
+/**
+ * Submit function for cu_share_settings_form()
+ */
+function cu_share_settings_form_submit($form, &$form_state) {
+  // Save sharing settings
+  $share_settings = $form_state['values']['cu_share_settings'];
+  $settings = array_intersect_key($share_settings, array_flip(element_children($share_settings)));
+  variable_set('cu_share_settings', $settings);
+
+  // Save sharing node types/basic settings
+  $basic_settings = $form_state['values']['basic_settings'];
+  variable_set('cu_share_basic_settings', $basic_settings);
+
+  // Save sharing node types/basic settings
+  $advanced_settings = $form_state['values']['advanced_settings'];
+  variable_set('cu_share_advanced_settings', $advanced_settings);
+
+  // Save sharing position
+  $position = $form_state['values']['cu_share_position'];
+  variable_set('cu_share_position', $position);
+
+}
+
+/**
+ * Function to return services options
+ */
+function _cu_share_services() {
+
+  $title = drupal_get_title();
+
+  $options = array();
+  $options['twitter'] = array(
+    'name' => 'Twitter',
+    'url' => 'https://twitter.com/home?status=',
+  );
+  $options['facebook'] = array(
+    'name' => 'Facebook',
+    'url' => 'https://www.facebook.com/sharer/sharer.php?u=',
+  );
+  $options['googleplus'] = array(
+    'name' => 'Google Plus',
+    'url' => 'https://plus.google.com/share?url=',
+  );
+  $options['linkedin'] = array(
+    'name' => 'LinkedIn',
+    'url' => 'https://www.linkedin.com/shareArticle?mini=true&title=' . $title . '&summary=&source=&url=',
+  );
+  $options['email'] = array(
+      'name' => 'E-mail',
+      'url' => 'mailto:?body=Check%20this%20out%20-%20',
+  );
+  return $options;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+
+function cu_share_block_info() {
+  $blocks['cu_share'] = array(
+    'info' => t('Social Media Share Links'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function cu_share_block_view($delta = '') {
+  switch ($delta) {
+    case 'cu_share':
+      if (!path_is_admin(current_path())) {
+        // Load settings
+        $settings = variable_get('cu_share_settings', '');
+        $share_services = _cu_share_services($node);
+
+        // Get current url
+        $current_url = url(current_path(), array('absolute' => TRUE));
+
+        if ($settings) {
+          // Assign weights to form services
+          foreach ($settings as $key => $setting) {
+            $share_services[$key]['#weight'] = $settings[$key]['weight'];
+          }
+          // Sort services by weight
+          uasort($share_services, function($a, $b) {
+            return $a['#weight'] - $b['#weight'];
+          });
+        }
+
+        $output = '';
+        // Loop through services
+        foreach ($share_services as $key => $share_service) {
+          // If service is enabled build the link and list item
+          if ($settings[$key]['enabled']) {
+            // Build sharing url
+            $url = $share_service['url'] . urlencode($current_url);
+            $output .= '<li class="social-share-item">';
+            $output .= '<a href="' . $url . '" target="_blank"><span class="socicon soc-' . $key . '"></span><span class="element-invisible">Share via ' . $share_service['name'] . '</span></a>';
+            $output .= '</li>';
+          }
+        }
+        $output .= '</ul>';
+
+        $block['content']['cu_share']['#markup'] = '<ul class="soc social-links-24"><li>
+        <span class="social-links-text"><i class="fa fa-share-alt"></i> Share </li></span>' . $output;
+        $block['content']['cu_share']['#prefix'] = '<div class="cu-share-block cu-share-inline block">';
+        $block['content']['cu_share']['#suffix'] =  '</div>';
+
+        return $block;
+      }
+    break;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ *
+ * Notify CTools that we'll be using the plugin API with Context module.
+ */
+function cu_share_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && ($api == 'plugins' || $api == 'context')) {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_plugins().
+ *
+ * CTools plugin API hook for Context.
+ *
+ * @return array
+ *   Config details for each reaction.
+ *
+ * @see hook_context_plugins()
+ */
+function cu_share_context_plugins() {
+  $plugins = array();
+
+  $plugins['context_reaction_social_share'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'cu_share') . '/plugins',
+      'file' => 'cu_share.inc',
+      'class' => 'context_reaction_social_share',
+      'parent' => 'context_reaction',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry().
+ *
+ * Registry hook for conditions & reactions.
+ *
+ * @see hook_context_registry()
+ */
+function cu_share_context_registry() {
+  return array(
+    'reactions' => array(
+      'cu_share' => array(
+        'title' => t('Social media share links'),
+        'plugin' => 'context_reaction_social_share',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function cu_share_flush_caches() {
+  $mlid = db_query("SELECT mlid FROM {menu_links} WHERE link_path = 'admin/settings/social'")->fetchField();
+  // Fix social sharing link.
+  $share_mlid =  db_query("SELECT mlid FROM {menu_links} WHERE link_path = 'admin/settings/social/share'")->fetchField();
+  $item = menu_link_load($share_mlid);
+  if($item['mlid']) {
+    $item['plid'] = $mlid;
+    $item['hidden'] = 0;
+    menu_link_save($item);
+  }
+}
+
+/**
+ * Implements hook_shortcode_info().
+ */
+function cu_share_shortcode_info() {
+  $shortcodes = array();
+  $shortcodes['share_on_twitter'] = array(
+    'title' => t('Share On Twitter'),
+    'description' => t('Create a link and quote for readers to share on Twitter.'),
+    'process callback' => 'cu_share_share_on_twitter',
+    'tips callback' => 'cu_share_share_on_twitter_tips',
+    'default settings' => array(),
+  );
+  return $shortcodes;
+}
+
+/**
+ * Tips function for share_on_twitter shortcode.
+ */
+function cu_share_share_on_twitter_tips($format, $long) {
+  $output = '[share_on_twitter]Text to share on Twitter[/share_on_twitter] or [share_on_twitter text="Text to share on Twitter #hashtag"]Highlighted Text[/share_on_twitter]';
+  return $output;
+}
+
+/**
+ * Process function for share_on_twitter shortcode.
+ */
+function cu_share_share_on_twitter($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'text' => NULL,
+      ), $attrs));
+  // Character count - 140, url, ellipsis
+
+  // Save original content for inserting later.
+  $original_content = strip_tags($content);
+  // If custom text, save to $content.
+  if ($text) {
+    $content = $text;
+  }
+  $content = strip_tags($content);
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    // Get the nid
+    $nid = arg(1);
+    $current_url = url('node/' . $nid, array('absolute' => TRUE, 'alias' => TRUE));
+  }
+  else {
+    $current_url = url(current_path(), array('absolute' => TRUE));
+  }
+  // Get the current url.
+  $current_url = url(current_path(), array('absolute' => TRUE));
+
+  // Encode url
+  $encoded_url = urlencode($current_url);
+  // Get the url parts.
+  $url_parts = parse_url($current_url);
+  // Initial domain counts towards 140 characters, so figure out that length.
+  $link_length = strlen($url_parts['scheme'] . '://' . $url_parts['host']);
+  // Total character count is 140, minues domain length, minus 1 spaces
+  $character_count = 140 - $link_length - 1;
+  // If content length is greater than allowed count, truncate.
+  if (strlen($content) > $character_count) {
+    $over = strlen($content) - $link_length - 140 - 4;
+    $content_length = strlen($content);
+    $short_content = substr($content, 0, $over) . '...';
+  } else {
+    $short_content = $content;
+  }
+  // Encode content.
+  $encoded_text = urlencode($short_content);
+  $share_link = '<a href="https://twitter.com/intent/tweet?url=' . $encoded_url . '&text=' . $encoded_text . '" class="share-on-twitter">' . $original_content . '&nbsp;<i class="fa fa-twitter"></i></a>';
+
+  return $share_link;
+}
+
+/**
+ * Implements hook_filter_info_alter().
+ */
+function cu_share_filter_info_alter(&$info) {
+  // Load the wysiwyg text format
+    $format = filter_format_load('wysiwyg');
+    // Get the filters on the wysiwyg text format
+    $filters = filter_list_format($format->format);
+    // Enable countdown shortcode
+    $filters['shortcode']->settings['share_on_twitter'] = 1;
+}

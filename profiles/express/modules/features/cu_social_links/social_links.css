@@ -1,0 +1,247 @@
+.social-links-horizontal li,
+.social-links-horizontal-icons-only li {
+  display: inline;
+}
+.social-links-horizontal li a,
+.social-links-horizontal-icons-only li a {
+  display: inline-block !important;
+}
+.social-links-horizontal-icons-only li a span.social-links-type {
+  display: none;
+}
+
+ul.social-links,
+ul.social-links li,
+.item-list ul.social-links,
+.item-list ul.social-links li {
+  margin:0;
+  padding:0;
+  list-style: none;
+  list-style-image: none;
+}
+ul.social-links {
+  margin:10px 0;
+}
+ul.social-links a {
+  margin-bottom: 8px;
+}
+span.social-links-wrapper a {
+  float: left;
+}
+
+.social-links-no-text a {
+  text-indent: -9999px;
+}
+
+
+/* 24px Icons */
+
+.social-links-24 a {
+  height: 24px;
+  display: block;
+  line-height: 26px;
+  padding-left: 32px;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  padding-right: 3px;
+}
+.social-links-24 a.social-links-blogger {
+  background-image: url(flat_icons/24px/blogger.png);
+}
+.social-links-24 a.social-links-email {
+  background-image: url(flat_icons/24px/email.png);
+  padding:0 3px 0 32px;
+  background-position: 0 0;
+}
+.social-links-24 a.social-links-facebook {
+  background-image: url(flat_icons/24px/facebook.png);
+}
+.social-links-24 a.social-links-flickr {
+  background-image: url(flat_icons/24px/flickr.png);
+}
+.social-links-24 a.social-links-googleplus {
+  background-image: url(flat_icons/24px/googleplus.png);
+}
+.social-links-24 a.social-links-instagram {
+  background-image: url(flat_icons/24px/instagram.png);
+}
+.social-links-24 a.social-links-linkedin {
+  background-image: url(flat_icons/24px/linkedin.png);
+}
+.social-links-24 a.social-links-myspace {
+  background-image: url(flat_icons/24px/myspace.png);
+}
+.social-links-24 a.social-links-pinterest {
+  background-image: url(flat_icons/24px/pinterest.png);
+}
+.social-links-24 a.social-links-feed {
+  background-image: url(flat_icons/24px/rss.png);
+}
+.social-links-24 a.social-links-twitter {
+  background-image: url(flat_icons/24px/twitter.png);
+}
+.social-links-24 a.social-links-vimeo {
+  background-image: url(flat_icons/24px/vimeo.png);
+}
+.social-links-24 a.social-links-youtube {
+  background-image: url(flat_icons/24px/youtube.png);
+}
+
+/* 32px Icons */
+
+.social-links-32 a {
+  height: 32px;
+  display: block;
+  line-height: 34px;
+  padding-left: 40px;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  padding-right: 3px;
+}
+.social-links-32 a.social-links-blogger {
+  background-image: url(flat_icons/32px/blogger.png);
+}
+.social-links-32 a.social-links-email {
+  background-image: url(flat_icons/32px/email.png);
+  padding:0 3px 0 40px;
+  background-position: 0 0;
+}
+.social-links-32 a.social-links-facebook {
+  background-image: url(flat_icons/32px/facebook.png);
+}
+.social-links-32 a.social-links-flickr {
+  background-image: url(flat_icons/32px/flickr.png);
+}
+.social-links-32 a.social-links-googleplus {
+  background-image: url(flat_icons/32px/googleplus.png);
+}
+.social-links-32 a.social-links-instagram {
+  background-image: url(flat_icons/32px/instagram.png);
+}
+.social-links-32 a.social-links-linkedin {
+  background-image: url(flat_icons/32px/linkedin.png);
+}
+.social-links-32 a.social-links-myspace {
+  background-image: url(flat_icons/32px/myspace.png);
+}
+.social-links-32 a.social-links-pinterest {
+  background-image: url(flat_icons/32px/pinterest.png);
+}
+.social-links-32 a.social-links-feed {
+  background-image: url(flat_icons/32px/rss.png);
+}
+.social-links-32 a.social-links-twitter {
+  background-image: url(flat_icons/32px/twitter.png);
+}
+.social-links-32 a.social-links-vimeo {
+  background-image: url(flat_icons/32px/vimeo.png);
+}
+.social-links-32 a.social-links-youtube {
+  background-image: url(flat_icons/32px/youtube.png);
+}
+
+/* 48px Icons */
+
+.social-links-48 a {
+  height: 48px;
+  display: block;
+  line-height: 50px;
+  padding-left: 56px;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  padding-right: 3px;
+}
+.social-links-48 a.social-links-blogger {
+  background-image: url(flat_icons/48px/blogger.png);
+}
+.social-links-48 a.social-links-email {
+  background-image: url(flat_icons/48px/email.png);
+  padding:0 3px 0 56px;
+  background-position: 0 0;
+}
+.social-links-48 a.social-links-facebook {
+  background-image: url(flat_icons/48px/facebook.png);
+}
+.social-links-48 a.social-links-flickr {
+  background-image: url(flat_icons/48px/flickr.png);
+}
+.social-links-48 a.social-links-googleplus {
+  background-image: url(flat_icons/48px/googleplus.png);
+}
+.social-links-48 a.social-links-instagram {
+  background-image: url(flat_icons/48px/instagram.png);
+}
+.social-links-48 a.social-links-linkedin {
+  background-image: url(flat_icons/48px/linkedin.png);
+}
+.social-links-48 a.social-links-myspace {
+  background-image: url(flat_icons/48px/myspace.png);
+}
+.social-links-48 a.social-links-pinterest {
+  background-image: url(flat_icons/48px/pinterest.png);
+}
+.social-links-48 a.social-links-feed {
+  background-image: url(flat_icons/48px/rss.png);
+}
+.social-links-48 a.social-links-twitter {
+  background-image: url(flat_icons/48px/twitter.png);
+}
+.social-links-48 a.social-links-vimeo {
+  background-image: url(flat_icons/48px/vimeo.png);
+}
+.social-links-48 a.social-links-youtube {
+  background-image: url(flat_icons/48px/youtube.png);
+}
+
+/* 64px Icons */
+
+.social-links-64 a {
+  height: 64px;
+  display: block;
+  line-height: 66px;
+  padding-left: 72px;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  padding-right: 3px;
+}
+.social-links-64 a.social-links-blogger {
+  background-image: url(flat_icons/64px/blogger.png);
+}
+.social-links-64 a.social-links-email {
+  background-image: url(flat_icons/64px/email.png);
+  padding:0 3px 0 72px;
+  background-position: 0 0;
+}
+.social-links-64 a.social-links-facebook {
+  background-image: url(flat_icons/64px/facebook.png);
+}
+.social-links-64 a.social-links-flickr {
+  background-image: url(flat_icons/64px/flickr.png);
+}
+.social-links-64 a.social-links-googleplus {
+  background-image: url(flat_icons/64px/googleplus.png);
+}
+.social-links-64 a.social-links-instagram {
+  background-image: url(flat_icons/64px/instagram.png);
+}
+.social-links-64 a.social-links-linkedin {
+  background-image: url(flat_icons/64px/linkedin.png);
+}
+.social-links-64 a.social-links-myspace {
+  background-image: url(flat_icons/64px/myspace.png);
+}
+.social-links-64 a.social-links-pinterest {
+  background-image: url(flat_icons/64px/pinterest.png);
+}
+.social-links-64 a.social-links-feed {
+  background-image: url(flat_icons/64px/rss.png);
+}
+.social-links-64 a.social-links-twitter {
+  background-image: url(flat_icons/64px/twitter.png);
+}
+.social-links-64 a.social-links-vimeo {
+  background-image: url(flat_icons/64px/vimeo.png);
+}
+.social-links-64 a.social-links-youtube {
+  background-image: url(flat_icons/64px/youtube.png);
+}

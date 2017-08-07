@@ -1,0 +1,245 @@
+<?php
+
+/**
+ * @file
+ * Grid size blocks.
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function grid_size_blocks_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'grid_size_blocks') . '/grid_size_blocks.css');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function grid_size_blocks_form_block_admin_configure_alter(&$form, &$form_state, &$form_id) {
+  // Get saved values.
+  $module = $form['module']['#value'];
+  $delta = $form['delta']['#value'];
+  $var_name = $module . '-' . $delta;
+  $block_column_width = grid_size_blocks_get();
+  $form['grid_size_blocks'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Columns'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['grid_size_blocks']['grid_size_blocks_options'] = array(
+    '#type' => 'select',
+    '#title' => t('Column Width'),
+    '#options' => array(
+      '' => t('Auto Width'),
+      'grid-12' => t('12 Columns'),
+      'grid-11' => t('11 Columns'),
+      'grid-10' => t('10 Columns'),
+      'grid-9' => t('9 Columns'),
+      'grid-8' => t('8 Columns'),
+      'grid-7' => t('7 Columns'),
+      'grid-6' => t('6 Columns'),
+      'grid-5' => t('5 Columns'),
+      'grid-4' => t('4 Columns'),
+      'grid-3' => t('3 Columns'),
+      'grid-2' => t('2 Columns'),
+      'grid-1' => t('1 Column'),
+    ),
+    '#default_value' => isset($block_column_width[$var_name]) ? $block_column_width[$var_name] : 'auto',
+  );
+  $block_column_clear = grid_size_clear_get();
+  $block_column_omega = grid_size_omega_get();
+
+  $form['grid_size_blocks']['grid_size_blocks_clear'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Clear/Alpha class - check this box for the first block in the row'),
+    '#default_value' => isset($block_column_clear[$var_name]) ? $block_column_clear[$var_name] : FALSE,
+  );
+  $form['grid_size_blocks']['grid_size_blocks_omega_class'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Omega class - check this box for the last block in the row'),
+    '#default_value' => isset($block_column_omega[$var_name]) ? $block_column_omega[$var_name] : FALSE,
+  );
+  $form['#submit'][] = 'grid_size_blocks_update';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will be used to alter the block bean creation/modification to add
+ *  a size/columns selection.
+ */
+function grid_size_blocks_form_bean_form_alter(&$form, &$form_state, $form_id) { 
+
+  $delta = $form['bean']['#value']->delta;
+
+  if(isset($delta)) {  
+    $form['module'] = array(
+      '#type' => 'hidden',
+      '#value' => 'bean',
+    );
+    $module = 'bean';
+    $form['delta'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['bean']['#value']->delta,
+    );
+
+    $var_name = $module . '-' . $delta;
+    $block_column_width = grid_size_blocks_get();
+    $form['grid_size_blocks'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Columns'),
+      '#weight' => 80,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['grid_size_blocks']['grid_size_blocks_options'] = array(
+      '#type' => 'select',
+      '#title' => t('Column Width'),
+      '#options' => array(
+        '' => t('Auto Width'),
+        'grid-12' => t('12 Columns'),
+        'grid-11' => t('11 Columns'),
+        'grid-10' => t('10 Columns'),
+        'grid-9' => t('9 Columns'),
+        'grid-8' => t('8 Columns'),
+        'grid-7' => t('7 Columns'),
+        'grid-6' => t('6 Columns'),
+        'grid-5' => t('5 Columns'),
+        'grid-4' => t('4 Columns'),
+        'grid-3' => t('3 Columns'),
+        'grid-2' => t('2 Columns'),
+        'grid-1' => t('1 Column'),
+      ),
+      '#default_value' => isset($block_column_width[$var_name]) ? $block_column_width[$var_name] : 'auto',
+    );
+    $block_column_clear = grid_size_clear_get();
+    $block_column_omega = grid_size_omega_get();
+    $form['grid_size_blocks']['grid_size_blocks_clear'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Clear/Alpha class - check this box for the first block in the row'),
+      '#default_value' => isset($block_column_clear[$var_name]) ? $block_column_clear[$var_name] : FALSE,
+    );
+    $form['grid_size_blocks']['grid_size_blocks_omega_class'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Omega class - check this box for the last block in the row'),
+      '#default_value' => isset($block_column_omega[$var_name]) ? $block_column_omega[$var_name] : FALSE,
+    );
+    $form['#submit'][] = 'grid_size_blocks_update';
+  }
+}
+
+
+/**
+ * Update an existing block after the block form has been submitted.
+ */
+function grid_size_blocks_update($form_id, &$form_state) {
+  $var_name = $form_state['values']['module'] . '-' . $form_state['values']['delta'];
+  $grid_value = grid_size_blocks_get();
+  $grid_value[$var_name] = $form_state['values']['grid_size_blocks_options'];
+
+  $grid_clear = grid_size_clear_get();
+  $grid_clear[$var_name] = $form_state['values']['grid_size_blocks_clear'];
+
+  $grid_omega = grid_size_omega_get();
+  $grid_omega[$var_name] = $form_state['values']['grid_size_blocks_omega_class'];
+
+  grid_size_blocks_set($grid_value, $grid_clear, $grid_omega);
+}
+
+/**
+ * Set Responsive Toggle custom block settings.
+ */
+function grid_size_blocks_set($grid_value, $grid_clear, $grid_omega) {
+  variable_set('grid_size_blocks', $grid_value);
+  variable_set('grid_size_clear', $grid_clear);
+  variable_set('grid_size_omega', $grid_omega);
+}
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function grid_size_blocks_preprocess_block(&$variables) {
+  if ($block_column_width = grid_size_blocks_get_display($variables['block'])) {
+    $variables['grid_size_blocks'] = $block_column_width;
+    $variables['classes_array'][] = $block_column_width;
+  }
+
+  if ($block_column_clear = grid_size_clear_get_display($variables['block'])) {
+    $variables['grid_size_clear'] = $block_column_clear;
+    $variables['classes_array'][] = "clear-blocks alpha";
+  }
+  if ($block_column_omega = grid_size_omega_get_display($variables['block'])) {
+    $variables['grid_size_omega'] = $block_column_omega;
+    $variables['classes_array'][] = "omega";
+  }
+
+}
+
+/**
+ * Gets block.
+ */
+function grid_size_blocks_get_display($block) {
+  $block_column_width = grid_size_blocks_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($block_column_width[$var_name])) {
+    return $block_column_width[$var_name];
+  }
+}
+
+/**
+ * Gets clear.
+ */
+function grid_size_clear_get_display($block) {
+
+  $block_column_clear = grid_size_clear_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($block_column_clear[$var_name])) {
+    return $block_column_clear[$var_name];
+  }
+}
+
+/**
+ * Gets display.
+ */
+function grid_size_omega_get_display($block) {
+  $block_column_omega = grid_size_omega_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($block_column_omega[$var_name])) {
+    return $block_column_omega[$var_name];
+  }
+}
+
+/**
+ * Get Responsive Toggle custom block settings.
+ */
+function grid_size_blocks_get() {
+  static $grid_value;
+  if (empty($grid_value)) {
+    $grid_value = variable_get('grid_size_blocks', array());
+  }
+  return $grid_value;
+}
+
+/**
+ * Get variable.
+ */
+function grid_size_clear_get() {
+  static $grid_clear;
+  if (empty($grid_clear)) {
+    $grid_clear = variable_get('grid_size_clear', array());
+  }
+  return $grid_clear;
+}
+
+/**
+ * Get variable.
+ */
+function grid_size_omega_get() {
+  static $grid_omega;
+  if (empty($grid_omega)) {
+    $grid_omega = variable_get('grid_size_omega', array());
+  }
+  return $grid_omega;
+}

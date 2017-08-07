@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ * Installation file for the menu_firstchild module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function menu_firstchild_install() {
+  db_add_index('menu_links', 'plid', array('plid'));
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function menu_firstchild_uninstall() {
+  db_drop_index('menu_links', 'plid');
+}
+
+/**
+ * Implementation of hook_schema_alter().
+ */
+function menu_firstchild_schema_alter(&$schema) {
+  $schema['menu_links']['indexes']['plid'] = array('plid');
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function menu_firstchild_update_6001(&$sandbox) {
+  db_add_index('menu_links', 'plid', array('plid'));
+}

@@ -1,0 +1,76 @@
+@import "modules/_colors.scss";
+
+
+/**
+ * Tabs
+ */
+.tabs {
+  font-size: 70%;
+  padding: 0;
+
+  ul.primary {
+    border: 0;
+    padding: 0;
+    margin: 10px 0;
+    text-transform: uppercase;
+    font-weight: 600;
+    display: block;
+    border:2px solid $blue;
+    background-color: $blue;
+    overflow: auto;
+    li {
+      margin: 0;
+      padding: 0;
+      display: inline;
+    
+      a {
+        margin: 0;
+        padding: 5px 10px;
+        color: #fff;
+        background: $blue;
+        display: block;
+        float: left;
+        //border:1px solid $blue;
+        border: none;
+        &:hover {
+          background: #fff;
+          color: $blue;
+        }
+      }
+    }
+    li.active {
+    
+      a {
+        color: $blue;
+        background: #fff;
+        
+      }
+    }
+  }
+  ul.clearfix:after {
+    content: none;
+  }
+}
+
+ul.primary li a:before {
+  padding-right:5px;
+  font-family: FontAwesome;
+}
+ul.primary li a.view:before {
+  content: "\f06e";
+}
+ul.primary li a.edit:before {
+  content: "\f044";
+}
+ul.primary li a.edit-layout:before {
+  content: "\f009";
+}
+ul.primary li a.edit-webform:before {
+  content: "\f14a";
+}
+ul.primary li a.webform-results:before {
+  content: "\f1fe";
+}
+ul.primary li a.devel:before {
+  content: "\f002";
+}

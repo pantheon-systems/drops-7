@@ -1,0 +1,168 @@
+<?php
+/**
+ * @file
+ * Code for the Block Row feature.
+ */
+
+include_once 'cu_block_row.features.inc';
+
+/**
+ * Implements hook_libraries_info().
+ */
+function cu_block_row_libraries_info() {
+  $libraries = array();
+  $libraries['match-height'] = array(
+    'name' => t('Match Height'),
+    'vendor url' => 'http://brm.io/jquery-match-height/',
+    'download url' => 'https://github.com/liabru/jquery-match-height',
+    'version' => '0.7.0',
+    'files' => array(
+      'js' => array(
+        'jquery.matchHeight-min.js' => array(),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_registry_alter().
+ */
+function cu_block_row_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_block_row');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/*
+ * Implements hook_page_alter().
+ * adds custom css.
+ *
+ */
+function cu_block_row_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_block_row') . '/css/cu-block-row.css');
+
+  // Is the library installed?
+  $path = libraries_get_path('match-height') . '/jquery.matchHeight-min.js';
+  $installed = file_exists($path);
+  if (!$installed) {
+    return;
+  }
+  // Add the library reference.
+  drupal_add_js($path, array(
+    'group' => JS_LIBRARY,
+    'every_page' => TRUE,
+  ));
+}
+
+/*
+ * Implements hook_preprocess_entity().
+ * prepares beans for tpl output.
+ *
+ */
+function cu_block_row_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess block row beans.
+  if ($entity_type == 'bean' && $bundle == 'block_row') {
+    $counter = 0;
+    $vars['content']['blocks'] = array();
+    foreach (element_children($vars['content']['field_block_row_collection']) as $child) {
+      // Grab the field_collection_item entity.
+      $fc_item = array_pop($vars['content']['field_block_row_collection'][$child]['entity']['field_collection_item']);
+      $bean_objects = $fc_item['field_block_row_block']['#items'];
+      foreach($bean_objects as $bean_object) {
+      // render the bean object using the rerender function from the cu_block_section module
+        $bean = _cu_block_section_rerender($bean_object);
+        if (empty($vars['content']['blocks'][$child])) {
+          $vars['content']['blocks'][$child] = array();
+        }
+        if (empty($vars['content']['blocks'][$child]['#markup'])) {
+          $vars['content']['blocks'][$child]['#markup'] = '';
+        }
+        $vars['content']['blocks'][$child]['#markup'] .= render($bean);
+      }
+      $counter++;
+      $vars['content']['blocks'][$child]['#prefix'] = '<div class="block-row-column block-row-column-' . $counter . '"><div class="block-row-column-inner">';
+      $vars['content']['blocks'][$child]['#suffix'] = '</div></div>';
+    }
+    // add a variable of the columns so the content can be formatted properly.
+    $vars['column_count'] = count($vars['content']['field_block_row_collection']['#items']);
+    // Set class for height matching.
+    $vars['match_height'] = (isset($vars['field_block_row_match_height']) && $vars['field_block_row_match_height'][0]['value']) ? 'block-row-match-height' : '';
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Change text of add more button for columns,
+ * Add visiuals for distribution options.
+ *
+ */
+function cu_block_row_form_bean_form_alter(&$form, &$form_state, $form_id) {
+
+  if (isset($form['field_block_row_collection'])) {
+    $form['field_block_row_collection'][LANGUAGE_NONE]['add_more']['#value'] = "Add another column";
+  }
+
+  if (isset($form['field_block_row_distribution'])) {
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['auto'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="50%">&nbsp;</td><td bgcolor="#ccc" width="50%">&nbsp;</td></tr></table>';
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['left'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="66%">&nbsp;</td><td bgcolor="#ccc" width="33%">&nbsp;</td></tr></table>';
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['right'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="33%">&nbsp;</td><td bgcolor="#ccc" width="66%">&nbsp;</td></tr></table>';
+  }
+}
+
+/*
+ * Implements hook_secure_permissions
+ *
+ * Adding permissions for block row bean
+ */
+function cu_block_row_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any block_row bean',
+    ),
+    'authenticated user' => array(
+      'view any block_row bean',
+    ),
+    'administrator' => array(
+      'create any block_row bean',
+      'delete any block_row bean',
+      'edit any block_row bean',
+      'view any block_row bean',
+    ),
+    'content_editor' => array(
+      'create any block_row bean',
+      'delete any block_row bean',
+      'edit any block_row bean',
+      'view any block_row bean',
+    ),
+    'developer' => array(
+      'create any block_row bean',
+      'delete any block_row bean',
+      'edit any block_row bean',
+      'view any block_row bean',
+    ),
+    'site_owner' => array(
+      'create any block_row bean',
+      'delete any block_row bean',
+      'edit any block_row bean',
+      'view any block_row bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

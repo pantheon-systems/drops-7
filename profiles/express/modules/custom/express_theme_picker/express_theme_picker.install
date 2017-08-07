@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ */
+function express_theme_picker_install() {
+  // Set weight to come after jquery_update.
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'jquery_update', '=')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $weight +1))
+    ->condition('name', 'express_theme_picker', '=')
+    ->execute();
+}
+

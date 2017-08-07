@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_api().
+ *
+ * Notify CTools that we'll be using the plugin API with Context module.
+ */
+function cu_column_override_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_plugins().
+ *
+ * CTools plugin API hook for Context.
+ *
+ * @return array
+ *   Config details for each reaction.
+ *
+ * @see hook_context_plugins()
+ */
+function cu_column_override_context_plugins() {
+  $plugins = array();
+
+  $plugins['context_reaction_column_override'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'cu_column_override') . '/plugins',
+      'file' => 'cu_column_override.inc',
+      'class' => 'context_reaction_column_override',
+      'parent' => 'context_reaction',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry().
+ *
+ * Registry hook for conditions & reactions.
+ *
+ * @see hook_context_registry()
+ */
+function cu_column_override_context_registry() {
+  return array(
+    'reactions' => array(
+      'column_override' => array(
+        'title' => t('Columns Override'),
+        'plugin' => 'context_reaction_column_override',
+      ),
+    ),
+  );
+}
+
+function cu_column_override_context_page_reaction() {
+  if ($plugin = context_get_plugin('reaction', 'column_override')) {
+   $plugin->execute();
+  }
+}
+
+function cu_column_override_preprocess_page(&$page) {
+  if ($plugin = context_get_plugin('condition', 'path')) {
+    $plugin->execute();
+  }
+  if ($plugin = context_get_plugin('condition', 'language')) {
+    global $language;
+    $plugin->execute($language->language);
+  }
+  if ($plugin = context_get_plugin('condition', 'user')) {
+    global $user;
+    $plugin->execute($user);
+  }
+  // @todo: write a module_implements hook to allow custom conditions here?
+
+  // Check for the active theme reaction.
+  if ($plugin = context_get_plugin('reaction', 'column_override')) {
+    if ($column_override = $plugin->execute()) {
+
+
+    }
+  }
+}
+function cu_column_override_preprocess_block(&$vars) {
+
+  if ($plugin = context_get_plugin('reaction', 'column_override')) {
+    if ($column_override = $plugin->execute()) {
+      $block_counter = &drupal_static(__FUNCTION__, array());
+      $vars['block'] = $vars['elements']['#block'];
+      // All blocks get an independent counter for each region.
+      if (!isset($block_counter[$vars['block']->region])) {
+        $block_counter[$vars['block']->region] = -1;
+      }
+      // Same with zebra striping.
+      $vars['block_id'] = $block_counter[$vars['block']->region]++;
+
+      switch ($vars['block']->region) {
+
+        case 'after_content':
+          if ($column_override['column_override_after_content_columns'] != 'no-change') {
+            $columns = $column_override['column_override_after_content_columns'];
+            $vars['column_override'] = $columns;
+          }
+          break;
+
+        case 'lower':
+          if ($column_override['column_override_after_content_2_columns'] != 'no-change') {
+            $columns = $column_override['column_override_after_content_2_columns'];
+            $vars['column_override'] = $columns;
+          }
+          break;
+
+        case 'footer':
+          if ($column_override['column_override_footer_columns'] != 'no-change') {
+            $columns = $column_override['column_override_footer_columns'];
+            $vars['column_override'] = $columns;
+          }
+          break;
+      }
+    }
+  }
+}

@@ -1,0 +1,759 @@
+<?php
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function express_settings_permission() {
+  return array(
+    'access express settings' => array(
+      'title' => 'Access Express Settings',
+      'description' => 'Access admin/settings',
+    ),
+    'administer express settings' => array(
+      'title' => 'Administer Express Settings',
+      'description' => 'Configure settings in admin/settings',
+    ),
+    'administer redirect settings' => array(
+      'title' => 'Administer Redirect Settings',
+      'description' => 'Overrides some permissions of the Redirect contrib project to expose specific settings to users',
+    ),
+    'clear path caches' => array(
+      'title' => 'Clear Path Caches',
+      'description' => 'Gives users access clear varnish by path',
+    ),
+    'clear full caches' => array(
+      'title' => 'Clears Full Caches',
+      'description' => 'Gives users access clear varnish by path',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Icons are configured in expressadmin_preprocess_admin_block in
+ * expressadmin/template.php.
+ */
+function express_settings_menu() {
+  // IN ADMIN, BUT NOT ADMIN/CONFIG
+  $items['admin/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'express_settings_management_page',
+    'access arguments' => array('access express settings'),
+    'weight' => 8,
+  );
+
+  // DEFINES SITE CONFIGURATION SECTION.
+  $items['admin/settings/site-configuration'] = array(
+    'title' => 'Site Configurations',
+    'description' => '',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => -99,
+  );
+  $items['admin/settings/site-configuration/site-name'] = array(
+    'title' => 'Site Name',
+    'description' => 'Edit the text for the top brand banner of the website',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_site_name_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => -50,
+  );
+  $items['admin/settings/site-configuration/site-description'] = array(
+    'title' => 'Site Description',
+    'description' => 'Edit the description of the website',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_site_description_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => -45,
+  );
+  $items['admin/settings/site-configuration/contact'] = array(
+    'title' => 'Contact Information',
+    'description' => 'Edit the Contact Information which appears at the bottom of the page',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_contact_info_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => -25,
+  );
+  $items['admin/settings/site-configuration/google-analytics'] = array(
+    'title' => 'Google Analytics',
+    'description' => 'Add your Google Analytics account number (i.e. UA-123456-1)',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_google_analytics_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 25,
+  );
+
+  // DEFINES URL MANAGEMENT SECTION.
+  $items['admin/settings/url-management'] = array(
+    'title' => 'URL Management',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer redirects'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  $items['admin/settings/url-management/redirects'] = array(
+    'title' => 'URL Redirects',
+    'description' => 'Redirect users from one URL to another',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/config/search/redirect'),
+    'access arguments' => array('administer redirects'),
+    'weight' => 0,
+  );
+
+  // DEFINES CACHE SECTION.
+  $items['admin/settings/cache'] = array(
+    'title' => 'Cache',
+    'description' => '',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 99,
+  );
+
+  // Cache clearing via admin/settings.
+  $items['admin/settings/cache/clear'] = array(
+    'title' => 'Clear Caches',
+    'description' => 'Invalidate various caches.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'express_settings_cache_clear_landing',
+    'access arguments' => array('access express settings'),
+    'weight' => 0,
+  );
+  $items['admin/settings/cache/clear/help'] = array(
+    'title' => 'Clear Caches',
+    'description' => 'Invalidate various caches.',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'express_settings_cache_clear_landing',
+    'access arguments' => array('access express settings'),
+    'weight' => 0,
+  );
+  $items['admin/settings/cache/clear/varnish-path'] = array(
+    'title' => 'Clear Page by Path',
+    'description' => 'Clear Page by Path.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_varnish_path_cache_form'),
+    'access arguments' => array('clear path caches'),
+    'weight' => 1,
+  );
+  $items['admin/settings/cache/clear/varnish-full'] = array(
+    'title' => 'Clear Page Full',
+    'description' => 'Clear Entire Page Cache.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_varnish_site_cache_form'),
+    'access arguments' => array('clear full caches'),
+    'weight' => 2,
+  );
+  $items['admin/settings/cache/clear/drupal-full'] = array(
+    'title' => 'Clear Database Full',
+    'description' => 'Invalidate Database Cache.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_settings_drupal_cache_form'),
+    'access arguments' => array('clear full caches'),
+    'weight' => 3,
+  );
+
+
+  // Node-level cache clearing.
+  $items['node/%/clear-varnish'] = array(
+    'title' => 'Clear Page Cache',
+    'description' => 'Invalidate various caches.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'express_settings_varnish_path_redirect',
+    'page arguments' => array('test'),
+    'access arguments' => array('clear path caches'),
+    'weight' => 999,
+  );
+
+  return $items;
+}
+
+/**
+ * Landing page with documentation about different cache layers.
+ */
+function express_settings_cache_clear_landing() {
+  $content = file_get_contents(drupal_get_path('module', 'express_settings') . '/templates/cache--landing.tpl.php');
+
+  return $content;
+}
+
+/**
+ * Redirect request to admin/settings/admin/clear-cache/varnish-path
+ * with destination of current node path.
+ */
+function express_settings_varnish_path_redirect($path) {
+
+  $path = explode('/clear-varnish', current_path());
+  drupal_goto('admin/settings/cache/clear/varnish-path', array('query' => array('destination' => $path[0])));
+
+}
+
+/**
+ * Implements hook_admin_paths().
+ *
+ * Set edit layout paths to be admin paths.
+ */
+function express_settings_admin_paths() {
+  $paths = array(
+    'node/*/clear-varnish' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function express_settings_menu_alter(&$items) {
+  // Add new permissions to redirect settings and generate
+  $items['admin/config/search/redirect/settings']['access arguments'] = array('administer redirect settings');
+  $items['admin/config/search/redirect/generate']['access arguments'] = array('administer redirect settings');
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function express_settings_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'express_settings') . '/css/express-settings.css');
+}
+
+/**
+ * Implements hook_navbar_alter().
+ */
+function express_settings_navbar_alter(&$items) {
+  $items['administration']['#title'] = t('Express');
+  $items['administration']['tab']['#title'] = t('Express');
+}
+
+/**
+ * Implements hook_navbar().
+ */
+function express_settings_navbar() {
+  $items = array();
+
+  $items['user_logout'] = array(
+    '#type' => 'navbar_item',
+    'tab' => array(
+      '#type' => 'link',
+      '#title' => t('Log out'),
+      '#href' => 'user/logout',
+      '#options' => array(
+        'attributes' => array(
+          'title' => t('Log out'),
+          'class' => array('navbar-icon', 'navbar-icon-logout'),
+        ),
+      ),
+    ),
+    '#weight' => 200,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for admin/site-configuration/site-name.
+ */
+function express_settings_site_name_form($form, &$form_state) {
+  global $base_url;
+  $form = array();
+
+  $form['site_name_1'] = array(
+    '#title' => t('Site name - line 1'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('site_name_1', 'Express'),
+    '#required' => TRUE,
+  );
+  $form['site_name_2'] = array(
+    '#title' => t('Site name - line 2 (optional)'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('site_name_2', ''),
+    '#required' => FALSE,
+  );
+
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'express_settings_site_name_form_submit';
+  return $form;
+}
+
+/**
+ * Submit handler for express_settings_site_name_form.
+ */
+function express_settings_site_name_form_submit($form, &$form_state) {
+
+  // Save site names as independent variables and concatenated
+  $full_site_name = $form_state['values']['site_name_1'] . ' ' . $form_state['values']['site_name_2'];
+  variable_set('site_name', filter_xss($full_site_name));
+  variable_set('site_name_1', filter_xss($form_state['values']['site_name_1']));
+  variable_set('site_name_2', filter_xss($form_state['values']['site_name_2']));
+}
+
+/**
+ * Page callback for admin/site-configuration/site-description.
+ */
+function express_settings_site_description_form($form, &$form_state) {
+  $form = array();
+
+  $form['site_description'] = array(
+    '#title' => 'Site Description',
+    '#type' => 'textarea',
+    '#default_value' => variable_get('site_description', ''),
+    '#description' => t('This text is added as a meta description for the site homepage.'),
+  );
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'express_settings_site_description_form_submit';
+  return $form;
+}
+
+/**
+ * Submit handler for express_settings_site_description_form.
+ */
+function express_settings_site_description_form_submit($form, &$form_state) {
+  variable_set('site_description', check_plain($form_state['values']['site_description']));
+}
+
+/**
+ * Page callback for admin/site-configuration/google-analytics.
+ */
+function express_settings_google_analytics_form($form, &$form_state) {
+  $form = array();
+
+  $form['ga_account'] = array(
+    '#title' => t('Google Analytics Account IDs'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('ga_account', ''),
+    '#description' => t('Enter Google Analytics account IDs separated by commas. Example: UA-123456-1'),
+  );
+
+  $form['#validate'][] = 'express_settings_google_analytics_form_validate';
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'express_settings_google_analytics_form_submit';
+  return $form;
+}
+
+/**
+ * Validation handler for express_settings_google_analytics_form().
+ */
+function express_settings_google_analytics_form_validate($form, &$form_state) {
+  // Ensure ga-account looks like a real account value.
+  if (!empty($form_state['values']['ga_account'])) {
+    $ga_codes = explode(',', $form_state['values']['ga_account']);
+    foreach ($ga_codes as $code) {
+      $ga_code = trim(filter_xss($code));
+      $pattern = '/^ua-\d{4,9}-\d{1,4}$/i';
+      $match = preg_match($pattern, $ga_code);
+      if (!$match) {
+        form_set_error('ga_account', t('Please enter your google account codes in the form of "UA-123456-1".'));
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for express_settings_google_analytics_form().
+ */
+function express_settings_google_analytics_form_submit($form, &$form_state) {
+  if ($ga_codes = variable_get('ga_account', '')) {
+    // Explode the string and trim whitespace.
+    $ga_codes = array_map('trim', explode(',', $ga_codes));
+    $js_code = '';
+    foreach ($ga_codes as $key => $code) {
+      $js_code .= format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker@key'});  ga('customTracker@key.send', 'pageview');", array(
+        '@ga_account' => $code,
+        '@key' => $key,
+      ));
+    }
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  }
+  else {
+    variable_set('googleanalytics_codesnippet_after', '');
+  }
+}
+
+/**
+ * Page callback for admin/settings/contact.
+ */
+function express_settings_contact_info_form($form, &$form_state) {
+
+  $site_info_body = variable_get('site_info_body', array(
+    'value' => t('Put your contact information here'),
+    'format' => 'wysiwyg',
+  ));
+  $form['contact_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Contact Information',
+  );
+  $form['contact_info']['site_info_body'] = array(
+    '#type' => 'text_format',
+    '#default_value' => $site_info_body['value'],
+    '#format' => $site_info_body['format'],
+    '#required' => FALSE,
+    '#description' => t('This will display as contact information for your visitors'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Form for clearing Drupal's cache
+ */
+function express_settings_drupal_cache_form($form, &$form_state) {
+  $cache_drupal_last = variable_get('cache_drupal_last', NULL);
+
+  drupal_set_message('Repeatedly clearing caches will cause performance problems for you and your website\'s users, therefore full cache clears are limited to once per hour.', 'warning');
+
+  $form['clear_drupal_cache'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear Full Database Cache'),
+    '#submit' => array('express_settings_clear_drupal_cache_submit'),
+    '#attributes' => array('class' => array('btn-warning')),
+  );
+
+  if (date('H', $cache_drupal_last) == date('H', time())) {
+    $form['clear_drupal_cache']['#disabled'] = TRUE;
+    drupal_set_message(t('The Full Database Cache cache was recently cleared. Because repeatedly clearing the cache can cause performance problems, it cannot be cleared again until @time', array('@time' => date('h:i A', $cache_drupal_last + 3600))), 'warning');
+  }
+
+  return $form;
+}
+
+/**
+ * Form for clearing a single path from Varnish's cache.
+ */
+function express_settings_varnish_path_cache_form($form, &$form_state) {
+  $path = isset($_REQUEST['destination']) ? $_REQUEST['destination'] : '';
+
+  $form['clear_varnish_path_cache_path'] = array(
+    '#type' => 'textfield',
+    '#description' => ('Enter the specific path or URL to clear from the Page cache.'),
+    '#title' => 'Path To Clear',
+    '#default_value' => $path,
+    '#required' => TRUE,
+  );
+  $form['clear_varnish_path_cache'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear Path From Page Cache'),
+    '#submit' => array('express_settings_clear_varnish_path_cache_submit'),
+    '#attributes' => array('class' => array('btn-warning')),
+  );
+  $form["#validate"][] = 'express_settings_varnish_path_cache_validate';
+  return $form;
+}
+
+/**
+ * Form for clearing a site from Varnish's cache.
+ */
+function express_settings_varnish_site_cache_form($form, &$form_state) {
+  $cache_varnish_last = variable_get('cache_varnish_last', NULL);
+
+  drupal_set_message('Repeatedly clearing caches will cause performance problems for you and your website\'s users, therefore full cache clears are limited to once per hour.', 'warning');
+
+  $form['clear_varnish_cache'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear Full Page Cache'),
+    '#submit' => array('express_settings_clear_varnish_cache_submit'),
+    '#attributes' => array('class' => array('btn-warning')),
+  );
+
+  if (date('H', $cache_varnish_last) == date('H', time())) {
+    $form['clear_varnish_cache']['#disabled'] = TRUE;
+    drupal_set_message(t('The whole Page Cache was recently cleared. Because repeatedly clearing the cache can cause performance problems, it cannot be cleared again until @time.', array('@time' => date('h:i A', $cache_varnish_last + 3600))), 'warning');
+  }
+
+  return $form;
+}
+
+/**
+ * Submit callback; clear Drupal caches.
+ *
+ * @ingroup forms
+ */
+function express_settings_clear_drupal_cache_submit($form, &$form_state) {
+  variable_set('cache_drupal_last', REQUEST_TIME);
+  drupal_flush_all_caches();
+  drupal_set_message(t('Full Database Cache Cleared.'));
+}
+
+/**
+ * Submit callback; clear Varnish caches.
+ *
+ * @ingroup forms
+ */
+function express_settings_clear_varnish_cache_submit($form, &$form_state) {
+  variable_set('cache_varnish_last', REQUEST_TIME);
+  varnish_purge_all_pages();
+  drupal_set_message(t('Full Page Cache Cleared.'));
+}
+
+/**
+ * Form validation; prevents users without perm to clear full site using front page path.
+ *
+ * @ingroup forms
+ */
+function express_settings_varnish_path_cache_validate($form, &$form_state) {
+
+  $path = $form_state['values']['clear_varnish_path_cache_path'];
+  $host = _varnish_get_host();
+
+  if (stripos($path, '://')) {
+    if (!stripos($path, '://' . $host . base_path())) {
+      form_set_error('[clear_varnish_path_cache_path]', t('Path must be part of this site.'));
+    }
+    if ($path == 'https://' . $host . base_path() ||  $path == 'http://' . $host . base_path()) {
+      form_set_error('[clear_varnish_path_cache_path]', t('The front page of a site can only be cleared by users with permission to clear the Full Page Cache.'));
+    }
+  }
+
+  if (preg_match('#^node/#', $path)) {
+    $path = base_path() . drupal_get_path_alias($path);
+  }
+
+  // the node set to <front> resolves to base_path() . 'home'
+  // since this clears the entire site, it we limit this to
+  if ($path == base_path() . 'home' || $path == base_path()) {
+    if (!user_access('clear full caches')) {
+      form_set_error('[clear_varnish_path_cache_path]', t('The front page of a site can only be cleared by users with permission to clear the Full Page Cache.'));
+    }
+  }
+}
+
+/**
+ * Submit callback; clear a single URL from Varnish caches.
+ *
+ * @ingroup forms
+ */
+function express_settings_clear_varnish_path_cache_submit($form, &$form_state) {
+
+  $path = $form_state['values']['clear_varnish_path_cache_path'];
+  $host = _varnish_get_host();
+
+  if (preg_match('#^node/#', $path)) {
+
+    $file_paths = array(
+      $path . '/attachment',
+      $path . '/backstretch',
+      $path . '/large',
+      $path . '/medium',
+      $path . '/small'
+    );
+
+    varnish_purge_paths($host, $file_paths);
+
+    $path = base_path() . drupal_get_path_alias($path);
+
+    // The node set to <front> resolves to base_path() . 'home'.
+    // This clears the entire site, so we limit access.
+    if ($path == base_path() . 'home') {
+      $path = base_path();
+      varnish_purge($host, $path);
+    }
+
+  }
+  else {
+
+    // If a node path was not passed, deal with urls and edge cases.
+
+    if (filter_var($path, FILTER_VALIDATE_URL)) {
+      $url_parts = parse_url($path);
+
+      $path = $url_parts['path'];
+      if (isset($url_parts['query'])) {
+        $path .= $url_parts['query'];
+      }
+    }
+
+    if ($path == '/') {
+      $path = base_path();
+    }
+  }
+
+  // Clear the page path.
+  varnish_purge($host, $path);
+
+  // Attempt to get all http paths from source path and clear those.
+  $url = 'http://' . $host;
+
+  $headers = get_headers($url);
+
+  // @TODO: Do we want to do something if the url doesn't exist?
+  if (substr($headers[0], 9, 3) == "200") {
+    $html = file_get_contents($url . $path);
+    $dom = new DOMDocument;
+    @$dom->loadHTML($html);
+    $asset_paths = array();
+
+    // Find Local CSS.
+    $css_links = $dom->getElementsByTagName('link');
+
+    foreach ($css_links as $css_link) {
+
+      if (strpos($css_link->getAttribute('href'), $host)) {
+        $path_parts = explode($url, $css_link->getAttribute('href'));
+        $asset_paths[] = $path_parts[1];
+      }
+    }
+
+    // Find Local JS.
+    $js_links = $dom->getElementsByTagName('script');
+
+    foreach ($js_links as $js_link) {
+
+      if (strpos($js_link->getAttribute('src'), $url)) {
+        $path_parts = explode($url, $js_link->getAttribute('src'));
+        $asset_paths[] = $path_parts[1];
+      }
+    }
+
+    // Find Local Images.
+    $img_links = $dom->getElementsByTagName('img');
+
+    foreach ($img_links as $img_link) {
+
+      if (strpos($img_link->getAttribute('src'), $url)) {
+        $path_parts = explode($url, $img_link->getAttribute('src'));
+        $asset_paths[] = $path_parts[1];
+      }
+    }
+
+    if (count($asset_paths)) {
+      varnish_expire_cache($asset_paths);
+    }
+  }
+
+  drupal_set_message(t('!path cleared from Page Cache.', array('!path' => $path)));
+
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function express_settings_preprocess_page(&$variables) {
+  if (variable_get('site_name_2', '')) {
+    $variables['site_name'] = '<span class="site-name-two-lines">' . variable_get('site_name_1', NULL) . '<br />' . variable_get('site_name_2', NULL) . '</span>';
+    $variables['classes_array'][] = 'two-line-title';
+  }
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function express_settings_preprocess_html(&$variables) {
+  if (variable_get('site_name_2', '')) {
+    $variables['head_title_array']['name'] = variable_get('site_name_1', NULL) . ' ' . variable_get('site_name_2', NULL);
+  }
+  $description = variable_get('site_description', NULL);
+  if ($description && drupal_is_front_page()) {
+    // Add meta tag to home page.
+    $element = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'description',
+        'content' => $description,
+      ),
+    );
+    drupal_add_html_head($element, 'description');
+  }
+}
+
+/**
+ * Menu callback; Provide the administration overview page.
+ */
+function express_settings_management_page() {
+
+  $blocks = array();
+  if ($admin = db_query("SELECT menu_name, mlid FROM {menu_links} WHERE link_path = 'admin/settings'")->fetchAssoc()) {
+
+    $result = db_query("
+      SELECT m.*, ml.*
+      FROM {menu_links} ml
+      INNER JOIN {menu_router} m ON ml.router_path = m.path
+      WHERE ml.link_path <> 'admin/help' AND menu_name = :menu_name AND ml.plid = :mlid AND hidden = 0", $admin, array('fetch' => PDO::FETCH_ASSOC));
+
+    // SELECT m.*, ml.* FROM menu_links ml INNER JOIN menu_router m ON ml.router_path = m.path WHERE menu_name = 'management' AND ml.plid = 559 AND hidden = 0
+    foreach ($result as $item) {
+
+      _menu_link_translate($item);
+      if (!$item['access']) {
+        continue;
+      }
+      // The link description, either derived from 'description' in hook_menu()
+      // or customized via menu module is used as title attribute.
+      if (!empty($item['localized_options']['attributes']['title'])) {
+        $item['description'] = $item['localized_options']['attributes']['title'];
+        unset($item['localized_options']['attributes']['title']);
+      }
+      $block = $item;
+      $block['content'] = '';
+      $block['content'] .= theme('admin_block_content', array('content' => system_admin_menu_block($item)));
+      if (!empty($block['content'])) {
+        $block['show'] = TRUE;
+      }
+
+      // Prepare for sorting as in function _menu_tree_check_access().
+      // The weight is offset so it is always positive, with a uniform 5-digits.
+      $blocks[(50000 + $item['weight']) . ' ' . $item['title'] . ' ' . $item['mlid']] = $block;
+    }
+  }
+  if ($blocks) {
+    ksort($blocks);
+    return theme('admin_page', array('blocks' => $blocks));
+  }
+  else {
+    return t('You do not have any administrative items.');
+  }
+}
+
+/**
+ * Implements hook_menu_link_insert().
+ *
+ * Allows bundles to define a top level menu under and settings after child
+ * menus are created.
+ */
+function express_settings_menu_link_insert($item) {
+
+  // if the link is directly under admin/setting, check so see if any items in the next level need to be fixed
+  if ($item['parts'][0] == 'admin' && $item['parts'][1] == 'settings' && $item['depth'] === 3) {
+
+    // without this rebuild, the children aren't found
+    menu_rebuild();
+
+  }
+}

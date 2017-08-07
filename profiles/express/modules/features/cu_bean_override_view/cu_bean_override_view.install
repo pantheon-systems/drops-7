@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function cu_bean_override_view_install() {
+  // We need to run after Views module's hook_menu_alter() to fix the router
+  // item properties of overridden pages.
+  db_query("UPDATE {system} SET weight = 12 WHERE name = 'cu_bean_override_view'");
+
+
+  // Clear these three caches to update access controls for replacement administrative views.
+  registry_rebuild();
+  menu_rebuild();
+  cache_clear_all();
+  drupal_set_message('Menu rebuilt with views.');
+}

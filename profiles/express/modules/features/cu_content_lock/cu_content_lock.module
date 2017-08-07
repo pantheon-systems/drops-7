@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Content Lock feature.
+ */
+
+include_once 'cu_content_lock.features.inc';

@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Dummy module implementing menu access functions to test the
+ * Chain Menu Access API module.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function chain_menu_access_test_menu_alter(&$menu) {
+  // Allow everyone access to admin/people/create (#1079032).
+  chain_menu_access_chain($menu, 'admin/people/create', 'chain_menu_access_test_enabled', array('admin/people/create'), TRUE);
+}
+
+/**
+ * Dynamically turn this module on and off.
+ */
+function chain_menu_access_test_enabled($path) {
+  $query = drupal_get_query_parameters();
+  $enabled = !empty($query['enable_cma']);
+  drupal_set_message("Access to $path is " . ($enabled ? 'ENABLED' : 'DISABLED') . '.');
+  return $enabled;
+}

@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * Tests for the Metatag module for Me module integration.
+ */
+class MetatagCoreWithMeTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Me',
+      'description' => 'Test Metatag integration with the Me module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'me'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'me';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Make sure the /user/me path doesn't load any meta tags.
+   */
+  public function testMePath() {
+    // Create an admin user and log them in.
+    if (!isset($this->adminUser)) {
+      $this->adminUser = $this->createAdminUser();
+    }
+    $this->drupalLogin($this->adminUser);
+
+    // Load the user's profile page.
+    // Load the 'me' page.
+    $this->drupalGet('user/' . $this->adminUser->uid);
+    $this->assertResponse(200);
+
+    // Look for some meta tags that should exist.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Drupal 7 (http://drupal.org)');
+    $xpath = $this->xpath("//link[@rel='canonical']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one canonical meta tag found.');
+    $this->assertEqual($xpath[0]['href'], url('user/' . $this->adminUser->uid, array('absolute' => TRUE)));
+    $xpath = $this->xpath("//link[@rel='shortlink']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one shortlink meta tag found.');
+    $this->assertEqual($xpath[0]['href'], url('user/' . $this->adminUser->uid, array('absolute' => TRUE)));
+
+    // Load the 'me' page.
+    $this->drupalGet('user/me');
+    $this->assertResponse(200);
+
+    // Confirm the meta tags defined above don't exist.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 0, 'Did not find the generator meta tag.');
+    $xpath = $this->xpath("//link[@rel='canonical']");
+    $this->assertEqual(count($xpath), 0, 'Did not find the canonical meta tag.');
+    $xpath = $this->xpath("//link[@rel='shortlink']");
+    $this->assertEqual(count($xpath), 0, 'Did not find the shortlink meta tag.');
+  }
+
+}

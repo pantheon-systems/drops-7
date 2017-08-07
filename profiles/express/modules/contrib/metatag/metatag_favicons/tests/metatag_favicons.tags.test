@@ -1,0 +1,246 @@
+<?php
+
+/**
+ * Tests that each of the Metatag Favicons tags work correctly.
+ */
+class MetatagFaviconsTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Favicons',
+      'description' => 'Test the Favicons meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'apple-touch-icon',
+    'apple-touch-icon-precomposed',
+    'apple-touch-icon-precomposed_114x114',
+    'apple-touch-icon-precomposed_120x120',
+    'apple-touch-icon-precomposed_144x144',
+    'apple-touch-icon-precomposed_152x152',
+    'apple-touch-icon-precomposed_180x180',
+    'apple-touch-icon-precomposed_72x72',
+    'apple-touch-icon-precomposed_76x76',
+    'apple-touch-icon_114x114',
+    'apple-touch-icon_120x120',
+    'apple-touch-icon_144x144',
+    'apple-touch-icon_152x152',
+    'apple-touch-icon_180x180',
+    'apple-touch-icon_72x72',
+    'apple-touch-icon_76x76',
+    'icon_16x16',
+    'icon_192x192',
+    'icon_32x32',
+    'icon_96x96',
+    'mask-icon',
+    'shortcut icon',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_favicons';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_tag = 'link';
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'rel';
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_value_attribute = 'href';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagValue() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'icon_16x16',
+   */
+  public function icon_16x16_test_output_xpath() {
+    return "//link[@rel='icon' and @sizes='16x16']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'icon_192x192',
+   */
+  public function icon_192x192_test_output_xpath() {
+    return "//link[@rel='icon' and @sizes='192x192']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'icon_32x32',
+   */
+  public function icon_32x32_test_output_xpath() {
+    return "//link[@rel='icon' and @sizes='32x32']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'icon_96x96',
+   */
+  public function icon_96x96_test_output_xpath() {
+    return "//link[@rel='icon' and @sizes='96x96']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed',
+   */
+  public function apple_touch_icon_precomposed_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and not(@sizes)]";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_114x114',
+   */
+  public function apple_touch_icon_precomposed_114x114_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='114x114']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_120x120',
+   */
+  public function apple_touch_icon_precomposed_120x120_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='120x120']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_144x144',
+   */
+  public function apple_touch_icon_precomposed_144x144_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='144x144']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_152x152',
+   */
+  public function apple_touch_icon_precomposed_152x152_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='152x152']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_180x180',
+   */
+  public function apple_touch_icon_precomposed_180x180_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='180x180']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_72x72',
+   */
+  public function apple_touch_icon_precomposed_72x72_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='72x72']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_precomposed_76x76',
+   */
+  public function apple_touch_icon_precomposed_76x76_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon-precomposed' and @sizes='76x76']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'apple_touch_icon',
+   */
+  public function apple_touch_icon_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and not(@sizes)]";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_114x114',
+   */
+  public function apple_touch_icon_114x114_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='114x114']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_120x120',
+   */
+  public function apple_touch_icon_120x120_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='120x120']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_144x144',
+   */
+  public function apple_touch_icon_144x144_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='144x144']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_152x152',
+   */
+  public function apple_touch_icon_152x152_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='152x152']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_180x180',
+   */
+  public function apple_touch_icon_180x180_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='180x180']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_72x72',
+   */
+  public function apple_touch_icon_72x72_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='72x72']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'apple_touch_icon_76x76',
+   */
+  public function apple_touch_icon_76x76_test_output_xpath() {
+    return "//link[@rel='apple-touch-icon' and @sizes='76x76']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath for 'mask-icon'.
+   */
+  public function mask_icon_test_tag_name() {
+    return 'mask-icon';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name for 'shortcut icon'.
+   */
+  public function shortcut_icon_test_tag_name() {
+    return 'shortcut icon';
+  }
+
+}

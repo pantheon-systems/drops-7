@@ -1,0 +1,37 @@
+.blockgray .block-inner, .blockgray-example { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; padding: 10px; background-color: #f4f4f4; }
+@media screen and (min-width: 960px) { .blockgray .block-inner, .blockgray-example { padding: 20px; } }
+.blockgray .block-inner p:last-child, .blockgray-example p:last-child { margin-bottom: 0; }
+.blockgray .block-inner a:link, .blockgray .block-inner a:visited, .blockgray-example a:link, .blockgray-example a:visited { color: #006db1; }
+.blockgray .block-inner a:hover, .blockgray .block-inner a:focus, .blockgray-example a:hover, .blockgray-example a:focus { color: #e51c23; }
+
+.blockdarkgray .block-inner, .blockdarkgray-example { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; padding: 10px; background-color: #272727; color: #fff; }
+@media screen and (min-width: 960px) { .blockdarkgray .block-inner, .blockdarkgray-example { padding: 20px; } }
+.blockdarkgray .block-inner p:last-child, .blockdarkgray-example p:last-child { margin-bottom: 0; }
+.blockdarkgray .block-inner .content a:link, .blockdarkgray .block-inner .content a:visited, .blockdarkgray-example .content a:link, .blockdarkgray-example .content a:visited { color: #cfb87c; }
+.blockdarkgray .block-inner .content a:hover, .blockdarkgray .block-inner .content a:focus, .blockdarkgray-example .content a:hover, .blockdarkgray-example .content a:focus { color: #76cff7; }
+
+.blockoutline .block-inner, .blockoutline-example { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; padding: 10px; background-color: transparent; border: 1px solid #e0e0e0; }
+@media screen and (min-width: 960px) { .blockoutline .block-inner, .blockoutline-example { padding: 20px; } }
+.blockoutline .block-inner p:last-child, .blockoutline-example p:last-child { margin-bottom: 0; }
+
+.blockunderline > .block-inner, .blockunderline-example { border-bottom: 1px solid #e0e0e0; padding: 0 0 20px 0; }
+.blockunderline > .block-inner p:last-child, .blockunderline-example p:last-child { margin-bottom: 0; }
+
+.block.block-bean-type-block-row.blockunderline { margin-bottom: 20px; }
+
+.lightblue > .block-inner, .blocklightblue-example { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; padding: 10px; background-color: #ebf7ff; }
+@media screen and (min-width: 960px) { .lightblue > .block-inner, .blocklightblue-example { padding: 20px; } }
+.lightblue > .block-inner p:last-child, .blocklightblue-example p:last-child { margin-bottom: 0; }
+.lightblue > .block-inner a:link, .lightblue > .block-inner a:visited, .blocklightblue-example a:link, .blocklightblue-example a:visited { color: #006db1; }
+.lightblue > .block-inner a:hover, .lightblue > .block-inner a:focus, .blocklightblue-example a:hover, .blocklightblue-example a:focus { color: #e51c23; }
+
+.tan > .block-inner, .blocktan-example { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; padding: 10px; background-color: #fffbf0; }
+@media screen and (min-width: 960px) { .tan > .block-inner, .blocktan-example { padding: 20px; } }
+.tan > .block-inner p:last-child, .blocktan-example p:last-child { margin-bottom: 0; }
+.tan > .block-inner a:link, .tan > .block-inner a:visited, .blocktan-example a:link, .blocktan-example a:visited { color: #006db1; }
+.tan > .block-inner a:hover, .tan > .block-inner a:focus, .blocktan-example a:hover, .blocktan-example a:focus { color: #e51c23; }
+
+/* Examples css */
+table.block-style-examples { table-layout: fixed; }
+
+table.block-style-examples td ul { margin: 0; padding: 0; }

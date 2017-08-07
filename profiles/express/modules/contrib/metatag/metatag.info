@@ -1,0 +1,113 @@
+name = Metatag
+description = "Adds support and an API to implement meta tags."
+package = SEO
+core = 7.x
+
+; This requires Drupal 7.28 or newer as it fixes the [node:summary] token that
+; was previously broken.
+dependencies[] = drupal:system (>= 7.28)
+
+; CTools is required.
+dependencies[] = ctools:ctools
+
+; Requires Token; v7.x-1.6 is highly recommended due to bugs with certain tags
+; when using older versions.
+dependencies[] = token:token
+
+configure = admin/config/search/metatags
+
+; The main classes.
+files[] = metatag.inc
+
+; Defines the basic meta tags.
+files[] = metatag.migrate.inc
+
+; Search API integration.
+files[] = metatag.search_api.inc
+
+
+; Tests.
+files[] = tests/metatag.helper.test
+
+; Basic configuration handling.
+files[] = tests/metatag.unit.test
+
+; Basic tag testing.
+files[] = tests/metatag.tags_helper.test
+files[] = tests/metatag.tags.test
+
+; Core entities.
+files[] = tests/metatag.node.test
+files[] = tests/metatag.term.test
+files[] = tests/metatag.user.test
+
+; Handling of core's default meta tags.
+files[] = tests/metatag.core_tag_removal.test
+
+; The custom Bulk Revert functionality.
+files[] = tests/metatag.bulk_revert.test
+
+; String handling.
+files[] = tests/metatag.string_handling.test
+files[] = tests/metatag.string_handling_with_i18n.test
+
+; XSS testing.
+files[] = tests/metatag.xss.test
+
+; Output caching.
+files[] = tests/metatag.output_caching.test
+
+; Images need specia attention.
+test_dependencies[] = devel:devel
+test_dependencies[] = imagecache_token:imagecache_token
+files[] = tests/metatag.image.test
+
+; Internationalization & translation.
+test_dependencies[] = entity_translation:entity_translation
+test_dependencies[] = i18n:i18n
+files[] = tests/metatag.locale.test
+files[] = tests/metatag.node.with_i18n.test
+files[] = tests/metatag.term.with_i18n.test
+files[] = tests/metatag.with_i18n_output.test
+files[] = tests/metatag.with_i18n_disabled.test
+files[] = tests/metatag.with_i18n_config.test
+
+; Basic integration with Me.
+test_dependencies[] = me:me
+files[] = tests/metatag.with_me.test
+
+; Basic integration with Media.
+test_dependencies[] = file_entity:file_entity
+test_dependencies[] = media:media (>= 2.0, < 3.0)
+files[] = tests/metatag.with_media.test
+
+; Basic integration with Panels.
+test_dependencies[] = panels:panels
+files[] = tests/metatag.with_panels.test
+
+; Basic integration with Profile2.
+test_dependencies[] = profile2:profile2
+files[] = tests/metatag.with_profile2.test
+
+; Basic integration with Search API.
+test_dependencies[] = entity:entity
+test_dependencies[] = search_api:search_api
+files[] = tests/metatag.with_search_api.test
+
+; Integration with Workbench Moderation.
+test_dependencies[] = workbench_moderation:workbench_moderation
+files[] = tests/metatag.with_workbench_moderation.test
+
+; Basic integration with Views.
+test_dependencies[] = views:views
+files[] = tests/metatag.with_views.test
+
+; Other test dependencies.
+test_dependencies[] = context:context
+
+; Information added by Drupal.org packaging script on 2017-02-15
+version = "7.x-1.21"
+core = "7.x"
+project = "metatag"
+datestamp = "1487171290"
+

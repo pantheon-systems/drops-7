@@ -1,0 +1,431 @@
+<?php
+
+/**
+ * @file
+ * This module injects itself into Drupal's Authentication stack.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ldap_sso_menu() {
+  $items = array();
+
+  $items['user/login/sso'] = array(
+    'title' => 'Log In',
+    'page callback' => 'ldap_sso_user_login_sso',
+    'access callback' => '_ldap_authentication_user_access',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_user_logout().
+ *
+ * The user just logged out.
+ */
+function ldap_sso_user_logout($account) {
+  $auth_conf = ldap_authentication_get_valid_conf();
+  if ($auth_conf->seamlessLogin == 1) {
+    $cookie_string = 'do not auto login';
+    $cookie_timeout = (int) $auth_conf->cookieExpire;
+    setcookie('seamless_login', $cookie_string, (($cookie_timeout == -1) ? 0 : $cookie_timeout + time()), base_path(), "");
+    ldap_servers_set_globals('_SESSION', 'seamless_login', $cookie_string);
+  }
+}
+
+/**
+ * Implements hook_boot().
+ *
+ * Perform setup tasks. This entry point is used because hook_user_load no
+ * longer runs on anonymous users, and hook_boot is guaranteed to run,
+ * regardless of cache.
+ */
+function ldap_sso_boot() {
+
+  if (!drupal_is_cli() && ($GLOBALS['user']->uid == 0)) {
+
+    if (ldap_sso_path_excluded_from_sso()) {
+      return;
+    }
+    module_load_include('module', 'ldap_servers');
+
+    if (!(isset($_COOKIE['seamless_login'])) || $_COOKIE['seamless_login'] == 'auto login') {
+      if ((arg(0) == 'user' && !(is_numeric(arg(1)))) || arg(0) == 'logout') {
+        return;
+      }
+      else {
+        if (isset($_COOKIE['seamless_login_attempted'])) {
+          $login_attempted = $_COOKIE['seamless_login_attempted'];
+        }
+        else {
+          $login_attempted = FALSE;
+        }
+
+        require_once DRUPAL_ROOT . '/includes/common.inc';
+        require_once DRUPAL_ROOT . '/' . variable_get('path_inc', 'includes/path.inc');
+        $ldap_authentication_conf = variable_get('ldap_authentication_conf', array());
+
+        if (isset($ldap_authentication_conf['seamlessLogin']) && $ldap_authentication_conf['seamlessLogin'] == 1 && ($login_attempted != 'true')) {
+          if ($ldap_authentication_conf['cookieExpire'] == 0) {
+            setcookie("seamless_login_attempted", 'true', 0, base_path(), "");
+          }
+          else {
+            setcookie('seamless_login_attempted', 'true', time() + (int) $ldap_authentication_conf['cookieExpire'], base_path(), "");
+          }
+          ldap_servers_set_globals('_SESSION', 'seamless_login_attempted', $login_attempted);
+
+          drupal_bootstrap(DRUPAL_BOOTSTRAP_LANGUAGE);
+          // Seems redundant, but need to check this again after additional
+          // bootstrap.
+          if (ldap_sso_path_excluded_from_sso()) {
+            return;
+          }
+          // Add the query key to the drupal_goto() options array only if there
+          // is a destination set. This prevents infinite redirect loops.
+          $options = array();
+          $destination = drupal_get_destination();
+          if (!empty($destination['destination'])) {
+            $options['query'] = $destination;
+          }
+          drupal_goto('user/login/sso', $options);
+        }
+        else {
+          return;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Default excluded paths.
+ */
+function ldap_sso_default_excluded_paths() {
+  return array(
+    'admin/config/search/clean-urls/check',
+  );
+}
+
+/**
+ * Paths excluded from SSO.
+ */
+function ldap_sso_path_excluded_from_sso($path = FALSE) {
+  module_load_include('module', 'ldap_servers');
+  $result = FALSE;
+  if ($path) {
+    // Don't derive.
+  }
+  elseif (ldap_servers_get_globals('_SERVER', 'PHP_SELF') == '/index.php') {
+    $path = $_GET['q'];
+  }
+  else {
+    // Cron.php, etc.
+    $path = ltrim(ldap_servers_get_globals('_SERVER', 'PHP_SELF'), '/');
+  }
+
+  if (in_array($path, ldap_sso_default_excluded_paths())) {
+    return TRUE;
+  }
+
+  $ldap_authentication_conf = variable_get('ldap_authentication_conf', array());
+
+  if (isset($ldap_authentication_conf['ssoExcludedHosts']) && is_array($ldap_authentication_conf['ssoExcludedHosts'])) {
+    $host = ldap_servers_get_globals('_SERVER', 'SERVER_NAME');
+    foreach ($ldap_authentication_conf['ssoExcludedHosts'] as $host_to_check) {
+      if ($host_to_check == $host) {
+        return TRUE;
+      }
+    }
+  }
+
+  if (isset($ldap_authentication_conf['ssoExcludedPaths'])) {
+    $patterns = implode("\r\n", $ldap_authentication_conf['ssoExcludedPaths']);
+    if ($patterns) {
+      if (function_exists('drupal_get_path_alias')) {
+        $path = drupal_get_path_alias($path);
+      }
+      $path = (function_exists('drupal_strtolower')) ? drupal_strtolower($path) : strtolower($path);
+
+      $to_replace = array(
+        // Newlines.
+        '/(\r\n?|\n)/',
+        // Asterisks.
+        '/\\\\\*/',
+        // <front>.
+        '/(^|\|)\\\\<front\\\\>($|\|)/',
+      );
+      $replacements = array(
+        '|',
+        '.*',
+        '\1' . preg_quote(variable_get('site_frontpage', 'node'), '/') . '\2',
+      );
+      $patterns_quoted = preg_quote($patterns, '/');
+      $regex = '/^(' . preg_replace($to_replace, $replacements, $patterns_quoted) . ')$/';
+      $result = (bool) preg_match($regex, $path);
+    }
+  }
+
+  return $result;
+
+}
+
+
+/**
+ * A proxy function for the actual authentication routine.
+ *
+ * This is in place so various implementations of grabbing NTLM credentials can
+ * be used and selected from an administration page. This is the real gatekeeper
+ * since this assumes that any NTLM authentication from the underlying web
+ * server is good enough, and only checks that there are values in place for the
+ * user name, and anything else that is set for a particular implementation. In
+ * the case that there are no credentials set by the underlying web server, the
+ * user is redirected to the normal user login form.
+ */
+function ldap_sso_user_login_sso() {
+
+  $detailed_watchdog_log = variable_get('ldap_help_watchdog_detail', 0);
+  $auth_conf = ldap_authentication_get_valid_conf();
+
+  if ($detailed_watchdog_log) {
+    $watchdog_tokens = array(
+      '!implementation' => $auth_conf->ldapImplementation,
+      '!enabled' => $auth_conf->ssoEnabled,
+      '!server_remote_user' => @$_SERVER['REMOTE_USER'],
+      '!server_redirect_remote_user' => @$_SERVER['REDIRECT_REMOTE_USER'],
+      '!ssoRemoteUserStripDomainName' => $auth_conf->ssoRemoteUserStripDomainName,
+      '!seamlessLogin' => $auth_conf->seamlessLogin,
+    );
+
+    watchdog(
+      'ldap_sso',
+      'ldap_sso_user_login_sso.step1: implementation: !implementation, enabled: !enabled, server_remote_user: !server_remote_user, server_redirect_remote_user: !server_redirect_remote_user, ssoRemoteUserStripDomainName: !ssoRemoteUserStripDomainName,seamlessLogin: !seamlessLogin',
+      $watchdog_tokens,
+      WATCHDOG_DEBUG
+    );
+  }
+
+  // Step 1.  Derive $remote_user, $realm, and $domain from $_SERVER variable.
+  $remote_user = NULL;
+  $realm = NULL;
+  $domain = NULL;
+
+  switch ($auth_conf->ldapImplementation) {
+    case 'mod_auth_sspi':
+      $remote_user = FALSE;
+      if ($remote_user = ldap_servers_get_globals('_SERVER', 'REMOTE_USER')) {
+      }
+      else {
+        $remote_user = ldap_servers_get_globals('_SERVER', 'REDIRECT_REMOTE_USER');
+      }
+      break;
+
+    case 'mod_auth_kerb':
+      if ($remote_user = ldap_servers_get_globals('_SERVER', 'REMOTE_USER')) {
+      }
+      else {
+        $remote_user = ldap_servers_get_globals('_SERVER', 'REDIRECT_REMOTE_USER');
+      }
+
+      if ($remote_user && preg_match('/^([A-Za-z0-9_\-\.]+)@([A-Za-z0-9_\-.]+)$/', $remote_user, $matches)) {
+        $remote_user = $matches[1];
+        // This can be used later if realms is ever supported properly.
+        $realm = $matches[2];
+      }
+      break;
+  }
+
+  if ($detailed_watchdog_log) {
+    $watchdog_tokens['!remote_user'] = $remote_user;
+    $watchdog_tokens['!realm'] = $realm;
+    watchdog('ldap_authentication', 'ldap_sso_user_login_sso.implementation: username=!remote_user, (realm=!realm) found',
+              $watchdog_tokens, WATCHDOG_DEBUG);
+  }
+
+  if ($remote_user) {
+    if ($auth_conf->ssoRemoteUserStripDomainName) {
+      // Might be in form <remote_user>@<domain> or <domain>\<remote_user>.
+      $domain = NULL;
+      $exploded = preg_split('/[\@\\\\]/', $remote_user);
+      if (count($exploded) == 2) {
+        if (strpos($remote_user, '@') !== FALSE) {
+          $remote_user = $exploded[0];
+          $domain = $exploded[1];
+        }
+        else {
+          $domain = $exploded[0];
+          $remote_user = $exploded[1];
+        }
+        if ($detailed_watchdog_log) {
+          $watchdog_tokens['!remote_user'] = $remote_user;
+          $watchdog_tokens['!domain'] = $domain;
+          watchdog('ldap_authentication', 'ldap_sso_user_login_sso.stripdomain: remote_user=!remote_user, domain=!domain', $watchdog_tokens, WATCHDOG_DEBUG);
+        }
+      }
+    }
+
+    if ($detailed_watchdog_log) {
+      $watchdog_tokens['!remote_user'] = $remote_user;
+      $watchdog_tokens['!realm'] = $realm;
+      $watchdog_tokens['!domain'] = $domain;
+      watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user: username=!remote_user, (realm=!realm, domain=!domain) found', $watchdog_tokens, WATCHDOG_DEBUG);
+    }
+    $fake_form_state = array(
+      'values' => array(
+        'name' => check_plain($remote_user),
+        'pass' => user_password(20),
+      ),
+      'sso_login' => TRUE,
+    );
+
+    // Make sure we're populating the global user object so that we can log this
+    // user in.
+    global $user;
+    $user = ldap_authentication_user_login_authenticate_validate(array(), $fake_form_state, TRUE);
+
+
+    if ($detailed_watchdog_log) {
+      $watchdog_tokens['!uid'] = is_object($user) ? $user->uid : NULL;
+      watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user: uid of user=!uid', $watchdog_tokens, WATCHDOG_DEBUG);
+    }
+
+    if ($user && $user->uid > 0) {
+      // Reload the account to ensure we have a fully populated user object.
+      $user = user_load($user->uid);
+
+      if ($auth_conf->seamlessLogin == 1) {
+        if ($detailed_watchdog_log) {
+          watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user.user_success.seamlessLogin', $watchdog_tokens, WATCHDOG_DEBUG);
+        }
+        setcookie("seamless_login", 'auto login', time() + $auth_conf->cookieExpire, base_path(), "");
+        ldap_servers_set_globals('_SESSION', 'seamless_login', 'auto login');
+        setcookie("seamless_login_attempted", '', time() - 3600, base_path(), "");
+        ldap_servers_delete_globals('_SESSION', 'seamless_login_attempted');
+        // Make sure we tell Drupal to create the session cookie for this
+        // authenticated user.
+      }
+      user_login_finalize();
+      if ($auth_conf->ssoNotifyAuthentication) {
+        drupal_set_message(theme('ldap_authentication_login_message',
+          array('message' => t('You have been successfully authenticated'))));
+      }
+      if ($detailed_watchdog_log) {
+        watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user.user_success.drupal_goto front', $watchdog_tokens, WATCHDOG_DEBUG);
+      }
+      drupal_goto('<front>');
+    }
+    else {
+      if ($auth_conf->seamlessLogin == 1) {
+        if ($detailed_watchdog_log) {
+          watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user.user_fail.seamlessLogin', $watchdog_tokens, WATCHDOG_DEBUG);
+        }
+        setcookie("seamless_login", 'do not auto login', time() + $auth_conf->cookieExpire, base_path(), "");
+        ldap_servers_set_globals('_SESSION', 'seamless_login', 'do not auto login');
+      }
+      drupal_set_message(theme('ldap_authentication_message_not_found', array(
+        'message' => t('Sorry, your LDAP credentials were not found, or the LDAP server is not available. You may log in with other credentials on the !user_login_form.',
+          array('!user_login_form' => l(t('user login form'), 'user/login'))))
+        ), 'error');
+      if ($detailed_watchdog_log) {
+        watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user.user_fail.drupal_goto user/logint', $watchdog_tokens, WATCHDOG_DEBUG);
+      }
+      drupal_goto('user/login');
+    }
+  }
+  else {
+    if ($detailed_watchdog_log) {
+      watchdog('ldap_authentication', '$_SERVER[\'REMOTE_USER\'] not found', array(), WATCHDOG_DEBUG);
+    }
+    if ($auth_conf->seamlessLogin == 1) {
+      setcookie("seamless_login", 'do not auto login', time() + $auth_conf->cookieExpire, base_path(), "");
+      ldap_servers_set_globals('_SESSION', 'seamless_login', 'do not auto login');
+      if ($detailed_watchdog_log) {
+        watchdog('ldap_authentication', 'ldap_sso_user_login_sso.no_remote_user.seamlessLogin', $watchdog_tokens, WATCHDOG_DEBUG);
+      }
+    }
+    drupal_set_message(theme('ldap_authentication_message_not_authenticated', array(
+      'message' => t('You were not authenticated by the server. You may log in with your credentials below.'),
+      )), 'error');
+    if ($detailed_watchdog_log) {
+      watchdog('ldap_authentication', 'ldap_sso_user_login_sso.no_remote_user.drupal_goto user/login', $watchdog_tokens, WATCHDOG_DEBUG);
+    }
+    drupal_goto('user/login');
+  }
+}
+
+
+/**
+ * Used to mock $_SERVER, $_SESSION, etc globals for simpletests.
+ *
+ * @param string $global_type
+ *   _SERVER, _ENV, _COOKIE, _GET, _POST, _REQUEST.
+ * @param string $key
+ *   Such as 'SERVER_ADDR', 'SERVER_PROTOCOL', etc.
+ * @param bool $only_mock_values
+ *   Don't get actual values when mock values don't exist.
+ *
+ * @return mixed
+ *   ldap_simpletest_globals variable for global and key or $_SERVER[][],
+ *   $_ENV[][], etv value if not in a simpletest or mock variable not available.
+ */
+function ldap_servers_get_globals($global_type, $key, $only_mock_values = FALSE) {
+  $simpletest_globals = variable_get('ldap_simpletest_globals', array());
+  $simpletest = variable_get('ldap_simpletest', FALSE);
+
+  if ($simpletest && (isset($simpletest_globals[$global_type][$key]) || $only_mock_values)) {
+    return ($simpletest_globals[$global_type][$key]) ? $simpletest_globals[$global_type][$key] : NULL;
+  }
+  else {
+    return (isset($GLOBALS[$global_type][$key]) && !$only_mock_values) ? $GLOBALS[$global_type][$key] : NULL;
+  }
+
+}
+
+/**
+ * Set globals.
+ *
+ * @param string $global_type
+ *   _SERVER, _ENV, _COOKIE, _GET, _POST, _REQUEST.
+ * @param string $key
+ *   Such as 'SERVER_ADDR', 'SERVER_PROTOCOL', etc.
+ * @param string $value
+ *   The value to be set.
+ */
+function ldap_servers_set_globals($global_type, $key, $value) {
+  $simpletest_globals = variable_get('ldap_simpletest_globals', array());
+  $simpletest = variable_get('ldap_simpletest', FALSE);
+  if ($simpletest) {
+    $simpletest_globals[$global_type][$key] = $value;
+    variable_set('ldap_simpletest_globals', $simpletest_globals);
+  }
+  else {
+    $GLOBALS[$global_type][$key] = $value;
+  }
+
+}
+
+/**
+ * Delete globals.
+ *
+ * @param string $global_type
+ *   _SERVER, _ENV, _COOKIE, _GET, _POST, _REQUEST.
+ * @param string $key
+ *   Such as 'SERVER_ADDR', 'SERVER_PROTOCOL', etc.
+ * @param bool $only_mock_values
+ *   Don't get actual values when mock values don't exist.
+ */
+function ldap_servers_delete_globals($global_type, $key, $only_mock_values = FALSE) {
+  $simpletest_globals = variable_get('ldap_simpletest_globals', array());
+  $simpletest = variable_get('ldap_simpletest', FALSE);
+  if ($simpletest && isset($simpletest_globals[$global_type][$key])) {
+    unset($simpletest_globals[$global_type][$key]);
+    variable_set('ldap_simpletest_globals', $simpletest_globals);
+  }
+  elseif (!$only_mock_values && isset($GLOBALS[$global_type][$key])) {
+    unset($GLOBALS[$global_type][$key]);
+  }
+
+}

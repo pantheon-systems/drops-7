@@ -1,0 +1,22 @@
+name = CU Debug
+description = This bundle enables/disables modules and configures default settings.
+core = 7.x
+package = CU-Development
+
+dependencies[] = devel
+dependencies[] = search_krumo
+dependencies[] = ds_ui
+dependencies[] = diff
+
+optional-dependencies[] = devel
+optional-dependencies[] = search_krumo
+optional-dependencies[] = ds_ui
+optional-dependencies[] = views_ui
+optional-dependencies[] = diff
+optional-dependencies[] = devel_debug_log
+optional-dependencies[] = devel_generate
+optional-dependencies[] = security_review
+
+stylesheets[all][] = cu-debug-admin-bundle.css
+
+bundle_group = 'admin_bundles'

@@ -1,0 +1,764 @@
+<?php
+
+/**
+ * A base class for the Metatag tests, provides shared methods.
+ */
+abstract class MetatagTestHelper extends DrupalWebTestCase {
+
+  /**
+   * Admin user.
+   *
+   * @var \StdClass
+   */
+  protected $adminUser;
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Make sure these modules are enabled so that we can use their entity
+    // types later.
+    $modules[] = 'node';
+    $modules[] = 'taxonomy';
+
+    // Requirements.
+    $modules[] = 'ctools';
+    $modules[] = 'token';
+
+    // Metatag modules. Only enable the main module, submodules will be tested
+    // separately.
+    $modules[] = 'metatag';
+
+    // Adds some functionality for testing the entity handling.
+    $modules[] = 'metatag_test';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function verbose($message, $title = NULL) {
+    // Handle arrays, objects, etc.
+    if (!is_string($message)) {
+      $message = "<pre>\n" . print_r($message, TRUE) . "\n</pre>\n";
+    }
+
+    // Optional title to go before the output.
+    if (!empty($title)) {
+      $title = '<h2>' . check_plain($title) . "</h2>\n";
+    }
+
+    parent::verbose($title . $message);
+  }
+
+  /**
+   * Load the Performance admin page and clear all caches.
+   */
+  function clearAllCaches() {
+    $this->drupalGet('admin/config/development/performance');
+    $this->assertResponse(200);
+    $this->assertText(t('Performance'));
+    $this->assertText(t('Clear cache'));
+    $this->drupalPost(NULL, array(), t('Clear all caches'));
+    $this->assertResponse(200);
+    $this->assertText(t('Caches cleared'));
+  }
+
+  /**
+   * Create a content type for the tests.
+   */
+  function createContentType($machine_name, $label) {
+    // Create a content type.
+    $content_type = $this->drupalCreateContentType(array(
+      'type' => $machine_name,
+      'name' => $label,
+    ));
+
+    // Enable meta tags for this new content type.
+    metatag_entity_type_enable('node', $machine_name, TRUE);
+
+    return $content_type;
+  }
+
+  /**
+   * Create an admin user for the tests.
+   *
+   * @param array $extra_permissions
+   *   An array of permission strings to be added to the user.
+   *
+   * @return object
+   *   A user object.
+   */
+  function createAdminUser($extra_permissions = array()) {
+    $permissions = array(
+      // Basic permissions for the module.
+      'administer meta tags',
+      'edit meta tags',
+
+      // General admin access.
+      'access administration pages',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    return $this->drupalCreateUser(array_merge($permissions, $extra_permissions));
+  }
+
+  /**
+   * Create a normal user for the tests.
+   *
+   * @param array $extra_permissions
+   *   An array of permission strings to be added to the user.
+   *
+   * @return object
+   *   A user object.
+   */
+  function createUser($extra_permissions) {
+    // Basic permissions for the module.
+    $permissions = array(
+      'edit meta tags',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    return $this->drupalCreateUser(array_merge($permissions, $extra_permissions));
+  }
+
+  /**
+   * Returns a new vocabulary with random properties.
+   *
+   * @param $vocab_name
+   *   If empty a random string will be used.
+   * @param $content_type
+   *   Any content types listed will have a Taxonomy Term reference field added
+   *   that points to the new vocabulary.
+   *
+   * @return object
+   *   A vocabulary object.
+   */
+  function createVocabulary($vocab_name = NULL, $content_type = NULL) {
+    if (empty($vocab_name)) {
+      $vocab_name = $this->randomName();
+    }
+
+    // Create a vocabulary.
+    $vocabulary = new stdClass();
+    $vocabulary->name = $vocab_name;
+    $vocabulary->description = $vocab_name;
+    $vocabulary->machine_name = drupal_strtolower($vocab_name);
+    $vocabulary->help = '';
+    $vocabulary->weight = mt_rand(0, 10);
+    if (!empty($content_type)) {
+      $vocabulary->nodes = array($content_type => $content_type);
+    }
+    taxonomy_vocabulary_save($vocabulary);
+
+    // Enable meta tags for this new vocabulary.
+    metatag_entity_type_enable('taxonomy_term', $vocab_name, TRUE);
+
+    return $vocabulary;
+  }
+
+  /**
+   * Returns a new taxonomy term in a specific vocabulary.
+   *
+   * @param object $vocabulary
+   *   The vocabulary to add the term to.
+   * @param string $term_name
+   *   The name to use for the new vocabulary. If none is provided one will be
+   *   generated randomly.
+   *
+   * @return object
+   *   A taxonomy term object.
+   */
+  function createTerm($vocabulary, $term_name = NULL) {
+    if (empty($term_name)) {
+      $term_name = $this->randomName();
+    }
+
+    // Create an object to save.
+    $term = new stdClass();
+    $term->name = $term_name;
+    $term->description = $term_name;
+    // Use the first available text format.
+    $term->format = db_query_range('SELECT format FROM {filter_format}', 0, 1)->fetchField();
+    $term->vid = $vocabulary->vid;
+
+    // Save the term.
+    taxonomy_term_save($term);
+
+    return $term;
+  }
+
+  /**
+   * Return an list of default values.
+   *
+   * This should cover all of the default meta tags provided for a test:foo
+   * entity.
+   *
+   * @todo Expand to cover more meta tags.
+   *
+   * @see metatag_test_metatag_config_default()
+   */
+  function getTestDefaults() {
+    return array(
+      // Basic meta tags.
+      'title' => array('value' => 'Test altered title'),
+      'description' => array('value' => 'Test foo description'),
+      'abstract' => array('value' => 'Test foo abstract'),
+      // 'keywords' => array('value' => ''),
+
+      // Advanced meta tags.
+      // 'robots' => array('value' => ''),
+      // 'news_keywords' => array('value' => ''),
+      // 'standout' => array('value' => ''),
+      // 'robots' => array('value' => ''),
+      // 'standout' => array('value' => ''),
+      'generator' => array('value' => 'Drupal 7 (http://drupal.org)'),
+      // 'standout' => array('value' => ''),
+      // 'image_src' => array('value' => ''),
+      'canonical' => array('value' => '[current-page:url:absolute]'),
+      'shortlink' => array('value' => '[current-page:url:unaliased]'),
+      // 'publisher' => array('value' => ''),
+      // 'author' => array('value' => ''),
+      // 'original-source' => array('value' => ''),
+      // 'revisit-after' => array('value' => ''),
+      // 'content-language' => array('value' => ''),'
+    );
+  }
+
+  /**
+   * Add a locale to the site.
+   *
+   * This assumes the Locale module is enabled.
+   */
+  public function addSiteLanguage($langcode) {
+    // Load the language-add page.
+    $this->drupalGet('admin/config/regional/language/add');
+    $this->assertResponse(200, 'Loaded the language-add admin page.');
+
+    // Submit the language-add form.
+    $args = array(
+      'langcode' => $langcode,
+    );
+    $this->drupalPost(NULL, $args, t('Add language'));
+    $this->assertResponse(200);
+
+    // Verify that the browser was returned to the main languages admin page.
+    $this->assertEqual($this->getUrl(), url('admin/config/regional/language', array('absolute' => TRUE)), 'Redirected back to the main languages admin page.');
+
+    // Clear the language list cache so it can be reloaded.
+    drupal_static_reset('language_list');
+
+    // Get all language definitions.
+    $languages = language_list();
+    $language = $languages[$langcode]->name;
+    $this->assertText(strip_tags(t('The language %language has been created and can now be used. More information is available on the <a href="@locale-help">help screen</a>.', array('%language' => t($language), '@locale-help' => url('admin/help/locale')))), 'A new language has been added.');
+  }
+
+  /**
+   * Set up a basic starting point for the locales.
+   *
+   * This assumes the Locale module is enabled. This also must be done before
+   * other user accounts are logged in.
+   *
+   * @param array $locales
+   *   A list of locales to be enabled, in langcode format.
+   */
+  public function setupLocales(array $locales = array()) {
+    // If no locales were requested, add Spanish and French.
+    if (empty($locales)) {
+      $locales[] = 'es';
+      $locales[] = 'fr';
+    }
+
+    // Log in as an admin user with privs to just set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      'access administration pages',
+    );
+    $admin_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($admin_user);
+
+    // Load the admin page, just to have a point of reference.
+    $this->drupalGet('admin');
+    $this->assertResponse(200, 'Loaded the main admin page.');
+
+    // Identify the site's default language.
+    $default_language = language_default('language');
+
+    // Add the locales.
+    foreach ($locales as $langcode) {
+      // Don't create the default language, it's already present.
+      if ($langcode != $default_language) {
+        $this->addSiteLanguage($langcode);
+      }
+    }
+
+    // Enable URL language detection and selection.
+    $this->drupalGet('admin/config/regional/language/configure');
+    $this->assertResponse(200);
+    $edit = array(
+      'language[enabled][locale-url]' => TRUE,
+    );
+    // Also enable path handling for Entity Translation if it is installed.
+    if (module_exists('entity_translation')) {
+      $edit['language_content[enabled][locale-url]'] = TRUE;
+    }
+    $this->drupalPost(NULL, $edit, t('Save settings'));
+    $this->assertResponse(200);
+
+    // Once all the setup is done, log out the user.
+    $this->drupalLogout();
+  }
+
+  /**
+   * Get the {locales_source} lid value for a specific context.
+   *
+   * @param string $context
+   *   The context string to search for.
+   * @param string $textgroup
+   *   This string's textgroup; defaults to 'metatag'.
+   *
+   * @return integer
+   *   The {locales_source}.lid value for this string.
+   */
+  function getTranslationLidByContext($context, $textgroup = 'metatag') {
+    // Extra debug output.
+    $this->debugLocalesSourcesByContext($context);
+
+    // Look for the string that's actually being requested.
+    return (int) db_query("SELECT lid
+      FROM {locales_source}
+      WHERE textgroup = :textgroup
+      AND context = :context",
+      array(
+        ':textgroup' => $textgroup,
+        ':context' => $context,
+      ))
+      ->fetchField();
+  }
+
+  /**
+   * Get the {locales_source} lid value for a specific source.
+   *
+   * @param string $string
+   *   The translation string to search for.
+   * @param string $textgroup
+   *   This string's textgroup; defaults to 'metatag'.
+   *
+   * @return integer
+   *   The {locales_source}.lid value for this string.
+   */
+  function getTranslationLidBySource($string, $textgroup = 'metatag') {
+    // Extra debug output.
+    $this->debugLocalesSourcesByContext('', $textgroup);
+
+    // Look for the string that's actually being requested.
+    return (int) db_query("SELECT lid
+      FROM {locales_source}
+      WHERE textgroup = :textgroup
+      AND source = :source",
+      array(
+        ':textgroup' => $textgroup,
+        ':source' => $string,
+      ))
+      ->fetchField();
+  }
+
+  /**
+   * Get the {locales_source} lid values for a specific context.
+   *
+   * @param string $context
+   *   The context string to search for.
+   * @param string $textgroup
+   *   This string's textgroup; defaults to 'metatag'.
+   *
+   * @return integer
+   *   The {locales_source}.lid value for this string.
+   */
+  function getTranslationsByContext($context, $textgroup = 'metatag') {
+    return db_query("SELECT lid
+      FROM {locales_source}
+      WHERE textgroup = :textgroup
+      AND context = :context",
+      array(
+        ':textgroup' => $textgroup,
+        ':context' => $context,
+      ))
+      ->fetchCol();
+  }
+
+  /**
+   * Generate a debug dump of the {locales_source} records for a specific context.
+   *
+   * @param string $context
+   *   The translation context to search against.
+   * @param string $textgroup
+   *   This string's textgroup; defaults to 'metatag'.
+   */
+  function debugLocalesSourcesByContext($context, $textgroup = 'metatag') {
+    // Get a dump of all i18n strings for Metatag.
+    $records = db_query("SELECT lid, location, textgroup, source, context, version
+      FROM {locales_source}
+      WHERE textgroup = :textgroup",
+      array(
+        ':textgroup' => $textgroup,
+      ))
+      ->fetchAllAssoc('lid');
+    foreach ($records as $key => $record) {
+      $records[$key] = (array) $record;
+    }
+    $args = array(
+      'caption' => 'i18n source check for . ' . $context,
+      'header' => array(
+        'lid',
+        'location',
+        'textgroup',
+        'source',
+        'context',
+        'version',
+      ),
+      'rows' => $records,
+    );
+    $this->verbose(theme('table', $args));
+  }
+
+  /**
+   * Save a {locales_target} translation string to the database.
+   *
+   * @param int $lid
+   *   The {locales_source}.lid primary key.
+   * @param string $context
+   *   The {locales_source}.context value for this string.
+   * @param string $langcode
+   *   The language the string is being translated into.
+   * @param string $string_source
+   *   The string that is being translated.
+   * @param string $string_target
+   *   The destination string.
+   */
+  function saveTranslationString($lid, $context, $langcode, $string_source, $string_target) {
+    // Load the translation page for the front page's title tag.
+    $this->drupalGet('admin/config/regional/translate/edit/' . $lid);
+    $this->assertResponse(200, 'Loaded the front page title tag string translation page.');
+    $this->assertEqual($this->getUrl(), url('admin/config/regional/translate/edit/' . $lid, array('absolute' => TRUE)));
+
+    // Confirm that the permission-check text is not found.
+    $this->assertNoText(t('This is a user-defined string. You are not allowed to translate these strings.'));
+
+    // Look for the existing string. The string gets mungled by the Locale
+    // module, so need to replicate its behaviour.
+    $this->assertText(check_plain(wordwrap($string_source, 0)));
+
+    // Look for the context value; the context value is empty for all default
+    // i.e. interface strings, so don't test this when the context is empty.
+    if (!empty($context)) {
+      $this->assertText($context);
+    }
+
+    // Confirm that the destination strings exist.
+    $source_locale = language_default('language');
+    if (function_exists('i18n_string_source_language')) {
+      $source_locale = i18n_string_source_language();
+    }
+    if ($source_locale != 'en') {
+      $this->assertField('translations[en]', 'Found the English translation string field.');
+    }
+    if ($source_locale != 'fr') {
+      $this->assertField('translations[fr]', 'Found the French translation string field.');
+    }
+    if ($source_locale != 'es') {
+      $this->assertField('translations[es]', 'Found the Spanish translation string field.');
+    }
+
+    // Translate the string.
+    $edit = array(
+      "translations[{$langcode}]" => $string_target,
+    );
+    $this->drupalPost(NULL, $edit, t('Save translations'));
+    $this->assertResponse(200);
+
+    // Confirm the save worked.
+    $this->assertText(t('The string has been saved.'));
+    $this->assertEqual($this->getUrl(), url('admin/config/regional/translate/translate', array('absolute' => TRUE)));
+
+    // Debug output.
+    $this->debugLocalesTargetsByContext($context);
+
+    // Clear the Metatag caches.
+    metatag_flush_caches();
+  }
+
+  /**
+   * Generate a debug dump of the {locales_target} records for a specific context.
+   *
+   * @param string $context
+   *   The translation context to search against.
+   */
+  function debugLocalesTargetsByContext($context) {
+    // , lt.i18n_status
+    $records = db_query("SELECT lt.lid, lt.translation, lt.language, lt.plid, lt.plural
+      FROM {locales_target} lt
+        INNER JOIN {locales_source} ls
+          ON lt.lid = ls.lid
+      WHERE ls.textgroup = 'metatag'
+        AND ls.context = :context",
+      array(':context' => $context))
+      ->fetchAllAssoc('lid');
+    foreach ($records as $key => $record) {
+      $records[$key] = (array) $record;
+    }
+    $args = array(
+      'caption' => 'Locale target check for . ' . $context,
+      'header' => array(
+        'lid',
+        'translation',
+        'language',
+        'plid',
+        'plural',
+        // 'i18n_status',
+      ),
+      'rows' => $records,
+    );
+    $this->verbose(theme('table', $args));
+  }
+
+  /**
+   * Creates an object which can be used for generating and checking behavior.
+   *
+   * @param string $identifier
+   *   The machine name to identify this object in source code.
+   * @param string $path
+   *   Path where generate metatags.
+   *
+   * @return object
+   *   A mapping object.
+   */
+  function createTestObject($identifier, $path) {
+    $test_object = new stdClass();
+    $test_object->name = $identifier;
+    $test_object->path = $path;
+    $test_object->title = "My $identifier title";
+    $test_object->description = "My $identifier description";
+    $test_object->abstract = "My $identifier abstract";
+    $test_object->keywords = "My $identifier keywords";
+
+    return $test_object;
+  }
+
+  /**
+   * Generates meta tags by path from a test_object.
+   *
+   * @return $test_object
+   *   Metatag mapping object.
+   */
+  function generateByPathConfig($test_object) {
+    // Verify the "add context" page works.
+    $this->drupalGet('admin/config/search/metatags/context');
+    $this->assertResponse(200);
+    $this->assertText(t('Add a meta tag by path'));
+
+    // Verify the "add context" page works.
+    $this->drupalGet('admin/config/search/metatags/context/add');
+    $this->assertResponse(200);
+    $this->assertText(t('The unique ID for this metatag path context rule. This must contain only lower case letters, numbers and underscores.'));
+
+    // Add new Metatag object for this configuration.
+    $values = array(
+      'name' => $test_object->name,
+    );
+
+    $this->drupalPost('admin/config/search/metatags/context/add', $values, t('Add and configure'));
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Edits meta tags by path from a test_object.
+   *
+   * @return $test_object
+   *   Metatag mapping object.
+   */
+  function editByPathConfig($test_object) {
+    $edit = array(
+      'paths' => $test_object->path,
+      'metatags[und][title][value]' => $test_object->title,
+      'metatags[und][description][value]' => $test_object->description,
+      'metatags[und][abstract][value]' => $test_object->abstract,
+      'metatags[und][keywords][value]' => $test_object->keywords,
+    );
+    $this->drupalPost('admin/config/search/metatags/context/' . $test_object->name, $edit, t('Save'));
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Checks if meta tags have been added correctly from a test_object.
+   *
+   * @return $test_object
+   *   Metatag mapping object.
+   */
+  function checkByPathConfig($test_object) {
+    $this->drupalGet($test_object->path);
+    $this->assertResponse(200);
+
+    // Manually test the page title.
+    if (!empty($test_object->title)) {
+      $this->assertTitle($test_object->title, 'Title found in ' . $test_object->path);
+    }
+
+    // Test the other meta tags.
+    $tags = array('description', 'abstract', 'keywords');
+    foreach ($tags as $tag) {
+      if (!empty($test_object->{$tag})) {
+        $this->assertRaw($test_object->{$tag}, $tag . ' found in ' . $test_object->path);
+      }
+      else {
+        $this->assertNoRaw('<meta name="' . $tag, $tag . ' not found in ' . $test_object->path);
+      }
+    }
+  }
+
+
+  /**
+   * Check the translation page for a specific string.
+   *
+   * @param string $string
+   *   The source string to search for.
+   * @param string $context
+   *   The i18n string context to check for.
+   * @param boolean $assert_true
+   *   By default strings are expeted to be found. If the string is not expected
+   *   to be translatable yet then pass in FALSE.
+   */
+  function searchTranslationPage($string, $context, $assert_true = TRUE) {
+    // Load the translation page.
+    $search = array(
+      'string' => $string,
+      'language' => 'all',
+      'translation' => 'all',
+      'group' => 'metatag',
+    );
+    $this->drupalPost('admin/config/regional/translate/translate', $search, t('Filter'));
+    $this->assertResponse(200, 'Loaded the translation admin page.');
+
+    // Confirm there are strings to translate.
+    $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
+    $count = count($xpath);
+
+    // If the string is expected, then confirm that there are strings to be
+    // found.
+    if ($assert_true) {
+      $this->assertTrue($count >= 1, 'Found Metatag strings to translate.');
+      $this->assertNoText(t('No strings available.'));
+      $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
+      $this->verbose("Found {$count} items to translate.");
+      if (!empty($string)) {
+        $this->assertText($context);
+        $this->assertText('metatag:' . $context);
+      }
+    }
+    // If the string is not supposed to be found, then confirm the context is
+    // not available.
+    else {
+      $this->assertNoText($context);
+      $this->assertNoText('metatag:' . $context);
+    }
+  }
+
+  /**
+   * Create an image of a specific size & type.
+   *
+   * @param string $image_size
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string $format
+   *   The image format to use, defaults to 'png'.
+   *
+   * @return string
+   *   The URL to a public file.
+   */
+  function generateImage($image_size = '200x200', $format = 'png') {
+    // Only proceed if the Devel Generate module is installed.
+    if (module_exists('devel_generate')) {
+      // Load the Devel Generate image generator logic.
+      module_load_include('inc', 'devel_generate', 'image.devel_generate');
+
+      $image_format = 'png';
+      $image_size = '200x200';
+      $temp_image = devel_generate_image($image_format, $image_size, $image_size);
+
+      return file_unmanaged_move($temp_image, 'public://');
+    }
+    else {
+      $this->error('The Devel Generate module is not enabled, it must be added to the $modules array in the setUp() method for this test class.');
+    }
+  }
+
+  /**
+   * Create an image file object of a specific size & type.
+   *
+   * @param string
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string
+   *   The image format to use, defaults to 'png'.
+   *
+   * @return object
+   *   The file object for the generated image.
+   */
+  function generateImageFile($image_size = '200x200', $format = 'png') {
+    // Generate a test image.
+    $image_uri = $this->generateImage();
+
+    // Create a file object for this image.
+    $file = new StdClass();
+    $file->fid = NULL;
+    $file->uid = 1;
+    $file->uri = $image_uri;
+    $file->filemime = file_get_mimetype($image_uri);
+    $file->filesize = filesize($image_uri);
+    $file->status = 1;
+    $file->timestamp = filemtime($image_uri);
+    $saved_file = file_save($file);
+
+    return $saved_file;
+  }
+
+  /**
+   * Verify a user entity's meta tags load correctly.
+   *
+   * @param object $user
+   *   A user object that is to be tested.
+   */
+  function assertUserEntityTags($user) {
+    // Load the user's profile page.
+    $this->drupalGet('user/' . $user->uid);
+    $this->assertResponse(200);
+
+    // Verify the title is using the custom default for this vocabulary.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $user->name . " ponies");
+  }
+
+  /**
+   * Generate a string that is allowable as a machine name.
+   *
+   * @param int $length
+   *   How long the machine name will be, defaults to eight characters.
+   *
+   * @return string
+   *   A string that contains lowercase letters and numbers, with a letter as
+   *   the first character.
+   */
+  function randomMachineName($length = 8) {
+    return strtolower($this->randomName($length));
+  }
+
+}

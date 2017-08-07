@@ -1,0 +1,259 @@
+<?php
+/**
+ * @file
+ * Code for the Block Section feature.
+ */
+
+include_once 'cu_block_section.features.inc';
+
+function cu_block_section_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_block_section');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/*
+ * Implements hook_page_alter().
+ * adds custom css.
+ *
+ */
+
+function cu_block_section_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_block_section') . '/css/cu-block-section.css');
+
+  drupal_add_js(drupal_get_path('module', 'cu_block_section') . '/js/cu-block-section.js');
+  drupal_add_js(drupal_get_path('module', 'cu_block_section') . '/js/parallaxie.js');
+}
+
+/*
+ * renders beans as blocks so block titles, contextual links, etc are included.
+ *
+ */
+
+function _cu_block_section_rerender($item) {
+  $output = array();
+    $bean = $item['entity'];
+    $block = array();
+    if (bean_access('view', $bean)) {
+      // Most of this taken from bean_block_view().
+      $block['content'] = $bean->view($bean->view_mode);
+      $block['subject'] = $bean->title;
+      $block['#theme_wrappers'] = array('block');
+      $block['#block'] = (object) array(
+        'region' => 'block_section',
+        'module' => 'bean',
+        'delta' => $bean->delta,
+        'subject' => $bean->title,
+      );
+
+      if (module_exists('contextual')) {
+        $block['#contextual_links']['bean'] = array(
+          'block',
+          array($bean->Identifier()),
+        );
+        $block['#contextual_links']['block'] = array(
+          'admin/structure/block/manage',
+          array($block['#block']->module, $block['#block']->delta),
+        );
+
+        // If it's a quicktab block, add an additional contextual link
+        // and remove bean edit.
+        if ($bean->type == 'quicktab') {
+          $block['#contextual_links']['quicktabs'] = array(
+            'admin/structure/quicktabs/manage',
+            array($bean->delta),
+          );
+          unset($block['#contextual_links']['bean']);
+        }
+      }
+    }
+    $output[$bean->bid] = $block;
+  return $output;
+}
+
+function cu_block_section_breakpoints() {
+  $queries = array();
+  $queries['tablet'] = 'screen and (min-width:768px) and (max-width:1000px)';
+  $queries['desktop'] = 'screen and (min-width:1000px)';
+  return $queries;
+}
+
+/*
+ * Implements hook_preprocess_entity().
+ * prepares beans for tpl output.
+ *
+ */
+function cu_block_section_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  $output = '';
+  // Only preprocess block section beans.
+  if ($entity_type == 'bean' && $bundle == 'block_section') {
+    foreach ($vars['bean']->field_blocks_section_blocks[LANGUAGE_NONE] as $item) {
+      $bean = _cu_block_section_rerender($item);
+      $output .= render($bean);
+    }
+    $vars['content']['blocks'] = $output;
+
+    // Add paddings for responsive output
+    $padding['desktop'] = $vars['field_block_section_padding'][0]['safe_value'];
+    $padding['tablet'] = $vars['field_block_section_tablet_pad'][0]['safe_value'];
+    $padding['mobile'] = $vars['field_block_section_mobile_pad'][0]['safe_value'];
+
+
+    // Render responsive sized images
+    if (!empty($vars['content']['field_block_section_bg_image'])) {
+      $image = render($vars['content']['field_block_section_bg_image']);
+      $vars['image'] = trim(preg_replace('/\s+/', ' ', $image));
+
+      $dimensions = array();
+      $dimensions['height'] = $vars['content']['field_block_section_bg_image']['#items'][0]['height'];
+      $dimensions['width'] = $vars['content']['field_block_section_bg_image']['#items'][0]['width'];
+      // Render image for large displays
+      $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'hero';
+      $image_large = render($vars['content']['field_block_section_bg_image']);
+      $vars['image_large'] = trim(preg_replace('/\s+/', ' ', $image_large));
+
+      $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'large';
+      $image_medium = render($vars['content']['field_block_section_bg_image']);
+      $vars['image_medium'] = trim(preg_replace('/\s+/', ' ', $image_medium));
+
+      $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'medium';
+      $image_small = render($vars['content']['field_block_section_bg_image']);
+      $vars['image_small'] = trim(preg_replace('/\s+/', ' ', $image_small));
+    }
+    // Render image for medium displays
+    if (!empty($vars['content']['field_block_section_bg_image_t'])) {
+      $vars['content']['field_block_section_bg_image_t'][0]['#image_style'] = 'large';
+      $image_medium = render($vars['content']['field_block_section_bg_image_t']);
+      $vars['image_medium'] = trim(preg_replace('/\s+/', ' ', $image_medium));
+    }
+
+    // Render image for small displays
+    if (!empty($vars['content']['field_block_section_bg_image_m'])) {
+      $vars['content']['field_block_section_bg_image_m'][0]['#image_style'] = 'medium';
+      $image_small = render($vars['content']['field_block_section_bg_image_m']);
+      $vars['image_small'] = trim(preg_replace('/\s+/', ' ', $image_small));
+    }
+    // Background effect
+    $block_section_bg_effect = !empty($vars['content']['field_block_section_bg_effect']) ? 'block-section-bg-effect-' . $vars['content']['field_block_section_bg_effect'][0]['#markup'] : 'block-section-bg-effect-fixed';
+
+    // CSS Classes
+    $classes = array();
+    $vars['parallax_data'] = '';
+    $classes[] = 'block-section';
+    $classes[] = 'block-section-text-' . $vars['field_hero_unit_text_color'][0]['value'];
+    $classes[] = 'block-section-background-' . $vars['field_hero_unit_bg_color'][0]['value'];
+    $classes[] = !empty($vars['field_block_section_bg_effect']) ? 'block-section-bg-effect-' . $vars['field_block_section_bg_effect'][0]['value'] : 'block-section-bg-effect-fixed';
+
+    // Overlay
+    if (!empty($vars['field_hero_unit_overlay']) && $vars['field_hero_unit_overlay'][0]['value']) {
+      $classes[] = 'block-section-overlay';
+    }
+    // Parallax
+    if (!empty($vars['field_block_section_bg_effect']) && $vars['field_block_section_bg_effect'][0]['value'] == 'parallax') {
+      $classes[] = 'parallax-window';
+      $vars['parallax_data'] = 'data-parallax="scroll" data-image-src="' . $image_large . '" data-z-index="0" data-naturalWidth="' . $dimensions['width'] . '" data-naturalHeight="' . $dimensions['height'] . '"';
+    }
+    else if (!empty($vars['field_block_section_bg_effect']) && $vars['field_block_section_bg_effect'][0]['value'] == 'scroll') {
+      $classes[] = 'parallax-window';
+      $vars['parallax_data'] = "data-parallaxie='{\"speed\": 1}'";
+    }
+    $vars['block_section_classes'] = join(' ', $classes);
+
+
+
+
+
+    if (theme_get_setting('alpha_responsive', variable_get('theme_default'))) {
+      $queries = cu_block_section_breakpoints();
+
+      drupal_add_css(
+        '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['mobile'] . '; }',
+        array(
+          'group' => CSS_THEME,
+          'type' => 'inline',
+          'media' => 'screen',
+          'preprocess' => FALSE,
+          'weight' => '9999',
+        )
+      );
+      drupal_add_css(
+        '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['tablet'] . '; }',
+        array(
+          'group' => CSS_THEME,
+          'type' => 'inline',
+          'media' => $queries['tablet'],
+          'preprocess' => FALSE,
+          'weight' => '9999',
+        )
+      );
+      drupal_add_css(
+        '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['desktop'] . '; }',
+        array(
+          'group' => CSS_THEME,
+          'type' => 'inline',
+          'media' => $queries['desktop'],
+          'preprocess' => FALSE,
+          'weight' => '9999',
+        )
+      );
+
+
+
+    } else {
+      drupal_add_css(
+        '#block-section-' . $vars['bean']->bid . ' .block-section-content { margin:' . $padding['desktop'] . '; }',
+        array(
+          'group' => CSS_THEME,
+          'type' => 'inline',
+          'media' => 'screen',
+          'preprocess' => FALSE,
+          'weight' => '9999',
+        )
+      );
+    }
+  }
+}
+
+
+/*
+ * Implements hook_form_alter().
+ * Hides mobile and tablet padding fields if site is not repsonsive
+ *
+ */
+function cu_block_section_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#bundle'] == 'block_section') {
+    if (!theme_get_setting('alpha_responsive', variable_get('theme_default'))) {
+      $form['field_block_section_tablet_pad']['#access'] = FALSE;
+      $form['field_block_section_mobile_pad']['#access'] = FALSE;
+    }
+    if (empty($form['field_block_section_bg_effect'][LANGUAGE_NONE]['#default_value'])) {
+      $form['field_block_section_bg_effect'][LANGUAGE_NONE]['#default_value'] = 'fixed';
+    }
+  }
+}
+
+function _block_section_backgrounds() {
+  return array(
+    'hidden' => 'Hidden',
+    'visible' => 'Transparent',
+    'solid' => 'Solid',
+  );
+}
+
+function cu_block_section_bg_effect_options() {
+  return array(
+    'fixed' => 'Fixed',
+    'scroll' => 'Scroll',
+    'parallax' => 'Parallax',
+  );
+}

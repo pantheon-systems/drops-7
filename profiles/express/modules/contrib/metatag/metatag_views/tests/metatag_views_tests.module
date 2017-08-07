@@ -1,0 +1,12 @@
+<?php
+/**
+ * @file
+ * Primary hook implementations.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function metatag_views_tests_views_api($module = NULL, $api = NULL) {
+  return array('api' => '3.0');
+}

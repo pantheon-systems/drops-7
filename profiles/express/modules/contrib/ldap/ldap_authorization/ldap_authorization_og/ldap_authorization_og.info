@@ -1,0 +1,21 @@
+
+name = LDAP Authorization - OG (Organic Groups)
+description = "Implements LDAP authorization for Organic Groups"
+package = "Lightweight Directory Access Protocol"
+dependencies[] = ldap_authorization
+dependencies[] = og
+core = 7.x
+configure = admin/config/people/ldap_authorization_og
+files[] = LdapAuthorizationConsumerOG.class.php
+files[] = ldap_authorization_og.module
+files[] = ldap_authorization_og.inc
+
+
+core = "7.x"
+
+; Information added by Drupal.org packaging script on 2017-05-30
+version = "7.x-2.2"
+core = "7.x"
+project = "ldap"
+datestamp = "1496167150"
+

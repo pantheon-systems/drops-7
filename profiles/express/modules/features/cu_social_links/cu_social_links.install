@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_update_N().
+ *
+ * Set social_link_url values to contain 'mailto:' if email type.
+ */
+function cu_social_links_update_7001() {
+  db_query("UPDATE {field_data_field_social_link_url} lu JOIN {field_data_field_social_link_type} lt ON lt.entity_id = lu.entity_id SET lu.field_social_link_url_url = CONCAT('mailto:', lu.field_social_link_url_url) WHERE lt.field_social_link_type_value = 'email' AND lu.field_social_link_url_url NOT LIKE 'mailto:%'");
+}

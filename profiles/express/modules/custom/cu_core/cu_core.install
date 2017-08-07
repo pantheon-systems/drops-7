@@ -1,0 +1,871 @@
+<?php
+
+/**
+ * Implemenets hook_enable().
+ */
+function cu_core_enable() {
+
+}
+
+/**
+ * Implements hook_install().
+ */
+function cu_core_install() {
+
+  theme_enable(array(
+    'cuhighlight',
+    'cuivory',
+    'culayers',
+    'cuminimal',
+    'cumodern',
+    'curise',
+    'cushadow',
+    'cusimple',
+    'cuspirit',
+    'cuswatch',
+    'cutradition',
+  ));
+
+  // these modules need to be enabled late in the install process and/or to be ignored by profile_module_manager's report.
+  $module_array = array(
+    'cu_users',
+    'memcache',
+    'varnish'  // Adding caching modules here for changes involving Travis CI testing.
+  );
+
+  module_enable($module_array);
+
+  profile_module_manager_add_to_ignore($module_array);
+
+  // Add blocks shortcut to shortcuts set.
+  $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
+  $shortcut_set->links[] =
+  array(
+    'link_path' => 'admin/content/blocks',
+    'link_title' => st('Blocks'),
+    'weight' => -18,
+  );
+  shortcut_set_save($shortcut_set);
+
+  //set default variables for user_external_invite
+  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'message')) {
+    $spec = array(
+      'type' => 'text',
+      'description' => "Custom message included with invite",
+      'not null' => FALSE,
+    );
+    db_add_field('user_external_invite', 'message', $spec);
+  }
+
+  // Add id and drop mail as primary key.
+  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'id')) {
+    db_drop_primary_key('user_external_invite');
+    $spec = array(
+      'type' => 'serial',
+      'description' => 'Primary key of the Project entity',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+    );
+    db_add_field('user_external_invite', 'id', $spec, array('primary key' => array('id')));
+  }
+
+  // change for #FIT-583 for https://www.drupal.org/node/2172293
+  // Must be set before cu_forms_bundle is enabled
+  variable_set('webform_install_add_body_field', TRUE);
+
+  variable_set('site_name', 'University of Colorado Boulder');
+  variable_set('site_name_1', 'University of Colorado Boulder');
+  variable_set('site_slogan', 'University of Colorado Boulder');
+
+  variable_set('express_help_base_url', 'http://www.colorado.edu/webcentral');
+
+
+  // Set message for when enabling of bundles is turned off.
+  variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');
+
+  // Set default variables for user_external_invite.
+  $site_owner_role = user_role_load_by_name('site_owner');
+  $content_editor_role = user_role_load_by_name('content_editor');
+  $edit_my_content_role = user_role_load_by_name('edit_my_content');
+  $authenticated_user_role = user_role_load_by_name('authenticated user');
+
+    variable_set('securepages_enable', '1');
+  variable_set('securepages_pages', 'node/add*
+node/*/edit
+node/*/delete
+user
+user/*
+admin
+admin/*
+sites/default/files/webform/*');
+
+  variable_set('securepages_roles', array($authenticated_user_role->rid => $authenticated_user_role->rid));
+  variable_set('securepages_secure', '1');
+  variable_set('securepages_switch', TRUE);
+
+  variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
+  variable_set('rave_alerts_check_enable', 1);
+  variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
+  variable_set('rave_alerts_deafult_read_more_url', 'http://alerts.colorado.edu');
+
+  variable_set('user_external_invite_roles', array(
+    $site_owner_role->rid,
+    $content_editor_role->rid,
+    $edit_my_content_role->rid
+  ));
+  variable_set('user_external_invite_days_valid_for', 5);
+
+  variable_set('user_external_invite_invite_template', '[user_external_invite:invite_custom]
+
+You have been invited to join the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
+
+To accept this invitation:
+1) Go to [user_external_invite:invite_link]
+2) Login with your IdentiKey name and password.
+
+Upon completion, you will receive an email confirming your access.
+
+--
+The Web Express Team
+http://www.colorado.edu/webcentral
+websupport@colorado.edu');
+
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following users:
+
+[user_external_invite:invited_emails]
+
+An email invitation has been sent requesting the user to login to [site:url] and accept the invitation. Upon completion, a confirmation email will be sent.
+
+If you did not submit this request or need to modify it, please contact us at websupport@colorado.edu.
+
+--
+The Web Express Team
+http://www.colorado.edu/webcentral
+websupport@colorado.edu');
+
+  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.
+
+Web Central:
+You can use the Web Central website as your main resource for step-by-step tutorials, information on training sessions, and requesting help. http://www.colorado.edu/webcentral
+
+--
+The Web Express Team
+http://www.colorado.edu/webcentral
+websupport@colorado.edu');
+
+  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
+
+To access and edit this site:
+1) Go to [site:login-url]
+2) Login with your IdentiKey name and password.
+
+Web Central:
+You can use the Web Central website as your main resource for step-by-step tutorials, information on training sessions, and requesting help. http://www.colorado.edu/webcentral
+
+--
+The Web Express Team
+http://www.colorado.edu/webcentral
+websupport@colorado.edu');
+
+  // Set the syslog_identity variable to the SID.
+  $cu_sid = variable_get('cu_sid', '');
+  if ($cu_sid) {
+    // Current value
+    $syslog_identity = 'drupal-' . $cu_sid;
+  }
+  else {
+    $syslog_identity = 'drupal-no_sid';
+  }
+  variable_set('syslog_identity', $syslog_identity);
+  // Key for 'LOG_LOCAL0' in the form.
+  variable_set('syslog_facility', '128');
+  variable_set('syslog_format','!base_url|!timestamp|!type|!ip|!request_uri|!referer|!uid|!link|!message');
+
+  // Set variable for disabling certain messages from users.
+  variable_set('disable_messages_ignore_regex', array(
+    '/^Metatag support has been enabled for the .*?$/i',
+    '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
+    '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+    '/^The block System help was assigned to the invalid region help and has been disabled.$/i',
+  ));
+  variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
+You can now .+configure the CAPTCHA module.+ for your site.
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.
+The block System help was assigned to the invalid region help and has been disabled.');
+
+  variable_set('express_layout_node_type_ignore', array('file'));
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 0,))
+  ->execute();
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 1,))
+    ->condition(db_or()
+      ->condition('name', 'medium')
+      ->condition('name', 'small')
+    )
+  ->execute();
+
+  // Disable user 1 & set random name
+  $random_name = 'admin-' . user_password(10);
+
+  // Generate hashed password.
+  $unhashed_pass = user_password(50);
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  $hashed_pass = user_hash_password(trim($unhashed_pass));
+
+  variable_set('user_mail_status_activated_notify ', 0);
+
+  // Set admin user email to something not admin@example.com.
+  $admin_user = user_load(1);
+  $admin_user->mail = 'websupport@colorado.edu';
+  $admin_user->name = $random_name;
+  $admin_user->pass = $hashed_pass;
+  $admin_user->status = 0;
+  user_save($admin_user);
+
+  watchdog('express', 'attempted to disable uid 1');
+
+  variable_set('profile_module_manager_bundle_ignore', array('cu_newsletter_bundle' => 'cu_newsletter_bundle'));
+}
+
+/**
+ * Variable sets for Express transition.
+ */
+function cu_core_update_7001() {
+
+  variable_set('express_help_base_url', 'https://www.colorado.edu/webcentral');
+
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final');
+
+  // Set SEO bundle to be hidden in bundle list form.
+  variable_set('profile_module_manager_bundle_ignore', array('cu_seo_bundle' => 'cu_seo_bundle'));
+  // Set message for when enabling of bundles is turned off.
+  variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');
+
+  // Set variable for disabling certain messages from users.
+  variable_set('disable_messages_ignore_regex', array(
+    '/^Metatag support has been enabled for the .*?$/i',
+    '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
+    '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+  ));
+  variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
+You can now .+configure the CAPTCHA module.+ for your site.
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.');
+}
+
+/**
+ * Express Update 7002.
+ * Removing cu_default_image_style_override and grid_images.
+ * Cleanup sites migrated for Express transition.
+ */
+function cu_core_update_7002() {
+
+  // Disable grid_images, cu_default_image_style_override modules.
+  module_disable(array(
+    'grid_images',
+    'cu_default_image_style_override',
+  ));
+
+  // Uninstall grid_images, cu_default_image_style_override modules.
+  drupal_uninstall_modules(array(
+    'grid_images',
+    'cu_default_image_style_override',
+  ));
+
+  variable_set('express_layout_node_type_ignore', array('file'));
+
+  module_disable(array('diff', 'quicktabs_tabstyles', 'views_ui', 'environment', 'client_ui_control', 'color'));
+
+  module_enable(array('cu_googleanalytics'));
+
+  // Makes sure blocks are set properly on structure/blocks for all new themes
+  // This is also in hook_themes_enabled in express.profile, but some sites may not
+  // have seen express as enabled when new themes were added
+  $query = db_update('block')
+    ->fields(array(
+      'region' => '-1',
+      'status' => '0',
+    ))
+    ->execute();
+  $query = db_update('block')
+    ->fields(array(
+      'region' => 'content',
+      'status' => '1',
+    ))
+    ->condition('delta', 'main')
+    ->execute();
+  $query = db_update('block')
+    ->fields(array(
+      'region' => 'help',
+      'status' => '1',
+    ))
+    ->condition('delta', 'help')
+    ->execute();
+
+  cu_core_revert_features();
+
+  // Run on every update
+  cu_core_inventory_update('7002');
+}
+
+/**
+ * Updates for Express 2.0.1.
+ */
+function cu_core_update_7003() {
+
+  // Uninstall unused modules.
+  drupal_uninstall_modules(array(
+    'cu_block_selector',
+    'cu_transition_express',
+    'overlay',
+  ));
+
+  // Uninstall modules that had dependencies on modules above.
+  drupal_uninstall_modules(array(
+    'cu_transition_fit',
+  ));
+
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache');
+
+  // Run on every update
+  cu_core_inventory_update('7003');
+}
+
+/**
+ * Core CU Redirect module.
+ * Disable, Uninstall More Menus, CU Shortcuts modules.
+ * Remove duplicates in shortcut menu
+ * Express 2.1.0
+ */
+function cu_core_update_7004() {
+  module_enable(array('cu_redirect'));
+  module_disable(array('more_menus', 'cu_shortcuts'));
+  drupal_uninstall_modules(array(
+    'more_menus',
+    'cu_shortcuts',
+  ));
+
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, entityreference, express_layout, cu_ldap, ldap_authentication, ldap_servers');
+
+  // Remove duplicates in shortcut menu
+  $shortcuts = array();
+  $query = db_select('menu_links', 'ml');
+  $query->fields('ml', array('menu_name', 'mlid', 'link_path'));
+  $query->condition('ml.menu_name', 'shortcut-set-1', '=');
+  $results = $query->execute()->fetchAll();
+  foreach ($results as $result) {
+    $shortcuts[$result->link_path][] = $result->mlid;
+  }
+  foreach ($shortcuts as $shortcut) {
+    if (isset($shortcut[1])) {
+      menu_link_delete($shortcut[1]);
+    }
+  }
+
+  // Run on every update
+  cu_core_inventory_update('7004');
+}
+
+/**
+ * Core Update 7005.
+ * Removing cu_livechat module, enabling responsive_preview, reverting features
+ */
+function cu_core_update_7005() {
+  // Disable cu_livechat module.
+  module_disable(array(
+    'cu_livechat',
+  ));
+
+  // Uninstall cu_livechat module.
+  drupal_uninstall_modules(array(
+    'cu_livechat',
+  ));
+
+  module_enable(array('responsive_preview'));
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 0,))
+  ->execute();
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 1,))
+    ->condition(db_or()
+      ->condition('name', 'medium')
+      ->condition('name', 'small')
+    )
+  ->execute();
+
+  cu_core_revert_features();
+
+  // Run on every update
+  cu_core_inventory_update('7005');
+}
+
+/**
+ * Core Update 7006.
+ * Enabling dashboards, reverting features.
+ */
+function cu_core_update_7006() {
+
+  variable_set('express_core_version', 'cu_core');
+
+  module_enable(array('express_dashboards', 'express_dashboard_user', 'context_sitewide_public'));
+
+  cu_core_revert_features();
+
+  // Run on every update
+  cu_core_inventory_update('7006');
+}
+
+/**
+ * Core Update 7007.
+ * Converting Profile Module Manager variable to an array.
+ */
+function cu_core_update_7007() {
+  $ignore_modules = variable_get('profile_module_manager_ignore', array());
+
+  module_disable(array(
+    'cu_cache',
+    'cu_bucket',
+  ));
+
+  drupal_uninstall_modules(array(
+    'cu_cache',
+    'cu_bucket',
+  ));
+
+  // Check to see whether variable is array.
+  // If it is an array, don't do anything.
+  if (!is_array($ignore_modules)) {
+    $ignore_modules = explode(',', $ignore_modules);
+    variable_set('profile_module_manager_ignore', $ignore_modules);
+  }
+
+  // Run on every update
+  cu_core_inventory_update('7007');
+}
+
+/**
+ * Core Update 7008.
+ * Showing SEO dashboard, reverting features.
+ */
+function cu_core_update_7008() {
+  // Set SEO bundle to be hidden in bundle list form.
+  variable_del('profile_module_manager_bundle_ignore');
+
+  cu_core_revert_features();
+
+  // Run on every update
+  cu_core_inventory_update('7008');
+}
+
+/**
+ * Core Update 7009.
+ * Reverting GA codes for sites.
+ */
+function cu_core_update_7009() {
+  if ($ga_codes = variable_get('ga_account', '')) {
+    // Explode string and trim whitespace.
+    $ga_codes = array_map('trim', explode(',', $ga_codes));
+    $js_code = '';
+    foreach ($ga_codes as $key => $code) {
+      $js_code .= format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker@key'});  ga('customTracker@key.send', 'pageview');", array('@ga_account' => $code, '@key' => $key));
+    }
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  }
+  else {
+    variable_set('googleanalytics_codesnippet_after', '');
+  }
+
+  // Run on every update
+  cu_core_inventory_update('7009');
+}
+
+/**
+ * Core Update 7010.
+ * Turn off linkchecker modules for sites without SEO bundle enabled
+ */
+function cu_core_update_7010() {
+
+  // Check if SEO bundle is enabled.
+  $result = db_query("SELECT * FROM {system} s WHERE s.name = 'cu_seo_bundle' AND s.status = 1")->fetchAll();
+
+  // If it isn't enabled, disable SEO-related modules.
+  $modules = array(
+    'metatag',
+    'xmlsitemap',
+    'xmlsitemap_engines',
+    'xmlsitemap_menu',
+    'cu_sitemap',
+    'linkchecker',
+    'linkchecker_bean',
+    'cu_linkchecker',
+    'site_verify',
+    'cu_dashboard_seo',
+  );
+
+  if (empty($result)) {
+    module_disable($modules);
+  }
+
+  // Run on every update
+  cu_core_inventory_update('7010');
+}
+
+/**
+ * Core Update 7011.
+ * Revert features.
+ */
+function cu_core_update_7011() {
+
+  cu_core_revert_features();
+
+  // Run on every update
+  cu_core_inventory_update('7011');
+}
+
+/**
+ * Core Update 7012.
+ * Change user 1 email address.
+ * Add noreqnewpass module.
+ */
+function cu_core_update_7012() {
+
+  $modules = array(
+    'noreqnewpass',
+  );
+  module_enable($modules);
+
+  // Set admin user email to something not admin@example.com.
+  $admin_user = user_load(1);
+  $admin_user->mail = 'websupport@colorado.edu';
+  user_save($admin_user);
+
+  cu_core_inventory_update('7012');
+}
+
+/**
+ * Core Update 7013 for Express 2.2.7
+ * Disable and unistall Moulde Missine Message Fixer.
+ * Revert unprotected Features.
+ */
+function cu_core_update_7013() {
+
+  module_disable(array('module_missing_message_fixer'));
+
+  drupal_uninstall_modules(array('module_missing_message_fixer'));
+
+  cu_core_inventory_update('7013');
+}
+
+/**
+ * Core Update 7014 for Express 2.2.7
+ * Enable rave_alters module.
+ * Revert unprotected Features.
+ */
+function cu_core_update_7014() {
+
+  module_enable(array('rave_alerts'));
+
+  variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
+  variable_set('rave_alerts_deafult_read_more_url', 'http://alerts.colorado.edu');
+  variable_set('rave_alerts_check_enable', 0);
+  variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
+
+  cu_core_revert_features();
+
+  cu_core_inventory_update('7014');
+}
+
+
+
+/**
+ * Core Update 7015 for Express 2.2.8
+ * Add webform files to securepages paths.
+ */
+function cu_core_update_7015() {
+  $pages = variable_get(securepages_pages);
+  // Need this awkward two line thing to get the var right on the form.
+  $pages = $pages . '
+sites/default/files/webform/*';
+  variable_set('securepages_pages', $pages);
+
+  cu_core_inventory_update('7015');
+}
+
+/**
+ * Core Update 7016 for Express 2.2.7.
+ *
+ * Rename block_styles to cu_block_theme module.
+ * Enable cu_block_theme, blank out block_styles.
+ * Disable, uninstall grid_size_blocks module, delete related variables.
+ */
+function cu_core_update_7016() {
+  module_enable(array('cu_block_theme'));
+
+  if (module_exists('block_styles')) {
+    module_disable(array('block_styles'));
+    drupal_uninstall_modules(array('block_styles'));
+  }
+  if (module_exists('grid_size_blocks')) {
+    module_disable(array('grid_size_blocks'));
+    drupal_uninstall_modules(array('grid_size_blocks'));
+  }
+  variable_del('grid_size_blocks');
+  variable_del('grid_size_clear');
+  variable_del('grid_size_omega');
+}
+
+/**
+ * Core Update 7017 for Express 2.3.0.
+ *
+ * Hide cu_newsletter from most users.
+ */
+function cu_core_update_7017() {
+  // Set SEO bundle to be hidden in bundle list form.
+  variable_set('profile_module_manager_bundle_ignore', array('cu_newsletter_bundle' => 'cu_newsletter_bundle'));
+
+  cu_core_revert_features();
+
+  cu_core_inventory_update('7017');
+}
+
+/**
+ * Core Update 7017 for Express 2.3.0.
+ *
+ * Add to disabled messages array to hide message displayed to user after enabling newsletter bundle.
+ */
+function cu_core_update_7018() {
+
+  // It looks like the original string of messages was truncated to one line so
+  // I am adding all disabled messages once again in addition to new message.
+  variable_set('disable_messages_ignore_regex', array(
+    '/^Metatag support has been enabled for the .*?$/i',
+    '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
+    '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+    '/^The block System help was assigned to the invalid region help and has been disabled.$/i'
+  ));
+
+  variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
+You can now .+configure the CAPTCHA module.+ for your site.
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.
+The block System help was assigned to the invalid region help and has been disabled.');
+}
+
+/**
+ * Core Update 7019 for Express 2.3.1.
+ *
+ * Disable old inventory modules and enable Atlas modules.
+ */
+function cu_core_update_7019() {
+
+  if (module_exists('cu_inventory_stats')) {
+    module_disable(array('cu_inventory_stats'));
+    drupal_uninstall_modules(array('cu_inventory_stats'));
+  }
+
+  if (module_exists('cu_inventory')) {
+    module_disable(array('cu_inventory'));
+    drupal_uninstall_modules(array('cu_inventory'));
+  }
+
+  module_enable(array('cu_atlas'));
+
+  cu_core_revert_features();
+}
+
+/**
+ * Core Update 7021 for Express 2.4.0.
+ *
+ * Revert cu_block_theme feature.
+ */
+function cu_core_update_7021() {
+  cu_core_revert_features(array('cu_block_theme' => 'cu_block_theme'));
+}
+
+/**
+ * Core Update 7022 for Express 2.4.0.
+ *
+ * Rebuild perms for varnish button.
+ */
+function cu_core_update_7022() {
+  secure_permissions_rebuild();
+}
+
+/**
+ * Enable cu_profile_module_manager module
+ */
+function cu_core_update_7023() {
+  module_enable(array('cu_profile_module_manager'));
+}
+
+/**
+ * Revert Features.
+ */
+function cu_core_update_7024() {
+  cu_core_revert_features();
+}
+
+/**
+ * Express 2.5.0 Update.
+ *
+ * Revert All Features.
+ */
+function cu_core_update_7025() {
+  cu_core_revert_features();
+}
+
+/**
+ * Express 2.5.3 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7026() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.4 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7027() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.5 Update.
+ *
+ * Revert LDAP Feature.
+ */
+function cu_core_update_7028() {
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap'));
+}
+
+/**
+ * Express 2.5.6 Update.
+ *
+ * Enable Realname. Revert LDAP and People Administration Override Features.
+ */
+function cu_core_update_7029() {
+  module_enable(array('realname'));
+  cu_core_revert_features(array('cu_ldap' => 'cu_ldap', 'cu_people_administration_override' => 'cu_people_administration_override'));
+  cu_core_scramble_admin();
+}
+
+/**
+ * Express 2.5.6 Update.
+ *
+ * Attempt to set Realname for all users in authoring roles.
+ */
+function cu_core_update_7030() {
+
+  $roles = array('content_editor', 'site_owner', 'edit_my_content');
+  $query = db_select('users_roles', 'ur');
+  $query->join('users', 'u', 'u.uid = ur.uid');
+  $query->join('role', 'r', 'r.rid = ur.rid');
+  $query->fields('u',array('name'));
+  $query->condition('r.name', $roles, 'IN');
+  $users = $query->execute();
+
+  foreach ($users as $user) {
+
+    //skip osr test users?
+    $ldap = cu_ldap_lookup($user->name);
+    $account = user_load_by_name($user->name);
+
+    //Check to see that LDAP is returned a value.  There are no display names for acconts like OSR-TEST-OWNER
+    if (isset($ldap[0]) && ($account->field_ldap_display_name != $ldap[0]['displayname'][0] || $account->field_ldap_primary_affiliation != $ldap[0]['edupersonprimaryaffiliation'][0])) {
+      // update account fields
+      $edit = array();
+      $edit['field_ldap_display_name'][LANGUAGE_NONE][0]['value'] = $ldap[0]['displayname'][0];
+      $edit['field_ldap_primary_affiliation'][LANGUAGE_NONE][0]['value'] = $ldap[0]['edupersonprimaryaffiliation'][0];
+      user_save($account, $edit);
+    }
+  }
+}
+
+/**
+ * Revert features by passing features in an array.
+ */
+function cu_core_revert_features($features = NULL) {
+  // If an array of specific features isn't passed, populate with all overridden features.
+  if ($features == NULL) {
+    module_load_include('inc', 'features', 'features.export');
+    $features = features_get_features();
+    foreach ($features as $feature) {
+      if (features_get_storage($feature->name) == 0) {
+        unset($features[$feature->name]);
+      }
+    }
+  }
+  // Check against features that currently can't be reverted.
+  $express_protected_features = array_merge(array(
+    'cu_home_page',
+    'cu_sitewide',
+  ), explode(',', variable_get('express_protected_features', '')));
+
+  foreach ($features as $key => $feature) {
+    if (!in_array($key, $express_protected_features)) {
+      $f = features_get_features($key);
+      $components = array_keys($f->info['features']);
+      features_revert(array($f->name => $components));
+      watchdog('cu_core', 'Attempting to revert %feature', array('%feature' => $feature->name), WATCHDOG_NOTICE);
+    }
+  }
+}
+
+/**
+ * Run every time a db update.
+ *
+ * This calls the inventory update function and admin password change.
+ */
+function cu_core_express_update($version) {
+
+  cu_core_atlas_update($version);
+
+  // Change admin user/pass.
+  cu_core_scramble_admin();
+}
+
+/**
+ * Updates inventory with profile version.
+ */
+function cu_core_inventory_update($version) {
+  // Nulling this function out so that older update hooks will still work.
+  return;
+}
+
+/**
+ * Updates Atlas with profile version.
+ */
+function cu_core_atlas_update($version) {
+  if (module_exists('atlas')) {
+    atlas_process_core_schema_version($version);
+  }
+}
+
+/**
+ * Obscures uid 1 password and username for added security.
+ */
+function cu_core_scramble_admin() {
+
+  // Generate hashed password.
+  $unhashed_pass = user_password(50);
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  $hashed_pass = user_hash_password(trim($unhashed_pass));
+
+  // Abort if the hashing failed and returned FALSE.
+  if (!$hashed_pass) {
+    return FALSE;
+  }
+  else {
+    // Save admin user with new user/password.
+    $user = user_load(1);
+    $user->name = 'admin-' . user_password(10);
+    $user->pass = $hashed_pass;
+    user_save($user);
+  }
+}

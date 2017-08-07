@@ -1,0 +1,97 @@
+<?php
+/**
+ * @file
+ * Provide an accordion display style for Views.
+ *
+ * This is a placeholder file so drupal will enable the module. All logic is
+ * contained in other files located with the module.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function views_accordion_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#views_accordion':
+      $output = '<p>' . t('The Views Accordion module is a Views style plugin that displays the results in a JQuery accordion style. For more updated information visit the !views_accordion_documentation_page.', array('!views_accordion_documentation_page' => l(t('Views Accordion documentation page'), 'http://drupal.org/node/366263', array('absolute' => TRUE)))) . '</p>';
+
+      $output .= '<h3>' . t('How to use the plugin') . '</h3>';
+      $output .= t('<strong>IMPORTANT:</strong> The first field in order of appearance will be the one used as the "header" or "trigger" of the accordion action.') . '<br />';
+
+      $output .= '<h4>' . t('Your view must meet these requirements:') . '</h4>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('<em>Row style</em> must be set to <em>Fields</em>.') . '</li>';
+      $output .= '<li>' . t('The header field can not be set to inline.') . '</li>';
+      $output .= '<li>' . t('If you use a separator for inline fields, be sure to wrap it in a html tag, like a span tag.') . '</li>';
+      $output .= '</ul>';
+
+      $output .= '<h4>' . t('Choose <em>Views Accordion</em> in the <em>Style</em> dialog within your view, which will prompt you to configure:') . '</h4>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('<strong>Transition time</strong>: How fast you want the opening and closing of the sections to last for, in seconds. Default is half a second.') . '</li>';
+      $output .= '<li>' . t('<strong>Start with the first row opened</strong>: Wether or not the first row of the view should start opened when the view is first shown. Uncheck this if you would like the accordion to start closed.') . '</li>';
+      $output .= '<li>' . t("<strong>Use the module's default styling</strong>:  If you disable this, the CSS file in the module's directory (views-accordion.css) will not be loaded. You can uncheck this if you plan on doing your own CSS styling.") . '</li>';
+      $output .= '</ul>';
+      $output .= '<h3>' . t('Theming information')  .'</h3>';
+      $output .= t('This module comes with a default style, which you can disable in the options (see above). Files included for your convinence:');
+      $output .= '<ul><li>' . t('<strong>views-acordion.css</strong> - with how the classes the author thought would be best used, mostly empty.') . '</li>';
+      $output .= '<li>' . t('<strong>views-view-accordion.tpl.php</strong> - copy/paste into your theme directory - please the comments in this file for requirements/instructions.') . '</li></ul>';
+      return $output;
+  }
+}
+
+
+/**
+ * Implements hook_views_api().
+ */
+function views_accordion_views_api() {
+  return array('api' => 2);
+}
+
+/**
+ * Template function for views_accordion style plugin.
+ *
+ * @param array $vars
+ *   Array of template variables.
+ *
+ * The JS file is loaded within render() in views_accordion_style_plugin.inc
+ */
+function template_preprocess_views_view_accordion(&$vars) {
+  // Inherit the normal unformatted classes.
+  template_preprocess_views_view_unformatted($vars);
+
+  $vars['use_group_header'] = $vars['options']['use-grouping-header'];
+
+  // The template variable 'view_accordion_id' MUST be the same as $accordion_id
+  // in the render() function inside the style plugin.
+  // Don't touch it or it will stop working.
+  $vars['view_accordion_id'] = 'views-accordion-' . $vars['view']->name . '-'. $vars['view']->current_display . '-header';
+
+  // Add the css for fixing/preventing accordion issues.
+  drupal_add_css(drupal_get_path('module', 'views_accordion') . '/views-accordion.css');
+}
+
+/**
+ * Only returns true the first time it's called for an id.
+ *
+ * @param string $id
+ *   A unique view id.
+ *
+ * @return bool
+ *   TRUE for the first time called for a given $id
+ *   FALSE for each time after that
+ */
+function theme_views_accordion_display_item($id) {
+  static $display = array();
+
+  if (!isset($display[$id])) {
+    $display[$id] = FALSE;
+  }
+
+  $output = $display[$id];
+
+  if ($display[$id] == FALSE) {
+    $display[$id] = TRUE;
+  }
+
+  return $output;
+}

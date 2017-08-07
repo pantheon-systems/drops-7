@@ -1,0 +1,10 @@
+name = CU Share
+description = Social Sharing Icons
+core = 7.x
+package = CU-Social Media
+version = 7.x-1.0
+
+stylesheets[screen][] = css/cu-share.css
+scripts[] = js/cu_share.js
+
+files[] = cu_share.context.inc

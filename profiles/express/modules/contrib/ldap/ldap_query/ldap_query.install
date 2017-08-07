@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP API module.
+ */
+
+
+/**
+ * Implements hook_install().
+ */
+function ldap_query_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_query_uninstall() {
+
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+/**
+ * Implements hook_schema().
+ */
+function ldap_query_schema() {
+
+  $schema['ldap_query'] = array(
+    'export' => array(
+      'key' => 'qid',
+      'key name' => 'Query Name',
+      'identifier' => 'qid',
+      'primary key' => 'query_numeric_id',
+      'api' => array(
+        'owner' => 'ldap_query',
+        'api' => 'ldap_query',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+
+    'description' => "LDAP Query Data leveraged by other LDAP Modules",
+    'primary key' => array('query_numeric_id'),
+    'foreign keys' => array(
+      'sid' => array(
+        'table' => 'ldap_servers',
+        'columns' => array('sid' => 'sid'),
+      ),
+    ),
+  );
+  module_load_include('module', 'ldap_servers');
+  ldap_servers_module_load_include('php', 'ldap_query', 'LdapQuery.class');
+  $fields = LdapQuery::fields();
+  foreach ($fields as $field_id => $field) {
+    if (isset($field['schema'])) {
+      $schema['ldap_query']['fields'][$field_id] = $field['schema'];
+    }
+  }
+
+  return $schema;
+}
+
+/**
+ * Add scope field to ldap_query table.
+ */
+function ldap_query_update_7100() {
+  module_load_include('inc', 'ldap_servers', 'ldap_servers.functions');
+  ldap_servers_module_load_include('module', 'ldap_servers', 'ldap_servers'); // get LDAP_SCOPE_SUBTREE constant
+  // make sure 'create_consumers' field is there for old 7.x-1.x-dev versions
+  if (!db_field_exists('ldap_query', 'scope')) {
+    db_add_field('ldap_query', 'scope', array(
+      'type' => 'int',
+      'size' => 'small',
+      'not null' => FALSE,
+      'default' => LDAP_SCOPE_SUBTREE,
+    ));
+    return t('"scope" field added to ldap_query table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+
+}
+
+/**
+ * Make filter field type 'text' for longer filters
+ */
+function ldap_query_update_7101() {
+  db_change_field('ldap_query', 'filter', 'filter', array(
+    'type' => 'text',
+    'not null' => FALSE,
+  ));
+
+  return t('ldap_query table field "filter" changed to type "text"');
+}
+
+
+/**
+ * make ldap_query.scope field small int instead of tiny int for ctools bug
+ */
+function ldap_query_update_7102() {
+
+  db_change_field('ldap_query', 'scope', 'scope', array(
+    'type' => 'int',
+    'size' => 'small',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+
+}

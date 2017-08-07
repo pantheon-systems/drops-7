@@ -1,0 +1,12 @@
+#zone-content h2.block-title,
+#zone-after-content h2.block-title,
+#zone-footer h2.block-title,
+#zone-content h1#page-title,
+#zone-content h2,
+#zone-content h3,
+#zone-content h4,
+#zone-content h5,
+.page-title-wrapper h1#page-title {
+  font-family: "Museo Slab W01 900", Helvetica, Arial;
+  font-weight: normal;
+}

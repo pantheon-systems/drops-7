@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Provides updates to the WYSIWYG shortcodes.
+ */
+
+/**
+ * Enable Soundcloud Embed module.
+ */
+function cu_shortcodes_wysiwyg_update_7001() {
+  module_enable(array('cu_soundcloud_embed'));
+}

@@ -1,0 +1,16 @@
+name = Metatag: Devel
+description = Provides development / debugging functionality for the Metatag module. Integrates with Devel Generate.
+package = Development
+core = 7.x
+tags[] = developer
+dependencies[] = metatag:metatag
+
+; Tests.
+files[] = tests/metatag_devel.test
+
+; Information added by Drupal.org packaging script on 2017-02-15
+version = "7.x-1.21"
+core = "7.x"
+project = "metatag"
+datestamp = "1487171290"
+

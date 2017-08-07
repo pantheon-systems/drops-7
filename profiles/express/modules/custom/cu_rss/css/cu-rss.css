@@ -1,0 +1,6 @@
+ul.primary li a.create-feed:before {
+  content: "\f09e";
+}
+h1.page-title.icon-create-feed:before {
+  content: "\f143";
+}

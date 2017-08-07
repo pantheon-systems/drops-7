@@ -1,0 +1,59 @@
+<?php
+/**
+ * @file
+ * Code for the cu_home_page feature.
+ */
+
+include_once 'cu_home_page.features.inc';
+
+/**
+ * Preprocess html.
+ */
+function cu_home_page_preprocess_html(&$vars) {
+  // Set page title (in <head>) to "Site Name | University of Colorado Boulder"
+  // only on the homepage. Besides that, the default of
+  // "Page Name | Site Name | Unviersity of Colorado Boulder" is fine.
+  if (drupal_is_front_page()) {
+    $vars['head_title'] = implode(' | ', array(variable_get('site_name'), t('University of Colorado Boulder')));
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Removes delete button from node form if this node is set as the homepage.
+ */
+function cu_home_page_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node_edit_form']) && ($form['#node_edit_form'] == TRUE)) {
+    // Get frontpage variable
+    $site_frontpage = variable_get('site_frontpage', 'node');
+    list($first, $second) = explode('/', $site_frontpage, 2);
+    if ($first == 'node' && is_numeric($second) && ($form['nid']['#value'] == $second)) {
+      unset($form['actions']['delete']);
+    }
+  }
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Extends node delete access to restrict deleting of home page.
+ */
+function cu_home_page_menu_alter(&$items) {
+  $items['node/%node/delete']['access callback'] = 'cu_home_page_node_delete_access';
+}
+
+/**
+ * Returns FALSE if node is set as homepage, otherwise passes to node_access().
+ */
+function cu_home_page_node_delete_access($op, $node) {
+  $site_frontpage = variable_get('site_frontpage', 'node');
+  list($first, $second) = explode('/', $site_frontpage, 2);
+  if ($first == 'node' && is_numeric($second) && ($node->nid == $second)) {
+    drupal_set_message(t('You cannot delete your home page. Please promote a different node as your homepage before attempting to delete this node.'), 'error');
+    return FALSE;
+  }
+  else {
+    return node_access('delete', $node);
+  }
+}

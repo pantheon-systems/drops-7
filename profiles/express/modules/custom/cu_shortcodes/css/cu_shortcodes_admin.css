@@ -1,0 +1,43 @@
+#cu-shortcodes-button-generator-form .form-radios .form-item {
+  display:inline;
+}
+
+#cu-shortcodes-button-generator-form .form-item-button-shortcode-icon .form-radios .form-item,
+#cu-shortcodes-icon-generator-form .form-item-icon-shortcode-icon .form-radios .form-item {
+  display: block;
+  
+}
+.form-item-icon-shortcode-icon .form-radios .form-item i.fa {
+  font-size: 150%;
+}
+
+#edit-button-shortcode-icon,
+#edit-icon-shortcode-icon {
+  -webkit-column-count: 8;
+  -webkit-column-gap: 20px;
+  -webkit-column-rule: 1px solid #ddd;
+
+  -moz-column-count: 8;
+  -moz-column-gap: 20px;
+  -moz-column-rule: 1px solid #ddd;
+
+  column-count: 8;
+  column-gap: 20px;
+  column-rule: 1px solid #ddd;
+}
+#edit-button-shortcode-icon .form-type-radio,
+#edit-icon-shortcode-icon .form-type-radio {
+  padding:5px;
+}
+
+.button-shortcode {
+  color: #fff; display: inline-block; padding: 5px 10px; font-weight: bold; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px;
+}
+a.button-shortcode:hover {
+  text-decoration: none;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+}

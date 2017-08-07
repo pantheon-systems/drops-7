@@ -1,0 +1,31 @@
+name = LDAP User Module
+description = Module for ldap identified users.  User may be associated via ldap authentication, ldap authorization, or from account provisioning.  Configures synching of ldap entries to drupal user properties, fields and the opposite direction.
+package = Lightweight Directory Access Protocol
+dependencies[] = ldap_servers
+dependencies[] = entity
+dependencies[] = number
+
+core = 7.x
+
+files[] = ldap_user.api.php
+files[] = ldap_user.inc
+files[] = ldap_user.install
+files[] = ldap_user.module
+files[] = ldap_user.functions.inc
+files[] = ldap_user.admin.inc
+files[] = ldap_user.test_form.inc
+files[] = ldap_user.theme.inc
+;files[] = ldap_user.ws.inc
+files[] = LdapUserConf.class.php
+files[] = LdapUserConfAdmin.class.php
+files[] = tests/ldap_user.test
+
+stylesheets[all][] = ldap_user.css
+configure = admin/config/people/ldap/user
+
+; Information added by Drupal.org packaging script on 2017-05-30
+version = "7.x-2.2"
+core = "7.x"
+project = "ldap"
+datestamp = "1496167150"
+

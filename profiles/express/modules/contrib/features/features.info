@@ -1,0 +1,18 @@
+name = "Features"
+description = "Provides feature management for Drupal."
+core = 7.x
+package = "Features"
+files[] = tests/features.test
+test_dependencies[] = image
+test_dependencies[] = strongarm
+test_dependencies[] = taxonomy
+test_dependencies[] = views
+
+configure = admin/structure/features/settings
+
+; Information added by Drupal.org packaging script on 2016-04-18
+version = "7.x-2.10"
+core = "7.x"
+project = "features"
+datestamp = "1461011641"
+

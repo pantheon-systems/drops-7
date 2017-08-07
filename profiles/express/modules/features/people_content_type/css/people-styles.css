@@ -1,0 +1,32 @@
+span.job-title {
+  font-size: 80%;
+  display: block;
+}
+span.phone {
+  white-space: nowrap;
+  display: block;
+}
+
+.person-view-mode-teaser {
+  border-bottom: 1px solid #e7e7e7;
+  margin-bottom:20px;
+  padding-bottom: 20px;
+}
+
+.person-view-mode-teaser img.image-thumbnail {
+  float: left;
+  margin: 0 20px 0 0;
+}
+.person-view-mode-teaser-content {
+  overflow: hidden;
+}
+
+#views-exposed-form-people-list-entity-view-1,
+#views-exposed-form-people-list-entity-view-2 {
+  padding:10px;
+  border:1px solid #e7e7e7;
+}
+
+.person-view-mode-grid img {
+  display: block;
+}

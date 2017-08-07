@@ -1,0 +1,21 @@
+name = Metatag: Views
+description = Provides Metatag integration within the Views interface.
+package = SEO
+core = 7.x
+
+dependencies[] = metatag:metatag
+dependencies[] = views:views
+
+files[] = metatag_views.inc
+files[] = metatag_views_plugin_display_extender_metatags.inc
+
+; Tests.
+files[] = tests/metatag_views.test
+files[] = tests/metatag_views.i18n.test
+
+; Information added by Drupal.org packaging script on 2017-02-15
+version = "7.x-1.21"
+core = "7.x"
+project = "metatag"
+datestamp = "1487171290"
+

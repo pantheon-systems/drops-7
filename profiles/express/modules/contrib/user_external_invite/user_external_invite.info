@@ -1,0 +1,14 @@
+name = User External Invite
+description = "Allows users with permissions to assign a role and email invitations to other users. Requires external authentication."
+core = 7.x
+dependencies[] = token
+dependencies[] = entity
+
+configure = admin/config/people/invite
+
+; Information added by Drupal.org packaging script on 2016-12-06
+version = "7.x-1.2"
+core = "7.x"
+project = "user_external_invite"
+datestamp = "1481043485"
+

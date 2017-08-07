@@ -1,0 +1,13 @@
+<?php
+
+/*
+ * Migrate button text variable to label variable
+ */
+ 
+function cu_feedback_update_7010() {
+  $config = variable_get('cu_feedback_config');
+  if (empty($config['cu_feedback_label'])) {
+    $config['cu_feedback_label'] = $config['cu_feedback_text'];
+  }
+  variable_set('cu_feedback_config', $config);
+}

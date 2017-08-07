@@ -1,0 +1,7 @@
+name = CU Email Newsletter
+description = Theme for exporting content for email
+screenshot = images/screenshot.png
+core = 7.x
+engine = phptemplate
+
+regions[content] = Content

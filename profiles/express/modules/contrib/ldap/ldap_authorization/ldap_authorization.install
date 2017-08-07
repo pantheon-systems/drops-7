@@ -1,0 +1,381 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP authorization module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function ldap_authorization_requirements($phase) {
+  $requirements = array();
+
+if ($phase != "install" && db_field_exists('ldapauth', 'ldapgroups_in_dn' )) {
+    $requirements['ldap_authorization_ldap_integration']['title'] = t('LDAP Integration LDAP Groups Upgrade Concern');
+    $requirements['ldap_authorization_ldap_integration']['severity'] = REQUIREMENT_WARNING;
+    $requirements['ldap_authorization_ldap_integration']['value'] = NULL;
+    $requirements['ldap_authorization_ldap_integration']['description'] = t('Upgrade from Drupal 6 LDAP Groups to Drupal 7
+      LDAP Authorization is not automatic.  LDAP Authorization will need to be configured by hand.
+      The authorization options are different and automated updgrade is not possible.
+      See also. See http://drupal.org/node/1023016, http://drupal.org/node/1183192.
+      This message will go away when the ldapauth database table is removed.');
+  }
+  // check that ldapauth not installed.
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function ldap_authorization_install() {
+
+  cache_clear_all('field_info_types:', 'cache_field', TRUE);
+  foreach (ldap_authorization_user_entity_fields() as $field_id => $field_conf) {
+    $field_info = field_info_field($field_id);
+    if (!$field_info) {
+      field_create_field($field_conf['field']);
+      field_create_instance($field_conf['instance']);
+    }
+  }
+
+}
+
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_authorization_uninstall() {
+  foreach (ldap_authorization_user_entity_fields() as $field_id => $field_conf) {
+
+    $instance = field_info_instance($field_conf['instance']['entity_type'], $field_conf['instance']['field_name'], $field_conf['instance']['bundle']);
+    if ($instance) {
+      field_delete_instance($instance);
+    }
+
+    $field_info = field_info_field($field_conf['field']['field_name']);
+    if ($field_info) {
+      field_delete_field($field_conf['field']['field_name']);
+    }
+  }
+  module_load_include('inc', 'ldap_servers', 'ldap_servers.user_data_remove');
+  batch_set(ldap_severs_user_data_setup_batch());
+  $batch =& batch_get();
+  
+}
+
+
+function ldap_authorization_user_entity_fields() {
+
+  $fields = array();
+
+  return $fields;
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function ldap_authorization_schema() {
+
+  $schema['ldap_authorization'] = array(
+    'export' => array(
+      'key' => 'consumer_type',
+      'key name' => 'Mapping ID',
+      'identifier' => 'consumer_type',
+      'primary key' => 'numeric_consumer_conf_id',
+      'api' => array(
+        'owner' => 'ldap_authorization',
+        'api' => 'ldap_authorization',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+
+    'description' => "Data used to map users ldap entry to authorization rights.",
+    'primary key' => array('numeric_consumer_conf_id'),
+    'foreign keys' => array(
+      'sid' => array(
+        'table' => 'ldap_servers',
+        'columns' => array('sid' => 'sid'),
+      ),
+    ),
+  );
+
+  module_load_include('inc', 'ldap_servers', 'ldap_servers.functions');
+  module_load_include('php', 'ldap_authorization', 'LdapAuthorizationConsumerConfAdmin.class');
+
+  $fields = LdapAuthorizationConsumerConfAdmin::fields();
+  foreach ($fields as $name => $props) {
+    if (isset($props['schema'])) {
+      $schema['ldap_authorization']['fields'][$name] = $props['schema'];
+    }
+  }
+
+  return $schema;
+}
+
+/**
+ * add 'create_consumers field to ldap_authorization table
+ */
+function ldap_authorization_update_7100() {
+
+  if (!db_field_exists('ldap_authorization', 'create_consumers')) {
+    db_add_field('ldap_authorization', 'create_consumers', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    return t('"create_consumers" field added to ldap_authorization table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+
+}
+
+/**
+ * add derive_from_attr_use_first_attr field to ldap_authorization table
+ */
+function ldap_authorization_update_7101() {
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_attr_use_first_attr')) {
+    db_add_field('ldap_authorization', 'derive_from_attr_use_first_attr', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    return t('"derive_from_attr_use_first_attr" field added to ldap_authorization table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+
+}
+
+
+/**
+ * Add derive_from_entry_search_all column to ldap_authorization
+ */
+function ldap_authorization_update_7102() {
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_entry_search_all')) {
+    db_add_field('ldap_authorization', 'derive_from_entry_search_all', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    return t('"derive_from_entry_search_all" field added to ldap_authorization table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+
+}
+
+/**
+ * change derive_from_attr_attr and derive_from_entry fields to text instead of varchar 2555
+ */
+function ldap_authorization_update_7103() {
+
+  foreach (array('derive_from_dn_attr', 'derive_from_attr_attr', 'derive_from_entry_entries') as $field_name) {
+    db_change_field('ldap_authorization', $field_name, $field_name, array(
+    'type' => 'text',
+    'not null' => FALSE,
+    ));
+  }
+
+}
+
+/**
+ * change derive_from_attr_attr and derive_from_entry fields to text instead of varchar 2555
+ * applied second time because beta6 and 7 were wrong.
+ */
+function ldap_authorization_update_7104() {
+
+  foreach (array('derive_from_dn_attr', 'derive_from_attr_attr', 'derive_from_entry_entries') as $field_name) {
+    db_change_field('ldap_authorization', $field_name, $field_name, array(
+    'type' => 'text',
+    'not null' => FALSE,
+    ));
+  }
+
+}
+
+/**
+ * add derive_from_entry_user_ldap_attr field to allow user specification of dn or other identifier.
+ */
+function ldap_authorization_update_7105() {
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_entry_user_ldap_attr')) {
+    db_add_field('ldap_authorization', 'derive_from_entry_user_ldap_attr', array(
+      'type' => 'varchar',
+      'length' => 255,
+      'default' => NULL,
+    ));
+    return t('"derive_from_entry_user_ldap_attr" field added to ldap_authorization table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+
+}
+
+/**
+ * add nested checkboxes to derive from entry and attributes strategies.
+ */
+function ldap_authorization_update_7106() {
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_attr_nested')) {
+    db_add_field('ldap_authorization', 'derive_from_attr_nested', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $msg = t('"derive_from_attr_nested" field added to ldap_authorization table');
+  }
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_entry_nested')) {
+    db_add_field('ldap_authorization', 'derive_from_entry_nested', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $msg .=  t('"derive_from_entry_nested" field added to ldap_authorization table');
+  }
+
+  return ($msg) ? $msg :  t('No database changes made.');
+}
+
+/**
+ * add derive_from_entry_use_first_attr field to and remove description field from ldap_authorization table
+ */
+function ldap_authorization_update_7107() {
+
+  $changes = '';
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_entry_use_first_attr')) {
+    db_add_field('ldap_authorization', 'derive_from_entry_use_first_attr', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $changes .= t('"derive_from_entry_use_first_attr" field added to ldap_authorization table');
+  }
+
+  if (db_field_exists('ldap_authorization', 'description')) {
+    db_drop_field('ldap_authorization', 'description');
+    $changes .=  t('"description" field dropped from to ldap_authorization table');
+  }
+
+  return ($changes) ? $changes : t('No database changes made.');
+
+}
+
+
+/**
+ * add derive_from_entry_entries_attr field to allow user specification of attribute representing group in queries.
+ */
+function ldap_authorization_update_7108() {
+
+  if (!db_field_exists('ldap_authorization', 'derive_from_entry_entries_attr')) {
+    db_add_field('ldap_authorization', 'derive_from_entry_entries_attr', array(
+      'type' => 'varchar',
+      'length' => 255,
+      'default' => NULL,
+    ));
+    return t('"derive_from_entry_entries_attr" field added to ldap_authorization table');
+  }
+  else {
+    return t('No database changes made.');
+  }
+  _ldap_authorization_add_ldap_user_fields();
+
+}
+
+/**
+ * moving some groups related fields into ldap server module
+ */
+function ldap_authorization_update_7201() {
+
+// need to merge 2 table fields (derive_from_entry_use_first_attr and derive_from_attr_use_first_attr into one field useFirstAttrAsGroupId)
+  $results = '';
+
+  if (!db_field_exists('ldap_authorization', 'useFirstAttrAsGroupId')) {
+    db_add_field('ldap_authorization', 'useFirstAttrAsGroupId', array(
+      'type' => 'int',
+      'size' => tiny,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $results .= t('"useFirstAttrAsGroupId" field added to ldap_authorization table');
+  }
+
+  if (!db_field_exists('ldap_authorization', 'searchAll')) {
+    db_add_field('ldap_authorization', 'searchAll', array(
+      'type' => 'int',
+      'size' => tiny,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $results .= t('"searchAll" field added to ldap_authorization table');
+  }
+}
+
+
+/**
+ * remove user ldap authorizations field.  its in $user->data now
+ */
+function ldap_authorization_update_7202() {
+
+    $instance = array(
+      'field_name' => 'ldap_authorizations',
+      'entity_type' => 'user',
+      'bundle' => 'user',
+    );
+    field_delete_instance($instance, TRUE);
+    field_delete_field('ldap_authorizations');
+
+}
+
+/**
+ * make all schema field names lowercase in ldap server to deal with cronic case sensitivity issues
+ */
+function ldap_authorization_update_7203() {
+
+  if (db_field_exists('ldap_authorization', 'searchAll')) {
+    db_drop_field('ldap_authorization', 'searchAll');
+  }
+
+  $schema = ldap_authorization_schema();
+  $field_schema = $schema['ldap_authorization']['fields']['use_first_attr_as_groupid'];
+  if (db_field_exists('ldap_authorization', 'useFirstAttrAsGroupId')) {
+    if (db_field_exists('ldap_authorization', 'use_first_attr_as_groupid')) {
+      db_drop_field('ldap_authorization', 'useFirstAttrAsGroupId');
+    }
+    else {
+      db_change_field('ldap_authorization', 'useFirstAttrAsGroupId', 'use_first_attr_as_groupid', $field_schema);
+    }
+  }
+
+}
+
+/**
+ * make all schema field names lowercase in ldap server to deal with cronic case sensitivity issues
+ */
+function ldap_authorization_update_7204() {
+
+  $schema = ldap_authorization_schema();
+  $field_schema = $schema['ldap_authorization']['fields']['mappings'];
+  if (db_field_exists('ldap_authorization', 'mappings')) {
+     db_change_field('ldap_authorization', 'mappings', 'mappings', $field_schema);
+  }
+
+}

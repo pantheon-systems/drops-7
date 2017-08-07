@@ -1,0 +1,8 @@
+name = Link checker Bean
+description = "Periodically checks for broken links in beans and reports the results."
+configure = admin/config/content/linkchecker
+package = "Link checker"
+core = 7.x
+
+dependencies[] = bean
+dependencies[] = linkchecker

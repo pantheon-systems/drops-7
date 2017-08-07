@@ -1,0 +1,70 @@
+<?php
+
+function cu_quicktab_styles_quicktabs_tabstyles() {
+  $tabstyles_directory = drupal_get_path('module', 'cu_quicktab_styles') . '/tabstyles';
+  $files = file_scan_directory($tabstyles_directory, '/\.css$/');
+  $tabstyles = array();
+  foreach ($files as $file) {
+    // Skip RTL files.
+    if (!strpos($file->name, '-rtl')) {
+      //$tabstyles[$file->uri] = drupal_ucfirst($file->name);
+    }
+  }
+  $tabstyles['line.css'] = 'Line';
+  $tabstyles['circles.css'] = 'Circles';
+  $tabstyles['dark.css'] = 'Dark';
+  $tabstyles['minimal.css'] = 'Minimal';
+  $tabstyles['simple.css'] = 'Simple';
+  $tabstyles['tabs.css'] = 'Tabs';
+  $tabstyles['triangles.css'] = 'Triangles';
+  $tabstyles['vertical.css'] = 'Vertical';
+  return $tabstyles;
+}
+
+function cu_quicktab_styles_form_alter(&$form, &$form_state, $form_id) {
+}
+function cu_quicktab_styles_form_quicktabs_form_alter(&$form, &$form_state, $form_id){
+
+  // The quicktab renderer should be returned with the form, but it is not.
+  // Rather than fix in quicktab project, we are adding it here to avoid the module issue queue.
+  $qt_renderer = db_query('SELECT renderer FROM {quicktabs} q WHERE q.machine_name = :name', array( ':name' => $form['machine_name']['#value']))->fetchField();
+
+  unset($form['style']['#options']['Arrows']);
+  unset($form['style']['#options']['Basic']);
+  unset($form['style']['#options']['Bullets']);
+  unset($form['style']['#options']['Excel']);
+  unset($form['style']['#options']['Garland']);
+  unset($form['style']['#options']['Mac']);
+  unset($form['style']['#options']['Navlist']);
+  unset($form['style']['#options']['Phylactere']);
+  unset($form['style']['#options']['Sky']);
+  unset($form['style']['#options']['Zen']);
+
+  // It easier for end users to understand a "tabs" vs. "ui_tabs" option.
+  $form['renderer']['#options']['ui_tabs'] = 'tabs';
+
+  if ($qt_renderer != 'quicktabs') {
+    unset($form['renderer']['#options']['quicktabs']);
+  }
+  else {
+    drupal_set_message(t('The quicktabs rendering options has been deprecated. If you choose a different render option, you will not be able to switch back to the quicktabs render option.'), 'warning');
+  }
+}
+
+function cu_quicktab_styles_form_quicktabs_tabstyles_styles_alter(&$form, &$form_state, $form_id){
+  unset($form['quicktabs_tabstyle']['#options']['Arrows']);
+  unset($form['quicktabs_tabstyle']['#options']['Basic']);
+  unset($form['quicktabs_tabstyle']['#options']['Bullets']);
+  unset($form['quicktabs_tabstyle']['#options']['Excel']);
+  unset($form['quicktabs_tabstyle']['#options']['Garland']);
+  unset($form['quicktabs_tabstyle']['#options']['Mac']);
+  unset($form['quicktabs_tabstyle']['#options']['Navlist']);
+  unset($form['quicktabs_tabstyle']['#options']['Phylactere']);
+  unset($form['quicktabs_tabstyle']['#options']['Sky']);
+  unset($form['quicktabs_tabstyle']['#options']['Zen']);
+}
+
+function cu_quicktab_styles_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_quicktab_styles') . '/css/cu_quicktab_styles.css');
+  drupal_add_js(drupal_get_path('module','cu_quicktab_styles') . '/js/cu_quicktab_styles.js', array('type' => 'file', 'scope' => 'footer', 'weight' => 50));
+}

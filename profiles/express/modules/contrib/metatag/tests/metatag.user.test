@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Tests for the Metatag module of user entities.
+ */
+class MetatagCoreUserTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for users',
+      'description' => 'Test Metatag edit functionality for users.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
+    );
+  }
+
+  /**
+   * Tests creation of a standard entity.
+   */
+  public function testEntityCreationWorkflow() {
+    // Create an admin user and log them in.
+    if (!isset($this->adminUser)) {
+      $this->adminUser = $this->createAdminUser();
+    }
+    $this->drupalLogin($this->adminUser);
+
+    // Assign default values for the new vocabulary.
+
+    // Load the page for overriding the User configuration.
+    $this->drupalGet('admin/config/search/metatags/config/user');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    // @todo Update this to extract the H1 tag.
+    $this->assertText(strip_tags('User'));
+
+    // Submit the form with some values.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[user:name]',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText(strip_tags(t('The meta tag defaults for @label have been saved.', array('@label' => 'User'))));
+
+    // Verify that the user was redirected to the settings page again.
+    $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
+
+    // Load the user's edit form.
+    $this->drupalGet('user/' . $this->adminUser->uid . '/edit');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly.
+    // @todo Update this to extract the H1 tag.
+    // $this->assertText(strip_tags(t('Create @name', array('@name' => $vocabulary->name))));
+
+    // Verify that it's possible to submit values to the form.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[user:name] ponies',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify that the user object saved correctly.
+    // $t_args = array('%name' => $this->adminUser->name);
+    // This doesn't work for some reason, it seems the HTML is stripped off
+    // during output so the %name's standard Drupal wrappers don't match.
+    // $this->assertText(t('The changes have been saved.'));
+    // .. so this has to be done instead.
+    $this->assertText(strip_tags(t('The changes have been saved.')));
+
+    // Manually load the admin account.
+    $account = user_load($this->adminUser->uid);
+
+    // Only the non-default values are stored.
+    $expected = array(
+      'und' => array(
+        'abstract' => array(
+          'value' => '[user:name] ponies',
+        ),
+      ),
+    );
+    $this->assertEqual($expected, $account->metatags);
+
+    // Confirm the user profile tags work correctly.
+    $this->assertUserEntityTags($this->adminUser);
+  }
+
+}

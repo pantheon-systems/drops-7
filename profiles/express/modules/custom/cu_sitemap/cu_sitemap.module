@@ -1,0 +1,231 @@
+<?php
+
+/**
+ * @file
+ * Code for the cu_sitemap feature.
+ */
+
+include_once 'cu_sitemap.features.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function cu_sitemap_menu() {
+  $items = array();
+
+  $items['admin/settings/seo/xmlsitemap'] = array(
+    'title' => 'Sitemap',
+    'description' => 'Configure sitemap settings.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'cu_sitemap_overview_page',
+    'access arguments' => array('administer express settings'),
+    'weight' => 30,
+  );
+
+  return $items;
+}
+
+/**
+ * Callback for Sitemap Overview page.
+ */
+function cu_sitemap_overview_page() {
+  $output = array();
+
+  // Sitemap table
+  $output['sitemap_table']['content']['#markup'] = cu_sitemap_list();
+
+  // Update Sitemap button/form.
+  $output['update_sitemap']['content']['#markup'] = render(drupal_get_form('cu_sitemap_update_form'));
+
+  // Add menus
+  $output['add_menus']['content']['#markup'] = render(drupal_get_form('cu_sitemap_add_menus_form'));
+
+  return $output;
+}
+
+/**
+ * Render a tableselect list of XML sitemaps for the main admin page.
+ */
+function cu_sitemap_list() {
+
+  $header = array();
+  $header['url'] = array('data' => t('URL'));
+  $header['updated'] = array('data' => t('Last updated'), 'field' => 'updated', 'sort' => 'asc');
+  $header['links'] = array('data' => t('Links'), 'field' => 'links');
+  $header['chunks'] = array('data' => t('Pages'), 'field' => 'chunks');
+
+  $query = db_select('xmlsitemap_sitemap');
+  $query->fields('xmlsitemap_sitemap', array('smid'));
+  $query->extend('TableSort')->orderByHeader($header);
+  $smids = $query->execute()->fetchCol();
+  $sitemaps = $smids ? xmlsitemap_sitemap_load_multiple($smids) : array();
+
+  // Set message if sitemap hasn't been updated at all.
+  if ($sitemaps[$smids[0]]->updated == '0') {
+    drupal_set_message('Your sitemap has never been updated. You should update your sitemap now.', 'warning');
+  }
+
+  $rows = array();
+  foreach ($sitemaps as $smid => $sitemap) {
+    $sitemap->url = url($sitemap->uri['path'], $sitemap->uri['options']);
+    $updated = $sitemap->updated ? format_date($sitemap->updated, 'short') : t('Never');
+    $links = $sitemap->updated ? $sitemap->links : '-';
+    $chunks = $sitemap->updated ? $sitemap->chunks : '-';
+
+    $rows[] = array(
+      l($sitemap->url, $sitemap->url),
+      $updated,
+      $links,
+      $chunks,
+    );
+  }
+
+  $table = theme('table', array('header' => $header, 'rows' => $rows));
+  return $table;
+}
+
+function cu_sitemap_update_form() {
+  $form = array();
+
+  $form['update_sitemap'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Update Sitemap'),
+  );
+
+  $form['update_sitemap']['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>Update your sitemap to include the most current links on your site.</p>',
+  );
+
+  $form['update_sitemap']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update Sitemap'),
+    '#submit' => array('cu_sitemap_update_form_submit'),
+  );
+
+  return $form;
+}
+
+function cu_sitemap_update_form_submit($form, &$form_state) {
+  // Get smid of sitemap,
+  $query = db_select('xmlsitemap_sitemap');
+  $query->fields('xmlsitemap_sitemap', array('smid'));
+  $smids = $query->execute()->fetchCol();
+
+  // Update sitemap links.
+  module_load_include('generate.inc', 'xmlsitemap');
+  $batch = xmlsitemap_rebuild_batch(array('menu_link'), 1);
+  batch_set($batch);
+}
+
+function cu_sitemap_add_menus_form() {
+  $menus = menu_get_menus();
+
+  $restricted_menus = array(
+    'devel',
+    'features',
+    'management',
+    'navigation',
+    'user-menu',
+  );
+
+  foreach ($menus as $key => $menu) {
+    if (in_array($key, $restricted_menus)) {
+      unset($menus[$key]);
+    }
+  }
+
+  $form = array();
+  $form['menus'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Include Menus'),
+  );
+
+  $menus_default_values = variable_get('cu_sitemap_menus');
+  $form['menus']['options'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $menus,
+    '#default_value' => $menus_default_values,
+    '#description' => 'Add menus to be included on sitemap.',
+  );
+
+  $form['menus']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add Menus'),
+    '#submit' => array('cu_sitemap_add_menus_form_submit'),
+  );
+
+  return $form;
+}
+
+function cu_sitemap_add_menus_form_submit($form, &$form_state) {
+  // Get menu choices to include in sitemap.
+  $menus = $form_state['values']['options'];
+
+  // Set default values for form display.
+  variable_set('cu_sitemap_menus', $menus);
+
+  $menu_values = array(
+    'status' => 1,
+    'priority' => 0.5,
+  );
+  // Loop through menus and add or delete xmlsitemap variables.
+  foreach ($menus as $menu) {
+    if (!empty($menu)) {
+      variable_set('xmlsitemap_settings_menu_link_' . $menu, $menu_values);
+    } else {
+      variable_del('xmlsitemap_settings_menu_link_' . $menu);
+    }
+  }
+
+  drupal_set_message('Menu options have been updated for sitemap.');
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * @param $items
+ */
+/*
+function cu_sitemap_menu_alter(&$items) {
+  // Hide advanced settings from non-developers.
+  $items['admin/config/search/xmlsitemap/settings']['access callback'] = 'cu_sitemap_access';
+  $items['admin/config/search/xmlsitemap/add']['access callback'] = 'cu_sitemap_access';
+}
+*/
+/**
+ * Access check for sitemap advanced settings.
+ *
+ * @return bool
+ */
+/*
+function cu_sitemap_access() {
+  global $user;
+  if (!in_array('developer', $user->roles) && $user->uid != 1) {
+    return FALSE;
+  } else {
+    return TRUE;
+  }
+}
+*/
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_sitemap_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'xmlsitemap_sitemap_list_form') {
+    global $user;
+    foreach ($form['sitemaps']['#options'] as $key => $sitemap) {
+      if (!in_array('developer', $user->roles) && $user->uid != 1) {
+        unset($form['sitemaps']['#options'][$key]['operations']['data']['#links']['delete']);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_sitemap_page_alter(&$vars) {
+  //dpm($vars);
+}

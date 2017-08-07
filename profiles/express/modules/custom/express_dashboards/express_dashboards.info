@@ -1,0 +1,5 @@
+name = Express Dashboards
+description = Provides as extendable dashboard system.
+core = 7.x
+package = CU-Core
+version = 7.x-1.0

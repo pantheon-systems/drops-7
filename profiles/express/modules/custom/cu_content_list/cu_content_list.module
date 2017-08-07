@@ -1,0 +1,211 @@
+<?php
+/**
+ * @file
+ * Code for the Content List feature.
+ */
+
+include_once 'cu_content_list.features.inc';
+
+function cu_content_list_preprocess_node(&$vars) {
+
+  if ($vars['type'] == 'content_list_page') {
+    if (!empty($vars['field_content_list_reference'])) {
+      $nids = array();
+      foreach ($vars['field_content_list_reference'] as $key=>$reference) {
+        $nids[] = $reference['target_id'];
+      }
+      $nodes = node_load_multiple($nids = $nids, $conditions = array(), $reset = FALSE);
+
+
+      $sort = $vars['field_content_list_sort'][LANGUAGE_NONE][0]['value'];
+      switch ($sort) {
+        case 'date':
+          usort($nodes, function($a, $b) {
+            return $a->created - $b->created;
+          });
+          break;
+        case 'date_reverse':
+          usort($nodes, function($a, $b) {
+            return $b->created - $a->created;
+          });
+          break;
+
+        case 'alpha':
+          foreach ($nodes as $key => $node) {
+            if ($node->type == 'person') {
+              $nodes[$key]->sortvalue = $node->field_person_last_name[LANGUAGE_NONE][0]['value'];
+            } else {
+              $nodes[$key]->sortvalue = $node->title;
+            }
+          }
+          usort($nodes, function($a, $b) {
+            return strcmp($a->sortvalue, $b->sortvalue);
+          });
+          break;
+      }
+
+
+
+
+      $vars['content']['content_list'] = node_view_multiple($nodes, $view_mode = 'teaser', $weight = 0, $langcode = NULL);
+      $vars['content']['content_list']['#weight'] = 100;
+    }
+    unset($vars['content']['field_content_list_reference']);
+  }
+}
+
+function cu_content_list_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  if ($entity_type == 'bean' && $bundle == 'content_list') {
+    if (!empty($vars['field_content_list_reference'])) {
+      $nids = array();
+      foreach ($vars['field_content_list_reference'] as $key=>$reference) {
+        $nids[] = $reference['target_id'];
+      }
+      $nodes = node_load_multiple($nids = $nids, $conditions = array(), $reset = FALSE);
+
+
+      $sort = $vars['field_content_list_sort'][0]['value'];
+      switch ($sort) {
+        case 'date':
+          usort($nodes, function($a, $b) {
+            return $a->created - $b->created;
+          });
+          break;
+        case 'date_reverse':
+          usort($nodes, function($a, $b) {
+            return $b->created - $a->created;
+          });
+          break;
+
+        case 'alpha':
+          foreach ($nodes as $key => $node) {
+            if ($node->type == 'person') {
+              $nodes[$key]->sortvalue = $node->field_person_last_name[LANGUAGE_NONE][0]['value'];
+            } else {
+              $nodes[$key]->sortvalue = $node->title;
+            }
+          }
+          usort($nodes, function($a, $b) {
+            return strcmp($a->sortvalue, $b->sortvalue);
+          });
+          break;
+      }
+
+
+      $display = $vars['field_content_list_display'][0]['value'];
+      if ($display == 'title') {
+        $vars['content']['content_list'] = node_title_list($nodes);
+      } else {
+        $vars['content']['content_list'] = node_view_multiple($nodes, $display, $weight = 0, $langcode = NULL);
+      }
+      $vars['content']['content_list']['#weight'] = 100;
+    }
+    unset($vars['content']['field_content_list_reference']);
+    unset($vars['content']['field_content_list_display']);
+    unset($vars['content']['field_content_list_sort']);
+
+  }
+}
+
+function cu_content_list_sort_values() {
+  return array(
+    'custom' => 'Custom',
+    'date_created' => 'Date Created',
+    'date_created_reverse' => 'Date Created Reverse',
+    'alpha' => 'Alphabetical',
+  );
+}
+
+
+function cu_content_list_display_values() {
+  return array(
+    'teaser' => 'Teaser',
+    'embed' => 'Embed',
+    'title' => 'Title',
+    'sidebar' => 'Sidebar',
+
+  );
+}
+
+/*
+ * Implements hook_secure_permissions
+ *
+ * Adding permissions for content list bean
+ */
+function cu_content_list_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any content_list bean',
+    ),
+    'authenticated user' => array(
+      'view any content_list bean',
+    ),
+    'administrator' => array(
+      'create any content_list bean',
+      'delete any content_list bean',
+      'edit any content_list bean',
+      'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
+    ),
+    'content_editor' => array(
+      'create any content_list bean',
+      'delete any content_list bean',
+      'edit any content_list bean',
+      'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
+    ),
+    'developer' => array(
+      'create any content_list bean',
+      'delete any content_list bean',
+      'edit any content_list bean',
+      'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
+    ),
+    'site_owner' => array(
+      'create any content_list bean',
+      'delete any content_list bean',
+      'edit any content_list bean',
+      'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_node_list_groups().
+ */
+ function cu_content_list_express_node_list_groups($bundles) {
+   $bundles['advanced_content']['title'] = 'Advanced Content';
+   $bundles['advanced_content']['types'][] = 'Content List Page';
+   return $bundles;
+ }
+
+ /**
+  * Implements hook_express_bean_list_groups().
+  */
+ function cu_content_list_express_bean_list_groups($bundles) {
+  $bundles['advanced_content']['types'][] = 'Content List';
+  return $bundles;
+}

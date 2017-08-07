@@ -1,0 +1,14 @@
+name = CU JQuery
+description = JQuery Update Settings
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = ctools
+dependencies[] = jquery_update
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = jquery_update_compression_type
+features[variable][] = jquery_update_jquery_cdn
+features[variable][] = jquery_update_jquery_migrate_enable
+features[variable][] = jquery_update_jquery_version

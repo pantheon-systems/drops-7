@@ -1,0 +1,524 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP User module.
+ */
+
+
+/**
+ * Implements hook_requirements().
+ */
+function ldap_user_requirements($phase) {
+
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+
+    // check for all $user->* fields created
+    $missing_fields = ldap_user_update_check_user_fields(TRUE);
+    if (count($missing_fields)) {
+      $requirements['ldap_user']['title'] = t('User Fields for LDAP User Module Missing');
+      $requirements['ldap_user']['severity'] = REQUIREMENT_ERROR;
+      $requirements['ldap_user']['value'] = NULL;
+
+      $requirements['ldap_user']['description'] = t('Fields are added to the
+        Drupal User entity for LDAP User module functionality.  These fields should
+        have been created in LDAP User update 7203. The following userfields are missing:') .
+        theme('item_list', array(
+          'items' => $missing_fields,
+          'type' => 'ul',
+          'title' => NULL,
+        )) .
+        t('Rerun update 7203 to correct this; it will not write over destroy existing fields.');
+    }
+  }
+
+
+  // check that ldapauth not installed.
+  return $requirements;
+
+}
+
+/**
+ * Implements hook_install().
+ */
+function ldap_user_install() {
+
+  foreach (ldap_user_user_entity_fields() as $field_id => $field_conf) {
+    $field_info = field_info_field($field_id);
+    if (!$field_info) {
+      field_create_field($field_conf['field']);
+      field_create_instance($field_conf['instance']);
+    }
+  }
+
+  // make ldap user weight slightly less than other ldap modules so it can load
+  // user's associated ldap data first and save on ldap queries.
+
+  db_query("UPDATE {system} SET weight = -1 WHERE name = 'ldap_user'");
+
+  _ldap_user_install_update_authmap();
+
+
+
+}
+
+function _ldap_user_install_update_authmap() {
+  db_update('authmap')
+  ->fields(
+    array(
+      'module' => 'ldap_user',
+    )
+  )
+  ->condition('module', 'ldap_authentication')
+  ->execute();
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_user_uninstall() {
+
+  foreach (ldap_user_user_entity_fields() as $field_id => $field_conf) {
+
+    $instance = field_info_instance($field_conf['instance']['entity_type'], $field_conf['instance']['field_name'], $field_conf['instance']['bundle']);
+    if ($instance) {
+      field_delete_instance($instance);
+    }
+
+    $field_info = field_info_field($field_conf['field']['field_name']);
+    if ($field_info) {
+      field_delete_field($field_conf['field']['field_name']);
+    }
+  }
+
+  variable_del('ldap_user_conf');
+  variable_del('ldap_user_cron_last_orphan_checked');
+  variable_del('ldap_user_cron_last_uid_checked');
+
+}
+
+/**
+ * Implements hook_schema().
+ */
+function ldap_user_schema() {
+
+
+}
+
+
+// see http://api.drupal.org/api/drupal/modules%21field%21field.module/group/field/7
+
+
+function ldap_user_user_entity_fields() {
+
+  $fields = array();
+
+  $field_name = 'ldap_user_puid_sid';
+  $fields[$field_name]['field'] = array(
+    'field_name' => $field_name,
+    'type' => 'text',
+    'entity_types' => array('user'),
+    'cardinality' => 1,
+    'translatable' => 0,
+    'locked' => 1,
+    'module' => 'text',
+    'no_ui' => 1,
+    'settings' => array(),
+    );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'LDAP Server ID that puid was derived from.  NULL if puid is independent of server configuration instance.',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => array(),
+      'settings' => array(
+        'text_processing' => 0,
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+
+  $field_name = 'ldap_user_puid';
+  $fields[$field_name]['field'] = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'entity_types' => array('user'),
+      'cardinality' => 1,
+      'translatable' => 0,
+      'locked' => 1,
+      'module' => 'text',
+      'no_ui' => 1,
+      'settings' => array(),
+      );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'Value of user\'s permanent unique id.  This should never change for a given ldap identified user.',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => array(),
+      'settings' => array(
+        'text_processing' => 0,
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+  $field_name = 'ldap_user_puid_property';
+  $fields[$field_name]['field'] = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'entity_types' => array('user'),
+      'cardinality' => 1,
+      'translatable' => 0,
+      'locked' => 1,
+      'module' => 'text',
+      'no_ui' => 1,
+      'settings' => array(),
+      );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'Property specified as user\'s puid.',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => array(),
+      'settings' => array(
+        'text_processing' => 0,
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+  $field_name = 'ldap_user_current_dn';
+  $fields[$field_name]['field'] = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'entity_types' => array('user'),
+      'cardinality' => 1,
+      'translatable' => 0,
+      'locked' => 1,
+      'module' => 'text',
+      'no_ui' => 1,
+      'settings' => array(),
+      );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'User LDAP DN',
+      'description' => 'May change when user\'s DN changes. This field should not be edited.',
+      'required' => 0,
+      'default_value' => array(),
+      'settings' => array(
+        'text_processing' => 0,
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+  $field_name = 'ldap_user_prov_entries';
+  $fields[$field_name]['field'] = array(
+    'field_name' => $field_name,
+    'type' => 'text',
+    'entity_types' => array('user'),
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+    'translatable' => 0,
+    'locked' => 1,
+    'module' => 'text',
+    'no_ui' => 1,
+    'settings' => array(),
+    );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'LDAP Entries that have been provisioned from this Drupal user.',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => NULL,
+      'settings' => array(
+        'text_processing' => 0,
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+  $field_name = 'ldap_user_last_checked';
+  $fields[$field_name]['field'] = array(
+    'field_name' => $field_name,
+    'type' => 'number_integer',
+    'entity_types' => array('user'),
+    'cardinality' => 1,
+    'translatable' => 0,
+    'locked' => 1,
+    'module' => 'number',
+    'no_ui' => 1,
+    'settings' => array(),
+    );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'Unix timestamp of when Drupal user was compard to ldap entry.  This could be for purposes of synching, deleteing drupal account, etc.',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => NULL,
+      'settings' => array(
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+
+  $field_name = 'ldap_user_ldap_exclude';
+  $fields[$field_name]['field'] = array(
+    'field_name' => $field_name,
+    'type' => 'number_integer',
+    'entity_types' => array('user'),
+    'cardinality' => 1,
+    'translatable' => 0,
+    'locked' => 1,
+    'module' => 'number',
+    'no_ui' => 1,
+    'settings' => array(),
+    );
+
+  $fields[$field_name]['instance'] = array(
+      'field_name' => $field_name,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'label' => 'Whether to exclude the user from LDAP functionality',
+      'description' => 'This field should not be edited.',
+      'required' => 0,
+      'default_value' => 0,
+      'settings' => array(
+      ),
+      'widget' => array(
+        'type' => 'ldap_user_hidden',
+        'settings' => array(),
+        'module' => 'ldap_user',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'full' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'hidden',
+        ),
+      ));
+  
+  return $fields;
+}
+
+
+/**
+ * update authmap table, changing ldap_authentication to ldap_user, disable ldap_profile
+ */
+
+function ldap_user_update_7201() {
+  if (module_exists('ldap_profile')) {
+    module_disable(array('ldap_profile', TRUE));
+  }
+  _ldap_user_install_update_authmap();
+}
+
+
+/**
+ * attach ldap_user_last_checked field to user entity to track reconciliation of ldap and drupal accounts
+ */
+
+function ldap_user_update_7202() {
+
+  return t('ldap_user_last_checked field added to user entity.');
+
+}
+
+
+
+/**
+ * make sure all user entity fields are created
+ */
+function ldap_user_update_7203() {
+
+  if (module_exists('ldap_groups')) {
+    module_disable(array('ldap_groups', TRUE));
+  }
+
+  $fields_added = ldap_user_update_check_user_fields();
+
+  if (count($fields_added)) {
+    $fields = join(', ', $fields_added);
+    return t('%fields added to user entity.', array('%fields' => $fields));
+  }
+  else {
+    return t('no fields needed to be added to user entity.');
+  }
+
+}
+
+/**
+ * make sure all user entity field instances are created
+ */
+function ldap_user_update_7204() {
+
+  $fields_added = ldap_user_update_check_user_fields();
+
+  if (count($fields_added)) {
+    $fields = join(', ', $fields_added);
+    return t('%fields added to user entity.', array('%fields' => $fields));
+  }
+  else {
+    return t('no fields needed to be added to user entity.');
+  }
+
+}
+
+/**
+ * make sure all user entity field instances are created
+ */
+function ldap_user_update_7205() {
+
+  return ldap_user_update_7204();
+
+}
+
+function ldap_user_update_check_user_fields($query = FALSE) {
+  if (!$query) {
+    module_enable(array('number'));
+  }
+  $fields_added = array();
+  foreach (ldap_user_user_entity_fields() as $field_id => $field_conf) {
+    $field_info = field_info_field($field_id);
+    if (!$field_info) {
+      $fields_added[] = $field_id;
+      if (!$query) {
+        field_create_field($field_conf['field']);
+      }
+    }
+    $field_instance_info = field_info_instance('user', $field_id, 'user');
+    if (!$field_instance_info) {
+      $fields_added[] = $field_id . " instance";
+      if (!$query) {
+        field_create_instance($field_conf['instance']);
+      }
+    }
+  }
+  return $fields_added;
+
+}

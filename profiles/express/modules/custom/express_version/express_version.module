@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * @file
+ * Version.
+ */
+
+
+/**
+ * Combines the version of core and profile.
+ */
+function express_version_get_version() {
+  $profile_version = _express_version_determine_profile_version();
+  $profile_version_parts = explode('-', $profile_version);
+
+  $core_version = _express_version_determine_core_version();
+  $core_parts = explode('.', $core_version);
+
+  return $profile_version_parts[1] . '.' . $core_parts[2];
+}
+
+/**
+ * Determines the installed profile and its version.
+ */
+function _express_version_determine_profile_version() {
+  require_once DRUPAL_ROOT . '/includes/install.inc';
+
+  // Determine installation profile used.
+  $profile = variable_get('install_profile', '');
+  $parse = install_profile_info($profile);
+  return $parse['version'];
+
+}
+
+/**
+ * Determines the version of Drupal core in use.
+ */
+function _express_version_determine_core_version() {
+  // @TODO: The core var is set on install.  It is possible that the core could be changed
+  // could be changed after install.  Not sure how to deal with that.
+  $core = variable_get('express_core_version', '');
+  $parse = drupal_parse_info_file(drupal_get_path('module', $core) . '/' . $core . '.info');
+  return $parse['version'];
+}

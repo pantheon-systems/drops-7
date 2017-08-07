@@ -1,0 +1,326 @@
+<?php
+
+/**
+ * Tests for Metatag's i18n integration for the configurations.
+ */
+class MetatagCoreWithI18nConfigTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with i18n: configs',
+      'description' => 'Test Metatag configuration integration with the i18n module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need the i18n and i18n_strings modules.
+    $modules[] = 'i18n';
+    $modules[] = 'i18n_string';
+
+    // Enable all of the modules that are needed.
+    parent::setUp($modules);
+
+    // Add more locales.
+    $this->setupLocales();
+
+    // Set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      // From i18n.
+      'translate admin strings',
+      'translate user-defined strings',
+      // Needed for content type management.
+      'bypass node access',
+      'administer content types',
+      'administer nodes',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Reload the translations.
+    drupal_flush_all_caches();
+    module_load_include('admin.inc', 'i18n_string');
+    i18n_string_refresh_group('metatag');
+  }
+
+  /**
+   * Test translation functionality with i18n on config defaults.
+   */
+  public function testI18nDefaultConfig() {
+    // Plan out the different translation string tests.
+    $string_en = 'Drupal 7 (http://drupal.org)';
+    $string_fr = 'French Drupal';
+    $config_name = 'metatag_config:global:generator';
+
+    // Confirm the translation page exists and has some Metatag strings.
+    $this->searchTranslationPage('', $config_name);
+
+    // Load the front page.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $string_en);
+
+    // Confirm the string is present.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Get the translation string lid for the generator tag.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the generator tag.');
+
+    // Save the translation string.
+    $this->saveTranslationString($lid, $config_name, 'fr', $string_en, $string_fr);
+
+    // Load the English front page again.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the default homepage.');
+
+    // Confirm the page's generator tag is what we set it to.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $string_en);
+
+    // Load the French front page.
+    $this->drupalGet('fr');
+    $this->assertResponse(200, 'Loaded the French homepage.');
+
+    // Confirm the generator string was translated.
+    $xpath = $this->xpath("//meta[@name='generator']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $string_fr);
+  }
+
+  /**
+   * Test translations of the custom configurations.
+   */
+  public function testI18nCustomConfig() {
+    // Plan out the different translation string tests.
+    $string_en = 'Welcome to the homepage!';
+    $string_fr = 'Bonjour pour le homepage!';
+    $config_name = 'metatag_config:global:frontpage:title';
+
+    // Confirm the translation page exists and has some Metatag strings.
+    $this->searchTranslationPage('', $config_name);
+
+    // Confirm the string is not present yet.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Load the front page's meta tags.
+    $instance = 'global:frontpage';
+    $config = metatag_config_load($instance);
+
+    // Set something specific as the homepage.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Load the front page.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_en);
+
+    // Get the translation string lid for the front page's title.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the front page title tag.');
+
+    // Save the translation string.
+    $this->saveTranslationString($lid, $config_name, 'fr', $string_en, $string_fr);
+
+    // Load the English front page again.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the default homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_en);
+
+    // Load the French front page.
+    $this->drupalGet('fr');
+    $this->assertResponse(200, 'Loaded the French homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_fr);
+  }
+
+  /**
+   * Confirm that translations will be deleted when configs are deleted.
+   */
+  public function testI18nDeleteConfig() {
+    // Plan out the different translation string tests.
+    $string_en = 'Hey, an article!';
+    $string_fr = 'Alors! Un article!';
+    $config_name = 'metatag_config:node:article:title';
+
+    // Create a config for the 'article' content type's meta tags.
+    $instance = 'node:article';
+    $label = t('Node: Article');
+    $config = new StdClass();
+    $config->instance = $instance;
+    $config->api_version = 1;
+    $config->disabled = FALSE;
+    $config->export_module = 'metatag';
+    $config->config = array();
+
+    // Set something specific as the page title.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Load the 'delete' page.
+    $this->drupalGet('admin/config/search/metatags/config/' . $instance . '/delete');
+    $this->assertResponse(200);
+
+    // Confirm this is the correct page.
+    $this->assertText(t('Are you sure you want to delete the meta tag defaults for @label?', array('@label' => $label)));
+    $this->assertText(t('This action cannot be undone.'));
+    $this->assertFieldByName('op');
+    $this->assertFieldByName('op', t('Confirm'));
+
+    // Submit the form.
+    $this->drupalPost(NULL, array(), t('Confirm'));
+    $this->assertResponse(200);
+    $this->assertText(t('The meta tag defaults for @label have been deleted.', array('@label' => $label)));
+
+    // Confirm the string has been removed.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+  }
+
+  /**
+   * Confirm that translations will be deleted when entity bundles are deleted.
+   */
+  public function testI18nDeleteEntityBundle() {
+    // Plan out the different translation string tests.
+    $string_en = 'Hey, an article!';
+    $string_fr = 'Alors! Un article!';
+    $config_name = 'metatag_config:node:article:title';
+
+    // Create a config for the 'article' content type's meta tags.
+    $content_type = 'article';
+    $content_type_label = t('Article');
+    $instance = 'node:article';
+    $instance_label = t('Node: Article');
+    $config = new StdClass();
+    $config->instance = $instance;
+    $config->api_version = 1;
+    $config->disabled = FALSE;
+    $config->export_module = 'metatag';
+    $config->config = array();
+
+    // Set something specific as the page title.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Load the 'delete' page.
+    $this->drupalGet('admin/structure/types/manage/' . $content_type);
+    $this->assertResponse(200);
+
+    // Confirm this is the correct page.
+    $this->assertFieldByName('op', t('Delete content type'));
+
+    // Submit the form.
+    $this->drupalPost(NULL, array(), t('Delete content type'));
+    $this->assertResponse(200);
+
+    // Confirm this is the correct page.
+    $this->assertText(t('Are you sure you want to delete the content type @label?', array('@label' => $content_type_label)));
+    $this->assertText(t('This action cannot be undone.'));
+    $this->assertFieldByName('op');
+    $this->assertFieldByName('op', t('Delete'));
+
+    // Submit the form.
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertResponse(200);
+    $this->assertText(t('The content type @label has been deleted.', array('@label' => $content_type_label)));
+
+    // Confirm the config was deleted.
+    $config = metatag_config_load($instance);
+    $this->assertEqual($config, array());
+
+    // Confirm the string has been removed.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+  }
+
+  /**
+   * Test translations of the custom configurations.
+   */
+  public function testI18nDifferentSourceLanguage() {
+    // Make French the default source locale.
+    variable_set('i18n_string_source_language', 'fr');
+
+    // Verify that the default language and source language are different.
+    $this->assertNotEqual(i18n_string_source_language(), language_default('language'));
+
+    // Plan out the different translation string tests.
+    $string_en = 'Welcome to the homepage!';
+    $string_fr = 'Bonjour pour le homepage!';
+    $config_name = 'metatag_config:global:frontpage:title';
+
+    // Confirm the translation page exists and has some Metatag strings.
+    $this->searchTranslationPage('', $config_name);
+
+    // Confirm the string is not present yet.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Load the front page's meta tags.
+    $instance = 'global:frontpage';
+    $config = metatag_config_load($instance);
+
+    // Set something specific as the homepage.
+    $config->config['title']['value'] = $string_fr;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_fr, $config_name);
+
+    // Load the front page.
+    $this->drupalGet('fr');
+    $this->assertResponse(200, 'Loaded the homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_fr);
+
+    // Get the translation string lid for the front page's title.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the front page title tag.');
+
+    // Save the translation string.
+    $this->saveTranslationString($lid, $config_name, 'en', $string_fr, $string_en);
+
+    // Load the English front page again.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the default homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_en);
+
+    // Load the French front page.
+    $this->drupalGet('fr');
+    $this->assertResponse(200, 'Loaded the French homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_fr);
+  }
+
+}

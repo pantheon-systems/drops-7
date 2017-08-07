@@ -1,0 +1,67 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+function cu_advanced_design_bundle_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'administer backstretch',
+    ),
+    'anonymous user' => array(
+
+    ),
+    'authenticated user' => array(
+
+    ),
+    'content_editor' => array(
+
+    ),
+    'developer' => array(
+      'administer backstretch',
+    ),
+    'edit_my_content' => array(
+
+    ),
+    'site_owner' => array(
+      'administer backstretch',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help().
+ *
+ * Add contextual help for the Advanced Design functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_design_bundle_express_help($variables) {
+  $variables['admin/structure/context'][] = array(
+    'title' => 'Context Tutorial',
+    'short_title' => 'Context Tutorial',
+    'url' => '/node/434',
+  );
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_advanced_design_bundle';
+      return $a;
+    },
+    $variables);
+}

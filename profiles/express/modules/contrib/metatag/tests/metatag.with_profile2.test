@@ -1,0 +1,128 @@
+<?php
+
+/**
+ * Tests for the Metatag module for Profile2 integration.
+ *
+ * Inherit from the User test so that its tests can be confirmed to still work
+ * when the Profile2 module is enabled.
+ */
+class MetatagCoreWithProfile2Test extends MetatagCoreUserTest {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Profile2',
+      'description' => 'Test Metatag integration with the Profile2 module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'profile2'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'profile2';
+
+    parent::setUp($modules);
+
+    // Add extra permissions for the admin user, this way it can be ready for
+    // use by the other user tests.
+    $perms = array(
+      // Let the user edit & view their own profile.
+      'edit own main profile',
+      'view own main profile',
+      // Manage profile entity definitions.
+      'administer profile types',
+      // Need this permission to access the Field UI pages for Profile2.
+      'administer site configuration',
+      'administer fields',
+      'administer profiles',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Make sure that the Profile2 entity doesn't interfere with the user entity.
+   */
+  public function testUserProfilePage() {
+    // Add a custom meta tag to the user's profile.
+    $this->drupalGet('user/' . $this->adminUser->uid . '/edit');
+    $this->assertResponse(200);
+
+    // Verify that it's possible to submit values to the form.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[user:name] ponies',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify that the user object saved correctly.
+    $this->assertText(strip_tags(t('The changes have been saved.')));
+
+    // Confirm the user profile tags work correctly.
+    $this->assertUserEntityTags($this->adminUser);
+
+    // Load the 'main' Profile2 fields admin page.
+    $this->drupalGet('admin/structure/profiles');
+    $this->assertResponse(200);
+    // Load the 'main' Profile2 fields admin page.
+    $this->drupalGet('admin/structure/profiles/manage/main');
+    $this->assertResponse(200);
+    // Load the 'main' Profile2 fields admin page.
+    $this->drupalGet('admin/structure/profiles/manage/main/fields');
+    $this->assertResponse(200);
+
+    // Verify that the page loaded correctly.
+    $this->assertFieldByName('fields[_add_new_field][label]');
+    $this->assertFieldByName('fields[_add_new_field][field_name]');
+    $this->assertFieldByName('fields[_add_new_field][type]');
+    $this->assertFieldByName('fields[_add_new_field][widget_type]');
+
+    // Add a text field to the Main profile.
+    $edit = array(
+      'fields[_add_new_field][label]' => 'Test field',
+      'fields[_add_new_field][field_name]' => 'test',
+      'fields[_add_new_field][type]' => 'text',
+      'fields[_add_new_field][widget_type]' => 'text_textfield',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->drupalPost(NULL, array(), t('Save field settings'));
+    $this->drupalPost(NULL, array(), t('Save settings'));
+    $this->assertText(strip_tags(t('Saved %label configuration.', array('%label' => 'Test field'))));
+
+    // Edit the user's Profile2 entity.
+    $this->drupalGet('user/' . $this->adminUser->uid . '/edit/main');
+    $this->assertResponse(200);
+    $this->assertFieldByName('profile_main[field_test][und][0][value]');
+    $edit = array(
+      'profile_main[field_test][und][0][value]' => 'test string',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Add a custom meta tag to the user's profile.
+    $this->drupalGet('user/' . $this->adminUser->uid . '/edit');
+    $this->assertResponse(200);
+
+    // Verify that it's possible to submit values to the form.
+    $edit = array(
+      'metatags[und][abstract][value]' => '[user:name] ponies',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertResponse(200);
+
+    // Verify that the user object saved correctly.
+    $this->assertText(strip_tags(t('The changes have been saved.')));
+
+    // Clear all caches.
+    drupal_flush_all_caches();
+
+    // Confirm the user profile tags still work correctly.
+    $this->assertUserEntityTags($this->adminUser);
+  }
+
+}

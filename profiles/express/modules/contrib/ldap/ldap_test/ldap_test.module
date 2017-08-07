@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * @file
+ * Module for the LDAP module testing
+ *
+ */
+
+define('LDAP_TEST_USER_ORPHAN_CLONE_COUNT', 7);  // number of cloned drupal users (clone0, clone1, etc) to make for tests
+define('LDAP_TEST_USER_ORPHAN_CLONE_REMOVE_COUNT', 2); // number of cloned drupal users to delete in orphan check
+define('LDAP_TEST_LDAP_NAME', 'hogwarts');
+

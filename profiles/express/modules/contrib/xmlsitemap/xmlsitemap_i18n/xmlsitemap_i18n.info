@@ -1,0 +1,15 @@
+name = XML sitemap internationalization
+description = Enables multilingual XML sitemaps.
+package = XML sitemap
+core = 7.x
+dependencies[] = xmlsitemap
+dependencies[] = i18n
+files[] = xmlsitemap_i18n.module
+files[] = xmlsitemap_i18n.test
+
+; Information added by Drupal.org packaging script on 2016-05-25
+version = "7.x-2.3"
+core = "7.x"
+project = "xmlsitemap"
+datestamp = "1464191061"
+

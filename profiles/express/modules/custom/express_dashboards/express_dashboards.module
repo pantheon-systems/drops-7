@@ -1,0 +1,167 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ *
+ * Add menu items for dashboards, set default dashboard.
+ */
+function express_dashboards_menu() {
+  $items = array();
+  $weights = array();
+  // Get all hook_express_dashboard functions.
+  if ($cache = cache_get('express_dashboards')) {
+    $dashboards = $cache->data;
+  } else {
+    $dashboards = module_invoke_all('express_dashboard', $variables = NULL);
+    // Save this for 30 days - it should only be cleared on a code update
+    cache_set('express_dashboards', $dashboards, 'cache', time() + 60 * 60 * 24 * 30);
+  }
+  //$dashboards = module_invoke_all('express_dashboard', $variables = NULL);
+  // Get default dashbaord
+  $default_dashboard = variable_get('express_dashboard_default', NULL);
+  // Loop through dashboards to add menu items
+  foreach($dashboards as $key => $dashboard) {
+    $path = 'admin/dashboard/' . $key;
+    $weight = isset($dashboard['weight']) ? $dashboard['weight'] : 0;
+    $items[$path] = array(
+      'title' => $dashboard['title'],
+      'page callback' => 'express_dashboards_dashboard_output',
+      'page arguments' => array($dashboard['callback'], $key),
+      'access arguments' => $dashboard['access arguments'],
+      'type' => MENU_LOCAL_TASK,
+      'weight' => $weight,
+    );
+    // Get dashbaord weights in case no dafault is set
+    $weights[$key] = $weight;
+    // if this is the default dashboard, add as default task.
+    if (isset($default_dashboard) && ($key == $default_dashboard)) {
+      $items[$path]['type'] = MENU_DEFAULT_LOCAL_TASK;
+      $items['admin/dashboard'] = array(
+        'title' => 'Dashboard',
+        'page callback' => 'express_dashboards_dashboard_output',
+        'page arguments' => array($dashboard['callback'], $key),
+        'access arguments' => $dashboard['access arguments'],
+        'weight' => -500,
+      );
+    }
+  }
+  // If no default dashboard, set default to lowest weight dashboard.
+  if (!isset($default_dashboard)) {
+    asort($weights);
+    $key = key($weights);
+    $path = 'admin/dashboard/' . $key;
+    $items[$path]['type'] = MENU_DEFAULT_LOCAL_TASK;
+    $items['admin/dashboard'] = array(
+      'title' => 'Dashboard',
+      'page callback' => 'express_dashboards_dashboard_output',
+      'page arguments' => array($dashboards[$key]['callback'], $key),
+      'access arguments' => $dashboards[$key]['access arguments'],
+      'weight' => -500,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Callback function for dashboard items.
+ */
+function express_dashboards_dashboard_output($dashboard, $id) {
+  $dashboard_sections = $dashboard();
+  $dashboard_output = array();
+  // Check for missing section weights and then sort
+  foreach ($dashboard_sections as $key => $section) {
+    $dashboard_sections[$key]['weight'] = isset($dashboard_sections[$key]['weight']) ? $dashboard_sections[$key]['weight'] : 0;
+  }
+  uasort($dashboard_sections, 'drupal_sort_weight');
+
+  // Step through sections
+  foreach ($dashboard_sections as $section_key => $section) {
+    $vars = array();
+    $dashboard_section_output = array();
+    // Check for missing widget weights and then sort
+    foreach ($dashboard_sections[$section_key]['widgets'] as $key => $widget) {
+      $dashboard_sections[$section_key]['widgets'][$key]['weight'] = isset($dashboard_sections[$section_key]['widgets'][$key]['weight']) ? $dashboard_sections[$section_key]['widgets'][$key]['weight'] : 0;
+    }
+    uasort($dashboard_sections[$section_key]['widgets'], 'drupal_sort_weight');
+
+    // Step through widgets
+    foreach ($dashboard_sections[$section_key]['widgets'] as $key => $widget) {
+      $vars = array();
+      $vars['dashboard_section_id'] = $section_key;
+      $vars['dashboard_widget_id'] = $key;
+      $vars['title'] = $widget['title'];
+      $vars['content'] = $widget['content'];
+      $dashboard_section_output[$section_key]['widgets'][$key]['#markup'] = theme('express_dashboard_widget', $vars);
+    }
+    $vars = array();
+    $vars['content'] = $dashboard_section_output;
+    $vars['dashboard_section_id'] = $section_key;
+    $dashboard_output['content'][$section_key]['#markup'] = theme('express_dashboard_section', $vars);
+  }
+
+  // Adding dashboard id for making template suggestions
+  $dashboard_output['dashboard_id'] = $id;
+  // Return dashboard output
+  return theme('express_dashboard', $dashboard_output);
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Adds theme functions and tempalte files for dashboards
+ */
+function express_dashboards_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'express_dashboards') . '/templates';
+  $registry['express_dashboard'] = array(
+    'template' => 'express-dashboard',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['express_dashboard_section'] = array(
+    'template' => 'express-dashboard-section',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['express_dashboard_widget'] = array(
+    'template' => 'express-dashboard-widget',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  return $registry;
+}
+
+/**
+ * Adding template suggestions for dashboard.
+ */
+function template_preprocess_express_dashboard(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'express_dashboard__' . $vars['dashboard_id'];
+}
+
+/**
+ * Adding template suggestions for dashboard top widgets.
+ */
+function template_preprocess_express_dashboard_section(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'express_dashboard_section__' . $vars['dashboard_section_id'];
+}
+
+/**
+ * Adding template suggestions for dashboard widgets.
+ */
+function template_preprocess_express_dashboard_widget(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'express_dashboard_widget__' . $vars['dashboard_widget_id'];
+
+  $vars['theme_hook_suggestions'][] = 'express_dashboard_widget__' . $vars['dashboard_section_id'];
+
+  $vars['theme_hook_suggestions'][] = 'express_dashboard_widget__' . $vars['dashboard_section_id'] . '__' . $vars['dashboard_widget_id'];
+}
+
+
+/**
+ * Imlements hook_enable().
+ *
+ * Clear dashboard cache when new modules are enabled.
+ */
+function  express_dashboards_enable() {
+  cache_clear_all('express_dashboards', 'cache', TRUE);
+}

@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * Tests for the Metatag module for the direct Panels integration.
+ */
+class MetatagPanelsTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag:Panels tests',
+      'description' => 'Test Metatag integration via the Metatag:Panels module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'panels', 'page_manager'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'panels';
+
+    // Can't really do anything without Page Manager.
+    $modules[] = 'page_manager';
+
+    // Enable the hidden submodule to manage some default configs.
+    $modules[] = 'metatag_panels_tests';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Test the Panels integration.
+   */
+  public function testExportedPage() {
+    $this->drupalGet('metatag-panels-test');
+    $this->assertResponse(200);
+
+    // Test the page title.
+    $this->assertTitle('Test page title');
+
+    // Test the description meta tag.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Test page description.');
+
+    // Test the keywords meta tag.
+    $xpath = $this->xpath("//meta[@name='keywords']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one keywords meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Test, page, keywords');
+  }
+
+  // @todo Test an in-db page.
+}

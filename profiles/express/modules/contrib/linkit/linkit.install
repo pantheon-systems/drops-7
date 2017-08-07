@@ -1,0 +1,261 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the Linkit module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function linkit_schema() {
+  $schema = array();
+  $schema['linkit_profiles'] = array(
+    'description' => 'Base table holding Linkit profiles.',
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Name',
+      'primary key' => 'pid',
+      'object' => 'LinkitProfile',
+      'identifier' => 'linkit_profile',
+      'status' => 'linkit_profiles_status',
+      'load callback' => 'linkit_profile_load',
+      'load all callback' => 'linkit_profile_load_all',
+      'bulk export' => TRUE,
+      'api' => array(
+        'owner' => 'linkit',
+        'api' => 'linkit_profiles',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'pid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'no export' => TRUE,
+        'description' => 'Serial id for this profile.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'description' => 'Machine-readable name for this profile.',
+      ),
+      'admin_title' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'description' => 'Administrative title for this profile.',
+      ),
+      'admin_description' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+        'description' => 'Administrative description for this profile.',
+      ),
+      'profile_type' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'description' => 'The profile type.',
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'description' => 'Serialized data containing the profile settings.',
+      ),
+    ),
+    'primary key' => array('pid'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+    'indexes' => array(
+      'pid' => array('pid'),
+      'profile_type' => array('profile_type'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Migrate settings from v2 to v3 if needed.
+ */
+function linkit_update_7300() {
+  if (!db_field_exists('linkit_profiles', 'role_rids')) {
+    // Already 3.x, no need for migration from 2.x.
+    return;
+  }
+
+  // Get old profiles.
+  $old_profiles = db_query("SELECT * FROM {linkit_profiles} ORDER BY weight DESC");
+  //Drop redundant fields
+  db_drop_field('linkit_profiles', 'role_rids');
+  db_drop_field('linkit_profiles', 'weight');
+  db_add_field('linkit_profiles', 'profile_type',
+    array(
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => TRUE,
+      'description' => 'The profile type.',
+      'default' => ''
+    )
+  );
+  db_add_field('linkit_profiles', 'admin_description',
+    array(
+      'type' => 'text',
+      'size' => 'medium',
+      'description' => 'Administrative description for this profile.',
+     )
+  );
+
+  // Make sure our schema changes are reflected in the cached schema or
+  // subsequent update hooks making use of it might fail.
+  drupal_get_schema('linkit_profiles', TRUE);
+
+  foreach ($old_profiles as $profile) {
+    $data = unserialize($profile->data);
+
+    // Rename the plugins
+    $data['search_plugins'] = $data['plugins'];
+    unset($data['plugins']);
+    $data['attribute_plugins'] = $data['attributes'];
+    unset($data['plugins']);
+    $data['attribute_plugins']['target'] = array(
+      'enabled' => 0,
+      'weight' => -10,
+    );
+
+    // Add new plugins
+    $data['insert_plugin'] = array(
+      'plugin' => 'raw_url',
+      'url_method' => 1,
+    );
+
+    // Remove reverse_menu_trail
+    foreach ($data as $key => $item) {
+      if(strstr($key, 'entity:')) {
+        unset($data[$key]['reverse_menu_trail']);
+      }
+    }
+
+    $profile->data = serialize($data);
+
+    // All old profiles are migrated as field profiles
+    // Do the update.
+    db_update('linkit_profiles')
+    ->fields(array(
+      'data' => $profile->data,
+      'profile_type' => "2"
+    ))
+    ->condition('pid', $profile->pid)
+    ->execute();
+
+    // Store the weightest profile
+    $weightest_profile = clone $profile;
+
+    // Insert an editor profile for every field profile
+        // Copy the prfoile for latter usage
+    $profile_editor = clone $profile;
+    $profile_editor->pid = NULL;
+    $data = unserialize($profile_editor->data);
+    $data['text_formats'] = array(
+      'full_html' => 'full_html',
+      'filtered_html' => 0,
+      'plain_text' => 0
+    );
+    $profile_editor->data = serialize($data);
+    $profile_editor->name = $profile_editor->name . '_editor';
+    $profile_editor->admin_title = $profile_editor->admin_title . ' [editor]';
+    $profile_editor->profile_type = 1;
+    $profile_editor->admin_description = '';
+    unset($profile_editor->role_rids, $profile_editor->weight);
+
+    db_insert('linkit_profiles')
+    ->fields((array)$profile_editor)
+    ->execute();
+
+  }
+
+  // Update the field instances with the weightest profile
+  $instances_info = field_info_instances();
+  foreach ($instances_info as $entity_type_name => $entity_type) {
+    foreach ($entity_type as $bundle_name => $bundle) {
+      foreach ($bundle as $field_name => $field) {
+        if(isset($field['settings'], $field['settings']['linkit'])) {
+          $settings = &$field['settings']['linkit'];
+          $settings['button_text'] = 'Search';
+          unset($settings['insert_plugin']);
+          if($settings['enable']) {
+            $settings['profile'] = $weightest_profile->name;
+          }
+          else {
+            $settings['profile'] = '';
+          }
+          field_update_instance($field);
+        }
+      }
+    }
+  }
+
+  // Rebuild code registry so the LinkitProfile class is found.
+  registry_rebuild();
+}
+
+/**
+ * Do nothing. Update the schema version.
+ */
+function linkit_update_7301() {
+  // Do nothing.
+}
+
+/**
+ * Reverted.
+ */
+function linkit_update_7302() {
+  // This is the broken verison of 7304
+}
+
+/**
+ * Fixed 7302. Set URL type to "Entity view page" to preserve current behavior.
+ */
+function linkit_update_7303() {
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'linkit') . '/plugins/linkit_search/file.class.php';
+  $profiles = linkit_profile_load_all();
+  $show_notice = FALSE;
+  foreach ($profiles as $profile) {
+    // If the broken 7302 has been applied, and no other changes has been made, there is not way to get the data back.
+    // Lets add the default settings instead.
+    if (isset($profile->data['entity:file']) && $profile->data['entity:file'] == LINKIT_FILE_URL_TYPE_ENTITY) {
+      $profile->data['entity:file'] = array(
+        'result_description' => '',
+        'bundles' => array(
+          'image' => 0,
+          'video' => 0,
+          'audio' => 0,
+          'document' => 0,
+        ),
+        'group_by_bundle' => 0,
+        'show_scheme' => 0,
+        'group_by_scheme' => 0,
+        'url_type' => 'entity',
+        'image_extra_info' => array(
+          'thumbnail' => 'thumbnail',
+          'dimensions' => 'dimensions',
+        ),
+      );
+      ctools_export_crud_save('linkit_profiles', $profile);
+      $show_notice = TRUE;
+    }
+    else if (isset($profile->data['entity:file']) && !isset($profile->data['entity:file']['url_type'])) {
+      $profile->data['entity:file']['url_type'] = LINKIT_FILE_URL_TYPE_ENTITY;
+      ctools_export_crud_save('linkit_profiles', $profile);
+    }
+
+    if ($show_notice) {
+      return t('A previous update may have changed the settings for the "managed file" search plugin in all your linkit profiles.');
+    }
+  }
+}

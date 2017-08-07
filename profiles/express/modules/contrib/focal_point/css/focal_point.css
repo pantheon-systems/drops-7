@@ -1,0 +1,28 @@
+.focal-point-indicator {
+  width: 1px;
+  height:1px;
+  cursor: move;
+}
+.focal-point-indicator:after {
+  /*content: '⌖';*/
+  content: '+';
+  color: white;
+  cursor: move;
+  text-shadow: 1px 1px 0 black, 1px -1px 0 black, -1px 1px 0 black, -1px -1px 0 black;
+  width: .75em;
+  height: .75em;
+  font-size: 1.5em;
+  line-height: .75em;
+  display: block;
+  position: relative;
+  top: -.375em;
+  left: -.375em;
+}
+.focal-point-wrapper {
+  display: inline-block;
+  position: relative;
+  direction: ltr;
+}
+.focal-point-preview-link {
+  display: block;
+}

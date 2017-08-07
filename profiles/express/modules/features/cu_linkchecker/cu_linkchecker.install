@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_linkchecker_install() {
+
+}
+
+/**
+ * Implements hook_enable().
+ */
+function cu_linkchecker_enable() {
+
+}

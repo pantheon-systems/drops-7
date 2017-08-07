@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ * Creates a set of default users with specified roles.
+ */
+function express_permissions_install() {
+
+  // Configure secure_permissions module.
+  variable_set('secure_permissions_active', 1);
+  variable_set('secure_permissions_disable_forms', 1);
+  variable_set('secure_permissions_show_permissions_page', 1);
+  variable_set('secure_permissions_show_roles_page', 0);
+  variable_set('secure_permissions_use_default', 0);
+  variable_set('secure_permissions_verbose', 0);
+  variable_set('secure_permissions_ignore_in_export', 'access devel information');
+
+  // Load our roles and permissions.
+  secure_permissions_rebuild();
+
+  // force roles to be weighted by increasing permissions
+  $role = user_role_load_by_name('edit_my_content');
+  $role->weight = 2;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('content_editor');
+  $role->weight = 3;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('site_owner');
+  $role->weight = 4;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('administrator');
+  $role->weight = 5;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('developer');
+  $role->weight = 6;
+  user_role_save($role);
+
+}
+
+/**
+ * Reset role weight by increasing permissions
+ */
+function express_permissions_update_7001() {
+    // force roles to be weighted by increasing permissions
+  $role = user_role_load_by_name('edit_my_content');
+  $role->weight = 2;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('content_editor');
+  $role->weight = 3;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('site_owner');
+  $role->weight = 4;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('administrator');
+  $role->weight = 5;
+  user_role_save($role);
+
+  $role = user_role_load_by_name('developer');
+  $role->weight = 6;
+  user_role_save($role);
+}
+

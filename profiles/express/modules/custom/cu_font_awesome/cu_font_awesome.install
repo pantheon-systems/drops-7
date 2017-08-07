@@ -1,0 +1,30 @@
+<?php
+
+function cu_font_awesome_uninstall() {
+  variable_del('cu_font_awesome_icons');
+}
+
+/**
+ * Delete font awesome variable, rebuild from library.
+ */
+function cu_font_awesome_update_7000() {
+  variable_del('cu_font_awesome_icons');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function cu_font_awesome_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $library = libraries_load(CUFA_FONTAWESOME_LIBRARY);
+    if (!$library['loaded']) {
+      $requirements['font_awesome_library'] = array(
+        'title' => 'Font Awesome Library',
+        'value' => 'The Font Awesome Library is missing.',
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+  return $requirements;
+}

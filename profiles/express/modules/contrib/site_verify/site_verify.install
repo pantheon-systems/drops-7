@@ -1,0 +1,130 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the site_verify module.
+ */
+
+/**
+ * Implements hook_scheam().
+ */
+function site_verify_schema() {
+  $schema['site_verify'] = array(
+    'description' => '',
+    'fields' => array(
+      'svid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique site verification ID.',
+      ),
+      'engine' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => '',
+      ),
+      'file' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+        'description' => '',
+      ),
+      'file_contents' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => '',
+      ),
+      'meta' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => '',
+      ),
+    ),
+    'primary key' => array('svid'),
+    'indexes' => array(
+      'engine' => array('engine'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function site_verify_install() {
+  // Import data from deprecated modules.
+  site_verify_import_xmlsitemap();
+  site_verify_import_ghs();
+}
+
+/**
+ * Drop the unique key on file names.
+ */
+function site_verify_update_1() {
+  db_drop_unique_key('site_verify', 'file');
+}
+
+/**
+ * Update engine Live Search to Bing.
+ */
+function site_verify_update_2() {
+  db_update('site_verify')
+    ->fields(array(
+      'engine' => 'bing',
+    ))
+    ->condition('engine', 'live_search')
+    ->execute();
+}
+
+/**
+ * Run imports from other contrib modules.
+ */
+function site_verify_update_3() {
+  site_verify_import_xmlsitemap();
+  site_verify_import_ghs();
+}
+
+/**
+ * Import data from XML sitemap engines.
+ */
+function site_verify_import_xmlsitemap() {
+  $engines = array('google', 'bing', 'yahoo');
+  foreach ($engines as $engine) {
+    if ($file = variable_get('xmlsitemap_engines_' . $engine . '_verify', '')) {
+      db_merge('site_verify')
+        ->key(array(
+          'engine' => $engine,
+          'file' => $file,
+          'file_contents' => variable_get('xmlsitemap_engines_' . $engine . '_verify_string', ''),
+          'meta' => '',
+        ))
+        ->execute();
+    }
+    variable_del('xmlsitemap_engines_' . $engine . '_verify');
+    variable_del('xmlsitemap_engines_' . $engine . '_verify_string');
+  }
+}
+
+/**
+ * Import data from Google Apps Verification.
+ */
+function site_verify_import_ghs() {
+  if ($google_content = variable_get('ghs_string_verify', '')) {
+    db_merge('site_verify')
+      ->key(array(
+        'engine' => 'google',
+        'file' => 'googlehostedservice.html',
+      ))
+      ->fields(array(
+        'file_contents' => $google_content,
+        'meta' => '',
+      ))
+      ->execute();
+  }
+  variable_del('ghs_string_verify');
+  module_disable(array('ghs'));
+}

@@ -1,0 +1,382 @@
+@import "../modules/_global.scss";
+@import "../modules/_colors.scss";
+
+/* Menu visibility */
+.layout-responsive {
+  #secondary-menu-wrapper,
+  #main-menu-wrapper,
+  #footer-menu-wrapper {
+    display: none;
+  }
+  @media (min-width:960px) {
+    #secondary-menu-wrapper,
+    #main-menu-wrapper,
+    #footer-menu-wrapper {
+      display: block;
+    }
+  }
+}
+
+/* Secondary Navigation */
+#secondary-navigation {
+  font-size: 80%;
+  @include clearfix();
+  nav {
+    float: right;
+    ul li {
+      display: inline;
+      list-style: none;
+      list-style-image: none;
+      margin:0;
+      padding: 0;
+
+      a {
+        padding: 0 10px;
+      }
+    }
+  }
+  h2.secondary-menu-label {
+    display: inline;
+    font-size: 100%;
+    font-weight: 600;
+  }
+}
+/* Action menu, or inline secondary menu */
+#navigation ul.action-menu {
+  float: right;
+  margin:0 0 0 20px;
+  font-size: 85%;
+  a {
+    line-height: 24px;
+    margin: 8px 5px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    padding: 0 5px;
+    border: none;
+    white-space: nowrap;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
+
+.action-blue ul#action-menu a {
+  background-color: $blue;
+  color:#fff;
+  @include shadowtransition;
+  @include rgbashadow(0, 0px, 3px, #000000, .24);
+  &:hover,
+  &:focus {
+    background-color:darken($blue, 3%);
+    @include rgbashadow(0, 2px, 5px, #000000, .30);
+    color:#fff;
+  }
+  &:active {
+    @include rgbashadow(0, 3px, 15px, #000000, .35);
+  }
+}
+
+.action-gray ul#action-menu a {
+  background-color: #444;
+  color:#fff;
+  @include shadowtransition;
+  @include rgbashadow(0, 0px, 3px, #000000, .24);
+  &:hover,
+  &:focus {
+    background-color:darken(#666, 3%);
+    @include rgbashadow(0, 2px, 5px, #000000, .30);
+    color:#fff;
+  }
+  &:active {
+    @include rgbashadow(0, 3px, 15px, #000000, .35);
+  }
+}
+.action-gold ul#action-menu a {
+  background-color: $cugold;
+  color:#000;
+  @include shadowtransition;
+  @include rgbashadow(0, 0px, 3px, #000000, .24);
+  &:hover,
+  &:focus {
+    background-color:lighten($cugold, 3%);
+    @include rgbashadow(0, 2px, 5px, #000000, .30);
+    color:#000;
+  }
+  &:active {
+    @include rgbashadow(0, 3px, 15px, #000000, .35);
+  }
+}
+/* Block Menu - default blocks provided by core for each menu */
+.block-menu {
+  ul.menu,
+  ul.menu li {
+    list-style: none;
+    list-style-image: none;
+    margin:0;
+    padding:0;
+  }
+  ul.menu li {
+  }
+  ul.menu a {
+    display: block;
+    padding: 5px 0;
+  }
+  ul.menu ul.menu a {
+    padding-left: 10px;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: 20px;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 30px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 40px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 50px;
+  }
+  ul.menu li.expanded > a:before {
+    //content: '\f107';
+    //font-family: 'FontAwesome';
+    //margin-right:5px;
+  }
+  ul.menu li.collapsed > a:before {
+    //content: '\f105';
+    //font-family: 'FontAwesome';
+    //margin-right:5px;
+  }
+}
+.block-menu ul.menu a {
+  display: block;
+  padding:10px 0;
+  border-bottom: 1px solid $border_color;
+  margin-bottom: -1px;
+  i.fa {
+    color:#363636;
+  }
+}
+.block-menu.blockdarkgray ul.menu a {
+  border-bottom: 1px solid #555;
+  i.fa {
+    color:#fff;
+  }
+}
+// Style menu item borders depending on region background color
+.region-background-dark {
+  .block-menu ul.menu a {
+    border-bottom: 1px solid #444;
+  }
+}
+.region-background-light {
+  .block-menu ul.menu a {
+    border-bottom: 1px solid $border_color;
+  }
+}
+
+/* Footer Menu */
+#footer-menu {
+  /* Main menu and secondary menu links and menu block links. */
+  .links,
+  .menu {
+    margin: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding: 10px 0;
+    text-align: left; /* LTR */
+
+    li {
+      /* A simple method to get navigation links to appear in one line. */
+      float: left; /* LTR */
+      padding: 0 5px 0 0; /* LTR */
+      list-style-type: none;
+      list-style-image: none;
+    }
+  }
+}
+#footer-menu-wrapper {
+  font-size: 90%;
+  padding: 0;
+  font-weight: bold;
+}
+#footer-menu-links {
+}
+.footer-menu-gray {
+  background-color: #333;
+}
+.footer-menu-gray ul#footer-menu-links {
+  a,
+  a.active,
+  a.active-trail {
+    color:#fff;
+    margin-right: 20px;
+    &:hover,
+    &:focus {
+      color:$cugold;
+    }
+  }
+}
+.footer-menu-gold {
+  background-color: $cugold;
+}
+.footer-menu-gold ul#footer-menu-links {
+  a,
+  a.active,
+  a.active-trail {
+    color:#333;
+    margin-right: 20px;
+    &:hover,
+    &:focus {
+      color:#000;
+    }
+  }
+}
+
+/* Menu Blocks - menus provided by menu block module */
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+  ul.menu,
+  ul.menu li {
+    list-style: none;
+    list-style-image: none;
+    margin: 0;
+    padding: 0;
+
+    a {
+      display: block;
+    }
+  }
+  ul.menu ul.menu a {
+    padding-left: 15px;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: 30px;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 45px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 60px;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: 75px;
+  }
+}
+/* Mobile Menu Toggle/ Hamburger Menu */
+.mobile-menu-toggle {
+  display: none;
+}
+.layout-responsive {
+  .mobile-menu-toggle {
+    display: block;
+    position: absolute;
+    top:3px;
+    right:20px;
+    text-transform: uppercase;
+    font-size:18px;
+    font-family: Arial, Helvetica;
+    span.mobile-menu-text {
+      position: absolute !important;
+      clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+      clip: rect(1px, 1px, 1px, 1px);
+    }
+    a {
+      display: inline-block;
+      white-space: nowrap;
+    }
+  }
+  @media screen and (min-width: 480px) {
+    .mobile-menu-toggle {
+      font-size:11px;
+      span.mobile-menu-text {
+        position: static !important;
+        clip: auto;
+      }
+      a {
+        padding:2px 5px;
+        display: inline-block;
+        border-width: 1px;
+        border-style: solid;
+        white-space: nowrap;
+        @include rounded(2px);
+      }
+    }
+  }
+  @media screen and (min-width: 960px) {
+    .mobile-menu-toggle {
+      display: none;
+    }
+  }
+}
+/* Mobile navigation */
+#mobile-navigation-wrapper {
+  display: none;
+}
+#mobile-navigation {
+  margin:0 0px;
+  .culinks {
+    display: none;
+  }
+}
+#mobile-menu {
+  ul, li {
+    list-style: none;
+    list-style-image: none;
+    margin: 0;
+    padding: 0;
+  }
+  a {
+    display: block;
+    padding:10px 20px;
+  }
+}
+#mobile-search {
+  padding:20px 20px 0;
+  .cu-search input.form-text {
+    width: 100%;
+  }
+}
+#navigation .links,
+#navigation .menu {
+  li {
+    margin: 0;
+    padding: 0;
+  }
+  a {
+    display: inline-block;
+    padding:0 12px;
+    line-height: 40px;
+  }
+}
+/* Menu Icons - for block menus, not main, secondary, footer menus */
+.menu-icon-text {
+  @include clearfloats;
+  display: block;
+}
+.hide-text {
+  position: absolute !important;
+  clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
+}
+a.menu__link {
+  display: block;
+  @include clearfloats;
+  i.fa {
+    float: left;
+    margin-right: 5px;
+    margin-top: 3px;
+    font-size: 120%;
+  }
+}
+/* Mobile subnavigation */
+.layout-responsive {
+  #block-menu-block-site-navigation-menus-4 {
+    display: block;
+  }
+  @media (min-width:768px) {
+    #block-menu-block-site-navigation-menus-4 {
+      display: none;
+    }
+  }
+}

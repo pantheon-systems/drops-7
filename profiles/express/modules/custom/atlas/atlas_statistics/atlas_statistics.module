@@ -1,0 +1,228 @@
+<?php
+
+/**
+ * @file
+ * Provides statistics reporting for Atlas.
+ */
+
+
+/**
+ * Implements hook_boot().
+ */
+function atlas_statistics_boot() {
+  // forces bootstrap setting = 1 in system table to avoid
+  // https://www.drupal.org/node/1822278
+}
+
+/**
+ * Implements hook_cron().
+ */
+function atlas_statistics_cron() {
+  // Only run cron task if site is installed or launched.
+  $site_status = variable_get('atlas_status');
+  if ($site_status == 'installed' || $site_status == 'launched') {
+    $cron_last = variable_get('cron_last', NULL);
+    // Run once a day.
+    if (date('ymd', $cron_last) != date('ymd', time())) {
+      // Switch so that we can easily stop the processing.
+      if (variable_get('atlas_statistics_site_cron', TRUE)) {
+        $atlas_id = variable_get('atlas_id', NULL);
+        $site_array = atlas_api_request('sites', $atlas_id);
+        $statistics_id = $site_array['statistics'];
+        $statistics_array = atlas_api_request('statistics', $statistics_id);
+
+        module_load_include('inc', 'atlas_statistics');
+        $request_data = atlas_statistics_get_statistics();
+
+        // Set the etag from the form.
+        $request_data['_etag'] = $statistics_array['_etag'];
+        $request_data['site'] = $atlas_id;
+
+        atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function atlas_statistics_menu() {
+  $items['admin/config/development/atlas/statistics'] = array(
+    'title' => 'Statistics',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('atlas_statistics'),
+    'access arguments' => array('administer modules'),
+    'weight' => 0,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for admin/config/development/atlas Statistics tab.
+ */
+function atlas_statistics() {
+  $form = array();
+
+  // Check the base requirements to interact with Atlas.
+  // We need Atlas to be up.
+  if (!atlas_up()) {
+    drupal_set_message(t("Atlas must be up to configure these settings"), 'error');
+    return;
+  }
+
+  // We need to know the 'statistics_id'.
+  $atlas_id = variable_get('atlas_id', NULL);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  $statistics_id = $site_array['statistics'];
+  $statistics_array = atlas_api_request('statistics', $statistics_id);
+
+  if (!$statistics_id) {
+    drupal_set_message(t("A 'statistic' item is not defined for this site."), 'error');
+    return;
+  }
+
+  $atlas_url = variable_get('atlas_url');
+  $statistics_url = $atlas_url . 'statistics/' . $statistics_id;
+  $statistics_url_markup = '<a href="' . $statistics_url . '">' . $statistics_url . '</a>';
+
+  $form['atlas_statistics_link'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div><strong>Statistics Item URL</strong>: ' . $statistics_url_markup . '</div>',
+  );
+
+  module_load_include('inc', 'atlas_statistics');
+  $atlas_statistics = atlas_statistics_get_statistics();
+
+  $form['atlas_statistics'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div><strong>Statistics Payload</strong><br /><pre>',
+    '#markup' => atlas_statistics_pretty_print(drupal_json_encode($atlas_statistics)),
+    '#suffix' => '</pre></div>',
+  );
+
+
+  // Store the etag when we load the form for concurrency control with Atlas.
+  // Need to make sure the Atlas item hasn't changed since we loaded the form.
+  $form['atlas_etag'] = array(
+    '#type' => 'hidden',
+    '#title' => t('eTag'),
+    '#default_value' => $statistics_array['_etag'],
+  );
+
+  $form['atlas_statistics_id'] = array(
+    '#type' => 'hidden',
+    '#title' => t('statistics_id'),
+    '#default_value' => $statistics_id,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save Statistics',
+    '#submit' => array('atlas_statistics_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit function for atlas_admin_settings().
+ */
+function atlas_statistics_submit($form, &$form_state) {
+
+  module_load_include('inc', 'atlas_statistics');
+  $request_data = atlas_statistics_get_statistics();
+
+  // Set the etag from the form.
+  $request_data['_etag'] = $form_state['values']['atlas_etag'];
+  $statistics_id = $form_state['values']['atlas_statistics_id'];
+
+  atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+}
+
+/**
+* Format a flat JSON string to make it more human-readable
+*
+* @param string $json The original JSON string to process
+*        When the input is not a string it is assumed the input is RAW
+*        and should be converted to JSON first of all.
+* @return string Indented version of the original JSON string
+*/
+function atlas_statistics_pretty_print($json) {
+  if (!is_string($json)) {
+    if (phpversion() && phpversion() >= 5.4) {
+      return json_encode($json, JSON_PRETTY_PRINT);
+    }
+    $json = json_encode($json);
+  }
+  $result      = '';
+  $pos         = 0;               // indentation level
+  $strLen      = strlen($json);
+  $indentStr   = "\t";
+  $newLine     = "\n";
+  $prevChar    = '';
+  $outOfQuotes = true;
+  for ($i = 0; $i < $strLen; $i++) {
+    // Speedup: copy blocks of input which don't matter re string detection and formatting.
+    $copyLen = strcspn($json, $outOfQuotes ? " \t\r\n\",:[{}]" : "\\\"", $i);
+    if ($copyLen >= 1) {
+      $copyStr = substr($json, $i, $copyLen);
+      // Also reset the tracker for escapes: we won't be hitting any right now
+      // and the next round is the first time an 'escape' character can be seen again at the input.
+      $prevChar = '';
+      $result .= $copyStr;
+      $i += $copyLen - 1;      // correct for the for(;;) loop
+      continue;
+    }
+
+    // Grab the next character in the string
+    $char = substr($json, $i, 1);
+
+    // Are we inside a quoted string encountering an escape sequence?
+    if (!$outOfQuotes && $prevChar === '\\') {
+      // Add the escaped character to the result string and ignore it for the string enter/exit detection:
+      $result .= $char;
+      $prevChar = '';
+      continue;
+    }
+    // Are we entering/exiting a quoted string?
+    if ($char === '"' && $prevChar !== '\\') {
+      $outOfQuotes = !$outOfQuotes;
+    }
+    // If this character is the end of an element,
+    // output a new line and indent the next line
+    else if ($outOfQuotes && ($char === '}' || $char === ']')) {
+      $result .= $newLine;
+      $pos--;
+      for ($j = 0; $j < $pos; $j++) {
+        $result .= $indentStr;
+      }
+    }
+    // eat all non-essential whitespace in the input as we do our own here and it would only mess up our process
+    else if ($outOfQuotes && false !== strpos(" \t\r\n", $char)) {
+      continue;
+    }
+    // Add the character to the result string
+    $result .= $char;
+    // always add a space after a field colon:
+    if ($outOfQuotes && $char === ':') {
+      $result .= ' ';
+    }
+    // If the last character was the beginning of an element,
+    // output a new line and indent the next line
+    else if ($outOfQuotes && ($char === ',' || $char === '{' || $char === '[')) {
+      $result .= $newLine;
+      if ($char === '{' || $char === '[') {
+        $pos++;
+      }
+      for ($j = 0; $j < $pos; $j++) {
+        $result .= $indentStr;
+      }
+    }
+    $prevChar = $char;
+  }
+  return $result;
+}
+

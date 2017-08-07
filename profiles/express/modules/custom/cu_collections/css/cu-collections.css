@@ -1,0 +1,30 @@
+.collection-view-mode-grid { margin-bottom: 20px; }
+.collection-view-mode-grid h4 { font-size: 100%; }
+
+ul.collection-items-navigation, ul.collection-items-navigation li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+
+ul.collection-items-navigation { margin-bottom: 10px; }
+
+ul.collection-items-navigation li { display: inline; }
+
+ul.collection-items-navigation a { display: inline-block; padding: 2px 5px; border: 1px solid #d7d7d7; font-size: 75%; color: #656565; margin: 0 5px 5px 0; font-weight: 600; text-transform: uppercase; }
+ul.collection-items-navigation a.active { background-color: #d7d7d7; color: #000; }
+
+select.collection-filter { margin-bottom: 10px; }
+
+.bean-collection-grid label { display: inline; font-size: 85%; font-weight: 600; }
+
+.collection-items .row { display: flex; flex-direction: row; flex-wrap: wrap; }
+.collection-items .row .collection-item { width: 100%; padding: 0 20px; }
+.collection-items .row .collection-item img { width: 100%; height: auto; }
+@media (min-width: 1200px) { .collection-items .row .collection-item { width: 33.3333%; } }
+@media (min-width: 960px) and (max-width: 1199px) { .collection-items .row .collection-item { width: 33.3333%; } }
+@media (min-width: 768px) and (max-width: 959px) { .collection-items .row .collection-item { width: 50%; } }
+
+.collection-item { opacity: 1; -webkit-transition: opacity 0.3s linear; -moz-transition: opacity 0.3s linear; -ms-transition: opacity 0.3s linear; -o-transition: opacity 0.3s linear; transition: opacity 0.3s linear; display: block; }
+.collection-item img { filter: grayscale(0); -webkit-transition: filter 0.3s linear; -moz-transition: filter 0.3s linear; -ms-transition: filter 0.3s linear; -o-transition: filter 0.3s linear; transition: filter 0.3s linear; }
+
+.collection-item.collection-item-disabled { opacity: .25; display: none; }
+.collection-item.collection-item-disabled img, .collection-item.collection-item-disabled a { filter: grayscale(1); }
+
+@media screen and (min-width: 768px) { .collection-filter-effect-fade .collection-item.collection-item-disabled { display: block; } }

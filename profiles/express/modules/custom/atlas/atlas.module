@@ -1,0 +1,498 @@
+<?php
+
+/**
+ * @file
+ * Provides functions to talk to Atlas.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function atlas_menu() {
+  $items['admin/config/development/atlas'] = array(
+    'title' => 'Atlas',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Atlas Configuration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('atlas_admin_settings'),
+    'access arguments' => array('administer modules'),
+  );
+
+  $items['admin/config/development/atlas/site'] = array(
+    'title' => 'Site',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for admin/config/development/atlas.
+ */
+function atlas_admin_settings() {
+  $form = array();
+
+  // Check the base requirements to interact with Atlas.
+  // We need Atlas to be up.
+  if (!atlas_up()) {
+    drupal_set_message(t("Atlas must be up to configure these settings"), 'error');
+    return;
+  }
+
+  // We need to know the 'atlas_id'.
+  $atlas_id = variable_get('atlas_id', FALSE);
+
+  if (!$atlas_id) {
+    drupal_set_message(t("Atlas ID is not configured."), 'error');
+    return;
+  }
+
+  $site_array = atlas_api_request('sites', $atlas_id);
+
+  // Options are limited based on permissions.
+  $status_options = array(
+    'launching' => t('Launching'),
+    'take_down' => t('Take Down Site'),
+  );
+
+  // If site is Available, Installed, or Launched, add options. You shouldn't
+  // go to these states.
+  if ($site_array['status'] == 'available') {
+    $status_options = array(
+      'installing' => t('Installing'),
+      'available' => t('Available'),
+    );
+  }
+  elseif ($site_array['status'] == 'installed') {
+    $status_options['installed'] = t('Installed');
+  }
+  elseif ($site_array['status'] == 'launched') {
+    $status_options['launched'] = t('Launched');
+  }
+
+  $form['atlas_status'] = array(
+    '#type' => 'select',
+    '#title' => t('Site Status'),
+    '#options' => $status_options,
+    '#default_value' => $site_array['status'],
+    '#description' => '',
+  );
+
+  $form['atlas_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path'),
+    '#default_value' => $site_array['path'],
+  );
+
+  $form['atlas_code'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Code Items'),
+    '#collapsible' => TRUE,
+  );
+
+  $core_options = _get_code_options('core', 'drupal');
+  $active_core = $site_array['code']['core'];
+
+  $form['atlas_code']['atlas_core'] = array(
+    '#type' => 'select',
+    '#title' => t('Core'),
+    '#options' => $core_options,
+    '#default_value' => $active_core,
+  );
+
+  $profile_options = _get_code_options('profile', 'express');
+  $active_profile = $site_array['code']['profile'];
+
+  $form['atlas_code']['atlas_profile'] = array(
+    '#type' => 'select',
+    '#title' => t('Profile'),
+    '#options' => $profile_options,
+    '#default_value' => $active_profile,
+  );
+
+  $package_options = _get_code_options('packages', NULL);
+  // If there are packages, add the field.
+  if (!empty($package_options)) {
+    $active_packages = array();
+    // Check and see if we have any packages.
+    if (array_key_exists('package', $site_array['code'])) {
+      $active_modules_list = $site_array['code']['package'];
+      foreach ($active_modules_list as $module) {
+        $active_packages[] = $module;
+      }
+    }
+
+    $form['atlas_code']['atlas_packages'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('packages'),
+      '#options' => $package_options,
+      '#default_value' => $active_packages,
+    );
+  }
+
+  // Set the options and description. Override if status is not 'Launched'.
+  $update_group_options = range(0, 14);
+  $update_group_description = 'Groups 0-10 are considered "normal" and can be arbitrarily reassigned. Groups 11-14 should only be used for sites that need special attention.';
+  if ($site_array['status'] != 'launched') {
+    $update_group_options = range(0, 2);
+    $update_group_description = 'Installed sites can be put into groups 0-2. These groups can be arbitrarily reassigned.';
+  }
+  $active_update_group = $site_array['update_group'];
+
+  $form['atlas_update_group'] = array(
+    '#type' => 'select',
+    '#title' => t('Update Group'),
+    '#options' => $update_group_options,
+    '#default_value' => $active_update_group,
+    '#description' => $update_group_description,
+  );
+  // TODO: Add display of sites that are in the selected group.
+
+  if ($site_array['status'] == 'available') {
+    $form['atlas_code']['#disabled'] = TRUE;
+    $form['atlas_code']['#collapsed'] = TRUE;
+    $form['atlas_path']['#disabled'] = TRUE;
+    $form['atlas_update_group']['#disabled'] = TRUE;
+    drupal_set_message(t("You can only modify 'status' while the site is '<i>available</i>'."), 'warning');
+  }
+
+  if ($site_array['status'] == 'launched') {
+    $form['atlas_path']['#disabled'] = TRUE;
+  }
+
+  // Store the etag when we load the form for concurrency control with Atlas.
+  // Need to make sure the Atlas item hasn't changed since we loaded the form.
+  $form['atlas_etag'] = array(
+    '#type' => 'hidden',
+    '#title' => t('eTag'),
+    '#default_value' => $site_array['_etag'],
+  );
+
+  $form['#validate'][] = 'validate_atlas_admin_settings';
+  $form['#submit'][] = 'atlas_admin_settings_submit';
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validate the Atlas form.
+ */
+function validate_atlas_admin_settings($form, &$form_state) {
+  $atlas_id = variable_get('atlas_id', FALSE);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  if ($form['atlas_path']['#value'] == $site_array['sid'] && $site_array['pool'] != 'poolb-homepage' && ($form['atlas_status']['#value'] == 'launching' || $form['atlas_status']['#value'] == 'launched')) {
+    form_set_error('atlas_path', t('You cannot launch a site at it\'s \'p1\' URL.'));
+  }
+  if ($form['atlas_status']['#value'] == 'available') {
+    form_set_error('atlas_status', t('You cannot make any changes to a site while it is in the \'Available\' state.'));
+  }
+}
+
+/**
+ * Submit function for atlas_admin_settings().
+ */
+function atlas_admin_settings_submit($form, &$form_state) {
+  $atlas_id = variable_get('atlas_id', NULL);
+  $site_array = atlas_api_request('sites', $atlas_id);
+
+  // Setup empty array for data that is changing.
+  $request_data = array();
+
+  // Check to see if the form value is the same as the original item and remove
+  // the row if it is.
+  if ($form_state['values']['atlas_status'] != $site_array['status']) {
+    $request_data['status'] = $form_state['values']['atlas_status'];
+  }
+
+  if ($form_state['values']['atlas_path'] != $site_array['path']) {
+    $request_data['path'] = $form_state['values']['atlas_path'];
+  }
+
+  if ($form_state['values']['atlas_core'] != $site_array['code']['core']) {
+    $request_data['code']['core'] = $form_state['values']['atlas_core'];
+  }
+
+  if ($form_state['values']['atlas_profile'] != $site_array['code']['profile']) {
+    $request_data['code']['profile'] = $form_state['values']['atlas_profile'];
+  }
+  if (isset($form_state['values']['atlas_packages'])) {
+    // Drop all the keys with zero as a value.
+    $form_state['values']['atlas_packages'] = array_diff($form_state['values']['atlas_packages'], array(0));
+    // Check to see if the new arrays are different.
+    if (isset($site_array['code']['package'])) {
+      $packages_diff = array_diff($form_state['values']['atlas_packages'], $site_array['code']['package']);
+    }
+    // Check for First added package, Remove all packages, or Change packages.
+    if (!empty($packages_diff)
+      || (array_key_exists('package', $site_array['code']) && empty($form_state['values']['atlas_packages']))
+    ) {
+      $request_data['code']['package'] = $form_state['values']['atlas_packages'];
+    }
+    elseif (!array_key_exists('package', $site_array['code']) && !empty($form_state['values']['atlas_packages'])) {
+      $request_data['code']['package'] = $form_state['values']['atlas_packages'];
+    }
+  }
+
+  if ($form_state['values']['atlas_update_group'] != $site_array['update_group']) {
+    $request_data['update_group'] = $form_state['values']['atlas_update_group'];
+  }
+
+  // We only want to send a patch if something has changed.
+  if (!empty($request_data)) {
+    // Set the etag from the form.
+    $request_data['_etag'] = $form_state['values']['atlas_etag'];
+    atlas_api_request('sites', $atlas_id, 'PATCH', $request_data);
+  }
+  else {
+    drupal_set_message(t('No data was changed.'), 'warning');
+  }
+}
+
+
+/**
+ * Create an array w/ core version to send to Atlas.
+ *
+ * @param int $version
+ *   Express core version to process.
+ *
+ * @return array
+ *   $site_data: A partial PATCH to the site item in Atlas.
+ */
+function atlas_process_core_schema_version($version) {
+  $data = array();
+
+  // We need to know the 'atlas_id' to get the 'statistics_id'.
+  $atlas_id = variable_get('atlas_id', FALSE);
+
+
+  $site_array = atlas_api_request('sites', $atlas_id);
+  $statistics_id = $site_array['statistics'];
+  $statistics_array = atlas_api_request('statistics', $statistics_id);
+  $request_data['_etag'] = $statistics_array['_etag'];
+
+  if (!$version) {
+    // drupal_get_installed_schema_version doesn't appear at the bootstrap level
+    // of an updated so query the value.
+    $version = drupal_get_installed_schema_version(variable_get('express_core_version', 'cu_core'));
+  }
+  $request_data['express_core_schema_version'] = (int) $version;
+
+  // Ready to patch.
+  atlas_api_request('statistics', $statistics_id, 'PATCH', $request_data);
+}
+
+/**
+ * Determine if Atlas is up. Included a 5 second timeout.
+ *
+ * @return bool
+ *   TRUE if api returns 200 else FALSE if non 200 or not configured.
+ */
+function atlas_up() {
+  $url = variable_get('atlas_url');
+  $options = array(
+    'timeout' => 5.0,
+  );
+  $response = drupal_http_request($url, $options);
+  if ($response->code == 200) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Determine if Atlas is up. Included a 5 second timeout.
+ *
+ * @return bool
+ *   TRUE if api returns 200 else FALSE if non 200 or not configured.
+ */
+function atlas_version() {
+  $url = variable_get('atlas_url') . 'version';
+  $options = array(
+    'timeout' => 5.0,
+  );
+  $response = drupal_http_request($url, $options);
+  if (!property_exists($response, 'error')) {
+    return $response->data;
+  }
+  else {
+    return NULL;
+  }
+}
+
+/**
+ * Send a request to the Atlas API.
+ *
+ * @param string $resource
+ *   Options include 'sites','commands','code','statistics'.
+ * @param string $query
+ *   Query string or single item identifier, do not include the first separator.
+ * @param string $method
+ *   HTTP method to use.
+ * @param array $data
+ *   Array of data to use when creating or updating an item.
+ */
+function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NULL) {
+  // We want to figure out what kind of query we are running (Resource endpoint
+  // vs. single item) and adjust the separator.
+  if (preg_match('/^where/', $query)) {
+    $query = '?' . $query;
+  }
+  else {
+    $query = '/' . $query;
+  }
+
+  // Environmental variable has a trailing slash.
+  $atlas_url = variable_get('atlas_url');
+  $request_url = $atlas_url . $resource . $query;
+
+  $request_options = array(
+    'method' => $method,
+    'timeout' => 15,
+  );
+
+  global $user;
+
+  if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'))) {
+    // Set Content-Type header to application/json.
+    $user_string = base64_encode(variable_get('atlas_username') . ':' . variable_get('atlas_password'));
+    $request_options['headers'] = array(
+      'Content-Type' => 'application/json',
+      'User-Agent' => 'Web Express',
+      'Authorization' => 'Basic ' . $user_string,
+    );
+
+    // When modifying the record, we need to set the If-Match header to the
+    // _etag.
+    if (in_array($method, array('PUT', 'PATCH', 'DELETE'))) {
+      $request_options['headers']['If-Match'] = $data['_etag'];
+
+      // Remove Atlas private fields because we cannot modify them. They all
+      // begin with an underscore.
+      $keys = preg_grep('/^_/', array_keys($data));
+      foreach ($keys as $k) {
+        unset($data[$k]);
+      }
+    }
+    // Add the username here since we are using a service account. Need the else
+    // statement to handle running via drush.
+    if (isset($user->name)) {
+      $data['modified_by'] = $user->name;
+    }
+    else {
+      $data['modified_by'] = variable_get('atlas_username');
+    }
+
+    // JSON encode the data.
+    if (isset($data['code']['package'])) {
+      $data['code']['package'] = array_filter(array_values($data['code']['package']));
+    }
+    $request_options['data'] = drupal_json_encode($data);
+  }
+
+  // Make the request.
+  $response = drupal_http_request($request_url, $request_options);
+
+  if ($request_options['method'] != 'GET') {
+    watchdog(
+      'atlas',
+      '%method sent to %resource',
+      array(
+        '%method' => $request_options['method'],
+        '%resource' => $resource
+      ),
+      WATCHDOG_INFO,
+      NULL
+    );
+  }
+
+  if (in_array($response->code, array(200, 201))) {
+    // Clear the Drupal cache for $site_array because we just updated something.
+    cache_clear_all('atlas_site_array', 'cache', TRUE);
+
+    if ($response->headers['content-type'] == 'application/json') {
+      $json_array = drupal_json_decode($response->data);
+      return $json_array;
+    }
+  }
+  // If error property exists in the response object.
+  elseif (property_exists($response, 'error')) {
+
+    if (property_exists($response, 'data') && $response->code != 500) {
+      $response_json = drupal_json_decode($response->data);
+      if (array_key_exists('_error', $response_json)) {
+        $error_message = 'Atlas response: ' . $response->error . ' - Error Code: ' . $response_json['_error']['code'] . ' - ' . $response_json['_error']['message'];
+      }
+      if (array_key_exists('_issues', $response_json)) {
+        $error_message = 'Atlas response: ' . $response->error . ' - ' . $response->data;
+      }
+    }
+    else {
+      $error_message = 'Atlas response: ' . $response->error;
+    }
+    drupal_set_message($error_message, 'warning');
+    watchdog(
+      'atlas',
+      'API Request Error - %error',
+      array(
+        '%error' => $error_message,
+      ),
+      WATCHDOG_WARNING,
+      NULL
+    );
+  }
+}
+
+/**
+ * Get code options.
+ *
+ * @param string $type optional
+ *   Either type in code schema or 'packages' to get all modules, themes, and
+ *   libraries.
+ * @param string $name optional
+ *   All versions of a specifically named code item. *
+ *
+ * @return array option list
+ *   Form ready list of options with '_id' field as the key.
+ */
+function _get_code_options($type = NULL, $name = NULL) {
+
+  if ($name && $type) {
+    if ($type == 'packages') {
+      $query = 'where={"meta.name":"' . $name . '","meta.code_type":{"$in":["module","theme","library"]}}';
+    }
+    else {
+      $query = 'where={"meta.name":"' . $name . '","meta.code_type":"' . $type . '"}';
+    }
+  }
+  elseif ($type) {
+    if ($type == 'packages') {
+      $query = 'where={"meta.code_type":{"$in":["module","theme","library"]}}';
+    }
+    else {
+      $query = 'where={"meta.code_type":"' . $type . '"}';
+    }
+  }
+  elseif ($name) {
+    $query = 'where={"meta.name":"' . $name . '"}';
+  }
+  else {
+    $query = NULL;
+  }
+
+  $options_data = atlas_api_request('code', $query);
+  $options_data = (array) $options_data;
+  $options_data = $options_data['_items'];
+
+  $options = array();
+  foreach ($options_data as $option) {
+    $option_label = $option['meta']['name'] . ' ' . $option['meta']['version'];
+    if ($option['meta']['is_current']) {
+      $option_label = $option_label . ' - Current';
+    }
+    $options[$option['_id']] = $option_label;
+  }
+  return $options;
+}

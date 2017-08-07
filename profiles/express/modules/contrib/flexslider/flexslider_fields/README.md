@@ -1,0 +1,18 @@
+About
+=====
+
+Adds a field display formatter to allow you to display field content using FlexSlider. The module doesn't require Field UI to be enabled by default (so you can leave it off once everything is configured) but it is recommended to use to setup your display settings.
+
+Usage
+=====
+
+Manage the fields on any entity (ex: node of type Article)
+
+Ex: admin/structure/types/manage/article
+
+Select any field of type "image" or "media" and set the display options to "FlexSlider". Then select your option set in the display formatter settings. That's it!
+
+File Entity Integration
+=======================
+
+The module integrates with the [File Entity module](https://www.drupal.org/project/file_entity). Select "FlexSlider File Entity" formatter to use your file entity display modes for you slide layout.

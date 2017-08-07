@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Install functions for block_title_icons module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function block_title_icons_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    $library = libraries_load(BLOCKTITLEICONS_LIBRARY);
+    if (!$library['loaded']) {
+      $requirements['font_awesome_library'] = array(
+        'title' => 'Font Awesome Library',
+        'description' => 'The Font Awesome Library is missing.',
+        'value' => '',
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}

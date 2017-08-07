@@ -1,0 +1,389 @@
+<?php
+
+/**
+ * @file
+ * Install and update for Performance Logging
+ *
+ * Copyright Khalid Baheyeldin 2008 of http://2bits.com
+ */
+
+// Minimum APC shm memory size to require
+define('PERFORMANCE_MIN_MEMORY', 48);
+
+/**
+ * Implements hook_schema().
+ */
+function performance_schema() {
+  $schema = array();
+
+  $schema['cache_performance'] = array(
+    'description' => 'Table that holds summary performance data.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Primary Key: Unique cache ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'description' => 'A collection of data to cache.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+      'expire' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry should expire, or 0 for never.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'serialized' => array(
+        'description' => 'A flag to indicate whether content is serialized (1) or not (0).',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'expire' => array('expire'),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $schema['performance_detail'] = array(
+    'fields' => array(
+      'pid' => array(
+        'description' => 'Primary Key: Unique path ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'description' => 'A Unix timestamp indicating when the entry was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bytes' => array(
+        'description' => 'Memory consumed in bytes.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'ms' => array(
+        'description' => 'Time consumed in milliseconds.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'query_count' => array(
+        'description' => 'Number of queries executed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'query_timer' => array(
+        'description' => 'Time taken to execute queries.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'anon' => array(
+        'description' => 'Whether the page was accessed by an anonymous user.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 1,
+      ),
+      'path' => array(
+        'description' => 'The path the data belongs to.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language used when calling this path.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'description' => 'Additional (debug) info for future expansion.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('pid'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function performance_install() {
+  // Set the weight so this module runs last
+  // SQL: UPDATE {system} SET weight = 3000 WHERE name = 'performance'
+  db_update('system')
+    ->fields(array('weight' => 3000))
+    ->condition('name', 'performance')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function performance_uninstall() {
+  // SQL: DELETE FROM {variable} WHERE name LIKE 'performance\_%'
+  db_delete('variable')
+    ->condition('name', 'performance\_%', 'LIKE')
+    ->execute();
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function performance_requirements($phase) {
+  $requirements = array();
+
+  if ($phase != 'runtime') {
+    return $requirements;
+  }
+
+  if (variable_get('performance_detail', 0)) {
+    $requirements['performance_detail'] = array(
+      'title' => t('Performance logging details'),
+      'value' => 'Enabled',
+      'severity' => REQUIREMENT_WARNING,
+      'description' => t('Performance detailed logging is !link. This can cause severe issues on live sites.', array('!link' => l(t('enabled'), PERFORMANCE_SETTINGS))),
+    );
+  }
+
+  if (variable_get(PERFORMANCE_QUERY_VAR, 0)) {
+    if (variable_get('performance_detail', 0) || variable_get('performance_summary', 0)) {
+      $requirements['performance_query'] = array(
+        'title' => t('Performance logging query'),
+        'value' => 'Enabled',
+        'severity' => REQUIREMENT_WARNING,
+        'description' => t('Query timing and count logging is !link. This can cause memory size per page to be larger than normal.', array('!link' => l(t('enabled'), PERFORMANCE_SETTINGS))),
+      );
+    }
+  }
+
+  $default = 'DrupalDatabaseCache';
+  $cache = variable_get(PERFORMANCE_CACHE, $default);
+  if ($cache == $default) {
+    $requirements['performance_cache'] = array(
+      'title' => t('Performance logging summary'),
+      'value' => 'Disabled',
+      'severity' => REQUIREMENT_WARNING,
+      'description' => t('Performance logging on live web sites works best if an alternative caching mechanism, like APC or Memcache, is enabled.'),
+    );
+  }
+
+  $shm_size = ini_get('apc.shm_size');
+  if (function_exists('apc_fetch') && $shm_size < PERFORMANCE_MIN_MEMORY) {
+    $requirements['performance_apc_mem'] = array(
+      'title' => t('Performance logging APC memory size'),
+      'value' => $shm_size,
+      'severity' => REQUIREMENT_WARNING,
+      'description' => t('APC has been configured for !size, which is less than the recommended !min_memory MB of memory. If you encounter errors when viewing the summary report, then try to increase that limit for APC.', array('!size' => 1 * $shm_size, '!min_memory' => PERFORMANCE_MIN_MEMORY)),
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Harmonize notations for milliseconds to "ms".
+ */
+function performance_update_7001() {
+  $int_field = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'disp-width' => '11',
+  );
+
+  db_change_field('performance_summary', 'millisecs_max', 'ms_max', $int_field);
+  db_change_field('performance_summary', 'millisecs_avg', 'ms_avg', $int_field);
+  db_change_field('performance_detail', 'millisecs', 'ms', $int_field);
+
+  // We don't have a cache update method, so it's better to clear it
+  if (function_exists('apc_fetch')) {
+    apc_clear_cache('user');
+  }
+}
+
+/**
+ * Move summary data from old performance_summary table to new cache bin.
+ * Note that we now cache per language and separate anonymous users from logged
+ * in users! During this migration, we do BASIC separation between anonymous and
+ * logged in users based on admin paths. Back up your data if you want to keep
+ * the original logs!
+ * DRUSH NOTE: make sure to set a proper $base_url using the --uri parameter or
+ * by means of a drushrc.php config file! Alternatively you can setup a
+ * $conf['performance_key'] = 'my_unique_key'; in settings.php when using
+ * multiple domains for one site.
+ */
+function performance_update_7200() {
+  global $language;
+
+  // Abort when improperly invoked when using drush. See DRUSH NOTE above.
+  if(drupal_is_cli() && variable_get('performance_key', FALSE) === FALSE && $GLOBALS['base_url'] == 'http://default') {
+    // Throw an exception to make this update fail. Found no other way. Better
+    // suggestion anyone? Tried various drush functions, such as
+    // drush_set_error(), to no avail. Update was always marked as 'completed'
+    // and was not re-executed when re-running drush updb.
+    throw new Exception(dt("Please run drush with the --uri parameter or setup a drushrc.php file to successfully migrate the summary data! The site's domain name will be used in the cache key! Use \$conf['performance_key'] = 'my_unique_key'; in settings.php when using multiple domains on one site."));
+    return;
+  }
+
+  // Create new cache bin, see http://drupal.org/node/150220.
+  $table = array(
+    'description' => 'Table that holds summary performance data.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Primary Key: Unique cache ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'description' => 'A collection of data to cache.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+      'expire' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry should expire, or 0 for never.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'serialized' => array(
+        'description' => 'A flag to indicate whether content is serialized (1) or not (0).',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'expire' => array('expire'),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $keys_cache = array();
+  // Keep records for 1 day.
+  $expire = REQUEST_TIME + (24 * 60 * 60);
+
+  // Extra check to prevent errors when running this update multiple times.
+  if (db_table_exists('performance_summary') && !db_table_exists('cache_performance')) {
+    db_create_table('cache_performance', $table);
+
+    $result = db_select('performance_summary', 'ps')
+      ->fields('ps')
+      ->execute();
+    foreach ($result as $row) {
+      // Make some BASIC separation between anonymous users and logged in users.
+      $anonymous = 1;
+      if (preg_match('/^(admin|admin\/.*|node\/add.*)$/i', $row->path) || preg_match('/^(node|user)\/\d+\/(edit|translate|delete|revisions.*)$/i', $row->path)) {
+        $anonymous = 0;
+      }
+
+      $data = array(
+        'path' => $row->path,
+        'bytes_max' => $row->bytes_max,
+        'bytes_sum' => $row->bytes_avg * $row->num_accesses,
+        'ms_max' => $row->ms_max,
+        'ms_sum' => $row->ms_avg * $row->num_accesses,
+        'query_timer_max' => $row->query_timer_max,
+        'query_timer_sum' => $row->query_timer_avg * $row->num_accesses,
+        'query_count_max' => $row->query_count_max,
+        'query_count_sum' => $row->query_count_avg * $row->num_accesses,
+        'num_accesses' => $row->num_accesses,
+        'last_access' => $row->last_access,
+        'anon' => $anonymous,
+        'language' => $language->language,
+      );
+      // We now cache per language and distinguish between anonymous users and
+      // logged in users. As usual, we keep logs for one day!
+      $key = PERFORMANCE_KEY . $row->path . ':' . $language->language . ':' . $anonymous;
+      cache_set($key, $data, 'cache_performance', $expire);
+      // Keep the key for the key cache store. We do it this way so that keys
+      // will replace eachother which would not happen when using
+      // $keys_cache[] = $key;
+      $keys_cache[$key] = 1;
+    }
+    // This will allow easy retrieval of data as we cannot use SQL queries since
+    // the cache store can by anything!
+    cache_set(PERFORMANCE_KEY, $keys_cache, 'cache_performance');
+
+    // No longer needed!
+    db_drop_table('performance_summary');
+
+    // Preserve summary logging setting if enabled.
+    // There can, in theory, be unlimited variables named performance_summary_%
+    // where we do not know what % is, hence this approach.
+    $result = db_select('variable', 'v')
+      ->fields('v', array('value'))
+      ->condition('name', 'performance_summary\_%', 'LIKE')
+      ->execute();
+    foreach ($result as $row) {
+      if (unserialize($row->value)) {
+        variable_set('performance_summary', 1);
+        break;
+      }
+    }
+
+    // Delete old performance summary variables!
+    db_delete('variable')
+      ->condition('name', 'performance_summary\_%', 'LIKE')
+      ->execute();
+
+    return t('Migrated all data from old performance_summary table to new cache bin.');
+  }
+}
+
+/**
+ * Add new language field to performance_detail table.
+ */
+function performance_update_7201() {
+  $field = 'language';
+  $table = 'performance_detail';
+
+  // See http://drupal.org/node/150220.
+  $language = array(
+    'description' => 'The {languages}.language used when calling this path.',
+    'type' => 'varchar',
+    'length' => 12,
+    'not null' => TRUE,
+    'default' => '',
+  );
+
+  if (!db_field_exists($table, $field)) {
+    db_add_field($table, $field, $language);
+    return t('Created language field in performance_detail table.');
+  }
+}

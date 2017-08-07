@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * @file
+ * Main functions for block_title_icons module.
+ */
+
+define('BLOCKTITLEICONS_LIBRARY', 'fontawesome');
+define('BLOCKTITLEICONS_NAME', 'Font Awesome');
+define('BLOCKTITLEICONS_URL', 'http://fontawesome.io');
+define('BLOCKTITLEICONS_ICONS_URL', 'scss/_icons.scss');
+define('BLOCKTITLEICONS_DOWNLOAD_URL', 'https://github.com/FortAwesome/Font-Awesome/archive/v4.6.3.zip');
+define('BLOCKTITLEICONS_PREFIX', 'fa');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function block_title_icons_libraries_info() {
+  $libraries[BLOCKTITLEICONS_LIBRARY] = array(
+    'name' => BLOCKTITLEICONS_NAME,
+    'vendor url' => BLOCKTITLEICONS_URL,
+    'download url' => BLOCKTITLEICONS_DOWNLOAD_URL,
+    'version arguments' => array(
+      'file' => 'css/font-awesome.css',
+      'pattern' => '/((?:\d+\.?){2,3})/',
+      'lines' => 10,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/font-awesome.min.css',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Return array of icons for option lists.
+ */
+function block_title_icons_icon_list($add_icon = TRUE) {
+  // Check to see if this is saved already.
+  $icons = variable_get('block_title_icons_list', array());
+  if (empty($icons)) {
+    // Load icon scss file.
+    $library = libraries_load(BLOCKTITLEICONS_LIBRARY);
+    $icons_file = file_get_contents($library['library path'] . '/' . BLOCKTITLEICONS_ICONS_URL);
+    $icons = array();
+    // Break each line into array.
+    $icons_styles = explode("\n", $icons_file);
+    // Use this to see if it's a line we want.
+    $icon_query = 'content: $fa-var-';
+    foreach ($icons_styles as $icon_style) {
+      // Check to see if line includes our query variable.
+      if (strpos($icon_style, $icon_query) !== FALSE) {
+        // Get the part out of the string that we want and add to array.
+        $icon_name = _block_title_icons_regex($icon_style);
+        $icons[] = $icon_name;
+      }
+    }
+    // Sort icons alphabetically.
+    asort($icons);
+    // Save icons array.
+    variable_set('block_title_icons_list', $icons);
+  }
+  $icon_names = array();
+  // Theme the option list.
+  foreach ($icons as $icon) {
+    if ($add_icon) {
+      // If type is radio, render icon as well.
+      $icon_names['fa-' . $icon] = theme('block_title_icons_option', array('icon' => $icon));
+    }
+    else {
+      // Otherwise just add name (for a select list).
+      $icon_names['fa-' . $icon] = $icon;
+    }
+  }
+  return $icon_names;
+}
+
+/**
+ * Parse and manipulate css rule to get icon name.
+ */
+function _block_title_icons_regex($string) {
+  $prefix = ' $fa-var-';
+  $parts = explode(':', $string);
+  return substr($parts[2], strlen($prefix), -3);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function block_title_icons_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $registry['block_title_icons_option'] = array(
+    'arguments' => array('icon' => NULL),
+  );
+
+  return $registry;
+}
+
+/**
+ * Theme function for icon options.
+ */
+function theme_block_title_icons_option($vars) {
+  return '<i class="fa fa-' . $vars['icon'] . '" aria-hidden="true"></i> ' . $vars['icon'];
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function block_title_icons_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'block_title_icons') . '/block_title_icons.css');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function block_title_icons_form_block_admin_configure_alter(&$form, &$form_state, &$form_id) {
+  // Get saved values.
+  $module = $form['module']['#value'];
+  $delta = $form['delta']['#value'];
+  $var_name = $module . '-' . $delta;
+  $block_icon = block_title_icons_get();
+  $form['block_title_icons'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Title Icons'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $options = array('none' => 'none');
+  $options = array_merge($options, block_title_icons_icon_list());
+  $form['block_title_icons']['block_title_icons_options'] = array(
+    '#type' => 'radios',
+    '#title' => '',
+    '#options' => $options,
+    '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : 'none',
+  );
+  $form['#submit'][] = 'block_title_icons_update';
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will be used to alter the block bean creation/modification to add
+ *  a icon selection.
+ */
+function block_title_icons_form_bean_form_alter(&$form, &$form_state, $form_id) {
+
+  $delta = $form['bean']['#value']->delta;
+
+  if (isset($delta)) {
+    $form['module'] = array(
+      '#type' => 'hidden',
+      '#value' => 'bean',
+    );
+    $module = 'bean';
+    $form['delta'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['bean']['#value']->delta,
+    );
+    $var_name = $module . '-' . $delta;
+    $block_icon = block_title_icons_get();
+    $form['block_title_icons'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Title Icons'),
+      '#weight' => 90,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $options = array('none' => 'none');
+    $options = array_merge($options, block_title_icons_icon_list());
+    $form['block_title_icons']['block_title_icons_options'] = array(
+      '#type' => 'radios',
+      '#title' => '',
+      '#options' => $options,
+      '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : 'none',
+    );
+    $form['#submit'][] = 'block_title_icons_update';
+  }
+}
+
+
+/**
+ * Update an existing block after the block form has been submitted.
+ */
+function block_title_icons_update($form_id, &$form_state) {
+  $var_name = $form_state['values']['module'] . '-' . $form_state['values']['delta'];
+  $icons_value = block_title_icons_get();
+  $icons_value[$var_name] = $form_state['values']['block_title_icons_options'];
+  block_title_icons_set($icons_value);
+}
+
+/**
+ * Set Responsive Toggle custom block settings.
+ */
+function block_title_icons_set($icons_value) {
+  variable_set('block_title_icons', $icons_value);
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function block_title_icons_preprocess_block(&$variables) {
+  if ($block_icon = block_title_icons_get_display($variables['block'])) {
+    $elements = $variables['elements']['#block'];
+    if (!empty($elements->subject)) {
+      $elements->subject = '<i class="blockicon fa ' . $block_icon . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
+    }
+  }
+}
+
+/**
+ * Gets block.
+ */
+function block_title_icons_get_display($block) {
+  $block_icon = block_title_icons_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($block_icon[$var_name])) {
+    return $block_icon[$var_name];
+  }
+}
+
+
+/**
+ * Get Responsive Toggle custom block settings.
+ */
+function block_title_icons_get() {
+  static $icons_value;
+  if (empty($icons_value)) {
+    $icons_value = variable_get('block_title_icons', array());
+  }
+  return $icons_value;
+}
+
+/**
+ * Implements hook_init().
+ */
+function block_title_icons_init() {
+  $library = libraries_load(BLOCKTITLEICONS_LIBRARY);
+}

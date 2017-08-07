@@ -1,0 +1,134 @@
+<?php
+
+/**
+ * Tests for the Search API integration.
+ */
+class MetatagCoreWithSearchAPITest extends MetatagTestHelper {
+
+  /**
+   * The index used by these tests.
+   *
+   * @var SearchApIindex
+   */
+  protected $index;
+
+  /**
+   * The ID of the index used by these tests.
+   *
+   * @var string
+   */
+  protected $indexId;
+
+  /**
+   * The machine name of the created test server.
+   *
+   * @var string
+   */
+  protected $serverId;
+
+  /**
+   * @inheritdoc
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag Search API tests',
+      'description' => 'Tests the Metatag Search API integration.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'entity', 'search_api'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Needed for Search API.
+    $modules[] = 'entity';
+    // The module.
+    $modules[] = 'search_api';
+    // Used to help test the integration.
+    $modules[] = 'metatag_search_test';
+
+    parent::setUp($modules);
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'edit any page content',
+
+      // Needed for Search API.
+      'administer search_api',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Create an index.
+    $this->indexId = 'test_index';
+    $this->index = entity_create('search_api_index', array(
+      'id' => $this->indexId,
+      'name' => 'test',
+      'machine_name' => 'test_index',
+      'enabled' => 1,
+      'item_type' => 'node',
+      'options' => array(
+        'data_alter_callbacks' => array(
+          'search_api_metatag_alter_callback' => array(
+            'status' => 1,
+          ),
+        ),
+        'fields' => array(
+          'metatag_keywords' => array(
+            'type' => 'text',
+          ),
+        ),
+      ),
+    ));
+    $this->index->save();
+
+    // Set up a Search API server.
+    $this->serverId = 'test_server';
+    $values = array(
+      'name' => 'Search API test server',
+      'machine_name' => $this->serverId,
+      'enabled' => 1,
+      'description' => 'A server used for testing.',
+      'class' => 'metatag_search_test_service',
+    );
+    $this->drupalPost('admin/config/search/search_api/add_server', $values, 'Create server');
+
+    // Configure the server.
+    $this->drupalPost(NULL, array(), 'Create server');
+    $this->assertText(t('The server was successfully created.'));
+    $this->drupalGet('admin/config/search/search_api');
+    $values = array(
+      'server' => $this->serverId,
+    );
+    $this->drupalPost("admin/config/search/search_api/index/{$this->indexId}/edit", $values, 'Save settings');
+    $this->clickLink(t('enable'));
+
+    // Enable meta tags for the 'page' content type.
+    metatag_entity_type_enable('node', 'page');
+  }
+
+  /**
+   * Test that the alter callback indexes the keywords.
+   */
+  public function testAlter() {
+    // Add a node with keywords.
+    $node = $this->drupalCreateNode();
+    $keywords = 'puppies, rainbows';
+    $values = array(
+      'metatags[' . LANGUAGE_NONE . '][keywords][value]' => $keywords,
+    );
+    $this->drupalPost('node/' . $node->nid . '/edit', $values, 'Save');
+
+    // Index the node.
+    $this->drupalPost("admin/config/search/search_api/index/{$this->indexId}", array(), 'Index now');
+
+    // Check whether the keywords have been indexed.
+    $this->assertIdentical(variable_get('metatag_search_test_keywords', FALSE), $keywords);
+  }
+
+}

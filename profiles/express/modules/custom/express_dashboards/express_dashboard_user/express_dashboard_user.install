@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for express_dashboards_user module.
+ */
+
+/**
+ * Install express_status module.
+ */
+function express_dashboard_user_update_7001() {
+  module_enable(array('express_status'));
+}

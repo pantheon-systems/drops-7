@@ -1,0 +1,291 @@
+<?php
+
+/**
+ * @file
+ * Install test content for collections feature.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function cu_test_content_collections_install() {
+  $terms = array(
+    'Academic Program' => array(),
+  );
+  _cu_test_content_collections_terms_create_taxonomy_terms_insert('collection_type', $terms);
+
+  $terms = array(
+    'Major' => array(),
+    'Minor' => array(),
+    'Certificate' => array(),
+  );
+  _cu_test_content_collections_terms_create_taxonomy_terms_insert('collection_categories', $terms);
+
+  $nodes = array(
+    '1' => array(
+      'title' => 'Anthropology',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '2' => array(
+      'title' => 'Chemistry & Bio Chemistry',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '3' => array(
+      'title' => 'Economics',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '4' => array(
+      'title' => 'Film Studies',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '5' => array(
+      'title' => 'Geography',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '6' => array(
+      'title' => 'History',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '7' => array(
+      'title' => 'Linguistics',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '8' => array(
+      'title' => 'Neuroscience',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '9' => array(
+      'title' => 'Philosophy',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '10' => array(
+      'title' => 'Religious Studies',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '11' => array(
+      'title' => 'Sociology',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '12' => array(
+      'title' => 'Speech, Language & Hearing Sciences',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '13' => array(
+      'title' => 'Theatre & Dance',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+    '14' => array(
+      'title' => 'Women & Gender Studies',
+      'body' => _cu_test_content_collections_create_nodes_dummy_text(),
+    ),
+  );
+  _cu_test_content_collections_create_nodes($nodes);
+  _cu_test_content_collections_block();
+}
+
+/**
+ * Create collections terms.
+ *
+ * @param string $vocab_name
+ *   Name of the vocabulary.
+ * @param array $terms
+ *   Array of vocabulary terms.
+ * @param integer|null $parent
+ *   Vocabulary ID of parent.
+ *
+ * @return bool
+ *
+ * @throws \Exception
+ */
+function _cu_test_content_collections_terms_create_taxonomy_terms_insert($vocab_name, $terms, $parent = NULL) {
+  $temp_terms = variable_get('cu_test_content_collections_terms_' . $vocab_name, array());
+  if (!(isset($parent))) {
+    $parent = 0;
+  }
+  $vocab = taxonomy_vocabulary_machine_name_load($vocab_name);
+  // Get the vocabulary ID.
+  $vid = $vocab->vid;
+  foreach ($terms as $parent_name => $children) {
+    // Create the parent term.
+    $term = new stdClass();
+    $term->name = $parent_name;
+    $term->vid = $vid;
+    $term->parent = $parent;
+    $status = taxonomy_term_save($term);
+    if (!$status) {
+      throw new Exception("Could not save taxonomy term $parent_name with these params -> vid: $vid parent: $parent");
+    }
+    if (isset($children)) {
+      _cu_test_content_collections_terms_create_taxonomy_terms_insert($vocab_name, $children, $term->tid);
+    }
+    $temp_term = taxonomy_get_term_by_name($term->name, $vocab_name);
+    $temp_term = current($temp_term);
+    $temp_terms[$temp_term->tid] = $term->name;
+    drupal_set_message("Term $term->name - $temp_term->tid created.");
+  }
+  variable_set('cu_test_content_collections_terms_' . $vocab_name, $temp_terms);
+  return TRUE;
+}
+
+/**
+ * Create collections nodes.
+ *
+ * @param array $nodes
+ *   Nodes for which to create content.
+ */
+function _cu_test_content_collections_create_nodes($nodes) {
+  $collection_type = taxonomy_get_term_by_name('Academic Program', 'collection_type');
+  $collection_tid = key($collection_type);
+
+  $temp_collections = variable_get('cu_test_content_collections', array());
+  $vocabulary = taxonomy_vocabulary_machine_name_load('collection_categories');
+  $collection_categories = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
+
+  $weight = 0;
+  $time = time();
+  // Set date range to 15 days.
+  $date_range = 60 * 60 * 24 * 15;
+  foreach ($nodes as $elem) {
+    $count = $weight + 1;
+    $node_title = $elem['title'];
+    $node = new StdClass();
+    $node->title = $node_title;
+    $node->language = LANGUAGE_NONE;
+    if (isset($elem['body'])) {
+      $node->field_collection_body[$node->language][0]['value'] = $elem['body'];
+      $node->field_collection_body[$node->language][0]['safe_value'] = $elem['body'];
+    }
+
+    $node->field_collection_body[$node->language][0]['format'] = 'wysiwyg';
+
+    $rand_tags = array_rand($collection_categories, 2);
+
+    $node->field_collection_category[$node->language][0]['tid'] = $rand_tags[0];
+    $node->field_collection_category[$node->language][1]['tid'] = $rand_tags[1];
+
+    $node->field_collection_type[$node->language][0]['tid'] = $collection_tid;
+
+    $file_path = system_retrieve_file('https://unsplash.it/1500/1000?random');
+    $file = (object) array(
+      'uid' => $count,
+      'uri' => $file_path,
+      'filemime' => file_get_mimetype($file_path),
+      'status' => 1,
+    );
+    // You can specify a subdirectory, e.g. "public://foo/".
+    $file = file_copy($file, 'public://');
+    $node->field_collection_thumbnail[LANGUAGE_NONE][0] = (array) $file;
+    $node->field_collection_thumbnail[LANGUAGE_NONE][0]['alt'] = 'Photo Alt Text';
+    $node->type = 'collection_item';
+    $node->uid = 1;
+
+    // Set created date.
+    $created = $time - ($date_range * $weight);
+    $node->created = $created;
+    node_save($node);
+    $temp_collections[$node->nid] = $node->title;
+    drupal_set_message("Collection Item $node->title - $node->nid created.");
+    $weight++;
+  }
+  variable_set('cu_test_content_collections', $temp_collections);
+}
+
+/**
+ * Create dummy text.
+ *
+ * @return string
+ */
+function _cu_test_content_collections_create_nodes_dummy_text() {
+  $response = drupal_http_request('http://loripsum.net/api/10/');
+  if ($response->code == '200') {
+    return $response->data;
+  }
+  else {
+    return 'No dummy text.';
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Remove test collections.
+ */
+function cu_test_content_collections_uninstall() {
+  $temp_colections = variable_get('cu_test_content_collections', NULL);
+  if ($temp_colections) {
+    foreach ($temp_colections as $nid => $name) {
+      node_delete($nid);
+      drupal_set_message("Node $name - $nid deleted.");
+    }
+    variable_del('cu_test_content_collections');
+  }
+
+  $temp_terms = variable_get('cu_test_content_collections_terms_collection_type', NULL);
+  if ($temp_terms) {
+
+    foreach ($temp_terms as $tid => $name) {
+      taxonomy_term_delete($tid);
+      drupal_set_message("Term $name - $tid deleted.");
+    }
+    variable_del('cu_test_content_collections_terms_collection_type');
+  }
+
+  $temp_terms = variable_get('cu_test_content_collections_terms_collection_categories', NULL);
+  if ($temp_terms) {
+
+    foreach ($temp_terms as $tid => $name) {
+      taxonomy_term_delete($tid);
+      drupal_set_message("Term $name - $tid deleted.");
+    }
+    variable_del('cu_test_content_collections_terms_collection_categories');
+  }
+
+  $temp_beans = variable_get('cu_test_content_collections_block', NULL);
+  if ($temp_beans) {
+    foreach ($temp_beans as $bid => $name) {
+      $bean = bean_load($bid);
+      bean_delete($bean);
+      drupal_set_message("Bean $name - $bid deleted.");
+    }
+    variable_del('cu_test_content_collections_block');
+  }
+}
+
+/**
+ * Install Article list block.
+ */
+function _cu_test_content_collections_block() {
+
+  $temp_beans = variable_get('cu_test_content_collections_block', array());
+
+  $collection_type = taxonomy_get_term_by_name('Academic Program', 'collection_type');
+  $collection_tid = key($collection_type);
+
+  $vocabulary = taxonomy_vocabulary_machine_name_load('collection_categories');
+  $terms = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
+  $collection_terms = array();
+  foreach ($terms as $term) {
+    $collection_terms[] = $term->tid;
+  }
+
+  $values = array(
+    'delta' => 'collection_grid_block_test',
+    'label' => 'collection_grid_block_test',
+    'title' => 'Academic Programs',
+    'type' => 'collection_grid',
+    'view_mode' => 'default',
+  );
+  $values['field_collection_grid_type'][LANGUAGE_NONE][0]['tid'] = $collection_tid;
+
+  foreach ($collection_terms as $key => $term) {
+    $values['field_collection_grid_category'][LANGUAGE_NONE][$key]['tid'] = $term;
+  }
+
+  $bean = bean_create($values);
+  $bean->save();
+
+  $title = $values['title'] . '|' . $values['label'];
+  $temp_beans[$bean->bid] = $title;
+  drupal_set_message("Bean $title - $bean->bid created");
+  variable_set('cu_test_content_collections_block', $temp_beans);
+}

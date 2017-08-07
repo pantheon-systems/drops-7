@@ -1,0 +1,20 @@
+.express-status .incidents, .express-status .components .components-message, .express-status .components .component, .express-status .status-info { padding: 10px; border: 1px solid #e7e7e7; margin-bottom: -1px; }
+
+.express-status { max-width: 480px; margin-bottom: 20px; }
+.express-status .status-message { color: #fff; font-weight: bold; padding: 10px; }
+.express-status .status-message.none { background-color: #43A047; }
+.express-status .status-message.minor { background-color: #7E57C2; }
+.express-status .status-message.maintenance { background-color: #3498DB; }
+.express-status .status-message.major, .express-status .status-message.critical { background-color: #D84315; }
+.express-status .incidents { font-size: 85%; display: none; }
+.express-status .incidents .incident { border-bottom: 1px solid #e7e7e7; padding: 10px 0; }
+.express-status .incidents .incident:last-child { border: none; padding-bottom: 5px; }
+.express-status .components { font-size: 85%; display: none; }
+.express-status .components .components-message { background-color: #f2f2f2; }
+.express-status .components .component { font-weight: bold; }
+.express-status .components .operational { color: #43A047; }
+.express-status .components .under_maintenance { color: #3498DB; }
+.express-status .components .partial_outage { color: #EF6C00; }
+.express-status .components .degraded_performance { color: #7E57C2; }
+.express-status .components .major_outage { color: #D84315; }
+.express-status .status-info { display: none; font-size: 75%; text-align: right; }

@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_testing_core_install() {
+
+  theme_enable(array(
+    'cuminimal',
+    'cumodern',
+    'cuivory',
+  ));
+
+  // change for #FIT-583 for https://www.drupal.org/node/2172293
+  // Must be set before cu_forms_bundle is enabled
+  variable_set('webform_install_add_body_field', TRUE);
+
+  variable_set('site_name', 'University of Colorado Boulder');
+  variable_set('site_name_1', 'University of Colorado Boulder');
+  variable_set('site_slogan', 'University of Colorado Boulder');
+
+  variable_set('express_help_base_url', 'http://www.colorado.edu/webcentral');
+
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, cu_custom_logo, varnish, memcache, cu_redirect');
+
+  // Set message for when enabling of bundles is turned off.
+  variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');
+
+
+  // Set variable for disabling certain messages from users.
+  variable_set('disable_messages_ignore_regex', array(
+    '/^Metatag support has been enabled for the .*?$/i',
+    '/^You can now .+configure the CAPTCHA module.+ for your site.$/i',
+    '/^Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.$/i',
+  ));
+  variable_set('disable_messages_ignore_patterns', 'Metatag support has been enabled for the .+
+You can now .+configure the CAPTCHA module.+ for your site.
+Note that the CAPTCHA module disables .+page caching.+ of pages that include a CAPTCHA challenge.');
+
+  variable_set('express_layout_node_type_ignore', array('file'));
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 0,))
+  ->execute();
+
+  db_update('responsive_preview')
+    ->fields(array('status' => 1,))
+    ->condition(db_or()
+      ->condition('name', 'medium')
+      ->condition('name', 'small')
+    )
+  ->execute();
+
+
+  // Setting performance logging variables.
+  variable_set('performance_detail', 1);
+  variable_set('performance_nodrush', 1);
+  variable_set('performance_threshold_accesses', '2');
+
+  // Don't check for summary detail since not using in report.
+  // variable_set('performance_summary', 1);
+  // Don't add query logging since it adds memory overhead.
+  // variable_set('performance_query', 1);
+
+
+}
+
+/**
+ * Revert features by passing features in an array.
+ */
+function cu_testing_core_revert_features($features = NULL) {
+  // If an array of specific features isn't passed, populate with all overridden features.
+  if ($features == NULL) {
+    module_load_include('inc', 'features', 'features.export');
+    $features = features_get_features();
+    foreach ($features as $feature) {
+      if (features_get_storage($feature->name) == 0) {
+        unset($features[$feature->name]);
+      }
+    }
+  }
+  // Check against features that currently can't be reverted.
+  $protected_features = array(
+    'cu_home_page',
+    'cu_sitewide',
+  );
+  foreach ($features as $key => $feature) {
+    if (!in_array($key, $protected_features)) {
+      $f = features_get_features($key);
+      $components = array_keys($f->info['features']);
+      features_revert(array($f->name => $components));
+      watchdog('cu_core', 'Attempting to revert %feature', array('%feature' => $feature->name), WATCHDOG_NOTICE);
+    }
+  }
+}
+
+/**
+ * Updates inventory with profile version.
+ */
+function _express_inventory_update($version) {
+  // Do at the end of every update.
+  module_load_include('inc', 'cu_inventory');
+  cu_inventory_process_profile_version($version);
+}

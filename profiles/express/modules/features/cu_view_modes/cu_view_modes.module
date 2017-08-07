@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the cu_view_modes feature.
+ */
+
+include_once 'cu_view_modes.features.inc';

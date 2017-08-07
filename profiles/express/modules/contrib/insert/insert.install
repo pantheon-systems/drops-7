@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Update and install functions for Insert.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function insert_install() {
+  // Insert needs to load after both ImageField and FileField.
+  db_query("UPDATE {system} SET weight = 15 WHERE type = 'module' AND name = 'insert'");
+}

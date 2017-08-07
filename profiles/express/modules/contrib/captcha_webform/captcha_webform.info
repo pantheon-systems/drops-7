@@ -1,0 +1,8 @@
+name = CAPTCHA Webform Bridge
+description = Automatically set (or unset) CAPTCHA challenges to webforms.
+package = "Spam control"
+dependencies[] = captcha
+core = 7.x
+
+configuration = admin/config/people/captcha/captcha/webform
+

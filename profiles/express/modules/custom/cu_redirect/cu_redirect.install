@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_redirect_install() {
+  cu_redirect_add_redirect('index.html', '<front>');
+}
+

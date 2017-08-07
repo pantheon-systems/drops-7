@@ -1,0 +1,85 @@
+body.layout-boxed { background-color: #f4f4f4; }
+
+body.layout-wide { background-color: #1e1e1e; }
+
+.layout-boxed .page-wrapper { background-image: url(../images/transparent/white25.png); width: 1000px; margin: 0 auto; padding-bottom: 20px; }
+
+.rgba .layout-boxed .page-wrapper { background-image: none; background: rgba(255, 255, 255, 0.15); }
+
+.layout-boxed #page { width: 960px; margin: 0 auto; }
+
+#page { background: #fff; }
+
+.layout-wide #backstretch { display: none; }
+
+#section-header { background-color: #fff; }
+
+.banner-black #zone-branding-wrapper { background-color: #000; }
+.banner-black #zone-secondary-menu-wrapper { background-color: #000; color: #9b9b9b; }
+.banner-black #zone-menu-wrapper { background-color: #000; }
+.banner-black #region-menu { border: 1px solid #454545; margin-bottom: 20px; }
+.banner-black #zone-menu-wrapper ul#main-menu a { color: #fff; font-weight: 600; }
+.banner-black #zone-menu-wrapper ul#main-menu a.active, .banner-black #zone-menu-wrapper ul#main-menu a.active-trail, .banner-black #zone-menu-wrapper ul#main-menu a:hover, .banner-black #zone-menu-wrapper ul#main-menu a:focus { color: #363636; background: #fff; }
+.banner-black #zone-secondary-menu a { color: #fff; display: inline-block; }
+.banner-black #zone-secondary-menu a:hover, .banner-black #zone-secondary-menu a:focus, .banner-black #zone-secondary-menu a.active, .banner-black #zone-secondary-menu a.active-trail { background-color: #454545; color: #fff; }
+.banner-black #zone-menu-wrapper ul#main-menu a#home-link { background-color: transparent; color: #fff; }
+.banner-black #zone-intro { background-color: #fff; }
+.banner-black #section-content { background-color: #fff; }
+
+.banner-white #zone-branding-wrapper { background-color: #fff; }
+.banner-white #zone-secondary-menu-wrapper { background-color: #fff; color: #4f4f4f; }
+.banner-white #zone-menu-wrapper { background-color: #fff; }
+.banner-white #region-menu { border: 1px solid #ccc; margin-bottom: 20px; }
+.banner-white #zone-menu-wrapper ul#main-menu a { color: #666; font-weight: 600; }
+.banner-white #zone-menu-wrapper ul#main-menu a.active, .banner-white #zone-menu-wrapper ul#main-menu a.active-trail, .banner-white #zone-menu-wrapper ul#main-menu a:hover, .banner-white #zone-menu-wrapper ul#main-menu a:focus { color: #fff; background: #363636; }
+.banner-white #zone-secondary-menu a { color: #666; display: inline-block; }
+.banner-white #zone-secondary-menu a:hover, .banner-white #zone-secondary-menu a:focus, .banner-white #zone-secondary-menu a.active, .banner-white #zone-secondary-menu a.active-trail { background-color: #ccc; color: #363636; }
+.banner-white #zone-menu-wrapper ul#main-menu a#home-link { background-color: transparent; color: #666; }
+.banner-white #zone-intro { background-color: #fff; }
+.banner-white #section-content { background-color: #fff; }
+
+#zone-slider-wrapper { margin-top: 0px; background-color: #f4f4f4; background: #000; border-bottom: 1px solid #f0f0f0; }
+
+#section-footer { background-color: #272727; color: #fff; }
+
+#section-footer a, #section-footer a.active, #section-footer a.active-trail { color: #cfb87c; }
+
+#section-footer a:hover, #section-footer a:focus { color: #fff; }
+
+#zone-footer-wrapper { padding-top: 40px; }
+
+#zone-site-information-wrapper { background-color: #1e1e1e; }
+
+.page-title-wrapper { padding: 10px 0; }
+
+.page-title-wrapper { background-color: #272727; color: #fff; }
+
+.page-title-image-wrapper.container-content { margin-top: 20px; }
+
+#page-title-image h1 { color: #363636; }
+
+.page-title-section h1 { font-size: 187%; margin: 0; padding: 10px 0; }
+
+#breadcrumb, .breadcrumb { font-size: 12px; font-family: Arial, Helvetica, sans-serif; }
+
+#zone-after-content, #zone-after-content-2 { border-top: 1px solid #e0e0e0; padding-top: 20px; }
+
+/* BLOCKSTYLES OVERRIDES */
+.blockoutline .block-inner, .blockgray .block-inner, .blockdarkgray .block-inner { -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+
+#block-menu-block-site-navigation-menus-1 .menu-block-wrapper, #block-menu-block-site-navigation-menus-2 .menu-block-wrapper, #block-menu-block-site-navigation-menus-3 .menu-block-wrapper, #section-navigation .menu-block-wrapper { font-weight: 500; border-bottom: 1px solid #e7e7e7; }
+#block-menu-block-site-navigation-menus-1 ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu a, #section-navigation ul.menu a { padding: 10px; border: 1px solid #e7e7e7; margin-bottom: -1px; color: #656565; line-height: 120%; }
+#block-menu-block-site-navigation-menus-1 ul.menu a:hover, #block-menu-block-site-navigation-menus-1 ul.menu a:focus, #block-menu-block-site-navigation-menus-2 ul.menu a:hover, #block-menu-block-site-navigation-menus-2 ul.menu a:focus, #block-menu-block-site-navigation-menus-3 ul.menu a:hover, #block-menu-block-site-navigation-menus-3 ul.menu a:focus, #section-navigation ul.menu a:hover, #section-navigation ul.menu a:focus { background-color: #e7e7e7; color: #202020; }
+#block-menu-block-site-navigation-menus-1 ul.menu a.active-trail, #block-menu-block-site-navigation-menus-2 ul.menu a.active-trail, #block-menu-block-site-navigation-menus-3 ul.menu a.active-trail, #section-navigation ul.menu a.active-trail { border-bottom: none; }
+#block-menu-block-site-navigation-menus-1 ul.menu a.active, #block-menu-block-site-navigation-menus-2 ul.menu a.active, #block-menu-block-site-navigation-menus-3 ul.menu a.active, #section-navigation ul.menu a.active { color: white; background-color: #333333; font-weight: 500 !important; }
+#block-menu-block-site-navigation-menus-1 li.active-trail, #block-menu-block-site-navigation-menus-2 li.active-trail, #block-menu-block-site-navigation-menus-3 li.active-trail, #section-navigation li.active-trail { border-left: 3px solid #333333; }
+#block-menu-block-site-navigation-menus-1 li.active-trail a, #block-menu-block-site-navigation-menus-2 li.active-trail a, #block-menu-block-site-navigation-menus-3 li.active-trail a, #section-navigation li.active-trail a { border-left-color: #333333; }
+#block-menu-block-site-navigation-menus-1 li.active-trail li, #block-menu-block-site-navigation-menus-2 li.active-trail li, #block-menu-block-site-navigation-menus-3 li.active-trail li, #section-navigation li.active-trail li { border: none; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu a, #section-navigation ul.menu ul.menu a { padding-left: 20px; font-size: 90%; padding-top: 7px; padding-bottom: 7px; border-top: none; border-bottom: none; font-weight: normal; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu a { padding-left: 30px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu a { padding-left: 40px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 50px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 60px; }
+
+#block-menu-block-site-navigation-menus-3 h2.block-title { font-size: 100%; line-height: 120%; padding: 0; margin: 0; }
+#block-menu-block-site-navigation-menus-3 h2.block-title a { display: block; padding: 10px; background-color: #333333; color: white; font-weight: 600; }

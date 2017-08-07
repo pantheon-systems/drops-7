@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file
+ * Creates basic page home page.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function cu_home_page_install() {
+  node_types_rebuild();
+  $types = node_type_get_types();
+  node_add_body_field($types['page']);
+  _cu_home_page_menu_item();
+  _cu_home_page_node();
+}
+
+
+/**
+ * Creates a default homepage node and vset the site_frontpage.
+ */
+function _cu_home_page_node() {
+  $nodes = array(
+    array(
+      'title' => 'Home',
+      'body' => '<p>Welcome to your new Web Express website! This content area is used for your homepage content. You can edit this section by clicking on the Edit link above. Once in edit mode, just edit the body text area. For help with your site, you can <a href="http://www.colorado.edu/express/features/" target="_blank">view examples of all the Web Express Features</a> or <a href="http://www.colorado.edu/webcentral/tutorials" target="_blank">view online tutorials</a>.</p>',
+      'language' => LANGUAGE_NONE,
+    ),
+  );
+  $created_nodes = _cu_home_page_recursive_tree_of_nodes($nodes, 'main-menu');
+  variable_set('site_frontpage', 'node/' . $created_nodes[0]->nid);
+
+  // Set path alias to homepage.
+  $path = array('source' => "node/" . $created_nodes[0]->nid, 'alias' => 'home');
+  path_save($path);
+
+  // SETTING TITLES ON MENUS FROM site_navigation_menus module to <none> - If
+  // this module is rmeoved, this needs to go somewhere else late enough that
+  // the blocks already exist in the block table.
+  db_query("UPDATE {block} SET title = '<none>' WHERE delta = 'site_navigation_menus-1'");
+  db_query("UPDATE {block} SET title = '<none>' WHERE delta = 'site_navigation_menus-2'");
+  db_query("UPDATE {block} SET title = '<none>' WHERE delta = 'site_navigation_menus-4'");
+}
+
+/**
+ * Creates a home page menu item placed in the main menu.
+ */
+function _cu_home_page_menu_item() {
+  $home_item = array(
+    'link_path' => '<front>',
+    'link_title' => 'Home',
+    'menu_name' => 'main-menu',
+    'weight' => -50,
+  );
+  menu_link_save($home_item);
+}
+
+/**
+ * Recursively create nodes in to a tree within a given menu.
+ *
+ * @param array $nodes
+ *   An array of node arrays ready to be created.
+ *
+ * @return array
+ *   An array of node objects after being passed through node_save().
+ */
+function _cu_home_page_recursive_tree_of_nodes($nodes) {
+  $created_nodes = array();
+  foreach ($nodes as $n) {
+    $node = new StdClass();
+    $node->type = 'page';
+    $node->title = $n['title'];
+    $node->uid = 1;
+    $node->language = $n['language'];
+    if (isset($n['body'])) {
+      $node->body[$node->language][0]['value'] = $n['body'];
+      $node->body[$node->language][0]['safe_value'] = $n['body'];
+    }
+    $node->body[$node->language][0]['format']  = 'wysiwyg';
+    node_save($node);
+    $created_nodes[] = $node;
+  }
+  return $created_nodes;
+}
+
+function cu_home_page_update_7010() {
+  // Get frontpage node id
+  $frontpage = explode('/', variable_get('site_frontpage'));
+  if ($frontpage[0] == 'node') {
+    $node = node_load($frontpage[1]);
+    // This is the old homepage default content
+    $old_homepage_content = '<p>Welcome to your new Drupal website! This content area is used for your homepage content. You can edit this section by clicking on the Edit tab on the top right of the content box. Once in edit mode, just edit the body text area. Refer to your "Edit a Page" section in your training material for help.</p>';
+    // This is the new homepage default content
+    $new_homepage_content = '<p>Welcome to your new Drupal website! This content area is used for your homepage content. You can edit this section by clicking on the Edit link above. Once in edit mode, just edit the body text area. For help with your site, you can <a href="http://www.colorado.edu/express/features/" target="_blank">view examples of all the Web Express Features</a> or <a href="http://www.colorado.edu/webcentral/tutorials" target="_blank">view online tutorials</a>.</p>';
+    // If the old default content is still there, replace with the new content
+    if ($node->body[LANGUAGE_NONE][0]['value'] == $old_homepage_content) {
+      $node->body[LANGUAGE_NONE][0]['value'] = $new_homepage_content;
+      $node->body[LANGUAGE_NONE][0]['safe_value'] = $new_homepage_content;
+      node_save($node);
+    }
+  }
+}

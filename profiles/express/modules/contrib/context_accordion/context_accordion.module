@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function context_accordion_init() {
+  drupal_add_library('system', 'ui.accordion');
+  drupal_add_js(drupal_get_path('module', 'context_accordion') .'/context_accordion.js');
+  drupal_add_css(drupal_get_path('module', 'context_accordion') .'/context_accordion.css');
+}
+

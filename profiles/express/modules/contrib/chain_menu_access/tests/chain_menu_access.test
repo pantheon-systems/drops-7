@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Tests for chain_menu_access.module.
+ */
+
+class CmaWebTestCase extends DrupalWebTestCase {
+
+  protected $web_user;
+  
+  public static function getInfo() {
+    return array(
+      'name' => 'Chain Menu Access API',
+      'description' => 'Test altering menu access via chained access functions.',
+      'group' => 'Chain Menu Access API',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('chain_menu_access', 'chain_menu_access_test');            //, 'devel');
+    $this->web_user = $this->drupalCreateUser(array('create page content')); //, 'access devel information'));
+    $this->drupalLogin($this->web_user);
+  }
+
+  /**
+   * Test making a third-level administrative path available to anon.
+   */
+  function testAdminAccess() {
+
+    $this->drupalGet('admin');
+    $this->assertResponse(403, "Cannot normally access 'admin'.");
+    $this->drupalGet('admin/people');
+    $this->assertResponse(403, "Cannot normally access 'admin/people'.");
+    $this->drupalGet('admin/people/create');
+    $this->assertResponse(403, "Cannot normally access 'admin/people/create'.");
+
+    $this->drupalGet('admin', array('query' => array('enable_cma' => 1)));
+    $this->assertResponse(403, "Still cannot access 'admin'.");
+    $this->drupalGet('admin/people', array('query' => array('enable_cma' => 1)));
+    $this->assertResponse(403, "Still cannot access 'admin/people'.");
+    $this->drupalGet('admin/people/create', array('query' => array('enable_cma' => 1)));
+    $this->assertResponse(200, "Can access 'admin/people/create' now. It's redirected to user/UID though, but that's caused by user_register_form(), which is outside of our scope.");
+  }
+
+}

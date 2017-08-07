@@ -1,0 +1,78 @@
+<?php
+/**
+ * @file
+ * Code for the cu_ldap feature.
+ */
+
+include_once('cu_ldap.features.inc');
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_ldap_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_login':
+      drupal_set_title(t('Log in'));
+    case 'user_login_block':
+      $form['name']['#title'] = t('CU Login Name');
+      $form['name']['#description'] = '';
+      $form['pass']['#title'] = t('IdentiKey Password');
+      $form['pass']['#description'] = '';
+    case 'user_profile_form':
+      $form['account']['name']['#disabled'] = TRUE;
+      $form['field_ldap_display_name']['#disabled'] = TRUE;
+      $form['field_ldap_primary_affiliation']['#disabled'] = TRUE;
+      break;
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function cu_ldap_user_insert(&$edit, $account, $category) {
+  /**
+   * Logs user account creation.
+   * Currently, core only logs when users are created through the
+   * registration form. When ldap, however creates the account, we need
+   * a log entry.  @see http://drupal.org/node/1382274
+   */
+  watchdog('user', 'New user: %name (%email).', array('%name' => $account->name, '%email' => $account->mail), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $account->uid . '/edit'));
+}
+
+/**
+ * Determines if this site has any site owners with a valid LDAP entry.
+ *
+ * A valid LDAP entry being one of a current employee or graduate student.
+ *
+ * @param string of valid identikey
+ *
+ * @return array
+ */
+function cu_ldap_lookup($identikey) {
+  //@TODO: replace hadcoded values with configuration from LDAP settings
+
+  // Load the user's entry in LDAP.
+  $link_identifier = ldap_connect('directory.colorado.edu');
+  $base_dn = "dc=colorado,dc=edu";
+  $filter = "uid=" . $identikey;
+  $result_identifier = ldap_search($link_identifier, $base_dn, $filter);
+  $ldap_entries = ldap_get_entries($link_identifier, $result_identifier);
+
+  return $ldap_entries;
+}
+  /**
+ * Implements hook_user_login
+ */
+function cu_ldap_user_login(&$edit, $account) {
+
+  $ldap = cu_ldap_lookup($account->name);
+
+  //Check to see that LDAP is returned a value.  There are no display names for acconts like OSR-TEST-OWNER
+  if (isset($ldap[0]) && ($account->field_ldap_display_name != $ldap[0]['displayname'][0] || $account->field_ldap_primary_affiliation != $ldap[0]['edupersonprimaryaffiliation'][0])) {
+    // update account fields
+    $edit = array();
+    $edit['field_ldap_display_name'][LANGUAGE_NONE][0]['value'] = $ldap[0]['displayname'][0];
+    $edit['field_ldap_primary_affiliation'][LANGUAGE_NONE][0]['value'] = $ldap[0]['edupersonprimaryaffiliation'][0];
+    user_save($account, $edit);
+  }
+}

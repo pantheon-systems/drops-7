@@ -1,0 +1,13 @@
+<?php
+
+/**
+* Implements hook_install().
+*/
+function cu_page_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'cu_page')
+    ->execute();
+}

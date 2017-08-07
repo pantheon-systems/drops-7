@@ -1,0 +1,179 @@
+<?php
+/**
+ * @file
+ * Primary hook implementations for Metatag:favicons.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_favicons_ctools_plugin_api($owner, $api) {
+  if ($owner == 'metatag' && $api == 'metatag') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function metatag_favicons_theme() {
+  $info['metatag_favicon'] = array(
+    'render element' => 'element',
+  );
+
+  $info['metatag_mask_icon'] = array(
+    'render element' => 'element',
+  );
+
+  $info['metatag_shortcut_icon'] = array(
+    'render element' => 'element',
+  );
+  return $info;
+}
+
+/**
+ * Implements hoko_html_head_alter().
+ *
+ * Remove the default shortcut icon if one was set by Metatag.
+ */
+function metatag_favicons_html_head_alter(&$elements) {
+  if (isset($elements['metatag_shortcut icon'])) {
+    foreach ($elements as $key => $element) {
+      if (isset($element['#tag']) && $element['#tag'] == 'link') {
+        if (isset($element['#attributes']) && is_array($element['#attributes'])) {
+          if (isset($element['#attributes']['rel'])) {
+            if ($element['#attributes']['rel'] == 'shortcut icon') {
+              unset($elements[$key]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Theme callback for a favicon meta tag.
+ *
+ * The format is:
+ * <link rel="[rel]" href="[value]" sizes="[sizes]" />
+ */
+function theme_metatag_favicon($variables) {
+  $element = &$variables['element'];
+  $args = array(
+    '#rel' => 'rel',
+    '#value' => 'href',
+    '#sizes' => 'sizes',
+    '#mask' => 'mask',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/**
+ * Theme callback for the mask-icon meta tag.
+ *
+ * The format is:
+ * <link rel="mask-icon" href="[value]" sizes="[sizes]" />
+ */
+function theme_metatag_mask_icon($variables) {
+  $element = &$variables['element'];
+
+  $args = array(
+    '#rel' => 'rel',
+    '#value' => 'href',
+    '#color' => 'color',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/**
+ * Theme callback for a shortcut icon meta tag.
+ *
+ * The format is:
+ * <link rel="[rel]" href="[value]" type="[type]" />
+ */
+function theme_metatag_shortcut_icon($variables) {
+  $element = &$variables['element'];
+
+  // Extract the MIME type.
+  $element['#type'] = metatag_favicons_get_mime_type($element['#value']);
+
+  $args = array(
+    '#rel' => 'rel',
+    '#value' => 'href',
+    '#type' => 'type',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/**
+ * Helper function to get the theme's favicon URL.
+ *
+ * @return string
+ *  The absolute URL to the favicon, empty string if not found.
+ */
+function metatag_favicons_get_theme_favicon() {
+  $favicon_url = '';
+
+  // Is the favicon enabled?
+  if (theme_get_setting('toggle_favicon')) {
+    $favicon_url = theme_get_setting('favicon');
+  }
+
+  return $favicon_url;
+}
+
+/**
+ * Returns the correct MIME type for favicons.
+ *
+ * @param string $uri
+ *   The URI, or URL, of the favicon to be checked.
+ *
+ * @return string
+ *  The MIME type on success, an empty string on failure.
+ */
+function metatag_favicons_get_mime_type($uri) {
+  // Look for the last period in the URL.
+  $extension_dot = strrpos($uri, '.');
+  $type = '';
+
+  // URLs must have a file extension in order for this to work.
+  if ($extension_dot) {
+    $extension = strtolower(substr($uri, $extension_dot + 1));
+
+    // Work out the file's extension.
+    switch ($extension) {
+      case 'ico':
+        $type = 'vnd.microsoft.icon';
+        break;
+
+      // Rename JPEG images as JPG.
+      case 'jpeg':
+        $extension = 'jpeg';
+
+      // Basic image types.
+      case 'gif':
+      case 'jpg':
+      case 'png':
+        // Keep the extension as it is.
+        break;
+
+      // This shouldn't happen, only GIF, JPG, ICO or PNG files are supported.
+      default:
+        $extension = '';
+    }
+
+    // Only compile the MIME type if a supported extension was found.
+    if (!empty($extension)) {
+      $type = 'image/' . $extension;
+    }
+  }
+
+  return $type;
+}

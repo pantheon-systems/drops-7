@@ -1,0 +1,16 @@
+name = "Content locking (edit lock)"
+description = "Prevents multiple users from trying to edit a single node simultaneously to prevent edit conflicts."
+core = 7.x
+dependencies[] = filter
+dependencies[] = node
+files[] = views/ContentLockViewsHandlerFieldLocked.inc
+files[] = views/ContentLockViewsHandlerFilterLocked.inc
+files[] = views/ContentLockViewsHandlerSortLocked.inc
+configure = admin/config/content/content_lock
+
+; Information added by Drupal.org packaging script on 2017-02-10
+version = "7.x-2.2"
+core = "7.x"
+project = "content_lock"
+datestamp = "1486698786"
+

@@ -1,0 +1,80 @@
+.ui-accordion {
+  margin:0;
+  padding: 0;
+}
+.ui-accordion h3.ui-accordion-header,
+.ui-accordion .ui-accordion-header {
+  font-weight: normal;
+  font-size: 110%;
+  margin:0;
+  padding:0px 5px;
+  border-bottom:1px solid #e5e5e5;
+  background-color: #f7f7f7;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#efefef));
+  background-image: -webkit-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -moz-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -o-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -ms-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: linear-gradient(top, #f7f7f7, #efefef);
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#f7f7f7', EndColorStr='#efefef');
+
+}
+.ui-accordion h3.ui-accordion-header a,
+.ui-accordion .ui-accordion-header a {
+  margin:0;
+  color:#666;
+  padding:5px 5px 5px 20px;
+  background-image: url(../images/expand.png);
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+.ui-accordion h3.ui-accordion-header.ui-state-active a,
+.ui-accordion .ui-accordion-header.ui-state-active a {
+  background-image: url(../images/collapse.png);
+  font-weight: bold;
+  color:#363636;
+}
+.ui-accordion .ui-accordion-content {
+  padding:5px 5px 5px 25px;
+  margin:0;
+}
+.ui-accordion .ui-accordion-content .block {
+  margin:0;
+  float: none;
+  width: 100%;
+  clear:both;
+  display: block;
+}
+.ui-accordion .ui-accordion-content p {
+  margin:.75em 0;
+}
+
+.ui-tabs-nav {
+  background-color: #f7f7f7;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#efefef));
+  background-image: -webkit-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -moz-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -o-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: -ms-linear-gradient(top, #f7f7f7, #efefef);
+  background-image: linear-gradient(top, #f7f7f7, #efefef);
+  padding:0 5px;
+}
+.ui-tabs .ui-tabs-nav li {
+  margin:0 5px;
+}
+.ui-tabs-nav li.ui-tabs-selected {
+  background-color: #fff;
+  border:1px solid #ddd;
+  border-bottom: none;
+}
+.ui-tabs .ui-tabs-panel {
+  margin:0;
+  padding: 20px 10px;
+}
+.ui-tabs .ui-tabs-panel .block {
+  margin:0;
+  float: none;
+  width:100%;
+  clear:both;
+  display: block;
+}

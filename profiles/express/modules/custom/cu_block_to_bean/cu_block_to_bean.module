@@ -1,0 +1,222 @@
+<?php
+
+/**
+ * @file
+ * Code for the wrapper feature.
+ */
+
+include_once 'cu_block_to_bean.features.inc';
+
+/**
+ * Return available blocks.
+ */
+function _wrapper_block_list() {
+  module_load_include('inc', 'block', 'block.admin');
+  global $theme_key;
+  $blocks = block_admin_display_prepare_blocks($theme_key);
+
+  $exclude = array();
+  $include = array();
+  $included_modules = variable_get('cu_block_to_bean_module_include', array());
+  $included_deltas = variable_get('cu_block_to_bean_delta_include', NULL);
+  $excluded_deltas = variable_get('cu_block_to_bean_delta_exclude', NULL);
+
+  foreach ($included_modules as $included_module) {
+    if ($included_module) {
+      $include[] = $included_module;
+    }
+  }
+  if ($included_deltas) {
+    $included_deltas = explode(',', $included_deltas);
+    foreach ($included_deltas as $key => $delta) {
+      $included_deltas[$key] = trim($delta);
+    }
+  }
+  else {
+    $included_deltas = array();
+  }
+  if ($excluded_deltas) {
+    $excluded_deltas = explode(',', $excluded_deltas);
+    foreach ($excluded_deltas as $key => $delta) {
+      $excluded_deltas[$key] = trim($delta);
+    }
+  }
+  else {
+    $excluded_deltas = array();
+  }
+  $options = array();
+
+  foreach ($blocks as $key => $block) {
+    if ($block['module'] == 'bean') {
+
+    }
+    elseif (in_array($block['delta'], $excluded_deltas)) {
+    }
+    elseif (empty($include)) {
+      $delta = $block['delta'];
+      $options[$delta] = $block['info'];
+    }
+    elseif ((in_array($block['module'], $include) || in_array($block['delta'], $included_deltas)) && !in_array($block['delta'], $excluded_deltas)) {
+      $delta = $block['delta'];
+      $options[$delta] = $block['info'];
+    }
+  }
+  return $options;
+}
+
+/**
+ * Implements hook_preprocess_entity().
+ */
+function cu_block_to_bean_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  if ($vars['elements']['#bundle'] == 'block_wrapper') {
+    $delta = $vars['field_block_wrapper_reference'][0]['value'];
+
+    $query = db_select('block', 'b');
+    $query->fields('b', array('module', 'delta'));
+    $query->condition('b.delta', $delta, '=');
+    $query->groupBy('b.delta');
+    $modules = $query->execute()->fetchCol();
+    $module = current($modules);
+
+    $blockObject = block_load($module, $delta);
+    $block = _block_get_renderable_array(_block_render_blocks(array($blockObject)));
+    $output = drupal_render($block);
+
+    $vars['content'] = $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_block_to_bean_menu() {
+  $items = array();
+  $items['admin/config/content/wrapper/settings'] = array(
+    'title' => 'Block Wrapper Settings',
+    'description' => 'Select which blocks are available in the block wrapper.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_block_to_bean_config_form'),
+    'access arguments' => array('administer block wrapper'),
+  );
+  return $items;
+}
+
+/**
+ * Config form for block_to_bean.
+ */
+function cu_block_to_bean_config_form($form, &$form_state) {
+
+  module_load_include('inc', 'block', 'block.admin');
+  global $theme_key;
+  $blocks = block_admin_display_prepare_blocks($theme_key);
+  $modules = array();
+  foreach ($blocks as $block) {
+    $module = $block['module'];
+    $modules[$module] = $module;
+  }
+  asort($modules);
+  $form['cu_block_to_bean_module_include'] = array(
+    '#title' => 'Modules:',
+    '#type' => 'checkboxes',
+    '#options' => $modules,
+    '#description' => 'Select which modules to include from the block wrapper.',
+    '#default_value' => variable_get('cu_block_to_bean_module_include', ''),
+  );
+  $form['cu_block_to_bean_delta_include'] = array(
+    '#title' => 'Block Deltas to Include:',
+    '#type' => 'textarea',
+    '#description' => 'Add a comma separated list of block deltas to include. (For modules that are not checked above)',
+    '#default_value' => variable_get('cu_block_to_bean_delta_include', ''),
+  );
+  $form['cu_block_to_bean_delta_exclude'] = array(
+    '#title' => 'Block Deltas to Exclude:',
+    '#type' => 'textarea',
+    '#description' => 'Add a comma separated list of block deltas to exclude. (For modules that are checked above)',
+    '#default_value' => variable_get('cu_block_to_bean_delta_exclude', ''),
+  );
+
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'cu_block_to_bean_config_form_submit';
+  return $form;
+}
+
+/**
+ * Submit funtion for cu_block_to_bean_config_form().
+ */
+function cu_block_to_bean_config_form_submit($form, &$form_state) {
+  $modules = $form_state['values']['cu_block_to_bean_module_include'];
+  $delta_exclude = $form_state['values']['cu_block_to_bean_delta_exclude'];
+  $delta_include = $form_state['values']['cu_block_to_bean_delta_include'];
+  variable_set('cu_block_to_bean_module_include', $modules);
+  variable_set('cu_block_to_bean_delta_exclude', $delta_exclude);
+  variable_set('cu_block_to_bean_delta_include', $delta_include);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove title field from wrapper beans.
+ */
+function cu_block_to_bean_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['bean']['#value']->type == 'block_wrapper') {
+    $form['title']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_block_to_bean_permission() {
+  return array(
+    'administer block wrapper' => array(
+      'title' => t('Administer Block Wrapper'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_secure_permissions().
+ *
+ * Adding permissions for block to bean wrapper.
+ */
+function cu_block_to_bean_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any block_wrapper bean',
+    ),
+    'authenticated user' => array(
+      'view any block_wrapper bean',
+    ),
+    'administrator' => array(
+      'create any block_wrapper bean',
+      'delete any block_wrapper bean',
+      'edit any block_wrapper bean',
+      'view any block_wrapper bean',
+    ),
+    'content_editor' => array(
+      'create any block_wrapper bean',
+      'delete any block_wrapper bean',
+      'edit any block_wrapper bean',
+      'view any block_wrapper bean',
+    ),
+    'developer' => array(
+      'create any block_wrapper bean',
+      'delete any block_wrapper bean',
+      'edit any block_wrapper bean',
+      'view any block_wrapper bean',
+      'administer block wrapper',
+    ),
+    'site_owner' => array(
+      'create any block_wrapper bean',
+      'delete any block_wrapper bean',
+      'edit any block_wrapper bean',
+      'view any block_wrapper bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

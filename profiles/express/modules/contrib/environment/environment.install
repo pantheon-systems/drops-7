@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * @file
+ * Handles installation of the Environment module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function environment_install() {
+  // New module weights in core: put environment as the very last in the chain.
+  db_query("UPDATE {system} SET weight = -100 WHERE name = 'environment'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function environment_uninstall() {
+  variable_del('environment');
+  variable_del('environment_require_override');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function environment_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $t = get_t();
+    if (variable_get('environment_require_override', FALSE)) {
+      $requirements['environment_require_override'] = array(
+        'title'       => $t('Environment Override'),
+        'description' => $t("You should override the 'environment_override' variable in your settings.php file to indicate the server environment this site is in."),
+        'value'       => $t('Missing'),
+        'severity'    => REQUIREMENT_ERROR,
+      );
+    }
+
+    $environment = (array) variable_get('environment', array());
+    $env_override = (array) variable_get('environment_override', array());
+    $workflows = environment_load_workflow();
+
+    if (empty($environment)) {
+      $requirements['environment'] = array(
+        'title'       => $t('Environment'),
+        'description' => $t('The environment is not set in your system.', array()),
+        'value'       => $t('Invalid State'),
+        'severity'    => REQUIREMENT_WARNING,
+      );
+    }
+
+    foreach ($workflows as $name => $workflow) {
+      if (!empty($environment[$name])) {
+        $status = environment_load($environment[$name]);
+      }
+      $key = empty($name) ? 'default' : $name;
+      if (isset($env_override[$name]) && $env_override[$name] != $environment['name']) {
+        $requirements['environment_override_' . $key] = array(
+          'title'       => $t('Environment Mismatch for @workflow workflow', array('@workflow' => $workflow['label'])),
+          'description' => $t("The environment override set in your settings.php file does not match the current system environment. Please !link or correct this setting.", array('!link' => l($t('switch environments'), 'admin/settings/environment/switch/' . $env_override))),
+          'value'       => $t('Mismatch'),
+          'severity'    => REQUIREMENT_ERROR,
+        );
+      }
+      if (!empty($environment[$name]) && empty($status)) {
+        $requirements['environment_' . $key] = array(
+          'title'       => $t('Environment'),
+          'description' => $t("The current environment '%environment' is no longer defined in your system.", array('%environment' => $environment)),
+          'value'       => $t('Invalid State'),
+          'severity'    => REQUIREMENT_WARNING,
+        );
+      }
+      elseif (!empty($environment[$name])) {
+        $environment = environment_load($environment[$name]);
+        $requirements['environment_' . $key] = array(
+          'title'       => $t('Environment'),
+          'description' => isset($environment['description']) ? $environment['description'] : '',
+          'value'       => $environment['label'],
+          'severity'    => REQUIREMENT_INFO,
+        );
+      }
+    }
+  }
+  return $requirements;
+}

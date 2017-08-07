@@ -1,0 +1,31 @@
+engines:
+  duplication:
+    enabled: true
+    checks:
+      Similar code:
+        enabled: false
+    config:
+      languages:
+      - php
+      - javascript
+  phpmd:
+    enabled: true
+    config:
+      file_extensions: "php,inc,module,install"
+      rulesets: ".phpmd.xml"
+  phpcodesniffer:
+    enabled: true
+    config:
+      file_extensions: "php,inc,module,install"
+      encoding: utf-8
+      standard: "Drupal"
+      ignore_warnings: true
+ratings:
+  paths:
+  - "modules/custom"
+  - "modules/features"
+exclude_paths:
+- "**.scss"
+- "libraries/"
+- "tests/"
+- "modules/contrib/"

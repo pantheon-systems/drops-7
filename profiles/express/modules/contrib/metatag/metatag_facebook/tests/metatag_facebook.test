@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Tests for the Metatag Facebook module.
+ */
+class MetatagFacebookTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag Facebook tests',
+      'description' => 'Test the Metatag:Facebook module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_facebook';
+
+    parent::setUp($modules);
+
+    // Create an admin user and log them in.
+    $this->adminUser = $this->createAdminUser();
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Confirm that it's possible to load the main admin page.
+   */
+  public function testAdminPage() {
+    $this->drupalGet('admin/config/search/metatags');
+    $this->assertResponse(200);
+
+    // Confirm the page is correct.
+    $this->assertText(t('To view a summary of the default meta tags and the inheritance, click on a meta tag type.'));
+  }
+
+}

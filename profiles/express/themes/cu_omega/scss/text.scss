@@ -1,0 +1,459 @@
+@import "modules/_global.scss";
+@import "modules/_colors.scss";
+
+body {
+  font-size:62.5%;
+  font-family: $base_font;
+  color:$text_black;
+  //color: #444;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-style: normal;
+  font-variant:normal;
+}
+#page {
+  font-size: 1.5em;
+  line-height: 140%;
+
+}
+
+#section-footer {
+  font-size:90%;
+  line-height: 135%;
+}
+.font-size-small #zone-content,
+.font-size-small #zone-after-content {
+  font-size:100%;
+  line-height: 140%;
+}
+.font-size-small #section-footer {
+  line-height: 140%;
+}
+a:link, a:visited {
+  color: $link_blue;
+  text-decoration: none;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+a:hover {
+  color: $red;
+  text-decoration: none;
+}
+
+a:active {
+  color: $red;
+  text-decoration: none;
+}
+// Focus styles
+.focus--keyboard {
+	outline: $link_blue solid 2px;
+	text-decoration: none;
+	outline-offset: -1px;
+}
+
+.focus--mouse {
+	box-shadow: none;
+	outline: none;
+	text-decoration: none;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+	&:focus {
+		@extend .focus--keyboard;
+	}
+
+	&:focus.focus--mouse {
+		@extend .focus--mouse;
+	}
+}
+
+
+hr {
+  margin: 0;
+  padding: 0;
+  border: none;
+  height: 1px;
+  background: $border_color;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 115%;
+  margin-bottom: 10px;
+}
+
+#zone-content h1,
+.page-title-section h1,
+.page-title-image-wrapper h1 {
+  font-size: 180%;
+  font-weight: 300;
+  font-family:$base_font;
+}
+
+h2 {
+  font-size: 160%;
+  font-weight: 300;
+}
+.headings-bold .hero-unit h2,
+ .hero-unit h2 {
+  font-weight: 900;
+}
+.headings-bold {
+  #zone-content h1,
+  .page-title-section h1,
+  .page-title-image-wrapper h1,
+  h2, h3, h4 {
+    font-weight:700;
+    & strong {
+      font-weight: 700;
+    }
+  }
+  h5, h6 {
+    font-weight: 600;
+  }
+  h2.block-title, h2.node-title {
+    font-weight:700;
+  }
+}
+.headings-light {
+  #zone-footer {
+    h2 {
+      font-weight: 400;
+    }
+  }
+}
+/* Make site titles the same size if it's an H1 (home) or H2 (internal) */
+h1.site-name,
+h2.site-name,
+h1.site-title,
+h2.site-title {
+  font-weight: 300 !important;
+  font-family:$base_font !important;
+}
+.site-name-description {
+  font-size:14px;
+  font-weight: 400;
+  line-height: 110%;
+  max-width: 65%;
+}
+
+/* Make it a bit smaller for block headers */
+h2.block-title {
+  font-size: 160%;
+  font-weight: 300;
+}
+.sidebar {
+  h2,
+  h2.block-title,
+  h2.node-title {
+    font-size: 125%;
+  }
+  h3 {
+    font-size:115%;
+  }
+  h4 {
+    font-size:110%;
+  }
+  h5 {
+    font-size: 105%;
+  }
+  h6 {
+    font-size: 100%;
+  }
+}
+#zone-after-content h2,
+#zone-after-content h2.block-title,
+#zone-after-content-2 h2,
+#zone-after-content-2 h2.block-title {
+  font-size: 150%;
+}
+#zone-footer h2.block-title {
+  font-size:110%;
+}
+h2.node-title {
+  font-size: 160%;
+  font-weight: 300;
+}
+
+h3 {
+  font-size: 140%;
+  font-weight: 300;
+}
+
+h4 {
+  font-size: 126%;
+  font-weight: 300;
+}
+
+h5 {
+  font-size: 113%;
+  font-weight: 300;
+}
+
+h6 {
+  font-size: 100%;
+  font-weight: 300;
+}
+h6.site-slogan,
+.site-slogan {
+  font-family:$base_font !important;
+  font-weight: 500 !important;
+
+  strong {
+    font-weight: 700 !important;
+  }
+}
+.block-cu-site-info {
+  h2.block-title {
+    border:none;
+
+    span {
+      display: inline;
+      border: none;
+      position: static;
+      bottom: auto;
+      padding: 0;
+    }
+  }
+}
+
+
+
+
+ol {
+  list-style: decimal;
+}
+
+ul {
+  list-style: disc;
+}
+.item-list,
+.field-type-text-with-summary,
+.field-type-text-long {
+  ul li {
+    list-style: disc;
+    margin-bottom: 10px;
+  }
+  ul ul li,
+  ul ul ul ul li,
+  ul ul ul ul ul ul li {
+    list-style: circle;
+  }
+  ul ul ul li,
+  ul ul ul ul ul li,
+  ul ul ul ul ul ul ul li {
+    list-style: disc;
+  }
+  ul ul,
+  ol ol {
+    margin:10px 0 0 0;
+
+  }
+  ol li {
+    margin-bottom: 10px;
+  }
+}
+
+
+.node ol,
+.node ul,
+ul,
+ol {
+  padding-left: 1.5em;
+}
+
+.node ul.inline,
+.node ol.inline,
+ul.inline,ol.inline {
+  padding-left: 0;
+}
+
+ul.list-style-nobullet {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-nobullet > li {
+  list-style: none;
+  list-style-image: none;
+}
+ul.list-style-underline > li {
+  list-style: none;
+}
+
+ul.list-style-underline {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-underline > li {
+  list-style: none;
+  border-bottom: 1px solid $border_color;
+  padding-bottom: 10px;
+}
+ul.list-style-border {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-border > li {
+  list-style: none;
+  border: 1px solid $border_color;
+  padding: 10px;
+  margin-bottom: -1px;
+}
+ul.list-style-icon-1,
+ul.list-style-icon-2,
+ul.list-style-icon-3,
+ul.list-style-icon-4,
+ul.list-style-icon-5,
+ul.list-style-icon-6 {
+  list-style: none;
+  list-style-image: none;
+  > li {
+    list-style: none !important;
+    list-style-image: none !important;
+    position: relative;
+  }
+  li:before {
+    font-family: 'FontAwesome';
+    position: absolute;
+    top:0;
+    left:-20px;
+    color:$cugold;
+  }
+}
+// check icon
+ul.list-style-icon-1 > li:before {
+  content: '\f00c';
+
+}
+// checkbox icon
+ul.list-style-icon-2 > li:before {
+  content: '\f14a';
+}
+// angle icon
+ul.list-style-icon-3 > li:before {
+  content: '\f101';
+}
+// arrow icon
+ul.list-style-icon-4 > li:before {
+  content: '\f0a9';
+}
+// star icon
+ul.list-style-icon-5 > li:before {
+  content: '\f005';
+}
+// hand icon
+ul.list-style-icon-6 > li:before {
+  content: '\f0a4';
+}
+
+/* ORDERED LIST STYLES */
+ol.list-style-alpha-upper, ol.list-style-alpha-upper > li {
+  list-style: upper-alpha;
+}
+ol.list-style-alpha-lower, ol.list-style-alpha-lower > li {
+  list-style: lower-alpha;
+}
+ol.list-style-roman-upper, ol.list-style-roman-upper > li {
+  list-style: upper-roman;
+}
+ol.list-style-roman-lower, ol.list-style-roman-lower > li {
+  list-style: lower-roman;
+}
+
+
+p, dl, hr, ol,
+ul, pre, table, address, fieldset {
+  margin-bottom: 20px;
+}
+.content p:last-child {
+  //margin-bottom: 0;
+}
+dt, .admin h3 {
+  font-weight: 600;
+  margin: 0;
+}
+
+dd {
+  padding-left: 10px;
+  font-style: italic;
+  margin-bottom: 20px;
+  p {
+    margin-bottom: 10px;
+  }
+}
+
+blockquote {
+  font-size: 110%;
+  margin: 0px 0px 40px 20px;
+  padding-top:25px;
+  padding-left:20px;
+  border-left: 4px solid $border_color;
+}
+small,
+.small-text {
+  font-size:80%;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+sub, sup {
+  /* Specified in % so that the sup/sup is the
+     right size relative to the surrounding text */
+  font-size: 75%;
+
+  /* Zero out the line-height so that it doesn't
+     interfere with the positioning that follows */
+  line-height: 0;
+
+  /* Where the magic happens: makes all browsers position
+     the sup/sup properly, relative to the surrounding text */
+  position: relative;
+
+  /* Note that if you're using Eric Meyer's reset.css, this
+     is already set and you can remove this rule */
+  vertical-align: baseline;
+}
+
+sup {
+  /* Move the superscripted text up */
+  top: -0.5em;
+}
+
+sub {
+  /* Move the subscripted text down, but only
+     half as far down as the superscript moved up */
+  bottom: -0.25em;
+}
+
+strong {
+  font-weight: 600;
+}
+.lead {
+  font-size: 130%;
+  line-height: 125%;
+  strong {
+    font-weight: 600;
+  }
+}
+.hero {
+  font-size:200%;
+  line-height: 125%;
+  font-weight: 300;
+  strong {
+    font-weight: 900;
+  }
+}
+.supersize {
+  font-size:320%;
+  line-height: 125%;
+  font-weight: 300;
+  strong {
+    font-weight: 900;
+  }
+}

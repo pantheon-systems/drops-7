@@ -1,0 +1,5 @@
+name = CU Give Buttons
+description = "Adds a shortcode for give buttons"
+core = 7.x
+package = CU-Core
+version = 7.x-1.0

@@ -1,0 +1,285 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function cu_advanced_content_bundle_menu() {
+  $items['admin/settings/adv-content'] = array(
+    'title' => 'Advanced Content',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 5,
+  );
+  $items['admin/settings/adv-content/error'] = array(
+    'title' => 'Error Pages',
+    'description' => 'Create your own \'404 Not Found\' or \'Access Denied\' page',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_advanced_content_bundle_error_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 25,
+  );
+  $items['admin/settings/adv-content/frontpage'] = array(
+    'title' => 'Set Homepage',
+    'description' => 'Change the default homepage',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_advanced_content_bundle_frontpage_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 50,
+  );
+  return $items;
+}
+
+/**
+ * Page callback for admin/settings/error.
+ */
+function cu_advanced_content_bundle_error_form($form, &$form_state) {
+  global $base_url;
+  $form['errors'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Error Pages',
+  );
+  $form['errors']['site_404'] = array(
+    '#title' => t('Default 404 page'),
+    '#description' => t('Allows you to set the default "Not Found" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => drupal_get_path_alias(variable_get('site_404', 'navigation404')),
+  );
+  $form['errors']['site_403'] = array(
+    '#title' => t('Default 403 page'),
+    '#description' => t('Allows you to set the default "Access Denied" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => FALSE,
+    '#default_value' => (variable_get('site_403') ? drupal_get_path_alias(variable_get('site_403', '')) : ''),
+  );
+  $form['#validate'][] = 'cu_advanced_content_bundle_404_validate';
+
+  return system_settings_form($form);
+}
+
+
+function cu_advanced_content_bundle_404_validate($form, &$form_state) {
+  // Check for empty 404 submission.
+  // Since it's required, this should never be hit...but just in case?
+  if (empty($form_state['values']['site_404'])) {
+    // Set default value to navigation404, just in case.
+    // I think a 404 value always MUST be set...right?
+    form_set_value($form['errors']['site_404'], 'naviagtion404', $form_state);
+  }
+}
+
+/**
+ * Page callback for admin/site-configuration/frontpage.
+ */
+function cu_advanced_content_bundle_frontpage_form($form, &$form_state) {
+  global $base_url;
+  $form = array();
+
+  $form['site_frontpage'] = array(
+    '#title' => t('Default front page'),
+    '#type' => 'textfield',
+    '#default_value' => (variable_get('site_frontpage') != 'node' ? drupal_get_path_alias(variable_get('site_frontpage', 'node')) : ''),
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+  );
+
+  $form['#validate'][] = 'cu_advanced_content_bundle_frontpage_validate';
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  return $form;
+}
+
+/**
+ * Validation handler for express_settings form.
+ */
+function cu_advanced_content_bundle_frontpage_validate($form, &$form_state) {
+  // using /node creates redirect loop
+
+  if ($form['site_frontpage']['#value'] == 'node') {
+    form_set_error('site_frontpage', 'Cannot set the homepage to that path.');
+  }
+
+  // Load file include to use redirect function.
+  module_load_include('module','cu_redirect', 'cu_redirect');
+
+  // Taken from system_site_information_settings_validate.
+  // No need to check for empty front page path since it's a required field.
+  // Check to see if path is valid and exists.
+  $redirect_path = drupal_get_normal_path($form_state['values']['site_frontpage']);
+
+  if (!drupal_valid_path($redirect_path)) {
+    form_set_error('site_frontpage', 'Please enter a valid path.');
+  }
+  // Check to see if path has a redirect, and set error if a redirect exists.
+  if (!_cu_redirect_check_existing($redirect_path)) {
+    form_set_error('site_frontpage', 'Cannot set the homepage to a path that has an existing redirect.');
+  }
+  // Get the normal path of the front page.
+  form_set_value($form['site_frontpage'], $redirect_path, $form_state);
+}
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_advanced_content_bundle_secure_permissions($role) {
+
+  $permissions = array(
+    'administrator' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'edit any feature_callout bean',
+      'delete any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'anonymous user' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'authenticated user' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'content_editor' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'developer' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'edit_my_content' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'site_owner' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_content_bundle_express_help($variables) {
+  $variables['admin/structure/quicktabs/manage/%/edit'][] = array(
+    'title' => 'Quicktabs help',
+    'short_title' => 'Quicktabs help',
+    'url' => '/node/948',
+  );
+  $variables['block/add/feature-callout'][] = array(
+    'title' => 'Content grid block help',
+    'short_title' => 'Content grid block help',
+    'url' => '/node/428',
+  );
+  $variables['block/edit/feature-callout'][] = array(
+    'title' => 'Content grid block help',
+    'short_title' => 'Content grid block help',
+    'url' => '/node/428',
+  );
+  $variables['block/add/video-reveal'][] = array(
+    'title' => 'Video reveal block help',
+    'short_title' => 'Video reveal block help',
+    'url' => '/node/582',
+  );
+  $variables['block/edit/video-reveal'][] = array(
+    'title' => 'Video reveal block help',
+    'short_title' => 'Video reveal block help',
+    'url' => '/node/582',
+  );
+
+  $variables['admin/structure/quicktabs/add'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => '/node/948',
+  );
+
+  $variables['admin/structure/quicktabs'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => '/node/948',
+  );
+
+  $variables['block/edit/quicktabs'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => '/node/948',
+  );
+
+  $variables['block/add/content-list'][] = array(
+    'title' => 'Content List Block Help',
+    'short_title' => 'Content List Block Help',
+    'url' => '/node/1112',
+  );
+  $variables['block/edit/content-list'][] = array(
+    'title' => 'Content List Block Help',
+    'short_title' => 'Content List Block Help',
+    'url' => '/node/1112',
+  );
+  $variables['node/add/content-list-page'][] = array(
+    'title' => 'Content List Page Help',
+    'short_title' => 'Content List Page Help',
+    'url' => '/node/1110',
+  );
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'advanced_content_bundle';
+      return $a;
+    },
+    $variables);
+}

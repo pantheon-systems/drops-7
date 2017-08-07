@@ -1,0 +1,178 @@
+<?php
+
+/**
+ * Tests that each of the Metatag OpenGraph tags work correctly.
+ */
+class MetatagOpenGraphTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: OpenGraph',
+      'description' => 'Test the OpenGraph meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'article:author',
+    'article:expiration_time',
+    'article:modified_time',
+    'article:published_time',
+    'article:publisher',
+    'article:section',
+    'article:tag',
+    'book:author',
+    'book:isbn',
+    'book:release_date',
+    'book:tag',
+    'og:audio',
+    'og:audio:secure_url',
+    'og:audio:type',
+    'og:country_name',
+    'og:description',
+    'og:determiner',
+    'og:email',
+    'og:fax_number',
+    'og:image',
+    'og:image:height',
+    'og:image:secure_url',
+    'og:image:type',
+    'og:image:url',
+    'og:image:width',
+    'og:latitude',
+    'og:locale',
+    'og:locale:alternate',
+    'og:locality',
+    'og:longitude',
+    'og:phone_number',
+    'og:postal_code',
+    'og:region',
+    'og:see_also',
+    'og:site_name',
+    'og:street_address',
+    'og:title',
+    'og:type',
+    'og:updated_time',
+    'og:url',
+    'og:video:height',
+    'og:video:secure_url',
+    'og:video:type',
+    'og:video:url',
+    'og:video:width',
+    'profile:first_name',
+    'profile:gender',
+    'profile:last_name',
+    'profile:username',
+    'video:actor',
+    'video:actor:role',
+    'video:director',
+    'video:duration',
+    'video:release_date',
+    'video:series',
+    'video:tag',
+    'video:writer',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_opengraph';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'property';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // All OG tags use colons to separate levels.
+    $tag_name = str_replace('_', ':', $tag_name);
+
+    // Fix a few specific tags.
+    $tag_name = str_replace('secure:url', 'secure_url', $tag_name);
+    $tag_name = str_replace(':time', '_time', $tag_name);
+    $tag_name = str_replace(':date', '_date', $tag_name);
+    $tag_name = str_replace(':name', '_name', $tag_name);
+    $tag_name = str_replace(':address', '_address', $tag_name);
+    $tag_name = str_replace('see:also', 'see_also', $tag_name);
+    $tag_name = str_replace(':number', '_number', $tag_name);
+    $tag_name = str_replace(':code', '_code', $tag_name);
+
+    return $tag_name;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'og:type'.
+   */
+  public function og_type_test_key() {
+    return 'metatags[und][og:type][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'og:type'.
+   */
+  public function og_type_test_value() {
+    return 'article';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'og:type'.
+   */
+  public function og_type_test_field_xpath() {
+    return "//select[@name='metatags[und][og:type][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'og:determiner'.
+   */
+  public function og_determiner_test_key() {
+    return 'metatags[und][og:determiner][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'og:determiner'.
+   */
+  public function og_determiner_test_value() {
+    return 'a';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'og:determiner'.
+   */
+  public function og_determiner_test_field_xpath() {
+    return "//select[@name='metatags[und][og:determiner][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'og:image'.
+   */
+  public function og_image_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'og:image:url'.
+   */
+  public function og_image_url_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'og:image:secure_url'.
+   */
+  public function og_image_secure_url_test_value() {
+    return str_replace('http://', 'https://', $this->randomImageUrl());
+  }
+
+}

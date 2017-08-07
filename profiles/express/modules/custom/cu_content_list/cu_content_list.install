@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * Implements hook_instal().
+ *
+ * Set express layout settings.
+ */
+function cu_content_list_install() {
+  $layout_settings = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+  );
+  variable_set('express_layout_settings_content_list_page', $layout_settings);
+  variable_set('express_layout_type_content_list_page', 'content_list_page');
+}
+
+/**
+ * Setting variable to allow content list pages to have layouts.
+ */
+function cu_content_list_update_7001() {
+  $layout_settings = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+  );
+  variable_set('express_layout_settings_content_list_page', $layout_settings);
+  variable_set('express_layout_type_content_list_page', 'content_list_page');
+}

@@ -1,0 +1,10 @@
+name = "Files undo remove"
+description = "Adds the capability to undo the removal of a file."
+package = Fields
+core = 7.x
+; Information added by drupal.org packaging script on 2013-01-16
+version = "7.x-1.3"
+core = "7.x"
+project = "files_undo_remove"
+datestamp = "1358325425"
+

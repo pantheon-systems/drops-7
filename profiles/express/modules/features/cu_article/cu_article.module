@@ -1,0 +1,1888 @@
+<?php
+/**
+ * @file
+ * Code for the Articles feature.
+ */
+
+include_once 'cu_article.features.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function cu_article_menu() {
+  // News BLOCK
+  $items['admin/settings/news'] = array(
+    'title' => 'News',
+    'description' => 'Configuration Options for News',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  $items['admin/settings/news/article-settings'] = array(
+    'title' => 'Article Settings',
+    'description' => 'Global setting to show or hide the Article publication date on all articles',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_article_global_settings_form'),
+    'access arguments' => array('administer express settings'),
+    'description' => 'Global site configurations for articles.'
+  );
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Hidden Terms',
+    'page callback' => 'cu_article_hidden_tags',
+    'access arguments' => array('taxonomy_form_vocabulary', 3),
+    'access callback' => 'cu_article_hidden_tags_access',
+    'description' => 'See what tags are set to be hidden',
+  );
+  $items['node/%node/articles'] = array(
+    'page callback' => 'cu_article_by_person',
+    'page arguments' => array(1),
+    'access callback' => 'cu_article_by_person_access',
+    'access arguments' => array(1),
+    'title callback' => 'cu_article_by_person_title',
+    'title arguments' => array(1),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form().
+ */
+function cu_article_global_settings_form($form, &$form_state) {
+  $settings = variable_get('cu_article_global_settings', '');
+  $form['published_date'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Article Published Date Display',
+  );
+  $form['published_date']['date_display'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      'custom' => 'Choose on each article if publish date should be displayed',
+      'show' => 'Show publish date on all articles',
+      'hide' => 'Hide publish date on all articles',
+    ),
+    '#default_value' => $settings['date_display'] ? $settings['date_display'] : 'custom',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Settings'),
+  );
+  $form['#submit'][] = 'cu_article_global_settings_form_submit';
+  return $form;
+}
+
+/**
+ * Submit function for cu_article_global_settings_form().
+ */
+function cu_article_global_settings_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['date_display'])) {
+    $settings['date_display'] = $form_state['values']['date_display'];
+    variable_set('cu_article_global_settings', $settings);
+    drupal_set_message(t('Article settings have been saved.'), 'status', FALSE);
+  }
+}
+
+/**
+ *  Implements hook_form_FORM_ID_alter.
+ */
+function cu_article_form_article_list_page_node_form_alter(&$form, &$form_state, $form_id) {
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_article_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article.css');
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article-grid.css');
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/owl.carousel.css');
+  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/owl.carousel.js');
+  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/article-slider.js');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--articles.tpl.php in our module
+ * directory.
+ */
+function cu_article_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_article');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+  $theme_registry['bean__articles']['preprocess functions'][] = 'cu_article_preprocess_bean';
+  // Take advantage of columns on admin theme for article node edit pages.
+  if (variable_get('admin_theme', '') == 'cuseven' && variable_get('node_admin_theme', 0) == 1) {
+    $theme_registry['node_form']['preprocess functions'][] = 'cu_article_preprocess_form_node';
+  }
+}
+
+/**
+ * Implements hook_preprocess_entity().
+ *
+ * Prepare content for article list and article grid beans
+ */
+function cu_article_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+  if ($vars['elements']['#bundle'] == 'articles') {
+    $content = $vars['content'];
+    global $base_url;
+
+
+    // Get configs.
+    $items = $vars['elements']['#entity']->field_article_items_display[LANGUAGE_NONE][0]['value'];
+    $display = $vars['elements']['#entity']->field_article_display[LANGUAGE_NONE][0]['value'];
+    $pager = $vars['elements']['#entity']->field_article_pager[LANGUAGE_NONE][0]['value'];
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Display pager or only set number of items.
+    if ($pager) {
+      $query = $query->extend('PagerDefault')->limit($items);
+    }
+    else {
+      $query->range(0, $items);
+    }
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_term[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_term[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_list_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_list_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Exclude category
+    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+
+    // Pass a tag type to use for node titles - this is used in the article node tpl
+    foreach ($nodes as $key => $node) {
+      if ($display == 'feature' || $display == 'feature_large') {
+        $nodes[$key]->heading_tag['#tag'] = 'h3';
+      }
+      else {
+        $nodes[$key]->heading_tag['#tag'] = 'strong';
+      }
+    }
+    // Build output.
+    if (!empty($nodes)) {
+      $rows = array();
+      if ($display == 'feature_large') {
+        $output['articles'] = node_view_multiple($nodes, 'feature');
+        foreach ($output['articles']['nodes'] as $key => $node) {
+          if (!empty($output['articles']['nodes'][$key]['field_article_thumbnail'])) {
+            $output['articles']['nodes'][$key]['field_article_thumbnail'][0]['#image_style'] = 'slider-large';
+          }
+        }
+      }
+      else {
+        $output['articles'] = node_view_multiple($nodes, $display);
+      }
+      if ($pager == 1) {
+        $output['pager'] = array(
+          '#theme' => 'pager',
+          '#tags' => array()
+        );
+      }
+      elseif ($pager == 2) {
+        $output['pager'] = array(
+          '#theme' => 'views_mini_pager',
+          '#tags' => array(),
+          '#prefix' => '<div class="mini-pager">',
+          '#suffix' => '</div>',
+        );
+      }
+      else {
+        if (!empty($vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['url']) && !empty($vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['title'])) {
+          $output['more_link'] = array(
+            '#theme' => 'link',
+            '#path' => $vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['url'],
+            '#text' => $vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['title'],
+            '#options' => array('attributes' => array(), 'html' => TRUE),
+            '#prefix' => '<div class="more-link">',
+            '#suffix' => '</div>',
+          );
+        }
+      }
+      if (isset($output)) {
+        $vars['content'] = $output;
+      }
+    }
+    else {
+      $type = $vars['elements']['#bundle'];
+      _cu_article_bean_null_results($vars, $type);
+      $vars['content'] = array();
+    }
+
+  }
+
+  if ($vars['elements']['#bundle'] == 'article_grid') {
+
+    $content = $vars['content'];
+    global $base_url;
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Set number of items.
+    $items = $content['field_article_grid_items'][0]['#markup'] ? $content['field_article_grid_items'][0]['#markup'] : 3;
+    $query = $query->extend('PagerDefault')->limit($items);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_grid_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_grid_filter[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_grid_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_grid_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Exclude category
+    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    // Build output.
+    if (!empty($nodes)) {
+      $output = array();
+      $rows = array();
+      $rows[1] = 'alpha';
+      $rows[2] = '';
+      $rows[3] = 'omega';
+      $i = 1;
+      $output['articles'] = node_view_multiple($nodes, 'grid');
+      unset($output['articles']['nodes']['#sorted']);
+      foreach ($output['articles']['nodes'] as $nid => $node) {
+        if ($i > 3) {
+          $i = 1;
+        }
+        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid ' . $rows[$i] . '">';
+        $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
+        $i++;
+      }
+      $vars['content'] = array_merge($vars['content'], $output);
+    }
+    else {
+      $type = $vars['elements']['#bundle'];
+      _cu_article_bean_null_results($vars, $type);
+      $vars['content'] = array();
+    }
+
+  }
+
+  // Article Feature Bean
+  if ($entity_type == 'bean' && $bundle == 'article_feature') {
+    // Get settings
+    $display = $vars['elements']['#entity']->field_article_feature_display[LANGUAGE_NONE][0]['value'];
+    $image_style = $vars['elements']['#entity']->field_article_feature_image_size[LANGUAGE_NONE][0]['value'];
+    // Start query.
+    $query = db_select('node', 'n');
+    if ($display == 'article-feature-stacked') {
+      $query->range(0, 4);
+    }
+    else {
+      $query->range(0, 5);
+    }
+
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title'));
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_feature_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_feature_filter[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_feature_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_feature_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Exclude category
+    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    // Build output.
+    if (!empty($nodes)) {
+      // Get the first article so we can style it differently
+      // Not using array_shift because it does not preserve keys
+      $first_key = key($nodes);
+      $top_article = $nodes[$first_key];
+      unset($nodes[$first_key]);
+      $output = array();
+
+      // Show categories option
+      $show_category = !empty($vars['elements']['#entity']->field_article_feature_show_cat) ? $vars['elements']['#entity']->field_article_feature_show_cat[LANGUAGE_NONE][0]['value'] : 'hide';
+      // View mdoes for articles in feature article bean.
+      $view_modes['feature'] = array(
+        'hide' => 'feature',
+        'show' => 'feature_category',
+      );
+      $view_modes['sidebar'] = array(
+        'hide' => 'sidebar',
+        'show' => 'sidebar_category',
+      );
+      $output['top_article'] = node_view($top_article, $view_modes['feature'][$show_category]);
+      // Change the image style of the first article
+      $output['top_article']['field_article_thumbnail'][0]['#image_style'] = $image_style;
+      $output['top_article']['#prefix'] = '<div class="article-feature-top">';
+      $output['top_article']['#suffix'] = '</div>';
+      // Do the rest of the articles
+      $remaining_nodes = node_view_multiple($nodes, $view_modes['sidebar'][$show_category]);
+      foreach ($remaining_nodes as $key => $remaining_node) {
+        // Insert categories here
+      }
+      $output['articles']['remaining'] = $remaining_nodes;
+      $output['articles']['more'] = isset($vars['content']['field_article_link']) ? $vars['content']['field_article_link'] : '';
+      $output['articles']['#prefix'] = '<div class="article-feature-remaining clearfix">';
+      $output['articles']['#suffix'] = '</div>';
+      $vars['content'] = $output;
+      // Add classes to set layout
+      $vars['content']['#prefix'] = '<div class="article-feature ' . $display . '">';
+      $vars['content']['#suffix'] = '</div>';
+    }
+    else {
+      $type = $vars['elements']['#bundle'];
+      _cu_article_bean_null_results($vars, $type);
+      $vars['content'] = array();
+    }
+  }
+
+  if ($vars['elements']['#bundle'] == 'article_slider') {
+    $bid = $vars['bean']->bid;
+    $content = $vars['content'];
+    global $base_url;
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Set number of items.
+
+    $query = $query->extend('PagerDefault')->limit(15);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Make sure articles have thumbnails
+    $query->join("field_data_field_article_thumbnail", "thumbs", "n.nid = thumbs.entity_id");
+    $query->fields('thumbs', array('field_article_thumbnail_fid'));
+    $query->condition('thumbs.field_article_thumbnail_fid', 'NULL', '!=');
+
+    // Exclude category
+    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    // Build output.
+    if (!empty($nodes)) {
+      $output = array();
+      $rows = array();
+      $rows[1] = 'alpha';
+      $rows[2] = '';
+      $rows[3] = 'omega';
+      $i = 1;
+      $output['articles'] = node_view_multiple($nodes, 'grid');
+      unset($output['articles']['nodes']['#sorted']);
+      foreach ($output['articles']['nodes'] as $nid => $node) {
+        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid article-slider-slide">';
+        $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
+        $i++;
+      }
+      $output['articles']['#prefix'] = '<div class="article-slider">';
+      $output['articles']['#suffix'] = '</div>';
+      unset($vars['content']['article_slider_entity_view_1']);
+      $vars['content']['article_slider'] = $output;
+    }
+    else {
+      $vars['content'] = array_merge($vars['content'], $output);
+      $vars['content'] = '';
+    }
+
+  }
+}
+
+/**
+ * Returns message if bean has no result.
+ */
+function _cu_article_bean_null_results($vars, $type = NULL) {
+  if ($type) {
+    $permission = 'edit any ' . $type . ' bean';
+    if (user_access($permission)) {
+      $delta = $vars['elements']['#entity']->delta;
+      $label = $vars['elements']['#entity']->label;
+      $edit = l($label, 'block/' . $delta . '/edit');
+      drupal_set_message(t('!label has no results', array('!label' => $edit)), 'warning');
+    }
+  }
+}
+
+
+/**
+ * Implements hook_preprocess_node().
+ *
+ * Replaces original tags linked to term pages with tags linked to article list
+ * pages.
+ */
+function cu_article_preprocess_node(&$vars) {
+  if ($vars['node']->type == 'article') {
+    // Load global article settings
+    $settings = variable_get('cu_article_global_settings', '');
+    $global_date_display = isset($settings['date_display']) ? $settings['date_display'] : 'custom';
+
+    // Add article metadata element. Other modules can add to this.
+    $vars['content']['article_meta']['#prefix'] = '<div class="article-meta-wrapper"><div class="article-meta">';
+    $vars['content']['article_meta']['#suffix'] = '</div></div>';
+    $vars['content']['article_meta']['#weight'] = 100;
+
+    // Add publish date to author meta element
+    $vars['author_meta']['date'] = '<span class="author-meta-date author-meta-item"><i class="fa fa-clock-o"></i><span class="element-invisible">Published:</span>  ' . $vars['ap_date_cu_medium_date'] . '</span>';
+
+    // Show/hide publish date
+    $article_date_settings = !empty($vars['node']->field_article_date_display) ? $vars['node']->field_article_date_display[LANGUAGE_NONE][0]['value'] : NULL;
+    if (($article_date_settings == 'hide' || $global_date_display == 'hide') && $global_date_display != 'show') {
+      unset($vars['author_meta']['date']);
+    }
+
+    // If there are tags, get terms to build new tag list
+    $tids = array();
+    if (isset($vars['field_tags'])) {
+      $vars['content']['new_tags']['#weight'] = 50;
+      foreach ($vars['field_tags'] as $tid) {
+        if (isset($tid['tid'])) {
+          $tids[] = $tid['tid'];
+        }
+      }
+    }
+    // Build new tag list that links to article list pages
+    if (!empty($tids)) {
+      // lookup parent terms
+      foreach ($tids as $tid) {
+        $parents = taxonomy_get_parents_all($tid);
+        unset($parents[0]);
+        if (!empty($parents)) {
+          //$tids = $tids + $parents;
+          foreach ($parents as $parent) {
+            $tids[] = $parent->tid;
+          }
+        }
+      }
+
+      $terms = taxonomy_term_load_multiple($tids);
+      foreach ($terms as $term) {
+        $display = isset($term->field_tag_display[LANGUAGE_NONE][0]['value']) ? $term->field_tag_display[LANGUAGE_NONE][0]['value'] : 'show';
+        if (isset($term->name) && $display == 'show') {
+          $tag = $term->name;
+          if (!empty($term->field_tag_term_page_link)) {
+            $new_tags[$tag] = l($tag, $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url']);
+          }
+          else {
+            $new_tags[$tag] = $tag;
+          }
+        }
+      }
+      // Add new tags to article_meta element
+      if (!empty($new_tags)) {
+        ksort($new_tags);
+        $markup = '<i class="fa fa-tags"></i><span class="element-invisible">Tags:</span>' . theme('item_list', array('items' => $new_tags));
+        $vars['content']['article_meta']['article_tags']['#markup'] = $markup;
+        $vars['content']['article_meta']['article_tags']['#prefix'] = '<div class="article-meta-section article-meta-tags">';
+        $vars['content']['article_meta']['article_tags']['#suffix'] = '</div>';
+        $vars['content']['article_meta']['article_tags']['#weight'] = 0;
+      }
+    }
+
+    // If there are categories, get terms to build new category list
+    $tids = array();
+    if (isset($vars['field_article_categories'])) {
+      $vars['content']['new_categories']['#weight'] = 50;
+      foreach ($vars['field_article_categories'] as $tid) {
+        if (isset($tid['tid'])) {
+          $tids[] = $tid['tid'];
+        }
+      }
+    }
+    // Build new tag list that links to article list pages
+    if (isset ($tids)) {
+      // lookup parent terms
+      foreach ($tids as $tid) {
+        $parents = taxonomy_get_parents_all($tid);
+        unset($parents[0]);
+        if (!empty($parents)) {
+          //$tids = $tids + $parents;
+          foreach ($parents as $parent) {
+            $tids[] = $parent->tid;
+          }
+        }
+      }
+      $terms = taxonomy_term_load_multiple($tids);
+      foreach ($terms as $term) {
+        $display = isset($term->field_category_display[LANGUAGE_NONE][0]['value']) ? $term->field_category_display[LANGUAGE_NONE][0]['value'] : 'show';
+        if (isset($term->name) && $display == 'show') {
+          $category = $term->name;
+          if (!empty($term->field_category_term_page_link)) {
+            $new_categories[] = l($category, $term->field_category_term_page_link[LANGUAGE_NONE][0]['url']);
+          }
+          else {
+            $new_categories[$category] = $category;
+          }
+        }
+      }
+      // Add new tags to article_meta element
+      if (!empty($new_categories)) {
+        ksort($new_categories);
+        $markup = '<i class="fa fa-folder-open"></i><span class="element-invisible">Categories:</span>' . theme('item_list', array('items' => $new_categories));
+        $vars['content']['article_meta']['article_categories']['#markup'] = $markup;
+        $vars['content']['article_meta']['article_categories']['#prefix'] = '<div class="article-meta-section article-meta-categories">';
+        $vars['content']['article_meta']['article_categories']['#suffix'] = '</div>';
+        $vars['content']['article_meta']['article_categories']['#weight'] = -10;
+
+        // Build category list for category_teaser view mode
+        $vars['category_teaser_category_links'] = implode(' ', $new_categories);
+      }
+      // Add thumbnail to OpenGraph meta for facebook sharing
+      if ($vars['view_mode'] == 'full' && !empty($vars['field_article_thumbnail'])) {
+
+        // Get node thumbnail
+        $image = express_get_node_thumbnail($vars['node'], 'field_article_thumbnail', 'medium');
+
+        // build and add meta element
+        $element = array(
+          '#tag' => 'meta', // The #tag is the html tag -
+          '#attributes' => array( // Set up an array of attributes inside the tag
+            'property' => 'og:image',
+            'content' => $image['path'],
+          ),
+        );
+        drupal_add_html_head($element, 'open_graph_image');
+        $og_parameters = array(
+          'width' => $image['info']['width'],
+          'height' => $image['info']['height'],
+          'type' => $image['info']['mime_type'],
+        );
+        foreach ($og_parameters as $key => $param) {
+          $element = array(
+            '#tag' => 'meta', // The #tag is the html tag -
+            '#attributes' => array( // Set up an array of attributes inside the tag
+              'property' => 'og:image:' . $key,
+              'content' => $param,
+            ),
+          );
+          drupal_add_html_head($element, 'open_graph_image_' . $key);
+        }
+      }
+    }
+
+    // Bylines
+    if (!empty($vars['field_article_byline'])) {
+      // For bylines at top of article
+      $bylines = array();
+      // Load bylines terms
+      foreach ($vars['field_article_byline'][LANGUAGE_NONE] as $byline) {
+        $term = taxonomy_term_load($byline['tid']);
+        // If term has a url, link to url
+        if (!empty($term->field_article_byline_url)) {
+          $url = $term->field_article_byline_url[LANGUAGE_NONE][0]['url'];
+          $byline_name = l($term->name, $url);
+        }
+        // If term has a person id, link to person node
+        elseif (!empty($term->field_article_byline_person_id)) {
+          $person_id = $term->field_article_byline_person_id[LANGUAGE_NONE][0]['value'];
+          $byline_name = l($term->name, 'node/' . $person_id);
+        }
+        // Otherwise just print term name
+        else {
+          $byline_name = $term->name;
+        }
+        $bylines[] = '<span class="byline-author-name">' . $byline_name
+          . '</span>';
+      }
+      // Add bylines terms to author meta section
+      $vars['author_meta']['byline'] = '<span class="author-meta-name author-meta-item">By ' . join(', ', $bylines) . '</span>';
+    }
+  }
+  if ($vars['node']->type == 'article_list_page') {
+    // Start query.
+    $query = db_select('node', 'n');
+    $query = $query->extend('PagerDefault')->limit(10);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    // Filter by tag.
+    if (isset($vars['node']->field_article_page_filter[LANGUAGE_NONE]) && empty($_GET['tags'])) {
+      $terms = array();
+      foreach ($vars['node']->field_article_page_filter[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+    // Filter by exposed tag filter
+    elseif (!empty($_GET['tags'])) {
+      $terms = array();
+      $tid = check_plain($_GET['tags']);
+      $terms[$tid] = $tid;
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('tags');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+    // Filter by category.
+    if (isset($vars['node']->field_article_page_category[LANGUAGE_NONE]) && empty($_GET['category'])) {
+      $terms = array();
+      foreach ($vars['node']->field_article_page_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+    elseif (!empty($_GET['category'])) {
+      $terms = array();
+      $tid = check_plain($_GET['category']);
+      $terms[$tid] = $tid;
+
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('category');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Exclude category
+    if (!empty($vars['node']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['node']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['node']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['node']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+    $query->groupBy('n.nid');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+    foreach ($nodes as $key => $node) {
+      $nodes[$key]->heading_tag['#tag'] = 'h2';
+    }
+    $output['articles'] = node_view_multiple($nodes, 'teaser');
+    $output['articles']['#weight'] = 99;
+    $output['pager'] = array(
+      '#theme' => 'pager',
+      '#tags' => array(),
+      '#weight' => 100.
+    );
+    $output['exposed_filter'] = drupal_get_form('cu_article_list_filter_form');
+    $output['exposed_filter']['#weight'] = 95;
+    $vars['content'] = array_merge($vars['content'], $output);
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ *
+ * Set field_tag_term_page_link on the term to this node.
+ */
+function cu_article_node_update($node) {
+  global $base_url;
+  if ($node->type == 'article_list_page') {
+    $nid = $node->nid;
+    $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
+    if ($tid) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+  }
+  if ($node->type == 'article') {
+    // Get tags on article node.
+    $tags = $node->field_tags;
+
+    if (isset($tags[LANGUAGE_NONE])) {
+      // Let's step through one tag at a time.
+      foreach ($tags[LANGUAGE_NONE] as $tag) {
+        $tid = $tag['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_filter", "tags", "n.nid = tags.entity_id");
+        $query->fields('tags', array('field_article_page_filter_tid'));
+        $query->condition('tags.field_article_page_filter_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+
+    // Get categories on article node.
+    if (isset ($node->field_article_categories[LANGUAGE_NONE])) {
+      $categories = $node->field_article_categories[LANGUAGE_NONE];
+
+      // Let's step through one category at a time.
+      foreach ($categories as $category) {
+        $tid = $category['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_category", "cats", "n.nid = cats.entity_id");
+        $query->fields('cats', array('field_article_page_category_tid'));
+        $query->condition('cats.field_article_page_category_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ *
+ * Set field_tag_term_page_link on the term to this node.
+ */
+function cu_article_node_insert($node) {
+  global $base_url;
+  if ($node->type == 'article_list_page') {
+    $nid = $node->nid;
+
+    // Tags
+    if (isset($node->field_article_page_filter[LANGUAGE_NONE][0]['tid']) && $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid']) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+
+    // Categories
+    if (isset($node->field_article_page_category[LANGUAGE_NONE][0]['tid']) && $tid = $node->field_article_page_category[LANGUAGE_NONE][0]['tid']) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_category_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+  }
+  if ($node->type == 'article') {
+    // Get tags on article node.
+    if (isset ($node->field_tags)) {
+      $tags = $node->field_tags;
+
+      // Let's step through one tag at a time.
+      foreach ($tags[LANGUAGE_NONE] as $tag) {
+        $tid = $tag['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_filter", "tags", "n.nid = tags.entity_id");
+        $query->fields('tags', array('field_article_page_filter_tid'));
+        $query->condition('tags.field_article_page_filter_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+
+    // Get categories on article node.
+    if (isset ($node->field_article_categories)) {
+      $categories = $node->field_article_categories;
+
+      // Let's step through one category at a time.
+      foreach ($categories[LANGUAGE_NONE] as $category) {
+        $tid = $category['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_category", "cats", "n.nid = cats.entity_id");
+        $query->fields('cats', array('field_article_page_category_tid'));
+        $query->condition('cats.field_article_page_category_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ *
+ * Clear field_tag_term_page_link on the term that used to be linked to this
+ * node.
+ */
+function cu_article_node_delete($node) {
+  // Make sure we are only working on article_list_page_nodes
+  if ($node->type == 'article_list_page' && isset($node->field_article_page_filter[LANGUAGE_NONE][0]['tid'])) {
+    $nid = $node->nid;
+    $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
+    $term = taxonomy_term_load($tid);
+    $node_nid = 'node/' . $nid;
+    if ($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] == $node_nid) {
+      $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = '';
+      taxonomy_term_save($term);
+      drupal_set_message('The taxonomy term link has been removed.');
+    }
+  }
+}
+
+/**
+ * Create a new article list page node when article node tags are added/updated.
+ */
+function _cu_article_create_list_page($tid) {
+  global $user;
+
+  // Get term name.
+  $term = taxonomy_term_load($tid);
+  $node = new StdClass();
+  $node->language = LANGUAGE_NONE;
+  $node->type = 'article_list_page';
+  $node->uid = $user->uid;
+
+  // Capitalize the first letter of each word in term and set as the node title.
+  $node->title = ucwords($term->name);
+
+  // Set the term filter to the tid that was passed in.
+  if ($term->vocabulary_machine_name == 'tags') {
+    $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'] = $tid;
+  }
+  elseif ($term->vocabulary_machine_name == 'category') {
+    $node->field_article_page_category[LANGUAGE_NONE][0]['tid'] = $tid;
+  }
+
+  node_save($node);
+  drupal_set_message('An Article List Page has been created for the tags on the article node you just created/updated.');
+}
+
+/**
+ * Implements hook_node_view().
+ * Redirecting users without edit permissions to the external url,
+ * Displays message to users with permissions
+ */
+function cu_article_node_view($node, $view_mode) {
+  switch ($node->type) {
+    case 'article':
+      if ($view_mode == 'full' && !empty($node->field_article_external_url[LANGUAGE_NONE][0]['url'])) {
+        $redirect = $node->field_article_external_url[LANGUAGE_NONE][0]['url'];
+        if (user_access("edit any article content")) {
+          drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
+            array('!redirect' => l($redirect, $redirect))),
+            'status');
+        }
+        else {
+          drupal_goto($redirect);
+        }
+      }
+      break;
+  }
+}
+
+function _cu_article_list_block_display_options() {
+  return array(
+    'teaser' => 'Teaser (Title, thumbnail & summary)',
+    'feature' => 'Feature (Wide photo, title, & summary)',
+    'feature_large' => 'Feature (Large photo, title, & summary)',
+    'sidebar' => 'Title & thumbnail',
+    'title' => 'Title',
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Move date display option into vertical tabs authoring fieldset.
+ */
+function cu_article_form_article_node_form_alter(&$form, &$form_state, $form_id) {
+  if (empty($form['field_article_date_display'][LANGUAGE_NONE]['#default_value'])) {
+    $form['field_article_date_display'][LANGUAGE_NONE]['#default_value'][0] = 'show';
+  }
+  $form['author']['field_article_date_display'] = $form['field_article_date_display'];
+  unset($form['field_article_date_display']);
+}
+
+/**
+ * Access callback function for admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden
+ */
+function cu_article_hidden_tags_access($op, $vocab) {
+  if (user_access('administer tags vocabulary terms') && ($vocab->machine_name == 'tags')) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Callback function for admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden
+ */
+function cu_article_hidden_tags() {
+  $output = array();
+  $output['description']['#markup'] = 'The following terms set to be hidden. These terms can still be used to organize articles, but will not be displayed to the site visitor.';
+
+  $hidden_terms = array();
+  $v = taxonomy_vocabulary_machine_name_load('tags');
+  $terms = taxonomy_get_tree($v->vid);
+
+  foreach ($terms as $tid => $term) {
+    $t = taxonomy_term_load($term->tid);
+    if ($t->field_tag_display[LANGUAGE_NONE][0]['value'] == 'hide') {
+      unset($terms[$tid]);
+      $hidden_terms[] = l($term->name, 'taxonomy/term/' . $term->tid . '/edit');
+    }
+  }
+  $output['terms'] = array(
+    'list' => array(
+      '#theme' => 'item_list',
+      '#type' => 'ul',
+      '#items' => $hidden_terms,
+    ),
+  );
+  return $output;
+}
+
+/**
+ * Implements hook_taxonomy_term_insert($term).
+ * Check to see if a person node exists and link them
+ */
+function cu_article_taxonomy_term_insert($term) {
+  // Only do this if people bundle is enabled
+  if (module_exists('people_content_type')) {
+    // Only on byline terms
+    if ($term->vocabulary_machine_name == 'byline') {
+      $name = $term->name;
+      // Check to see if a person node exists with the same name
+      $query = db_select('node', 'n');
+      $query->fields('n', array('nid', 'title'));
+      $query->condition('n.type', 'person', '=');
+      $query->condition('n.title', $name, '=');
+      $nids = $query->execute()->fetchCol();
+      // If there's a node, add the nid to the term page
+      if ($nids) {
+        foreach ($nids as $nid) {
+          $term->field_article_byline_person_id[LANGUAGE_NONE][0]['value'] = $nid;
+          taxonomy_term_save($term);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_article_block_info() {
+  $blocks['articles_by_person'] = array(
+    'info' => t('Articles by Person'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ * A block that shows all articles that have a byline related to a person node
+ */
+function cu_article_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'articles_by_person':
+      // Get current node id
+      if ($node = menu_get_object()) {
+        $nid = $node->nid;
+        // See if there are any byline terms that match the nid
+        $query = db_select('field_data_field_article_byline_person_id', 'byline_id');
+        $query->condition('byline_id.field_article_byline_person_id_value', $nid, '=');
+        $query->fields('byline_id', array(
+          'entity_id',
+          'field_article_byline_person_id_value'
+        ));
+        $tid = $query->execute()->fetchCol();
+        // If there is a term, get all articles with that term
+        if ($tid) {
+          $query = db_select('node', 'n');
+          $query->condition('n.type', 'article', '=');
+          $query->condition('n.status', 1, '=');
+          $query->fields('n', array('nid', 'title', 'sticky'));
+
+          $query->join("field_data_field_article_byline", "bylines", "n.nid = bylines.entity_id");
+          $query->fields('bylines', array('field_article_byline_tid'));
+          $query->condition('bylines.field_article_byline_tid', $tid, '=');
+          $query->distinct();
+          $query->groupBy('n.nid');
+          // Display the newest first.
+          $query->orderBy('sticky', 'DESC');
+          $query->orderBy('created', 'DESC');
+          $query->range(0, 6);
+          $nids = $query->execute()->fetchCol();
+          if (count($nids) == 6) {
+            array_pop($nids);
+            $block['content']['more']['#markup'] = l('More articles by ' . $node->title, 'node/' . $nid . '/articles');
+            $block['content']['more']['#weight'] = 100;
+            $block['content']['more']['#prefix'] = '<div class="article-by-person-more-link more-link">';
+            $block['content']['more']['#suffix'] = '</div>';
+          }
+          $nodes = node_load_multiple($nids);
+          $block['content']['articles'] = node_view_multiple($nodes, 'sidebar');
+          // Block title by person name
+          $block['subject'] = 'Articles by ' . $node->title;
+        }
+      }
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Access callback for node/%node/articles
+ * Check to see if node type is person
+ */
+function cu_article_by_person_access($node) {
+  if ($node->type == 'person') {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Title callback for node/%node/articles
+ */
+function cu_article_by_person_title($node) {
+  return 'Articles by ' . $node->title;
+}
+
+/**
+ * Callback for node/%node/articles
+ * Ouput teaser list of articles by a person*/
+function cu_article_by_person($node) {
+  $output = array();
+  $nid = $node->nid;
+  // See if there are any byline terms that match the nid
+  $query = db_select('field_data_field_article_byline_person_id', 'byline_id');
+  $query->condition('byline_id.field_article_byline_person_id_value', $nid, '=');
+  $query->fields('byline_id', array(
+    'entity_id',
+    'field_article_byline_person_id_value'
+  ));
+  $tid = $query->execute()->fetchCol();
+  // If there is a term, get all articles with that term
+  if ($tid) {
+    $query = db_select('node', 'n');
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    $query->join("field_data_field_article_byline", "bylines", "n.nid = bylines.entity_id");
+    $query->fields('bylines', array('field_article_byline_tid'));
+    $query->condition('bylines.field_article_byline_tid', $tid, '=');
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+    $query = $query->extend('PagerDefault')->limit(10);
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+    $output['articles'] = node_view_multiple($nodes, 'teaser');
+    $output['pager'] = array(
+      '#theme' => 'pager',
+      '#tags' => array(),
+      '#weight' => 100.
+    );
+  }
+
+
+  return $output;
+}
+
+/**
+ * Implements hook_taxonomy_term_view().
+ */
+function cu_article_taxonomy_term_view($term) {
+  if (!empty($term->field_category_term_page_link)) {
+    drupal_goto($term->field_category_term_page_link[LANGUAGE_NONE][0]['url']);
+  }
+  elseif (!empty($term->field_tag_term_page_link)) {
+    drupal_goto($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url']);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add validation function to term edit form.
+ */
+function cu_article_form_taxonomy_form_term_alter(&$form, &$form_state, $form_id) {
+  $form['relations']['#access'] = FALSE;
+  // $form['#validate'][] = 'cu_article_taxonomy_form_validate';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add validation function to terms overview form.
+ */
+function cu_article_form_taxonomy_overview_terms_alter(&$form, &$form_state, $form_id) {
+  $form['#validate'][] = 'cu_article_taxonomy_overview_form_validate';
+}
+
+/**
+ * Validation function for cu_article_form_taxonomy_form_term_alter().
+ *
+ * Prevents user from exceeding maximum depth on taxonomy terms.
+ */
+function cu_article_taxonomy_form_validate($form, &$form_state) {
+  $limit = variable_get('express_maximum_taxonomy_depth', 4);
+  $parent = current($form_state['values']['parent']);
+  $tid = $form_state['term']->tid;
+  $vid = $form_state['term']->vid;
+
+  $parents = taxonomy_get_parents_all($parent);
+  $children = taxonomy_get_tree($vid, $tid);
+  $depth = count($parents) + count($children) + 1;
+  if ($depth > $limit) {
+    $error_link = l('This change', NULL, array(
+      'external' => TRUE,
+      'fragment' => 'edit-parent'
+    ));
+    //form_set_error('parent', t('!change has caused the taxonomy to exceed its maximum depth of 4 levels. The resulting tree would have a depth of !depth.', array('!change' => $error_link, '!depth' => $depth)));
+  }
+}
+
+/**
+ * Validation function for cu_article_form_taxonomy_overview_terms_alter().
+ *
+ * Prevents user from exceeding maximum depth on taxonomy terms.
+ */
+function cu_article_taxonomy_overview_form_validate($form, &$form_state) {
+  $limit = variable_get('express_maximum_taxonomy_depth', 4) - 1;
+  foreach ($form_state['input'] as $key => $term) {
+    if (!empty($term['depth']) && $term['depth'] > $limit && (substr($key, 0, 3) == tid)) {
+      $error_link = l('This change', NULL, array(
+        'external' => TRUE,
+        'fragment' => 'edit-tid' . $term['tid'] . '0-edit'
+      ));
+      form_set_error($key . '[depth]', t('!change has caused the taxonomy to exceed its maximum depth of 4 levels.', array('!change' => $error_link)));
+
+    }
+  }
+}
+
+function cu_article_list_filter_form($form, &$form_state) {
+  $form = array();
+  $filters = array();
+  $filter_count = 0;
+  $node = menu_get_object();
+  $show_category_filter = (!empty($node->field_article_page_cat_expose)) ?  $node->field_article_page_cat_expose[LANGUAGE_NONE][0]['value'] : NULL;
+  $show_tag_filter = (!empty($node->field_article_page_tag_expose)) ?  $node->field_article_page_tag_expose[LANGUAGE_NONE][0]['value'] : NULL;
+  $child_terms = (!empty($node->field_article_page_childterms)) ? $node->field_article_page_childterms[LANGUAGE_NONE][0]['value'] : 0;
+  $child_terms = $node->field_article_page_childterms[LANGUAGE_NONE][0]['value'] == 'all' ? 1 : 0;
+  // Build category filter options
+  if ($show_category_filter) {
+    $filters['category']['name'] = 'Category';
+    $filters['category']['vocabulary'] = 'category';
+    if (!empty($node->field_article_page_category[LANGUAGE_NONE])) {
+      $filters['category']['pre_filters'] = cu_article_pre_filter_map($node->field_article_page_category[LANGUAGE_NONE], 'category', $child_terms);
+      if (!empty($node->field_article_exclude_category)) {
+        $filters['category']['exclude'] = cu_article_pre_filter_map($node->field_article_exclude_category[LANGUAGE_NONE], 'category', $child_terms);
+      }
+    }
+  }
+  // Build tag filter options
+  if ($show_tag_filter) {
+    $filters['tags']['name'] = 'Tag';
+    $filters['tags']['vocabulary'] = 'tags';
+    if (!empty($node->field_article_page_filter[LANGUAGE_NONE])) {
+      $filters['tags']['pre_filters'] = cu_article_pre_filter_map($node->field_article_page_filter[LANGUAGE_NONE], 'tags', $child_terms);
+      if (!empty($node->field_article_exclude_tag)) {
+        $filters['tags']['exclude'] = cu_article_pre_filter_map($node->field_article_exclude_tag[LANGUAGE_NONE], 'tags', $child_terms);
+      }
+    }
+  }
+  // Build filters if they exist
+  if (!empty($filters)) {
+    foreach ($filters as $key => $filter) {
+      // Load vocabulary for filter
+      $vocabulary = taxonomy_vocabulary_machine_name_load($key);
+      // Get terms for vocabulary
+      $terms = taxonomy_get_tree($vocabulary->vid);
+      $options = array();
+      // Add 'all' option
+      $options[] = 'All';
+      // Get terms in a nested tree
+      $terms = cu_article_taxonomy_treedata($terms);
+      // Build select options from nested tree and add all option
+      $options = $options + cu_article_nested_options($terms);
+      // If pre_filters were added, only show those options
+      if (!empty($filter['pre_filters'])) {
+        $options = array_intersect_key($options, $filter['pre_filters']);
+      }
+      if (!empty($filter['exclude'])) {
+        unset($filter['exclude'][0]);
+        $options = array_diff_key($options, $filter['exclude']);
+      }
+
+      // Only show filter if there are more than 2 choices (all + 2)
+      if (count($options) > 2) {
+        $filter_count++;
+        $form['article_list_filter'][$key] = array(
+          '#type' => 'select',
+          '#title' => t($filter['name']),
+          '#options' => $options,
+          '#default_value' => isset($_GET[$key]) ? $_GET[$key] : '',
+        );
+      }
+
+    }
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Filter',
+    );
+    $form['#submit'][] = 'cu_article_list_filter_form_submit';
+    $form['#prefix'] = '<div class="article-list-filter"><label class="element-invisible">Article Filter</label>';
+    $form['#suffix'] = '</div>';
+  }
+  // Return form if there is at least 1 exposed filter
+  if ($filter_count) {
+    return $form;
+  }
+}
+
+/**
+ * Maps array items to a simple array of term ids to compare.
+ */
+function cu_article_pre_filter_map($filter_array, $vocabulary = NULL, $include_children = 0) {
+  if (!empty($filter_array)) {
+    $filter_tids = array();
+    $filter_tids[] = 'All';
+    foreach ($filter_array as $filter) {
+      $filter_tids[$filter['tid']] = $filter['tid'];
+      // Get descendents if asked for
+      if ($vocabulary && $include_children) {
+        $v = taxonomy_vocabulary_machine_name_load($vocabulary);
+        $children = taxonomy_get_tree($v->vid, $filter['tid']);
+        foreach ($children as $child) {
+          $filter_tids[$child->tid] = $child->tid;
+        }
+      }
+    }
+    return $filter_tids;
+  }
+}
+
+/**
+ * Submit handler for article list filter form.
+ */
+function cu_article_list_filter_form_submit($form, &$form_state) {
+  // Get current node
+  $node = menu_get_object();
+  // Get the nid
+  $nid = $node->nid;
+
+  // Get filters if they were submitted
+  foreach (array('tags', 'category') as $name) {
+    if (!empty($form_state['values'][$name])) {
+      $keys[$name] = $form_state['values'][$name];
+    }
+  }
+
+  // Build new url with filter parameters
+  $options = array();
+  if (isset($keys)) {
+    $options['query'] = $keys;
+  }
+  $form_state['redirect'] = array('node/' . $nid, $options);
+  return;
+}
+
+/**
+ * Build a nested array from a taxonomy tree.
+ */
+function &cu_article_taxonomy_treedata(&$nvocs) {
+  //this function will take a flat vocabulary tree and turn it into a multi-tiered array
+  //the return array will simply contain an array of pointers rather then physical objects
+
+  $map = array();
+
+  //go through the tree and find the lowest depth aswell as all available depth levels to scan
+  $startdepth = FALSE;
+  $depthlist = array();
+  foreach ($nvocs as $vocindex => &$vocitem) {
+    if ($startdepth === FALSE || $startdepth > $vocitem->depth) {
+      //new start depth found
+      $startdepth = $vocitem->depth;
+    }
+
+    //add this item to the speciffic depth level
+    $depthlist[$vocitem->depth][$vocitem->tid] = &$vocitem;
+  }
+
+  //sort the depthlist so lowest is first
+  ksort($depthlist);
+
+  //scan all depth levels found
+  $lastdepth = NULL;
+  foreach ($depthlist as $depthlevel => &$depths) {
+    //check for first depth (root) level
+    $currentdepthdata = array();
+
+    if ($depthlevel == $startdepth) {
+      //add root items to the map
+      foreach ($depths as $itemindex => &$item) {
+        $mapindex = count($map);
+        $map[$mapindex] = array("data" => &$item, "children" => array());
+        $currentdepthdata[$itemindex] = &$map[$mapindex];
+      }
+    }
+    else {
+      //scan through all items within this depth
+      foreach ($depths as $itemindex => &$item) {
+        //find a matching "map" in teh last depth to assign the item too
+        foreach ($item->parents as $parentindex) {
+          $mapindex = count($lastdepthdata[$parentindex]["children"]);
+          $lastdepthdata[$parentindex]["children"][$mapindex] = array(
+            "data" => &$item,
+            "children" => array()
+          );
+          $currentdepthdata[$itemindex] = &$lastdepthdata[$parentindex]["children"][$mapindex];
+        }
+      }
+    }
+
+    $lastdepthdata = $currentdepthdata;
+  }
+
+  return $map;
+}
+
+/**
+ * Build a nested select options list
+ */
+function cu_article_nested_options($terms) {
+  $options = array();
+  uasort($terms, 'cu_article_sort');
+  foreach ($terms as $term) {
+    // Use depth to add - to denote children terms
+    $indent = cu_article_term_depth($term['data']->depth);
+    // Load full term so we can tell if term should be hidden or not
+    $term_full = taxonomy_term_load($term['data']->tid);
+    // Term display field is different in catagory and tag
+    if (!empty($term_full->field_tag_display)) {
+      if ($term_full->field_tag_display[LANGUAGE_NONE][0]['value'] == 'show') {
+        $options[$term['data']->tid] = $indent . ' ' . $term['data']->name;
+        if (!empty($term['children'])) {
+          $nested = cu_article_nested_options($term['children']);
+          $options = $options + $nested;
+        }
+      }
+    }
+    elseif (!empty($term_full->field_category_display)) {
+      if ($term_full->field_category_display[LANGUAGE_NONE][0]['value'] == 'show') {
+        $options[$term['data']->tid] = $indent . ' ' . $term['data']->name;
+        if (!empty($term['children'])) {
+          $nested = cu_article_nested_options($term['children']);
+          $options = $options + $nested;
+        }
+      }
+    }
+    else {
+      $options[$term['data']->tid] = $indent . ' ' . $term['data']->name;
+      if (!empty($term['children'])) {
+        $nested = cu_article_nested_options($term['children']);
+        $options = $options + $nested;
+      }
+    }
+  }
+  return $options;
+}
+
+/**
+ * Returns - to denote children
+ */
+function cu_article_term_depth($depth = 0) {
+  $indent = '';
+  for ($i = 0; $i < $depth; $i++) {
+    $indent = $indent . '-';
+  }
+  return $indent;
+}
+
+/**
+ * Sort function for terms array
+ */
+function cu_article_sort($a, $b) {
+  $a = $a['data']->name;
+  $b = $b['data']->name;
+  if ($a == $b) {
+    return 0;
+  }
+  return ($a < $b) ? -1 : 1;
+}

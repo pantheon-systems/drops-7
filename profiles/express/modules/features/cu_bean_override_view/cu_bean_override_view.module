@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the CU Bean Override View feature.
+ */
+
+include_once 'cu_bean_override_view.features.inc';

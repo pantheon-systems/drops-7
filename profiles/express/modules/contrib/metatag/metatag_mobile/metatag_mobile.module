@@ -1,0 +1,90 @@
+<?php
+/**
+ * @file
+ * Primary hook implementations for Metatag:Mobile.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_mobile_ctools_plugin_api($owner, $api) {
+  if ($owner == 'metatag' && $api == 'metatag') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function metatag_mobile_theme() {
+  $info['metatag_mobile_android_app'] = array(
+    'render element' => 'element',
+  );
+  $info['metatag_mobile_ios_app'] = array(
+    'render element' => 'element',
+  );
+  $info['metatag_mobile_alt_handheld'] = array(
+    'render element' => 'element',
+  );
+
+  return $info;
+}
+
+/**
+ * Theme callback for an Android app link meta tag.
+ *
+ * The format is:
+ * <link rel="alternate" href="android-app://com.example.Example/sitesection/sitepage/thispage" />
+ */
+function theme_metatag_mobile_android_app($variables) {
+  // Pass everything through to the normal 'link' tag theme.
+  $variables['element']['#name'] = 'alternate';
+  $variables['element']['#value'] = 'android-app://' . $variables['element']['#value'];
+
+  return theme('metatag_link_rel', $variables);
+}
+
+/**
+ * Theme callback for an iOS app link meta tag.
+ *
+ * The format is:
+ * <link rel="alternate" href="ios-app://123456/example/hello-screen" />
+ */
+function theme_metatag_mobile_ios_app($variables) {
+  // Pass everything through to the normal 'link' tag theme.
+  $variables['element']['#name'] = 'alternate';
+  $variables['element']['#value'] = 'ios-app://' . $variables['element']['#value'];
+
+  return theme('metatag_link_rel', $variables);
+}
+
+
+/**
+ * Theme callback for a handheld-formatted alternative URL.
+ *
+ * The format is:
+ * <link rel="alternate" media="handheld" href="https://phone.example.com/the/page" />
+ */
+function theme_metatag_mobile_alt_handheld($variables) {
+  $element = &$variables['element'];
+  $args = array(
+    '#name' => 'rel',
+    '#media' => 'media',
+    '#value' => 'href',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}
+
+/*
+* theme-color
+* MobileOptimized
+* HandheldFriendly
+* viewport
+* cleartype
+* apple-mobile-web-app-capable
+* apple-mobile-web-app-status-bar-style
+* format-detection
+* android-app
+*/

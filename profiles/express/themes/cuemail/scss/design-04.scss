@@ -1,0 +1,131 @@
+@import "modules/_global.scss";
+
+body, table.body {
+	background-color:#000000;
+}
+.container {
+  background-color: #FFFFFF;
+}
+/* Newsletter Title & Logo */
+.title,
+.title td {
+  // Design
+	background-color:#000000;
+  color:#ffffff;
+}
+.title td.newsletter-name h1 {
+  // Design
+  color:#ffffff;
+}
+/* Newsletter Issue & Weblink */
+.title-bottom {
+  // Design
+  background-color: #000000;
+}
+.issue {
+  // Design
+  background-color: #ffffff;
+}
+td.issue-date {
+  // Design
+  color:#cccccc;
+}
+td.web-link a {
+  // Design
+  color:#cccccc;
+	&:link,
+	&:visited,
+	&:active {
+		color: #cccccc !important;
+	}
+}
+td.web-link a:hover {
+  // Design
+  color:#ffffff !important;
+}
+.title td h1 {
+  // Design
+	color:#ffffff;
+}
+/* Article List */
+.article-list {
+  // Design
+  background-color: #fff;
+}
+/* Articles */
+.content-top td.newsletter-sections {
+  padding-top: 10px;
+  // Design
+  background-color: #FFFFFF;
+}
+.article-section-title,
+.article-section-link,
+.article-content {
+  // Design
+  background-color: #FFFFFF;
+}
+.article-content {
+  // Design
+  background-color: #FFFFFF;
+}
+.article-intro,
+.article-intro td {
+  // Design
+  background-color: #FFFFFF;
+}
+/* Ads/Promos */
+.newsletter-ad-1 {
+  // Design
+  background-color: #FFFFFF;
+}
+.newsletter-ad-2 {
+  // Design
+  background-color: #FFFFFF;
+}
+/* Blocks */
+.blocks {
+  // Design
+  background-color: #FFFFFF;
+}
+/* Footer */
+.footer {
+  // Design
+  background-color: #000000;
+}
+.footer-content {
+  // Design
+  color:#FFFFFF;
+}
+.footer-content p {
+  // Design
+  color:#FFFFFF;
+}
+.footer-content a {
+  // Design
+  color:$gold;
+	&:link,
+	&:visited,
+	&:active {
+		color:$gold !important;
+	}
+}
+.footer-content a:hover {
+  // Design
+  color:$gold !important;
+}
+
+.hero-image .content-padding {
+  padding: 0px;
+  .intro-text {
+    padding: 0 10px;
+  }
+}
+
+.article-teaser-border {
+  border-bottom:1px solid #e7e7e7;
+  display:block;
+  margin:0 10px 20px;
+}
+.article-teaser-border.last {
+  display: none;
+}

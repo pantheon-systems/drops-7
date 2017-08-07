@@ -1,0 +1,26 @@
+name = LDAP Test Module
+description = Module for LDAP module for testing.  Only for development and debugging purposes.
+package = Lightweight Directory Access Protocol
+
+dependencies[] = ldap_servers
+dependencies[] = entity
+
+core = 7.x
+
+files[] = ldap_servers.conf.inc
+files[] = ldap_user.conf.inc
+files[] = ldap_authentication.conf.inc
+files[] = ldap_authorization.conf.inc
+
+files[] = ldap_test.module
+
+files[] = LdapServerTest.class.php
+files[] = LdapTestFunctions.class.php
+files[] = LdapUserTestCase.class.php
+
+; Information added by Drupal.org packaging script on 2017-05-30
+version = "7.x-2.2"
+core = "7.x"
+project = "ldap"
+datestamp = "1496167150"
+

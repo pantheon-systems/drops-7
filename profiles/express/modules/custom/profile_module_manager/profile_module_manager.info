@@ -1,0 +1,20 @@
+name = Profile Module Manager
+description = Allows a users to extend a profile with module bundles
+package = System
+core = 7.x
+
+configure = admin/config/system/module-manager
+
+; Information added by Drupal.org packaging script on 2016-09-23
+version = "7.x-1.0"
+core = "7.x"
+project = "profile_module_manager"
+datestamp = "1474658640"
+
+
+; Information added by Drupal.org packaging script on 2017-07-11
+version = "7.x-2.1"
+core = "7.x"
+project = "profile_module_manager"
+datestamp = "1499789645"
+

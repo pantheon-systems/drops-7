@@ -1,0 +1,15 @@
+body { background-color: #E9E9E9; }
+
+table.body { max-width: 580px !important; margin: 0 auto; background-color: #FFFFFF !important; }
+
+.email-blocks { background-color: #f2f2f2; }
+
+.blocks td { padding-top: 10px; }
+
+.hero-image .content-padding { padding: 0px; }
+.hero-image .content-padding .intro-text { padding: 0 10px; }
+
+.article-content.odd1 { background-color: #f2f2f2; }
+.article-content.odd1 .text-pad { padding-top: 10px; padding-bottom: 10px; }
+
+.article-teaser-border { border-bottom: 1px solid #e7e7e7; display: block; margin: 0 10px 20px; }

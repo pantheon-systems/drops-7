@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Installation hooks for Content Menu module
+ */
+
+/**
+ * Implements hook_install().
+ */
+function content_menu_install() {
+  // Set weight to come after core menu.module.
+  // Make sure this module's hooks' weight is set to be executed after the core.
+  // Menu.module's hooks, so the node add/edit form is already altered by the.
+  // Menu.module befor content_menu does its form alterations.
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'menu', '=')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $weight + 1))
+    ->condition('name', 'content_menu', '=')
+    ->execute();
+}

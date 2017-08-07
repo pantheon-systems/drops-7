@@ -1,0 +1,25 @@
+.item-list ul.rss-block-items,
+.item-list ul.rss-block-items li {
+  list-style: none;
+  list-style-image: none;
+  margin: 0;
+  padding: 0
+}
+ul.rss-block-items li a {
+  display: block;
+  padding: 10px 0;
+  border-bottom: 1px solid #e7e7e7;
+}
+a.rss-site-link {
+  display: block;
+  padding: 10px 0;
+  font-size: 85%;
+
+}
+a.rss-site-link  i.fa-rss-square {
+  color:#ff6600;
+}
+
+.bundle-type-feeds h2:before {
+    content: '\f143';
+}

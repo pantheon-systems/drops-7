@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Contains install hooks for cu_advanced_layout_bundle.
+ */
+
+/**
+ * Enable cu_block_to_bean module.
+ */
+function cu_advanced_layout_bundle_update_7001() {
+  module_enable(array('cu_block_to_bean'));
+}

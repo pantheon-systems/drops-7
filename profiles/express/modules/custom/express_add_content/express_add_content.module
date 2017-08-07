@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * Update hook_node_bundles, hook_bean_bundles caches.
+ */
+function express_add_content_modules_enabled($modules) {
+  $bundles = array();
+  $bundles = module_invoke_all('express_node_list_groups', $variables = NULL);
+  // Save this for 30 days - it should only be cleared on a code update
+  cache_set('express_add_content_express_node_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+  $bundles = array();
+  $bundles = module_invoke_all('express_bean_list_groups', $variables = NULL);
+  // Save this for 30 days - it should only be cleared on a code update
+  cache_set('express_add_content_express_bean_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+}
+
+function express_add_content_node_add($vars) {
+  // Check to see if any content types exist yet
+  if ($vars['content']) {
+    $output = array();
+    // Get node bundles
+    if ($cache = cache_get('express_add_content_express_node_list_groups')) {
+      $bundles = $cache->data;
+    } else {
+      $bundles = module_invoke_all('express_node_list_groups', $variables = NULL);
+      // Save this for 30 days - it should only be cleared on a code update
+      cache_set('express_add_content_express_node_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+    }
+    uasort($bundles, '_express_add_content_sort_types');
+    // Links fromt node_add_list().
+    $content = $vars['content'];
+    // Build new links list with title as key
+    $links = array();
+    foreach($content as $link) {
+      $key = $link['title'];
+      $links[$key] = $link;
+    }
+    // Step through bundles
+    foreach ($bundles as $key => $bundle) {
+      $output[$key]['title']['#markup'] = '<h2>' . $bundle['title'] . '</h2>';
+      $bundle_class = 'bundle-type-' . _express_add_content_string_to_machine($bundle['title']);
+      $output[$key]['#prefix'] = '<div class="admin-panel express-add-group ' . $bundle_class . '">';
+      $output[$key]['#suffix'] = '</div>';
+      // Add content types for each bundle
+      $types = '';
+      foreach ($bundle['types'] as $type) {
+        if (!empty($links[$type])) {
+          $types .= '<li class="clearfix">';
+          $types .= '<span class="label">' . l($links[$type]['title'], $links[$type]['href'], $links[$type]['localized_options']) . '</span>';
+          $types .= '<div class="description">' . filter_xss_admin($links[$type]['description']) . '</div>';
+          $types .= '</li>';
+          // Remove from $links array so we can check for leftovers that are not included in bundles
+          unset($links[$type]);
+        }
+      }
+      // Add markup for types, otherwise unset so empty set is not rendered
+      if (!empty($types)) {
+        $output[$key]['types']['#markup'] = $types;
+        $output[$key]['types']['#prefix'] = '<ul class="admin-list">';
+        $output[$key]['types']['#suffix'] = '</ul>';
+      } else {
+        unset($output[$key]);
+      }
+    }
+    // Output leftover links that were not assigned to a bundle
+    if (!empty($links)) {
+      $output['other']['title']['#markup'] = '<h2>Other</h2>';
+      $output['other']['#prefix'] = '<div class="admin-panel express-add-group">';
+      $output['other']['#suffix'] = '</div>';
+      $types = '<ul class="admin-list">';
+      foreach ($links as $link) {
+        $types .= '<li class="clearfix">';
+        $types .= '<span class="label">' . l($link['title'], $link['href']) . '</span>';
+        $types .= '<div class="description">' . filter_xss_admin($link['description']) . '</div>';
+        $types .= '</li>';
+      }
+      $types .= '</ul>';
+      $output['other']['types']['#markup'] = $types;
+    }
+    return $output;
+  } else {
+    $output = '<p>' . t('You have not created any content types yet. Go to the <a href="@create-content">content type creation page</a> to add a new content type.', array('@create-content' => url('admin/structure/types/add'))) . '</p>';
+    return $output;
+  }
+}
+
+function express_add_content_bean_add($vars) {
+  // Check to see if any content types exist yet
+  if ($vars['content']) {
+    $output = array();
+    // Get bean bundles
+    if ($cache = cache_get('express_add_content_express_bean_list_groups')) {
+      $bundles = $cache->data;
+    } else {
+      $bundles = module_invoke_all('express_bean_list_groups', $variables = NULL);
+      // Save this for 30 days - it should only be cleared on a code update
+      cache_set('express_add_content_express_bean_list_groups', $bundles, 'cache', time() + 60 * 60 * 24 * 30);
+    }
+    uasort($bundles, '_express_add_content_sort_types');
+    // Links fromt node_add_list().
+    $content = $vars['content'];
+    // Build new links list with title as key
+    $links = array();
+    // $vars['content'] for beans is different than nodes, so build a $links array in the same structure
+    foreach($content as $bean) {
+      $key = $bean->getLabel();
+      // build bean add path and check access
+      $path = 'block/add/' . $bean->buildURL();
+      if (drupal_valid_path($path)) {
+        $links[$key] = array(
+          'title' => $key,
+          'href' => $path,
+          'description' => $bean->getDescription(),
+        );
+      }
+    }
+    // Step through bundles
+    foreach ($bundles as $key => $bundle) {
+      $output[$key]['title']['#markup'] = '<h2>' . $bundle['title'] . '</h2>';
+      $bundle_class = 'bundle-type-' . _express_add_content_string_to_machine($bundle['title']);
+      $output[$key]['#prefix'] = '<div class="admin-panel express-add-group ' . $bundle_class . '">';
+      $output[$key]['#suffix'] = '</div>';
+      // Add content types for each bundle
+      $types = '';
+      foreach ($bundle['types'] as $type) {
+        if (!empty($links[$type])) {
+          $types .= '<li class="clearfix">';
+          $types .= '<span class="label">' . l($links[$type]['title'], $links[$type]['href']) . '</span>';
+          $types .= '<div class="description">' . filter_xss_admin($links[$type]['description']) . '</div>';
+          $types .= '</li>';
+          // Remove from $links array so we can check for leftovers that are not included in bundles
+          unset($links[$type]);
+        }
+      }
+      // Add markup for types, otherwise unset so empty set is not rendered
+      if (!empty($types)) {
+        $output[$key]['types']['#markup'] = $types;
+        $output[$key]['types']['#prefix'] = '<ul class="admin-list">';
+        $output[$key]['types']['#suffix'] = '</ul>';
+      } else {
+        unset($output[$key]);
+      }
+    }
+    // Output leftover links that were not assigned to a bundle
+    if (!empty($links)) {
+      $output['other']['title']['#markup'] = '<h2>Other</h2>';
+      $output['other']['#prefix'] = '<div class="admin-panel express-add-group">';
+      $output['other']['#suffix'] = '</div>';
+      $types = '<ul class="admin-list">';
+      foreach ($links as $link) {
+        $types .= '<li class="clearfix">';
+        $types .= '<span class="label">' . l($link['title'], $link['href']) . '</span>';
+        $types .= '<div class="description">' . filter_xss_admin($link['description']) . '</div>';
+        $types .= '</li>';
+      }
+      $types .= '</ul>';
+      $output['other']['types']['#markup'] = $types;
+    }
+    return $output;
+  } else {
+    $output = '<p>' . t('You have not created any content types yet. Go to the <a href="@create-content">content type creation page</a> to add a new content type.', array('@create-content' => url('admin/structure/types/add'))) . '</p>';
+    return $output;
+  }
+}
+
+function express_add_content_theme_registry_alter(&$theme_registry) {
+  $theme_registry['node_add_list']['function'] = 'express_add_content_node_add';
+  $theme_registry['bean_add_list']['function'] = 'express_add_content_bean_add';
+}
+
+/**
+ * Sort bundle arrays by weight/title.
+ */
+function _express_add_content_sort_types($a, $b) {
+  // Assign weights, even if empty
+  $a['weight'] = isset($a['weight']) ? $a['weight'] : 0;
+  $b['weight'] = isset($b['weight']) ? $b['weight'] : 0;
+  // Sort by title
+  if ($a['weight'] == $b['weight']) {
+    return strcmp($a['title'], $b['title']);
+  }
+  // Sort by weight
+  return $a['weight'] - $b['weight'];
+}
+
+/**
+ * Convert string to machine name.
+ */
+ function _express_add_content_string_to_machine($string) {
+  return strtolower(preg_replace(array(
+    '/[^a-zA-Z0-9]+/',
+    '/-+/',
+    '/^-+/',
+    '/-+$/',
+  ), array('-', '-', '', ''), $string));
+}

@@ -1,0 +1,31 @@
+@media print {
+  #backstretch { display: none; }
+}
+
+ul.footer-links {
+  background-color: #F0F0F0;
+  border-top: 1px solid white;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  bottom: 0;
+  box-shadow: 0 0 2px #333;
+  color: #D0B87C;
+  display: block;
+  font-size: 1em;
+  padding: 2px 5px;
+  position: fixed;
+  right: 20px;
+  z-index: 99;
+  list-style: none;
+  list-style-type: none;
+}
+ul.footer-links li {
+  list-style: none;
+  list-style-type: none;
+}
+ul.footer-links a {
+  color: #666;
+  min-height: 16px;
+  padding: 0 5px;
+  display: inline-block;
+}

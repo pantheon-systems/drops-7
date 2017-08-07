@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ * Files undo remove.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function files_undo_remove_init() {
+  // Add the Javascript and css. This will disable the 'Remove' buttons
+  // and add nice CSS to the table rows. We need todo this here, because
+  // it's possible a field collection on say an existing node doesn't have
+  // any files yet so the 'remove' button would fail on editing as well.
+  drupal_add_js(drupal_get_path('module', 'files_undo_remove') . '/files_undo_remove.js');
+  drupal_add_css(drupal_get_path('module', 'files_undo_remove') . '/files_undo_remove.css');
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function files_undo_remove_element_info_alter(&$type) {
+  if (isset($type['managed_file'])) {
+    $type['managed_file']['#process'][] = 'files_undo_remove_file_process';
+  }
+}
+
+/**
+ * Process callback on managed_file type.
+ */
+function files_undo_remove_file_process($element, &$form_state, $form) {
+
+  // Do not process on field edit form.
+  if ($form['#form_id'] == 'field_ui_field_edit_form') {
+    return $element;
+  }
+
+  if (isset($element['fid']) && !empty($element['fid']['#value']) && !empty($element['#field_name'])) {
+
+    $field_info = field_info_field($element['#field_name']);
+    if ($field_info['cardinality'] == 1) {
+      return $element;
+    }
+
+    // Change the remove button to one of ours.
+    $element['remove_button'] = array(
+      '#name' => $element['remove_button']['#name'],
+      '#type' => 'submit',
+      '#value' => t('Remove'),
+      '#attributes' => array(
+        'class' => array('files-undo-remove'),
+      ),
+      '#weight' => -5,
+    );
+
+    // Add a hidden state, defaults to 0.
+    $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+    $remove_state = isset($values['remove_state']) ? $values['remove_state'] : 0;
+    $element['remove_state'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $remove_state,
+      '#attributes' => array('class' => array('files-undo-remove-hidden-state')),
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function files_undo_remove_entity_presave($entity, $entity_type) {
+  $clear_cache = FALSE;
+
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  $instances = field_info_instances($entity_type, $bundle);
+  foreach ($instances as $field_name => $field_instance) {
+
+    // Make sure the field exists.
+    if (!isset($entity->{$field_name})) {
+      continue;
+    }
+
+    // Check if the modules are file, image or linkimage.
+    if (in_array($field_instance['widget']['module'], array('image', 'file', 'linkimagefield'))) {
+      foreach ($entity->{$field_name} as $language => $items) {
+        foreach ($items as $delta => $item) {
+          // Check if there's a remove_state key on the file values.
+          if (isset($item['remove_state']) && $item['remove_state']) {
+            $file = file_load($item['fid']);
+            // @todo we'll probably have to do this different, like checking
+            // usage, dropping it by one and removing if none is found anymore.
+            // For now, we force the file to delete.
+            file_delete($file, TRUE);
+            // Remove the item from the entity.
+            unset($entity->{$field_name}[$language][$delta]);
+          }
+        }
+
+        $entity->{$field_name}[$language] = array_values($entity->{$field_name}[$language]);
+      }
+    }
+  }
+
+  if ($clear_cache) {
+    // @todo check with entity cache module.
+    cache_clear_all('field:' . $entity_type . ':' . $id, 'cache_field');
+  }
+}
