@@ -116,5 +116,19 @@ function cu_advanced_layout_bundle_express_help($variables) {
  * @return $variables
  */
 function cu_advanced_layout_bundle_express_help_fields($variables) {
-  
+
+}
+
+/**
+ * Implements hook_express_bean_list_groups().
+ * Provided by express_add_content.api.php.
+ */
+function cu_advanced_layout_bundle_express_bean_list_groups($bundles) {
+
+  $bundles['advanced_layout']['title'] = 'Advanced Layout';
+  $bundles['advanced_layout']['types'][] = 'Block Row';
+  $bundles['advanced_layout']['types'][] = 'Block Section';
+  $bundles['advanced_layout']['types'][] = 'Block Wrapper';
+
+  return $bundles;
 }

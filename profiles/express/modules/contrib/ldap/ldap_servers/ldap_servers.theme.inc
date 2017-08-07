@@ -122,7 +122,6 @@ function theme_ldap_server_token_table($variables) {
 }
 
 function theme_ldap_server_ldap_entry_table($variables) {
- // debug($variables);
   if (!isset($variables['entry']) || !is_array($variables['entry'])) {
     return '<p>' . t('No Entry Returned.') . t('</p>');
   }

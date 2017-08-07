@@ -39,7 +39,7 @@ function cu_video_reveal_field_default_field_instances() {
       'file_directory' => '',
       'file_extensions' => 'png gif jpg jpeg',
       'max_filesize' => '',
-      'max_resolution' => '',
+      'max_resolution' => '2000x2000',
       'min_resolution' => '',
       'title_field' => 0,
       'user_register_form' => FALSE,

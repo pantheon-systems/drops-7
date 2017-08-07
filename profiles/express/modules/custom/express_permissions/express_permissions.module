@@ -300,6 +300,7 @@ function express_permissions_secure_permissions($role) {
       'administer meta tags',
       'administer modernizr',
       'administer module filter',
+      'administer module missing message fixer',
       'administer modules',
       'administer nodes',
       'administer people settings',

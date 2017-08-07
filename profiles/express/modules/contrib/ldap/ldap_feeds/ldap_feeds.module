@@ -110,10 +110,8 @@ function ldap_feeds_query_legend(&$form, $importer) {
 
   $source = feeds_source($importer->id);
   $fetcher = feeds_plugin('FeedsLdapQueryFetcher', $source->importer->id);
-  //dpm((array)$fetcher);  dpm((array)$source->importer->parser->ldap_result);
  // $fetcher_result = new FeedsLdapQueryFetcher($source->config);
  // $records = $fetcher->getRaw(); // FeedsSource $source
-// dpm($records);
  // foreach ($records[0] as $field_name => $value) {
   //  $sources[$field_name] = array(
   //    'name' => array('#markup' => $field_name),

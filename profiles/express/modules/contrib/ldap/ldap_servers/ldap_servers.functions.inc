@@ -248,6 +248,9 @@ function ldap_server_massage_text($value, $value_type, $context) {
         if ($is_scalar) {
             $values = array($values);
         }
+        if ($values === NULL) {
+          return NULL;
+        }
 
        foreach ($values as $key => $val) {
             // Escaping of filter meta characters

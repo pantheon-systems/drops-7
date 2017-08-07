@@ -20,7 +20,6 @@
  *
  *  @return boolean &$hook_result passed by reference
  */
-
 function hook_ldap_authentication_allowuser_results_alter($ldap_user, $name, &$hook_result) {
 
   if ($hook_result === FALSE) { // other module has denied user, should not override
@@ -34,4 +33,12 @@ function hook_ldap_authentication_allowuser_results_alter($ldap_user, $name, &$h
 
 }
 
-
+/**
+ * Allow a custom module to alter $ldap_user before validating user login.
+ *
+ *  @param array $ldap_user
+ *    See README.developers.txt for structure
+ */
+function hook_ldap_entry_alter(&$ldap_user) {
+  $ldap_user['mail'] = 'newmail@example.com';
+}

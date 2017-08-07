@@ -5,9 +5,9 @@ core = 7.x
 
 dependencies[] = ldap_servers
 dependencies[] = ldap_test
-; Information added by Drupal.org packaging script on 2017-02-19
-version = "7.x-2.0-beta12+7-dev"
+; Information added by Drupal.org packaging script on 2017-05-30
+version = "7.x-2.2"
 core = "7.x"
 project = "ldap"
-datestamp = "1487504891"
+datestamp = "1496167150"
 

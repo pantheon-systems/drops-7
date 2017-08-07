@@ -238,13 +238,14 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
  */
     if ($result !== FALSE) { // not an error
         $entries = array_merge($entries, $result);
-        $num_entries += array_shift($result);
+        $num_entries += $result['count'];
+        unset($result['count']);
       }
     }
     if (property_exists($view->query, 'limit')) {
       $limit     = $view->query->limit;
     }
-    $offset      = $view->query->offset;
+    $offset = property_exists($view->query, 'offset')? $view->query->offset : 0;
     $result      = array();
     $sort_fields = array();
     if (!empty($this->orderby)) {
@@ -269,7 +270,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
             switch ($field->options['multivalue']) {
               case 'v-all':
                 // remove 'count' index
-                array_shift($entry[$alias]);
+                unset($entry[$alias]['count']);
                 $entry[$alias] = implode($field->options['value_separator'], $entry[$alias]);
                 break;
               case 'v-count':
@@ -283,6 +284,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
             }
           }
           // order criteria
+          //If the field with alias $alias has a corresponding entry in $sort_fields, copy its value into the data key of $sort_fields for later sorting.
           if (array_key_exists($alias, $sort_fields)) {
             $sort_fields[$alias]['data'][$key] = $entry[$alias];
           }
@@ -305,13 +307,14 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
       }
       $params[] = &$entries;
 
-      // Some LDAP setups output a 'count' variable first in the array, which changes the array size;
+      // Some LDAP setups output a 'count' variable in the array, which changes the array size;
       // temporarily remove it, sort the arrays, and then put it back.
       if (array_key_exists('count', $entries)) {
-        $countValue = array_shift($entries); // remove the count variable
+        $countValue = $entries['count']; // remove the count variable
+        unset($entries['count']);
         $params[] = &$entries;
         call_user_func_array('array_multisort', $params);
-        array_unshift($params, $countValue);
+        $params['count'] = $countValue;
       }
       else {
         $params[] = &$entries;

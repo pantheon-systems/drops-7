@@ -50,7 +50,7 @@ function atlas_requirements($phase) {
         'severity' => REQUIREMENT_OK,
       );
       // Link to the logging in the Elasticsearch, Logstash, Kibana stack.
-      $logging_url = "https://wlogstash.colorado.edu/app/kibana/#/dashboard/Drupal-Syslog-Site?_g=(refreshInterval:(display:'1%20minute',pause:!t,section:2,value:60000),time:(from:now-24h,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Drupal-Syslog-Top-15-event-categories,row:1,size_x:6,size_y:4,type:visualization),(col:7,columns:!(_source),id:'*-Drupal-Syslog',row:1,size_x:6,size_y:7,sort:!('@timestamp',desc),type:search),(col:1,id:Drupal-Syslog-Messages-Top-5,row:5,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'atlas_id:%22" . $cu_sid . "%22')),title:'Drupal%20Syslog%20-%20Site')";
+      $logging_url = "https://wlogstash.colorado.edu/app/kibana/#/dashboard/Drupal-Syslog-Site?_g=(refreshInterval:(display:'1%20minute',pause:!t,section:2,value:60000),time:(from:now-24h,mode:quick,to:now))&_a=(filters:!(),panels:!((col:1,id:Drupal-Syslog-Top-15-event-categories,row:1,size_x:6,size_y:4,type:visualization),(col:7,columns:!(_source),id:'*-Drupal-Syslog',row:1,size_x:6,size_y:7,sort:!('@timestamp',desc),type:search),(col:1,id:Drupal-Syslog-Messages-Top-5,row:5,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,query:'cu_sid:%22" . $cu_sid . "%22')),title:'Drupal%20Syslog%20-%20Site')";
       $requirements['cu_log_link'] = array(
         'title' => $t('Atlas Syslog'),
         'value' => $t('See <a href="@url" target="_blank">logs on wlogstash.colorado.edu</a>. <em>Requires authorized Identikey</em>.', array('@url' => $logging_url)),

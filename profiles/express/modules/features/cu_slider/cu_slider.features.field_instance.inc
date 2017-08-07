@@ -185,7 +185,7 @@ function cu_slider_field_default_field_instances() {
       'file_directory' => 'slider',
       'file_extensions' => 'png gif jpg jpeg',
       'max_filesize' => '',
-      'max_resolution' => '',
+      'max_resolution' => '2000x2000',
       'min_resolution' => '960x360',
       'title_field' => 0,
       'user_register_form' => FALSE,

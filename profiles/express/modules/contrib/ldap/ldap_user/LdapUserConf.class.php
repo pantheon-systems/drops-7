@@ -496,7 +496,6 @@ class LdapUserConf {
    */
 
   public function provisionLdapEntry($account, $ldap_user = NULL, $test_query = FALSE) {
-    //debug('provisionLdapEntry account'); //debug($account);
     $watchdog_tokens = array();
     $result = array(
       'status' => NULL,
@@ -709,8 +708,7 @@ class LdapUserConf {
           );
         }
         else {
-         //  //debug('modifyLdapEntry,dn=' . $proposed_ldap_entry['dn']);  //debug($attributes);
-              // stick $proposed_ldap_entry in $ldap_entries array for drupal_alter call
+          // stick $proposed_ldap_entry in $ldap_entries array for drupal_alter call
           $proposed_dn_lcase = drupal_strtolower($proposed_ldap_entry['dn']);
           $ldap_entries = array($proposed_dn_lcase => $attributes);
           $context = array(
@@ -833,7 +831,6 @@ class LdapUserConf {
       $prov_events = ldap_user_all_events();
     }
     $sid = $this->ldapEntryProvisionServer; //
-    //debug("ldapEntryProvisionServer:$sid");
     if (!$sid) {
       return FALSE;
     }
@@ -911,8 +908,6 @@ class LdapUserConf {
   */
 
   function drupalUserToLdapEntry($account, $ldap_server, $params, $ldap_user_entry = NULL) {
-  //debug('call to drupalUserToLdapEntry, account:'); //debug($account); //debug('ldap_server'); //debug($ldap_server);
-  //debug('params'); //debug($params); //debug('ldap_user_entry');//debug($ldap_user_entry);
     $provision = (isset($params['function']) && $params['function'] == 'provisionLdapEntry');
     $result = LDAP_USER_PROV_RESULT_NO_ERROR;
     if (!$ldap_user_entry) {
@@ -931,9 +926,6 @@ class LdapUserConf {
     $prov_events = empty($params['prov_events']) ? ldap_user_all_events() : $params['prov_events'];
 
     $mappings = $this->getSynchMappings($direction, $prov_events);
-     //debug('prov_events'); //debug(join(",",$prov_events));
-  //  debug('mappings'); debug($mappings);
-      // Loop over the mappings.
     foreach ($mappings as $field_key => $field_detail) {
       list($ldap_attr_name, $ordinal, $conversion) = ldap_servers_token_extract_parts($field_key, TRUE);  //trim($field_key, '[]');
       $ordinal = (!$ordinal) ? 0 : $ordinal;
@@ -942,7 +934,6 @@ class LdapUserConf {
       }
 
       $synched = $this->isSynched($field_key, $params['prov_events'], LDAP_USER_PROV_DIRECTION_TO_LDAP_ENTRY);
-    //  debug("isSynched $field_key: $synched");
       if ($synched) {
         $token = ($field_detail['user_attr'] == 'user_tokens') ? $field_detail['user_tokens'] : $field_detail['user_attr'];
         $value = ldap_servers_token_replace($account, $token, 'user_account');
@@ -1027,7 +1018,7 @@ class LdapUserConf {
         return FALSE;
       }
     }
-   // dpm('ldap_user 675');dpm($ldap_user);
+
     if (!isset($user_edit['name']) && isset($account->name)) {
       $user_edit['name'] = $account->name;
       $watchdog_tokens['%username'] = $user_edit['name'];
@@ -1329,14 +1320,11 @@ class LdapUserConf {
     );
     if (!$result) {
       if (isset($this->synchMapping[$direction][$attr_token])) {
-        //debug($this->synchMapping[$direction][$attr_token]);
       }
       else {
-      //  debug("$attr_token not in ldapUserConf::synchMapping");
       }
     }
     return $result;
   }
 
-
-} // end LdapUserConf class
+}

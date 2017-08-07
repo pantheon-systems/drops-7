@@ -152,10 +152,5 @@ function cu_core_express_bean_list_groups($bundles) {
   $bundles['advanced_content']['types'][] = 'Quicktab';
   $bundles['advanced_content']['types'][] = 'Video Reveal';
 
-  $bundles['advanced_layout']['title'] = 'Advanced Layout';
-  $bundles['advanced_layout']['types'][] = 'Block Row';
-  $bundles['advanced_layout']['types'][] = 'Block Section';
-
-
   return $bundles;
 }

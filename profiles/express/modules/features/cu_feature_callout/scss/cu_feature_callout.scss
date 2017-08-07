@@ -177,12 +177,18 @@ $text: #202020;
       h2.feature-callout-title,
       h3.feature-callout-title {
         margin: 0;
+        a {
+          color:#fff;
+        }
       }
       color:#fff;
-      a {
-        color:#fff;
+      .content-grid-text {
+        a {
+          color: $cugold;
+        }
       }
     }
+
   }
 
   .sub-grid {
@@ -199,12 +205,22 @@ $text: #202020;
     .content-grid-text > *:last-child {
       margin-bottom: 0;
     }
+    .content-grid-content {
+      position: static;
+      background-color: #202020;
+    }
+    @media screen and (min-width:768px) {
+      .content-grid-content {
+        position: absolute;
+        background: rgba(0,0,0,.5);
+      }
+    }
   }
   .sub-grid {
     background-color: #000;
     img {
       float:left;
-      width:100px;
+      width:120px;
       margin:10px;
     }
     .content-grid-content {

@@ -105,8 +105,8 @@ function ldap_query_admin_form_submit($form, &$form_state) {
    // }
   }
   else {
-    form_set_error($server->errorName(), $server->errorMsg());
-    $server->clearError();
+    form_set_error($query->errorName(), $query->errorMsg());
+    $query->clearError();
   }
   ldap_query_cache_clear();
 }

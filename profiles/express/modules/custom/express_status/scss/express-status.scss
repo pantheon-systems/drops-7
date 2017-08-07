@@ -15,37 +15,16 @@
   .status-message {
     &.none {
       background-color: #43A047;
-      &:before {
-        content: "\f118";
-        font-family: FontAwesome;
-        margin-right:10px;
-      }
     }
     &.minor {
       background-color:#7E57C2;
-      &:before {
-        content: "\f119";
-        font-family: FontAwesome;
-        margin-right:10px;
-      }
     }
     &.maintenance {
       background-color: #3498DB;
-      &:before {
-        content: "\f119";
-        font-family: FontAwesome;
-        margin-right:10px;
-      }
     }
     &.major,
     &.critical {
       background-color: #D84315;
-      &:before {
-        content: "\f119";
-        font-family: FontAwesome;
-        margin-right:10px;
-      }
-
     }
   }
   .incidents {

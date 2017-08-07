@@ -158,7 +158,6 @@ class LdapServerAdmin extends LdapServer {
 
     }
 
-  //  debug("values sent to save op=$op, ctools=". (int)module_exists('ctools')); debug($values);
     if ($result) {
       $this->inDatabase = TRUE;
     }
@@ -878,8 +877,12 @@ public function drupalFormSubmit($op, $values) {
         'form' => array(
           'fieldset' => 'users',
           '#type' => 'checkbox',
-          '#title' => t('Does PUID hold a binary value?'),
-          '#description' => t(''),
+          '#title' => t('Does the <em>Persistent and Unique User ID
+            Attribute</em> hold a binary value?'),
+          '#description' => t('You need to set this if you are using a binary
+             attribute such as objectSid in ActiveDirectory for the PUID.<br>
+             If you don\'t want this consider switching to another attribute,
+             such as samaccountname.'),
         ),
         'schema' => array(
           'type' => 'int',

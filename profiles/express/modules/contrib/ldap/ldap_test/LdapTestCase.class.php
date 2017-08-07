@@ -139,29 +139,22 @@ class LdapTestCase extends DrupalWebTestCase {
         $test_data['search_results'][$filter][$domain] = array_diff($test_data['search_results'][$filter][$domain], array($group_dn));
         $test_data['search_results'][$filter][$domain]['count'] = count($test_data['search_results'][$filter][$domain] - 1);
       }
-      //debug("removeUserFromGroup:debug test_data[search_results][$filter]"); debug($test_data['search_results']['(&(objectClass=group)(member=$user_dn))']);
-
 
       if (!empty($test_data['users'][$user_dn]['attr']['memberof']) && in_array($group_dn, $test_data['users'][$user_dn]['attr']['memberof'])) {
         $test_data['users'][$user_dn]['attr']['memberof'] = array_diff($test_data['users'][$user_dn]['attr']['memberof'], array($group_dn));
         $test_data['users'][$user_dn]['attr']['memberof']['count'] = count($test_data['users'][$user_dn]['attr']['memberof'] - 1);
       }
-      //debug("removeUserFromGroup:debug test_data[users][$user_dn]"); debug($test_data['users'][$user_dn]);
-
 
       if (!empty($test_data['ldap'][$user_dn]['memberof']) && in_array($group_dn, $test_data['ldap'][$user_dn]['memberof'])) {
         $test_data['ldap'][$user_dn]['memberof'] = array_diff($test_data['ldap'][$user_dn]['memberof'], array($group_dn));
         $test_data['ldap'][$user_dn]['memberof']['count'] = count($test_data['ldap'][$user_dn]['memberof']) - 1;
       }
-      //debug("removeUserFromGroup:debug test_data[ldap][$user_dn]"); debug($test_data['ldap'][$user_dn]);
-
 
       if (!empty($test_data['groups'][$group_dn]['attr']['member']) && in_array($group_dn, $test_data['groups'][$group_dn]['attr']['member']) ) {
         $members = array_diff($test_data['groups'][$group_dn]['attr']['member'], array($group_dn));
         $test_data['groups'][$group_dn]['attr']['member'] = $members;
         $test_data['groups'][$group_dn]['attr']['member'][$i]['count'] = count($members - 1);
       }
-      //debug("removeUserFromGroup:debug test_data[groups][$group_dn]"); debug($test_data['groups'][$group_dn]);
     }
 
   public function AttemptLogonNewUser($name, $goodpwd = TRUE) {
