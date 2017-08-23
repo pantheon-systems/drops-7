@@ -3,9 +3,9 @@ api: '2'
 core: 7.x
 includes:
 - https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.2/visualization_entity.make
-- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.13.6/open_data_schema_map.make
+- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/1.13.6/open_data_schema_map.make
 - https://raw.githubusercontent.com/NuCivic/leaflet_draw_widget/5a5f8faf664aeca02371f6692307580d9fab9116/leaflet_widget.make
-- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.13.6/recline.make
+- https://raw.githubusercontent.com/NuCivic/recline/1.13.6/recline.make
 projects:
   admin_menu:
     version: 3.0-rc5
@@ -77,7 +77,7 @@ projects:
     patch:
       2809655: https://www.drupal.org/files/issues/entity-path-mysql-5-7_3.diff
   entityreference:
-    version: '1.4'
+    version: '1.5'
   entityreference_filter:
     version: '1.7'
   facetapi:
@@ -217,8 +217,6 @@ projects:
     version: '1.3'
   menu_block:
     version: '2.7'
-  menu_token:
-    version: 1.0-beta7
   migrate:
     version: '2.8'
     patch:
@@ -246,7 +244,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/open_data_schema_map.git
-      tag: 7.x-1.13.6
+      tag: 7.x-1.13.7
   panelizer:
     version: '3.4'
   panels:
@@ -276,7 +274,7 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/recline.git
-      tag: 7.x-1.13.6
+      tag: 7.x-1.13.7
   ref_field:
     download:
       type: git
@@ -284,10 +282,6 @@ projects:
       revision: 9dbf7cf
     patch:
       2360019: https://www.drupal.org/files/issues/ref_field-delete-insert-warning-2360019-5.patch
-  remote_file_source:
-    version: 1.x
-    patch:
-      2362487: https://www.drupal.org/files/issues/remote_file_source-location-content-dist_1.patch
   remote_stream_wrapper:
     download:
       type: git
@@ -329,13 +323,13 @@ projects:
     download:
       type: git
       url: https://github.com/NuCivic/taxonomy_fixtures.git
-      revision: 485d92019d11a61de585707db8f49d0160bd03b2
+      revision: b2f092c963f4a24afe1e6443eb9ff01c959079ed
   token:
     version: '1.7'
   uuid:
     version: '1.0'
   views:
-    version: '3.16'
+    version: '3.17'
   views_autocomplete_filters:
     version: '1.2'
     patch:
