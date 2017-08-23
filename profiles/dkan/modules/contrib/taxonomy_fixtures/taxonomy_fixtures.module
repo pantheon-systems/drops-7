@@ -34,17 +34,24 @@ function taxonomy_fixtures_import_terms($vocabularies = array()) {
     $data_file = implode('/', $data_file);
     $data_file = file_get_contents($data_file);
     $terms = drupal_json_decode($data_file);
+    
     // Load Vocabulary.
     $vocabulary = taxonomy_vocabulary_machine_name_load($machine_name);
-    foreach ($terms as $key => $term) {
-      $import = new TermFixtureImport(
-        $term,
-        $vocabulary,
-        $config['map'],
-        $config['export_path']
-      );
-      $imports[] = $import;
+    if (!empty($vocabulary)) {
+      foreach ($terms as $key => $term) {
+        $import = new TermFixtureImport(
+          $term,
+          $vocabulary,
+          $config['map'],
+          $config['export_path']
+        );
+        $imports[] = $import;
+      }
     }
+    else {
+	    drupal_set_message(t("Vocabulary %machine_name does not exist.",
+	      array('%machine_name' => $machine_name)), 'error'); 
+	  }
   }
 
   while(count($imports)) {
