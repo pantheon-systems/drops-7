@@ -105,6 +105,18 @@ function express_layout_context_default_contexts() {
           'region' => 'content_bottom',
           'weight' => '-10',
         ),
+        'express_layout-el_block_post_title' => array(
+          'module' => 'express_layout',
+          'delta' => 'el_block_post_title',
+          'region' => 'post_title',
+          'weight' => '-10',
+        ),
+        'express_layout-el_block_post_title_wide' => array(
+          'module' => 'express_layout',
+          'delta' => 'el_block_post_title_wide',
+          'region' => 'post_title_wide',
+          'weight' => '-10',
+        ),
       ),
     ),
   );

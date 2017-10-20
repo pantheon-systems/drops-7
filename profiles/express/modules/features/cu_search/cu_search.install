@@ -25,3 +25,22 @@ function cu_search_update_7002() {
     variable_set('google_appliance_collection', $cu_path);
   }
 }
+
+/**
+ * Enable google_cse. Set search to custom cse if google_cse_cx is set.
+ */
+function cu_search_update_7003() {
+  module_enable(array('google_cse'));
+  if (variable_get('google_cse_cx', NULL)) {
+    variable_set('cu_search_options', array('this' => 'this'));
+  }
+}
+
+/**
+ * Set search to custom cse if google_cse_cx is set.
+ */
+function cu_search_update_7004() {
+  if (variable_get('google_cse_cx', NULL)) {
+    variable_set('cu_search_options', array('this' => 'this'));
+  }
+}

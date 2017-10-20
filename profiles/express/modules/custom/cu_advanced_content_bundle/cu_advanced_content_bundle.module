@@ -215,11 +215,6 @@ function cu_advanced_content_bundle_secure_permissions($role) {
  * @return $variables
  */
 function cu_advanced_content_bundle_express_help($variables) {
-  $variables['admin/structure/quicktabs/manage/%/edit'][] = array(
-    'title' => 'Quicktabs help',
-    'short_title' => 'Quicktabs help',
-    'url' => '/node/948',
-  );
   $variables['block/add/feature-callout'][] = array(
     'title' => 'Content grid block help',
     'short_title' => 'Content grid block help',
@@ -239,24 +234,6 @@ function cu_advanced_content_bundle_express_help($variables) {
     'title' => 'Video reveal block help',
     'short_title' => 'Video reveal block help',
     'url' => '/node/582',
-  );
-
-  $variables['admin/structure/quicktabs/add'][] = array(
-    'title' => 'Quicktabs Help',
-    'short_title' => 'Quicktabs Help',
-    'url' => '/node/948',
-  );
-
-  $variables['admin/structure/quicktabs'][] = array(
-    'title' => 'Quicktabs Help',
-    'short_title' => 'Quicktabs Help',
-    'url' => '/node/948',
-  );
-
-  $variables['block/edit/quicktabs'][] = array(
-    'title' => 'Quicktabs Help',
-    'short_title' => 'Quicktabs Help',
-    'url' => '/node/948',
   );
 
   $variables['block/add/content-list'][] = array(

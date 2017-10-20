@@ -105,6 +105,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 'field_content_bottom',
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_article_list_page'] = array(
     'field_feature_layout_toggle' => 0,
@@ -119,6 +121,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_article_list_page'] = array(
     'field_feature_layout_toggle' => 0,
@@ -133,6 +137,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_faqs'] = array(
     'field_feature_layout_toggle' => 0,
@@ -147,6 +153,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_file'] = array(
     'field_feature_layout_toggle' => 0,
@@ -175,6 +183,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 'field_inner_content_left',
     'field_inner_content_right' => 'field_inner_content_right',
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_people_list_page'] = array(
     'field_feature_layout_toggle' => 0,
@@ -189,6 +199,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_person'] = array(
     'field_feature_layout_toggle' => 0,
@@ -203,6 +215,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_photo_gallery'] = array(
     'field_feature_layout_toggle' => 0,
@@ -217,6 +231,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_video'] = array(
     'field_feature_layout_toggle' => 0,
@@ -231,6 +247,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
   $settings['express_layout_settings_webform'] = array(
     'field_feature_layout_toggle' => 0,
@@ -245,6 +263,8 @@ function _express_layout_default_settings() {
     'field_inner_content_left' => 0,
     'field_inner_content_right' => 0,
     'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
   );
 
   foreach ($settings as $key => $setting) {
@@ -300,4 +320,36 @@ function express_layout_update_7004() {
       db_create_table($table, $schema);
     }
   }
+}
+
+/**
+ * Create post title, post title wide fields, updating layout configs, field order.
+ */
+function express_layout_update_7005() {
+  include 'express_layout.field_bases.inc';
+  include 'express_layout.field_instances.inc';
+  _express_layout_default_settings();
+
+  $fields = array(
+    'field_feature_layout_toggle' => 300,
+    'field_feature_title_image' => 290,
+    'field_footer' => 50,
+    'field_header' => 40,
+    'field_intro' => 0,
+    'field_sidebar_first' => 60,
+    'field_sidebar_second' => 70,
+    'field_slider' => 10,
+    'field_wide_2' => 110,
+    'field_inner_content_left' => 90,
+    'field_inner_content_right' => 95,
+    'field_content_bottom' => 100,
+    'field_post_title' => 30,
+    'field_post_title_wide' => 20,
+  );
+  foreach ($fields as $field => $weight) {
+    $instance = field_info_instance('express_layout', $field, 'express_layout');
+    $instance['widget']['weight'] = $weight;
+    field_update_instance($instance);
+  }
+
 }

@@ -46,18 +46,18 @@ body {
   background-position: top center;
   background-repeat: no-repeat;
 }
-#intro-wide-wrapper,
-#slider-wrapper,
-#feature-layout-wrapper {
+.intro-wide-wrapper,
+.slider-wrapper,
+.feature-layout-wrapper {
   width: 1200px;
   margin: 0 auto;
   background: #fff;
 }
-#slider-wrapper {
+.slider-wrapper {
   padding-top: 20px;
 }
-#post-wide-wrapper,
-#feature-layout-wrapper {
+.post-wide-wrapper,
+.feature-layout-wrapper {
   background-color: #fff;
 }
 #content-wrapper {
@@ -67,17 +67,17 @@ body {
   background-color: #fff;
   padding-top: 20px;
 }
-#post-wide-wrapper + #after-content-wrapper {
+.post-wide-wrapper + .after-content-wrapper {
   padding-top: 40px;
 }
-#after-content-wrapper {
+.after-content-wrapper {
   background-color: #fff;
 }
-#after-content2-wrapper {
+.after-content2-wrapper {
   background-color: $light_gray;
   padding-top:40px;
 }
-#after-content2-wrapper {
+.after-content2-wrapper {
   a:link,
   a:visited {
     color:$dark_link_blue;
@@ -87,7 +87,7 @@ body {
     color:$red;
   }
 }
-#footer-section {
+.footer-section {
   background-color: $bg_dark1;
   background-image: url(../images/footer-top-background.png);
   background-repeat: repeat-x;
@@ -99,10 +99,10 @@ body {
     color:#fff;
   }
 }
-#footer-wrapper {
+.footer-wrapper {
   padding-top: 40px;
 }
-#site-info-wrapper {
+.site-info-wrapper {
   background-color: #000;
   padding-top: 40px;
 }

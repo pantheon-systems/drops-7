@@ -7,38 +7,217 @@
 include_once 'cu_search.features.inc';
 
 /**
+ * Implements hook_menu().
+ */
+function cu_search_menu() {
+  $items = array();
+  $items['search'] = array(
+    'title' => 'Search',
+    'page callback' => 'cu_search_page',
+    'access callback' => TRUE,
+  );
+  $items['admin/settings/search'] = array(
+    'title' => 'Search',
+    'description' => 'Configuration for Site Search',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/settings/search/search-settings'] = array(
+    'title' => 'Site Search Settings',
+    'description' => 'Site search settings',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_search_settings_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 1,
+    'file' => 'cu_search.admin.inc'
+  );
+  $items['admin/config/search/search-settings'] = array(
+    'title' => 'Express Site Search Settings',
+    'description' => 'Site search settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_search_settings_admin_form'),
+    'access arguments' => array('administer site search'),
+    'weight' => 1,
+    'file' => 'cu_search.admin.inc'
+  );
+  return $items;
+}
+
+
+
+/**
  * Implements hook_page_alter().
  */
 function cu_search_page_alter(&$page) {
   // Add JS and CSS to every page to style the search box.
-  drupal_add_css(drupal_get_path('module', 'cu_search') . '/cu_search.css');
-  drupal_add_js(drupal_get_path('module', 'cu_search') . '/cu_search.js', array('scope' => 'footer'));
+  drupal_add_css(drupal_get_path('module', 'cu_search') . '/css/cu-search.css');
+  drupal_add_js(drupal_get_path('module', 'cu_search') . '/js/cu-search.js', array('scope' => 'footer'));
+}
+
+
+
+
+
+
+function cu_search_page() {
+ return array();
+}
+
+function cu_search_block_info() {
+  $blocks['cu_search'] = array(
+    'info' => t('CU Search'),
+  );
+  $blocks['cu_search_page'] = array(
+    'info' => t('CU Search Page'),
+  );
+  return $blocks;
+}
+
+function cu_search_block_view($delta = '') {
+  switch ($delta) {
+    case 'cu_search':
+
+      $block['subject'] = '';
+
+      $block['content'] = 'search form goes here';
+      $search_configs = cu_search_configs();
+      $block['options'] = $search_configs['options'];
+      $block['configs'] = $search_configs['configs'];
+      break;
+    case 'cu_search_page':
+
+      $block['subject'] = '';
+
+      $block['content'] = 'search form goes here';
+      $search_configs = cu_search_configs();
+      $block['options'] = $search_configs['options'];
+      $block['configs'] = $search_configs['configs'];
+      break;
+  }
+  return $block;
+}
+
+function cu_search_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_search');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'block', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('block');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+function cu_search_configs() {
+
+
+  $options = variable_get('cu_search_options', array('all' => 'all'));
+
+  // Move all option to the end.
+  if (!empty($options['all']) && $options['all']) {
+    $all = $options['all'];
+    unset($options['all']);
+    $options['all'] = $all;
+  }
+  // Remove unused options.
+  foreach ($options as $key => $option) {
+    if (!$option) {
+      unset($options[$key]);
+    }
+  }
+
+  $this_site_label = variable_get('this_site_label', 'this site');
+  $configs = array();
+  $configs['this'] = array(
+    'value' => 'This site',
+    'placeholder' => 'Search ' . $this_site_label,
+    'label' => check_plain(ucfirst($this_site_label)),
+    'action' => base_path() . 'search',
+  );
+  // @TODO: Improve this
+  $rootsite = 'https://www.colorado.edu/search';
+  if ( $_SERVER['SERVER_NAME'] == 'www-test.colorado.edu') {
+    $rootsite = 'https://www-test.colorado.edu/search';
+  }
+
+  $configs['all'] = array(
+    'value' => 'Colorado.edu',
+    'placeholder' => 'Search Colorado.edu',
+    'label' => 'Colorado.edu',
+    'action' => $rootsite,
+  );
+
+  // Get affiliation searches in a more usable format.
+  if ($searches = variable_get('cu_search_affiliation_search_options', NULL)) {
+    $affiliate_searches = array();
+    $searches = $searches = explode("\n", $searches);
+    foreach ($searches as $search) {
+      if (!empty($search)) {
+        $search_values = explode('|', $search);
+        $label = $search_values[0];
+        $configs[$label] = array(
+          'placeholder' => 'Search ' . $label,
+          'label' => $label,
+          'action' => $search_values[1] . '/search',
+        );
+      }
+    }
+  }
+
+
+  $search_configs = array(
+    'options' => $options,
+    'configs' => $configs,
+  );
+  return $search_configs;
 }
 
 /**
- * Implements hook_FORM_ID_form_alter().
+ * Implements hook_permission().
  */
-function cu_search_form_google_appliance_block_form_alter(&$form, &$form_state, $form_id) {
-  $form['search_keys']['#weight'] = 0;
-  $form['actions']['#weight'] = 1;
-
-  $form['search_keys']['#prefix'] = '<div class="cu-search clearfix">';
-  $form['actions']['#suffix'] = '</div>';
-
-  $form['cu_links'] = array(
-    '#markup' => '<div class="culinks"><strong>CU:</strong> <a href="/">Home</a> &bull; <a href="/atoz">A to Z</a> &bull; <a href="/campusmap">Campus Map</a></div>',
-    '#weight' => 99,
+function cu_search_permission() {
+  return array(
+    'administer site search' => array(
+      'title' => t('Administer Site Search'),
+    ),
   );
 }
 
-
 /**
- * Implements hook_theme_registry_alter
- *
- * Provide our own template for google_appliance_block_form
+ * Implements hook_secure_permissions().
  */
-function cu_search_theme_registry_alter(&$theme_registry) {
-  $theme_registry['google_appliance_block_form']['template'] = 'google-appliance-block-form';
-  $theme_registry['google_appliance_block_form']['path'] = drupal_get_path('module', 'cu_search') . '/templates';
-  $theme_registry['google_appliance_block_form']['theme path'] = drupal_get_path('module', 'cu_search');
+function cu_search_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'search Google CSE',
+    ),
+    'authenticated user' => array(
+      'search Google CSE',
+    ),
+    'administrator' => array(
+      'administer site search',
+      'search Google CSE',
+    ),
+    'content_editor' => array(
+      'search Google CSE',
+    ),
+    'developer' => array(
+      'administer site search',
+      'search Google CSE',
+    ),
+    'site_owner' => array(
+      'search Google CSE',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
 }

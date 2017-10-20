@@ -1,0 +1,31 @@
+.exbd-menu-style-arrow.block-menu {
+   ul.menu a {
+     margin:0;
+     border:none;
+     padding:3px 0;
+   }
+   ul.menu li {
+     &:before {
+       content: '\f104';
+       font-family: FontAwesome;
+       margin-right:10px;
+       color:inherit;
+       float:left;
+       padding:3px 0;
+       opacity: .5;
+     }
+     &:hover {
+       &:before {
+         opacity: 1;
+       }
+     }
+   }
+
+}
+.exbd-menu-style-none.block-menu {
+   ul.menu a {
+     margin:0;
+     border:none;
+     padding:3px 0;
+   }
+}

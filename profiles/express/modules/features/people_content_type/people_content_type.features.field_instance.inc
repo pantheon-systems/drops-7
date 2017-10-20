@@ -20,9 +20,9 @@ function people_content_type_field_default_field_instances() {
       ),
     ),
     'default_value_function' => '',
-    'default_value_php' => '',
+    'default_value_php' => FALSE,
     'deleted' => 0,
-    'description' => '',
+    'description' => 'Choose how the people are displayed in the list.',
     'display' => array(
       'default' => array(
         'label' => 'hidden',
@@ -34,7 +34,7 @@ function people_content_type_field_default_field_instances() {
     'entity_type' => 'bean',
     'fences_wrapper' => 'no_wrapper',
     'field_name' => 'field_people_block_thumbnail',
-    'label' => 'Thumbnail',
+    'label' => 'Display',
     'required' => 1,
     'settings' => array(
       'user_register_form' => FALSE,
@@ -2164,6 +2164,7 @@ function people_content_type_field_default_field_instances() {
   // Included for use with string extractors like potx.
   t('Address');
   t('Body');
+  t('Choose how the people are displayed in the list.');
   t('Department');
   t('Display');
   t('Email');
@@ -2188,7 +2189,6 @@ function people_content_type_field_default_field_instances() {
   t('Show Filter 2');
   t('Show Filter 3');
   t('Show Job Type Filter');
-  t('Thumbnail');
   t('Title');
   t('Used to group people into categories such as administration, faculty, staff, etc.');
   t('You can make a custom order by reordering the <a href="[site:url]/admin/structure/taxonomy">taxonomy terms</a>.');

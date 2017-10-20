@@ -1,0 +1,14 @@
+name = CU Sitewide Required
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = context
+dependencies[] = context_sitewide_public
+dependencies[] = ctools
+dependencies[] = cu_search
+dependencies[] = cu_site_info
+dependencies[] = rave_alerts
+features[context][] = pc2tr40fz12bx
+features[context][] = search_results
+features[ctools][] = context:context:3
+features[features_api][] = api:2

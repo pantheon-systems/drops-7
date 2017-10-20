@@ -331,3 +331,24 @@ The Web Express Team
 http://www.colorado.edu/webcentral
 websupport@colorado.edu');
 }
+
+/**
+ * Add Jesus Ortiz Tovar as a developer.
+ */
+function cu_users_update_7026() {
+  // If alfi2595 user does not exist.
+  $new_account = user_load_by_name('jeor0980');
+  if (!isset($new_account->uid)) {
+    // Create new user.
+    $account = new stdClass();
+    $account->name = 'jeor0980';
+    $account->mail = 'Jesus.OrtizTovar@colorado.edu';
+    $account->status = 1;
+    $account = user_save($account);
+
+    $developer_role = user_role_load_by_name('developer');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
+    $query->execute();
+  }
+}

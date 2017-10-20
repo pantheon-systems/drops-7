@@ -1,0 +1,348 @@
+@import "modules/_colors.scss";
+@import "modules/_global.scss";
+
+ul.tabs--primary li a.block-designer:before {
+    content: "\f1fc";
+}
+
+/* Styles for Block Designer Blocks */
+.exbd-block {
+  .exbd-block-icon {
+    display: inline-block;
+    margin-right: 5px;
+  }
+  // Block Styles
+
+  &.exbd-style-white {
+    & > .block-inner {
+      @include block(#fff);
+      color: $text;
+      a:link, a:visited {
+        color:$blue;
+      }
+    }
+  }
+
+  &.exbd-style-light-gray {
+    & > .block-inner {
+      @include block($light_gray);
+      color: $text;
+      a:link, a:visited {
+        color:$dark_link_blue;
+      }
+    }
+  }
+  &.exbd-style-outline {
+    & > .block-inner {
+      @include block($color: transparent);
+      border:1px solid $border_color;
+    }
+  }
+  &.exbd-style-underline {
+    & > .block-inner {
+      border-bottom:1px solid $border_color;
+      padding:0 0 20px 0;
+    }
+  }
+  &.exbd-style-dark-gray {
+    & > .block-inner {
+      @include block($dark_gray);
+      color:#fff;
+      a:link, a:visited {
+        color:$cugold;
+      }
+      a:hover,
+      a:active {
+        color:#ddd;
+      }
+    }
+  }
+  &.exbd-style-lightblue {
+    & > .block-inner {
+      @include block($light_blue);
+      color: $text;
+      a:link, a:visited {
+        color:$dark_link_blue;
+      }
+    }
+  }
+  &.exbd-style-tan {
+    & > .block-inner {
+      @include block($tan);
+      color:$text;
+      a:link, a:visited {
+        color:$dark_link_blue;
+      }
+    }
+  }
+  // Heading alignment
+  &.exbd-heading-align-centered > .block-inner > .exbd-block-title {
+    text-align: center;
+    & .exbd-block-icon {
+
+    }
+
+  }
+  // Icons Positions
+  &.exbd-icon-position-default > .block-inner > .exbd-block-title > .block-title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  &.exbd-icon-position-top > .block-inner > .exbd-block-title {
+    & .exbd-block-title-text {
+      display: block;
+    }
+    & .exbd-block-icon {
+      display: inline-block;
+      margin: 0;
+      margin-bottom: 5px;
+    }
+  }
+  &.exbd-icon-position-offset {
+    & > .block-inner > .content {
+      overflow:hidden;
+    }
+    & > .block-inner > .exbd-block-title .exbd-block-title-text {
+      position: relative;
+    }
+    & > .block-inner > .exbd-block-title i.exbd-block-icon {
+      float:left;
+      margin-bottom: 75px;
+      margin-right:10px;
+      padding-top: 5px;
+      &.exbd-icon-size-increase {
+        font-size: 160%;
+      }
+    }
+  }
+  .exbd-block-title strong {
+    display: block;
+  }
+  &.exbd-font-scale-title-increase {
+    & > .block-inner > h2.block-title,
+    & > .block-inner > h3.block-title,
+    & > .block-inner > h4.block-title,
+    & > .block-inner > h5.block-title,
+    & > .block-inner > h6.block-title {
+      //font-size: 250%;
+    }
+    & > .block-inner > .exbd-block-title {
+      font-size: 150%;
+    }
+  }
+  &.exbd-font-scale-content-increase {
+    & > .block-inner > .content {
+      font-size: 150%;
+    }
+  }
+  &.exbd-font-scale-title-decrease {
+    & > .block-inner > h2.block-title,
+    & > .block-inner > h3.block-title,
+    & > .block-inner > h4.block-title,
+    & > .block-inner > h5.block-title,
+    & > .block-inner > h6.block-title {
+      //font-size: 85%;
+    }
+    & > .block-inner > .exbd-block-title {
+      font-size: 80%;
+    }
+  }
+  &.exbd-font-scale-content-decrease {
+    & > .block-inner > .content {
+      font-size: 80%;
+    }
+  }
+}
+/* Previews */
+
+.exbd-theme-previews {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Display icon options in columns. */
+#express-block-designer-form {
+  .icon-search {
+    padding:20px 0;
+  }
+}
+#express-block-designer-form #edit-exbd-icon {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+
+  .form-type-radio {
+    padding:8px 10px 8px 0;
+    color:#757575;
+    font-size: 85%;
+    width:100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    input {
+      width:20px;
+    }
+    label {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding-left:5px;
+    }
+  }
+  /* ICON SEARCH */
+
+  .icon-search-hidden {
+    display: none;
+  }
+  .icon-search-selected {
+    display: flex;
+  }
+
+  @media screen and (min-width: 480px) {
+    .form-type-radio {
+      width:50%;
+    }
+  }
+  @media screen and (min-width: 768px) {
+    .form-type-radio {
+      width:33.333%;
+    }
+  }
+  @media screen and (min-width: 960px) {
+    .form-type-radio {
+      width:25%;
+    }
+  }
+  @media screen and (min-width: 1500px) {
+    .form-type-radio {
+      width:20%;
+    }
+  }
+  .form-type-radio:hover {
+    color:#111;
+  }
+  i {
+    font-size: 175%;
+    color:#111;
+    padding:0 5px;
+  }
+}
+
+.exbd-block-icon {
+  &.exbd-icon-size-increase {
+    font-size:200%;
+  }
+  &.exbd-icon-color-blue {
+    color: desaturate(#03A9F4, 15%);
+  }
+  &.exbd-icon-color-gray {
+    color: #757575;
+  }
+  &.exbd-icon-color-gold {
+    color: $cugold;
+  }
+  &.exbd-icon-color-green {
+    color: desaturate(#4CAF50, 15%);
+  }
+  &.exbd-icon-color-orange {
+    color: desaturate(#FF9800, 15%);
+  }
+  &.exbd-icon-color-purple {
+    color: desaturate(#AB47BC, 15%);
+  }
+  &.exbd-icon-color-red {
+    color: desaturate(#F44336, 15%);
+  }
+  &.exbd-icon-color-yellow {
+    color: desaturate(#FFEA00, 15%);
+  }
+}
+
+.express-block-designer-description {
+  margin:0 0 20px 0;
+  border: 1px solid #e7e7e7;
+  padding:20px;
+}
+@media screen and (min-width: 768px) {
+  .express-block-designer-description {
+    margin:0 0 20px 40px;
+    float:right;
+    width:25%;
+  }
+}
+
+
+/* Form */
+
+#edit-exbd-style {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-left:-10px;
+  margin-right:-10px;
+  .form-item-exbd-style {
+    padding:0 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width:100%;
+    position: relative;
+    margin-bottom: 20px;
+    & > * {
+      margin: 0 auto;
+
+    }
+   }
+   @media screen and (min-width:480px) {
+     .form-item-exbd-style {
+       width:50%;
+     }
+   }
+   @media screen and (min-width:768px) {
+     .form-item-exbd-style {
+       width:33.333%;
+     }
+   }
+   @media screen and (min-width:960px) {
+     .form-item-exbd-style {
+       width:25%;
+     }
+   }
+   label[for='edit-exbd-style-none'],
+   label[for='edit-exbd-style-default'],
+   label[for='edit-exbd-style-inherit'] {
+     @include styleRadio(null, rgba(255,255,255,0), null, null);
+     &:after {
+       background-image:url(../images/transparent-grid.png);
+       background-position:center center;
+     }
+   }
+   label[for='edit-exbd-style-white'] {
+     @include styleRadio('White', #ffffff, null, null);
+   }
+   label[for='edit-exbd-style-light-gray'] {
+     @include styleRadio('Light Gray', $light_gray, null, null);
+   }
+
+   label[for='edit-exbd-style-dark-gray'] {
+     @include styleRadio('Dark Gray', $dark_gray, null, null);
+   }
+   label[for='edit-exbd-style-tan'] {
+     @include styleRadio('Tan', $tan, null, null);
+   }
+   label[for='edit-exbd-style-lightblue'] {
+     @include styleRadio('Light Blue', $light_blue, null, null);
+   }
+   label[for='edit-exbd-style-outline'] {
+     @include styleRadio(null, null, $border_color, null);
+   }
+   label[for='edit-exbd-style-underline'] {
+     @include styleRadio(null, null, null, $border_color);
+   }
+}

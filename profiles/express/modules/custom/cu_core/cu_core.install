@@ -89,20 +89,6 @@ function cu_core_install() {
   $edit_my_content_role = user_role_load_by_name('edit_my_content');
   $authenticated_user_role = user_role_load_by_name('authenticated user');
 
-    variable_set('securepages_enable', '1');
-  variable_set('securepages_pages', 'node/add*
-node/*/edit
-node/*/delete
-user
-user/*
-admin
-admin/*
-sites/default/files/webform/*');
-
-  variable_set('securepages_roles', array($authenticated_user_role->rid => $authenticated_user_role->rid));
-  variable_set('securepages_secure', '1');
-  variable_set('securepages_switch', TRUE);
-
   variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
   variable_set('rave_alerts_check_enable', 1);
   variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
@@ -583,16 +569,9 @@ function cu_core_update_7014() {
 
 /**
  * Core Update 7015 for Express 2.2.8
- * Add webform files to securepages paths.
  */
 function cu_core_update_7015() {
-  $pages = variable_get(securepages_pages);
-  // Need this awkward two line thing to get the var right on the form.
-  $pages = $pages . '
-sites/default/files/webform/*';
-  variable_set('securepages_pages', $pages);
-
-  cu_core_inventory_update('7015');
+// Empty Update hook because we no longer use securepages.
 }
 
 /**
@@ -785,6 +764,93 @@ function cu_core_update_7030() {
       user_save($account, $edit);
     }
   }
+}
+
+/**
+ * Express 2.6.0 Update.
+ *
+ * Enable Express Block Designer and cu_expandable.
+ * Disable cu_block_theme, blocktheme.
+ * Revert All Features.
+ */
+function cu_core_update_7031() {
+  module_enable(array(
+    'express_block_designer'
+  ));
+  module_disable(array(
+    'cu_block_theme',
+    'blocktheme',
+  ));
+  cu_core_revert_features();
+}
+
+/**
+ * Express 2.6.2 Update.
+ *
+ * Enable Update Ping, User Lock, Unused Beans.
+ */
+function cu_core_update_7032() {
+  module_enable(array(
+    'cu_update_ping',
+    'express_user_lock',
+    'cu_unused_beans'
+  ));
+}
+
+/**
+ * Add addtional Express specific UA code.
+ */
+function cu_core_update_7033() {
+  if ($ga_codes = variable_get('ga_account', '')) {
+    // Explode string and trim whitespace.
+    $ga_codes = array_map('trim', explode(',', $ga_codes));
+    $ga_codes[] = 'UA-105731679-1';
+    $js_code = '';
+    foreach ($ga_codes as $key => $code) {
+      $js_code .= format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker@key'});  ga('customTracker@key.send', 'pageview');", array('@ga_account' => $code, '@key' => $key));
+    }
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  }
+  else {
+    $js_code = format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker0'});  ga('customTracker0.send', 'pageview');", array('@ga_account' => 'UA-105731679-1'));
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  }
+}
+
+/**
+ * Express 2.6.2 Update.
+ *
+ * Disable Update Ping, User Lock, Unused Beans.
+ */
+ function cu_core_update_7034() {
+  module_disable(array(
+    'cu_update_ping',
+    'express_user_lock',
+    'cu_unused_beans'
+  ));
+}
+/*
+ * Express 2.6.5 Update.
+ *
+ * Disable and uninstall securepages. Need to skip hook numbered 7035 because
+ * the homepage will already have run it.
+ */
+ function cu_core_update_7036() {
+  module_disable(array('securepages'));
+  drupal_uninstall_modules($module_list = array('securepages'), $uninstall_dependents = FALSE);
+}
+
+
+/**
+ * Express 2.7.0 Update.
+ *
+ * Enable google_cse and diff modules.
+ */
+ function cu_core_update_7035() {
+  module_enable(array(
+    'google_cse',
+    'diff',
+  ));
 }
 
 /**

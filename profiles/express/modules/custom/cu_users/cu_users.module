@@ -2,12 +2,17 @@
 
 /**
  * @file
- * CU Users Module Module containing users/roles and permissions for CU-FIT
- * CU-FIT clones.
+ * CU Users Module containing users/roles and permissions for CU-FIT clones.
  */
 
 /**
- * Returns an array of that type of user
+ * Returns an array of that type of user.
+ *
+ * @param string $type
+ *   Which set of accounts to return.
+ *
+ * @return array
+ *   Associative array of user accounts.
  */
 function cu_users_get_users($type = 'all') {
 
@@ -17,7 +22,8 @@ function cu_users_get_users($type = 'all') {
     'kere7580' => 'Kevin.Reynen@Coloardo.EDU',
     'jafu6031' => 'James.W.Fuller@Colorado.EDU',
     'alfi2595' => 'alexander.finnarn@colorado.edu',
-    'owmo7772' => 'owen.morrill@colorado.edu'
+    'owmo7772' => 'owen.morrill@colorado.edu',
+    'jeor0980' => 'Jesus.OrtizTovar@colorado.edu'
   );
 
   $user_array['administrator'] = array(
@@ -25,7 +31,7 @@ function cu_users_get_users($type = 'all') {
     'leslie' => 'jon.leslie@Colorado.EDU',
     'linebarg' => 'joanna.bertrand@Colorado.EDU',
     'wetu1300' => 'wendy.turnbull@Colorado.EDU',
-    'mortone' => 'Emily.Kellagher@Colorado.EDU'
+    'mortone' => 'Emily.Kellagher@Colorado.EDU',
   );
 
   $user_array['site_owner'] = array(
@@ -45,11 +51,16 @@ function cu_users_get_users($type = 'all') {
   return $user_array[$type];
 }
 
-
 /**
- * Checks to see if a specific user is a developer or admin
+ * Checks to see if a specific user is a developer or admin.
+ *
+ * @param string $username
+ *   The username to check.
+ *
+ * @return bool
+ *   TRUE if user is admin or developer, FALSE otherwise.
  */
-function cu_users_check_user($username){
+function cu_users_check_user($username) {
   $users = cu_users_get_users('all');
   if (array_key_exists($username, $users)) {
     return TRUE;
@@ -64,8 +75,7 @@ function cu_users_check_user($username){
 function cu_users_help($path, $arg) {
   switch ($path) {
     case 'admin/people/invite':
-      return '<p>' . t("Any CU-Boulder employee, student, or sponsored vendor with an IdentiKey can be granted acess to the website administration area. To add new users, select a role and add the users' colorado.edu email address. You can send multiple invites by separating email addresses with a comma (i.e. jane.doe@colorado.edu, joe.smith@colorado.edu). Once submitted an email will be sent inviting the users.") . '</p><p>' . t("<strong>Content Editors</strong> can create content, create and place blocks, and administer menus.") . '</p><p>' . t('<strong>Edit My Content</strong> users can only edit content they have authored.') . '</p><p>' . t("<strong>Site Owners</strong> can do everything a content editor can do plus add new site users, edit the site name, set the site homepage, configure the site theme, and create contexts.") . '</p><br/>';
-      break;
+      return '<p>' . t("Any CU-Boulder employee, student, or sponsored vendor with an IdentiKey can be granted access to the website administration area. To add new users, select a role and add the users' colorado.edu email address. You can send multiple invites by separating email addresses with a comma (i.e. jane.doe@colorado.edu, joe.smith@colorado.edu). Once submitted an email will be sent inviting the users.") . '</p><p>' . t("<strong>Content Editors</strong> can create content, create and place blocks, and administer menus.") . '</p><p>' . t('<strong>Edit My Content</strong> users can only edit content they have authored.') . '</p><p>' . t("<strong>Site Owners</strong> can do everything a content editor can do plus add new site users, edit the site name, set the site homepage, configure the site theme, and create contexts.") . '</p><br/>';
   }
 }
 
@@ -110,21 +120,26 @@ function cu_users_cron() {
   $hours = date("H");
 
   // If hour is 2 meaning between 2AM and 3AM delete user sessions
-  // This assumes cron runs every 20 minutes or at least a couple times and hour.
+  // This assumes cron runs every 20 minutes or at least a couple times and
+  // hour.
   if ($hours == 02) {
     $deleted_rows = db_delete('sessions')->execute();
 
     // Write to the watchdog just in case this becomes a stat in the future.
-    watchdog('cron', 'Number of sessions deleted: '. $deleted_rows);
+    watchdog('cron', 'Number of sessions deleted: %deleted_rows', array('%deleted_rows' => $deleted_rows));
   }
 }
 
 /**
- * Check if user has role name
+ * Check if user has role name.
  *
- * @param $role_name
- * @param null $user
+ * @param string $role_name
+ *   The role to check for.
+ * @param object $user
+ *   The user object to check against.
+ *
  * @return bool
+ *   TRUE if user has role, FALSE otherwise.
  */
 function cu_users_user_has_role($role_name, $user = NULL) {
   if ($user == NULL) {
@@ -139,19 +154,39 @@ function cu_users_user_has_role($role_name, $user = NULL) {
 /**
  * Implements hook_views_pre_render().
  *
- * Hide developers and administrators on the Users overview page from lesser roles.
+ * Hide developers, administrators, and test accounts on the Users overview page
+ * from lesser roles.
  */
 function cu_users_views_pre_render(&$view) {
   if ($view->name == 'cu_people_administration_override_view') {
     $account = $GLOBALS['user'];
-    if (in_array('developer', $account->roles) || in_array('administrator', $account->roles) || $account->uid == 1) {
+    // If the current user is an administrator or developer, then don't alter
+    // the view results.
+    if ($account->uid == 1 || cu_users_user_has_role('developer', $account)) {
       return;
     }
-    foreach ($view->result as $key => $user) {
-      $user_object = user_load($user->uid);
-      if (in_array('developer', $user_object->roles) || in_array('administrator', $user_object->roles)) {
-        unset($view->result[$key]);
+    // Load all of the view results at once to avoid making hundreds of calls to
+    // load users.
+    $uids = array_map(function ($var) {
+      return $var->uid;
+    }, $view->result);
+    $users = user_load_multiple($uids);
+    // $view-result is keyed by 0, whereas the loaded users are keyed by id,
+    // so let's use a for loop to walk through the loaded users and unset the
+    // matching view results.
+    for ($x = 0; $x < count($users); $x++) {
+      $user = current($users);
+      // Hide developer, administrator, and test accounts.
+      if (in_array('developer', $user->roles) ||
+        in_array('administrator', $user->roles) ||
+        (strpos($user->name, 'osr') === 0 && strpos($account->name, 'osr') !== 0)
+      ) {
+        // Don't hide the current user (Site Owner).
+        if ($user->uid != $account->uid) {
+          unset($view->result[$x]);
+        }
       }
+      next($users);
     }
   }
 }
@@ -169,9 +204,7 @@ function cu_users_form_user_cancel_confirm_form_alter(&$form, &$form_state) {
 /**
  * Implements hook_user_update().
  *
- * @param $edit
- * @param $account
- * @param $category
+ * Save a message to the log when a user is updated containing the updated info.
  */
 function cu_users_user_update(&$edit, $account, $category) {
 
@@ -187,11 +220,9 @@ function cu_users_user_update(&$edit, $account, $category) {
 }
 
 /**
- * Implements hook_user_update().
+ * Implements hook_user_insert().
  *
- * @param $edit
- * @param $account
- * @param $category
+ * Save a message to the log when a user is inserted containing the new info.
  */
 function cu_users_user_insert(&$edit, $account, $category) {
 

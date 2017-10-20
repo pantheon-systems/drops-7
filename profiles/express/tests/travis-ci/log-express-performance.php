@@ -33,7 +33,8 @@ usort($output, function ($a, $b) {
   return count($a['memory']) < count($b['memory']);
 });
 
-// Get environmental variables for sending to logstash
+// Get environmental variables for sending to logstash.
+/*
 if (getenv('TRAVIS_PULL_REQUEST_BRANCH')) {
   $build_branch = getenv('TRAVIS_PULL_REQUEST_BRANCH');
 }
@@ -44,12 +45,14 @@ $build_number = getenv('TRAVIS_BUILD_NUMBER');
 $build_type = getenv('TRAVIS_EVENT_TYPE');
 $build_repo = getenv('TRAVIS_REPO_SLUG');
 $build_job_number = getenv('TRAVIS_JOB_NUMBER');
+*/
 
 // Print out aggregate stats.
 print_r('Average Memory Consumption: ' . $average_results['memory'] . "MB\n");
 print_r('Average Load Time: ' . $average_results['load'] . " Milliseconds\n");
 
-// Prep data to send to logstash
+// Prep data to send to logstash.
+/*
 $data = array(
   'test_type' => 'full_test_run',
   'average_memory_consumption' => $average_results['memory'],
@@ -61,14 +64,21 @@ $data = array(
   'build_type' => $build_type,
 );
 curl_logstash($data);
+*/
 
 // Removed query stats due to memory load.
 // print_r('Average Query Count: ' . $average_results['query_count'] . " Queries\n");
 // print_r('Average Query Time: ' . $average_results['query_time'] . " Milliseconds\n");
+
 print_r("\n");
 
 // Build individual page output to screen. Only list top 15 pages by access count.
+$i = 0;
 foreach ($output as $key => $path) {
+  if ($i >= 15) {
+    return;
+  }
+
   $count = count($path['memory']);
   $memory_sum = array_sum($path['memory']);
   $load_sum = array_sum($path['load']);
@@ -76,11 +86,12 @@ foreach ($output as $key => $path) {
   // Removed query stats due to memory load.
   // $query_count_sum = array_sum($path['query_count']);
   // $query_time_sum = array_sum($path['query_timer']);
+  // $query_count_average = number_format(($query_count_sum / $count), 2, '.', '');
+  // $query_time_average = number_format(($query_time_sum / $count), 2, '.', '');
 
   $memory_average = number_format(($memory_sum / $count / 1000000), 2, '.', '');
   $load_average = $load_sum / $count;
-  $query_count_average = number_format(($query_count_sum / $count), 2, '.', '');
-  $query_time_average = number_format(($query_time_sum / $count), 2, '.', '');
+
   print_r('Path: ' . $path['path'] . "\n");
   print_r('Accessed: ' . $count . "\n");
   print_r('Memory Consumption: ' . $memory_average . "MB\n");
@@ -91,7 +102,10 @@ foreach ($output as $key => $path) {
   // print_r('Query Time: ' . $query_time_average . " Milliseconds\n");
   print_r("\n");
 
-  // Prep data per test to send to logstash
+  $i++;
+
+  // Prep data per test to send to logstash.
+  /*
   $data = array(
     'test_type' => 'indvidual_test',
     'path' => $path['path'],
@@ -102,9 +116,10 @@ foreach ($output as $key => $path) {
     'build_number' => $build_number,
     'build_type' => $build_type,
   );
- curl_logstash($data);
+ curl_logstash($data);*/
 }
 
+/*
 function curl_logstash($data) {
   $data_string = json_encode($data);
 
@@ -138,3 +153,4 @@ function curl_logstash($data) {
   }
   curl_close($ch);
 }
+*/

@@ -1,0 +1,15 @@
+<?php
+
+function express_user_lock_install() {
+  variable_set('lock_allow_users', array());
+  variable_set('lock_leave_message', '');
+  variable_set('lock_by_role', array());
+  variable_set('lock_user_dev', FALSE);
+}
+
+function express_user_lock_uninstall() {
+  variable_del('lock_allow_users');
+  variable_del('lock_leave_message');
+  variable_del('lock_by_role');
+  variable_del('lock_user_dev');
+}

@@ -45,6 +45,14 @@ function express_theme_picker_menu() {
     'access arguments' => array('administer express theme picker'),
     'weight' => 8,
   );
+  $items['admin/theme/list'] = array(
+    'title' => 'Site Themes',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'express_theme_picker_list',
+    //'page arguments' => array('express_theme_picker_settings_form'),
+    'access arguments' => array('administer express theme picker'),
+    'weight' => 1,
+  );
   $items['admin/theme/config/%'] = array(
     'title' => 'Configure Theme Settings',
     'title arguments' => array(3),
@@ -151,7 +159,7 @@ function express_theme_picker_list() {
   $output = array();
   $output['description']['#markup'] = '<h2>Choose a theme.</h2>';
   foreach (list_themes() as $theme => $data) {
-    if ($data->status && !$hidden_themes[$data->name]) {
+    if ($data->status && empty($hidden_themes[$data->name])) {
 
       // Theme machine name
       $machine_name = $data->name;

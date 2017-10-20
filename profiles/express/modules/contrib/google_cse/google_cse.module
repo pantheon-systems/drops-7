@@ -1,0 +1,219 @@
+<?php
+
+/**
+ * @file
+ * Display a Google Custom Search Engine (CSE) on your site.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function google_cse_help($path, $arg) {
+
+  switch ($path) {
+    case 'admin/help#google_cse':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Google Custom Search Engine (CSE) is an embedded search engine that can be used to search any set of one or more sites.  No Google API key is required.  Read more at <a href="http://www.google.com/cse/" target="blank">http://www.google.com/cse/</a>.') . '</p>';
+      $output .= '<h3>' . t('Usage') . '</h3>';
+      $output .= '<p>' . t("After installing this module, activate Google CSE at <a href=\"/admin/config/search/settings\" target=\"blank\">admin/config/search/settings</a>, optionally setting it as the default search module, and configure it by entering Google's unique ID for your CSE.  Once you have granted permission for one or more roles to search the Google CSE, the search page can be found at search/google, and a separate self-contained search block can also be enabled.") . '</p>';
+      $output .= '<h3>' . t('Blocks') . '</h3>';
+      $output .= '<p>' . t('The include Google CSE block can optionally be enabled at <a href="/admin/structure/block" target="blank">admin/structure/block</a>.  The "Google CSE" block provides a search box and also displays the search results.  After entering search terms, the user will be returned to the same page (via GET request) and the results will be displayed.  Do not allow this Google CSE block to appear on the search/google page, as the search results will fail to display.') . '</p>';
+      $output .= '<h3>' . t('SiteSearch') . '</h3>';
+      $output .= '<p>' . t('In addition to the CSE functionality, SiteSearch on one or more domains or URL paths can optionally be configured.  Radio buttons allow users to search on either the SiteSearch option(s) or the CSE, and searches can default to either option.') . '</p>';
+      $output .= '<h3>' . t('Advanced Settings') . '</h3>';
+      $output .= '<p>' . t("The collapsed advanced settings on the settings page provide various customizations such as country and language preferences.  For example, with the Locale module enabled, the Google CSE user interface language can be selected dynamically based on the current user's language.") . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function google_cse_menu() {
+
+  $items['admin/config/search/cse-settings'] = array(
+    'title' => 'Configure Google CSE',
+    'description' => '',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('google_cse_admin_settings'),
+    'file' => 'google_cse.admin.inc',
+    'access arguments' => array('administer search'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_search_info().
+ */
+function google_cse_search_info() {
+  return array(
+    'title' => google_cse_results_tab(),
+    'path' => 'google',
+    'conditions_callback' => 'google_cse_conditions_callback',
+  );
+}
+
+/**
+ * Search conditions callback.
+ */
+function google_cse_conditions_callback($keys) {
+  $conditions = array();
+  return $conditions;
+}
+
+/**
+ * Implements hook_search_execute().
+ */
+function google_cse_search_execute($keys = NULL, $conditions = NULL) {
+  // Pass search terms to JS so they can be sent in google_cse_results.js
+  drupal_add_js(array('googleCSE' => array('keys' => $keys)), 'setting');
+}
+
+/**
+ * Builds a query array based on Google CSE settings.
+ */
+function google_cse_build_query($keys, $sitesearch = NULL, $here = TRUE) {
+    return array(
+      'q' => $keys,
+      'cx' => variable_get('google_cse_cx', ''),
+    );
+}
+
+/**
+ * Implements hook_search_page().
+ */
+function google_cse_search_page($results) {
+    $output['#theme'] = 'google_cse_results';
+    return $output;
+}
+
+/**
+ * Implements hook_search_admin().
+ */
+function google_cse_search_admin() {
+  module_load_include('admin.inc', 'google_cse');
+  return google_cse_admin_settings();
+}
+
+/**
+ * Implements hook_search_access().
+ */
+function google_cse_search_access() {
+  return user_access('search Google CSE');
+}
+
+/**
+ * Implements hook_theme().
+ */
+function google_cse_theme($existing, $type, $theme, $path) {
+  return array(
+    'google_cse_results' => array(
+      'variables' => array('form' => FALSE, 'path' => $path),
+      'file' => 'google_cse.theme.inc',
+      'template' => 'google_cse_results',
+    ),
+    // Shows a message when the search does not return any result.
+    'google_cse_search_noresults' => array(
+      'variables' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function google_cse_block_info() {
+  return array(
+    'google_cse' => array(
+      'info' => t('Google CSE'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function google_cse_block_view($delta = '') {
+  if (user_access('search Google CSE')) {
+    switch ($delta) {
+      case 'google_cse':
+        return array(
+          'subject' => t('Search'),
+          'content' => array('#theme' => 'google_cse_results', '#form' => TRUE),
+        );
+    }
+  }
+}
+
+/**
+ * Return the Google CSE tab title, either a setting or a translation.
+ */
+function google_cse_results_tab() {
+  return ($var = variable_get('google_cse_results_tab', '')) ? $var : t('Google');
+}
+
+/**
+ * Implements hook_perm().
+ */
+function google_cse_permission() {
+  $perms = array(
+    'search Google CSE' => array(
+      'title' => t('Use Google CSE search'),
+    ),
+  );
+
+ if (!module_exists('search')) {
+    $perms['administer search'] = array('title' => t('Administer search'));
+  }
+
+  return $perms;
+}
+
+/**
+ * Implements hook_init().
+ */
+function google_cse_init() {
+  drupal_add_js(array(
+    'googleCSE' => array(
+      'cx' => variable_get('google_cse_cx', ''),
+      'resultsWidth' => intval(variable_get('google_cse_results_width', 600)),
+      'domain' => variable_get('google_cse_domain', 'www.google.com'),
+      'showWaterMark' => variable_get('google_cse_show_watermark', TRUE),
+    ),
+  ), 'setting');
+}
+
+/**
+ * Adds custom submit handler for search form.
+ */
+function google_cse_form_search_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['module']['#value'] == 'google_cse') {
+    $form['#attributes']['class'][] = 'google-cse';
+  }
+}
+
+/**
+ * Adds custom submit handler for search block form.
+ */
+function google_cse_form_search_block_form_alter(&$form, &$form_state, $form_id) {
+  $info = search_get_default_module_info();
+  if ($info['module'] == 'google_cse') {
+    $form['#attributes']['class'][] = 'google-cse';
+  }
+}
+
+/**
+ * Brief message to display when no results match the query.
+ *
+ * @see search_help()
+ */
+function theme_google_cse_search_noresults() {
+  return t('<h2>Sorry, there were no results matching your enquiry.</h2>
+    <ul>
+    <li>Check the spelling of your keywords</li>
+    <li>Try a more specific enquiry (e.g. <em>"Penny Black"</em> instead of <em>"Stamps"</em>).</em></li>
+    <li>Be explicit (e.g. <em>"Second class stamp"</em> instead of <em>"Stamp"</em>).</li>
+    <li>Include spaces between keywords.</li>
+    </ul>');
+}

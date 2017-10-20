@@ -42,7 +42,7 @@ $field_instances['layout-block_layout-field_feature_layout_toggle'] = array(
     'module' => 'options',
     'settings' => array(),
     'type' => 'options_select',
-    'weight' => 32,
+    'weight' => 300,
   ),
 );
 
@@ -151,7 +151,7 @@ $field_instances['layout-block_layout-field_feature_title_image'] = array(
       'progress_indicator' => 'throbber',
     ),
     'type' => 'image_image',
-    'weight' => 31,
+    'weight' => 290,
   ),
 );
 
@@ -201,7 +201,7 @@ $field_instances['layout-block_layout-field_footer'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 11,
+    'weight' => 50,
   ),
 );
 
@@ -251,7 +251,7 @@ $field_instances['layout-block_layout-field_header'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 9,
+    'weight' => 40,
   ),
 );
 
@@ -301,7 +301,7 @@ $field_instances['layout-block_layout-field_inner_content_left'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 13,
+    'weight' => 90,
   ),
 );
 
@@ -351,7 +351,7 @@ $field_instances['layout-block_layout-field_inner_content_right'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 15,
+    'weight' => 95,
   ),
 );
 
@@ -401,7 +401,7 @@ $field_instances['layout-block_layout-field_intro'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 1,
+    'weight' => 0,
   ),
 );
 
@@ -451,7 +451,7 @@ $field_instances['layout-block_layout-field_sidebar_first'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 5,
+    'weight' => 60,
   ),
 );
 
@@ -501,7 +501,7 @@ $field_instances['layout-block_layout-field_sidebar_second'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 7,
+    'weight' => 70,
   ),
 );
 
@@ -551,7 +551,7 @@ $field_instances['layout-block_layout-field_slider'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 3,
+    'weight' => 10,
   ),
 );
 
@@ -601,7 +601,7 @@ $field_instances['layout-block_layout-field_wide_2'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 15,
+    'weight' => 110,
   ),
 );
 
@@ -651,7 +651,107 @@ $field_instances['layout-block_layout-field_content_bottom'] = array(
       ),
     ),
     'type' => 'inline_entity_form',
-    'weight' => 12,
+    'weight' => 100,
+  ),
+);
+
+// Exported field_instance: 'layout-block_layout-field_post_title'
+$field_instances['layout-block_layout-field_post_title'] = array(
+  'bundle' => 'express_layout',
+  'deleted' => 0,
+  'description' => '',
+  'display' => array(
+    'default' => array(
+      'label' => 'hidden',
+      'module' => 'entityreference',
+      'settings' => array(
+        'link' => FALSE,
+      ),
+      'type' => 'entityreference_label',
+      'weight' => 8,
+    ),
+    'teaser' => array(
+      'label' => 'above',
+      'settings' => array(),
+      'type' => 'hidden',
+      'weight' => 0,
+    ),
+  ),
+  'entity_type' => 'express_layout',
+  'fences_wrapper' => 'no_wrapper',
+  'field_name' => 'field_post_title',
+  'label' => 'Post Title',
+  'required' => 0,
+  'settings' => array(
+    'user_register_form' => FALSE,
+  ),
+  'widget' => array(
+    'active' => 1,
+    'module' => 'inline_entity_form',
+    'settings' => array(
+      'fields' => array(),
+      'type_settings' => array(
+        'allow_existing' => 1,
+        'allow_new' => 1,
+        'delete_references' => 0,
+        'label_plural' => 'entities',
+        'label_singular' => 'entity',
+        'match_operator' => 'CONTAINS',
+        'override_labels' => 0,
+      ),
+    ),
+    'type' => 'inline_entity_form',
+    'weight' => 30,
+  ),
+);
+
+// Exported field_instance: 'layout-block_layout-field_post_title_wide'
+$field_instances['layout-block_layout-field_post_title_wide'] = array(
+  'bundle' => 'express_layout',
+  'deleted' => 0,
+  'description' => '',
+  'display' => array(
+    'default' => array(
+      'label' => 'hidden',
+      'module' => 'entityreference',
+      'settings' => array(
+        'link' => FALSE,
+      ),
+      'type' => 'entityreference_label',
+      'weight' => 8,
+    ),
+    'teaser' => array(
+      'label' => 'above',
+      'settings' => array(),
+      'type' => 'hidden',
+      'weight' => 0,
+    ),
+  ),
+  'entity_type' => 'express_layout',
+  'fences_wrapper' => 'no_wrapper',
+  'field_name' => 'field_post_title_wide',
+  'label' => 'Post Title Wide',
+  'required' => 0,
+  'settings' => array(
+    'user_register_form' => FALSE,
+  ),
+  'widget' => array(
+    'active' => 1,
+    'module' => 'inline_entity_form',
+    'settings' => array(
+      'fields' => array(),
+      'type_settings' => array(
+        'allow_existing' => 1,
+        'allow_new' => 1,
+        'delete_references' => 0,
+        'label_plural' => 'entities',
+        'label_singular' => 'entity',
+        'match_operator' => 'CONTAINS',
+        'override_labels' => 0,
+      ),
+    ),
+    'type' => 'inline_entity_form',
+    'weight' => 20,
   ),
 );
 

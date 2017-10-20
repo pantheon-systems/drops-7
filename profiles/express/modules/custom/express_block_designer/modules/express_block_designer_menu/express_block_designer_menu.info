@@ -1,0 +1,8 @@
+name = Express Block Designer Menu
+core = 7.x
+package = CU-Advanced Design
+version = 7.x-1.0
+
+description = Adds additional block designer options for menu blocks
+
+stylesheets[all][] = css/exbd-menu.css

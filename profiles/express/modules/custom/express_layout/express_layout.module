@@ -141,8 +141,13 @@ function express_layout_admin_paths() {
  * Check to see if there are layout fields and user has node access.
  */
 function express_layout_access($op, $node) {
- $type = variable_get('express_layout_type_' . $node->type, NULL);
-  if (user_access('edit express layouts') && $type && !in_array($node->type, variable_get('express_layout_node_type_ignore', array()))) {
+  $type = variable_get('express_layout_type_' . $node->type, NULL);
+  $ignore = variable_get('express_layout_node_type_ignore');
+
+  if (isset($ignore[$node->type]) && ($ignore[$node->type] == TRUE)) {
+    return FALSE;
+  }
+  if (user_access('edit express layouts') && $type) {
     return node_access($op, $node);
   }
   return FALSE;
@@ -464,6 +469,14 @@ function express_layout_block_info() {
       'info' => t('Node Inner Content Bottom'),
       'cache' => DRUPAL_NO_CACHE,
     ),
+    'el_block_post_title' => array(
+      'info' => t('Post Title'),
+      'cache' => DRUPAL_NO_CACHE,
+    ),
+    'el_block_post_title_wide' => array(
+      'info' => t('Post Title Wide'),
+      'cache' => DRUPAL_NO_CACHE,
+    ),
   );
 }
 /**
@@ -484,6 +497,8 @@ function express_layout_contextual_links_view_alter(&$element, &$items) {
       case 'el_block_slider':
       case 'el_block_wide_2':
       case 'el_block_inner_content_bottom':
+      case 'el_block_post_title':
+      case 'el_block_post_title_wide':
         unset($element['#links']);
         break;
     }
@@ -568,6 +583,16 @@ function express_layout_block_view($delta = '') {
       case 'el_block_inner_content_bottom':
         $field = 'field_content_bottom';
         $region = 'content_bottom';
+        break;
+
+      case 'el_block_post_title':
+        $field = 'field_post_title';
+        $region = 'post_title';
+        break;
+
+      case 'el_block_post_title_wide':
+        $field = 'field_post_title_wide';
+        $region = 'post_title_wide';
         break;
     }
   }

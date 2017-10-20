@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ *
+ * @return $schema array
+ */
+function express_block_designer_schema() {
+  $schema = array();
+
+  $schema['express_block_designer'] = array(
+    'description' => 'The base table for block design configurations.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key for Block Designer.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'module' => array(
+        'description' => 'Module that implements the block.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'block_delta' => array(
+        'description' => 'Block delta for Block Designer.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'module_block_delta' => array(
+        'description' => 'Block delta for Block Designer.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'block_settings' => array(
+        'description' => 'Block Designer Settings.',
+        'type' => 'blob',
+        'not null' => FALSE,
+      ),
+      'block_theme' => array(
+        'description' => 'Reference to express_block_designer_themes',
+        'type' => 'int',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['express_block_designer_themes'] = array(
+    'description' => 'The base table for block design themes.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key for Block Designer Themes.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'block_theme_name' => array(
+        'description' => 'Block Theme Name.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'block_settings' => array(
+        'description' => 'Block Designer Settings.',
+        'type' => 'blob',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Set value variables, migrate block icons and themes.
+ */
+function express_block_designer_install() {
+  variable_set('express_block_designer_default_values', express_block_designer_default_values());
+
+
+  express_block_designer_migrate();
+  module_disable(array(
+    'block_title_icons',
+    'blocktheme',
+    'cu_block_theme',
+  ));
+}

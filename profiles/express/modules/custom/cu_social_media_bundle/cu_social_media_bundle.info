@@ -9,6 +9,9 @@ dependencies[] = cu_facebook_like_button
 dependencies[] = cu_share
 dependencies[] = cu_social_links
 dependencies[] = context_sitewide_public
+dependencies[] =  metatag
+dependencies[] =  metatag_twitter_cards
+dependencies[] =  metatag_opengraph
 
 bundle_cache_clear = 1
 bundle_context_clear = 1

@@ -75,10 +75,7 @@ $base_font: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif
   padding: 0;
   position: absolute !important;
   width: 1px;
-  @if $legacy-support-for-ie6 or $legacy-support-for-ie7 {
-    clip: rect(1px 1px 1px 1px); // IE6 and IE7 use the wrong syntax }
-    clip: rect(1px, 1px, 1px, 1px);
-  }
+  white-space: nowrap;
 }
 
 @mixin clearfloats {

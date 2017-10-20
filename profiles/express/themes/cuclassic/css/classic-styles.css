@@ -14,32 +14,32 @@ body { background-color: #000; }
 
 .top-content { background-image: url(../images/shadow.png); background-position: top center; background-repeat: no-repeat; }
 
-#intro-wide-wrapper, #slider-wrapper, #feature-layout-wrapper { width: 1200px; margin: 0 auto; background: #fff; }
+.intro-wide-wrapper, .slider-wrapper, .feature-layout-wrapper { width: 1200px; margin: 0 auto; background: #fff; }
 
-#slider-wrapper { padding-top: 20px; }
+.slider-wrapper { padding-top: 20px; }
 
-#post-wide-wrapper, #feature-layout-wrapper { background-color: #fff; }
+.post-wide-wrapper, .feature-layout-wrapper { background-color: #fff; }
 
 #content-wrapper { padding-top: 0; }
 
 #main { background-color: #fff; padding-top: 20px; }
 
-#post-wide-wrapper + #after-content-wrapper { padding-top: 40px; }
+.post-wide-wrapper + .after-content-wrapper { padding-top: 40px; }
 
-#after-content-wrapper { background-color: #fff; }
+.after-content-wrapper { background-color: #fff; }
 
-#after-content2-wrapper { background-color: #f4f4f4; padding-top: 40px; }
+.after-content2-wrapper { background-color: #f4f4f4; padding-top: 40px; }
 
-#after-content2-wrapper a:link, #after-content2-wrapper a:visited { color: #006db1; }
-#after-content2-wrapper a:hover, #after-content2-wrapper a:focus { color: #e51c23; }
+.after-content2-wrapper a:link, .after-content2-wrapper a:visited { color: #006db1; }
+.after-content2-wrapper a:hover, .after-content2-wrapper a:focus { color: #e51c23; }
 
-#footer-section { background-color: #272727; background-image: url(../images/footer-top-background.png); background-repeat: repeat-x; color: #fff; }
-#footer-section a { color: #cfb87c; }
-#footer-section a:hover { color: #fff; }
+.footer-section { background-color: #272727; background-image: url(../images/footer-top-background.png); background-repeat: repeat-x; color: #fff; }
+.footer-section a { color: #cfb87c; }
+.footer-section a:hover { color: #fff; }
 
-#footer-wrapper { padding-top: 40px; }
+.footer-wrapper { padding-top: 40px; }
 
-#site-info-wrapper { background-color: #000; padding-top: 40px; }
+.site-info-wrapper { background-color: #000; padding-top: 40px; }
 
 #block-menu-block-site-navigation-menus-1 .menu-block-wrapper, #block-menu-block-site-navigation-menus-2 .menu-block-wrapper, #block-menu-block-site-navigation-menus-3 .menu-block-wrapper, #section-navigation .menu-block-wrapper { font-weight: 500; border-bottom: 1px solid #e7e7e7; }
 #block-menu-block-site-navigation-menus-1 ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu a, #section-navigation ul.menu a { padding: 10px; border: 1px solid #e7e7e7; margin-bottom: -1px; color: #656565; line-height: 120%; }

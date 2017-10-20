@@ -1,7 +1,7 @@
 name = CU Core
 description = Provides CU-specific functionality, like adding variables, to Express Core.
 core = 7.x
-version = 7.x-5.6
+version = 7.x-7.0
 package = CU-Core
 
 dependencies[] = ldap_authentication
@@ -20,11 +20,20 @@ dependencies[] = atlas
 dependencies[] = atlas_statistics
 dependencies[] = express_status
 dependencies[] = realname
+dependencies[] = elysia_cron
+dependencies[] = cu_elysia_cron
+dependencies[] = cu_search
+dependencies[] = google_cse
+
+
 
 optional-dependencies[] = cu_users
+optional-dependencies[] = express_user_lock
 optional-dependencies[] = memcache
 optional-dependencies[] = varnish
 optional-dependencies[] = entityreference
 optional-dependencies[] = express_layout
 optional-dependencies[] = secure_permissions
 optional-dependencies[] = express_permissions
+optional-dependencies[] = cu_update_ping
+optional-dependencies[] = cu_unused_beans

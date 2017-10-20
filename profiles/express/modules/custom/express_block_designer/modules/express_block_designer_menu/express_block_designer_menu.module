@@ -1,0 +1,49 @@
+<?php
+
+function express_block_designer_menu_form_express_block_designer_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['module']['#value'] == 'menu') {
+    // Get settings
+    $settings = $form['#exbd_settings'];
+
+    $form['block_designer_settings']['block_designer_menu'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Menu Blocks',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['block_designer_settings']['block_designer_menu']['exbd_menu_style'] = array(
+      '#title' => 'Menu Block Style',
+      '#type' => 'select',
+      '#options' => array(
+        'default' => 'Default/Underline',
+        'arrow' => 'Arrow',
+        'none' => 'No Decoration',
+      ),
+      '#default_value' => isset($settings['exbd_menu_style']) ? $settings['exbd_menu_style'] : 'default',
+    );
+  }
+}
+
+function express_block_designer_menu_form_express_block_designer_themes_form_alter(&$form, &$form_state, $form_id) {
+
+    // Get settings
+    $settings = $form['#exbd_settings'];
+
+    $form['block_designer_menu'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Menu Blocks',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#description' => t('This setting applies to Menu Blocks only'),
+    );
+    $form['block_designer_menu']['exbd_menu_style'] = array(
+      '#title' => 'Menu Block Style',
+      '#type' => 'select',
+      '#options' => array(
+        'default' => 'Default/Underline',
+        'arrow' => 'Arrow',
+        'none' => 'No Decoration',
+      ),
+      '#default_value' => isset($settings['exbd_menu_style']) ? $settings['exbd_menu_style'] : 'default',
+    );
+}

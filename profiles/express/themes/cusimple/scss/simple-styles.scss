@@ -27,17 +27,19 @@ body {
   //margin:0 40px;
   background-color: #333;
 }
-
+#main {
+  padding-top: 0;
+}
 #footer-menu-wrapper {
   padding: 10px 0px;
 }
-#after-content-wrapper {
+.after-content-wrapper {
   padding: 0;
 }
-#after-content,
-#after-content-2,
-#footer,
-#site-info-wrapper {
+.after-content,
+.after-content-2,
+.footer,
+.site-info-wrapper {
   padding:40px 0px 20px;
 }
 
@@ -122,28 +124,28 @@ h2.secondary-menu-label {
 }
 
 // Backgrounds
-#intro-wide-wrapper {
+.intro-wide-wrapper {
   //padding-top: 20px;
   background-color: #fff;
 }
 
-#slider-wrapper {
+.slider-wrapper {
   background-color: $light_gray;
   padding:20px;
 }
-#content-wrapper,
-#post-wide-wrapper,
-#after-content-wrapper {
+.content-wrapper,
+.post-wide-wrapper,
+.after-content-wrapper {
   background-color: #fff;
 }
 
 // Footer
-#post-wide-wrapper + #after-content-wrapper {
+.post-wide-wrapper + #after-content-wrapper {
 }
-#after-content2-wrapper {
+.after-content2-wrapper {
   background-color: $light_gray;
 }
-#after-content2-wrapper {
+.after-content2-wrapper {
   a:link,
   a:visited {
     color:$dark_link_blue;
@@ -154,25 +156,25 @@ h2.secondary-menu-label {
   }
 }
 
-#footer-section {
+.footer-section {
   background-color: $bg_dark1;
   color: #fff;
   .block-menu ul.menu a {
     border-bottom-color: #555;
   }
 }
-#footer-section a,
-#footer-section a.active,
-#footer-section a.active-trail {
+.footer-section a,
+.footer-section a.active,
+.footer-section a.active-trail {
   color:$cugold;
 }
-#footer-section a:hover {
+.footer-section a:hover {
   color:#fff;
 }
-#footer-wrapper {
+.footer-wrapper {
   background-color: $bg_dark1;
 }
-#site-info-wrapper {
+.site-info-wrapper {
   background-color: $bg_dark2;
   padding: 40px 0 20px;
   font-size: 90%;
@@ -230,7 +232,8 @@ $border: #e7e7e7;
   }
   ul.menu a {
     padding:10px;
-    border:1px solid $border;
+    border-top:1px solid $border;
+    border-bottom:1px solid $border;
     margin-bottom: -1px;
     color:$defaultFG;
     line-height: 120%;
@@ -249,7 +252,7 @@ $border: #e7e7e7;
     }
   }
   li.active-trail {
-    border-left:3px solid $activeBG;
+    //border-left:3px solid $activeBG;
 
     a {
       border-left-color: $activeBG;
@@ -281,6 +284,9 @@ $border: #e7e7e7;
   }
   ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
     padding-left: $indent * 6;
+  }
+  li.expanded  {
+    border-left:1px solid $activeBG;
   }
 }
 

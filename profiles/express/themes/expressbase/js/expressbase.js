@@ -12,11 +12,29 @@
 // - http://www.adequatelygood.com/2010/3/JavaScript-Module-Pattern-In-Depth
 (function ($, Drupal, window, document, undefined) {
   $(document).ready(function(){
-    $("#toggle").click(function() {
+    $("#toggle").click(function(event) {
+      event.preventDefault();
       $("#mobile-navigation-wrapper").slideToggle('fast');
       $("#toggle i.fa").toggleClass('fa-reorder');
       $("#toggle i.fa").toggleClass('fa-times');
-      return false;
+      if ($(this).attr('aria-expanded') == 'true') {
+        $(this).attr('aria-expanded', 'false');
+      }
+      else {
+        $(this).attr('aria-expanded', 'true');
+      }
+    });
+    // Add close messages area
+    var closeMsgs = '<a href="#" class="close-msgs" tabindex="-1"><i class="fa fa-times-circle"></a>';
+    $('.logged-in .express-messages').append(closeMsgs);
+    $('a.close-msgs').click(function(event){
+      event.preventDefault();
+      $('.express-messages').hide();
+    });
+    $('a.search-toggle').click(function(event){
+      event.preventDefault();
+      $('#search').slideToggle('fast').focus();
+      $('.express-search-box-small').addClass('fadeIn');
     });
   });
   $(window).on('resize', function(){

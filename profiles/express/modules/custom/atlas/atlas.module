@@ -50,10 +50,23 @@ function atlas_admin_settings() {
 
   $site_array = atlas_api_request('sites', $atlas_id);
 
+  $form['current_state'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Current Status'),
+  );
+
+  $form['current_state']['state'] = array(
+    '#type' => 'markup',
+    '#markup' => $site_array['status'],
+  );
+
   // Options are limited based on permissions.
   $status_options = array(
+    'installing' => t('Installing'),
+    'available' => t('Available'),
     'launching' => t('Launching'),
     'take_down' => t('Take Down Site'),
+    'locked' => t('Locked'),
   );
 
   // If site is Available, Installed, or Launched, add options. You shouldn't
@@ -62,16 +75,37 @@ function atlas_admin_settings() {
     $status_options = array(
       'installing' => t('Installing'),
       'available' => t('Available'),
+      'locked' => t('Locked'),
     );
   }
-  elseif ($site_array['status'] == 'installed') {
-    $status_options['installed'] = t('Installed');
+  elseif (($site_array['status'] == 'installed') || ($site_array['status'] == 'installing')) {
+    $status_options = array(
+      '' => t('Installed placeholder'),
+      'launching' => t('Launching'),
+      'take_down' => t('Take Down Site'),
+      'locked' => t('Locked'),
+    );
   }
-  elseif ($site_array['status'] == 'launched') {
-    $status_options['launched'] = t('Launched');
+  elseif (($site_array['status'] == 'launched') || ($site_array['status'] == 'launching')) {
+    $status_options = array(
+      'take_down' => t('Take Down Site'),
+      'locked' => t('Locked'),
+    );
   }
 
   $form['atlas_status'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Change Site Status'),
+  );
+
+  $form['atlas_status']['check'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Change Site Status?'),
+    '#default_value' => FALSE,
+    '#description' => t('You must check this box in order to change the site status.'),
+  );
+
+  $form['atlas_status']['status'] = array(
     '#type' => 'select',
     '#title' => t('Site Status'),
     '#options' => $status_options,
@@ -181,10 +215,10 @@ function atlas_admin_settings() {
 function validate_atlas_admin_settings($form, &$form_state) {
   $atlas_id = variable_get('atlas_id', FALSE);
   $site_array = atlas_api_request('sites', $atlas_id);
-  if ($form['atlas_path']['#value'] == $site_array['sid'] && $site_array['pool'] != 'poolb-homepage' && ($form['atlas_status']['#value'] == 'launching' || $form['atlas_status']['#value'] == 'launched')) {
+  if ($form['atlas_path']['#value'] == $site_array['sid'] && $site_array['pool'] != 'poolb-homepage' && ($form['atlas_status']['status']['#value'] == 'launching' || $form['atlas_status']['status']['#value'] == 'launched')) {
     form_set_error('atlas_path', t('You cannot launch a site at it\'s \'p1\' URL.'));
   }
-  if ($form['atlas_status']['#value'] == 'available') {
+  if ($form['atlas_status']['status']['#value'] == 'available') {
     form_set_error('atlas_status', t('You cannot make any changes to a site while it is in the \'Available\' state.'));
   }
 }
@@ -201,8 +235,14 @@ function atlas_admin_settings_submit($form, &$form_state) {
 
   // Check to see if the form value is the same as the original item and remove
   // the row if it is.
-  if ($form_state['values']['atlas_status'] != $site_array['status']) {
-    $request_data['status'] = $form_state['values']['atlas_status'];
+  if ($form_state['values']['check']) {
+    $request_data['status'] = $form_state['values']['status'];
+
+    if ($form_state['values']['status'] == 'locked') {
+      variable_set('lock_user_dev', TRUE);
+    } elseif ($form_state['values']['status'] != 'locked' && variable_get('lock_user_dev') == TRUE) {
+      variable_set('lock_user_dev', FALSE);
+    }
   }
 
   if ($form_state['values']['atlas_path'] != $site_array['path']) {

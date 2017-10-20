@@ -20,7 +20,6 @@ function curise_preprocess_html(&$vars) {
 
   // SET BANNER COLOR (banner-white, banner-light, banner-curise, banner-black)
   $banner_color = theme_get_setting('banner_color', 'curise') ? theme_get_setting('banner_color', 'curise') : 'dark';
-  $banner_color = 'dark';
   $vars['classes_array'][]='banner-' . $banner_color;
   $layout = theme_get_setting('layout_style', 'curise') ? theme_get_setting('layout_style', 'curise') : 'layout-wide';
   $layout = 'layout-wide';

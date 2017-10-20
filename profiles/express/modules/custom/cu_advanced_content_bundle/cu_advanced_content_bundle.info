@@ -6,6 +6,7 @@ project_demo_url = http://www.colorado.edu/webcentral/node/668
 dependencies[] = cu_video_reveal
 dependencies[] = cu_feature_callout
 dependencies[] = cu_content_list
+dependencies[] = cu_expandable
 dependencies[] = quicktabs
 dependencies[] = quicktab_beans
 dependencies[] = cu_quicktab_styles

@@ -561,6 +561,12 @@ a .icon-color-gray {
 .byline-author-name {
   font-weight: 700;
 }
+.front .breadcrumb-wrapper {
+  display: none;
+}
+.front .main-title-wrapper {
+  @include element-invisible;
+}
 .title-image-breadcrumbs-wrapper {
   padding:5px 0px;
   //background: rgba(255,255,255,.9);

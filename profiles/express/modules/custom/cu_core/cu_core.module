@@ -67,7 +67,7 @@ function cu_core_form_bean_form_alter(&$form, &$form_state, $form_id) {
 
   // Move revision group to bottom of bean edit forms.
   $form['revision2'] = $form['revision'];
-  $form['revision2']['#weight'] = 101;
+  $form['revision2']['#weight'] = 90;
   unset($form['revision']);
 }
 
@@ -149,7 +149,7 @@ function cu_core_express_bean_list_groups($bundles) {
 
   $bundles['advanced_content']['title'] = 'Advanced Content';
   $bundles['advanced_content']['types'][] = 'Content Grid';
-  $bundles['advanced_content']['types'][] = 'Quicktab';
+  $bundles['advanced_content']['types'][] = 'Expandable';
   $bundles['advanced_content']['types'][] = 'Video Reveal';
 
   return $bundles;

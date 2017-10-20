@@ -577,3 +577,12 @@ function people_content_type_preprocess_entity(&$vars) {
       $vars['content']['people'] = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
   }
 }
+
+function _people_list_block_display_options() {
+  return array(
+    'teaser' => 'Teaser (Name, thumbnail & summary)',
+    'grid' => 'Grid (Name, thumbnail)',
+    'sidebar' => 'Name & thumbnail',
+    'title' => 'Name',
+  );
+}

@@ -3,7 +3,7 @@ name = "Express"
 description = "Express installation profile"
 exclusive = "1"
 core = "7.x"
-version = 7.x-2.5
+version = 7.x-2.7
 
 ; ----------
 ; Dependencies
@@ -19,6 +19,7 @@ dependencies[] = cu_colorbox
 
 ;dependencies[] = cu_settings
 ;dependencies[] = cu_permissions
+;dependencies[] = cu_elysia_cron
 
 ; Core
 dependencies[] = block
@@ -72,13 +73,13 @@ dependencies[] = globalredirect
 dependencies[] = pathologic
 dependencies[] = pathauto
 dependencies[] = redirect
-dependencies[] = securepages
 dependencies[] = auto_entitylabel
 
 ; Admin UI Improvements
 dependencies[] = navbar
 dependencies[] = module_filter
 dependencies[] = responsive_preview
+dependencies[] = diff
 
 ; Site Structure
 dependencies[] = cu_site_info
@@ -119,6 +120,7 @@ dependencies[] = cu_page
 dependencies[] = cu_alerts
 dependencies[] = cu_search
 dependencies[] = cu_sitewide
+dependencies[] = cu_sitewide_required
 dependencies[] = cu_slider
 dependencies[] = cu_faq
 dependencies[] = cu_hero_unit
@@ -159,7 +161,6 @@ dependencies[] = video_filter
 ; ============ SEARCH AND ANALYTICS ============
 dependencies[] = cu_googleanalytics
 dependencies[] = googleanalytics
-dependencies[] = google_appliance
 
 ; ============ MENU ============
 dependencies[] = menu_block
@@ -168,8 +169,6 @@ dependencies[] = bigmenu
 dependencies[] = menu_firstchild
 
 ; ============ BLOCK ============
-dependencies[] = blocktheme
-dependencies[] = cu_block_theme
 dependencies[] = cu_block
 
 ; ============ FLEXSLIDER ============
@@ -203,6 +202,8 @@ dependencies[] = cu_content_lock
 dependencies[] = content_lock
 dependencies[] = context_sitewide_public
 dependencies[] = field_reference_delete
+dependencies[] = express_block_designer
+dependencies[] = express_block_designer_menu
 
 ; ============ FEATURE EXPORTS ============
 dependencies[] = express_linkit_profiles

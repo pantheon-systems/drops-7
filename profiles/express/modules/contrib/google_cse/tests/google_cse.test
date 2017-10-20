@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Google CSE module tests.
+ */
+
+class GoogleCSETestCase extends DrupalWebTestCase {
+  protected $privileged_user;
+
+  /**
+   * Tell Drupal about the module's tests.
+   *
+   * @return array
+   *   An array of information to display on Testing UI page.
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'Google CSE Tests',
+      'description' => 'Ensure that the Google Custom Search Engine is integrated with Search API.',
+      'group' => 'Search',
+    );
+  }
+
+  /**
+   *  Perform steps to setup Drupal installation for test runs.
+   */
+  public function setUp() {
+    // The only dependency for the Google CSE module is search.
+    $modules = array(
+      'google_cse',
+      'search',
+      'block',
+    );
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Tests all SiteSearch configuration options.
+   */
+  public function testSiteSearchSettingsConfig() {
+    // Need to have user for this test.
+    $this->setupGoogleCSEUser();
+
+    // Need to have Google CSE as default search.
+    $this->setupGoogleCSEAsDefaultSearch();
+
+    // Need to setup page with Google CSE search block until redirect issue is fixed.
+    // @todo Figure out why going to /search/google ended up in a redirect loop.
+    $this->setupGoogleCSESearchPage();
+
+    // Post to config form to save SiteSearch settings.
+    $edit = array();
+    $edit['google_cse_sitesearch'] = "example.com/user User Search \n example.com/node Node Search";
+    $edit['google_cse_sitesearch_form'] = 'radios';
+    $this->drupalPost('admin/config/search/settings', $edit, t('Save configuration'));
+
+    // Go to Google CSE search page.
+    $this->drupalGet('node/1');
+
+    // Assert that all SiteSearch options are there.
+    $this->assertText('Search the web', "Default SiteSearch radio button found.");
+    $this->assertText('User Search', "First SiteSearch radio button found.");
+    $this->assertText('Node Search', "Second SiteSearch radio button found.");
+
+    // Post different config options for more checks.
+    $edit = array();
+    $edit['google_cse_sitesearch_form'] = 'select';
+    $edit['google_cse_sitesearch_option'] = 'Search Your Site';
+    $edit['google_cse_sitesearch_default'] = 1;
+    $edit['google_cse_sitesearch'] = "example.com/user \n example.com/node";
+    $this->drupalPost('admin/config/search/settings', $edit, t('Save configuration'));
+
+    // Go to Google CSE search page.
+    $this->drupalGet('node/1');
+
+    // Assert select options have changed.
+    // Need to use raw option since the select list options are not visible.
+    $this->assertRaw('<option value="">Search Your Site</option>', "Default SiteSearch select option found.");
+    $this->assertRaw('<option value="example.com/user" selected="selected">Search &quot;example.com/user&quot;</option>', "First SiteSearch select option found and selected.");
+    $this->assertRaw('<option value="example.com/node">Search &quot;example.com/node&quot;</option>', "Second SiteSearch select option found.");
+  }
+
+  /**
+   * Since most tests need a user and Google CSE to be default search, abstract to function.
+   */
+  private function setupGoogleCSEUser() {
+    // Give the user all search permissions to use in testing.
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'search Google CSE',
+      'administer search',
+      'search content',
+      'use advanced search',
+      'administer site configuration',
+      'access administration pages',
+      'view the administration theme',
+      'bypass node access',
+      'administer content types',
+      'administer blocks',
+    ));
+
+    // Login user in order to edit config forms and use search.
+    $this->drupalLogin($this->privileged_user);
+  }
+
+  /**
+   * Setup search variables as most Google CSE users will.
+   */
+  private function setupGoogleCSEAsDefaultSearch() {
+    // Set variable for Drupal to use CSE as default search option.
+    // We will explicitly define it with the other search module options.
+    variable_set('search_active_modules', array(
+      'google_cse' => 'google_cse',
+      'node' => 'node',
+      'user' => 'user',
+    ));
+    variable_set('search_default_module', 'google_cse');
+  }
+
+  /**
+   * Sets up a search block on "/node/1".
+   */
+  private function setupGoogleCSESearchPage() {
+    $edit = array();
+    $edit['name'] = 'CSE';
+    $edit['type'] = 'cse';
+    $this->drupalPost('admin/structure/types/add', $edit, t('Save content type'));
+
+    $edit = array();
+    $edit['title'] = 'Google CSE';
+    $this->drupalPost('node/add/cse', $edit, t('Save'));
+
+    $edit = array();
+    $edit['types[cse]'] = TRUE;
+    $edit['regions[bartik]'] = 'content';
+    $this->drupalPost('admin/structure/block/manage/google_cse/google_cse/configure', $edit, t('Save block'));
+  }
+}
+

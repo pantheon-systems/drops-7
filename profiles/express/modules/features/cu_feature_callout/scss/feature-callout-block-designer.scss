@@ -5,6 +5,18 @@
 
 .block-bean-type-feature-callout {
   &.content-grid-style--cards {
+    &.exbd-style-dark-gray,
+    &.exbd-style-light-gray,
+    &.exbd-style-light-blue,
+    &.exbd-style-tan{
+      .block-inner {
+        padding-bottom: 0;
+      }
+    }
+  }
+
+  /*
+  &.content-grid-style--cards {
     .block-inner {
       padding:0;
       background:none;
@@ -13,7 +25,7 @@
     .block-title {
       margin-bottom:10px;
     }
-    &.blockdarkgray {
+    &.exbd-style-dark-gray {
       .content-grid-style-cards {
         .content-grid-item-inner {
           background:#222;
@@ -28,6 +40,8 @@
       }
     }
   }
+  */
+
   &.content-grid-style--tiles,
   &.content-grid-style--tiles_alt {
     // Remove background, color applied by block designer
@@ -39,19 +53,26 @@
     .block-title {
       margin-bottom:10px;
     }
-    &.blockgray {
+    &.exbd-style-light-gray {
       .content-grid-style-tiles,
       .content-grid-style-tiles_alt {
         background:#f4f4f4;
       }
     }
-    &.lightblue {
+    &.exbd-style-lightblue {
       .content-grid-style-tiles,
       .content-grid-style-tiles_alt {
         background:#EBF7FF;
       }
     }
-    &.blockdarkgray {
+    &.exbd-style-tan {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#FFFBF0;
+      }
+    }
+
+    &.exbd-style-dark-gray {
       .content-grid-style-tiles,
       .content-grid-style-tiles_alt {
         background:#222;
@@ -60,6 +81,12 @@
         a:visited {
           color:$cugold;
         }
+      }
+    }
+    &.exbd-style-underline {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        padding-bottom: 20px;
       }
     }
   }

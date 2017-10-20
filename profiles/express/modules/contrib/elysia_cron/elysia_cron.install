@@ -1,0 +1,209 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the elysia_cron module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function elysia_cron_schema() {
+  $schema['elysia_cron'] = array(
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 120,
+        'not null' => TRUE,
+      ),
+      'disable' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => FALSE,
+      ),
+      'rule' => array(
+        'type' => 'varchar',
+        'not null' => FALSE,
+        'length' => 256,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'context' => array(
+        'type' => 'varchar',
+        'not null' => FALSE,
+        'length' => 32,
+      ),
+      'running' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'last_run' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'last_aborted' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'abort_count' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'last_abort_function' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'no export' => TRUE,
+      ),
+      'last_execution_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'execution_count' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'avg_execution_time' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'max_execution_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'last_shutdown_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+    ),
+    'primary key' => array('name'),
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Cron job name',
+      'primary key' => 'name',
+      'identifier' => 'cron_rule',
+      'object factory' => 'elysia_cron_ctools_export_object_factory',
+      'load callback' => 'elysia_cron_ctools_export_load',
+      'load all callback' => 'elysia_cron_ctools_export_load_all',
+      'export callback' => 'elysia_cron_ctools_export_callback',
+      'to hook code callback' => 'elysia_cron_ctools_to_hook_code',
+
+      'default hook' => 'default_elysia_cron_rules',
+      'api' => array(
+        'owner' => 'elysia_cron',
+        'api' => 'default_elysia_cron_rules',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function elysia_cron_install() {
+  // Elysia cron MUST be the first returned by module_list.
+  // This is to ensure elysia_cron_cron is the first hook
+  // called by standard cron.php.
+  $query = db_select('system');
+  $query->addExpression('MIN(weight)');
+  $min = $query->execute()->fetchField();
+
+  $min = ($min > -65535) ? -65535 : --$min;
+
+  db_update('system')
+    ->fields(array('weight' => $min))
+    ->condition('name', 'elysia_cron')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function elysia_cron_uninstall() {
+  $variables = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('v.name', 'elysia_cron_%', 'LIKE')
+    ->execute()
+    ->fetchCol();
+
+  foreach ($variables as $name) {
+    variable_del($name);
+  }
+}
+
+/**
+ * Use default cron_key variable.
+ */
+function elysia_cron_update_7201() {
+  $cron_key = variable_get('elysia_cron_key', FALSE);
+  if ($cron_key) {
+    variable_set('cron_key', $cron_key);
+  }
+
+  variable_del('elysia_cron_key');
+}
+
+/**
+ * Increase elysia_cron last_abort_function size from 32 to 128 characters.
+ */
+function elysia_cron_update_7202() {
+  db_change_field('elysia_cron', 'last_abort_function', 'last_abort_function', array(
+    'type' => 'varchar',
+    'length' => 128,
+    'no export' => TRUE,
+  ));
+}
+
+/**
+ * Change length property of rule to 256 characters.
+ */
+function elysia_cron_update_7203() {
+  $spec = array(
+    'type' => 'varchar',
+    'not null' => FALSE,
+    'length' => 256,
+  );
+  db_change_field('elysia_cron', 'rule', 'rule', $spec);
+}
+
+/**
+ * Remove unused variables.
+ */
+function elysia_cron_update_7204() {
+  variable_del('elysia_cron_version');
+}
+
+/**
+ * Rename context variable to channel.
+ */
+function elysia_cron_update_7205() {
+  if ($last = variable_get('elysia_cron_last_context')) {
+    variable_set('elysia_cron_last_channel', $last);
+  }
+
+  variable_del('elysia_cron_last_context');
+}

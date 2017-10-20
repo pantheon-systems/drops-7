@@ -1,0 +1,40 @@
+<?php
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ */
+function cu_elysia_cron_install() {
+  // Set options
+  $default_options = array (
+    '*/15 * * * *' => 'Every 15 minutes',
+    '*/30 * * * *' => 'Every 30 minutes',
+    '0 * * * *' => 'Every hour',
+    '0 */6 * * *' => 'Every 6 hours',
+    '0 */12 * * *' => 'Every 12 hours',
+    '0 2 * * *' => 'Every day at 2am',
+    '4 0 * * *' => 'Once a day',
+    '4 0 * * 0' => 'Once a week',
+    '4 0 1 * *' => 'Once a month',
+  );
+
+  variable_set('elysia_cron_default_rules', '0 */12 * * *');
+
+  // Set values. Null uses default.
+  variable_set('atlas_statistics_cron', '0 */12 * * *');
+  variable_set('ctools_cron', NULL);
+  variable_set('cu_redirect_cron', '0 */12 * * *');
+  variable_set('cu_users_cron', '0 2 * * *');
+  variable_set('field_cron', NULL);
+  variable_set('googleanalytics_cron', '0 */12 * * *');
+  variable_set('honeypot_cron', '*/15 * * * *');
+  variable_set('ldap_servers_cron', NULL);
+  variable_set('ldap_user_cron', '0 */12 * * *');
+  variable_set('node_cron', NULL);
+  variable_set('queue_file_entity_type_determine', '*/15 * * * *');
+  variable_set('queue_views_bulk_operations', '*/15 * * * *');
+  variable_set('redirect_cron', NULL);
+  variable_set('system_cron', NULL);
+  variable_set('user_external_invite_cron', '4 0 * * *');
+  variable_set('views_bulk_operations_cron', '0 */12 * * *');
+}

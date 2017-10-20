@@ -15,12 +15,29 @@ function cu_block_to_bean_install() {
 
   $included_modules = array(
     'cu_article' => 'cu_article',
+    'cu_publication' => 'cu_publication',
     'cu_related_articles' => 'cu_related_articles',
     'menu' => 'menu',
+    'menu_block' => 'menu_block',
     'webform' => 'webform',
   );
   $excluded_deltas = 'devel,features';
 
   variable_set('cu_block_to_bean_module_include', $included_modules);
   variable_set('cu_block_to_bean_delta_exclude', $excluded_deltas);
+}
+
+/**
+ * Add cu_publication and menu_block to allowed modules.
+ */
+function cu_block_to_bean_update_7001() {
+  $included_modules = array(
+    'cu_article' => 'cu_article',
+    'cu_publication' => 'cu_publication',
+    'cu_related_articles' => 'cu_related_articles',
+    'menu' => 'menu',
+    'menu_block' => 'menu_block',
+    'webform' => 'webform',
+  );
+  variable_set('cu_block_to_bean_module_include', $included_modules);
 }

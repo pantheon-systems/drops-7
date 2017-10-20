@@ -56,6 +56,7 @@ function express_layout_form($form, &$form_state, $op = 'edit', $express_layout 
       '#type' => 'submit',
       '#value' => t('Update layout'),
     ),
+    '#weight' => 500,
   );
   $form['#validate'][] = '_express_layout_validate';
   return $form;
@@ -267,6 +268,14 @@ function _express_layout_region_diagram() {
   <tr>
     <td class="fill">&nbsp;</td>
     <td colspan="3">Slider</td>
+    <td class="fill">&nbsp;</td>
+  </tr>
+  <tr>
+    <td colspan="5">Post Title Wide</td>
+  </tr>
+  <tr>
+    <td class="fill">&nbsp;</td>
+    <td colspan="3">Post Title</td>
     <td class="fill">&nbsp;</td>
   </tr>
   <tr>

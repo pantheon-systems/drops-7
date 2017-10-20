@@ -252,13 +252,23 @@ function _get_bundle_stats() {
     'cu_test_content_admin_bundle',
     'cu_debug_admin_bundle',
   );
+
+  $other_bundles = array();
+
   foreach ($enabled_bundles as $key => $bundle) {
     if (in_array($bundle->name, $express_bundles)) {
       $bundle_stats[$bundle->name] = array(
         'schema_version' => $bundle->schema_version,
       );
     }
+
+    else {
+      // For non-express bundles concatenate bundle name and schema version as 'bundle_name - schema_version' .
+      array_push($other_bundles, $bundle->name . ' - ' . $bundle->schema_version);
+    }
   }
+  // Concatenate strings in $other_bundles array to create one long string.
+  $bundle_stats['other'] = implode("; ", $other_bundles);
   return $bundle_stats;
 }
 
@@ -301,25 +311,17 @@ function cu_atlas_form_alter(&$form, &$form_state, $form_id) {
 /**
  * Implements hook_menu_alter.
  *
- * Bundle enable isn't an actual form, so we have to alter the menu as well.
+ * Bundle enable isn't an actual form, so we have to alter the page as well.
  */
-function cu_atlas_menu_alter(&$items) {
-  if (variable_get('atlas_status') == 'available') {
-    $items['admin/settings/bundles/list/confirm/%']['page callback'] = 'cu_atlas_redirect';
+function cu_atlas_page_alter(&$page) {
+  $onConfPage = strpos(current_path(), 'admin/settings/bundles/list/confirm');
+  if (variable_get('atlas_status') == 'available' && $onConfPage === 0) {
+    global $base_url;
+    drupal_set_message(
+      t('Enabling bundles has been disabled on this site while it is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
+        array('@base_url' => $base_url)
+      ),
+      'error');
+    $page['content']['system_main']['main']['#markup'] = '<p>Enabling bundles has been disabled on this site while it is in the <i>available</i> status.</p><div class="btn btn-primary disabled">Confirm</div></a><a href="https://express.local/p12751474eb1/admin/settings/bundles/list/" title="Cancel"><div class="btn btn-default">Cancel</div>';
   }
-}
-
-/**
- * Callback function for admin/settings/bundles/list/confirm/%.
- *
- * Redirect away from bundle enable while site status is "available".
- */
-function cu_atlas_redirect() {
-  global $base_url;
-  drupal_set_message(
-    t('Enabling bundles has been disabled on this site while it is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
-          array('@base_url' => $base_url)
-        ),
-        'error');
-  return '';
 }

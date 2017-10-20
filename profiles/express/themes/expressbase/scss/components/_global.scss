@@ -124,7 +124,18 @@ html {
 }
 
 #main {
-  padding:20px 0;
+  padding: 20px 0;
+}
+#main-content-wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+#post-title-wide-wrapper + #post-title-wrapper {
+  //padding-top: 20px;
+}
+#post-title-wide-wrapper, #post-title-wrapper {
+  background:#fff;
+  padding-bottom:20px;
 }
 #feature-layout-wrapper {
   background-color: #fff;
@@ -150,8 +161,11 @@ html {
 .responsive-notice {
   display: none;
 }
-.responsive-preview-frame .tabs {
-  display: none;
+.responsive-preview-frame {
+  .tabs,
+  .express-messages {
+    display: none;
+  }
 }
 .responsive-preview-frame .responsive-notice {
   padding:20px;
@@ -176,4 +190,38 @@ html {
 .field-type-text-with-summary .more-link:before {
   content: " ";
   white-space: nowrap;
+}
+
+/* Help, messages, etc */
+.express-messages {
+  background: #f2f2f2;
+  position: relative;
+  overflow: hidden;
+  a.close-msgs {
+    position: absolute;
+    top:5px;
+    right:5px;
+    color:#aaa;
+    opacity:.5;
+  }
+}
+.logged-in .express-messages {
+  //padding-right: 40px;
+}
+.express-message {
+  padding:20px;
+  background: #f2f2f2;
+  & > div {
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+  clear:both;
+}
+.express-message + .express-message {
+  padding-top: 1px;
+}
+
+/* Required Links */
+.required-links {
+  font-size: 85%;
 }
