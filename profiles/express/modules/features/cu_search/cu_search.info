@@ -1,8 +1,8 @@
 name = CU Search
 core = 7.x
 package = CU-Core
-version = 7.x-1.1
-dependencies[] = google_appliance
+version = 7.x-2.0
+dependencies[] = google_cse
 dependencies[] = strongarm
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2

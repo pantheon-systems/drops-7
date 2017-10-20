@@ -44,8 +44,7 @@ highly discouraged unless there is a specific need for both LDAP enabled
 accounts and non-LDAP accounts.
 
 4. In order to use this feature, your site must be SSL enabled - passwords
-must be transfered via https - this feature comes with configurations for
-the securepages module to ensure this. If you are using CU servers, ITSO
+must be transfered via https. If you are using CU servers, ITSO
 can provide SSL certificates free of charge.
 
 5. Finally, this feature configures the Drupal LDAP module to allow anybody

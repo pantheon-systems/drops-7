@@ -159,6 +159,7 @@ function express_permissions_secure_permissions($role) {
       'view error messages', // currently only the perms below diff with site owner role
       'administer cache settings',
       'configure profile module manager',
+      'view unused beans',
     ),
     'anonymous user' => array(
       'access content',
@@ -413,6 +414,10 @@ function express_permissions_secure_permissions($role) {
       'exclude from message filtering',
       'configure profile module manager',
       'administer cache settings',
+      'administer elysia_cron',
+      'execute elysia_cron',
+      'view elysia_cron',
+      'view unused beans',
     ),
     'edit_my_content' => array(
       'access ckeditor link',

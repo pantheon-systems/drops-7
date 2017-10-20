@@ -674,7 +674,7 @@ $text: #202020;
     .content-grid-image {
       width:50%;
       img {
-        display: none;
+        display: none !important;
       }
     }
     .content-grid-text {

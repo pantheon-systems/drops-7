@@ -403,7 +403,6 @@ function expressbase_preprocess_region(&$vars) {
  * Implements hook_preprocess_block).
  */
 function expressbase_preprocess_block(&$vars) {
-
   // Add class for block titles
   $vars['title_attributes_array']['class'][] = 'block-title';
   $vars['classes_array'][] = !empty($vars['block']->subject) ? 'has-block-title'
@@ -486,6 +485,7 @@ function expressbase_menu_link(array $vars) {
     $hide_class = $hide ? 'hide-text' : '';
     $space = $hide ? '' : ' ';
     $element['#title'] = '<i class="fa fa-fw ' . $element['#localized_options']['icon'] . '"></i>' . $space . '<span class="menu-icon-text ' . $hide_class . '">' . $element['#title']  . '</span>';
+    $element['#localized_options']['attributes']['class'][] = 'menu__link__icon';
   }
   $sub_menu = '';
   if ($element['#below']) {

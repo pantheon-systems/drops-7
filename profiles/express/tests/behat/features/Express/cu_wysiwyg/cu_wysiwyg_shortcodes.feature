@@ -9,7 +9,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Video Shortcode"
       And I press the "Video Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "video URL" with "https://www.youtube.com/watch?v=m-m7mBSw-5k"
       And I press the "OK" button
       And I press the "Save" button
@@ -21,7 +21,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Button Shortcode"
       And I press the "Button Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "Button Text" with "New Button"
       And I fill in "URL" with "http://www.google.com"
       And I press the "OK" button
@@ -40,7 +40,7 @@ I should be able to use the full functionality of the WYSIWYG editor
       And I press the "Upload" button
     Then I should see a ".image-widget-data" element
     When I press the "Insert" button
-      And I wait for AJAX
+      #And I wait for AJAX
       # TODO Figure out how to switch to iframe contexts http://apigen.juzna.cz/doc/Behat/Mink/source-class-Behat.Mink.Driver.DriverInterface.html#163-171
       #And I switch to iframe ".image-medium"
     #And I press the "Image Caption Shortcode Generator" button
@@ -52,7 +52,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Icon Shortcode"
       And I press the "Icon Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I select "ambulance" from "Icon [View Icons]"
       And I select "fa-5x" from "Icon Size"
       And I select "Black" from "Icon Color"
@@ -85,12 +85,12 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Expandable Content Shortcode"
       And I press the "Expand Content Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "Title" with "Example FAQ #1"
       And I fill in "Expand Content Text" with "Example content #1"
       And I press the "OK" button
       And I press the "Expand Content Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "Title" with "Example FAQ #2"
       And I fill in "Expand Content Text" with "Example content #2"
       And I press the "OK" button
@@ -111,7 +111,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Map Shortcode"
       And I press the "Map Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "Map Embed Code" with "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3055.782574009197!2d-105.25404084826329!3d40.0133039793131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876bedc53ea9c665%3A0x2927ccc033644a4b!2s3100+Marine+St%2C+Boulder%2C+CO+80303!5e0!3m2!1sen!2sus!4v1445292423584\" width=\"600\" height=\"450\" frameborder=\"0\" style=\"border:0\" allowfullscreen></iframe>"
       And I press the "OK" button
       And I press the "Save" button
@@ -124,7 +124,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My Box Shortcode"
       And I press the "Box Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "Title (optional)" with "Box Shortcode"
       And I fill in "Box Text" with "Box Shortcode Text"
       And I select "black" from "Box Color"
@@ -141,7 +141,7 @@ I should be able to use the full functionality of the WYSIWYG editor
     When I go to "node/add/page"
       And I fill in "Title" with "My video Shortcode"
       And I press the "Video Shortcode Generator" button
-      And I wait for AJAX
+      #And I wait for AJAX
       And I fill in "video URL" with "https://www.youtube.com/watch?v=YFKxpEdpqXI"
       And I press the "OK" button
       And I press the "Save" button
@@ -154,6 +154,6 @@ I should be able to use the full functionality of the WYSIWYG editor
       And I fill in "Title" with "Countup Shortcode"
       And I fill in "Body" with "[countup]5000[/countup]"
       And I press the "Save" button
-      And I wait for 4 seconds
+      And I wait 4 seconds
     Then I should see "5000"
       And I should not see "[countup]5000[/countup]"

@@ -390,6 +390,74 @@ $field_bases['field_content_bottom'] = array(
   'type' => 'entityreference',
 );
 
+// Exported field_base: 'field_post_title'
+$field_bases['field_post_title'] = array(
+  'active' => 1,
+  'cardinality' => -1,
+  'deleted' => 0,
+  'entity_types' => array(),
+  'field_name' => 'field_post_title',
+  'indexes' => array(
+    'target_id' => array(
+      0 => 'target_id',
+    ),
+  ),
+  'locked' => 0,
+  'module' => 'entityreference',
+  'settings' => array(
+    'handler' => 'views',
+    'handler_settings' => array(
+      'behaviors' => array(
+        'views-select-list' => array(
+          'status' => 0,
+        ),
+      ),
+      'view' => array(
+        'args' => array(),
+        'display_name' => 'entityreference_1',
+        'view_name' => 'express_layout_beans',
+      ),
+    ),
+    'target_type' => 'bean',
+  ),
+  'translatable' => 0,
+  'type' => 'entityreference',
+);
+
+// Exported field_base: 'field_post_title_wide'
+$field_bases['field_post_title_wide'] = array(
+  'active' => 1,
+  'cardinality' => -1,
+  'deleted' => 0,
+  'entity_types' => array(),
+  'field_name' => 'field_post_title_wide',
+  'indexes' => array(
+    'target_id' => array(
+      0 => 'target_id',
+    ),
+  ),
+  'locked' => 0,
+  'module' => 'entityreference',
+  'settings' => array(
+    'handler' => 'views',
+    'handler_settings' => array(
+      'behaviors' => array(
+        'views-select-list' => array(
+          'status' => 0,
+        ),
+      ),
+      'view' => array(
+        'args' => array(),
+        'display_name' => 'entityreference_1',
+        'view_name' => 'express_layout_beans',
+      ),
+    ),
+    'target_type' => 'bean',
+  ),
+  'translatable' => 0,
+  'type' => 'entityreference',
+);
+
 foreach ($field_bases as $field) {
   if (!field_info_field($field['field_name'])) {
     field_create_field($field);

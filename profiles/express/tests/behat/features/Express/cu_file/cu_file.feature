@@ -31,7 +31,7 @@ Feature: File Content Type
       And I fill in "body[und][0][value]" with "Sample Description"
       And I attach the file "ralphie.jpg" to "edit-field-file-attachment-und-0-upload"
       And I press the "Upload" button
-      And I wait for AJAX
+      #And I wait for AJAX
     Then I should see "ralphie.jpg"
     When I press the "Save" button
     Then I should see "My File"

@@ -80,7 +80,7 @@ function cu_block_row_preprocess_entity(&$vars) {
     foreach (element_children($vars['content']['field_block_row_collection']) as $child) {
       // Grab the field_collection_item entity.
       $fc_item = array_pop($vars['content']['field_block_row_collection'][$child]['entity']['field_collection_item']);
-      $bean_objects = $fc_item['field_block_row_block']['#items'];
+      $bean_objects = !empty($fc_item['field_block_row_block']) ? $fc_item['field_block_row_block']['#items'] : array();
       foreach($bean_objects as $bean_object) {
       // render the bean object using the rerender function from the cu_block_section module
         $bean = _cu_block_section_rerender($bean_object);

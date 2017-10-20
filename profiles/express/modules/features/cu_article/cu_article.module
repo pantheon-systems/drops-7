@@ -1644,7 +1644,13 @@ function cu_article_list_filter_form($form, &$form_state) {
   $show_category_filter = (!empty($node->field_article_page_cat_expose)) ?  $node->field_article_page_cat_expose[LANGUAGE_NONE][0]['value'] : NULL;
   $show_tag_filter = (!empty($node->field_article_page_tag_expose)) ?  $node->field_article_page_tag_expose[LANGUAGE_NONE][0]['value'] : NULL;
   $child_terms = (!empty($node->field_article_page_childterms)) ? $node->field_article_page_childterms[LANGUAGE_NONE][0]['value'] : 0;
-  $child_terms = $node->field_article_page_childterms[LANGUAGE_NONE][0]['value'] == 'all' ? 1 : 0;
+  if (!empty($node->field_article_page_childterms)) {
+    $child_terms = $node->field_article_page_childterms[LANGUAGE_NONE][0]['value'] == 'all' ? 1 : 0;
+  }
+  else {
+    $child_terms = 0;
+  }
+
   // Build category filter options
   if ($show_category_filter) {
     $filters['category']['name'] = 'Category';

@@ -26,7 +26,6 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
 
   }
 
-
   /**
    * @BeforeSuite
    * Enable bundle and add authentication data.
@@ -34,7 +33,7 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   public static function prepare($scope) {
 
     // List needed users.
-    $users = array('developer', 'administrator', 'content_editor', 'site_owner');
+    $users = array('developer', 'administrator', 'content_editor', 'site_owner', 'edit_my_content', 'authenticated user');
 
     // Create users.
     foreach ($users as $user_name) {
@@ -80,16 +79,16 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
     // Since they all have the same email, we can load them by that parameter.
     $uids = db_query("SELECT uid FROM {users} WHERE mail = 'noreply@nowhere.com'")->fetchCol();
     user_delete_multiple($uids);
+
+    // Re-import database if it exists.
+    // We do this since added nodes and other cruft can impact other test suites.
+    // @todo Need to save performance data if reimporting original database.
+    /*
+    if (file_exists($_SERVER['HOME'] . '/express.sql')) {
+      exec('drush sql-drop -y');
+      exec('drush sql-cli < ' . $_SERVER['HOME'] . '/express.sql');
+    }*/
   }
-
-
-  /**
-   * @BeforeScenario
-   */
-  public function before($event) {
-    //set_time_limit(60);
-  }
-
 
   /**
    * Creates and authenticates a user with the given role(s).
@@ -161,17 +160,73 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @BeforeScenario
+   */
+  public function beforeScenario($event) {
+    // If this is a @javascript test, then resize the window.
+    /*
+    if ($event->getScenario()->hasTag('javascript')) {
+      $this->getSession()->resizeWindow(1280, 1024, 'current');
+    }
+    */
+  }
+
+  /**
    * After every step in a @javascript scenario, we want to wait for AJAX
    * loading to finish.
    *
    * @AfterStep
    */
-  public function afterStep($event) {
-    if (isset($this->javascript) && $this->javascript && empty($this->iframe)) {
-      $text = $event->getStep()->getText();
-      if (preg_match('/(follow|press|click|submit|viewing|visit|reload|attach)/i', $text)) {
-        $this->iWaitForAjax();
+  public function afterStep($scope) {
+    if (0 === $scope->getTestResult()->getResultCode()) {
+      $driver = $this->getSession()->getDriver();
+      if (!($driver instanceof Selenium2Driver)) {
+        return;
       }
+      $this->iWaitForAjax();
+    }
+  }
+
+  /**
+   * Change the size of the window on Javascript tests.
+   *
+   * @param string $type
+   *   Predefined type to resize window.
+   *
+   * @throws Exception
+   *
+   * @Given I resize the window to a :type resolution.
+   */
+  function iChangeTheScreenSize($type) {
+    // Only change the window size on Javascript tests.
+    $driver = $this->getSession()->getDriver();
+    if (!($driver instanceof Selenium2Driver)) {
+      throw new \Exception('Only tests with the @javascript tag can resize the browser window.');
+    }
+
+    // Resize the window based on pre-defined types of resolutions.
+    switch ($type) {
+      case 'mobile':
+        $this->getSession()->resizeWindow(320, 480, 'current');
+        break;
+      case 'desktop':
+        $this->getSession()->resizeWindow(1280, 1024, 'current');
+        break;
+      default:
+        $this->getSession()->resizeWindow(1280, 1024, 'current');
+    }
+  }
+
+  /**
+   * @AfterStep
+   */
+  public function takeScreenShotAfterFailedStep($scope) {
+    if (99 === $scope->getTestResult()->getResultCode()) {
+      $driver = $this->getSession()->getDriver();
+      if (!($driver instanceof Selenium2Driver)) {
+        return;
+      }
+      file_put_contents('/tmp/test.png', $this->getSession()->getDriver()->getScreenshot());
     }
   }
 
@@ -181,7 +236,19 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Given I wait for AJAX
    */
   public function iWaitForAjax() {
-    $this->getSession()->wait(5000, 'typeof jQuery !== "undefined" && jQuery.active === 0 && document.readyState === "complete"');
+
+    // Polling for the sake of my intern tests
+    $script = '
+    var interval = setInterval(function() {
+    console.log("checking");
+      if (document.readyState === "complete") {
+        clearInterval(interval);
+        done();
+      }
+    }, 1000);';
+
+    //$this->getSession()->evaluateScript($script);
+    $this->getSession()->wait(2000, 'typeof jQuery !== "undefined" && jQuery.active === 0 && document.readyState === "complete"');
   }
 
   /**
@@ -265,11 +332,19 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @When /^I enable the "(?P<text>(?:[^"]|\\")*)" module$/
+   */
+  public function iEnableTheModule($text) {
+    module_enable(array($text));
+  }
+
+  /**
    * @Then /^I select autosuggestion option "([^"]*)"$/
    *
    * @param $text Option to be selected from autosuggestion
    * @throws \InvalidArgumentException
    */
+  // @todo Fix brokenness or use keystroke step on tests where this step was intended to go.
   public function selectAutosuggestionOption($text) {
     $session = $this->getSession();
     $element = $session->getPage()->find(
@@ -404,21 +479,6 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @AfterStep
-   */
-  public function takeScreenShotAfterFailedStep($scope) {
-    if (99 === $scope->getTestResult()->getResultCode()) {
-      $driver = $this->getSession()->getDriver();
-      if (!($driver instanceof Selenium2Driver)) {
-        return;
-      }
-      file_put_contents('/tmp/test.png', $this->getSession()->getDriver()->getScreenshot());
-    }
-  }
-
-
-
-  /**
    * @When /^I create a "(?P<content_type>(?:[^"]|\\")*)" node with the title "(?P<title>(?:[^"]|\\")*)"$/
    */
   public function imAtAWithTheTitle($content_type, $title) {
@@ -449,6 +509,33 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
     // Go to bean page.
     // Using vistPath() instead of visit() method since it adds base URL to relative path.
     $this->visitPath('block/' . $entity->delta);
+  }
+
+  /**
+   * @When I write :text into field :field
+   */
+  public function iWriteIntoField2($text, $field) {
+    // This function is used to
+    $this->getSession()
+      ->getDriver()
+      ->getWebDriverSession()
+      ->element('xpath', $this->getSession()->getSelectorsHandler()->selectorToXpath('named_exact', array('field', $field)))
+      ->postValue(array('value' => array($text)));
+  }
+
+  /**
+   * @Given /^I manually press "([^"]*)"$/
+   */
+  public function iManuallyPress($key) {
+    $script = "jQuery.event.trigger({ type : 'keypress', key : '" . $key . "' });";
+    $this->getSession()->evaluateScript($script);
+  }
+
+  /**
+   * @Given /^I switch to the iframe "([^"]*)"$/
+   */
+  public function iSwitchToIframe($arg1 = null) {
+    $this->getSession()->switchToIFrame($arg1);
   }
 
   /*

@@ -1,0 +1,264 @@
+<?php
+/**
+ * @file
+ * Code for the Expandable feature.
+ */
+
+include_once 'cu_expandable.features.inc';
+
+/*
+ * Implements hook_preprocess_entity().
+ * prepares beans for tpl output.
+ *
+ */
+function cu_expandable_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess block row beans.
+  if ($entity_type == 'bean' && $bundle == 'expandable') {
+    $element = $vars['content']['field_expandable_section'];
+    $sections = array_intersect_key($element, element_children($element));
+    $labels = array();
+    $contents = array();
+
+    foreach ($sections as $id => $section) {
+      $key = key($section['entity']['field_collection_item']);
+      $labels[] = $section['entity']['field_collection_item'][$key]['field_expandable_title'];
+      $contents[] = array(
+        'label' => $section['entity']['field_collection_item'][$key]['field_expandable_title'],
+        'text' => !empty($section['entity']['field_collection_item'][$key]['field_expandable_text']) ? $section['entity']['field_collection_item'][$key]['field_expandable_text'] : NULL,
+        'block' => !empty($section['entity']['field_collection_item'][$key]['field_expandable_block']) ? $section['entity']['field_collection_item'][$key]['field_expandable_block'] : NULL,
+        'block_title' => $section['entity']['field_collection_item'][$key]['field_expandable_block_titles']['#items'][0]['value'],
+      );
+    }
+    $open_section = !empty($vars['field_expandable_section_open']) ? $vars['field_expandable_section_open'][0]['value'] : 1;
+    $expandable_classes = array();
+    $expandable_classes[] = 'expandable-' . $vars['field_expandable_display'][0]['value'];
+    $expandable_classes[] = $open_section ? 'expandable-open' : 'expandable-closed';
+    $vars['expandable_classes'] = join(' ', $expandable_classes);
+    $vars['content'] = array(
+      'labels' => $labels,
+      'sections' => $contents,
+      'display' => $vars['field_expandable_display'][0]['value'],
+      'open_first' => !empty($vars['field_expandable_section_open']) ? $vars['field_expandable_section_open'][0]['value'] : 1,
+      'prompt' => !empty($vars['field_expandable_select_prompt']) ? $vars['field_expandable_select_prompt'][0]['value'] : NULL,
+    );
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cu_expandable_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'cu_expandable') . '/templates';
+  $registry['expandable_section'] = array(
+    'template' => 'expandable-section',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['expandable_section_tabs'] = array(
+    'template' => 'expandable-section-tabs',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  $registry['expandable_section_accordion'] = array(
+    'template' => 'expandable-section-accordion',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  return $registry;
+}
+function cu_expandable_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_expandable');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
+}
+
+function cu_expandable_bean_render($bid, $hide_block_titles) {
+  $output = array();
+  $bean = bean_load($bid);
+  $block = array();
+  if (bean_access('view', $bean)) {
+    // Most of this taken from bean_block_view().
+    $block['content'] = $bean->view($bean->view_mode);
+    if (!$hide_block_titles) {
+      $title = $bean->title;
+    }
+    else {
+      $title = NULL;
+    }
+
+    $block['subject'] = $title;
+    $block['#theme_wrappers'] = array('block');
+    $block['#block'] = (object) array(
+      'region' => 'block_section',
+      'module' => 'bean',
+      'delta' => $bean->delta,
+      'subject' => $title,
+    );
+
+    if (module_exists('contextual')) {
+      $block['#contextual_links']['bean'] = array(
+        'block',
+        array($bean->Identifier()),
+      );
+      $block['#contextual_links']['block'] = array(
+        'admin/structure/block/manage',
+        array($block['#block']->module, $block['#block']->delta),
+      );
+    }
+  }
+  $output[$bean->bid] = $block;
+  return $output;
+}
+
+function cu_expandable_system_label($string) {
+  return preg_replace('/[^a-z0-9]+/', '_', strtolower($string));
+}
+
+function cu_expandable_field_widget_form_alter(&$element, &$form_state, $context)	{
+  // Get entity layout fields
+  if (!empty($element['#bundle']) && $element['#bundle'] == 'field_expandable_section' && $element['#field_name'] == 'field_expandable_block') {
+
+    // Add 'or' separator between submit actions
+    if (isset($element['actions']['ief_add']) && isset($element['actions']['ief_add_existing'])) {
+      $element['actions']['ief_add']['#weight'] = 10;
+      $element['actions']['ief_add_existing']['#weight'] = 12;
+      $element['actions']['ief_separator'] = array(
+        '#markup' => '<span class="ief-separator">or</span>',
+        '#weight' => 11,
+      );
+
+      // Add 'Add New Block' label to available options and add class
+      $element['actions']['bundle']['#empty_option'] = t('Add new block');
+      $element['actions']['bundle']['#attributes']['class'][] = 'new-block-options';
+      // Add ajax from submit to select menu
+      $element['actions']['bundle']['#ajax'] = $element['actions']['ief_add']['#ajax'];
+      $element['actions']['bundle']['#ajax']['event'] = 'change';
+      $element['actions']['bundle']['#ajax']['trigger_as'] = array('name' => $element['actions']['ief_add']['#name']);
+      // Hide add new submit action
+      $element['actions']['ief_add']['#attributes']['class'][] = 'element-invisible';
+
+      $option_array =  $element['actions']['bundle']['#options'];
+
+      // Remove beans where the user isn't specifically allowed to create
+      foreach ($option_array as $key => $option) {
+        if (!express_layout_bean_access_check($key)) {
+          unset($option_array[$key]);
+        }
+      }
+      // Sort bean types by label instead of key/machine name
+      asort($option_array);
+      $element['actions']['bundle']['#options'] = $option_array;
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_secure_permissions().
+ *
+ */
+function cu_expandable_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+      'view any expandable bean',
+    ),
+    'authenticated user' => array(
+      'view any expandable bean',
+    ),
+    'administrator' => array(
+      'create any expandable bean',
+      'delete any expandable bean',
+      'edit any expandable bean',
+      'view any expandable bean',
+    ),
+    'content_editor' => array(
+      'create any expandable bean',
+      'delete any expandable bean',
+      'edit any expandable bean',
+      'view any expandable bean',
+    ),
+    'developer' => array(
+      'create any expandable bean',
+      'delete any expandable bean',
+      'edit any expandable bean',
+      'view any expandable bean',
+      'administer block wrapper',
+    ),
+    'site_owner' => array(
+      'create any expandable bean',
+      'delete any expandable bean',
+      'edit any expandable bean',
+      'view any expandable bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+function cu_expandable_display_options() {
+  $options = array(
+    'accordion' => 'Accordion',
+    'tabs' => 'Tabs - Horizontal',
+    'tabs-vertical' => 'Tabs - Vertical',
+    'select' => 'Select',
+  );
+  return $options;
+}
+
+/**
+ * Implements hook_form_FORMID_alter.
+ *
+ * Add States to expandable form.
+ */
+function cu_expandable_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['bean']['#value']->type == 'expandable') {
+    $form['field_expandable_select_prompt']['#states'] = array(
+      'visible' => array(
+        ':input[name="field_expandable_display[und]"]' => array('value' => 'select'),
+      ),
+      'required' => array(
+        ':input[name="field_expandable_display[und]"]' => array('value' => 'select'),
+      ),
+    );
+  }
+}
+/**
+ * Implements hook_inline_entity_form_entity_form_alter.
+ *
+ * Add States to expandable form when used in inline entity form.
+ */
+function cu_expandable_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+
+  if ($entity_form['#entity']->type == 'expandable') {
+    $entity_form['field_expandable_select_prompt']['#states'] = array(
+      'visible' => array(
+        '.field-name-field-expandable-display :input' => array('value' => 'select'),
+      ),
+      'required' => array(
+        '.field-name-field-expandable-display :input' => array('value' => 'select'),
+      ),
+    );
+  }
+}
+
+/**
+ * Remove access to create quicktabs.
+ */
+function cu_expandable_menu_alter(&$items){
+  $items['admin/structure/quicktabs/add']['access callback'] = FALSE;
+}

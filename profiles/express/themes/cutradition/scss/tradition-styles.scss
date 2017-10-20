@@ -23,6 +23,7 @@ body {
   }
 }
 
+
 .layout-wide #backstretch {
   display: none;
 }
@@ -109,14 +110,29 @@ body {
     color:#111;
   }
 }
-
-// Intro, Slider, Main backgrounds
-#content-wrapper {
-  background-color: #fff;
-  padding:20px 0;
+#main {
+  padding-top: 0;
 }
-#intro-wide-wrapper,
-#slider-wrapper {
+// Intro, Slider, Main backgrounds
+.content-wrapper {
+  background-color: #fff;
+  padding-bottom:20px;
+}
+#post-title-wide-wrapper,
+#post-title-wrapper {
+  padding-bottom: 0;
+}
+#main-content-wrapper {
+  padding-top: 20px;
+}
+.front #content-wrapper {
+  // padding-top: 0;
+}
+#post-title-wrapper {
+  padding-top: 20px;
+}
+.intro-wide-wrapper,
+.slider-wrapper {
   background-color: #232323;
 }
 .slider-wrapper {
@@ -171,46 +187,45 @@ body {
     background-repeat: no-repeat;
   }
 }
-
 // Bottom Regions
-#post-wide-wrapper,
-#after-content-wrapper {
+.post-wide-wrapper,
+.after-content-wrapper {
   background-color: #fff;
 }
-#after-content2-wrapper {
+.after-content2-wrapper {
   background-color: #f4f4f4;
   padding-top:20px;
 }
-#footer-section {
+.footer-section {
   background-color: #fff;
 }
-#site-info-wrapper {
+.site-info-wrapper {
   color:#fff;
   background-color: $bg_dark1;
 }
-#site-info-wrapper a,
-#site-info-wrapper a.active,
-#site-info-wrapper a.active-trail {
+.site-info-wrapper a,
+.site-info-wrapper a.active,
+.site-info-wrapper a.active-trail {
   color:$cugold;
 
   &:hover {
     color:#fff;
   }
 }
-#footer-wrapper {
+.footer-wrapper {
   padding-top: 20px;
 }
-#footer-menu-links {
+.footer-menu-links {
   padding: 15px 0;
 }
 
 .layout-feature {
-  #content-wrapper,
+  .content-wrapper,
   #main {
     padding: 0;
   }
 }
-#feature-layout-wrapper {
+.feature-layout-wrapper {
   padding-top: 20px;
 }
 
@@ -234,7 +249,8 @@ $border: #e7e7e7;
   }
   ul.menu a {
     padding:10px;
-    border:1px solid $border;
+    border-top:1px solid $border;
+    border-bottom:1px solid $border;
     margin-bottom: -1px;
     color:$defaultFG;
     line-height: 120%;
@@ -255,7 +271,7 @@ $border: #e7e7e7;
     }
   }
   li.active-trail {
-    border-left:3px solid $activeBG;
+    // border-left:3px solid $activeBG;
 
     a {
       border-left-color: $activeBG;
@@ -287,6 +303,9 @@ $border: #e7e7e7;
   }
   ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
     padding-left: $indent * 6;
+  }
+  li.expanded  {
+    border-left:1px solid $activeBG;
   }
 }
 

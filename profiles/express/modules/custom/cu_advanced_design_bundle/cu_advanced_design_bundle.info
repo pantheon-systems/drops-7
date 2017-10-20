@@ -8,7 +8,6 @@ dependencies[] = backstretch
 dependencies[] = cu_menu_icon
 dependencies[] = cu_sticky_menu
 dependencies[] = cu_title_image
-dependencies[] = block_title_icons
 
 bundle_cache_clear = 1
 bundle_context_clear = 1

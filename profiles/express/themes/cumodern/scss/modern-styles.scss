@@ -93,42 +93,45 @@ ul.action-menu a.active-trail {
 .top-content {
   background: #fff;
 }
-#intro-wide-wrapper,
-#slider-wrapper {
+.intro-wide-wrapper,
+.slider-wrapper {
   background-color: $light_gray;
 }
-#slider-wrapper {
+.slider-wrapper {
   padding: 20px;
 }
-#content-wrapper,
-#after-content-wrapper {
+#main-content-wrapper {
+  padding: 0;
+}
+.content-wrapper,
+.after-content-wrapper {
   background-color: #fff;
 }
-#after-content-wrapper {
+.after-content-wrapper {
   padding-top: 40px;
   padding-bottom: 20px;
 }
 // Footer
-#after-content2-wrapper {
+.after-content2-wrapper {
   background-color: $light_gray;
   padding-top: 40px;
   padding-bottom: 20px;
 }
-#footer-section {
+.footer-section {
   background-color: $bg_dark2;
   border-top: 5px solid $cugold;
 
   color: #fff;
 }
-#footer-section a,
-#footer-section a.active,
-#footer-section a.active-trail {
+.footer-section a,
+.footer-section a.active,
+.footer-section a.active-trail {
   color:$cugold;
 }
-#footer-section a:hover {
+.footer-section a:hover {
   color:#fff;
 }
-#footer-wrapper {
+.footer-wrapper {
   background-color: $bg_dark1;
   padding-top: 20px;
 }
@@ -190,7 +193,8 @@ $border: #e7e7e7;
   }
   ul.menu a {
     padding:10px;
-    border:1px solid $border;
+    border-top:1px solid $border;
+    border-bottom:1px solid $border;
     margin-bottom: -1px;
     color:$defaultFG;
     line-height: 120%;
@@ -209,7 +213,7 @@ $border: #e7e7e7;
     }
   }
   li.active-trail {
-    border-left:3px solid $activeBG;
+    //border-left:3px solid $activeBG;
 
     a {
       border-left-color: $activeBG;
@@ -241,6 +245,9 @@ $border: #e7e7e7;
   }
   ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
     padding-left: $indent * 6;
+  }
+  li.expanded  {
+    border-left:1px solid $activeBG;
   }
 }
 

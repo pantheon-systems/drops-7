@@ -221,6 +221,13 @@ function cu_help_express_help($variables) {
     'url' => 'node/1486',
   );
 
+  $variables['admin/settings/search/search-settings'][] = array(
+    'title' => 'Search Box Help',
+    'short_title' => 'Search Box',
+    'url' => 'node/1670',
+  );
+
+
   return array_map(
     function ($a) {
       $a[0]['module'] = 'cu_help';

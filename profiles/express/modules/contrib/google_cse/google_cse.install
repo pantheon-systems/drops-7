@@ -1,0 +1,76 @@
+<?php
+
+/**
+ * @file
+ * Installation functions.
+ */
+
+
+/**
+* Change search engine layout option from tags to fixed values.
+*/
+function google_cse_update_7200() {
+
+  switch (variable_get('google_cse_custom_results_display', '')) {
+    case '<gcse:search></gcse:search>':
+      $new_value = 'overlay';
+      break;
+
+    case '<gcse:searchbox-only></gcse:searchbox-only><gcse:searchresults-only></gcse:searchresults-only>':
+      $new_value = 'two-page';
+      break;
+
+    case '<gcse:search></gcse:search>&nbsp;':
+      $new_value = 'full-width';
+      break;
+
+    case '<gcse:searchbox></gcse:searchbox><gcse:searchresults></gcse:searchresults>':
+      $new_value = 'two-column';
+      break;
+
+    case '<gcse:search></gcse:search>&nbsp;&nbsp;':
+      $new_value = 'compact';
+      break;
+
+    case '<gcse:searchresults-only></gcse:searchresults-only>':
+      $new_value = 'results-only';
+      break;
+
+    case '<gcse:searchbox-only></gcse:searchbox-only>':
+      $new_value = 'google-hosted';
+      break;
+
+    default:
+      $new_value = 'results-only';
+  }
+
+  variable_set('google_cse_custom_results_display', $new_value);
+}
+
+/**
+ * Delete irrelevant gadget variable.
+ */
+function google_cse_update_7201() {
+  variable_del('google_cse_results_gadget');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_cse_uninstall() {
+  db_delete('variable')
+    ->condition('name', db_like('google_cse_') . '%', 'LIKE')
+    ->execute();
+
+  // Delete Google CSE from active search modules, if it exists.
+  $active_search = variable_get('search_active_modules');
+  if (array_key_exists('google_cse', $active_search)) {
+    unset($active_search['google_cse']);
+    variable_set('search_active_modules', $active_search);
+  }
+
+  // Delete Google CSE from being default search module.
+  if (variable_get('search_default_module') == 'google_cse') {
+    variable_del('search_default_module');
+  }
+}

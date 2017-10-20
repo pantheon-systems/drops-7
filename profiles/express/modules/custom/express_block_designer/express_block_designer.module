@@ -1,0 +1,711 @@
+<?php
+
+/**
+ * @file
+ * Main functions for block_title_icons module.
+ */
+
+define('EXBD_ICONS_LIBRARY', 'fontawesome');
+define('EXBD_ICONS_NAME', 'Font Awesome');
+define('EXBD_ICONS_URL', 'http://fontawesome.io');
+define('EXBD_ICONS_ICONS_URL', 'scss/_icons.scss');
+define('EXBD_ICONS_DOWNLOAD_URL', 'https://github.com/FortAwesome/Font-Awesome/archive/v4.6.3.zip');
+define('EXBD_ICONS_PREFIX', 'fa');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function express_block_designer_libraries_info() {
+  $libraries[EXBD_ICONS_LIBRARY] = array(
+    'name' => EXBD_ICONS_NAME,
+    'vendor url' => EXBD_ICONS_URL,
+    'download url' => EXBD_ICONS_DOWNLOAD_URL,
+    'version arguments' => array(
+      'file' => 'css/font-awesome.css',
+      'pattern' => '/((?:\d+\.?){2,3})/',
+      'lines' => 10,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/font-awesome.min.css',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Return array of icons for option lists.
+ */
+function express_block_designer_icon_list($add_icon = TRUE) {
+  // Check to see if this is saved already.
+  $icons = variable_get('express_block_designer_icon_list', array());
+  if (empty($icons)) {
+    // Load icon scss file.
+    $library = libraries_load(EXBD_ICONS_LIBRARY);
+    $icons_file = file_get_contents($library['library path'] . '/' . EXBD_ICONS_ICONS_URL);
+    $icons = array();
+    // Break each line into array.
+    $icons_styles = explode("\n", $icons_file);
+    // Use this to see if it's a line we want.
+    $icon_query = 'content: $fa-var-';
+    foreach ($icons_styles as $icon_style) {
+      // Check to see if line includes our query variable.
+      if (strpos($icon_style, $icon_query) !== FALSE) {
+        // Get the part out of the string that we want and add to array.
+        $icon_name = _express_block_designer_icons_regex($icon_style);
+        $icons[] = $icon_name;
+      }
+    }
+    // Sort icons alphabetically.
+    asort($icons);
+    // Save icons array.
+    //variable_set('express_block_designer_icon_list', $icons);
+  }
+  $icon_names = array();
+  // Theme the option list.
+  foreach ($icons as $icon) {
+    if ($add_icon) {
+      // If type is radio, render icon as well.
+
+      $icon_names['fa-' . $icon] = express_block_designer_icons_option( array('icon' => $icon));
+    }
+    else {
+      // Otherwise just add name (for a select list).
+      $icon_names['fa-' . $icon] = $icon;
+    }
+  }
+  return $icon_names;
+}
+
+/**
+ * Parse and manipulate css rule to get icon name.
+ */
+function _express_block_designer_icons_regex($string) {
+  $prefix = ' $fa-var-';
+  $parts = explode(':', $string);
+  return substr($parts[2], strlen($prefix), -3);
+}
+
+/**
+ * Theme function for icon options.
+ */
+function express_block_designer_icons_option($vars) {
+  return '<i class="fa fa-' . $vars['icon'] . '" aria-hidden="true" role="presentation"></i> <span class="exbd-icon-name">' . $vars['icon'] . '</span>';
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let drupal know there are tpl files in the module.
+ */
+function express_block_designer_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'express_block_designer');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'block__expd', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('block__expd');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * Implements hook_contextual_links_view_alter().
+ *
+ * Link users to edit block design, removes block config from bean blocks.
+ */
+function express_block_designer_contextual_links_view_alter(&$element, &$items) {
+  if (isset($element['#element']['#block'])) {
+    $module = $element['#element']['#block']->module;
+    $delta = $element['#element']['#block']->delta;
+    //$delta = $module . '-' . $delta;
+    $path = current_path();
+    $element['#links']['express_block_designer'] = array(
+      'title' => t('Block Designer'),
+      'href' => 'block/' . $delta . '/design',
+      'query' => array('destination' => $path),
+    );
+
+    // Remove block configure contextual link from beans.
+    if ($element['#element']['#block']->module == 'bean') {
+      unset($element['#links']['block-configure']);
+    }
+
+  }
+}
+
+/**
+ * Implements hook_form_id_form_alter().
+ *
+ * Hide block regions/visibility on block config form.
+ */
+function express_block_designer_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
+
+  $form['regions']['#access'] = FALSE;
+  $form['visibility_title']['#access'] = FALSE;
+  $form['visibility']['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function express_block_designer_permission() {
+  return array(
+    'administer block designer themes' => array(
+      'title' => 'Administer Block Designer',
+      'description' => 'Create/Edit/Delete Block Designer themes',
+    ),
+    'use block designer' => array(
+      'title' => 'Use Block Designer',
+      'description' => 'Set the visual display of blocks',
+    ),
+  );
+}
+
+/*
+ * Implements hook_secure_permissions
+ *
+ * Adding permissions for Block Designer.
+ */
+function express_block_designer_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'administrator' => array(
+      'administer block designer themes',
+      'use block designer',
+    ),
+    'content_editor' => array(
+      'use block designer',
+    ),
+    'developer' => array(
+      'administer block designer themes',
+      'use block designer',
+    ),
+    'site_owner' => array(
+      'administer block designer themes',
+      'use block designer',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function express_block_designer_menu() {
+  $items = array();
+
+  // Block Designer form.
+  $items['block/%/design'] = array(
+    'title' => 'Block Designer',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_block_designer_form', 1),
+    'access arguments' => array('use block designer'),
+    'file' => 'express_block_designer.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  // Block Designer Themes.
+  $items['admin/theme/block-designer'] = array(
+    'title' => 'Block Designer Themes',
+    'description' => 'Create and Manage Block Designer Themes.',
+    'page callback' => 'express_block_designer_themes_list',
+    'access arguments' => array('administer express theme picker'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'express_block_designer.admin.inc',
+    'weight' => 2,
+  );
+  // Block Designer Theme Add.
+  $items['admin/theme/block-designer/add'] = array(
+    'title' => 'Add a Block Designer Theme',
+    'description' => 'Create a Block Designer theme.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_block_designer_themes_form'),
+    'access arguments' => array('administer block designer themes'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'express_block_designer.admin.inc',
+  );
+  // Preview link
+  $items['admin/theme/block-designer/preview'] = array(
+    'title' => 'Preview Block Designer Themes',
+    'description' => 'Preview Block Designer Themes.',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('express/preview/block-designer-themes'),
+    'access arguments' => array('use block designer'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  // Assignments
+  $items['admin/theme/block-designer/list'] = array(
+    'title' => 'Block Designer Usage List',
+    'description' => 'View a list of blocks using block designer themes',
+    'page callback' => 'express_block_designer_list',
+    'access arguments' => array('use block designer'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'express_block_designer.admin.inc',
+  );
+  // Edit Block Designer Theme.
+  $items['admin/theme/block-designer/%/edit'] = array(
+    'title' => 'Edit Block Designer Theme',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_block_designer_themes_form', 3),
+    'access arguments' => array('administer block designer themes'),
+    'file' => 'express_block_designer.admin.inc',
+  );
+  // Delete Block Designer Theme.
+  $items['admin/theme/block-designer/%/delete'] = array(
+    'title' => 'Delete Block Designer Theme',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_block_designer_themes_delete_form', 3),
+    'access arguments' => array('administer block designer themes'),
+  );
+  // Block Designer Theme preview (all).
+  $items['express/preview/block-designer-themes'] = array(
+    'title' => 'Block Designer Themes Preview',
+    'page callback' => 'express_block_designer_themes_preview',
+    'access arguments' => array('use block designer'),
+    'file' => 'express_block_designer.page.inc',
+  );
+  // Block Designer Theme preview (single).
+  $items['express/preview/block-designer-themes/%'] = array(
+    'title' => 'Block Designer Themes Preview',
+    'page callback' => 'express_block_designer_themes_preview',
+    'page arguments' => array(3),
+    'access arguments' => array('use block designer'),
+    'file' => 'express_block_designer.page.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ *
+ * Set block designer paths to be admin paths.
+ */
+function express_block_designer_admin_paths() {
+  $paths = array(
+    'block/*/design' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Returns list of block themes + none option.
+ */
+function express_block_designer_theme_options() {
+  $query = db_select('express_block_designer_themes', 'ebdt');
+  $query->fields('ebdt', array('id', 'block_theme_name'));
+  $results = $query->execute()->fetchAll();
+  $options = array();
+  if (!empty($results)) {
+    foreach ($results as $result) {
+      $options[$result->id] = $result->block_theme_name;
+    }
+  }
+  asort($options);
+  $options = array(
+    '0' => 'None',
+  ) + $options;
+  return $options;
+}
+
+
+/**
+ * Submit function for express_block_designer_form().
+ *
+ * Only pass on form elements that begin with 'exbd_' to save.
+ */
+function express_block_designer_form_submit(&$form, &$form_state) {
+  $settings = array();
+  foreach ($form_state['values'] as $key => $value) {
+    if(substr($key,0,5) == 'exbd_') {
+      $settings[$key] = $value;
+    }
+  }
+  $id = isset($form_state['values']['id']) ? $form_state['values']['id'] : NULL;
+  $configs = array(
+    'id' => $id,
+    'delta' => $form_state['values']['block_delta'],
+    'module' => $form_state['values']['module'],
+    'module_block_delta' => $form_state['values']['module_block_delta'],
+    'settings' => $settings,
+    'theme' => !empty($form_state['values']['block_theme']) ? $form_state['values']['block_theme'] : NULL,
+  );
+
+  $saved = express_block_designer_save($configs);
+  drupal_set_message('Block Desiger settings have been saved.');
+}
+
+/**
+ * Load Block Designer Settings for a given block.
+ */
+function express_block_designer_load($delta = NULL) {
+  if ($delta) {
+    $query = db_select('express_block_designer', 'ebd');
+    $query->fields('ebd', array('id', 'module', 'block_delta', 'module_block_delta', 'block_settings', 'block_theme'));
+    $query->condition('ebd.block_delta', $delta, '=');
+    $result = $query->execute()->fetch();
+    return $result;
+  }
+  return FALSE;
+}
+
+/**
+ * Save Block Designer settings for a given block.
+ *
+ * $delta = block delta.
+ * $settings = prepared array of Block Designer settings.
+ * $theme = Block Designer Theme for given block.
+ * $id = $id of Block Designer settings record.
+ */
+
+function express_block_designer_save($configs) {
+  $record = array(
+    'module' => $configs['module'],
+    'block_delta' => $configs['delta'],
+    'module_block_delta' => $configs['module_block_delta'],
+    'block_settings' => serialize($configs['settings']),
+    'block_theme' => $configs['theme'],
+  );
+  if($configs['id']) {
+    $record['id'] = $configs['id'];
+    serialize($record);
+    $saved = drupal_write_record('express_block_designer', $record, 'id');
+  }
+  else {
+    serialize($record);
+    $saved = drupal_write_record('express_block_designer', $record);
+  }
+}
+
+/**
+ * Use form alter to extend and insert new settings.
+ * Prefix new fields with 'exbd_'.
+ */
+function express_block_designer_form_express_block_designer_form_alter(&$form, $form_state, $form_id) {
+
+}
+
+/**
+ * Submit function for Block Designer Theme edit form cancel button.
+ */
+function express_block_designer_themes_form_cancel() {
+
+}
+
+/**
+ * Submit function for Block Designer Theme edit from delete button.
+ */
+function express_block_designer_themes_delete(&$form, &$form_state) {
+  unset($_REQUEST['destination']);
+  unset($_GET['destination']);
+  $path = 'admin/theme/block-designer/' . $form_state['values']['id'] . '/delete';
+  drupal_goto($path);
+
+}
+/**
+ * Implements hook_form().
+ *
+ * Confirm form for deleting a Block Designer Theme.
+ */
+function express_block_designer_themes_delete_form($form, &$form_state, $id = NULL) {
+  $form = array();
+	$form['id'] = array(
+		'#type' => 'value',
+		'#value' => $id,
+	);
+
+	return confirm_form(
+		$form,
+		t('Are you sure you want to delete this item?'),
+		'admin/theme/block-designer',
+		t('This action cannot be undone.'),
+		t('Delete'),
+		t('Cancel')
+	);
+
+	return $form;
+}
+
+/**
+ * Submit function for express_block_designer_themes_delete_form().
+ *
+ * Deletes a Block Designer Theme.
+ */
+function express_block_designer_themes_delete_form_submit(&$form, &$form_state) {
+  $query = db_delete('express_block_designer_themes')->condition('id', $form_state['values']['id'])->execute();
+
+  $form_state['redirect'] = 'admin/theme/block-designer';
+}
+
+/**
+ * Load a Block Designer Theme.
+ */
+function express_block_designer_theme_load($id = NULL) {
+  $result = FALSE;
+  $query = db_select('express_block_designer_themes', 'ebdt');
+  $query->fields('ebdt', array('id', 'block_theme_name', 'block_settings'));
+  $query->condition('ebdt.id', $id, '=');
+  $result = $query->execute()->fetch();
+  return $result;
+}
+
+/**
+ * Submit function for express_block_designer_themes_form().
+ *
+ * Prepare Block Designer Theme settings for saving.
+ */
+function express_block_designer_themes_form_submit(&$form, &$form_state) {
+  $settings = array();
+  foreach ($form_state['values'] as $key => $value) {
+    if(substr($key,0,5) == 'exbd_') {
+      $settings[$key] = $value;
+    }
+  }
+  $id = isset($form_state['values']['id']) ? $form_state['values']['id'] : NULL;
+  $name = $form_state['values']['block_theme_name'];
+  $form_state['redirect'] = 'admin/theme/block-designer';
+  $saved = express_block_designer_theme_save($settings, $id, $name);
+  drupal_set_message('Block Designer Theme settings have been saved.');
+}
+
+/**
+ * Save Block Designer Theme settings.
+ */
+function express_block_designer_theme_save($settings, $id = NULL, $name) {
+  $record = array(
+    'id' => $id,
+    'block_theme_name' => $name,
+    'block_settings' => serialize($settings),
+  );
+  if($id) {
+    $record['id'] = $id;
+    serialize($record);
+    drupal_write_record('express_block_designer_themes', $record, 'id');
+  }
+  else {
+    serialize($record);
+    drupal_write_record('express_block_designer_themes', $record);
+  }
+}
+
+/**
+ * Implements module_preprocess_block().
+ *
+ * Apply Block Designer settings to blocks.
+ */
+function express_block_designer_preprocess_block(&$vars) {
+
+  // Exclude these settings that are not applied as css classes.
+  $excluded_settings = array(
+    'exbd_icon',
+    'exbd_heading',
+    'exbd_icon_color',
+    'exbd_icon_size',
+  );
+
+  // Get delta and load Block Designer settings.
+  $delta = $vars['block']->delta;
+  if ($settings = express_block_designer_load($delta)) {
+    $vars['theme_hook_suggestions'][] = 'block__exbd';
+    $vars['theme_hook_suggestions'][] = 'block__exbd__' . $vars['block']->module . '__' . $vars['block']->delta ;
+    $icon_classes = array();
+    $exbd_settings = unserialize($settings->block_settings);
+
+    // Save icon for later use.
+    $icon = $exbd_settings['exbd_icon'];
+
+    // If there is a theme applied, replace settings.
+    if ($settings->block_theme && $settings->block_theme != '0') {
+      $theme = express_block_designer_theme_load($settings->block_theme);
+      if ($theme) {
+        $exbd_settings = unserialize($theme->block_settings);
+      }
+    }
+
+    // Apply block designer settings.
+
+    // Block title heading.
+    $vars['exbd_heading'] = ($exbd_settings['exbd_heading'] == 'default') ? 'h2' : $exbd_settings['exbd_heading'];
+
+    // Loop through settings
+    foreach ($exbd_settings as $key => $setting) {
+      // All settings except excluded, because these are applied as css classes.
+      if (!in_array($key, $excluded_settings)) {
+        $prefix = str_replace("_", "-", $key);
+        $vars['classes_array'][$prefix] = $prefix . '-' . str_replace("_", "-", $setting);
+      }
+    }
+    // Icon Classes
+    // Icon color.
+    if ($exbd_settings['exbd_icon_color'] == 'default') {
+      unset($icon_classes['exbd_icon_color']);
+    }
+    else {
+      $icon_classes['exbd_icon_color'] = 'exbd-icon-color-' . $exbd_settings['exbd_icon_color'];
+    }
+    // Icon size.
+    if ($exbd_settings['exbd_icon_size'] == 'default') {
+      unset($icon_classes['exbd_icon_size']);
+    }
+    else {
+      $icon_classes['exbd_icon_size'] = 'exbd-icon-size-' . $exbd_settings['exbd_icon_size'];
+    }
+
+    // Add icon to title
+    $elements = $vars['elements']['#block'];
+    $icon_classes[] = $icon;
+    if (!empty($elements->subject) && $icon != 'none') {
+      $elements->subject = '<i class="exbd-block-icon fa ' . join(' ', $icon_classes) . '" aria-hidden="true" role="presentation"></i><span class="exbd-block-title-text">' . $elements->subject . '</span>';
+    }
+    $vars['classes_array'][] = 'exbd-block';
+  }
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Provide a preview template.
+ */
+function express_block_designer_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'express_block_designer') . '/templates';
+  $registry['express_block_designer_block_preview'] = array(
+    'template' => 'exbd-block-preview',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  return $registry;
+}
+
+/**
+ * Set default values.
+ */
+function express_block_designer_default_values() {
+  $values = array(
+    'exbd_icon_style' => 'default',
+    'exbd_icon_color' => 'default',
+    'exbd_icon_size' => 'default',
+    'exbd_icon' => 'none',
+    'exbd_heading' => 'default',
+    'exbd_heading_align' => 'default',
+    'exbd_style' => 'default',
+    'exbd_font_scale_title' => 'default',
+    'exbd_font_scale_content' => 'default',
+    'exbd_menu_style' => 'default',
+  );
+  return $values;
+}
+
+
+
+function express_block_designer_form_default(&$form, &$form_state) {
+  $settings = express_block_designer_default_values();
+  $settings['block_theme'] = 'none';
+  $id = $form_state['values']['id'];
+  $configs = array(
+    'id' => $form_state['values']['id'],
+    'delta' => $form_state['values']['block_delta'],
+    'module' => $form_state['values']['module'],
+    'module_delta' => $form_state['values']['module_block_delta'],
+    'settings' => $settings,
+    'theme' => $form_state['values']['block_theme'],
+  );
+  $saved = express_block_designer_save($configs);
+  drupal_set_message('Block Designer settings have been set to default.');
+}
+
+function express_block_designer_form_delete(&$form, &$form_state) {
+  $query = db_delete('express_block_designer')->condition('id', $form_state['values']['id'])->execute();
+}
+
+function express_block_designer_page_alter(&$page) {
+
+}
+
+/**
+ * Migrate block_title_icons and blocktheme settings.
+ */
+function express_block_designer_migrate() {
+  $blocks = array();
+  // Get block title icons and save.
+  $block_title_icons = variable_get('block_title_icons', array());
+  foreach ($block_title_icons as $delta => $icon) {
+    if ($icon != 'none') {
+      $blocks[$delta]['icon'] = $icon;
+      $block_name = explode('-', $delta, 2);
+      $blocks[$delta]['module'] = $block_name[0];
+      $blocks[$delta]['delta'] = $block_name[1];
+    }
+  }
+  // Get block themes and save.
+  $blockthemes = variable_get('blocktheme', array());
+  foreach ($blockthemes as $delta => $icon) {
+    $blocks[$delta]['theme'] = $icon;
+    $block_name = explode('-', $delta, 2);
+    $blocks[$delta]['module'] = $block_name[0];
+    $blocks[$delta]['delta'] = $block_name[1];
+  }
+  // Create a new express block designer record and save.
+  foreach ($blocks as $block) {
+    $exbd_record = array();
+    $exbd_record['module'] = $block['module'];
+    $exbd_record['block_delta'] = $block['delta'];
+    $exbd_record['module_block_delta'] = $block['module'] . '_' . $block['delta'];
+    $settings = express_block_designer_default_values();
+    if (!empty($block['theme'])) {
+      $settings['exbd_style'] = express_block_designer_migrate_style($block['theme']);
+    }
+    if (!empty($block['icon'])) {
+      $settings['exbd_icon'] = $block['icon'];
+    }
+    $exbd_record['block_settings'] = serialize($settings);
+    $exbd_record['block_theme'] = 0;
+    drupal_write_record('express_block_designer', $exbd_record);
+  }
+}
+
+/**
+ * Remap old block theme keys to express block designer keys.
+ */
+function express_block_designer_migrate_style($style) {
+  $styles = array(
+    'blocklightgray' => 'light_gray',
+    'blockdarkgray' => 'dark_gray',
+    'tan' => 'tan',
+    'lightblue' => 'light_blue',
+    'blockoutline' => 'outline',
+    'blockunderline' => 'underline',
+  );
+  if (!empty($styles[$style])) {
+    return $styles[$style];
+  }
+}
+
+/**
+ * Get block info from block delta.
+ */
+function express_block_designer_get_block_info($delta = NULL) {
+  if ($delta) {
+    $query = db_select('block', 'b');
+    $query->condition('delta', $delta);
+    $query->fields('b');
+    $query->distinct();
+    $query->groupBy('b.delta');
+
+    $block = $query->execute()->fetchAssoc();
+    return $block;
+  }
+}

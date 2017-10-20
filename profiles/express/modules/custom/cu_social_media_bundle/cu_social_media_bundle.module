@@ -33,6 +33,7 @@ function cu_social_media_bundle_secure_permissions($role) {
       'view any social_links bean',
       'view any twitter_block bean',
       'administer cu share',
+      'edit meta tags',
     ),
     'anonymous user' => array(
       'view any facebook_activity bean',
@@ -63,6 +64,7 @@ function cu_social_media_bundle_secure_permissions($role) {
       'view any facebook_like_button bean',
       'view any social_links bean',
       'view any twitter_block bean',
+      'edit meta tags',
     ),
     'developer' => array(
       'create any facebook_activity bean',
@@ -82,6 +84,8 @@ function cu_social_media_bundle_secure_permissions($role) {
       'view any social_links bean',
       'view any twitter_block bean',
       'administer cu share',
+      'edit meta tags',
+      'administer meta tags',
     ),
     'edit_my_content' => array(
       'view any facebook_activity bean',
@@ -107,6 +111,7 @@ function cu_social_media_bundle_secure_permissions($role) {
       'view any social_links bean',
       'view any twitter_block bean',
       'administer cu share',
+      'edit meta tags',
     ),
   );
 

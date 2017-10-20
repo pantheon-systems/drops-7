@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Enable cu_sitewide_required module.
+ */
+function cu_sitewide_update_7001() {
+  module_enable(array('cu_sitewide_required'));
+}

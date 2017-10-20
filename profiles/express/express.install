@@ -173,3 +173,14 @@ function express_update_7003() {
   // Enable module.
   module_enable(array('field_reference_delete'));
 }
+
+/**
+ * Express 2.6.0 update.
+ *
+ * Enable cu_elysia_cron module.
+ */
+function express_update_7004() {
+  // Enable module.
+  module_enable(array('cu_elysia_cron'));
+  secure_permissions_rebuild();
+}

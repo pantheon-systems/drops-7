@@ -108,16 +108,24 @@ ul#main-menu a#home-link.active {
   color:#333;
   background: transparent;
 }
-#intro-wide-wrapper {
+.intro-wide-wrapper {
   margin-top: -1px;
   background-color: #111;
 }
-#slider-wrapper {
+.slider-wrapper {
   background-color: #f5f5f5;
   background-image: url(../images/content-shadow.png);
   background-repeat: repeat-x;
   border-bottom: 1px solid #d7d7d7;
   padding: 20px;
+}
+#post-title-wide-wrapper {
+  background: #fff;
+  padding-bottom: 20px;
+}
+#main-content-wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 #content-wrapper {
@@ -125,10 +133,10 @@ ul#main-menu a#home-link.active {
   background-image: url(../images/content-shadow.png);
   background-repeat: repeat-x;
 }
-#post-wide-wrapper {
+.post-wide-wrapper {
   background-color: #fff;
 }
-#footer-section {
+.footer-section {
   background-color:$bg_dark1;
   border-top:5px solid #c7c7c7;
   background-image: url(../images/content-shadow.png);
@@ -142,15 +150,15 @@ ul#main-menu a#home-link.active {
     }
   }
 }
-#after-content-wrapper,
-#after-content2-wrapper {
+.after-content-wrapper,
+.after-content2-wrapper {
   background-color: #fff;
 }
-#after-content-2 .region-lower {
+.after-content-2 .region-lower {
   padding-top: 20px;
   position: relative;
 }
-#after-content-2 .region-lower:before {
+.after-content-2 .region-lower:before {
   content: '';
   border-top:1px solid $border_color;
   position: absolute;
@@ -165,7 +173,7 @@ ul#main-menu a#home-link.active {
 #footer {
   padding-top: 20px;
 }
-#site-info-wrapper {
+.site-info-wrapper {
   background-color: #000;
 }
 
@@ -189,7 +197,8 @@ $border: #e7e7e7;
   }
   ul.menu a {
     padding:10px;
-    border:1px solid $border;
+    border-bottom:1px solid $border;
+    border-top:1px solid $border;
     margin-bottom: -1px;
     color:$defaultFG;
     line-height: 120%;
@@ -209,7 +218,7 @@ $border: #e7e7e7;
     }
   }
   li.active-trail {
-    border-left:3px solid $activeBG;
+    //border-left:3px solid $activeBG;
 
     a {
       border-left-color: $activeBG;
@@ -241,6 +250,9 @@ $border: #e7e7e7;
   }
   ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
     padding-left: $indent * 6;
+  }
+  li.expanded  {
+    border-left:1px solid $activeBG;
   }
 }
 

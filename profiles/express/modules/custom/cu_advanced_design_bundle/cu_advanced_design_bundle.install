@@ -7,3 +7,9 @@ function cu_advanced_design_bundle_enable() {
 
 }
 
+/*
+ * Enable express_block_designer.
+ */
+function cu_advanced_design_bundle_update_7001() {
+  module_enable(array('express_block_designer'));
+}

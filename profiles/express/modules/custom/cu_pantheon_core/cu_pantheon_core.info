@@ -1,12 +1,13 @@
 name = Pantheon Core
 description = Provides CU-specific functionality, like adding variables, to Express Core and getting Express to work within Pantheon hosting.
 core = 7.x
-version = 7.x-5.6
+version = 7.x-7.0
 package = CU-Core
 
 dependencies[] = cu_redirect
 dependencies[] = cu_help
+dependencies[] = update
 
 ;dependencies[] = pantheon_apachesolr
 ;dependencies[] = pantheon_api
-dependencies[] = pantheon_login
+;dependencies[] = pantheon_login

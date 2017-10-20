@@ -6,7 +6,6 @@ package = CU-Development
 dependencies[] = devel
 dependencies[] = search_krumo
 dependencies[] = ds_ui
-dependencies[] = diff
 
 optional-dependencies[] = devel
 optional-dependencies[] = search_krumo
