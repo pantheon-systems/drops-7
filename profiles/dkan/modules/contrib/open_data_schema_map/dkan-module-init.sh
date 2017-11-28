@@ -20,6 +20,7 @@ if wget -q "$URL"; then
   cd ..
   tar -xzf dkan-$DKAN_VERSION.tar.gz
   # We need to fix the archive process to delete this file.
+  chmod 777 dkan/docroot/sites/default
   rm -rf dkan/docroot/sites/default/settings.php
   mv $DKAN_MODULE dkan/
   mv dkan $DKAN_MODULE
@@ -28,7 +29,9 @@ if wget -q "$URL"; then
   cd dkan
   bash dkan-init.sh dkan --skip-init --deps
   cd ..
-  ahoy drush "-y --verbose si minimal --sites-subdir=default --account-pass='admin' --db-url=$DATABASE_URL install_configure_form.update_status_module=\"'array\(FALSE,FALSE\)'\""
+  echo -ne 'y\n' | ahoy dkan drupal-rebuild $DATABASE_URL
+  ahoy dkan remake
+  echo -ne 'N\n' | ahoy dkan reinstall
 else
   wget -O /tmp/dkan-init.sh https://raw.githubusercontent.com/NuCivic/dkan/$DKAN_VERSION/dkan-init.sh
   # Make sure the download was at least successful.
@@ -44,6 +47,7 @@ else
   bash /tmp/dkan-init.sh $DKAN_MODULE $@ --skip-reinstall --branch=$DKAN_VERSION
 fi
 
+echo "Linking/Building Module..."
 ahoy dkan module-link $DKAN_MODULE
 ahoy dkan module-make $DKAN_MODULE
 
@@ -57,6 +61,7 @@ else
 fi
 
 ahoy drush en $DKAN_MODULE -y
+ahoy drush updb -y
 
  #Fix for behat bug not recognizing symlinked feature files or files outside it's root. See https://jira.govdelivery.com/browse/CIVIC-1005
 #cp dkan_workflow/test/features/dkan_workflow.feature dkan/test/features/.

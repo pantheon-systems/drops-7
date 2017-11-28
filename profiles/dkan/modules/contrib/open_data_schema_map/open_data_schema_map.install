@@ -71,7 +71,7 @@ function open_data_schema_map_schema() {
         'description' => 'Output Format.',
         'type' => 'varchar',
         'length' => 20,
-        'not null' => True,
+        'not null' => TRUE,
         'default' => 'json',
       ),
       'endpoint' => array(
@@ -87,6 +87,13 @@ function open_data_schema_map_schema() {
         'size' => 'big',
         'serialize' => TRUE,
       ),
+      'filter_enabled' => array(
+        'description' => 'Whether Data Federation Filter is enabled.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'default' => 0,
+      ),
     ),
     'primary key' => array('id'),
   );
@@ -95,24 +102,40 @@ function open_data_schema_map_schema() {
 
 
 /**
+ * Ensures that the output format field is in the table.
  *
- * Ensures that the output format field is in the table
  * Also sets outputformat to 'json' for all existing entries
- *
  */
-
 function open_data_schema_map_update_7001() {
 
   $column = array(
     'type' => 'varchar',
     'description' => "Output Format",
     'length' => 20,
-    'not null' => True,
+    'not null' => TRUE,
     'default' => 'json',
   );
 
   $data_table_name = 'open_data_schema_map';
   if (!db_field_exists('open_data_schema_map', 'outputformat')) {
     db_add_field($data_table_name, 'outputformat', $column);
+  }
+}
+
+/**
+ * Ensures that the filter_enabled field is in the table.
+ */
+function open_data_schema_map_update_7002() {
+  $column = array(
+    'description' => 'Whether Data Federation Filter is enabled.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'size' => 'tiny',
+    'default' => 0,
+  );
+
+  $data_table_name = 'open_data_schema_map';
+  if (!db_field_exists('open_data_schema_map', 'filter_enabled')) {
+    db_add_field($data_table_name, 'filter_enabled', $column);
   }
 }

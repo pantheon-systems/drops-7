@@ -450,38 +450,50 @@ function workbench_moderation_node_access($node, $op, $account) {
 /**
  * Custom access handler for node operations.
  *
- * @param $op
- *   The operation being requested.
- * @param $node
+ * @param string $op
+ *   The operation being requested. Must be one of 'view', 'update', 'view
+ *   revisions', 'view history' or 'unpublish'.
+ * @param object $node
  *   The node being acted upon.
+ * @param object $account
+ *   Optional user account to check. If omitted will default to the currently
+ *   logged in user.
  *
- * @return
- *   Boolean TRUE or FALSE.
+ * @return bool
+ *   TRUE if the user has access, FALSE otherwise.
  */
-function _workbench_moderation_access($op, $node) {
+function _workbench_moderation_access($op, $node, $account = NULL) {
   global $user;
+
+  // Default to the logged in user.
+  $account = empty($account) ? $user : $account;
 
   // If we do not control this node type, deny access.
   if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
     return FALSE;
   }
 
-  $access = TRUE;
-
   // The user must be able to view the moderation history.
-  $access &= user_access('view moderation history');
+  $access = user_access('view moderation history', $account);
 
-  // The user must be able to edit this node.
-  $access &= node_access('update', $node);
+  if ($op == 'update' || $op == 'unpublish') {
+    // The user must be able to edit this node.
+    $access &= node_access('update', $node, $account);
+  }
+
+  if ($op == 'view revisions' || $op == 'view history') {
+    // The user must be able to see revisions.
+    _node_revision_access($node, 'view', $account);
+  }
 
   if ($op == 'unpublish') {
     // workbench_moderation_states_next() checks transition permissions.
-    $next_states = workbench_moderation_states_next(workbench_moderation_state_published(), $user, $node);
+    $next_states = workbench_moderation_states_next(workbench_moderation_state_published(), $account, $node);
     $access &= !empty($next_states);
   }
 
   // Allow other modules to change our rule set.
-  drupal_alter('workbench_moderation_access', $access, $op, $node);
+  drupal_alter('workbench_moderation_access', $access, $op, $node, $account);
 
   return $access;
 }

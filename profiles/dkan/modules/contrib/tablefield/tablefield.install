@@ -6,26 +6,11 @@
  */
 
 /**
- * Implements hook_enable().
- *
- * Notify content module when this module is enabled.
- */
-function tablefield_enable() {
-}
-
-/**
- * Implements hook_disable().
- *
- * Notify content module when this module is disabled.
- */
-function tablefield_disable() {
-}
-
-/**
  * Implements hook_uninstall().
  */
 function tablefield_uninstall() {
   variable_del('tablefield_csv_separator');
+  variable_del('tablefield_detect_encodings');
 }
 
 /**
@@ -37,7 +22,6 @@ function tablefield_update_dependencies() {
   $dependencies['text'][7000] = array(
     'filter' => 7010,
   );
-
   return $dependencies;
 }
 
@@ -122,4 +106,298 @@ function tablefield_update_7002() {
       }
     }
   }
+}
+
+/**
+ * Re-save the default existing table fields and all entities containing them.
+ */
+function tablefield_update_7003() {
+  // Change the default field for each content type.
+  $instances = field_info_instances();
+  $field_names = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        if (in_array($instance['widget']['type'], array('tablefield'))) {
+          // Uniquely store the field names in an array for later use.
+          if (!in_array($instance['field_name'], $field_names)) {
+            array_push($field_names, $instance['field_name']);
+          }
+          // Rationalize the table data.
+          if (!empty($instance['default_value'][0]['tablefield'])) {
+            // Remove extraneous data.
+            $count_cols = $instance['default_value'][0]['tablefield']['rebuild']['count_cols'];
+            $count_rows = $instance['default_value'][0]['tablefield']['rebuild']['count_rows'];
+            $caption = $instance['default_value'][0]['tablefield']['caption'];
+            $rebuild = $instance['default_value'][0]['tablefield']['rebuild'];
+            $import = $instance['default_value'][0]['tablefield']['import'];
+            $paste = $instance['default_value'][0]['tablefield']['paste'];
+            unset($instance['default_value'][0]['tablefield']['caption']);
+            unset($instance['default_value'][0]['tablefield']['rebuild']);
+            unset($instance['default_value'][0]['tablefield']['import']);
+            unset($instance['default_value'][0]['tablefield']['paste']);
+
+            foreach ($instance['default_value'][0]['tablefield'] as $key => $value) {
+              if (preg_match('/cell_(.*)_(.*)/', $key, $cell)) {
+                // $cell[1] is row count $cell[2] is col count.
+                if ((int) $cell[1] < $count_rows && (int) $cell[2] < $count_cols) {
+                  $cel = explode('_', ltrim($key, 'cell_'));
+                  if ($cel[1] === 'weight') {
+                    $instance['default_value'][0]['tablefield']['tabledata']['row_' . $cel[0]]['weight'] = $value;
+                  }
+                  else {
+                    $instance['default_value'][0]['tablefield']['tabledata']['row_' . $cel[0]]['col_' . $cel[1]] = $value;
+                  }
+                  unset($instance['default_value'][0]['tablefield'][$key]);
+                }
+              }
+            }
+          }
+          // Recreate previous removed data.
+          $instance['default_value'][0]['tablefield']['caption'] = $caption;
+          $instance['default_value'][0]['tablefield']['rebuild'] = $rebuild;
+          $instance['default_value'][0]['tablefield']['import'] = $import;
+          $instance['default_value'][0]['tablefield']['paste'] = $paste;
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+
+  // Change all existing fields to store the data with the new format.
+  foreach ($field_names as $field_name) {
+    $tables = array('field_data_' . $field_name, 'field_revision_' . $field_name);
+    foreach ($tables as $table) {
+      $field = $field_name . '_value';
+      $query = db_select($table, 'n')
+        ->fields('n')
+        ->execute()
+        ->fetchAll();
+      foreach ($query as $record) {
+        $instance = unserialize($record->$field);
+
+        // Rationalize the table data.
+        if (!empty($instance)) {
+          // Remove extraneous data.
+          $count_cols = $instance['rebuild']['count_cols'];
+          $count_rows = $instance['rebuild']['count_rows'];
+          $caption = $instance['caption'];
+          $rebuild = $instance['rebuild'];
+          $import = $instance['import'];
+          $paste = $instance['paste'];
+          unset($instance['caption']);
+          unset($instance['rebuild']);
+          unset($instance['import']);
+          unset($instance['paste']);
+
+          foreach ($instance as $key => $value) {
+            if (preg_match('/cell_(.*)_(.*)/', $key, $cell)) {
+              // $cell[1] is row count $cell[2] is col count.
+              if ((int) $cell[1] < $count_rows && (int) $cell[2] < $count_cols) {
+                $cel = explode('_', ltrim($key, 'cell_'));
+                if ($cel[1] === 'weight') {
+                  $instance['tabledata']['row_' . $cel[0]]['weight'] = $value;
+                }
+                else {
+                  $instance['tabledata']['row_' . $cel[0]]['col_' . $cel[1]] = $value;
+                }
+                unset($instance[$key]);
+              }
+            }
+          }
+        }
+        // Recreate previous removed data.
+        $instance['caption'] = $caption;
+        $instance['rebuild'] = $rebuild;
+        $instance['import'] = $import;
+        $instance['paste'] = $paste;
+
+        // Change the stored data by a per record unique column key combination.
+        db_update($table)
+          ->fields(array(
+            $field => serialize($instance),
+          ))
+          ->condition('entity_id', $record->entity_id)
+          ->condition('revision_id', $record->revision_id)
+          ->condition('delta', $record->delta)
+          ->condition('entity_type', $record->entity_type)
+          ->condition('bundle', $record->bundle)
+          ->execute();
+      }
+    }
+  }
+
+  field_cache_clear();
+  drupal_set_message(t('All Table Field fields are now stored with a new data format.'), 'warning');
+}
+
+/**
+ * Convert field settings to display settings.
+ */
+function tablefield_update_7004() {
+  $instances = field_info_instances();
+  $field_names = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield'))) {
+          // Uniquely store the field names in an array for later use.
+          if (!in_array($instance['field_name'], $field_names)) {
+            array_push($field_names, $instance['field_name']);
+          }
+          // Convert the entity properties.
+          foreach ($instance['display'] as $view_mode => $occurrence) {
+            $instance['display'][$view_mode]['settings']['hide_header'] = $field_info['settings']['hide_headers'] ? 1 : 0;
+            $instance['display'][$view_mode]['settings']['export_csv'] = $field_info['settings']['export'] ? 1 : 0;
+          }
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+  field_cache_clear();
+  drupal_set_message(t('All Table Field fields have their display related field settings converted to display settings.'), 'warning');
+}
+
+/**
+ * Remove all empty multi-value TableField fields with locked values.
+ */
+function tablefield_update_7005() {
+  // Get all the field names for all multi-value tablefields with locked values.
+  $instances = field_info_instances();
+  $field_names = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield'))
+        && $field_info['cardinality'] != 1
+        && $field_info['settings']['lock_values'] == 1
+        ) {
+          // Uniquely store the field names in an array for later use.
+          if (!in_array($instance['field_name'], $field_names)) {
+            array_push($field_names, $instance['field_name']);
+          }
+        }
+      }
+    }
+  }
+  // Go through all empty multi-value TableField fields with locked values.
+  foreach ($field_names as $field_name) {
+    $tables = array('field_data_' . $field_name, 'field_revision_' . $field_name);
+    foreach ($tables as $table) {
+      $field = $field_name . '_value';
+      $query = db_select($table, 'n')
+        ->fields('n')
+        ->execute()
+        ->fetchAll();
+      foreach ($query as $record) {
+        $instance = unserialize($record->$field);
+
+        // Rationalize the table data.
+        if (!empty($instance)) {
+          // Remove extraneous data.
+          $count_cols = $instance['rebuild']['count_cols'];
+          $count_rows = $instance['rebuild']['count_rows'];
+          $caption = $instance['caption'];
+          $rebuild = $instance['rebuild'];
+          $import = $instance['import'];
+          $paste = $instance['paste'];
+          unset($instance['caption']);
+          unset($instance['rebuild']);
+          unset($instance['import']);
+          unset($instance['paste']);
+          foreach ($instance as $key => $value) {
+            array_shift($value);
+            $empty = TRUE;
+            foreach ($value as $row) {
+              array_pop($row);
+              if (array_filter($row)) {
+                $empty = FALSE;
+              }
+            }
+          }
+        }
+        if ($empty) {
+          unset($instance['tabledata']);
+        }
+        else {
+          // Recreate previous removed data.
+          $instance['caption'] = $caption;
+          $instance['rebuild'] = $rebuild;
+          $instance['import'] = $import;
+          $instance['paste'] = $paste;
+        }
+        // Change the stored data by a per record unique column key combination.
+        db_update($table)
+          ->fields(array(
+            $field => serialize($instance),
+          ))
+          ->condition('entity_id', $record->entity_id)
+          ->condition('revision_id', $record->revision_id)
+          ->condition('delta', $record->delta)
+          ->condition('entity_type', $record->entity_type)
+          ->condition('bundle', $record->bundle)
+          ->execute();
+        // Delete the tables that are now empty.
+        db_delete($table)
+          ->condition($field_name . '_value', 'a:0:{}')
+          ->execute();
+      }
+    }
+  }
+
+  field_cache_clear();
+  drupal_set_message(t('All empty multi-value TableField fields with locked values are now removed.'), 'warning');
+}
+
+/**
+ * Convert field settings to widget settings.
+ */
+function tablefield_update_7006() {
+  $instances = field_info_instances();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield'))) {
+          // Convert the entity properties.
+          foreach ($instance['display'] as $view_mode => $occurrence) {
+            $instance['widget']['settings']['restrict_rebuild'] = $field_info['settings']['restrict_rebuild'] ? 1 : 0;
+            $instance['widget']['settings']['lock_values'] = $field_info['settings']['lock_values'] ? 1 : 0;
+            $instance['widget']['settings']['cell_processing'] = $field_info['settings']['cell_processing'] ? 1 : 0;
+          }
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+  $norepeat = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield')) && !in_array($field_info['id'], $norepeat)) {
+          // Remove the now unused field settings values. We can not use
+          // field_update_field($field) as there is data in the field thus the
+          // field's storage module forbids an update.
+          $update = array();
+          $data = db_query("SELECT data FROM {field_config} WHERE id = :id", array(':id' => $field_info['id']))->fetchField();
+          $data = unserialize($data);
+          $data['settings'] = array();
+          $update['data'] = serialize($data);
+          if ($update) {
+            $query = db_update('field_config')
+              ->condition('id', $field_info['id'])
+              ->fields($update)
+              ->execute();
+          }
+          $norepeat[] = $field_info['id'];
+        }
+      }
+    }
+  }
+  field_cache_clear();
+  drupal_set_message(t('All Table Field fields have their field settings converted to widget settings.'), 'warning');
 }

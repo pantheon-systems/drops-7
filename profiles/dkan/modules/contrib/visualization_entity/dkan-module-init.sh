@@ -20,6 +20,7 @@ if wget -q "$URL"; then
   cd ..
   tar -xzf dkan-$DKAN_VERSION.tar.gz
   # We need to fix the archive process to delete this file.
+  chmod 777 dkan/docroot/sites/default
   rm -rf dkan/docroot/sites/default/settings.php
   mv $DKAN_MODULE dkan/
   mv dkan $DKAN_MODULE
@@ -28,16 +29,14 @@ if wget -q "$URL"; then
   cd dkan
   bash dkan-init.sh dkan --skip-init --deps
   cd ..
-  ahoy drush "-y --verbose si minimal --sites-subdir=default --account-pass='admin' --db-url=$DATABASE_URL install_configure_form.update_status_module=\"'array\(FALSE,FALSE\)'\""
-  chmod +w docroot/sites/default/settings.php
-  printf "// DKAN Datastore Fast Import options.\n\$databases['default']['default']['pdo'] = array(\n  PDO::MYSQL_ATTR_LOCAL_INFILE => 1,\n  PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => 1,\n);" >> docroot/sites/default/settings.php
-  chmod -w docroot/sites/default/settings.php
+  echo -ne 'y\n' | ahoy dkan drupal-rebuild $DATABASE_URL
+  echo -ne 'N\n' | ahoy dkan reinstall
 else
-  wget -O /tmp/dkan-init.sh https://raw.githubusercontent.com/NuCivic/dkan/$DKAN_VERSION/dkan-module-init.sh
+  wget -O /tmp/dkan-init.sh https://raw.githubusercontent.com/NuCivic/dkan/$DKAN_VERSION/dkan-init.sh
   # Make sure the download was at least successful.
   if [ $? -ne 0 ] ; then
     echo ""
-    echo "[Error] Failed to download the dkan-module-init.sh script from github dkan. Branch: $DKAN_BRANCH . Perhaps someone deleted the branch?"
+    echo "[Error] Failed to download the dkan-init.sh script from github dkan. Branch: $DKAN_BRANCH . Perhaps someone deleted the branch?"
     echo ""
     exit 1
   fi

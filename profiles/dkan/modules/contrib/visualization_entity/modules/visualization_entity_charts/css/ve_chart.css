@@ -7,6 +7,12 @@
 .field-name-field-ve-settings {
   display: none;
 }
+#chart-with-controls h4 {
+  font-weight: normal;
+}
+#chart-with-controls.col-md-12 {
+  padding: 0;
+}
 #chart-with-controls .tab-content {
   overflow: hidden;
 }
@@ -30,6 +36,7 @@ svg {
 
 #ve-chart-form .pane-content{
   overflow: auto;
+  padding: 4px;
 }
 
 #ve-chart-form .stages li {
@@ -43,7 +50,7 @@ svg {
 #chart-selector {
   width: 100%;
   overflow: auto;
-  padding: 0px;
+  padding: 0 0 15px;
 }
 #chart-selector button{
   height: 180px;
@@ -72,6 +79,9 @@ svg {
   margin-top: 0px;
   margin-bottom: 0px;
   position: relative;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
 }
 
 .expander span {
@@ -88,7 +98,9 @@ svg {
   border: 1px solid #ddd;
   border-radius: 5px;
 }
-
+.pad {
+  padding: 15px;
+}
 .form-panel .form-group:last-child{
   margin-bottom: 0px;
 }
@@ -100,8 +112,16 @@ svg {
 }
 
 #query-editor .btn {
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-right: none;
+  height: 34px;
+  margin: 4px 0;
+}
+#ve-chart-form input.form-control {
+  margin: 4px 1em 0 0;
+}
+#control_chart_series_chosen {
+  margin-bottom: 1em;
 }
 
 #pager li.prev.action-pagination-update a {
@@ -116,6 +136,7 @@ svg {
 
 #pager li.page-range a {
   padding: 3px;
+  height: 35px;
 }
 
 #pager .pagination {
@@ -168,4 +189,64 @@ svg {
 
 #chart-selector .linePlusBarChart {
   background-image: url('img/lineplusbar.png');
+}
+
+.filter fieldset {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 5px 0;
+  padding: 40px 8px 8px;
+  position: relative;
+}
+
+.filter fieldset legend,
+.filter-term label {
+  display: block;
+  max-width: 100%;
+  margin: 5px 0 0;
+  font-size: 1em;
+  font-weight: bold;
+  background: #DDDDDD;
+  padding: 4px 10px;
+  border-radius: 4px 4px 0 0;
+}
+.filter fieldset legend {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 10px;
+  margin: 0;
+}
+.filters .form-stacked button {
+  margin-top: 10px;
+}
+.filters .form-stacked button#add-filter-btn {
+  margin-top: 0;
+}
+.filters .filter-term input {
+  border-radius: 0 0 4px 4px
+}
+
+.data-details { display: table; }
+.data-results { 
+  display: table-cell;
+  padding: 0 20px;
+  vertical-align: middle;
+}
+
+/* Help Pop-overs */
+.fa-question-circle-o:before {
+  font-family: 'FontAwesome';
+  content: "\f29c";
+}
+.help {
+  padding: 0 8px;
+}
+#query-editor .help {
+  display: table-cell;
+  vertical-align: middle;
+}
+#filter-editor .help {
+  display: inline;
 }

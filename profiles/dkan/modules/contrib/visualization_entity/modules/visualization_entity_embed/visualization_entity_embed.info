@@ -2,10 +2,9 @@ name = Visualization Entity Embed
 description = Create visualization panes for panels
 package = Data Visualization
 core = 7.x
-version = 7.x-1.x-dev
 
 dependencies[] = visualization_entity
 
-; Information added by DKAN release script on 6/21/2017
-version = 7.x-1.2
+; Information added by DKAN release script on 11/14/2017
+version = 7.x-1.14
 project = dkan

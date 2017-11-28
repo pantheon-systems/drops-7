@@ -170,7 +170,7 @@ function workbench_moderation_node_history_view($node) {
     }
 
     // Provide a courtesy edit operation if this is the current revision.
-    if ($revision->vid == $node->workbench_moderation['current']->vid) {
+    if ($revision->vid == $node->workbench_moderation['current']->vid && _workbench_moderation_access('update', $node)) {
       // The edit operation's default link title, "Edit draft", matches
       // the logic tree in workbench_moderation_edit_tab_title().
       $edit_operation_title = t('Edit draft');

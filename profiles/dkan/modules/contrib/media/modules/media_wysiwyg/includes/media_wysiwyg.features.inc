@@ -42,7 +42,7 @@ function media_wysiwyg_features_export_options() {
     }
     // Add default option.
     $options[$file_type . '_default_restrict_wysiwyg'] =
-      t('@file_type view mode restriction: Default',  array(
+      t('@file_type view mode restriction: Default', array(
         '@file_type' => $file_type_label,
       ));
   }
@@ -91,7 +91,7 @@ function media_wysiwyg_features_export_render($module_name = '', $data, $export 
     $mode_data_key = $file_type . '_wysiwyg_view_mode';
     if (array_key_exists($mode_data_key, $data) || in_array($mode_data_key, $data, TRUE)) {
       $view_mode = _media_wysiwyg_get_wysiwyg_mode($file_type);
-      $view_mode_export =  (!empty($view_mode) ? features_var_export($view_mode) : "'none'");
+      $view_mode_export = (!empty($view_mode) ? features_var_export($view_mode) : "'none'");
       $code[] = "  // WYSIWYG view mode for $file_type files.";
       $code[] = "  \$media_wysiwyg['{$mode_data_key}'] = {$view_mode_export};";
       $code[] = "";

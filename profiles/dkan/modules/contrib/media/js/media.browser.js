@@ -40,6 +40,27 @@ Drupal.behaviors.MediaBrowser = {
     });
 
     $('.media-browser-tab').each( Drupal.media.browser.validateButtons );
+
+    // Keep keyboard focus from going to the browser chrome.
+    $('body', context).once(function () {
+      $(window).bind('keydown', function (event) {
+        if (event.keyCode === 9) {
+          var tabbables = $(':tabbable'),
+              first = tabbables.filter(':first'),
+              last = tabbables.filter(':last'),
+              new_event;
+          if ((event.target === last[0] && !event.shiftKey) || (event.target === first[0] && event.shiftKey)) {
+            // If we're at the end of the tab list, then send a keyboard event
+            // to the parent iframe.
+            if (parent_iframe = Drupal.media.browser.getParentIframe(window)) {
+              $('.ui-dialog-titlebar-close', $(parent_iframe).closest('.ui-dialog')).focus();
+              event.preventDefault();
+              return false;
+            }
+          }
+        }
+      });
+    });
   }
   // Wait for additional params to be passed in.
 };

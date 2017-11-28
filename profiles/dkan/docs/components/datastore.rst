@@ -5,7 +5,7 @@ DKAN Datastore bundles a number of modules and configuration to allow users to u
 
 **Drupal Architecture**
 
-The DKAN Datastore's importer is a wrapper around the `Feeds <https://www.drupal.org/project/feeds>`_ module. The custom `Feeds Flatstore Processor <https://github.com/NuCivic/feeds_flatstore_processor>`_ and `Feeds Field Fetcher <https://www.drupal.org/project/feeds_field_fetcher>`_ plugins were created  the file uploaded to the resource form a feed item.
+The DKAN Datastore's importer is a wrapper around the `Feeds <https://www.drupal.org/project/feeds>`_ module. The custom `Feeds Flatstore Processor <https://github.com/GetDKAN/feeds_flatstore_processor>`_ and `Feeds Field Fetcher <https://www.drupal.org/project/feeds_field_fetcher>`_ plugins were created  the file uploaded to the resource form a feed item.
 
 The `Data <https://www.drupal.org/project/data>`_ module is used to manage datastore tables' schema.
 
@@ -27,6 +27,13 @@ Click the "Manage Datastore" button at the top of the screen. On the "Manage Dat
 .. image:: ../images/datastore-resource.png
 
 Your data is now ready to use via the API! Click the "Data API" button at the top of the resource screen for specific instructions.
+
+TAB delimiter support
+---------------------
+
+DKAN supports TAB delimiters for csv files and other file extensions that commonly use TABs as delimiters. The autodetect format function is available for this file types (the format detected will be TSV) and the recline previews will work.
+
+The TAB delimiter support has been introduced to the datastore import functionality, so if your resource contains a csv file separated by TABs and you visit the "Manage Datastore" tab, you'll have an option in the 'Delimiter' dropdown to select TAB. Once you select that option and press the 'Import' button, your resource will be imported and should be shown as expected in the resource preview.
 
 Processing Options
 -------------------
@@ -166,7 +173,7 @@ Installation
 ^^^^^^^^^^^^^^
 
 - Inside your settings.php add a `pdo` element to your database configuration. For example:
-  
+
   .. code-block:: php
 
     <?php

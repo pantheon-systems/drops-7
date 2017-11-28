@@ -6,7 +6,7 @@ contents using Recline.js
 ## INSTALLATION
 
 
-+ Download the Reline.js library from https://github.com/okfn/recline 
++ Download the Recline.js library from https://github.com/okfn/recline 
 (zip file) and install in 'sites/all/libraries/'.
 + Enable recline module.
 

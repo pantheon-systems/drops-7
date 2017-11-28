@@ -146,15 +146,25 @@ function visualization_entity_iframe($entity) {
 }
 
 /**
+ * Implements hook_page_alter().
+ */
+function visualization_entity_page_alter(&$page) {
+  $menu = menu_get_item();
+  if(!empty($menu) && isset($menu['path']) && $menu['path'] == 'visualization/%/%/iframe') {
+    header_remove('X-Frame-Options');
+  }
+}
+
+/**
  * Implements hook_entity_info_alter().
  */
 function visualization_entity_entity_info_alter(&$entity_info) {
   // Override the default eck__entity__uri to allow uuids in the url.
   $entity_info['visualization']['uri callback'] = 'visualization_entity_uri';
 
-  // Override default edit/delete paths used on visualization tables 
-  // on admin pages. Change default paths with the form 
-  // 'admin/structure/entity-type/visualization/ve_chart/NODE_ID/edit' 
+  // Override default edit/delete paths used on visualization tables
+  // on admin pages. Change default paths with the form
+  // 'admin/structure/entity-type/visualization/ve_chart/NODE_ID/edit'
   // to '/visualization/ve_chart/NODE_ID/edit'.
   $bundles = isset($entity_info['visualization']['bundles']) ? $entity_info['visualization']['bundles'] : '';
   if ($bundles) {

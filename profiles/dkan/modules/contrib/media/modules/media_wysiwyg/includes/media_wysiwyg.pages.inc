@@ -80,7 +80,7 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
     '#default_value' => $default_view_mode,
     '#description' => t('Choose the type of display you would like for this
       file. Please be aware that files may display differently than they do when
-      they are inserted into an editor.')
+      they are inserted into an editor.'),
   );
 
   // If necessary, display the alignment widget.
@@ -112,8 +112,8 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
   // Get the external url from the fid array.
   $external_url = empty($query_fields['external_url']) ? NULL : $query_fields['external_url'];
   // Field to attach external url's to files for linking.
-  if(variable_get('media_wysiwyg_external_link', FALSE)) {
-    if($file->type == 'image') {
+  if (variable_get('media_wysiwyg_external_link', FALSE)) {
+    if ($file->type == 'image') {
       $form['options']['external_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Link Image'),
@@ -155,9 +155,9 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
 /**
  * Add ajax preview when selecting view mode in wysiwyg editor.
  */
-function media_wysiwyg_format_form_view_mode(&$form, $form_state, $file)  {
+function media_wysiwyg_format_form_view_mode(&$form, $form_state, $file) {
   // Check to see if a view mode ("format") has already been specified for
-  //  this media item. First, check for a standard form-submitted value.
+  // this media item. First, check for a standard form-submitted value.
   if (!empty($form_state['values']['format'])) {
     $view_mode = $form_state['values']['format'];
   }
@@ -169,15 +169,25 @@ function media_wysiwyg_format_form_view_mode(&$form, $form_state, $file)  {
     }
   }
   // If we were unable to determine a view mode, or we found a view mode
-  //  that does not exist in the list of format options presented on this
-  //  form, use the default view mode.
+  // that does not exist in the list of format options presented on this
+  // form, use the default view mode.
   if (!isset($view_mode) || !array_key_exists($view_mode, $form['options']['format']['#options'])) {
     $view_mode = variable_get('media_wysiwyg_wysiwyg_default_view_mode', 'full');
   }
 
+  $link_options = array(
+    'attributes' => array(
+      'class' => 'button',
+      'title' => t('Use for replace fox or edit file fields.'),
+    ),
+  );
+  if (!empty($_GET['render'])) {
+    $link_options['query']['render'] = $_GET['render'];
+  }
+
   $form['preview'] = array();
   $form['preview']['#prefix'] = '<div class="media-preview-group"><div class="media-item"><div class="media-thumbnail">';
-  $form['preview']['#suffix'] = '</div><div class="label-wrapper"><label class="media-filename">' . check_plain($file->filename) . '</label></div></div><div class="edit-file-link">' . l(t('Edit file'), 'file/'.$file->fid.'/edit', array('attributes' => array('class' => 'button', 'title' => t('Use for replace file or edit file fields.')))) . '</div></div>';
+  $form['preview']['#suffix'] = '</div><div class="label-wrapper"><label class="media-filename">' . check_plain($file->filename) . '</label></div></div><div class="edit-file-link">' . l(t('Edit file'), 'file/' . $file->fid . '/edit', $link_options) . '</div></div>';
   $form['preview']['thumbnail'] = file_view_file($file, $view_mode);
   $form['preview']['thumbnail']['#prefix'] = '<div id="media-preview">';
   $form['preview']['thumbnail']['#suffix'] = '</div>';
@@ -212,7 +222,7 @@ function media_wysiwyg_format_form_view_mode(&$form, $form_state, $file)  {
 }
 
 /**
- * AJAX callback to select the portion of the format form to be updated with a preview.
+ * AJAX callback to select portion of format form to be updated with a preview.
  *
  * @param array $form
  *   An associative array containing the structure of the form.

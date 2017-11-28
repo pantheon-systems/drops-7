@@ -89,6 +89,8 @@ function media_wysiwyg_update_dependencies() {
   $dependencies['media_wysiwyg'][7201] = array(
     'media' => 7226,
   );
+
+  return $dependencies;
 }
 
 /**
@@ -249,6 +251,6 @@ function media_wysiwyg_update_7206() {
  * Notify upgraders that there's optional media linking functionality that needs to be enabled.
  */
 function media_wysiwyg_update_7207() {
-  $message = t('If you would like to be able to link images to a page got o /admin/config/media/browser and check "Provide the ability to link media to pages", and save the settings.');
+  $message = t('If you would like to be able to link images to a page, go to /admin/config/media/browser, check "Provide the ability to link media to pages", and save the settings.');
   drupal_set_message($message, 'warning', TRUE);
 }

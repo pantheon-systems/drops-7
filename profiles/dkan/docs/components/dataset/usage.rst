@@ -2,11 +2,9 @@ Usage
 =====
 
 Creating Datasets and Resources
-------------------------------------
+-------------------------------
 
-DKAN’s data publishing model is based on the concept of :ref:`datasets <datasets>` and :ref:`resources <resources>`.  A dataset is a container for one or more resources; a resource is the actual “data” being published, such as a CSV table, a GeoJSON data file, or a TIFF aerial image.
-
-The dataset and resource content types in DKAN are provided by the `DKAN Dataset module <https://github.com/NuCivic/dkan/tree/7.x-1.x/modules/dkan/dkan_dataset>`_.
+DKAN’s data publishing model is based on the concept of :ref:`datasets <datasets>` and :ref:`resources <resources>`.  A dataset is a container for one or more resources; a resource is the actual “data” being published, such as a CSV table, a GeoJSON data file, or a TIFF aerial image. The dataset and resource content types in DKAN are provided by the DKAN Dataset module.
 
 In our example, we’ll be adding a dataset with Wisconsin polling places to a DKAN site. The data may look familiar; it's one of the sample datasets provided with DKAN upon installation.
 
@@ -18,7 +16,7 @@ By default, only authenticated (“logged-in”) users can add new Datasets and 
 The Dataset is the container for the actual data resource files and contains basic information about the data, such as title, description, category tags, and license.  Once we’ve entered information about the data, we can click the “Next: Add data” button to begin adding data.
 
 Step 2: Add one or more Resources to the Dataset
-**************************
+************************************************
 
 After creating a dataset, we’re prompted to add one or more data resources to it.  There are three types of Resources that can be added to a Dataset, depending on the type and location of the Resource:
 
@@ -27,8 +25,8 @@ After creating a dataset, we’re prompted to add one or more data resources to 
 :Remote file: This option allows publishers to create a link to a data file published on another Internet website.  Although the file itself will remain on the other site, the data within the file can be imported into your DKAN site’s Datastore for preview and analysis by your users.  See :doc:`../datastore` for more information.
 
 .. note::
-   
-   To provide :doc:`previews <../visualizations/datapreviews>` for your resources, they must contain either a local or remote file (*Link to a file* or *Upload a file*). If you use *API or Website URL* your link will be displayed in an iFrame but not further previewing will be possible. 
+
+   To provide :doc:`previews <../visualizations/datapreviews>` for your resources, they must contain either a local or remote file (*Link to a file* or *Upload a file*). If you use *API or Website URL* your link will be displayed in an iFrame but not further previewing will be possible.
 
 To continue with our Wisconsin Polling Places example, we’ll add one resource file to the Dataset we created in Step 1.  Our resource file is a CSV, that is, comma-separated values format; this is a popular file format for exchanging tabular data.  Let’s explore the example resource shown here and the various fields within:
 
@@ -53,7 +51,7 @@ At the bottom of the *Add Resource* page, we can choose:
 In our example, we’re only adding a single resource, so we’ll click “Next: Additional Info” to move onto Step 3. If we had more than one resource to add to this dataset, we would choose the “Save and add another” option. Simply clicking "Save" would end the Dataset creation process and save the dataset, for now, with no additional metadata.
 
 Step 3: Adding Metadata to a Dataset
-**************************
+************************************
 
 We now come to a third form which allows us to add additional metadata to the dataset. All these fields are optional, but provide valuable information about your dataset to both human visitors to the website and machines discovering your dataset through one of :doc:`DKAN's public APIs <../../apis/index>`.
 
@@ -77,7 +75,7 @@ Configuration
 Adding or Removing Allowed Resource File Types
 **********************************************
 
-Any type of file can be uploaded to Resources (though only CSV files can be imported to the :doc:`Datastore <../datastore/index>`.
+Any type of file can be uploaded to Resources (though only CSV files can be imported to the :doc:`Datastore <../datastore>`.
 
 File types are controlled at "/admin/structure/types/manage/resource/fields/field_upload"
 

@@ -18,12 +18,14 @@ Drupal.behaviors.mediaElement = {
     var elements;
 
     function initMediaBrowser(selector) {
-      $context.find(selector)
-        .once('media-browser-launch')
-        .siblings('.browse').show()
-        .siblings('.upload').hide()
-        .siblings('.attach').hide()
-        .siblings('.browse').bind('click', {configuration: settings.media.elements[selector]}, Drupal.media.openBrowser);
+      var widget=$context.find(selector).once('media-browser-launch');
+      var browse=widget.siblings('.browse').add(widget.find('.browse'));
+      var upload=browse.siblings('.upload').add(widget.find('.upload'));
+      var attach=upload.siblings('.attach').add(widget.find('.attach'));
+      browse.show();
+      upload.hide();
+      attach.hide();
+      browse.bind('click', {configuration: settings.media.elements[selector]}, Drupal.media.openBrowser);
     }
 
     if (settings.media && settings.media.elements) {

@@ -24,7 +24,7 @@ function open_data_schema_ckan_open_data_schema_map_load($machine_name) {
     $record->name = 'CKAN Site Read';
     $record->enabled = TRUE;
     $record->api_schema = 'ckan_no_schema';
-    $record->entity = '';
+    $record->type = '';
     $record->bundle = '';
     $record->arguments = array();
     $record->machine_name = 'ckan_site_read';
@@ -38,7 +38,7 @@ function open_data_schema_ckan_open_data_schema_map_load($machine_name) {
     $record->name = 'CKAN Revision List';
     $record->enabled = TRUE;
     $record->api_schema = 'ckan_dataset';
-    $record->entity = '';
+    $record->type = '';
     $record->bundle = '';
     $record->arguments = array();
     $record->machine_name = 'ckan_revision_list';
@@ -52,7 +52,7 @@ function open_data_schema_ckan_open_data_schema_map_load($machine_name) {
     $record->name = 'CKAN Package Revision List';
     $record->enabled = TRUE;
     $record->api_schema = 'ckan_dataset';
-    $record->entity = '';
+    $record->type = '';
     $record->bundle = '';
     $record->arguments = array('1' => array('field' => 'id', 'required' => 1));
     $record->machine_name = 'ckan_package_revision_list';

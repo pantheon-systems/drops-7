@@ -10,7 +10,7 @@
  *  $youtube = new MediaYouTubeStreamWrapper('youtube://v/[video-code]');
  */
 class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
-  protected $base_url = 'http://www.youtube.com/watch';
+  protected $base_url = 'https://www.youtube.com/watch';
 
   static function getMimeType($uri, $mapping = NULL) {
     return 'video/youtube';
@@ -18,8 +18,12 @@ class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
 
   function getOriginalThumbnailPath() {
     $parts = $this->get_parameters();
-    $thumbnail_url = 'http://img.youtube.com/vi/' . check_plain($parts['v']) . "/maxresdefault.jpg";
+    $thumbnail_url = 'https://img.youtube.com/vi/' . check_plain($parts['v']) . "/maxresdefault.jpg";
     $response = drupal_http_request($thumbnail_url);
+    if ($response->code == 404) {
+      $thumbnail_url = 'https://img.youtube.com/vi/' . check_plain($parts['v']) . "/hqdefault.jpg";
+      $response = drupal_http_request($thumbnail_url);
+    }
     if (!isset($response->error)) {
       return $thumbnail_url;
     }
@@ -27,7 +31,7 @@ class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
       throw new MediaInternetValidationException("Embedding has been disabled for this video.");
     }
     elseif ($response->code == 404) {
-      return "http://s.ytimg.com/yts/img/image-hh-404-vflvCykRp.png";
+      return "https://s.ytimg.com/yts/img/image-hh-404-vflvCykRp.png";
     }
     elseif ($response->code != 200) {
       throw new MediaInternetValidationException("The YouTube video ID is invalid or the video was deleted.");
@@ -35,7 +39,7 @@ class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
     else {
       $uri = file_stream_wrapper_uri_normalize('youtube://v/' . check_plain($parts['v']));
       $external_url = file_create_url($uri);
-      $oembed_url = url('http://www.youtube.com/oembed', array('query' => array('url' => $external_url, 'format' => 'json')));
+      $oembed_url = url('https://www.youtube.com/oembed', array('query' => array('url' => $external_url, 'format' => 'json')));
       $response = drupal_http_request($oembed_url);
 
       if (!isset($response->error)) {
@@ -65,7 +69,7 @@ class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
           file_unmanaged_save_data($response->data, $local_path, TRUE);
         }
         else {
-          @copy($this->getOriginalThumbnailPath(), $local_path);
+          system_retrieve_file($this->getOriginalThumbnailPath(), $local_path, FALSE, FILE_EXISTS_REPLACE);
         }
       }
       catch (Exception $e) {
@@ -86,7 +90,7 @@ class MediaYouTubeStreamWrapper extends MediaReadOnlyStreamWrapper {
   function setBaseUrl($parameters) {
     if (isset($parameters['l'])) {
       if (!isset($parameters['v'])) {
-        $this->base_url = 'http://youtube.com/playlist';
+        $this->base_url = 'https://youtube.com/playlist';
       }
       $parameters['list'] = $parameters['l'];
       unset($parameters['l']);

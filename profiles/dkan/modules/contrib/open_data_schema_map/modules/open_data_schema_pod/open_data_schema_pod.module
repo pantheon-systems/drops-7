@@ -137,6 +137,9 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
           if ($dataset['accessLevel'] == 'restricted') {
             $dataset['accessLevel'] = 'restricted public';
           }
+          if ($dataset['accessLevel'] == 'private') {
+            $dataset['accessLevel'] = 'non-public';
+          }
         }
         if (isset($dataset['temporal']) && $dataset['temporal'] == "/") {
           unset($dataset['temporal']);

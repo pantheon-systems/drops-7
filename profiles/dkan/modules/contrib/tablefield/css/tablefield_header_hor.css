@@ -1,0 +1,8 @@
+/**
+ * @file
+ * Styles for TableField form field in case of vertical header (first column).
+ */
+
+.form-tablefield input.tablefield-row-0 {
+  font-weight: bold;
+}

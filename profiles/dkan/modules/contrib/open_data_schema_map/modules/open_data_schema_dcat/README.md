@@ -7,4 +7,4 @@ Two schemas are actually provided:
 * **DCAT Catalog:** Can be used to create an entire data catalog, usually in XML format and exposed at `/catalog.xml`.
 * **DCAT Dataset**: Schema for providing a single-dataset endpoint
 
-[DKAN's implementation](https://github.com/NuCivic/open_data_schema_map_dkan) adds meta links in page headers to catalog.xml, and links in each dataset page (as well as header links) to the dataset-specific endpoints.
+[DKAN's implementation](https://github.com/GetDKAN/open_data_schema_map_dkan) adds meta links in page headers to catalog.xml, and links in each dataset page (as well as header links) to the dataset-specific endpoints.

@@ -20,8 +20,8 @@ function media_wysiwyg_variable_group_info() {
 }
 
 /**
-* Implements hook_variable_info().
-*/
+ * Implements hook_variable_info().
+ */
 function media_wysiwyg_variable_info($options) {
   $variables['media_wysiwyg_wysiwyg_title'] = array(
     'type' => 'string',

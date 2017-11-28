@@ -1,0 +1,12 @@
+name = TableField Themeless
+description = Provides themeless output of a node's tablefield on the path 'node/%/themeless'.
+core = 7.x
+package = Fields
+dependencies[] = tablefield
+
+; Information added by Drupal.org packaging script on 2017-06-13
+version = "7.x-3.1"
+core = "7.x"
+project = "tablefield"
+datestamp = "1497359647"
+

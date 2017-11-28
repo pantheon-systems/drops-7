@@ -289,6 +289,9 @@ function search_api_db_update_7107() {
     $options = unserialize($options);
 
     if (!empty($options['indexes'])) {
+      list($key, $target) = explode(':', $options['database'], 2);
+      $connection = Database::getConnection($target, $key);
+
       foreach ($options['indexes'] as $index_id => $fields) {
         $text_table = NULL;
 
@@ -296,7 +299,7 @@ function search_api_db_update_7107() {
           if (search_api_is_text_type($field['type'])) {
             $text_table = $field['table'];
             if (strlen($field_id) > 255) {
-              db_update($text_table)
+              $connection->update($text_table)
                 ->fields(array('field_name' => drupal_hash_base64($field_id)))
                 ->condition('field_name', md5($field_id))
                 ->execute();
@@ -305,8 +308,9 @@ function search_api_db_update_7107() {
         }
 
         // If there is a text table for this index, update its description.
-        if ($text_table) {
-          db_change_field($text_table, 'field_name', 'field_name', $spec);
+        if ($text_table && db_table_exists($text_table)) {
+          $connection->schema()
+            ->changeField($text_table, 'field_name', 'field_name', $spec);
         }
       }
     }

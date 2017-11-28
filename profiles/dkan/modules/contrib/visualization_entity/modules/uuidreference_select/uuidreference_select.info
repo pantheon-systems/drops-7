@@ -2,3 +2,7 @@ name = UUID Reference Select
 core = 7.x
 
 dependencies[] = uuidreference
+
+; Information added by DKAN release script on 11/14/2017
+version = 7.x-1.14
+project = dkan
