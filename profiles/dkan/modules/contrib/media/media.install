@@ -112,12 +112,25 @@ function media_requirements($phase) {
 
   if ($phase == 'update') {
     $info = system_get_info('module', 'file_entity');
-    if (strpos($info['version'], '7.x-2') === FALSE) {
+    $file_entity_installed_date = $info['datestamp'];
+    $file_entity_version = $info['version'];
+    $file_entity_minimum_date = 1495439635;
+    // Time of 2017-05-22 07:53:55 is most recent commit in 7.x-2.0.
+    if ($file_entity_installed_date < $file_entity_minimum_date) {
+      $description = $t('Media 2.10 or newer requires <a href="@url">File entity 2.0 or newer (2.4 or higher recommended)</a>. Please download the correct version and make sure you have deleted the file_entity folder inside the media module directory.', array('@url' => 'http://drupal.org/project/file_entity'));
+      $requirements['file_entity']['description'] = $description;
+      $requirements['file_entity']['severity'] = REQUIREMENT_ERROR;
+      $requirements['file_entity']['value'] = $file_entity_version;
+      $requirements['file_entity']['title'] = $t('Fieldable Files (file_entity) module 7.x-2.0 or newer is required by Media');
+      drupal_set_message($description, 'error', TRUE);
+    }
+    if (strpos($info['version'], '7.x-2') === FALSE &&
+      strpos($info['version'], '7.x-3') === FALSE) {
       $requirements['file_entity'] = array(
-        'title' => $t('File entity 2.x'),
+        'title' => $t('File entity 2.x or 3.x required.'),
         'value' => $t('Wrong version'),
         'severity' => REQUIREMENT_ERROR,
-        'description' => $t('Media 2.x requires <a href="@url">File entity 2.x</a>. Please download the correct version and make sure you have deleted the file_entity folder inside the media module directory.', array('@url' => 'http://drupal.org/project/file_entity')),
+        'description' => $t('Media requires <a href="@url">File entity 2.x or 3.x</a>. Please download the correct version and make sure you have deleted the file_entity folder inside the media module directory.', array('@url' => 'http://drupal.org/project/file_entity')),
       );
     }
   }
@@ -138,7 +151,7 @@ function media_requirements($phase) {
         $requirements['entity_translation']['severity'] = REQUIREMENT_ERROR;
         $requirements['entity_translation']['value'] = $et_installed_version;
         $requirements['entity_translation']['title'] = $t('Entity translation (when installed) with Media');
-	drupal_set_message($description, 'error', TRUE);
+        drupal_set_message($description, 'error', TRUE);
       }
     }
   }

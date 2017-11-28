@@ -35,7 +35,7 @@ drush cc all
 Once the module is enabled, new chart entities can be created by going to /admin/structure/entity-type/visualization/ve_chart/add. A multi-step process will guide you through creation of a chart based on an uploaded data file.
 
 #### Step One - Choose a Resource
-Use the form to upload or link to a data source for the visulization.
+Use the form to upload or link to a data source for the visualization.
 Valid source data include:
 * CSV
 * Google Spreadsheet
@@ -61,7 +61,7 @@ Multiple filters can be applied to data.
 * **Format** Select an appropriate format for the X Axis labels.
 * **Axis Label**  will provide a custom label for the x axis. **Note:** Axis labels do not display for Pie Charts.
 * **Label rotation** will change angle of label values.
-* **Tick Values** with **step value** will update the number of ticks for the X axis. **NOTE:** If the range set for tick values is smaller than the range of complete data represented, the chart will be abreviated.
+* **Tick Values** with **step value** will update the number of ticks for the X axis. **NOTE:** If the range set for tick values is smaller than the range of complete data represented, the chart will be abbreviated.
 
 
 ###### Y Axis

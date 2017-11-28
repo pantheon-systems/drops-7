@@ -34,7 +34,7 @@ class validate {
         $this->dataJSON->dataset = $this->dataset;
       }
       else {
-        throw new Exception(t("POD validator could not access %url", array("%url" => $this->url)));
+        throw new \Exception(t("POD validator could not access %url", array("%url" => $this->url)));
       }
     }
   }

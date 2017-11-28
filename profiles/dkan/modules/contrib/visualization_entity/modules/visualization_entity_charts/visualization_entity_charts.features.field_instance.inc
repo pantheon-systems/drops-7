@@ -10,7 +10,7 @@
 function visualization_entity_charts_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'visualization-ve_chart-field_description'
+  // Exported field_instance: 'visualization-ve_chart-field_description'.
   $field_instances['visualization-ve_chart-field_description'] = array(
     'bundle' => 've_chart',
     'default_value' => NULL,
@@ -50,7 +50,7 @@ function visualization_entity_charts_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'visualization-ve_chart-field_file'
+  // Exported field_instance: 'visualization-ve_chart-field_file'.
   $field_instances['visualization-ve_chart-field_file'] = array(
     'bundle' => 've_chart',
     'deleted' => 0,
@@ -79,6 +79,9 @@ function visualization_entity_charts_field_default_field_instances() {
       'file_directory' => '',
       'file_extensions' => 'csv',
       'max_filesize' => '',
+      'resup' => 0,
+      'resup_autostart' => 0,
+      'resup_max_filesize' => '',
       'user_register_form' => FALSE,
     ),
     'widget' => array(
@@ -102,11 +105,11 @@ function visualization_entity_charts_field_default_field_instances() {
         'progress_indicator' => 'throbber',
       ),
       'type' => 'file_generic',
-      'weight' => 2,
+      'weight' => 9,
     ),
   );
 
-  // Exported field_instance: 'visualization-ve_chart-field_ve_settings'
+  // Exported field_instance: 'visualization-ve_chart-field_ve_settings'.
   $field_instances['visualization-ve_chart-field_ve_settings'] = array(
     'bundle' => 've_chart',
     'default_value' => NULL,
@@ -142,7 +145,7 @@ function visualization_entity_charts_field_default_field_instances() {
         'rows' => 3,
       ),
       'type' => 'text_textarea',
-      'weight' => 3,
+      'weight' => 4,
     ),
   );
 

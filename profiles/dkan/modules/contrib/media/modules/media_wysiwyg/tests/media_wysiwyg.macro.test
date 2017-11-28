@@ -92,4 +92,29 @@ class MediaWYSIWYGWYSIWYGOverridesTest extends MediaWYSIWYGTestHelper {
     // Ensure that the alt/title from attributes display rather the field ones.
     $this->assertRaw(drupal_attributes($attributes), t('Image displays with alt/title set as attributes overriding field values.'));
   }
+
+  /**
+   * Test image media overrides on images with fields attached.
+   */
+  public function testAttributeOverridesWithFields() {
+    // First make images display the title field on the preview mode we use.
+    $instance = field_read_instance('file', 'field_file_image_title_text', 'image');
+    $instance['display']['preview']['type'] = 'text_default';
+    $instance['display']['preview']['module'] = 'text';
+    field_update_instance($instance);
+
+    $files = $this->drupalGetTestFiles('image');
+    $file = file_save($files[0]);
+
+    $attributes = array(
+      'style' => 'float: left;',
+    );
+    $fields = array(
+      'field_file_image_title_text[und][0][value]' => $this->randomName(),
+    );
+    $nid = $this->createNode($file->fid, $attributes, $fields);
+    $this->drupalGet('node/' . $nid);
+    $this->assertRaw('float: left;', 'Image displays with overriden attributes when displays with fields.');
+    $this->assertRaw('media-float-left', 'Media float class added.');
+  }
 }

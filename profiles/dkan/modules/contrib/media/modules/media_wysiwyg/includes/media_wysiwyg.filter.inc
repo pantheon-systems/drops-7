@@ -238,6 +238,11 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
             $settings[$dimension] = $settings['attributes'][$dimension];
           }
         }
+        // If the element is floated via WYSIWYG editor functionality, delegate
+        // that information to the outer element.
+        if (!empty($css_properties['float'])) {
+          $settings['float'] = $css_properties['float'];
+        }
       }
       foreach (array('title', 'alt') as $field_type) {
         if (isset($settings['attributes'][$field_type])) {
@@ -331,6 +336,11 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       field_attach_prepare_view('file', array($file->fid => $file), $tag_info['view_mode'], $langcode);
       entity_prepare_view('file', array($file->fid => $file), $langcode);
       $element['content'] += field_attach_view('file', $file, $tag_info['view_mode'], $langcode);
+
+      // Add any float information via an extra class
+      if (!empty($settings['float'])) {
+        $element['content']['file']['#attributes']['class'][] = drupal_html_class('media-float-' . $settings['float']);
+      }
     }
     if (count(element_children($element['content'])) > 1) {
       // Add surrounding divs to group them together.
@@ -342,6 +352,10 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
         'media-element-container',
         'media-' . $element['content']['file']['#view_mode'],
       );
+      // Add the float information to the outer element.
+      if (!empty($settings['float'])) {
+        $element['content']['#attributes']['class'][] = drupal_html_class('media-float-' . $settings['float']);
+      }
       if (variable_get('media_wysiwyg_remove_media_class', FALSE)) {
         $classes = $element['content']['#attributes']['class'];
         $element['content']['#attributes']['class'] = array_diff($classes, array('media'));
@@ -455,7 +469,7 @@ function _media_wysiwyg_generate_tagMap($text) {
   // between function calls. Since media_process_form is multiple times
   // with same form, this function is also called multiple times.
   static $tagmap = array();
-  preg_match_all("/\[\[.*?\]\]/s", $text, $matches, PREG_SET_ORDER);
+  preg_match_all("/\[\[(?!nid:).*?\]\]/s", $text, $matches, PREG_SET_ORDER);
   foreach ($matches as $match) {
     // We see if tagContent is already in $tagMap, if not we add it
     // to $tagmap.  If we return an empty array, we break embeddings of the same

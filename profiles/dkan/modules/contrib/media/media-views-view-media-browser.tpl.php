@@ -13,7 +13,7 @@
   <div class="clearfix">
     <?php print $list_type_prefix; ?>
       <?php foreach ($rows as $id => $row): ?>
-        <li id="media-item-<?php print $row->fid; ?>" class="<?php print $classes_array[$id]; ?>">
+        <li id="media-item-<?php print $row->fid; ?>" class="<?php print $classes_array[$id]; ?>" tabindex="0" role="<?php print $aria_role; ?>" aria-checked="false">
           <?php print $row->preview; ?>
         </li>
       <?php endforeach; ?>

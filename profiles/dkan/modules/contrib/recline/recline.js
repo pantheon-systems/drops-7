@@ -157,6 +157,20 @@
             delimiter: delimiter
           };
           break;
+        case 'tsv':
+          datasetOptions = {
+            backend: 'csv',
+            url: file,
+            delimiter: delimiter
+          };
+          break;
+        case 'txt':
+          datasetOptions = {
+            backend: 'csv',
+            url: file,
+            delimiter: delimiter
+          };
+          break;
         case 'ckan':
           datasetOptions = {
             endpoint: 'api',
@@ -213,8 +227,14 @@
       var formats = {
         'csv': ['text/csv', 'csv'],
         'xls': ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        'tsv': ['text/tab-separated-values', 'text/tsv', 'tsv', 'tab'],
+        'txt': ['text/plain', 'txt'],
       };
       var backend = _.findKey(formats, function(format) { return _.include(format, fileType) });
+
+      // If the backend is a txt but the delimiter is not a tab, we don't need
+      // to show it using the backend.
+      if (Drupal.settings.recline.delimiter !== "\t" && backend === 'txt') {return '';}
 
       // If the backend is an xls but the browser version is prior 9 then
       // we need to fallback to dataproxy

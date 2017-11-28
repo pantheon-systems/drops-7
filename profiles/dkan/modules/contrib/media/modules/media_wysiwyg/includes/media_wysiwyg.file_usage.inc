@@ -59,7 +59,7 @@ function _media_wysiwyg_filter_add_file_usage_from_fields($entity_type, $entity)
         unset($entity_files[$fid]);
       }
       // There are the same number of files, nothing to do
-      elseif ($entity_files[$fid] ==  $old_file_count) {
+      elseif ($entity_files[$fid] == $old_file_count) {
         unset($entity_files[$fid]);
       }
       // There are more files now, adjust the difference for the greater number.
@@ -121,8 +121,8 @@ function media_wysiwyg_filter_parse_from_fields($entity_type, $entity) {
 /**
  * Utility function to get the file count in this entity
  *
- * @param type $entity
- * @param type $entity_type
+ * @param string or int or object... $entity
+ * @param string or int or object... $entity_type
  * @return int
  */
 function media_wysiwyg_entity_field_count_files($entity_type, $entity) {
@@ -154,15 +154,15 @@ function media_wysiwyg_entity_delete($entity, $type) {
 /**
  * Implements hook_field_attach_delete_revision().
  *
- * @param type $entity_type
- * @param type $entity
+ * @param string or int or object... $entity_type
+ * @param string or int or object... $entity
  */
 function media_wysiwyg_field_attach_delete_revision($entity_type, $entity) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
   $files = media_wysiwyg_entity_field_count_files($entity_type, $entity);
   foreach ($files as $fid => $count) {
     if ($file = file_load($fid)) {
-      file_usage_delete($file, 'media', $entity_type , $entity_id, $count);
+      file_usage_delete($file, 'media', $entity_type, $entity_id, $count);
     }
   }
 }

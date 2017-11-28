@@ -607,7 +607,7 @@ function media_parse_to_uri($url) {
  * @see media_parse_to_uri()
  * @see media_add_from_url_submit()
  */
-function media_parse_to_file($url) {
+function media_parse_to_file($url, $params = array()) {
   try {
     $uri = media_parse_to_uri($url);
   }
@@ -646,9 +646,15 @@ function media_parse_to_file($url) {
       return;
     }
     $source_file = file_uri_to_object($source_uri);
-    $scheme = variable_get('file_default_scheme', 'public') . '://';
+    if(isset($params['to_directory'])){
+      $scheme = variable_get('file_default_scheme', 'public') . '://' . $params['to_directory'] . '/';
+    }
+    else{
+      $scheme = variable_get('file_default_scheme', 'public') . '://';
+    }
     $uri = file_stream_wrapper_uri_normalize($scheme . $source_file->filename);
     // Now to its new home.
+    file_prepare_directory($scheme, FILE_CREATE_DIRECTORY || FILE_MODIFY_PERMISSIONS);
     $file = file_move($source_file, $uri, FILE_EXISTS_RENAME);
   }
 

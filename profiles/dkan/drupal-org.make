@@ -2,10 +2,10 @@
 api: '2'
 core: 7.x
 includes:
-- https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.2/visualization_entity.make
-- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/1.13.6/open_data_schema_map.make
+- https://raw.githubusercontent.com/NuCivic/visualization_entity/7.x-1.14/visualization_entity.make
+- https://raw.githubusercontent.com/NuCivic/open_data_schema_map/7.x-1.14/open_data_schema_map.make
 - https://raw.githubusercontent.com/NuCivic/leaflet_draw_widget/5a5f8faf664aeca02371f6692307580d9fab9116/leaflet_widget.make
-- https://raw.githubusercontent.com/NuCivic/recline/1.13.6/recline.make
+- https://raw.githubusercontent.com/NuCivic/recline/7.x-1.14/recline.make
 projects:
   admin_menu:
     version: 3.0-rc5
@@ -13,10 +13,14 @@ projects:
     version: '1.1'
     patch:
       2441283: https://www.drupal.org/files/issues/allow_ordering_of_the-2441283-5.patch
+  admin_views:
+    version: '1.6'
+    patch:
+      1780004: https://www.drupal.org/files/issues/admin_views-duplicate_system_path-1780004-54.patch
   adminrole:
     version: '1.1'
   autocomplete_deluxe:
-    version: '2.2'
+    version: '2.3'
     patch:
       2833824: https://www.drupal.org/files/issues/autocomplete-deluxe-2833824-4.patch
   beautytips:
@@ -28,7 +32,7 @@ projects:
     patch:
       849232: http://drupal.org/files/include-excanvas-via-libraries-api-d7-849232-13.patch
   better_exposed_filters:
-    version: '3.4'
+    version: '3.5'
   bueditor:
     version: '1.8'
   bueditor_plus:
@@ -112,7 +116,7 @@ projects:
   feeds_flatstore_processor:
     download:
       type: git
-      url: https://github.com/NuCivic/feeds_flatstore_processor.git
+      url: https://github.com/GetDKAN/feeds_flatstore_processor.git
       revision: 82b2a05bd133dbf870bdf09f1c0a45711f1432e3
   field_group:
     version: '1.5'
@@ -135,7 +139,7 @@ projects:
       2826182: https://www.drupal.org/files/issues/fieldable_panels_panes-title-shown-when-set-to-hidden-2826182-3.patch
       2826205: https://www.drupal.org/files/issues/fieldable_panels_panes-n2826205-32.patch
   file_entity:
-    version: 2.3
+    version: 2.12
   file_resup:
     download:
       type: git
@@ -183,7 +187,7 @@ projects:
   leaflet_draw_widget:
     download:
       type: git
-      url: https://github.com/NuCivic/leaflet_draw_widget.git
+      url: https://github.com/GetDKAN/leaflet_draw_widget.git
       revision: 5a5f8faf664aeca02371f6692307580d9fab9116
   libraries:
     version: '2.3'
@@ -202,11 +206,9 @@ projects:
     patch:
       2045225: http://drupal.org/files/remove-dsm-from-hook-install-2045225-1.patch
   media:
-    version: 2.9
-    patch:
-      2272567: https://www.drupal.org/files/issues/media_dialog_appears_2272567-32.patch
+    version: 2.13
   media_youtube:
-    version: '3.4'
+    version: '3.5'
   media_vimeo:
     version: '2.1'
     patch:
@@ -243,8 +245,8 @@ projects:
   open_data_schema_map:
     download:
       type: git
-      url: https://github.com/NuCivic/open_data_schema_map.git
-      tag: 7.x-1.13.7
+      url: https://github.com/GetDKAN/open_data_schema_map.git
+      tag: 7.x-1.14
   panelizer:
     version: '3.4'
   panels:
@@ -273,8 +275,8 @@ projects:
   recline:
     download:
       type: git
-      url: https://github.com/NuCivic/recline.git
-      tag: 7.x-1.13.7
+      url: https://github.com/GetDKAN/recline.git
+      tag: 7.x-1.14
   ref_field:
     download:
       type: git
@@ -285,7 +287,7 @@ projects:
   remote_stream_wrapper:
     download:
       type: git
-      url: https://github.com/NuCivic/remote_stream_wrapper.git
+      url: https://github.com/GetDKAN/remote_stream_wrapper.git
       revision: 20311eee8f0ba87cbb7e48788b176c34e0313a78
   role_export:
     version: '1.0'
@@ -307,6 +309,8 @@ projects:
     version: '1.22'
   search_api_db:
     version: '1.6'
+    patch:
+      2855634: https://www.drupal.org/files/issues/2855634-23--fix_update_7107_for_different_db.patch
   select_or_other:
     version: '2.22'
   services:
@@ -316,20 +320,20 @@ projects:
   strongarm:
     version: '2.0'
   tablefield:
-    version: '2.5'
+    version: '3.1'
   taxonomy_menu:
     version: '1.5'
   taxonomy_fixtures:
     download:
       type: git
-      url: https://github.com/NuCivic/taxonomy_fixtures.git
+      url: https://github.com/GetDKAN/taxonomy_fixtures.git
       revision: b2f092c963f4a24afe1e6443eb9ff01c959079ed
   token:
     version: '1.7'
   uuid:
     version: '1.0'
   views:
-    version: '3.17'
+    version: '3.18'
   views_autocomplete_filters:
     version: '1.2'
     patch:
@@ -342,8 +346,8 @@ projects:
   visualization_entity:
     download:
       type: git
-      url: https://github.com/NuCivic/visualization_entity.git
-      tag: 7.x-1.2
+      url: https://github.com/GetDKAN/visualization_entity.git
+      tag: 7.x-1.14
     type: module
   workbench:
     version: '1.2'
@@ -353,6 +357,7 @@ projects:
     version: '3.0'
     patch:
       2360973: https://www.drupal.org/files/issues/workbench_moderation-install-warnings-2360973-3.patch
+      1512442: https://www.drupal.org/files/issues/1512442-20-workbench_moderation-fix_access_check.patch
   drafty:
     version: 1.0-beta4
 libraries:
@@ -391,7 +396,7 @@ libraries:
   spectrum:
     download:
       type: git
-      url: https://github.com/NuCivic/spectrum.git
+      url: https://github.com/GetDKAN/spectrum.git
       tag: 1.8.0-civic-4736
     directory_name: bgrins-spectrum
   spyc:

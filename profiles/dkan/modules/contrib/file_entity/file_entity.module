@@ -894,6 +894,10 @@ function file_entity_theme() {
       'variables' => array(
         'files' => array(),
         'controls' => TRUE,
+        'controls_list' => array(
+          'download' => 'download',
+          'remote_playback' => 'remote_playback',
+        ),
         'autoplay' => FALSE,
         'loop' => FALSE,
         'preload' => NULL,
@@ -904,6 +908,11 @@ function file_entity_theme() {
       'variables' => array(
         'files' => array(),
         'controls' => TRUE,
+        'controls_list' => array(
+          'fullscreen' => 'fullscreen',
+          'download' => 'download',
+          'remote_playback' => 'remote_playback',
+        ),
         'autoplay' => FALSE,
         'loop' => FALSE,
         'muted' => FALSE,
@@ -1678,11 +1687,14 @@ function file_entity_access($op, $file = NULL, $account = NULL) {
   // $file may be either an object or a file type. Since file types cannot be
   // an integer, use either fid or type as the static cache id.
   $cache_id = NULL;
-  if (!empty($file->id)) {
-    $cache_id = $file->id;
+  if (is_object($file) && !empty($file->fid)) {
+    $cache_id = $file->fid;
   }
-  elseif (is_string($file) && $op == 'create') {
+  elseif ($op == 'create' && is_string($file)) {
     $cache_id = $file;
+  }
+  elseif ($op == 'create' && is_object($file) && !empty($file->type)) {
+    $cache_id = $file->type;
   }
   else {
     $cache_id = drupal_hash_base64(serialize($file));
@@ -1746,18 +1758,18 @@ function file_entity_access($op, $file = NULL, $account = NULL) {
  * Implements hook_file_entity_access().
  */
 function file_entity_file_entity_access($op, $file, $account) {
+  // If the op is "create," all that's needed is to check the create permission.
+  if ($op == 'create') {
+    if (user_access('create files')) {
+      return FILE_ENTITY_ACCESS_ALLOW;
+    }
+  }
   // If the file URI is invalid, deny access.
   if (is_object($file) && isset($file->uri) && !file_valid_uri($file->uri)) {
     if(isset($file->is_new) && $file->is_new == true && user_access('create files')) {
       return FILE_ENTITY_ACCESS_ALLOW;
     }
     return FILE_ENTITY_ACCESS_DENY;
-  }
-
-  if ($op == 'create') {
-    if (user_access('create files')) {
-      return FILE_ENTITY_ACCESS_ALLOW;
-    }
   }
 
   if (!empty($file)) {
@@ -2137,7 +2149,9 @@ function file_entity_file_default_types() {
     'label' => t('Document'),
     'description' => t('A <em>Document</em> file is written information.'),
     'mimetypes' => array(
+      'text/html',
       'text/plain',
+      'application/acad',
       'application/msword',
       'application/vnd.ms-excel',
       'application/pdf',
@@ -2643,3 +2657,14 @@ function file_entity_features_pipe_file_type_alter(&$pipe, $data, $export) {
   }
 }
 
+/**
+ * Implements hook_FORM_ID_alter().
+ */
+function file_entity_form_system_performance_settings_alter(&$form, &$form_state) {
+  $form['bandwidth_optimization']['file_entity_total_count_optimization'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Optimize the calculation of the total usage count of files in the files overview.'),
+    '#default_value' => variable_get('file_entity_total_count_optimization', FALSE),
+    '#description' => t('Recommended if the files admin page loads too slowly due to a high number of files.'),
+  );
+}

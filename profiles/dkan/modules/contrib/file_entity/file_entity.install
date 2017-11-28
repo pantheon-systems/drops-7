@@ -239,6 +239,7 @@ function file_entity_uninstall() {
   // Remove variables.
   variable_del('file_entity_max_filesize');
   variable_del('file_entity_default_allowed_extensions');
+  variable_del('file_entity_default_file_directory');
   variable_del('file_entity_alt');
   variable_del('file_entity_title');
   variable_del('file_entity_allow_insecure_download');

@@ -12,7 +12,7 @@
 namespace Symfony\Component\Serializer\Normalizer;
 
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
-use Symfony\Component\Serializer\Exception\UnexpectedValueException;
+use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
 /**
  * Normalizes an object implementing the {@see \DateTimeInterface} to a date string.
@@ -25,17 +25,16 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
     const FORMAT_KEY = 'datetime_format';
     const TIMEZONE_KEY = 'datetime_timezone';
 
-    /**
-     * @var string
-     */
     private $format;
     private $timezone;
 
-    /**
-     * @param string             $format
-     * @param \DateTimeZone|null $timezone
-     */
-    public function __construct($format = \DateTime::RFC3339, \DateTimeZone $timezone = null)
+    private static $supportedTypes = array(
+        \DateTimeInterface::class => true,
+        \DateTimeImmutable::class => true,
+        \DateTime::class => true,
+    );
+
+    public function __construct(?string $format = \DateTime::RFC3339, \DateTimeZone $timezone = null)
     {
         $this->format = $format;
         $this->timezone = $timezone;
@@ -73,7 +72,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
     /**
      * {@inheritdoc}
      *
-     * @throws UnexpectedValueException
+     * @throws NotNormalizableValueException
      */
     public function denormalize($data, $class, $format = null, array $context = array())
     {
@@ -89,7 +88,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
 
             $dateTimeErrors = \DateTime::class === $class ? \DateTime::getLastErrors() : \DateTimeImmutable::getLastErrors();
 
-            throw new UnexpectedValueException(sprintf(
+            throw new NotNormalizableValueException(sprintf(
                 'Parsing datetime string "%s" using format "%s" resulted in %d errors:'."\n".'%s',
                 $data,
                 $dateTimeFormat,
@@ -101,7 +100,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
         try {
             return \DateTime::class === $class ? new \DateTime($data, $timezone) : new \DateTimeImmutable($data, $timezone);
         } catch (\Exception $e) {
-            throw new UnexpectedValueException($e->getMessage(), $e->getCode(), $e);
+            throw new NotNormalizableValueException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -110,19 +109,11 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
      */
     public function supportsDenormalization($data, $type, $format = null)
     {
-        $supportedTypes = array(
-            \DateTimeInterface::class => true,
-            \DateTimeImmutable::class => true,
-            \DateTime::class => true,
-        );
-
-        return isset($supportedTypes[$type]);
+        return isset(self::$supportedTypes[$type]);
     }
 
     /**
      * Formats datetime errors.
-     *
-     * @param array $errors
      *
      * @return string[]
      */

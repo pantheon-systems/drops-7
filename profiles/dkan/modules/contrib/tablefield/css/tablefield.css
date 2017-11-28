@@ -1,0 +1,42 @@
+/**
+ * @file
+ * Styles for Table fields themselves and the form field as well.
+ */
+
+.field-widget-tablefield .form-tablefield table,
+.form-tablefield table {
+  width: 100%;
+}
+.field-widget-tablefield .form-tablefield table tr td,
+.form-tablefield table tr td {
+  margin: 0;
+  padding: 2px 0;
+  text-align: center;
+}
+.form-tablefield table tr td.tablefield-row-count {
+  color: #cccccc;
+  vertical-align: middle;
+  max-width: 20px;
+}
+.field-widget-tablefield .draggable a.tabledrag-handle {
+  margin-left: 0;
+}
+.field-widget-tablefield .form-type-textfield {
+  overflow: hidden;
+  width: 98%;
+}
+.table-no-headers input.tablefield-row-0 {
+  font-weight: normal !important;
+}
+.form-tablefield input {
+  background-color: transparent;
+  width: 100%;
+}
+.form-tablefield table,
+.form-tablefield fieldset {
+  margin: 0.5em 0;
+}
+/* To have an input value close to its unit for the field 'Maximum cell length'.*/
+.tablefield-form-align {
+  text-align: right; /* LTR */
+}

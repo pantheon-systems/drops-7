@@ -38,6 +38,7 @@ function visualization_entity_charts_attach_libraries(&$element) {
     'lodash_data',
     'moment',
     'slickgrid',
+    'numeral',
   );
 
   foreach ($libraries as $library) {
@@ -199,6 +200,22 @@ function visualization_entity_charts_libraries_info() {
     ),
   );
 
+  $libraries['numeral'] = array(
+    'name' => 'Numeral JS',
+    'vendor url' => 'http://numeraljs.com/',
+    'download url' => 'https://github.com/adamwdraper/Numeral-js/zipball/master',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'bower.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'min/numeral.min.js'
+      ),
+    ),
+  );  
+
   $libraries['bgrins-spectrum'] = array(
     'name' => 'bgrins-spectrum',
     'vendor url' => 'https://github.com/bgrins/spectrum',
@@ -275,6 +292,7 @@ function visualization_entity_load_required_libraries(){
   libraries_load('csv');
   libraries_load('mustache');
   libraries_load('lodash_data');
+  libraries_load('numeral');
 }
 
 /**

@@ -25,7 +25,7 @@ function hook_open_data_schema_map_endpoints_alter(&$records) {
  *     - name
  *     - enabled
  *     - schema
- *     - entity
+ *     - type
  *     - bundle
  *     - arguments
  *     - description
@@ -39,7 +39,7 @@ function hook_open_data_schema_map_load($machine_name) {
     $record->name = 'My endpoint name';
     $record->enabled = TRUE;
     $record->schema = '';
-    $record->entity = '';
+    $record->type = '';
     $record->bundle = '';
     $record->arguments = '';
     $record->machine_name = 'my_machine_name';

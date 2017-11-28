@@ -35,13 +35,14 @@ namespace Symfony\Component\Serializer\Normalizer;
 class GetSetMethodNormalizer extends AbstractObjectNormalizer
 {
     private static $setterAccessibleCache = array();
+    private $cache = array();
 
     /**
      * {@inheritdoc}
      */
     public function supportsNormalization($data, $format = null)
     {
-        return parent::supportsNormalization($data, $format) && $this->supports(get_class($data));
+        return parent::supportsNormalization($data, $format) && (isset($this->cache[$type = \get_class($data)]) ? $this->cache[$type] : $this->cache[$type] = $this->supports($type));
     }
 
     /**
@@ -49,17 +50,13 @@ class GetSetMethodNormalizer extends AbstractObjectNormalizer
      */
     public function supportsDenormalization($data, $type, $format = null)
     {
-        return parent::supportsDenormalization($data, $type, $format) && $this->supports($type);
+        return parent::supportsDenormalization($data, $type, $format) && (isset($this->cache[$type]) ? $this->cache[$type] : $this->cache[$type] = $this->supports($type));
     }
 
     /**
      * Checks if the given class has any get{Property} method.
-     *
-     * @param string $class
-     *
-     * @return bool
      */
-    private function supports($class)
+    private function supports(string $class): bool
     {
         $class = new \ReflectionClass($class);
         $methods = $class->getMethods(\ReflectionMethod::IS_PUBLIC);
@@ -74,12 +71,8 @@ class GetSetMethodNormalizer extends AbstractObjectNormalizer
 
     /**
      * Checks if a method's name is get.* or is.*, and can be called without parameters.
-     *
-     * @param \ReflectionMethod $method the method to check
-     *
-     * @return bool whether the method is a getter or boolean getter
      */
-    private function isGetMethod(\ReflectionMethod $method)
+    private function isGetMethod(\ReflectionMethod $method): bool
     {
         $methodLength = strlen($method->name);
 

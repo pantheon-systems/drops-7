@@ -14,8 +14,8 @@ class MediaInternetYouTubeHandler extends MediaInternetBaseHandler {
 
   public function parse($embedCode) {
     $list_patterns = array(
-      '@youtube\.com/playlist[#\?].*?list=([^"\& ]+)@i',
-      '@youtube\.com/view_play_list[#\?].*?p=([^"\& ]+)@i',
+      '@youtube\.com/playlist[#\?].*?list=([^"#\& ]+)@i',
+      '@youtube\.com/view_play_list[#\?].*?p=([^"#\& ]+)@i',
     );
 
     foreach ($list_patterns as $pattern) {
@@ -32,15 +32,15 @@ class MediaInternetYouTubeHandler extends MediaInternetBaseHandler {
     // http://youtu.be/*
     // http://gdata.youtube.com/feeds/api/videos/*
     $patterns = array(
-      '@youtube\.com/watch[#\?].*?v=([^"\& ]+).*&list=([^"\& ]+)@i',
-      '@youtu\.be/([^"\&\? ]+)\?list=([^"\& ]+)@i',
-      '@youtube\.com/embed/([^"\&\? ]+)\?list=([^"\& ]+)@i',
-      '@youtube\.com/watch[#\?].*?v=([^"\& ]+)@i',
-      '@youtube\.com/embed/([^"\&\? ]+)@i',
-      '@youtube\.com/v/([^"\&\? ]+)@i',
-      '@youtube\.com/\?v=([^"\& ]+)@i',
-      '@youtu\.be/([^"\&\? ]+)@i',
-      '@gdata\.youtube\.com/feeds/api/videos/([^"\&\? ]+)@i',
+      '@youtube\.com/watch[#\?].*?v=([^"#\& ]+).*&list=([^"#\& ]+)@i',
+      '@youtu\.be/([^"#\&\? ]+)\?list=([^"#\& ]+)@i',
+      '@youtube\.com/embed/([^"#\&\? ]+)\?list=([^"#\& ]+)@i',
+      '@youtube\.com/watch[#\?].*?v=([^"#\& ]+)@i',
+      '@youtube\.com/embed/([^"#\&\? ]+)@i',
+      '@youtube\.com/v/([^"#\&\? ]+)@i',
+      '@youtube\.com/\?v=([^"#\& ]+)@i',
+      '@youtu\.be/([^"#\&\? ]+)@i',
+      '@gdata\.youtube\.com/feeds/api/videos/([^"#\&\? ]+)@i',
     );
 
     foreach ($patterns as $pattern) {
@@ -51,7 +51,7 @@ class MediaInternetYouTubeHandler extends MediaInternetBaseHandler {
         $uri = 'youtube://v/' . $matches[1][0];
         if (isset($matches[2][0]) && $this->validId($matches[2][0], 'l')) {
           $uri .= '/l/' . $matches[2][0];
-         }
+        }
         return file_stream_wrapper_uri_normalize($uri);
       }
     }

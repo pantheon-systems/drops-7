@@ -19,6 +19,13 @@ function media_bulk_upload_import($form, &$form_state) {
       '#required' => TRUE,
     );
 
+    $form['to_directory'] = array(
+      '#type' => 'textfield',
+      '#title' => t('To Directory'),
+      '#description' => t('Enter the subdirectory of /sites/default/files where files will be copied. If empty the default directory will be use.'),
+      '#required' => FALSE,
+    );
+
     $form['pattern'] = array(
       '#type' => 'textarea',
       '#title' => t('Pattern'),
@@ -76,6 +83,7 @@ function media_bulk_upload_import_validate($form, &$form_state) {
       form_set_error('pattern', t('No files were found in %directory matching the regular expression %pattern', array('%directory' => $directory, '%pattern' => $pattern_quoted)));
     }
     $form_state['storage']['files'] = $files;
+    $form_state['storage']['to_directory'] =  $form_state['values']['to_directory'];
   }
 }
 
@@ -85,10 +93,12 @@ function media_bulk_upload_import_validate($form, &$form_state) {
 function media_bulk_upload_import_submit($form, &$form_state) {
   if ($form_state['values']['op'] == t('Confirm')) {
     $files = $form_state['storage']['files'];
+    $params = array();
+    $params['to_directory'] = $form_state['storage']['to_directory'];
     $batch = array(
       'title' => t('Importing'),
       'operations' => array(
-        array('media_bulk_upload_import_batch_import_files', array($files)),
+        array('media_bulk_upload_import_batch_import_files', array($files, $params)),
       ),
       'finished' => 'media_bulk_upload_import_batch_import_complete',
       'file' => drupal_get_path('module', 'media_bulk_upload') . '/includes/media_bulk_upload.admin.inc',
@@ -103,7 +113,7 @@ function media_bulk_upload_import_submit($form, &$form_state) {
 /**
  * BatchAPI callback op for media import.
  */
-function media_bulk_upload_import_batch_import_files($files, &$context) {
+function media_bulk_upload_import_batch_import_files($files, $params, &$context) {
   if (!isset($context['sandbox']['files'])) {
     // This runs the first time the batch runs.
     // This is stupid, but otherwise, I don't think it will work...
@@ -121,7 +131,7 @@ function media_bulk_upload_import_batch_import_files($files, &$context) {
 
   foreach ($to_process as $file) {
     try {
-      $file_obj = media_parse_to_file($file);
+      $file_obj = media_parse_to_file($file, $params);
       $context['results']['success'][] = $file;
       if (!$image_in_message) {
         // @todo Is this load step really necessary? When there's time, test

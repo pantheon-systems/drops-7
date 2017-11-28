@@ -1,6 +1,6 @@
 # Nuboot Radix theme
 
-This is the default theme for DKAN 1.0 -> https://github.com/NuCivic/dkan
+This is the default theme for DKAN 1.0 -> https://github.com/GetDKAN/dkan
 
 
 ## Installation
@@ -36,7 +36,7 @@ To create a Nuboot Radix subtheme, run these command
 
 ```drush vset theme_default radix```
 
-```drush radix "MyThemeName" --kit=https://github.com/NuCivic/radix-kit-nuboot/archive/master.zip```
+```drush radix "MyThemeName" --kit=https://github.com/GetDKAN/radix-kit-nuboot/archive/master.zip```
 
 ```drush vset theme_default MyThemeName```
 
@@ -70,3 +70,5 @@ Use the components directory to break out your styles into easy to find partial 
 **Streamline Icons** http://www.streamlineicons.com/index.html
 
 **Flaticons** designed by Freepik http://www.flaticon.com/packs/file-formats-icons
+
+**Font Awesome** http://fontawesome.io/

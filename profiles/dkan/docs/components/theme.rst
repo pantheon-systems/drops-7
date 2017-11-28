@@ -92,12 +92,12 @@ Creating a new subtheme
 To create a Nuboot Radix subtheme, run these commands
 
 .. code-block:: php
-  
+
   drush en radix
 
   drush vset theme_default radix
 
-  drush radix "MyThemeName" --kit=https://github.com/NuCivic/radix-kit-nuboot/archive/master.zip
+  drush radix "MyThemeName" --kit=https://github.com/GetDKAN/radix-kit-nuboot/archive/master.zip
 
   drush vset theme_default MyThemeName
 
@@ -152,4 +152,4 @@ dkan-topics
 
 This font is used for the Content Type and :doc:`Topics <topics>` icons, see `Streamline Icons <http://www.streamlineicons.com/index.html>`_
 
-If you would like to use your own icon font for Topics, use the :doc:`steps outlined here <adding_new_icons>`.
+If you would like to use your own icon font for Topics, use the :ref:`steps outlined here <adding_new_icons>`.

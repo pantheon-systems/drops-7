@@ -3,7 +3,7 @@ description = Provides the core Media API
 package = Media
 core = 7.x
 
-dependencies[] = file_entity (>7.x-2.0)
+dependencies[] = file_entity
 dependencies[] = image
 dependencies[] = views
 
@@ -24,9 +24,9 @@ configure = admin/config/media/browser
 ; We have to add a fake version so Git checkouts do not fail Media dependencies
 version = 7.x-2.x-dev
 
-; Information added by Drupal.org packaging script on 2017-07-04
-version = "7.x-2.9"
+; Information added by Drupal.org packaging script on 2017-10-19
+version = "7.x-2.13"
 core = "7.x"
 project = "media"
-datestamp = "1499174646"
+datestamp = "1508430548"
 

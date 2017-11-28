@@ -128,7 +128,8 @@ Drupal.media.popups.mediaBrowser.mediaBrowserOnLoad = function (e) {
   var options = e.data;
 
   // Ensure that the iFrame is defined.
-  if (this.contentWindow.Drupal.media.browser == undefined) {
+  if (typeof this.contentWindow.Drupal.media === 'undefined' || typeof
+  this.contentWindow.Drupal.media.browser === 'undefined') {
     return;
   }
 
@@ -373,7 +374,7 @@ Drupal.media.popups.getPopupIframe = function (src, id, options) {
   var defaults = {width: '100%', scrolling: 'auto'};
   var options = $.extend({}, defaults, options);
 
-  return $('<iframe class="media-modal-frame"/>')
+  return $('<iframe class="media-modal-frame" tabindex="0"/>')
   .attr('src', src)
   .attr('width', options.width)
   .attr('id', id)

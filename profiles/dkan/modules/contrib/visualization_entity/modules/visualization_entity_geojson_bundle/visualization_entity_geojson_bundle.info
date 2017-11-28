@@ -2,7 +2,6 @@ name = Visualization Entity Geojson Bundle
 description = Plot simple geojson data on a map. Expiremental.
 core = 7.x
 package = Data Visualization
-version = 7.x-1.x-dev
 
 dependencies[] = libraries
 dependencies[] = geo_file_entity
@@ -11,9 +10,8 @@ dependencies[] = visualization_entity
 features[eck_bundle][] = visualization_geojson_visualization
 features[features_api][] = api:2
 features[field_instance][] = visualization-geojson_visualization-field_uuid_resource
-mtime = 1421033934
 project path = sites/all/modules/nucivic/visualization_entity/modules
 
-; Information added by DKAN release script on 6/21/2017
-version = 7.x-1.2
+; Information added by DKAN release script on 11/14/2017
+version = 7.x-1.14
 project = dkan

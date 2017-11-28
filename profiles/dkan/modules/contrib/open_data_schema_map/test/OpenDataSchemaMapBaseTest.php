@@ -1,7 +1,17 @@
 <?php
+/**
+ * @file
+ * Open Data Schema Map PHPUnit Tests.
+ */
+
+/**
+ * Class OpenDataSchemaMapBaseTest
+ */
 class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
 {
-
+  /**
+   * {@inheritdoc}
+   */
   public static function setUpBeforeClass() {
     // Change /data.json path to /json during tests.
     $data_json = open_data_schema_map_api_load('data_json_1_1');
@@ -9,15 +19,32 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
     drupal_write_record('open_data_schema_map', $data_json, 'id');
     drupal_static_reset('open_data_schema_map_api_load_all');
     menu_rebuild();
+
+    // Save original variables.
+    $original_included_agency_nids = variable_get('odsm_settings_groups', array());
+    variable_set('original_included_agency_nids', $original_included_agency_nids);
+
+    // Save original filter enabled on data.json.
+    variable_set('original_data_json_1_1_filter_enabled', $data_json->filter_enabled);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function tearDownAfterClass() {
-    // Restore /data.json path
+    // Restore /data.json path, filter_eenabled.
     $data_json = open_data_schema_map_api_load('data_json_1_1');
     $data_json->endpoint = 'data.json';
+    $data_json->filter_enabled = variable_get('original_data_json_1_1_filter_enabled', FALSE);
     drupal_write_record('open_data_schema_map', $data_json, 'id');
     drupal_static_reset('open_data_schema_map_api_load_all');
-    menu_rebuild(); 
+    menu_rebuild();
+
+    // Restore overridden variables.
+    $original_included_agency_nids = variable_get('original_included_agency_nids');
+    variable_set('odsm_settings_groups', $original_included_agency_nids);
+    variable_del('original_included_agency_nids');
+    variable_del('original_included_agency_nids');
   }
 
   /**
@@ -110,6 +137,164 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
   }
 
   /**
+   * Test filtering of API.
+   */
+  public function testDkanDatasetAPIFilter() {
+    $api_machine_name = 'data_json_1_1';
+    // Test when enable_filter is disabled.
+    self::modifyApiFieldValues('data_json_1_1', array('filter_enabled' => 0));
+
+    $query = new EntityFieldQuery();
+    $num_datasets = $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'dataset')
+      ->propertyCondition('status', NODE_PUBLISHED)
+      ->count()->execute();
+
+    // Load data.json responses.
+    $responses = $this->runQueries($api_machine_name);
+    $data = json_decode($responses[0]->data);
+
+    // Ensure all datasets are being shown.
+    $message = t(
+      'No Filter Enabled: Found @num_results_datasets, expected @expected_datasets datasets',
+      array(
+        '@num_results_datasets' => count($data->dataset),
+        '@expected_datasets' => $num_datasets,
+      )
+    );
+    $this->assertEquals(count($data->dataset), $num_datasets, $message);
+
+    // Test filter enabled, no groups are selected, publishers without name ok.
+    self::modifyApiFieldValues($api_machine_name, array('filter_enabled' => 1));
+    variable_set('odsm_settings_groups', array());
+    variable_set('odsm_settings_no_publishers', 1);
+
+    $query = new EntityFieldQuery();
+    $num_datasets = $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'dataset')
+      ->propertyCondition('status', NODE_PUBLISHED)
+      ->count()->execute();
+
+    // Load data.json responses.
+    $responses = $this->runQueries($api_machine_name);
+    $data = json_decode($responses[0]->data);
+
+    // Ensure all datasets are being shown.
+    $message = t(
+      'Filter Enabled/No Groups: Found @num_results_datasets, expected @expected_datasets datasets',
+      array(
+        '@num_results_datasets' => count($data->dataset),
+        '@expected_datasets' => $num_datasets,
+      )
+    );
+    $this->assertEquals(count($data->dataset), $num_datasets, $message);
+
+    // Test one group for filtering, publishers without name ok.
+    variable_set('odsm_settings_no_publishers', 1);
+
+    $query = db_query("SELECT node.title AS node_title, node.nid AS nid
+        FROM {node} node
+        WHERE ((node.status = '1') AND (node.type IN  ('group')) )
+        ORDER BY node_title ASC"
+    );
+    $groups = $query->fetchAll();
+
+
+    // Set the 1st group as the one to be included.
+    $group_to_filter = reset($groups);
+    variable_set('odsm_settings_groups', array($group_to_filter->nid => $group_to_filter->nid));
+
+    // Load data.json responses.
+    $responses = $this->runQueries($api_machine_name);
+    $data = json_decode($responses[0]->data);
+
+    foreach ($data->dataset as $dataset) {
+      // Check each dataset's og_group_ref (publisher/group).
+      $query = new EntityFieldQuery();
+      $loaded_dataset_nids = $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'dataset')
+        ->propertyCondition('status', NODE_PUBLISHED)
+        ->propertyCondition('uuid', $dataset->identifier)
+        ->execute();
+      $loaded_group_nodes = node_load_multiple(array_keys($loaded_dataset_nids['node']));
+
+      foreach ($loaded_group_nodes as $loaded_group_node) {
+        if (isset($loaded_group_node->og_group_ref[LANGUAGE_NONE])) {
+          foreach ($loaded_group_node->og_group_ref[LANGUAGE_NONE] as $target_ids) {
+            // Ensure the dataset is part of the group.
+            $message = t(
+              'Group of dataset @dataset_title did not match filter group NID @nid',
+              array(
+                '@dataset_title' => $group_to_filter->title,
+                '@nid' => $target_ids['target_id'],
+              )
+            );
+            $this->assertEquals($group_to_filter->nid, $target_ids['target_id'], $message);
+          }
+        }
+        else {
+          // No publisher set, no check necessary on this test.
+        }
+      }
+    }
+
+    // Test one group for filtering, publishers without name not ok.
+    variable_set('odsm_settings_no_publishers', 0);
+
+    $query = db_query("SELECT node.title AS node_title, node.nid AS nid
+        FROM {node} node
+        WHERE ((node.status = '1') AND (node.type IN  ('group')) )
+        ORDER BY node_title ASC"
+    );
+    $groups = $query->fetchAll();
+
+    // Set the 1st group as the one to be included.
+    $group_to_filter = reset($groups);
+    variable_set('odsm_settings_groups', array($group_to_filter->nid => $group_to_filter->nid));
+
+    // Load data.json responses.
+    $responses = $this->runQueries($api_machine_name);
+    $data = json_decode($responses[0]->data);
+
+    foreach ($data->dataset as $dataset) {
+      // Check each dataset's og_group_ref (publisher/group).
+      $query = new EntityFieldQuery();
+      $loaded_dataset_nids = $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'dataset')
+        ->propertyCondition('status', NODE_PUBLISHED)
+        ->propertyCondition('uuid', $dataset->identifier)
+        ->execute();
+      $loaded_group_nodes = node_load_multiple(array_keys($loaded_dataset_nids['node']));
+
+      foreach ($loaded_group_nodes as $loaded_group_node) {
+        if (isset($loaded_group_node->og_group_ref[LANGUAGE_NONE])) {
+          foreach ($loaded_group_node->og_group_ref[LANGUAGE_NONE] as $target_ids) {
+            // Ensure the dataset is part of the group.
+            $message = t(
+              'Group of dataset @dataset_title did not match filter group NID @nid',
+              array(
+                '@dataset_title' => $group_to_filter->title,
+                '@nid' => $target_ids['target_id'],
+              )
+            );
+            $this->assertEquals($group_to_filter->nid, $target_ids['target_id'], $message);
+          }
+        }
+        else {
+          // No publisher set, that violates the test.
+          $message = t(
+            'Blank publisher found on dataset @dataset_title',
+            array(
+              '@dataset_title' => $group_to_filter->title,
+            )
+          );
+          $this->assertTrue(FALSE, $message);
+        }
+      }
+    }
+  }
+
+  /**
    * Run common test to an array of package.
    *
    * @param object $result
@@ -129,7 +314,7 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
   /**
    * Run common test to an array of package.
    *
-   * @param array $packages
+   * @param mixed $packages
    *   An array of json datasets.
    */
   protected function runPackageTests($packages) {
@@ -168,19 +353,22 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
   }
 
   /**
-   * Runs querys for every hook_menu_item related to $slug.
+   * Runs queries for every hook_menu_item related to $slug.
    *
    * @param string $slug
    *   identifier for a specific api endpoint
    * @param string $uuid
    *   unique identifier for a specific group, resource or dataset query
+   *
+   * @return array
+   *   Array of successful queries.
    */
-  protected function runQueries($slug, $uuid = FALSE) {
+  protected function runQueries($slug, $uuid = '') {
     $uris = $this->getHookMenuItems($slug);
-    
+
     foreach ($uris as $key => $uri) {
       $uris[$key] = array('uri' => $uri, 'options' => array());
-      if ($uuid) {
+      if (!empty($uuid)) {
         if (strpos($uri, '%') !== FALSE) {
           $uris[$key]['uri'] = str_replace('%', $uuid, $uri);
         }
@@ -226,8 +414,21 @@ class OpenDataSchemaMapBaseTest  extends PHPUnit_Framework_TestCase
     return array($endpoints[$callback]);
   }
 
-    /*public function testDataJsonRollback() {
-      $this->rollback('dkan_migrate_base_example_data_json11');
-    }*/
-
+  /**
+   * Sets fields/values in an API schema.
+   *
+   * @param string $api_name
+   *   API machine name
+   * @param array $field_values
+   *   Array of field_name => value to set
+   */
+  protected static function modifyApiFieldValues($api_name, $field_values) {
+    $data_json = open_data_schema_map_api_load($api_name);
+    foreach ($field_values as $field => $value) {
+      $data_json->$field = $value;
+    }
+    drupal_write_record('open_data_schema_map', $data_json, 'id');
+    drupal_static_reset('open_data_schema_map_api_load_all');
+    menu_rebuild();
+  }
 }
