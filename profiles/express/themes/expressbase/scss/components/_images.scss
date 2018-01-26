@@ -44,7 +44,8 @@ img.image-slider {
   .field-type-text-long p:last-child {
     margin-bottom: 0;
   }
-  .block {
+  & > .block,
+  & .block-express-layout > .block-inner > .content > .block {
     margin-bottom: 0;
   }
 }

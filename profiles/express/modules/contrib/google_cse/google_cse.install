@@ -74,3 +74,10 @@ function google_cse_uninstall() {
     variable_del('search_default_module');
   }
 }
+
+/**
+ * Add path variable for cse form
+ */
+function google_cse_update_7202() {
+  variable_set('google_cse_name','');
+}

@@ -67,7 +67,7 @@ If you would like to have the characters %5B and %5D please use the html entity 
           $patterns .= theme('item_list',
             array(
               'items' => $items,
-              'type' => $type
+              'type' => $type,
             ));
         }
       }
@@ -183,11 +183,11 @@ If you would like to have the characters %5B and %5D please use the html entity 
         'width' => $width,
         'height' => $height,
         'title' => $caption,
-        'inline' => 'true'
+        'inline' => 'true',
       ),
       'attributes' => array(
         'class' => array('colorbox-inline'),
-        'rel' => $gallery_id
+        'rel' => $gallery_id,
       )
     );
     // Remove any parameters that aren't set.

@@ -11,6 +11,13 @@
 function google_cse_admin_settings() {
   $form = array();
 
+  $form['google_cse_name'] = array(
+    '#title' => t('Google Custom Search Engine Name'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('google_cse_name', ''),
+    '#description' => t('Enter your <a target="_blank" href="http://www.google.com/cse/manage/all">Google CSE Name</a> (click on control panel).'),
+  );
+
   $form['google_cse_cx'] = array(
     '#title' => t('Google Custom Search Engine ID'),
     '#type' => 'textfield',
@@ -107,7 +114,7 @@ function google_cse_admin_settings() {
   $form['google_cse_show_watermark'] = array(
     '#title' => t('Show watermark in search field'),
     '#type' => 'checkbox',
-    '#description' => t('If set, search result snippets will contain a thumbnail image'),
+    '#description' => t('If set, Google Custom Search watermark will be in search box'),
     '#default_value' => variable_get('google_cse_results_display_images', TRUE),
   );
 
@@ -144,17 +151,22 @@ function google_cse_admin_settings() {
   );
 
   if (!module_exists('search')) {
+    // If no search module enabled, then this form will load at a separate route under admin/config/search/cse-settings.
     return system_settings_form($form);
+  } else {
+    // If the search mdoule is enabled, then this form will load at admin/config/search/settings in a fieldset.
+    $form_fieldset = array();
+    $form_fieldset['google_cse'] = array(
+      '#title' => t('Google CSE'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    foreach ($form as $key => $value) {
+      $form_fieldset['google_cse'][$key] = $value;
+    }
+
+    return $form_fieldset;
   }
-
-  // @TODO: Put the values back into a fieldset when integrated with core search
-  $form['google_cse'] = array(
-    '#title' => t('Google CSE'),
-    '#type' => 'fieldset',
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  return $form;
-
 }

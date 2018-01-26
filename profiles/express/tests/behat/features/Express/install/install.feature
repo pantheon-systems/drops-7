@@ -21,4 +21,4 @@ Feature: Content Management
       Then I should not see the text "Home" in the "Sidebar Second" region
         And I should see the text "Basic Page" in the "Sidebar Second" region
 
-  # TODO write test to see no messages in the error regions
+  # @todo write test to see no messages in the error regions.

@@ -35,6 +35,10 @@ define('LDAP_USER_CONFLICT_LOG', 1);
 define('LDAP_USER_CONFLICT_RESOLVE', 2);
 define('LDAP_USER_CONFLICT_RESOLVE_DEFAULT', 2);
 
+// options for what to do if another Drupal account has the same email address
+define('LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED', 0);
+define('LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_ENABLED', 1);
+
 // options for dealing with manual account creation that conflict with ldap entries
 define('LDAP_USER_MANUAL_ACCT_CONFLICT_REJECT', 1);
 define('LDAP_USER_MANUAL_ACCT_CONFLICT_LDAP_ASSOCIATE', 2);

@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * @file
+ * Test general functionality of Webform.
+ */
+
+/**
+ *
+ */
+class WebformGeneralTestCase extends WebformTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Webform'),
+      'description' => t('Checks global Webform settings and content types.'),
+      'group' => t('Webform'),
+    );
+  }
+
+  /**
+   * Test creating a new Webform node.
+   */
+  public function testWebformCreate() {
+    $settings = array(
+      'title' => 'Test webform, no components',
+      'type' => 'webform',
+    );
+    $node = $this->drupalCreateNode($settings);
+
+    // Because this is a "webform" type node, it should have an entry in the
+    // database even though it's using the default settings.
+    $this->assertTrue($this->webformRecordExists($node->nid), t('Webform record made in the database for the new webform node.'));
+
+    // Make a change to the node, ensure that the record stays intact.
+    $node->title .= '!';
+    node_save($node);
+    $this->assertTrue($this->webformRecordExists($node->nid), t('Webform record still in the database after modifying webform node.'));
+  }
+
+  /**
+   * Test webform-enabling a different node type and testing behavior.
+   */
+  public function testWebformCreateNewType() {
+    // Enable webforms on the page content type.
+    variable_set('webform_node_webform', TRUE);
+    variable_set('webform_node_page', TRUE);
+
+    $settings = array(
+      'title' => 'Test webform-enabled page',
+      'type' => 'page',
+    );
+    $node = $this->drupalCreateNode($settings);
+
+    // Because this is a webform-enabled type node but does not yet have any
+    // components, it should not have an entry in the database because it is
+    // using the default settings.
+    $this->assertFalse($this->webformRecordExists($node->nid), t('Webform record not in the database for the new page node.'));
+
+    // Make a change to the node, ensure that the record stays empty.
+    $node->title .= '!';
+    node_save($node);
+    $this->assertFalse($this->webformRecordExists($node->nid), t('Webform record still not in the database after modifying page node.'));
+
+    // Add a new component to the node and check that a record is made in the
+    // webform table.
+    $components = $this->webformComponents();
+    $textarea = $components['textarea'];
+    $textarea['type'] = 'textarea';
+    $textarea['form_key'] = 'textarea';
+    $textarea['cid'] = 1;
+    $textarea['pid'] = 0;
+    $textarea = array_merge(webform_component_invoke('textarea', 'defaults'), $textarea);
+    $node->webform['components'][1] = $textarea;
+    node_save($node);
+    $this->assertTrue($this->webformRecordExists($node->nid), t('Webform record now exists after adding a new component.'));
+
+    // Remove the new component and ensure that the record is deleted.
+    $node->webform['components'] = array();
+    node_save($node);
+    $this->assertFalse($this->webformRecordExists($node->nid), t('Webform record deleted after deleting last component.'));
+  }
+
+  /**
+   * @return bool
+   */
+  public function webformRecordExists($nid) {
+    return (bool) db_query("SELECT nid FROM {webform} WHERE nid = :nid", array(':nid' => $nid))->fetchField();
+  }
+
+}

@@ -15,7 +15,8 @@
  *   The node object containing the current webform.
  * @param $submitted
  *   The submitted user values from the webform.
- * @return
+ *
+ * @return array
  *   An array suitable for use in the 'data' property of a $submission object.
  */
 function webform_submission_data($node, $submitted) {
@@ -46,15 +47,16 @@ function webform_submission_data($node, $submitted) {
  * @param object $account
  *   The user account that is creating this submission.
  * @param array $form_state
- *   The form_state containing the values for the submission
+ *   The form_state containing the values for the submission.
  * @param object $prototype
  *   An existing submission that is being previewed, if any.
+ *
  * @return object
  *   A new submission object, possibly for preview
  */
 function webform_submission_create($node, $account, $form_state, $is_preview = FALSE, $prototype = NULL) {
   $data = webform_submission_data($node, $form_state['values']['submitted']);
-  if ($prototype) {
+  if (is_object($prototype)) {
     $submission = clone $prototype;
     $submission->preview = $is_preview;
     $submission->data = $data;
@@ -74,7 +76,7 @@ function webform_submission_create($node, $account, $form_state, $is_preview = F
       'serial' => NULL,
       'data' => $data,
     );
-  drupal_alter('webform_submission_create', $submission, $node, $account, $form_state);
+    drupal_alter('webform_submission_create', $submission, $node, $account, $form_state);
   }
   return $submission;
 }
@@ -86,6 +88,7 @@ function webform_submission_create($node, $account, $form_state, $is_preview = F
  *   The node object containing the current webform.
  * @param $submission
  *   The webform submission object to be saved into the database.
+ *
  * @return
  *   The existing submission SID.
  */
@@ -135,6 +138,7 @@ function webform_submission_update($node, $submission) {
  *   The node object containing the current webform.
  * @param $submission
  *   The webform submission object to be saved into the database.
+ *
  * @return
  *   The new submission SID.
  */
@@ -222,6 +226,9 @@ function webform_submission_delete($node, $submission) {
  * @param $emails
  *   (optional) An array of specific e-mail settings to be used. If omitted, all
  *   e-mails in $node->webform['emails'] will be sent.
+ *
+ * @return int
+ *   Number of mail sent.
  */
 function webform_submission_send_mail($node, $submission, $emails = NULL) {
   global $user;
@@ -233,8 +240,9 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
   $send_count = 0;
   foreach ($emails as $eid => $email) {
     // Continue with next email recipients array if disabled for current.
-    if (!$email['status'])
+    if (!$email['status']) {
       continue;
+    }
 
     // Set the HTML property based on availablity of MIME Mail.
     $email['html'] = ($email['html'] && webform_variable_get('webform_email_html_capable'));
@@ -248,7 +256,7 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     }
 
     // Replace tokens in the message.
-    $email['message'] = webform_replace_tokens($email['message'], $node, $submission, $email, (boolean)$email['html']);
+    $email['message'] = webform_replace_tokens($email['message'], $node, $submission, $email, (boolean) $email['html']);
 
     // Build the e-mail headers.
     $email['headers'] = theme(array('webform_mail_headers_' . $node->nid, 'webform_mail_headers'), array('node' => $node, 'submission' => $submission, 'email' => $email));
@@ -261,7 +269,7 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     }
     else {
       // Format the From address.
-      $mapping = isset($email['extra']['from_address_mapping']) ?  $email['extra']['from_address_mapping'] : NULL;
+      $mapping = isset($email['extra']['from_address_mapping']) ? $email['extra']['from_address_mapping'] : NULL;
       $email['from'] = webform_format_email_address($email['from_address'], $email['from_name'], $node, $submission, TRUE, TRUE, NULL, $mapping);
     }
 
@@ -281,8 +289,10 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
       if (webform_variable_get('webform_email_address_format') == 'long') {
         $email_parts = webform_parse_email_address($email['headers']['Reply-To']);
         $from_name = t('!name via !site_name',
-                        array('!name' => strlen($email_parts['name']) ? $email_parts['name'] : $email_parts['address'],
-                              '!site_name' => $default_from_name));
+                        array(
+                          '!name' => strlen($email_parts['name']) ? $email_parts['name'] : $email_parts['address'],
+                          '!site_name' => $default_from_name,
+                        ));
         $from_name = implode(' ', array_map('mime_header_encode', explode(' ', $from_name)));
         $email['from'] = '"' . $from_name . '" <' . $email['from'] . '>';
       }
@@ -305,7 +315,7 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     }
     else {
       // Format the To address(es).
-      $mapping = isset($email['extra']['email_mapping']) ?  $email['extra']['email_mapping'] : NULL;
+      $mapping = isset($email['extra']['email_mapping']) ? $email['extra']['email_mapping'] : NULL;
       $addresses = webform_format_email_address($email['email'], NULL, $node, $submission, TRUE, FALSE, NULL, $mapping);
       $email['email'] = implode(',', $addresses);
     }
@@ -321,7 +331,7 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     foreach ($addresses_final as $address) {
       if (_webform_submission_spam_check($address, $email['subject'], $email['from'], $email['headers'])) {
         watchdog('webform', 'Possible spam attempt from @remote !message',
-                 array('@remote' => ip_address(), '!message'=> "<br />\n" . nl2br(htmlentities($email['message']))));
+          array('@remote' => ip_address(), '!message' => "<br />\n" . nl2br(htmlentities($email['message']))));
         drupal_set_message(t('Illegal information. Data not submitted.'), 'error');
         return FALSE;
       }
@@ -423,14 +433,17 @@ function webform_submission_delete_form($form, $form_state, $node, $submission) 
   return confirm_form($form, NULL, "node/{$node->nid}/submission/{$submission->sid}", $question, t('Delete'), t('Cancel'));
 }
 
+/**
+ *
+ */
 function webform_submission_delete_form_submit($form, &$form_state) {
   $node = node_load($form_state['values']['details']['nid']);
   $submission = webform_get_submission($form_state['values']['details']['nid'], $form_state['values']['details']['sid']);
   webform_submission_delete($node, $submission);
   drupal_set_message(t('Submission deleted.'));
 
-  // If no destination query was supplied in the URL (e.g. Edit tab), redirect
-  // to the most-privledged destination.
+  // If no destination query was supplied in the URL (for example, Edit tab),
+  // redirect to the most-privledged destination.
   $form_state['redirect'] = 'node/' . $node->nid .
                             (webform_results_access($node) ? '/webform-results' : '/submissions');
 }
@@ -517,7 +530,7 @@ function webform_submission_resend($form, $form_state, $node, $submission) {
 
   foreach ($node->webform['emails'] as $eid => $email) {
 
-    $mapping = isset($email['extra']['email_mapping']) ?  $email['extra']['email_mapping'] : NULL;
+    $mapping = isset($email['extra']['email_mapping']) ? $email['extra']['email_mapping'] : NULL;
     $addresses = webform_format_email_address($email['email'], NULL, $node, $submission, FALSE, FALSE, NULL, $mapping);
     $addresses_valid = array_map('webform_valid_email_address', $addresses);
     $valid_email = count($addresses) == array_sum($addresses_valid);
@@ -588,10 +601,13 @@ function webform_submission_resend_submit($form, &$form_state) {
 /**
  * Theme the node components form. Use a table to organize the components.
  *
- * @param $form
- *   The form array.
- * @return
+ * @param array $variables
+ *   Array with key "form" containing the form array.
+ *
+ * @return string
  *   Formatted HTML form, ready for display.
+ *
+ * @throws Exception
  */
 function theme_webform_submission_resend($variables) {
   $form = $variables['form'];
@@ -655,7 +671,7 @@ function webform_submission_render($node, $submission, $email, $format, $exclude
   module_load_include('inc', 'webform', 'includes/webform.components');
   _webform_components_tree_build($components, $component_tree, 0, $page_count);
 
-  // Make sure at least one field is available
+  // Make sure at least one field is available.
   if (isset($component_tree['children'])) {
     // Recursively add components to the form.
     $sorter = webform_get_conditional_sorter($node);
@@ -683,6 +699,9 @@ function webform_submission_render($node, $submission, $email, $format, $exclude
  *   table, pass the array header of the table.
  * @param $pager_count
  *   Optional. The number of submissions to include in the results.
+ *
+ * @return array
+ *   Array of submission data for a particular node.
  */
 function webform_get_submissions($filters = array(), $header = NULL, $pager_count = 0) {
   return webform_get_submissions_load(webform_get_submissions_query($filters, $header, $pager_count));
@@ -703,6 +722,8 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
  *   table, pass the array header of the table.
  * @param $pager_count
  *   Optional. The number of submissions to include in the results.
+ *
+ * @return QueryExtendableInterface|SelectQueryInterface
  */
 function webform_get_submissions_query($filters = array(), $header = NULL, $pager_count = 0) {
   if (!is_array($filters)) {
@@ -718,7 +739,7 @@ function webform_get_submissions_query($filters = array(), $header = NULL, $page
   }
 
   // If the sid is specified, but there are none, force the query to fail
-  // rather than query on an empty array
+  // rather than query on an empty array.
   if (isset($filters['ws.sid']) && empty($filters['ws.sid'])) {
     $filters['ws.sid'] = 0;
   }
@@ -795,20 +816,21 @@ function webform_get_submissions_query($filters = array(), $header = NULL, $page
  *   A select or extended select query containing the needed fields:
  *     webform_submissions: all fields
  *     user: name
+ *
  * @return array
  *   An array of loaded webform submissions.
  */
 function webform_get_submissions_load($pager_query) {
   // If the "$pager_query" is actually an unextended select query, then instead
-  // of querying the webform_submissions_data table with a pontentially huge
-  // array of sids in an IN clause, use the select query directy as this will
+  // of querying the webform_submissions_data table with a potentially huge
+  // array of sids in an IN clause, use the select query directly as this will
   // be much faster. Extended queries don't work in join clauses. The query
   // is assumed to include the sid.
   if ($pager_query instanceof SelectQuery) {
     $submissions_query = clone $pager_query;
   }
 
-  // Extract any filter on node id to use in an optimization below
+  // Extract any filter on node id to use in an optimization below.
   foreach ($pager_query->conditions() as $index => $condition) {
     if ($index !== '#conjunction' && $condition['operator'] === '=' && ($condition['field'] === 'nid' || $condition['field'] === 'ws.nid')) {
       $nid = $condition['value'];
@@ -845,7 +867,7 @@ function webform_get_submissions_load($pager_query) {
     $query->innerJoin($submissions_query, 'ws2', 'sd.sid = ws2.sid');
   }
   else {
-    $query->condition('sd.sid',  array_keys($submissions), 'IN');
+    $query->condition('sd.sid', array_keys($submissions), 'IN');
   }
 
   // By adding the NID to this query we allow MySQL to use the primary key on
@@ -879,6 +901,7 @@ function webform_get_submissions_load($pager_query) {
  * @param $is_draft
  *   Optional; NULL for all, truthy for drafts only, falsy for completed only.
  *   The default is completed submissions only.
+ *
  * @return
  *   An integer value of the number of submissions.
  */
@@ -927,13 +950,18 @@ function webform_get_submission($nid, $sid) {
   return $submissions[$sid];
 }
 
+/**
+ *
+ */
 function _webform_submission_spam_check($to, $subject, $from, $headers = array()) {
-  $headers = implode('\n', (array)$headers);
+  $headers = implode('\n', (array) $headers);
   // Check if they are attempting to spam using a bcc or content type hack.
   if (preg_match('/(b?cc\s?:)|(content\-type:)/i', $to . "\n" . $subject . "\n" . $from . "\n" . $headers)) {
-    return TRUE; // Possible spam attempt.
+    // Possible spam attempt.
+    return TRUE;
   }
-  return FALSE; // Not spam.
+  // Not spam.
+  return FALSE;
 }
 
 /**
@@ -945,7 +973,7 @@ function _webform_submission_spam_check($to, $subject, $from, $headers = array()
  *   Optional parameter. Specify the account you want to check the limit
  *   against.
  *
- * @return
+ * @return bool
  *   Boolean TRUE if the user has exceeded their limit. FALSE otherwise.
  */
 function webform_submission_user_limit_check($node, $account = NULL) {
@@ -964,7 +992,8 @@ function webform_submission_user_limit_check($node, $account = NULL) {
 
   // Check if submission limiting is enabled.
   if ($node->webform['submit_limit'] == '-1') {
-    return FALSE; // No check enabled.
+    // No check enabled.
+    return FALSE;
   }
 
   // Fetch all the entries from the database within the submit interval with
@@ -1022,14 +1051,16 @@ function webform_submission_user_limit_check($node, $account = NULL) {
  *
  * @param $node
  *   The webform node to be checked.
- * @return
+ *
+ * @return bool
  *   Boolean TRUE if the form has exceeded it's limit. FALSE otherwise.
  */
 function webform_submission_total_limit_check($node) {
 
   // Check if submission limiting is enabled.
   if ($node->webform['total_submit_limit'] == '-1') {
-    return FALSE; // No check enabled.
+    // No check enabled.
+    return FALSE;
   }
 
   // Retrieve submission data from the database.

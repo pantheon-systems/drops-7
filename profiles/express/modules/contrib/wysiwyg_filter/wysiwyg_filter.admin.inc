@@ -16,7 +16,7 @@
  * * remove format suffix, will be first array index
  * * care for pre- and post-processing, or remove it like parsed-elements
  * * rewrite validate to get correct values like $form['filters']['settings'][$name] / $form_state['values']['filters'][$name]['settings']
- * 
+ *
  */
 function wysiwyg_filter_filter_wysiwyg_settings(&$form, &$form_state, $filter, $format, $defaults, $filters) {
   global $base_url;
@@ -26,10 +26,10 @@ function wysiwyg_filter_filter_wysiwyg_settings(&$form, &$form_state, $filter, $
 
   $settings = $filter->settings;
   $settings += $defaults;
-  
+
   // carry over settings for other formats
   $filterform = array();
-  
+
   // *** valid elements ***
   $valid_elements = $settings['valid_elements'];
   $valid_elements_rows = min(20, max(5, substr_count($valid_elements, "\n") + 2));
@@ -111,6 +111,7 @@ This option allows you to specify which HTML elements and attributes are allowed
   $valid_elements_parsed = wysiwyg_filter_parse_valid_elements($settings['valid_elements']);
   foreach (wysiwyg_filter_get_advanced_rules() as $rule_key => $rule_info) {
     $field_name = "rule_$rule_key";
+    $field_bypass_name = "rule_bypass_$rule_key";
     $default_value = wysiwyg_filter_array2csv($settings[$field_name]);
     $filterform[$field_name] = array(
       '#type' => 'textarea',
@@ -120,10 +121,16 @@ This option allows you to specify which HTML elements and attributes are allowed
       '#rows' => min(10, max(2, substr_count($default_value, "\n") + 2)),
       '#description' => $rule_info['description'],
     );
+    $filterform[$field_bypass_name] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Bypass %rule', array('%rule' => $rule_info['title'])),
+      '#default_value' => !empty($settings[$field_bypass_name]),
+      '#description' => t('Bypassing this rule may lead to security vulnerabilities. Only grant this filter to trusted roles.'),
+    );
 
     // Display warning if the field is empty but the rule definition is not
     // complete.
-    if (empty($default_value) && !_wysiwyg_filter_is_rule_definition_complete($rule_info, $valid_elements_parsed, $enabled_style_properties)) {
+    if (empty($settings[$field_bypass_name]) && empty($default_value) && !_wysiwyg_filter_is_rule_definition_complete($rule_info, $valid_elements_parsed, $enabled_style_properties)) {
       drupal_set_message($rule_info['required_by_message'], 'warning');
     }
   }
@@ -139,6 +146,7 @@ This option allows you to specify which HTML elements and attributes are allowed
     '#options' => array(
       'disabled' => t('Disabled - Do not add rel=&quot;nofollow&quot; to any link.'),
       'whitelist' => t('Whitelist - Add rel=&quot;nofollow&quot; to all links except those leading to domain names specified in the list below.'),
+      'whitelist_current' => t('Whitelist - Add rel=&quot;nofollow&quot; to all links except those leading to current domain.'),
       'blacklist' => t('Blacklist - Add rel=&quot;nofollow&quot; to all links leading to domain names specified in the list below.'),
     ),
     '#default_value' => $settings['nofollow_policy'],
@@ -163,7 +171,7 @@ This option allows you to specify which HTML elements and attributes are allowed
 
 /*
  * Implements hook_form_FORM_ID_alter
- * 
+ *
  * add validate and submit handlers
  */
 function wysiwyg_filter_form_filter_admin_format_form_alter(&$form, &$form_state, $form_id) {
@@ -209,23 +217,6 @@ function _wysiwyg_filter_is_rule_definition_complete($rule_info, $elements, $sty
 }
 
 /**
- * Clear any warning message we might have set previously.
- */
-function _wysiwyg_filter_clear_messages() {
-  $messages = drupal_get_messages('warning');
-  if (!empty($messages)) {
-    foreach (wysiwyg_filter_get_advanced_rules() as $rule_info) {
-      $my_messages[] = $rule_info['required_by_message'];
-    }
-    foreach ($messages['warning'] as $warning) {
-      if (!in_array($warning, $my_messages)) {
-        drupal_set_message($warning, 'warning');
-      }
-    }
-  }
-}
-
-/**
  * Validate filter settings form.
  *
  * @ingroup forms
@@ -252,21 +243,23 @@ function wysiwyg_filter_filter_wysiwyg_settings_validate($form, &$form_state) {
     form_set_error('valid_elements', t('The following elements cannot be allowed: %elements.', array('%elements' => implode(', ', $forbidden_elements))));
   }
 
-  // *** validate nofollow_domains ***
+  // *** validate advanced rules ***
   foreach (wysiwyg_filter_get_advanced_rules() as $rule_key => $rule_info) {
-    $field_name = "rule_$rule_key";
-    $expressions = array_filter(explode(',', preg_replace('#\s+#', ',', trim($values[$field_name])))); // form2db
-    $errors = array();
-    foreach ($expressions as $expression) {
-      if (preg_match('`[*?]\*|\*\?`', $expression)) {
-        $errors[] = t('Invalid expression %expression. Please, do not use more than one consecutive asterisk (**) or one that is next to a question mark wildcard (?* or *?).', array('%expression' => $expression));
+    if (empty($settings["rule_bypass_$rule_key"])) {
+      $field_name = "rule_$rule_key";
+      $expressions = array_filter(explode(',', preg_replace('#\s+#', ',', trim($values[$field_name])))); // form2db
+      $errors = array();
+      foreach ($expressions as $expression) {
+        if (preg_match('`[*?]\*|\*\?`', $expression)) {
+          $errors[] = t('Invalid expression %expression. Please, do not use more than one consecutive asterisk (**) or one that is next to a question mark wildcard (?* or *?).', array('%expression' => $expression));
+        }
+        if (!preg_match($rule_info['validate_regexp'], $expression)) {
+          $errors[] = t('Invalid expression %expression. Please, check the syntax of the %field field.', array('%expression' => $expression, '%field' => $rule_info['title']));
+        }
       }
-      if (!preg_match($rule_info['validate_regexp'], $expression)) {
-        $errors[] = t('Invalid expression %expression. Please, check the syntax of the %field field.', array('%expression' => $expression, '%field' => $rule_info['title']));
+      if (!empty($errors)) {
+        form_set_error($field_name, implode('<br />', $errors));
       }
-    }
-    if (!empty($errors)) {
-      form_set_error($field_name, implode('<br />', $errors));
     }
   }
 
@@ -289,10 +282,10 @@ function wysiwyg_filter_filter_wysiwyg_settings_validate($form, &$form_state) {
  */
 function wysiwyg_filter_filter_wysiwyg_settings_submit($form, &$form_state) {
   $values =& $form_state['values']['filters']['wysiwyg']['settings'];
-    
+
   // *** prepare valid_elements - just trim ***
   $values['valid_elements'] = trim($values['valid_elements']);
-  
+
   // *** prepare rules - csv2array ***
   foreach (array_keys(wysiwyg_filter_get_advanced_rules()) as $rule_key) {
     $field_name = "rule_$rule_key";
@@ -305,7 +298,7 @@ function wysiwyg_filter_filter_wysiwyg_settings_submit($form, &$form_state) {
 
 /*
  * CSV to Array
- * 
+ *
  * @param atring $v
  * @param bool $space2comma - shall we convet whitespace to commas before processing?
  * @return array
@@ -316,7 +309,7 @@ function wysiwyg_filter_csv2array($v, $space2comma = TRUE) {
 }
 /*
  * Array to CSV
- * 
+ *
  * @param array $v
  * @return string
  */

@@ -18,10 +18,17 @@ function googleanalytics_admin_settings_form($form_state) {
     '#title' => t('Web Property ID'),
     '#type' => 'textfield',
     '#default_value' => variable_get('googleanalytics_account', 'UA-'),
-    '#size' => 15,
+    '#size' => 20,
     '#maxlength' => 20,
     '#required' => TRUE,
     '#description' => t('This ID is unique to each site you want to track separately, and is in the form of UA-xxxxxxx-yy. To get a Web Property ID, <a href="@analytics">register your site with Google Analytics</a>, or if you already have registered your site, go to your Google Analytics Settings page to see the ID next to every site profile. <a href="@webpropertyid">Find more information in the documentation</a>.', array('@analytics' => 'http://www.google.com/analytics/', '@webpropertyid' => url('https://developers.google.com/analytics/resources/concepts/gaConceptsAccounts', array('fragment' => 'webProperty')))),
+  );
+
+  $form['account']['googleanalytics_premium'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Premium account'),
+    '#description' => t('If you are a Google Analytics Premium customer, you can use up to 200 instead of 20 custom dimensions and metrics.'),
+    '#default_value' => variable_get('googleanalytics_premium', FALSE),
   );
 
   // Visibility settings.
@@ -326,8 +333,10 @@ function googleanalytics_admin_settings_form($form_state) {
 
   $googleanalytics_custom_dimension = variable_get('googleanalytics_custom_dimension', array());
 
-  // Google Analytics supports up to 20 custom dimensions.
-  for ($i = 1; $i <= 20; $i++) {
+  // Standard Google Analytics accounts support up to 20 custom dimensions,
+  // premium accounts support up to 200 custom dimensions.
+  $limit = (variable_get('googleanalytics_premium', FALSE)) ? 200 : 20;
+  for ($i = 1; $i <= $limit; $i++) {
     $form['googleanalytics_custom_dimension']['indexes'][$i]['index'] = array(
       '#default_value' => $i,
       '#description' => t('Index number'),
@@ -377,8 +386,9 @@ function googleanalytics_admin_settings_form($form_state) {
 
   $googleanalytics_custom_metric = variable_get('googleanalytics_custom_metric', array());
 
-  // Google Analytics supports up to 20 custom metrics.
-  for ($i = 1; $i <= 20; $i++) {
+  // Standard Google Analytics accounts support up to 20 custom metrics,
+  // premium accounts support up to 200 custom metrics.
+  for ($i = 1; $i <= $limit; $i++) {
     $form['googleanalytics_custom_metric']['indexes'][$i]['index'] = array(
       '#default_value' => $i,
       '#description' => t('Index number'),
@@ -785,16 +795,18 @@ function _googleanalytics_validate_create_field_name($name) {
   // List of supported field names:
   // https://developers.google.com/analytics/devguides/collection/analyticsjs/field-reference#create
   $create_only_fields = array(
-    'clientId',
-    'userId',
-    'sampleRate',
-    'siteSpeedSampleRate',
-    'alwaysSendReferrer',
     'allowAnchor',
+    'alwaysSendReferrer',
+    'clientId',
     'cookieName',
     'cookieDomain',
     'cookieExpires',
     'legacyCookieDomain',
+    'legacyHistoryImport',
+    'sampleRate',
+    'siteSpeedSampleRate',
+    'storage',
+    'userId',
   );
 
   if ($name == 'name') {

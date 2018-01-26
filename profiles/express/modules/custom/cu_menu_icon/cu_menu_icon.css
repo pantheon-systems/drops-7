@@ -1,21 +1,48 @@
-#edit-icon {
-  border-top:1px solid #ddd;
-  margin-top: 20px;
-  -webkit-column-count: 8;
-  -webkit-column-gap: 20px;
-  -webkit-column-rule: 1px solid #ddd;
-
-  -moz-column-count: 8;
-  -moz-column-gap: 20px;
-  -moz-column-rule: 1px solid #ddd;
-
-  column-count: 8;
-  column-gap: 20px;
-  column-rule: 1px solid #ddd;
+#menu-edit-item #edit-icon {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
-#edit-icon .form-type-radio {
-  padding:5px;
+#menu-edit-item #edit-icon .form-type-radio {
+  padding: 8px 10px 8px 0;
+  color: #757575;
+  font-size: 85%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
-#edit-icon i {
-  font-size: 150%;
+#menu-edit-item #edit-icon .form-type-radio label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 5px;
+}
+@media screen and (min-width: 480px) {
+  #menu-edit-item #edit-icon .form-type-radio {
+    width: 50%;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  #menu-edit-item #edit-icon .form-type-radio {
+    width: 33.333%;
+  }
+}
+
+@media screen and (min-width: 960px) {
+  #menu-edit-item #edit-icon .form-type-radio {
+    width: 25%;
+  }
+}
+
+@media screen and (min-width: 1500px) {
+  #menu-edit-item #edit-icon .form-type-radio {
+    width: 20%;
+  }
+}
+#menu-edit-item #edit-icon i.fa {
+  font-size: 175%;
+  color: #111;
+  padding: 0 5px;
 }

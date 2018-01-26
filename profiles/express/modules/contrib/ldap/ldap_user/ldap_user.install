@@ -522,3 +522,25 @@ function ldap_user_update_check_user_fields($query = FALSE) {
   return $fields_added;
 
 }
+
+/**
+ * Set an appropriate default value for accountsWithSameEmail.
+ */
+function ldap_user_update_7206() {
+  $message = NULL;
+  $ldap_user_conf = ldap_user_conf('admin', TRUE);
+  // If the configuration variable is not set, set a reasonable default and
+  // advise the administrator.
+  if (module_exists('sharedemail')) {
+    $message = t('The module "sharedemail" was detected. LDAP User configuration has been set so that user accounts can be provisioned regardless of whether an existing user account has the same email address.');
+    $ldap_user_conf->accountsWithSameEmail = LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_ENABLED;
+  }
+  else {
+    // The "sharedemail" module is not enabled; do not enable this setting.
+    // Do not mention anything in the hook_update_N output.
+    $ldap_user_conf->accountsWithSameEmail = LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED;
+  }
+  $ldap_user_conf->save();
+
+  return $message;
+}

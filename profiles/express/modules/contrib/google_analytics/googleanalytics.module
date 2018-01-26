@@ -98,7 +98,7 @@ function googleanalytics_menu() {
  * Implements hook_page_alter() to insert JavaScript to the appropriate scope/region of the page.
  */
 function googleanalytics_page_alter(&$page) {
-  global $user;
+  global $base_path, $user;
 
   $id = variable_get('googleanalytics_account', '');
 
@@ -134,7 +134,7 @@ function googleanalytics_page_alter(&$page) {
       $link_settings['trackColorbox'] = $track_colorbox;
     }
     if ($track_domain_mode = variable_get('googleanalytics_domain_mode', 0)) {
-      $link_settings['trackDomainMode'] = $track_domain_mode;
+      $link_settings['trackDomainMode'] = (int) $track_domain_mode;
     }
     if ($track_cross_domains = variable_get('googleanalytics_cross_domains', '')) {
       $link_settings['trackCrossDomains'] = preg_split('/(\r\n?|\n)/', $track_cross_domains);
@@ -202,10 +202,22 @@ function googleanalytics_page_alter(&$page) {
     // Track access denied (403) and file not found (404) pages.
     if ($status == '403 Forbidden') {
       // See http://www.google.com/support/analytics/bin/answer.py?answer=86927
-      $url_custom = '"/403.html?page=" + document.location.pathname + document.location.search + "&from=" + document.referrer';
+      $url_custom = '"' . $base_path . '403.html?page=" + document.location.pathname + document.location.search + "&from=" + document.referrer';
     }
     elseif ($status == '404 Not Found') {
-      $url_custom = '"/404.html?page=" + document.location.pathname + document.location.search + "&from=" + document.referrer';
+      $url_custom = '"' . $base_path . '404.html?page=" + document.location.pathname + document.location.search + "&from=" + document.referrer';
+    }
+
+    // #2693595: User has entered an invalid login and clicked on forgot
+    // password link. This link contains the username or email address and may
+    // get send to Google if we do not override it. Override only if 'name'
+    // query param exists. Last custom url condition, this need to win.
+    //
+    // URLs to protect are:
+    // - user/password?name=username
+    // - user/password?name=foo@example.com
+    if (arg(0) == 'user' && arg(1) == 'password' && array_key_exists('name', drupal_get_query_parameters())) {
+      $url_custom = '"' . $base_path . 'user/password"';
     }
 
     // Add custom dimensions and metrics.
@@ -256,11 +268,10 @@ function googleanalytics_page_alter(&$page) {
     $script .= '})(window,document,"script",';
 
     // Which version of the tracking library should be used?
-    $library_tracker_url = '//www.google-analytics.com/' . ($debug ? 'analytics_debug.js' : 'analytics.js');
-    $library_cache_url = 'http:' . $library_tracker_url;
+    $library_tracker_url = 'https://www.google-analytics.com/' . ($debug ? 'analytics_debug.js' : 'analytics.js');
 
     // Should a local cached copy of analytics.js be used?
-    if (variable_get('googleanalytics_cache', 0) && $url = _googleanalytics_cache($library_cache_url)) {
+    if (variable_get('googleanalytics_cache', 0) && $url = _googleanalytics_cache($library_tracker_url)) {
       // A dummy query-string is added to filenames, to gain control over
       // browser-caching. The string changes on every update or full cache
       // flush, forcing browsers to load a new copy of the files, as the
@@ -462,7 +473,7 @@ function googleanalytics_user_presave(&$edit, $account, $category) {
 function googleanalytics_cron() {
   // Regenerate the tracking code file every day.
   if (REQUEST_TIME - variable_get('googleanalytics_last_cache', 0) >= 86400 && variable_get('googleanalytics_cache', 0)) {
-    _googleanalytics_cache('http://www.google-analytics.com/analytics.js', TRUE);
+    _googleanalytics_cache('https://www.google-analytics.com/analytics.js', TRUE);
     variable_set('googleanalytics_last_cache', REQUEST_TIME);
   }
 }
@@ -526,6 +537,10 @@ function _googleanalytics_cache($location, $synchronize = FALSE) {
         if ($data_hash_local != $data_hash_remote && file_prepare_directory($path)) {
           // Save updated tracking code file to disk.
           file_unmanaged_save_data($result->data, $file_destination, FILE_EXISTS_REPLACE);
+          // Based on Drupal Core drupal_build_css_cache().
+          if (variable_get('css_gzip_compression', TRUE) && variable_get('clean_url', 0) && extension_loaded('zlib')) {
+            file_unmanaged_save_data(gzencode($result->data, 9, FORCE_GZIP), $file_destination . '.gz', FILE_EXISTS_REPLACE);
+          }
           watchdog('googleanalytics', 'Locally cached tracking code file has been updated.', array(), WATCHDOG_INFO);
 
           // Change query-strings on css/js files to enforce reload for all users.
@@ -538,6 +553,10 @@ function _googleanalytics_cache($location, $synchronize = FALSE) {
           // There is no need to flush JS here as core refreshes JS caches
           // automatically, if new files are added.
           file_unmanaged_save_data($result->data, $file_destination, FILE_EXISTS_REPLACE);
+          // Based on Drupal Core drupal_build_css_cache().
+          if (variable_get('css_gzip_compression', TRUE) && variable_get('clean_url', 0) && extension_loaded('zlib')) {
+            file_unmanaged_save_data(gzencode($result->data, 9, FORCE_GZIP), $file_destination . '.gz', FILE_EXISTS_REPLACE);
+          }
           watchdog('googleanalytics', 'Locally cached tracking code file has been saved.', array(), WATCHDOG_INFO);
 
           // Return the local JS file path.

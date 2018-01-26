@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * Provides basic Shortcodes (as examples).
+ * Provides basic ShortCodes (as examples).
  */
 
 /**
@@ -162,7 +163,8 @@ function shortcode_basic_tags_highlight_attributes($form, &$form_state) {
  * If the length is empty or invalid, between 1-99, the length will be 8
  */
 function shortcode_basic_tags_shortcode_highlight($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => '',
     ),
     $attrs
@@ -239,7 +241,8 @@ function shortcode_basic_tags_button_attributes($form, &$form_state) {
  * Provides process callback for Shortcode button.
  */
 function shortcode_basic_tags_shortcode_button($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'title' => 'title default',
       'class' => 'button',
       'url' => '',
@@ -249,10 +252,12 @@ function shortcode_basic_tags_shortcode_button($attrs, $text) {
   );
 
   $class = shortcode_add_class($attrs['class'], 'button');
+
   if ($attrs['url']) {
     $attrs['path'] = $attrs['url'];
   }
   $path = url($attrs['path']);
+
   return theme('shortcode_button', array(
     'path' => $path,
     'text' => $text,
@@ -309,7 +314,8 @@ function shortcode_basic_tags_dropcap_attributes($form, &$form_state) {
  * Provides process callback for dropcap Shortcode.
  */
 function shortcode_basic_tags_shortcode_dropcap($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => 'dropcap',
     ),
     $attrs
@@ -386,7 +392,8 @@ function shortcode_basic_tags_quote_attributes($form, &$form_state) {
  * Provides process callback for quote Shortcode.
  */
 function shortcode_basic_tags_shortcode_quote($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => 'quote',
       'author' => '',
     ),
@@ -394,10 +401,12 @@ function shortcode_basic_tags_shortcode_quote($attrs, $text) {
   );
 
   $class = shortcode_add_class($attrs['class'], 'quote');
-  return theme('shortcode_quote', array(
-    'text' => $text,
-    'author' => $attrs['author'],
-    'class' => $class)
+  return theme('shortcode_quote',
+    array(
+      'text' => $text,
+      'author' => $attrs['author'],
+      'class' => $class,
+    )
   );
 }
 
@@ -496,7 +505,8 @@ function shortcode_basic_tags_img_attributes($form, &$form_state) {
  * Provides process callback for img Shortcode.
  */
 function shortcode_basic_tags_shortcode_img($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => 'img',
       'alt' => '',
       // Add default logo from bartik theme.
@@ -507,10 +517,12 @@ function shortcode_basic_tags_shortcode_img($attrs, $text) {
 
   $class = shortcode_add_class($attrs['class'], 'img');
 
-  return theme('shortcode_img', array(
-    'src' => $attrs['src'],
-    'alt' => $attrs['alt'],
-    'class' => $class)
+  return theme('shortcode_img',
+    array(
+      'src' => check_plain($attrs['src']),
+      'alt' => check_plain($attrs['alt']),
+      'class' => $class,
+    )
   );
 }
 
@@ -580,10 +592,11 @@ function shortcode_basic_tags_item_attributes($form, &$form_state) {
 }
 
 /**
- * Provides process callback for item Shortcode.
+ * Provides process callback for item ShortCode.
  */
 function shortcode_basic_tags_shortcode_item($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => '',
       'style' => '',
       'id' => '',
@@ -604,17 +617,19 @@ function shortcode_basic_tags_shortcode_item($attrs, $text) {
       break;
   }
 
-  return theme('shortcode_item', array(
-    'text' => $text,
-    'id' => $attrs['id'],
-    'class' => $attrs['class'],
-    'type' => $type,
-    'style' => $attrs['style'])
+  return theme('shortcode_item',
+    array(
+      'text' => check_plain($text),
+      'id' => check_plain($attrs['id']),
+      'class' => shortcode_add_class($attrs['class']),
+      'type' => $type,
+      'style' => $attrs['style'],
+    )
   );
 }
 
 /**
- * Provides tip callback for item Shortcode.
+ * Provides tip callback for item ShortCode.
  */
 function shortcode_basic_tags_shortcode_item_tip($format, $long) {
   $output = array();
@@ -632,7 +647,7 @@ function shortcode_basic_tags_shortcode_item_tip($format, $long) {
 }
 
 /**
- * Implements theme for item Shortcode.
+ * Implements theme for item ShortCode.
  */
 function theme_shortcode_item($vars) {
   $id = empty($vars['id']) ? '' : ' id="' . $vars['id'] . '"';
@@ -643,7 +658,7 @@ function theme_shortcode_item($vars) {
 }
 
 /**
- * Attributes form element for clear shortcode.
+ * Attributes form element for clear ShortCode.
  *
  * Used by shortcode_wysiwyg module to add form elements for attributes.
  */
@@ -690,10 +705,11 @@ function shortcode_basic_tags_clear_attributes($form, &$form_state) {
 }
 
 /**
- * Provides process callback for clear Shortcode.
+ * Provides process callback for clear ShortCode.
  */
 function shortcode_basic_tags_shortcode_clear($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'class' => '',
       'style' => '',
       'id' => '',
@@ -716,12 +732,14 @@ function shortcode_basic_tags_shortcode_clear($attrs, $text) {
       break;
   }
 
-  return theme('shortcode_clear', array(
-    'text' => $text,
-    'id' => $attrs['id'],
-    'class' => $class,
-    'type' => $type,
-    'style' => $attrs['style'])
+  return theme('shortcode_clear',
+    array(
+      'text' => check_plain($text),
+      'id' => check_plain($attrs['id']),
+      'class' => $class,
+      'type' => $type,
+      'style' => check_plain($attrs['style']),
+    )
   );
 }
 
@@ -792,30 +810,32 @@ function shortcode_basic_tags_link_attributes($form, &$form_state) {
 }
 
 /**
- * Provides process callback for link Shortcode.
+ * Provides process callback for link ShortCode.
  *
  * @param array $attributes
- *   (optional)
- *
+ *   Optional.
  *   - title = the title of the link. Can be disabled by <none>. If empty the
  *             text will be used.
  *   - class = CSS classes separated by spaces
  *   - style = CSS styles
  *   - id – DOM id of the link.
- *  URL parameters:
+ *   URL parameters:
  *   - path = the path of the link. Will be formatted by the url(). Default is
  *     the <front> link.
  *   - html – Enable HTML of the link text.
  *   - absolute — The link can be absolute or relative (default).
  *   - fragment - The url fragment.
  *   - alias — Flag for aliased URL (TRUE).
- *
  * @param string $text
- *   (optional) The linked text.
+ *   The linked text (optional).
+ *
+ * @return string
+ *   The path string.
  */
 function shortcode_basic_tags_shortcode_link($attributes, $text) {
   // Used attributes by this macro.
-  $attributes = shortcode_attrs(array(
+  $attributes = shortcode_attrs(
+    array(
       'path' => '<front>',
       'title' => '',
       'class' => '',
@@ -842,7 +862,8 @@ function shortcode_basic_tags_shortcode_link($attributes, $text) {
 
   if ($text) {
     if ($attributes['class']) {
-      $options['attributes']['class'] = check_plain($attributes['class']);
+      $classes = shortcode_add_class($attributes['class']);
+      $options['attributes']['class'] = (array) $classes;
     }
 
     if ($attributes['style']) {
@@ -937,7 +958,8 @@ function shortcode_basic_tags_random_attributes($form, &$form_state) {
  * If the length empty or invalid, between 1-99, the length will be 8.
  */
 function shortcode_basic_tags_shortcode_random($attrs, $text) {
-  $attrs = shortcode_attrs(array(
+  $attrs = shortcode_attrs(
+    array(
       'length' => 8,
     ),
     $attrs

@@ -6,8 +6,15 @@
  */
 
 /**
- * @addtogroup hooks
+ * @defgroup vss_hooks Hooks
  * @{
+ * Hooks for modules to implement to extend or modify Views Slideshow.
+ *
+ * Allows modules to create actual slideshow implementations or add
+ * widgets such as pagers.
+ *
+ * @see contrib\views_slideshow_simple_pager\views_slideshow_simple_pager.module
+ * @see https://api.drupal.org/api/drupal/includes%21module.inc/group/hooks/7.x
  */
 
 /**
@@ -202,5 +209,5 @@ function INSERT_WIDGET_TYPE_HERE_views_slideshow_widget_controls_form_options(&$
 }
 
 /**
- * @} End of "addtogroup hooks".
+ * @} End of "defgroup vss_hooks".
  */

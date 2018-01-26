@@ -49,7 +49,6 @@ function _ldap_authentication_login_form_alter(&$form, &$form_state, $form_id) {
 
     $form['links']['#markup'] = theme('ldap_authentication_user_login_block_links', $vars);
   }
-  ldap_servers_disable_http_check($form);
 
   // Add help information for entering in username/password
   $auth_conf = ldap_authentication_get_valid_conf();
@@ -391,7 +390,7 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
   if (!$drupal_account_exists) {
 
     // VI.C.1 Do not provision Drupal account if another account has same email.
-    if ($account_with_same_email = user_load_by_mail($ldap_user['mail'])) {
+    if (($auth_conf->ldapUser->acctCreation == LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED) && ($account_with_same_email = user_load_by_mail($ldap_user['mail']))) {
       $error = TRUE;
       /**
        * username does not exist but email does.  Since user_external_login_register does not deal with

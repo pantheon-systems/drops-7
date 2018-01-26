@@ -130,7 +130,7 @@ function _webform_edit_grid($component) {
       '#title' => t('Options'),
       '#default_value' => $component['extra']['options'],
       '#description' => t('Options to select across the top, such as "Poor" through "Excellent" or "Stronly Disagree" through "Strongly Agree".') .
-                          '<p>' . t('One key-value option per line. <strong>Key-value pairs MUST be specified as "safe_key|Some readable option"</strong>. Use of only alphanumeric characters and underscores is recommended in keys.') . '</p>' . theme('webform_token_help'),
+      '<p>' . t('One key-value option per line. <strong>Key-value pairs MUST be specified as "safe_key|Some readable option"</strong>. Use of only alphanumeric characters and underscores is recommended in keys.') . '</p>' . theme('webform_token_help'),
       '#cols' => 60,
       '#rows' => 5,
       '#weight' => -3,
@@ -142,7 +142,7 @@ function _webform_edit_grid($component) {
       '#title' => t('Questions'),
       '#default_value' => $component['extra']['questions'],
       '#description' => t('Questions list down the side of the grid. One question per line. <strong>Key-value pairs MUST be specified as "safe_key|Some readable question"</strong>. For a heading column on the right, append "|" and the right-side heading. Use of only alphanumeric characters and underscores is recommended in keys.') . ' ' . theme('webform_token_help') . ' ' .
-                        '<p>' . t('<strong>Or for more control</strong> over the appearance and configuration, create additional additional Select Options or other type components nested under this grid. They will operate as separate components, but be displayed within this grid.') . '</p>',
+      '<p>' . t('<strong>Or for more control</strong> over the appearance and configuration, create additional additional Select Options or other type components nested under this grid. They will operate as separate components, but be displayed within this grid.') . '</p>',
       '#cols' => 60,
       '#rows' => 5,
       '#weight' => -2,
@@ -165,21 +165,21 @@ function _webform_edit_grid($component) {
     '#title' => t('Randomize Options'),
     '#default_value' => $component['extra']['optrand'],
     '#description' => t('Randomizes the order of options on the top when they are displayed in the form.'),
-    '#parents' => array('extra', 'optrand')
+    '#parents' => array('extra', 'optrand'),
   );
   $form['display']['qrand'] = array(
     '#type' => 'checkbox',
     '#title' => t('Randomize Questions'),
     '#default_value' => $component['extra']['qrand'],
     '#description' => t('Randomize the order of the questions on the side when they are displayed in the form.'),
-    '#parents' => array('extra', 'qrand')
+    '#parents' => array('extra', 'qrand'),
   );
   $form['display']['sticky'] = array(
     '#type' => 'checkbox',
     '#title' => t('Sticky table header'),
     '#default_value' => $component['extra']['sticky'],
     '#description' => t('Use a sticky (non-scrolling) table header.'),
-    '#parents' => array('extra', 'sticky')
+    '#parents' => array('extra', 'sticky'),
   );
 
   $form['validation']['unique'] = array(
@@ -320,6 +320,7 @@ function webform_expand_grid($element) {
  *   $existing are inserted.
  * @param array $new
  *   Values to be inserted into $existing.
+ *
  * @return array
  *   The merged array.
  */
@@ -364,9 +365,10 @@ function webform_grid_merge_options($existing, $new) {
  *   An array of options to be used at the grid table header.
  * @param array $row_options
  *   An array of options to be used for this row.
+ *
  * @return array
  *   The $row_options with any missing options replaced with empty values.
- **/
+ */
 function webform_grid_remove_options($header, $row_options) {
   foreach ($header as $key => $value) {
     if (!isset($row_options[$key])) {
@@ -432,8 +434,6 @@ function template_preprocess_webform_display_grid(&$variables) {
  */
 function theme_webform_display_grid($variables) {
   $element = $variables['element'];
-
-  $component = $element['#webform_component'];
   $format = $element['#format'];
 
   if ($format == 'html') {
@@ -498,7 +498,7 @@ function theme_webform_display_grid($variables) {
         $value = drupal_render($element[$question_key]);
       }
       $items[] = ' - ' . _webform_grid_question_header($question_element['#title']) . ': ' . $value;
-   }
+    }
     $output = implode("\n", $items);
   }
 
@@ -646,7 +646,10 @@ function _webform_edit_grid_unique_validate($element) {
   // Grids may contain nested multiple value select components.
   // Create a flat array of values.
   $values = array();
-  array_walk_recursive($element['#value'], function($a) use (&$values) { $values[] = $a; });
+  $element['#value'] = (array) $element['#value'];
+  array_walk_recursive($element['#value'], function ($a) use (&$values) {
+    $values[] = $a;
+  });
 
   $nr_unique = count(array_unique($values));
   $nr_values = count($values);
@@ -668,6 +671,9 @@ function _webform_edit_grid_unique_validate($element) {
   }
 }
 
+/**
+ *
+ */
 function theme_webform_grid($variables) {
   $element = $variables['element'];
   $right_titles = _webform_grid_right_titles($element);
@@ -722,8 +728,8 @@ function theme_webform_grid($variables) {
     $rows[] = array(
       'data' => $row,
       'class' => empty($question_element['#grid_question'])
-                    ? array('webform-component', 'webform-component-' . str_replace('_', '-', $question_element['#type']), 'webform-component--' . $parents)
-                    : array(),
+      ? array('webform-component', 'webform-component-' . str_replace('_', '-', $question_element['#type']), 'webform-component--' . $parents)
+      : array(),
     );
   }
 
@@ -795,9 +801,16 @@ function webform_validate_grid($element, $form_state) {
     foreach ($element['#parents'] as $key) {
       $values = isset($values[$key]) ? $values[$key] : $values;
     }
-    $nr_values = array_reduce($values, function($count, $item) { return $count + (int)!is_null($item); }, 0);
-    if (count($element['#grid_questions']) != $nr_values) {
-      form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+    // Remove any values that aren't grid question (i.e. nested components)
+    $grid_questions = $element['#grid_questions'];
+    $values = array_intersect_key($values, $grid_questions);
+    // Remove any unanswered grid questions.
+    $answers = array_filter($values, function ($item) {
+      return !is_null($item);
+    });
+    // Give required errors for any questions that aren't answered.
+    foreach (array_diff_key($grid_questions, $answers) as $question_key => $question) {
+      form_error($element[$question_key], t('!question field within !name is required.', array('!question' => $question, '!name' => $element['#title'])));
     }
   }
 }

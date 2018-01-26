@@ -1,5 +1,6 @@
 <?php
 
+
 use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\PyStringNode;
@@ -27,121 +28,6 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @BeforeSuite
-   * Enable bundle and add authentication data.
-   */
-  public static function prepare($scope) {
-
-    // List needed users.
-    $users = array('developer', 'administrator', 'content_editor', 'site_owner', 'edit_my_content', 'authenticated user');
-
-    // Create users.
-    foreach ($users as $user_name) {
-
-      // For some reason, I ran into the issue where the same user was created multiple times.
-      // If user exists, skip creation.
-      if (user_load_by_name($user_name)) {
-        continue;
-      }
-
-      // Get role ID.
-      $role = user_role_load_by_name($user_name);
-
-      $new_user = array(
-        'name' => $user_name,
-        'pass' => $user_name, // note: do not md5 the password
-        'mail' => 'noreply@nowhere.com',
-        'status' => 1,
-        'init' => 'noreply@nowhere.com',
-        'roles' => array(
-          DRUPAL_AUTHENTICATED_RID => 'authenticated user',
-          $role->rid => $user_name,
-        ),
-      );
-
-      // The first parameter is sent blank so a new user is created.
-      user_save('', $new_user);
-    }
-
-    // Set LDAP variable to mixed mode.
-    $ldap_conf = variable_get('ldap_authentication_conf');
-    // 1 is mixed mode, 2 is LDAP only.
-    $ldap_conf['authenticationMode'] = 1;
-    variable_set('ldap_authentication_conf', $ldap_conf);
-
-  }
-
-  /**
-   * @AfterSuite
-   */
-  public static function tearDown($scope) {
-    // Delete created users.
-    // Since they all have the same email, we can load them by that parameter.
-    $uids = db_query("SELECT uid FROM {users} WHERE mail = 'noreply@nowhere.com'")->fetchCol();
-    user_delete_multiple($uids);
-
-    // Re-import database if it exists.
-    // We do this since added nodes and other cruft can impact other test suites.
-    // @todo Need to save performance data if reimporting original database.
-    /*
-    if (file_exists($_SERVER['HOME'] . '/express.sql')) {
-      exec('drush sql-drop -y');
-      exec('drush sql-cli < ' . $_SERVER['HOME'] . '/express.sql');
-    }*/
-  }
-
-  /**
-   * Creates and authenticates a user with the given role(s).
-   *
-   * @Given CU - I am logged in as a user with the :role role(s)
-   * @Given CU - I am logged in as a/an :role
-   */
-  public function assertAuthenticatedByRole($role) {
-    // Load custom created user.
-    // User has the same name as the role.
-    $user = user_load_by_name($role);
-
-    // Translate to what is expected in $this->user.
-    $this->user = (object) array(
-      'name' => $user->name,
-      'pass' => $role,
-      'role' => $role,
-      'mail' => $user->mail,
-      'status' => $user->status,
-      'uid' => $user->uid,
-    );
-
-    // Check if logged in.
-    if ($this->loggedIn()) {
-      $this->logout();
-    }
-
-    if (!$this->user) {
-      throw new \Exception('Tried to login without a user.');
-    }
-
-    $this->getSession()->visit($this->locatePath('/user'));
-    $element = $this->getSession()->getPage();
-    $element->fillField($this->getDrupalText('username_field'), $this->user->name);
-    $element->fillField($this->getDrupalText('password_field'), $this->user->pass);
-    $submit = $element->findButton($this->getDrupalText('log_in'));
-    if (empty($submit)) {
-      throw new \Exception(sprintf("No submit button at %s", $this->getSession()
-        ->getCurrentUrl()));
-    }
-
-    // Log in.
-    $submit->click();
-
-    // Need to figure out better way to check if logged in.
-    /*
-    if (!$this->loggedIn()) {
-      throw new \Exception(sprintf("Failed to log in as user '%s' with role '%s'", $this->user->name, $this->user->role));
-    }
-    */
-  }
-
-  /**
    * Get a region by name.
    *
    * @param string $region
@@ -160,20 +46,8 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @BeforeScenario
-   */
-  public function beforeScenario($event) {
-    // If this is a @javascript test, then resize the window.
-    /*
-    if ($event->getScenario()->hasTag('javascript')) {
-      $this->getSession()->resizeWindow(1280, 1024, 'current');
-    }
-    */
-  }
-
-  /**
    * After every step in a @javascript scenario, we want to wait for AJAX
-   * loading to finish.
+   * loading to finish. If a test failure, then take a screenshot of failed step.
    *
    * @AfterStep
    */
@@ -184,6 +58,82 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
         return;
       }
       $this->iWaitForAjax();
+    }
+
+    if (99 === $scope->getTestResult()->getResultCode()) {
+      $driver = $this->getSession()->getDriver();
+      if (!($driver instanceof Selenium2Driver)) {
+        return;
+      }
+      file_put_contents('/tmp/test.png', $this->getSession()->getDriver()->getScreenshot());
+    }
+  }
+
+  /**
+   * Set timestamp for clearing data.
+   *
+   * @BeforeScenario
+   */
+  public function before($scope) {
+    /*
+    $this->getSession()->visit('behat/set');
+
+    if (!$this->getSession()->getPage()->getText('Set Behat testing timestamp.')) {
+      throw new \Exception(sprintf("Failed to set timestamp marker for clearing test data."));
+    }
+    */
+  }
+
+  /**
+   * Clear testing data.
+   *
+   * @AfterScenario
+   */
+  public function after($scope) {
+    /*
+    $this->getSession()->visit('behat/clear');
+
+    if (!$this->getSession()->getPage()->getText('Cleared test data created during scenario.')) {
+      throw new \Exception(sprintf("Failed to clear test data."));
+    }
+    */
+  }
+
+  /**
+   * Creates and authenticates a user with the given role(s).
+   *
+   * @Given CU - I am logged in as a user with the :role role(s)
+   * @Given CU - I am logged in as a/an :role
+   */
+  public function assertAuthenticatedByRole2($role) {
+
+    // Go to user login page.
+    $this->getSession()->visit($this->locatePath('/user'));
+    $element = $this->getSession()->getPage();
+
+    // Logout if logged in.
+    if ($element->getText('CU Login Name')) {
+      $this->getSession()->visit($this->locatePath('/user/logout'));
+      $this->getSession()->visit($this->locatePath('/user'));
+      $element = $this->getSession()->getPage();
+    }
+
+    // Fill fields with login information.
+    $element->fillField('CU Login Name', $role);
+    $element->fillField('IdentiKey Password', $role);
+    $submit = $element->findButton('Log in');
+
+    if (empty($submit)) {
+      throw new \Exception(sprintf("No submit button at %s", $this->getSession()
+        ->getCurrentUrl()));
+    }
+
+    // Log in.
+    $submit->click();
+
+    // Need to figure out better way to check if logged in.
+    if (!$this->getSession()->getPage()->getText('Dashboard')) {
+      throw new \Exception(sprintf("Failed to log in as user '%s'", $role));
     }
   }
 
@@ -214,19 +164,6 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
         break;
       default:
         $this->getSession()->resizeWindow(1280, 1024, 'current');
-    }
-  }
-
-  /**
-   * @AfterStep
-   */
-  public function takeScreenShotAfterFailedStep($scope) {
-    if (99 === $scope->getTestResult()->getResultCode()) {
-      $driver = $this->getSession()->getDriver();
-      if (!($driver instanceof Selenium2Driver)) {
-        return;
-      }
-      file_put_contents('/tmp/test.png', $this->getSession()->getDriver()->getScreenshot());
     }
   }
 
@@ -456,8 +393,7 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    */
   public function linkShouldHaveForAttribute($element, $text, $attribute) {
-    $session = $this->getSession();
-    $page = $session->getPage();
+    $page = $this->getSession()->getPage();
 
     $page_element = $page->findLink($element);
     if ($page_element == NULL) {
@@ -538,27 +474,40 @@ class ExpressContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->getSession()->switchToIFrame($arg1);
   }
 
-  /*
   /**
-   * @AfterScenario
-   *
-   * @todo Get this working to cleanup node creation
+   * @When I wait for the :arg1 element to appear
    */
-  /*
-  public function afterNodeCreation($event) {
-    $steps = $event->getScenario()->getSteps();
-    $tags = $event->getScenario()->getTags();
+  public function iWaitForTheElementToAppear2($arg1) {
+    $this->spinner(function($context, $arg1) {
 
-    if (in_array('node_creation', $tags)) {
-      foreach ($steps as $step) {
-        $step = (array) $step;
-        //print_r($step);
-        if (strpos($step[Behat\Gherkin\Node\StepNodetext], 'I create a' && strpos($step[Behat\Gherkin\Node\StepNodetext], 'node'))) {
-          $step_pieces = explode('"', $step[Behat\Gherkin\Node\StepNodetext]);
-          print_r($step_pieces);
-        }
+      $el = $context->getSession()->getPage()->findById($arg1);
+
+      if ($el !== NULL && $el->isVisible()) {
+        return true;
       }
-    }
+
+      return false;
+    }, $arg1);
   }
-  */
+
+  public function spinner($lambda, $element, $wait = 60) {
+    for ($i = 0; $i < $wait; $i++) {
+      try {
+        if ($lambda($this, $element)) {
+          return true;
+        }
+      } catch (Exception $e) {
+        // do nothing
+      }
+      sleep(1);
+    }
+
+    $backtrace = debug_backtrace();
+
+    throw new Exception(
+      "Timeout thrown by " . $backtrace[1]['class'] . "::" . $backtrace[1]['function'] . "()\n" .
+      $backtrace[1]['file'] . ", line " . $backtrace[1]['line']
+    );
+  }
+
 }

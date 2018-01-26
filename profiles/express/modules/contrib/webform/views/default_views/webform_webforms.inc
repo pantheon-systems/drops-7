@@ -2,11 +2,10 @@
 
 /**
  * @file
- * webform_webforms view definition.
+ * Wiew definition webform_webforms.
  */
 
-// --- Paste exported view below ---
-
+// --- Paste exported view below ---.
 $view = new view();
 $view->name = 'webform_webforms';
 $view->description = 'An administrative list of webform nodes';
@@ -214,6 +213,5 @@ $translatables['webform_webforms'] = array(
   t('Clear'),
 );
 
-// --- Paste exported view above ---
-
+// --- Paste exported view above ---.
 $views[$view->name] = $view;

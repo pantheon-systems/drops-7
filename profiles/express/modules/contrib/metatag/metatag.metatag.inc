@@ -170,7 +170,7 @@ function metatag_metatag_info() {
 
   $info['tags']['abstract'] = array(
     'label' => t('Abstract'),
-    'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. The abstract meta tag may be used by search engines for archiving purposes."),
+    'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. Where as the description meta tag may be used by search engines to display a snippet about the page in search results, the abstract tag may be used to archive a summary about the page. This meta tag is <em>no longer</em> supported by major search engines."),
     'class' => 'DrupalTextMetaTag',
     'group' => 'basic',
     'weight' => ++$weight,

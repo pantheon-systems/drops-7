@@ -1,11 +1,16 @@
 <?php
 /**
+ * @file
+ * Contains hooks for cu_core module.
+ */
+
+/**
  * Implements hook_module_implements_alter().
  *
  * @param array $implementations
- *   List of modules that implement hook
+ *   List of modules that implement hook.
  * @param string $hook
- *   Name of the hook being fired
+ *   Name of the hook being fired.
  */
 function cu_core_module_implements_alter(&$implementations, $hook) {
   if ($hook == 'form_alter' && isset($implementations['cu_core'])) {
@@ -153,4 +158,25 @@ function cu_core_express_bean_list_groups($bundles) {
   $bundles['advanced_content']['types'][] = 'Video Reveal';
 
   return $bundles;
+}
+/**
+ * Alters admin structure menu page to hide link to 'Block administration'.
+ */
+function cu_core_page_alter(&$page) {
+  if (!empty($page['help'])) {
+    $message = $page['help']['system_help']['#markup'];
+    $search = '/development/admin/structure/block';
+    if (current_path() == 'admin/structure/menu' && (strpos($message, $search) !== false)) {
+      unset($page['help']['system_help']);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Make sure that actiuons are at bottom of menu item form.
+ */
+function cu_core_form_menu_edit_item_alter(&$form, &$form_state, $form_id) {
+  $form['actions']['#weight'] = 1000;
 }

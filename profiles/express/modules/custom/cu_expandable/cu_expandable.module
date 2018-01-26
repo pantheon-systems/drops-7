@@ -98,7 +98,6 @@ function cu_expandable_bean_render($bid, $hide_block_titles) {
       $title = NULL;
     }
 
-    $block['subject'] = $title;
     $block['#theme_wrappers'] = array('block');
     $block['#block'] = (object) array(
       'region' => 'block_section',
@@ -129,41 +128,8 @@ function cu_expandable_system_label($string) {
 function cu_expandable_field_widget_form_alter(&$element, &$form_state, $context)	{
   // Get entity layout fields
   if (!empty($element['#bundle']) && $element['#bundle'] == 'field_expandable_section' && $element['#field_name'] == 'field_expandable_block') {
-
-    // Add 'or' separator between submit actions
-    if (isset($element['actions']['ief_add']) && isset($element['actions']['ief_add_existing'])) {
-      $element['actions']['ief_add']['#weight'] = 10;
-      $element['actions']['ief_add_existing']['#weight'] = 12;
-      $element['actions']['ief_separator'] = array(
-        '#markup' => '<span class="ief-separator">or</span>',
-        '#weight' => 11,
-      );
-
-      // Add 'Add New Block' label to available options and add class
-      $element['actions']['bundle']['#empty_option'] = t('Add new block');
-      $element['actions']['bundle']['#attributes']['class'][] = 'new-block-options';
-      // Add ajax from submit to select menu
-      $element['actions']['bundle']['#ajax'] = $element['actions']['ief_add']['#ajax'];
-      $element['actions']['bundle']['#ajax']['event'] = 'change';
-      $element['actions']['bundle']['#ajax']['trigger_as'] = array('name' => $element['actions']['ief_add']['#name']);
-      // Hide add new submit action
-      $element['actions']['ief_add']['#attributes']['class'][] = 'element-invisible';
-
-      $option_array =  $element['actions']['bundle']['#options'];
-
-      // Remove beans where the user isn't specifically allowed to create
-      foreach ($option_array as $key => $option) {
-        if (!express_layout_bean_access_check($key)) {
-          unset($option_array[$key]);
-        }
-      }
-      // Sort bean types by label instead of key/machine name
-      asort($option_array);
-      $element['actions']['bundle']['#options'] = $option_array;
-    }
-
+    express_layout_format_ief($element);
   }
-
 }
 
 /**

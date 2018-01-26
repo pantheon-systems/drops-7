@@ -12,14 +12,20 @@
  */
 class webform_handler_field_submission_data extends views_handler_field {
 
-  function construct() {
+  /**
+   *
+   */
+  public function construct() {
     // We need to set this property before calling the construct() chain
     // as we use it in the option_definintion() call.
     $this->webform_expand = $this->definition['webform_expand'];
     parent::construct();
   }
 
-  function option_definition() {
+  /**
+   *
+   */
+  public function option_definition() {
     $options = parent::option_definition();
     $options['format'] = array('default' => 'html');
     $options['custom_label'] = array('default' => 'default');
@@ -29,7 +35,10 @@ class webform_handler_field_submission_data extends views_handler_field {
     return $options;
   }
 
-  function options_form(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     form_load_include($form_state, 'inc', 'webform', 'views/webform.views');
 
@@ -73,14 +82,20 @@ class webform_handler_field_submission_data extends views_handler_field {
     );
   }
 
-  function options_validate(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_validate(&$form, &$form_state) {
     parent::options_validate($form, $form_state);
     if (!$this->webform_expand) {
       _webform_views_options_validate($form, $form_state);
     }
   }
 
-  function options_submit(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_submit(&$form, &$form_state) {
     parent::options_submit($form, $form_state);
     if (!$this->webform_expand) {
       _webform_views_options_submit($form, $form_state);
@@ -90,13 +105,13 @@ class webform_handler_field_submission_data extends views_handler_field {
   /**
    * Called to determine what to tell the clicksorter.
    */
-  function click_sort($order) {
+  public function click_sort($order) {
     if (isset($this->field_alias)) {
       // Since fields should always have themselves already added, just
       // add a sort on the field.
       $params = $this->options['group_type'] != 'group' ? array('function' => $this->options['group_type']) : array();
 
-      $join = new views_join;
+      $join = new views_join();
       $extra = array(
         array(
           'field' => 'cid',
@@ -115,6 +130,7 @@ class webform_handler_field_submission_data extends views_handler_field {
         case 'number':
           $this->query->add_orderby(NULL, "IF(webform_submitted_data_click_sort.data REGEXP '^-?[0-9]+(\\\\.[0-9]*)?$', webform_submitted_data_click_sort.data + 0, NULL)", $order, $this->field_alias . '_click_sort', $params);
           break;
+
         default:
           $this->query->add_orderby('webform_submitted_data_click_sort', 'data', $order, $this->field_alias . '_click_sort', $params);
           break;
@@ -125,7 +141,7 @@ class webform_handler_field_submission_data extends views_handler_field {
   /**
    * Load the node and submissions needed for this components values.
    */
-  function pre_render(&$values) {
+  public function pre_render(&$values) {
     $nid = $this->options['webform_nid'];
     $this->webform_node = node_load($nid);
     // Load all the submissions needed for this page. This is stored at the
@@ -147,7 +163,7 @@ class webform_handler_field_submission_data extends views_handler_field {
   /**
    * Get this field's label based on the selected component.
    */
-  function label() {
+  public function label() {
     if ($this->options['custom_label'] === 'default' && isset($this->options['webform_cid'])) {
       if (isset($this->webform_node)) {
         $node = $this->webform_node;
@@ -169,7 +185,7 @@ class webform_handler_field_submission_data extends views_handler_field {
   /**
    * Render the field using the loaded submissions from pre_render().
    */
-  function render($row) {
+  public function render($row) {
     $sid = $this->get_value($row);
     $nid = $this->options['webform_nid'];
     $cid = $this->options['webform_cid'];
@@ -188,7 +204,7 @@ class webform_handler_field_submission_data extends views_handler_field {
           $this->view->_webform_components[$nid][$submission->nid][$cid] = $component;
           $submission_node = node_load($submission->nid);
           foreach ($submission_node->webform['components'] as $sub_cid => $sub_component) {
-            if ($sub_component['form_key'] == $component['form_key'] && $sub_component['type'] == $component['type']) {
+            if ((string) $sub_component['form_key'] === (string) $component['form_key'] && $sub_component['type'] == $component['type']) {
               $this->view->_webform_components[$nid][$submission->nid]['webform'] = $submission_node;
               $this->view->_webform_components[$nid][$submission->nid][$cid] = $sub_component;
               break;
@@ -223,4 +239,5 @@ class webform_handler_field_submission_data extends views_handler_field {
       return $render;
     }
   }
+
 }

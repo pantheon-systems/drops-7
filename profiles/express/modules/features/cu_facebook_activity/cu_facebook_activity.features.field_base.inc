@@ -10,7 +10,7 @@
 function cu_facebook_activity_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_fb_like_faces'
+  // Exported field_base: 'field_fb_like_faces'.
   $field_bases['field_fb_like_faces'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -36,7 +36,7 @@ function cu_facebook_activity_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_fb_url'
+  // Exported field_base: 'field_fb_url'.
   $field_bases['field_fb_url'] = array(
     'active' => 1,
     'cardinality' => 1,

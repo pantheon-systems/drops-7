@@ -2,7 +2,7 @@
 
 /**
  * @file
- *   Webform module install/schema hooks.
+ * Webform module install/schema hooks.
  */
 
 /**
@@ -52,25 +52,25 @@ function webform_schema() {
         'default' => 1,
       ),
       'block' => array(
-         'description' => 'Boolean value for whether this form be available as a block.',
-         'type' => 'int',
-         'size' => 'tiny',
-         'not null' => TRUE,
-         'default' => 0,
+        'description' => 'Boolean value for whether this form be available as a block.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'allow_draft' => array(
-         'description' => 'Boolean value for whether submissions to this form be saved as a draft.',
-         'type' => 'int',
-         'size' => 'tiny',
-         'not null' => TRUE,
-         'default' => 0,
+        'description' => 'Boolean value for whether submissions to this form be saved as a draft.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'auto_save' => array(
-         'description' => 'Boolean value for whether submissions to this form should be auto-saved between pages.',
-         'type' => 'int',
-         'size' => 'tiny',
-         'not null' => TRUE,
-         'default' => 0,
+        'description' => 'Boolean value for whether submissions to this form should be auto-saved between pages.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'submit_notice' => array(
         'description' => 'Boolean value for whether to show or hide the previous submissions notification.',
@@ -554,18 +554,18 @@ function webform_schema() {
         'default' => 0,
       ),
       'is_draft' => array(
-         'description' => 'Is this a draft of the submission?',
-         'type' => 'int',
-         'size' => 'tiny',
-         'not null' => TRUE,
-         'default' => 0,
+        'description' => 'Is this a draft of the submission?',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'highest_valid_page' => array(
-         'description' => 'For drafts, the highest validated page number.',
-         'type' => 'int',
-         'size' => 'small',
-         'not null' => TRUE,
-         'default' => 0,
+        'description' => 'For drafts, the highest validated page number.',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'submitted' => array(
         'description' => 'Timestamp when the form was first saved as draft or submitted.',
@@ -650,7 +650,7 @@ function webform_schema() {
   );
 
   $schema['webform_last_download'] = array(
-   'description' => 'Stores last submission number per user download.',
+    'description' => 'Stores last submission number per user download.',
     'fields' => array(
       'nid' => array(
         'description' => 'The node identifier of a webform.',
@@ -660,20 +660,20 @@ function webform_schema() {
         'default' => 0,
       ),
       'uid' => array(
-       'description' => 'The user identifier.',
+        'description' => 'The user identifier.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-     'sid' => array(
+      'sid' => array(
         'description' => 'The last downloaded submission number.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-     'requested' => array(
+      'requested' => array(
         'description' => 'Timestamp of last download request.',
         'type' => 'int',
         'unsigned' => TRUE,
@@ -687,7 +687,6 @@ function webform_schema() {
   return $schema;
 }
 
-
 /**
  * Implements hook_requirements().
  */
@@ -700,7 +699,7 @@ function webform_requirements($phase) {
     $requirements['webform_zip'] = array(
       'title' => $t('Zip archive support'),
       'value' => $t('Missing'),
-      'severity' => REQUIREMENT_WARNING,
+      'severity' => REQUIREMENT_INFO,
       'description' => $t('PHP does not have the zip archive extension available. Webform module requires zip support for exporting submissions to Microsoft Excel.'),
     );
   }
@@ -1251,7 +1250,8 @@ function webform_update_7401(&$sandbox) {
     '%submission_url',
     '%sid',
     '%server[REQUEST_URI]',
-    '][', // Used to convert nested arrays of %value and %email.
+    // Used to convert nested arrays of %value and %email.
+    '][',
   );
   $replacements = array(
     '[current-user:name]',
@@ -1266,7 +1266,8 @@ function webform_update_7401(&$sandbox) {
     '[submission:url]',
     '[submission:sid]',
     '[current-page:url]',
-    ':', // Replace "][" with ":" for %value and %email.
+    // Replace "][" with ":" for %value and %email.
+    ':',
   );
   $dpatterns = array(
     '/%get\[([^\]]+)\]/m',
@@ -1941,7 +1942,6 @@ function webform_update_7416() {
   // transactions. Since this update routine should be run in maintenance mode
   // without concurrent transactions, no DDL statements are executed within a
   // transaction.
-
   // Add next_serial column to webform.
   $spec = array(
     'description' => 'The serial number to give to the next submission to this webform.',
@@ -1972,9 +1972,7 @@ function webform_update_7416() {
   db_query("DELETE FROM {webform_submissions} WHERE nid NOT IN (SELECT nid FROM {webform})");
   db_query("DELETE FROM {webform_submitted_data} WHERE nid NOT IN (SELECT nid FROM {webform})");
 
-
   // Add serial numbers to all submissions.
-
   // Repeat for every Webform.
   $nids = db_select('webform', 'w')
     ->fields('w', array('nid'))
@@ -2003,7 +2001,7 @@ function webform_update_7416() {
       ->condition('nid', $nid)
       ->execute();
   }
-  // Commit the transaction
+  // Commit the transaction.
   unset($txn);
 
   // Now that every submission has a serial number, make serial numbers required.
@@ -2091,7 +2089,9 @@ function webform_update_7420() {
  */
 function webform_update_7421() {
   $capable = array_reduce(array('mandrill', 'mimemail', 'htmlmail'),
-                          function($carry, $module) { return $carry || module_exists($module); },
+                          function ($carry, $module) {
+                            return $carry || module_exists($module);
+                          },
                           FALSE);
   variable_set('webform_email_html_capable', $capable);
   return $capable
@@ -2114,7 +2114,7 @@ function webform_update_7422() {
  */
 function webform_update_7423() {
   // Create webform_condtional_actions table.
-  // The table might already exist if this update previously timed-out
+  // The table might already exist if this update previously timed-out.
   if (!db_table_exists('webform_conditional_actions')) {
     $schema['webform_conditional_actions'] = array(
       'description' => 'Holds information about conditional actions.',
@@ -2186,7 +2186,7 @@ function webform_update_7423() {
     ->from($select)
     ->execute();
 
-  // Commit the insert
+  // Commit the insert.
   unset($tx);
 
   // Remove unneeded columns from webform_conditional.

@@ -204,7 +204,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
    * $view->result should contain an array of objects.
    */
   function execute(&$view) {
-    $start       = microtime();
+    $start       = microtime(TRUE);
     $entries     = array();
     $num_entries = 0;
 
@@ -258,7 +258,10 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
 
     foreach ($entries as $key => &$entry) {
       if (isset($entry['jpegphoto'])) {
-        $entry['jpegphoto'][0] = "<img src='data:image/jpeg;base64," . base64_encode($entry['jpegphoto'][0]) . "' alt='photo' />";
+        $entry['jpegphoto'][0] = '<img src="data:image/jpeg;base64,' . base64_encode($entry['jpegphoto'][0]) . '" alt="photo" />';
+      }
+      if (isset($entry['thumbnailphoto'])) {
+        $entry['thumbnailphoto'][0] = '<img src="data:image/jpeg;base64,' . base64_encode($entry['thumbnailphoto'][0]) . '" alt="photo" />';
       }
       foreach ($view->field as $field) {
         if (! isset($field_alias[$field->field_alias])) {
@@ -338,7 +341,7 @@ class ldap_views_plugin_query_ldap extends views_plugin_query {
 
     $view->result       = $result;
     $view->total_rows   = $num_entries;
-    $view->execute_time = microtime() - $start;
+    $view->execute_time = microtime(TRUE) - $start;
     $view->query->pager->total_items  = $num_entries;
     $view->query->pager->update_page_info();
 

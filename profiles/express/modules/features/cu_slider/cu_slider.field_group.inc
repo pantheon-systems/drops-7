@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function cu_slider_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -36,7 +36,7 @@ function cu_slider_field_group_info() {
       'formatter' => 'open',
     ),
   );
-  $export['group_slide_image|field_collection_item|field_slider_slide|form'] = $field_group;
+  $field_groups['group_slide_image|field_collection_item|field_slider_slide|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -64,7 +64,7 @@ function cu_slider_field_group_info() {
       ),
     ),
   );
-  $export['group_slide_link|field_collection_item|field_slider_slide|form'] = $field_group;
+  $field_groups['group_slide_link|field_collection_item|field_slider_slide|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -91,7 +91,7 @@ function cu_slider_field_group_info() {
       ),
     ),
   );
-  $export['group_slide_tabs|field_collection_item|field_slider_slide|form'] = $field_group;
+  $field_groups['group_slide_tabs|field_collection_item|field_slider_slide|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -119,7 +119,14 @@ function cu_slider_field_group_info() {
       ),
     ),
   );
-  $export['group_slider_slide_content|field_collection_item|field_slider_slide|form'] = $field_group;
+  $field_groups['group_slider_slide_content|field_collection_item|field_slider_slide|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Image');
+  t('Link');
+  t('Slide Content');
+  t('Slide Text');
+
+  return $field_groups;
 }

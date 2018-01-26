@@ -24,6 +24,10 @@ function cu_test_content_admin_bundle_install() {
     module_enable(array('cu_test_content_context'));
   }
 
+  if (module_exists('express_collections_bundle')) {
+    module_enable(array('cu_test_content_collections'));
+  }
+
 }
 
 /**

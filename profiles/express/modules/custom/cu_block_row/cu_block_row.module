@@ -123,6 +123,18 @@ function cu_block_row_form_bean_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+function cu_block_row_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if (isset($entity_form['field_block_row_collection'])) {
+    $entity_form['field_block_row_collection'][LANGUAGE_NONE]['add_more']['#value'] = "Add another column";
+  }
+
+  if (isset($entity_form['field_block_row_distribution'])) {
+    $entity_form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['auto'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="50%">&nbsp;</td><td bgcolor="#ccc" width="50%">&nbsp;</td></tr></table>';
+    $entity_form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['left'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="66%">&nbsp;</td><td bgcolor="#ccc" width="33%">&nbsp;</td></tr></table>';
+    $entity_form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['right'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="33%">&nbsp;</td><td bgcolor="#ccc" width="66%">&nbsp;</td></tr></table>';
+  }
+}
+
 /*
  * Implements hook_secure_permissions
  *
@@ -164,5 +176,16 @@ function cu_block_row_secure_permissions($role) {
 
   if (isset($permissions[$role])) {
     return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter.
+ *
+ * Format Inline Entity Forms.
+ */
+function cu_block_row_field_widget_form_alter(&$element, &$form_state, $context)	{
+  if (!empty($element['#bundle']) && $element['#bundle'] == 'field_block_row_collection' && $element['#field_name'] == 'field_block_row_block') {
+    express_layout_format_ief($element);
   }
 }

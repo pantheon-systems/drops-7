@@ -1,0 +1,5 @@
+name = CU HelpScout Admin Bundle
+description = Provides an endpoint for centralized HelpScout beacon configurations
+core = 7.x
+package = Express
+bundle_group = 'admin_bundles'

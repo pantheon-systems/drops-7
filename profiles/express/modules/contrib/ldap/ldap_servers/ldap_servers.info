@@ -17,9 +17,9 @@ files[] = ldap_servers.theme.inc
 files[] = tests/ldap_servers.test
 configure = admin/config/people/ldap/servers
 
-; Information added by Drupal.org packaging script on 2017-05-30
-version = "7.x-2.2"
+; Information added by Drupal.org packaging script on 2017-08-27
+version = "7.x-2.3"
 core = "7.x"
 project = "ldap"
-datestamp = "1496167150"
+datestamp = "1503841448"
 

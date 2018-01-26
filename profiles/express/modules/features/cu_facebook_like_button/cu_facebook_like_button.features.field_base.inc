@@ -10,7 +10,7 @@
 function cu_facebook_like_button_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_fb_verb'
+  // Exported field_base: 'field_fb_verb'.
   $field_bases['field_fb_verb'] = array(
     'active' => 1,
     'cardinality' => 1,

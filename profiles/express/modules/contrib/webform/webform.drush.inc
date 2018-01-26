@@ -2,9 +2,12 @@
 
 /**
  * @file
- * Implementation of hook_drush_command().
+ * Functions relating to Drush integration.
  */
 
+/**
+ * Implements hook_drush_command().
+ */
 function webform_drush_command() {
   return array(
     'webform-export' => array(
@@ -17,7 +20,7 @@ function webform_drush_command() {
         'format' => 'The exporter format to use. Out-of-the-box this may be "delimited" or "excel".',
         'delimiter' => 'Delimiter between columns (defaults to site-wide setting). This option may need to be wrapped in quotes. i.e. --delimter="\t".',
         'components' => 'Comma-separated list of component IDs or form keys to include.' . "\n" .
-                        'May also include "webform_serial", "webform_sid", "webform_time", "webform_complete_time", "webform_modified_time", "webform_draft", "webform_ip_address", "webform_uid", and "webform_username".',
+        'May also include "webform_serial", "webform_sid", "webform_time", "webform_complete_time", "webform_modified_time", "webform_draft", "webform_ip_address", "webform_uid", and "webform_username".',
         'header-keys' => 'Integer -1 for none, 0 for label (default) or 1 for form key.',
         'select-keys' => 'Integer 0 or 1 value. Set to 1 to print select list values by their form keys instead of labels.',
         'select-format' => 'Set to "separate" (default) or "compact" to determine how select list values are exported.',
@@ -46,8 +49,11 @@ function webform_drush_command() {
  * Exports a webform via drush, useful for large data dumps that would otherwise
  * time out due to memory consumption.
  *
- * @param int $nid
+ * @param bool|int $nid
  *   Node ID of the webform that we want to export.
+ *
+ * @return
+ *   The value returned from drush_set_error().
  */
 function drush_webform_export($nid = FALSE) {
   if (!$nid) {
@@ -62,7 +68,6 @@ function drush_webform_export($nid = FALSE) {
   module_load_include('inc', 'webform', 'includes/webform.export');
   module_load_include('inc', 'webform', 'includes/webform.components');
   module_load_include('inc', 'webform', 'includes/webform.report');
-
 
   // Pull in options from drush to override the defaults.
   $format = drush_get_option('format', 'delimited');
@@ -82,7 +87,8 @@ function drush_webform_export($nid = FALSE) {
       $component = $form_keys[$component];
     }
   }
-  unset($component); // Drop PHP reference.
+  // Drop PHP reference.
+  unset($component);
 
   // Get the range options.
   unset($options['range']['range_type']);
@@ -102,16 +108,16 @@ function drush_webform_export($nid = FALSE) {
                                 array('!opt' => "range-$option_name", '!val' => $option_value)));
     }
   }
-  
+
   // Determine the range type based on provided input, if not explicitly set.
   if (empty($options['range']['range_type'])) {
     $options['range']['range_type'] = isset($options['range']['start'])
-                                        ? 'range'
-                                        : (isset($options['range']['latest'])
-                                           ? 'latest'
-                                           : 'all');
+      ? 'range'
+      : (isset($options['range']['latest'])
+      ? 'latest'
+      : 'all');
   }
-  
+
   // Set defaults for any missing range arguments.
   switch ($options['range']['range_type']) {
     case 'latest':
@@ -120,12 +126,14 @@ function drush_webform_export($nid = FALSE) {
         $options['range']['latest'] = 100;
       }
       break;
+
     case 'range':
     case 'range_serial':
       if (empty($options['range']['start'])) {
         $options['range']['start'] = 1;
       }
       break;
+
     case 'range_date':
       if (empty($options['range']['start_date'])) {
         $options['range']['start_date'] = "1/1/1970";
@@ -133,8 +141,8 @@ function drush_webform_export($nid = FALSE) {
       break;
   }
 
-  // Get the preferred completion type
-  $options['range']['completion_type'] = drush_get_option('completion-type', NULL); 
+  // Get the preferred completion type.
+  $options['range']['completion_type'] = drush_get_option('completion-type', NULL);
   if (isset($options['range']['completion_type']) && !in_array($options['range']['completion_type'], array('finished', 'draft', 'all'))) {
     return drush_set_error('Unsupported completion-type. The available options are "finished", "draft", or "all".');
   }
@@ -149,8 +157,10 @@ function drush_webform_export($nid = FALSE) {
 
   // If no filename was specified, print the file and delete it.
   if (drush_get_option('file', FALSE) === FALSE) {
-    drush_print(file_get_contents($options['file_name']));  // The @ makes it silent.
-    @unlink($options['file_name']);  // Clean up, the @ makes it silent.
+    // The @ makes it silent.
+    drush_print(file_get_contents($options['file_name']));
+    // Clean up, the @ makes it silent.
+    @unlink($options['file_name']);
   }
 }
 
@@ -173,10 +183,11 @@ function drush_webform_clear($nid = FALSE) {
     return drush_set_error('webform-clear cancelled.');
   }
 
-  //module_load_include('inc', 'webform', 'includes/webform.submissions');
-  //module_load_include('inc', 'webform', 'includes/webform.components');
+  // @code
+  // module_load_include('inc', 'webform', 'includes/webform.submissions');
+  // module_load_include('inc', 'webform', 'includes/webform.components');
+  // @endcode
   module_load_include('inc', 'webform', 'includes/webform.report');
-
 
   // Pull in option from drush to override the default.
   $batch_size = drush_get_option('batch-size', 10000);
@@ -189,10 +200,21 @@ function drush_webform_clear($nid = FALSE) {
 }
 
 /**
- * Implements hook_drush_sql_sync_sanitize.
+ * Implements hook_drush_sql_sync_sanitize().
  */
 function webform_drush_sql_sync_sanitize($source) {
+  // Fetch list of all table.
+  $all_tables = drush_sql_get_class()->listTables();
+  $tables_to_truncate = array('webform_submitted_data', 'webform_submissions');
+
+  $truncate_webform_tables_query = array();
+  foreach ($tables_to_truncate as $table) {
+    if (in_array($table, $all_tables, TRUE)) {
+      $truncate_webform_tables_query[] = 'TRUNCATE ' . $table . ';';
+    }
+  }
+
   drush_sql_register_post_sync_op('webform_submitted_data',
     dt('Delete all data submitted to webforms (depending on the site config, may contain sensitive data).'),
-    "TRUNCATE webform_submitted_data; TRUNCATE webform_submissions;");
+    implode(' ', $truncate_webform_tables_query));
 }

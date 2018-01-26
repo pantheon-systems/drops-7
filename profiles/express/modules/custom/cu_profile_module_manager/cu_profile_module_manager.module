@@ -137,30 +137,39 @@ function cu_profile_module_manager_atlas_request_submit($form, &$form_state) {
 }
 
 /**
- * Check to see if the package has a label and return it.
- *
- * @param $key
- * @param $item
- * @return mixed
+ * @param $hash
+ * @param $name
+ * @return mixed|string
  */
-function _prepared_atlas_package($key, $item) {
-  // Atlas code api call.
-  $code_array = atlas_api_request('code', $key);
-
-  if (isset($code_array) && !empty($code_array['meta']['label']) && $item == 'label') {
-    $code_label = $code_array['meta']['label'];
-    return $code_label;
+function curl_github_info($hash, $name) {
+  if (variable_get('github_info')) {
+    // Great!
+  } else {
+    variable_set('github_info', array());
   }
 
-  if (isset($code_array) && !empty($code_array['meta']['tag']) && $item == 'tag') {
-    $code_tag = $code_array['meta']['tag'];
-    return $code_tag;
+  $github_info = variable_get('github_info');
+
+  if (!isset($github_info[$name])) {
+    $data = @file_get_contents('https://github.com/CuBoulder/' . $name . '/blob/' . $hash . '/' . $name . '.info');
+
+    if (strpos($data, 'description = ')) {
+      $start = strpos($data, 'description = ');
+      $start = $start + 14;
+      $end = strpos($data, 'core = ', $start);
+      $output = html_entity_decode(substr($data, $start, ($end - $start)));
+      $github_info[$name] = $output;
+
+      // Shave it for later.
+      variable_set('github_info', $github_info);
+    } else {
+      $output = 'For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a>';
+    }
+  } else {
+    $output = $github_info[$name];
   }
 
-  if (isset($code_array) && !empty($code_array['meta']['name']) && $item == 'name') {
-    $code_name = $code_array['meta']['name'];
-    return $code_name;
-  }
+  return $output;
 }
 
 /**
@@ -184,8 +193,7 @@ function cu_profile_module_manager_addon_page() {
       '#type' => 'markup',
       '#markup' => '<p>These are bundles that can be added at any time by site owners. Once you add the bundle,
                     you will receive an email when it has finished downloading. Once downloaded, the bundle will
-                    be available to enable.</p><p>Don\'t see your bundle available in Core yet? It takes a few 
-                    minutes to download. If it takes longer than 15 minutes, contact your site owner for help.</p>',
+                    be available to enable.</p><p>If you have any questions or concerns, contact Web Support for help.</p>',
     ),
   );
 
@@ -200,6 +208,7 @@ function cu_profile_module_manager_addon_page() {
     $name = (isset($package['meta']['name']) ? $package['meta']['name'] : '');
     $label = (isset($package['meta']['label']) ? $package['meta']['label'] : '');
     $id = (isset($package['_id']) ? $package['_id'] : '');
+    $hash = (isset($package['commit_hash']) ? $package['commit_hash'] : '');
 
     $tags = array();
     if (!empty($package['meta']['tag'])) {
@@ -211,30 +220,33 @@ function cu_profile_module_manager_addon_page() {
     $enabled = module_exists($name) ? 1 : 0;
 
     if (isset($tag) && isset($label) && isset($name) && in_array('addon_bundles', $tags) && !in_array($id, $packages_array)) {
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><a href="' . $base_path . 'admin/settings/bundles/list/atlas/' . $name . '/confirm" id="' . $id . '" class="pmm-actions btn btn-primary"><i class="fa fa-plus-circle"></i> Add bundle</a></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><a href="' . $base_path . 'admin/settings/bundles/list/atlas/' . $name . '/confirm" id="' . $id . '" class="pmm-actions btn btn-primary"><i class="fa fa-plus-circle"></i> Add bundle</a></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('addon_bundles', $tags) && in_array($id, $packages_array) && $enabled == FALSE) {
       // Is NOT enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('addon_bundles', $tags) && in_array($id, $packages_array) && $enabled == TRUE) {
       // Is enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
         ),
       );
     }
@@ -276,6 +288,7 @@ function cu_profile_module_manager_request_page() {
     $name = (isset($package['meta']['name']) ? $package['meta']['name'] : '');
     $label = (isset($package['meta']['label']) ? $package['meta']['label'] : '');
     $id = (isset($package['_id']) ? $package['_id'] : '');
+    $hash = (isset($package['commit_hash']) ? $package['commit_hash'] : '');
 
     $tags = array();
     if (!empty($package['meta']['tag'])) {
@@ -287,30 +300,33 @@ function cu_profile_module_manager_request_page() {
     $enabled = module_exists($name) ? 1 : 0;
 
     if (isset($tag) && isset($label) && isset($name) && in_array('request_bundles', $tags) && !in_array($id, $packages_array)) {
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://www.colorado.edu/webcentral/web-express-features/bundles-features/request-add-bundles" target="_blank">Webcentral\'s bundle requests page.</a></p><br><span id="' . $id . '" class="pmm-actions btn btn-primary" disabled ><i class="fa fa-plus-circle"></i> Requires prior approval</span></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><span id="' . $id . '" class="pmm-actions btn btn-primary" disabled ><i class="fa fa-plus-circle"></i> Requires prior approval</span></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('request_bundles', $tags) && in_array($id, $packages_array) && $enabled == FALSE) {
       // Is NOT enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://www.colorado.edu/webcentral/web-express-features/bundles-features/request-add-bundles" target="_blank">Webcentral\'s bundle requests page.</a></p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('request_bundles', $tags) && in_array($id, $packages_array) && $enabled == TRUE) {
       // Is enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://www.colorado.edu/webcentral/web-express-features/bundles-features/request-add-bundles" target="_blank">Webcentral\'s bundle requests page.</a></p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
         ),
       );
     }
@@ -351,6 +367,7 @@ function cu_profile_module_manager_beta_page() {
     $name = (isset($package['meta']['name']) ? $package['meta']['name'] : '');
     $label = (isset($package['meta']['label']) ? $package['meta']['label'] : '');
     $id = (isset($package['_id']) ? $package['_id'] : '');
+    $hash = (isset($package['commit_hash']) ? $package['commit_hash'] : '');
 
     $tags = array();
     if (!empty($package['meta']['tag'])) {
@@ -362,30 +379,33 @@ function cu_profile_module_manager_beta_page() {
     $enabled = module_exists($name) ? 1 : 0;
 
     if (!empty($tag) && isset($label) && isset($name) && in_array('beta_bundles', $tags) && !in_array($id, $packages_array)) {
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><a href="' . $base_path . 'admin/settings/bundles/list/atlas/' . $name . '/confirm" id="' . $id . '" class="pmm-actions btn btn-primary"><i class="fa fa-plus-circle"></i> Add bundle</a></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><a href="' . $base_path . 'admin/settings/bundles/list/atlas/' . $name . '/confirm" id="' . $id . '" class="pmm-actions btn btn-primary"><i class="fa fa-plus-circle"></i> Add bundle</a></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('beta_bundles', $tags) && in_array($id, $packages_array) && $enabled == FALSE) {
       // Is NOT enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><a href="' . $base_path . 'admin/settings/bundles/list/confirm/' . $name . '" id="' . $id . '" class="pmm-actions btn btn-info"><i class="fa fa-plus-circle"></i> Enable</a></div>',
         ),
       );
     }
 
     if (isset($tag) && isset($label) && isset($name) && in_array('beta_bundles', $tags) && in_array($id, $packages_array) && $enabled == TRUE) {
       // Is enabled.
+      $response = curl_github_info($hash, $name);
       $output[] = array(
         'atlas_item' => array(
           '#type' => 'markup',
-          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>For information on this and other bundles that require a request, visit <a href="http://colorado.edu/webcentral">Webcentral\'s page about bundle requests.</a></p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
+          '#markup' => '<div class="bundle-enable atlas-add-bundle bundle-ready"><h2>' . $label . '</h2><br><p>' . $response . '</p><br><span class="pmm-actions btn btn-info" disabled ><i class="fa fa-check-circle"></i> Ready to use</span></div>',
         ),
       );
     }

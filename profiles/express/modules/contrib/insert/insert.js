@@ -18,7 +18,7 @@ Drupal.behaviors.insert.attach = function(context) {
   $('textarea:not([name$="[data][title]"]):not(.insert-processed)', context).addClass('insert-processed').focus(insertSetActive).blur(insertRemoveActive);
 
   // Add the click handler to the insert button.
-  $('.insert-button:not(.insert-processed)', context).addClass('insert-processed').click(insert);
+  $('.insert-button:not(.insert-processed)', context).addClass('insert-processed').mousedown(insert);
 
   function insertSetActive() {
     insertTextarea = this;

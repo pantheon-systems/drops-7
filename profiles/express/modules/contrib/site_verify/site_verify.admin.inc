@@ -234,7 +234,8 @@ function site_verify_edit_form_validate($form, &$form_state) {
           form_set_error('file', t('The file %filename is already being used in another verification.', array('%filename' => $values['file'])));
         }
       }
-    } else {
+    }
+    else {
       $form_state['values']['file_contents'] = NULL;
     }
   }

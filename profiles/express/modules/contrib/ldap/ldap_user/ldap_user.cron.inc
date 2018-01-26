@@ -167,7 +167,7 @@ function _ldap_user_orphans($ldap_user_conf) {
                *     user_cancel_reassign, user_cancel_delete
                */
               if ($ldap_user_conf->orphanedDrupalAcctBehavior == 'ldap_user_orphan_email') {
-                 $email_list[] = $account->name . "," . $account->mail . "," . $base_url . "/user/$uid/edit";
+                 $email_list[] = $account->name . "," . $account->mail . "," . $base_url . "/user/" . $account->uid . "/edit";
               }
               else {
                  _user_cancel(array(), $account, $ldap_user_conf->orphanedDrupalAcctBehavior);

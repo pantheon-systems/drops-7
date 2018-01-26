@@ -903,11 +903,21 @@ td.ctools-export-ui-operations {
 
 .express-field-columns {
   .form-item {
+    white-space: normal;
     margin-bottom: 5px;
+  }
+
+  tr.odd &,
+  tr.even & {
+    .form-item {
+      white-space: normal;
+      margin-bottom: 5px;
+    }
   }
   /* Checkboxes */
   @media screen and (min-width: 480px) {
-    &.form-checkboxes  {
+    &.form-checkboxes,
+    &.form-radios  {
       -webkit-column-count: 2;
       -moz-column-count: 2;
       column-count: 2;
@@ -917,7 +927,8 @@ td.ctools-export-ui-operations {
     }
   }
   @media screen and (min-width: 768px) {
-    &.form-checkboxes  {
+    &.form-checkboxes,
+    &.form-radios  {
       -webkit-column-count: 3;
       -moz-column-count: 3;
       column-count: 3;
@@ -927,7 +938,8 @@ td.ctools-export-ui-operations {
     }
   }
   @media screen and (min-width: 960px) {
-    &.form-checkboxes  {
+    &.form-checkboxes,
+    &.form-radios  {
       -webkit-column-count: 4;
       -moz-column-count: 4;
       column-count: 4;
@@ -937,7 +949,8 @@ td.ctools-export-ui-operations {
     }
   }
   @media screen and (min-width: 1200px) {
-    &.form-checkboxes  {
+    &.form-checkboxes,
+    &.form-radios  {
       -webkit-column-count: 5;
       -moz-column-count: 5;
       column-count: 5;

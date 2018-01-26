@@ -107,6 +107,7 @@ function memcache_test_get($key) {
  * Clear cache using a wildcard.
  */
 function memcache_test_wildcard_flush($key) {
+  $_SESSION['cache_flush'] = array();
   cache_clear_all($key, 'MemcacheDrupal', TRUE);
   drupal_json_output($key);
 }

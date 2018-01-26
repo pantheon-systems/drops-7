@@ -51,6 +51,11 @@ class MetatagPanelsTest extends MetatagTestHelper {
     $xpath = $this->xpath("//meta[@name='keywords']");
     $this->assertEqual(count($xpath), 1, 'Exactly one keywords meta tag found.');
     $this->assertEqual($xpath[0]['content'], 'Test, page, keywords');
+
+    // Test the abstract meta tag.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'http://www.example.com/user/1/full-bio-(1).pdf');
   }
 
   // @todo Test an in-db page.

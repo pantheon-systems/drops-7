@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Basic styling for Views Slideshow Cycle.
+ */
 
 .views_slideshow_cycle_no_display,
 .views_slideshow_cycle_hidden,
@@ -8,17 +12,11 @@
   display: none;
 }
 
-.jquery-once-1-processed .views-slideshow-controls-bottom,
-.jquery-once-1-processed .views-slideshow-controls-top {
+/* Only show control blocks if the JavaScript successfully initialized. */
+.views-slideshow-cycle-processed .views-slideshow-controls-bottom,
+.views-slideshow-cycle-processed .views-slideshow-controls-top {
   display: block;
 }
-
-.views-slideshow-cycle-main-frame,
-.views-slideshow-cycle-main-frame div,
-.views-slideshow-cycle-main-frame img {
-  max-width: 100%;
-}
-
 
 /* Pager Settings */
 

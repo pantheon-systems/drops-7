@@ -13,6 +13,13 @@ function cu_ldap_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
       drupal_set_title(t('Log in'));
+      if (variable_get('login_lockout', FALSE)) {
+        $message = variable_get('login_lockout_message', t('Authentication to this site is temporarily disabled.  Please see <a href="http://status.colorado.edu/">status.colorado.edu</a> for more details.'));
+        drupal_set_message($message, 'error');
+        $form['name']['#attributes']['disabled'] = 'disabled';
+        $form['pass']['#attributes']['disabled'] = 'disabled';
+        $form['actions']['submit']['#attributes']['disabled'] = 'disabled';
+      }
     case 'user_login_block':
       $form['name']['#title'] = t('CU Login Name');
       $form['name']['#description'] = '';

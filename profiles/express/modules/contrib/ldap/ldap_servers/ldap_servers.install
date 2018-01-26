@@ -878,6 +878,15 @@ function ldap_servers_update_7207() {
     }
 }
 
+/**
+ * Removes HTTPS checking.
+ */
+function ldap_servers_update_7208() {
+  variable_del('ldap_servers_require_ssl_for_credentials');
+  return t('HTTPS validation was removed, if you need mixed mode consider another module such as securelogin for this. Mixed mode is strongly discouraged.');
+
+}
+
 function ldap_servers_install_update_schema($schema, &$change_log) {
   foreach ($schema as $table_name => $table_schema) {
     foreach ($table_schema['fields'] as $field_name => $field_schema) {

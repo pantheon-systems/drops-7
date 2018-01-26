@@ -36,7 +36,7 @@ function focal_point_menu() {
     'type' => MENU_CALLBACK,
     'title' => 'Image Preview',
     'page callback' => 'focal_point_preview_page',
-    'page arguments' => array(2,3),
+    'page arguments' => array(2, 3),
     'access arguments' => array('preview focal point'),
     'file' => 'focal_point.admin.inc',
   );
@@ -170,6 +170,7 @@ function focal_point_form_file_entity_edit_alter(&$form, &$form_state) {
  */
 function _focal_point_form_append_focal_point_preview(&$form, $file) {
   if (_focal_point_supported_field_type('media') && is_object($file) && _focal_point_supported_file($file)) {
+    $default_value = !empty($file->focal_point) ? $file->focal_point : _focal_point_guess_default($file->fid);
     $focal_point_id = drupal_html_id('focal-point-media');
     $form['focal_point'] = array(
       '#type' => 'container',
@@ -184,7 +185,7 @@ function _focal_point_form_append_focal_point_preview(&$form, $file) {
         '#title' => isset($file->title) ? $file->title : '',
       ),
       'preview_link' => _focal_point_preview_link($file->fid, $focal_point_id, $file->focal_point),
-      'focal_point' => _focal_point_field($focal_point_id, $file->focal_point),
+      'focal_point' => _focal_point_field($focal_point_id, $default_value),
       'focal_point_help' => _focal_point_help(),
     );
 
@@ -380,7 +381,9 @@ function focal_point_save($fid, $focal_point) {
  * Helper function to save a FocalPoint record, and invoke related hooks.
  *
  * @param array $record
+ *   Array with records.
  * @param array $primary_keys
+ *   Array with primary keys.
  */
 function _focal_point_save($record, $primary_keys = array()) {
   // Give other modules a chance to change the focal point.
@@ -523,7 +526,7 @@ function _focal_point_guess_default($fid) {
  *   (Optional) The id of the focal point indicator. This is needed to support
  *   image fields that have a cardinality greater than one, and forms in modals.
  * @param string $default_value
- *   The default value of the field
+ *   The default value of the field.
  * @param bool $access
  *   (Optional) Whether or not the field should be accessible.
  *
@@ -773,7 +776,7 @@ function _focal_point_preview($fid, $focal_point, $show_original = TRUE) {
       }
     }
     else {
-      $output['focal_point_examples']['#markup'] = '<div class="messages warning">' . t('There are no styles defined that use a focal point effect. To see how this module will work you should <a href="@url">create a new image style</a> that uses one.', array('@url' => '/admin/config/media/image-styles')) . '</div>';
+      $output['focal_point_examples']['#markup'] = '<div class="messages warning">' . t('There are no styles defined that use a focal point effect. To see how this module will work you should <a href="@url">create a new image style</a> that uses one.', array('@url' => url('/admin/config/media/image-styles'))) . '</div>';
     }
   }
 
@@ -792,7 +795,7 @@ function _focal_point_preview($fid, $focal_point, $show_original = TRUE) {
  *   (Optional) In the form xx,yy where xx represents the left offset as a
  *   percent and yy represents the top offset as a percent.
  *
- * @return array
+ * @return mixed
  *   A render array for the preview link.
  */
 function _focal_point_preview_link($fid, $indicator_id = 'focal-point', $focal_point = '') {

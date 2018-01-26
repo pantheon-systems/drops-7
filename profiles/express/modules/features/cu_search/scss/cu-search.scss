@@ -5,6 +5,7 @@ $border_color: #e0e0e0;
 .cu-search-box .search-form-wrapper {
   display: flex;
   flex-direction: column-reverse;
+  margin-bottom: 20px;
 }
 .search-options {
   display: flex;
@@ -65,6 +66,7 @@ $border_color: #e0e0e0;
     }
     .cu-search input.form-text {
       border:1px solid $border_color;
+
     }
   }
   .search-wrapper {
@@ -91,6 +93,8 @@ $border_color: #e0e0e0;
       padding:0 8px;
       background-color: #fff;
       -webkit-appearance: none;
+      border-radius: 0;
+      -webkit-border-radius:0;
       border:none;
     }
     .form-submit {
@@ -205,7 +209,8 @@ $border_color: #e0e0e0;
       .gs-spelling a {
         color:$blue;
       }
-      .gs-spelling-original {
+      .gs-spelling-original,
+       .gs-visibleUrl {
         font-size:75%;
       }
     }

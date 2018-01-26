@@ -1,14 +1,7 @@
 <?php
 
 /**
- * @file
- * Contains the list style plugin.
- */
-
-/**
  * Style plugin to render each item in a slideshow.
- *
- * @ingroup views_style_plugins
  */
 class views_slideshow_plugin_style_slideshow extends views_plugin_style {
 

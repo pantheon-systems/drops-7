@@ -8,9 +8,9 @@ dependencies[] = search_api:search_api
 
 hidden = TRUE
 
-; Information added by Drupal.org packaging script on 2017-02-15
-version = "7.x-1.21"
+; Information added by Drupal.org packaging script on 2017-07-03
+version = "7.x-1.22"
 core = "7.x"
 project = "metatag"
-datestamp = "1487171290"
+datestamp = "1499110746"
 

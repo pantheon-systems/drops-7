@@ -1,0 +1,400 @@
+<?php
+
+/**
+ * @file
+ * Provides primary Drupal hook implementations.
+ *
+ * Adds a JavaScript snippet to selected page responses to trigger analytics and
+ * other tracking items configured using the Google Tag Manager.
+ *
+ * @author Jim Berry ("solotandem", http://drupal.org/user/240748)
+ */
+
+/**
+ * Default for matching all items except listed.
+ */
+const GOOGLE_TAG_EXCLUDE_LISTED = 'exclude listed';
+
+/**
+ * Default for matching only listed items.
+ */
+const GOOGLE_TAG_INCLUDE_LISTED = 'include listed';
+
+/**
+ * Default list of relative paths.
+ */
+define('GOOGLE_TAG_PATHS', "admin*\nbatch*\nnode/add*\nnode/*/edit\nnode/*/delete\nuser/*/edit*\nuser/*/cancel*");
+
+/**
+ * Default list of HTTP response statuses that override path conditions.
+ */
+define('GOOGLE_TAG_STATUSES', "403 Forbidden\n404 Not Found");
+
+/**
+ * Default list of tag classes to allow.
+ */
+define('GOOGLE_TAG_WHITELIST_CLASSES', "google\nnonGooglePixels\nnonGoogleScripts\nnonGoogleIframes");
+
+/**
+ * Default list of tag classes to forbid.
+ */
+define('GOOGLE_TAG_BLACKLIST_CLASSES', "customScripts\ncustomPixels");
+
+/**
+ * Implements hook_help().
+ */
+function google_tag_help($path, $arg) {
+  module_load_include('inc', 'google_tag', 'includes/info');
+  return _google_tag_help($path, $arg);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function google_tag_menu() {
+  module_load_include('inc', 'google_tag', 'includes/info');
+  return _google_tag_menu();
+}
+
+/**
+ * Implements hook_permission().
+ */
+function google_tag_permission() {
+  module_load_include('inc', 'google_tag', 'includes/info');
+  return _google_tag_permission();
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * @todo Could instead implement hook_flush_caches() called from system_cron()
+ *   and drupal_flush_all_caches().
+ */
+function google_tag_cron() {
+  google_tag_assets_create($count);
+}
+
+/**
+ * Implements hook_variable_group_info().
+ */
+function google_tag_variable_group_info() {
+  module_load_include('inc', 'google_tag', 'includes/variable');
+  return _google_tag_variable_group_info();
+}
+
+/**
+ * Implements hook_variable_info().
+ */
+function google_tag_variable_info($options) {
+  module_load_include('inc', 'google_tag', 'includes/variable');
+  return _google_tag_variable_info($options);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for variable_edit_form().
+ *
+ * This applies to:
+ * - individual variables with a path like:
+ * admin/config/system/variable/edit/google_tag_role_toggle
+ *
+ * - all variables by group with a path like:
+ * admin/config/system/variable/group/google_tag
+ *
+ * - all variables by module with a path like:
+ * admin/config/system/variable/module/google_tag
+ *
+ * on the latter two forms:
+ * - comment says 'These are global default variables.'
+ * - regardless the highlighted value in realm switcher
+ * - realm name:key = global:default
+ * - $form[#variable_options][realm]->realm and key
+ *
+ * all of these forms have
+ * - element parents are none
+ * - $form[#variable_edit_form] contains list of variables on the form
+ * - with first form need to check the variable being in this module
+ *
+ * on all pages:
+ * - variable_realm_key_[realm] may be a query argument in the url
+ */
+function google_tag_form_variable_edit_form_alter(&$form, &$form_state, $form_id) {
+  // Also include these on group and module pages for element validation.
+  form_load_include($form_state, 'inc', 'google_tag', 'includes/admin');
+  form_load_include($form_state, 'inc', 'google_tag', 'includes/variable');
+  if (strpos($_GET['q'], 'admin/config/system/variable/edit/') === 0) {
+    if (strpos($form['#variable_edit_form'][0], 'google_tag_') === 0) {
+      $form['#submit'][] = 'google_tag_settings_form_submit';
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for variable_realm_edit_variables_form().
+ *
+ * This applies to:
+ * - selected variables by realm with a path like:
+ * admin/config/system/variable/realm/language/edit
+ * - $form[#variable_options][realm]->realm and key
+ * - $form_state[build_info][args] = [ [0] => realm_name, [1] => realm_key ]
+ * - element parents are [variables][google_tag]
+ * - and tree is true on variables key
+ * - $form[#variable_edit_form] contains list of variables on the form
+ * - which includes variables from other modules
+ */
+function google_tag_form_variable_realm_edit_variables_form_alter(&$form, &$form_state, $form_id) {
+  // @todo Why does variable_realm not set this item on this particular form?
+  $form['#realm_keys'][$form['#variable_options']['realm']->realm] = $form['#variable_options']['realm']->key;
+  $form['#submit'][] = 'google_tag_settings_form_submit';
+  form_load_include($form_state, 'inc', 'google_tag', 'includes/admin');
+  form_load_include($form_state, 'inc', 'google_tag', 'includes/variable');
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Adds the snippet to the page array if the insertion conditions are met.
+ *
+ * @see drupal_render_page()
+ */
+function google_tag_page_build(&$page) {
+  if (!google_tag_insert_snippet()) {
+    return;
+  }
+
+  // Call sequence:
+  // - drupal_render_page()
+  //   - hook_page_build()
+  //   - hook_page_alter()
+  //   - drupal_render()
+  // - drupal_render()
+  //   - callbacks in $elements['#theme_wrappers']
+  //     - hook_preprocess_html(): 'html' is the wrapper for page
+  //     - templates may add tags after body tag
+  //   - callbacks in $elements['#post_render']
+  //     - google_tag_page_process(): callback set here
+
+  $base_path = 'public:/';
+  $include_classes = variable_get('google_tag_include_classes', 0);
+
+  list($realm_name, $realm_key) = google_tag_realm_values();
+  $realm_name .= $realm_name ? '/' : '';
+  $realm_key .= $realm_key ? '.' : '';
+  $types = $include_classes ? array('data_layer', 'script') : array('script');
+
+  $data_layer = variable_get('google_tag_data_layer', 'dataLayer');
+  if ($include_classes && module_exists('datalayer') && $data_layer == 'dataLayer') {
+    $classes = variable_get('google_tag_data_layer_classes', array());
+    if ($classes) {
+      // Add data_layer using dataLayer module.
+      datalayer_add($classes);
+    }
+    $types = array('script');
+  }
+
+  // Add data_layer and script snippets to head (by default).
+  $include_script_as_file = variable_get('google_tag_include_file', 1);
+  if ($include_script_as_file) {
+    foreach ($types as $type) {
+      // A stream wrapper may be passed as $data to drupal_add_js($data) because
+      // drupal_get_js() calls file_create_url($data). The latter will work with
+      // whichever class implements the stream, e.g. local, S3, or App Engine.
+      $path = "$base_path/google_tag/{$realm_name}google_tag.$realm_key$type.js";
+      // @todo Will it matter if file is empty?
+      drupal_add_js($path, array('group' => JS_LIBRARY * 2, 'requires_jquery' => FALSE));
+    }
+  }
+  else {
+    foreach ($types as $type) {
+      $url = "$base_path/google_tag/{$realm_name}google_tag.$realm_key$type.js";
+      $contents = @file_get_contents($url);
+      // @see drupal_get_js()
+      // For inline JavaScript to validate as XHTML, all JavaScript containing
+      // XHTML needs to be wrapped in CDATA.
+      if ($contents) {
+        drupal_add_js($contents, array('type' => 'inline', 'group' => JS_LIBRARY * 2, 'requires_jquery' => FALSE));
+      }
+    }
+  }
+
+  // Add noscript snippet to page_top region.
+  $type = 'noscript';
+  $url = "$base_path/google_tag/{$realm_name}google_tag.$realm_key$type.js";
+  $noscript = @file_get_contents($url);
+
+  if ($noscript) {
+    // Note: for any theme that follows the pattern of core html.tpl.php in the
+    // system module (e.g. bootstrap theme), this does not place the snippet
+    // immediately after the body tag but rather after the 'skip-link' div.
+    $page['page_top']['google_tag'] = array(
+      '#markup' => $noscript,
+      '#weight' => -10,
+    );
+  }
+
+}
+
+/**
+ * Returns applicable realm name and key for the request.
+ *
+ * @return array
+ *   The realm name and key.
+ */
+function google_tag_realm_values() {
+  $realm_name = $realm_key = '';
+
+  if (module_exists('variable_realm') && module_exists('variable_store')) {
+    // If realms exist, then the non-realm snippet files will not be loaded.
+    // These are in the 'google_tag' directory beneath the site files directory.
+    // If variable_realm module is later removed, then visit the module settings
+    // page and update the settings.
+    $realms = variable_realm_current();
+    // Remove the global realm as this is always active.
+    unset($realms['global']);
+    if (empty($realms)) {
+      $realm_name = 'global';
+      $realm_key = 'default';
+    }
+    else {
+      // The variable_realm module allows multiple realms to be 'active' on a
+      // page request which leaves us in the dark as to which one to use.
+      // The realms are weighted; use first one after 'global:default'.
+      $realm_name = key($realms);
+      $realm_key = variable_realm_status($realm_name);
+    }
+    // Allow other modules to alter the realm name and key.
+    $realm_values = array('name' => $realm_name, 'key' => $realm_key);
+    drupal_alter('google_tag_realm', $realm_values);
+    $realm_name = $realm_values['name'];
+    $realm_key = $realm_values['key'];
+
+    $debug = variable_get('google_tag_debug_output', 0);
+    $debug ? drupal_set_message(t('realm:key = @realm:@key', array('@realm' => $realm_name, '@key' => $realm_key))) : '';
+  }
+  return array($realm_name, $realm_key);
+}
+
+/**
+ * Determines whether to insert the snippet on the response.
+ *
+ * @return bool
+ *   TRUE if the conditions are met; FALSE otherwise.
+ */
+function google_tag_insert_snippet() {
+  $id = variable_get('google_tag_container_id', '');
+
+  if (empty($id)) {
+    // No container ID.
+    return FALSE;
+  }
+  $satisfied = TRUE;
+  if (!_google_tag_status_check() || !_google_tag_path_check() || !_google_tag_role_check()) {
+    // Omit snippet if any condition is not met.
+    $satisfied = FALSE;
+  }
+  // Allow other modules to alter the insertion criteria.
+  drupal_alter('google_tag_insert', $satisfied);
+  $debug = variable_get('google_tag_debug_output', 0);
+  $debug ? drupal_set_message(t('after alter @satisfied', array('@satisfied' => $satisfied))) : '';
+  return $satisfied;
+}
+
+/**
+ * Determines whether to insert the snippet based on status code settings.
+ *
+ * @return bool
+ *   TRUE if the status conditions are met; FALSE otherwise.
+ */
+function _google_tag_status_check() {
+  static $satisfied;
+
+  if (!isset($satisfied)) {
+    $debug = variable_get('google_tag_debug_output', 0);
+    $toggle = variable_get('google_tag_status_toggle', GOOGLE_TAG_EXCLUDE_LISTED);
+    $statuses = variable_get('google_tag_status_list', GOOGLE_TAG_STATUSES);
+
+    if (empty($statuses)) {
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED);
+    }
+    else {
+      // Get the HTTP response status.
+      $status = drupal_get_http_header('status');
+      $satisfied = strpos($statuses, $status) !== FALSE;
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED) ? !$satisfied : $satisfied;
+    }
+    $debug ? drupal_set_message(t('google_tag')) : '';
+    $debug ? drupal_set_message(t('status check @satisfied', array('@satisfied' => $satisfied))) : '';
+  }
+  return $satisfied;
+}
+
+/**
+ * Determines whether to insert the snippet based on the path settings.
+ *
+ * @return bool
+ *   TRUE if the path conditions are met; FALSE otherwise.
+ */
+function _google_tag_path_check() {
+  static $satisfied;
+
+  if (!isset($satisfied)) {
+    $debug = variable_get('google_tag_debug_output', 0);
+    $toggle = variable_get('google_tag_path_toggle', GOOGLE_TAG_EXCLUDE_LISTED);
+    $paths = variable_get('google_tag_path_list', GOOGLE_TAG_PATHS);
+
+    if (empty($paths)) {
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED);
+    }
+    else {
+      // @todo Are not some paths case sensitive???
+      // Convert the paths to lowercase before comparison.
+      $paths = drupal_strtolower($paths);
+      $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+      $satisfied = drupal_match_path($path, $paths);
+      // @todo Lowercase $_GET['q'] before comparison? What is purpose of this check?
+      if ($path != $_GET['q']) {
+        $satisfied = $satisfied || drupal_match_path($_GET['q'], $paths);
+      }
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED) ? !$satisfied : $satisfied;
+    }
+    $debug ? drupal_set_message(t('path check @satisfied', array('@satisfied' => $satisfied))) : '';
+  }
+  return $satisfied;
+}
+
+/**
+ * Determines whether to insert the snippet based on the user role settings.
+ *
+ * @return bool
+ *   TRUE if the role conditions are met; FALSE otherwise.
+ */
+function _google_tag_role_check() {
+  global $user;
+  static $satisfied;
+
+  if (!isset($satisfied)) {
+    $debug = variable_get('google_tag_debug_output', 0);
+    $toggle = variable_get('google_tag_role_toggle', GOOGLE_TAG_EXCLUDE_LISTED);
+    $roles = variable_get('google_tag_role_list', array());
+    $roles = array_filter($roles);
+
+    if (empty($roles)) {
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED);
+    }
+    else {
+      $satisfied = FALSE;
+      // Check user roles against listed roles.
+      $satisfied = (bool) array_intersect($roles, $user->roles);
+      $satisfied = ($toggle == GOOGLE_TAG_EXCLUDE_LISTED) ? !$satisfied : $satisfied;
+    }
+    $debug ? drupal_set_message(t('role check @satisfied', array('@satisfied' => $satisfied))) : '';
+  }
+  return $satisfied;
+}
+
+/**
+ * Saves snippet files and data layer classes based on current settings.
+ */
+function google_tag_assets_create(&$count) {
+  module_load_include('inc', 'google_tag', 'includes/admin');
+  _google_tag_assets_create($count);
+}

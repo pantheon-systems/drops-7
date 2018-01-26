@@ -3,7 +3,7 @@ name = "Express"
 description = "Express installation profile"
 exclusive = "1"
 core = "7.x"
-version = 7.x-2.7
+version = 7.x-2.8
 
 ; ----------
 ; Dependencies

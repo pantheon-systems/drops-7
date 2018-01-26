@@ -21,13 +21,18 @@ Drupal.quicktabs.prepare = function(el) {
   // el.id format: "quicktabs-$name"
   var qt_name = Drupal.quicktabs.getQTName(el);
   var $ul = $(el).find('ul.quicktabs-tabs:first');
+
+  $("ul.quicktabs-tabs li a span#active-quicktabs-tab").remove();
+
   $ul.find('li a').each(function(i, element){
     element.myTabIndex = i;
     element.qt_name = qt_name;
+
     var tab = new Drupal.quicktabs.tab(element);
     var parent_li = $(element).parents('li').get(0);
     if ($(parent_li).hasClass('active')) {
       $(element).addClass('quicktabs-loaded');
+      $(element).append('<span id="active-quicktabs-tab" class="element-invisible">' + Drupal.t('(active tab)') + '</span>');
     }
     $(element).once(function() {$(this).bind('click', {tab: tab}, Drupal.quicktabs.clickHandler);});
   });
@@ -40,6 +45,9 @@ Drupal.quicktabs.clickHandler = function(event) {
   $(this).parents('li').siblings().removeClass('active');
   $(this).parents('li').addClass('active');
 
+  $("ul.quicktabs-tabs li a span#active-quicktabs-tab").remove();
+  $(this).append('<span id="active-quicktabs-tab" class="element-invisible">' + Drupal.t('(active tab)') + '</span>');
+
   // Hide all tabpages.
   tab.container.children().addClass('quicktabs-hide');
   
@@ -48,6 +56,7 @@ Drupal.quicktabs.clickHandler = function(event) {
   }
 
   tab.tabpage.removeClass('quicktabs-hide');
+  $(element).trigger('switchtab');
   return false;
 }
 
@@ -57,11 +66,12 @@ Drupal.quicktabs.tab = function (el) {
   this.tabIndex = el.myTabIndex;
   var qtKey = 'qt_' + el.qt_name;
   var i = 0;
-  for (var i = 0; i < Drupal.settings.quicktabs[qtKey].tabs.length; i++) {
+  for (var key in Drupal.settings.quicktabs[qtKey].tabs) {
     if (i == this.tabIndex) {
-      this.tabObj = Drupal.settings.quicktabs[qtKey].tabs[i];
-      this.tabKey = i;
+      this.tabObj = Drupal.settings.quicktabs[qtKey].tabs[key];
+      this.tabKey = key;
     }
+    i++;
   }
   this.tabpage_id = 'quicktabs-tabpage-' + el.qt_name + '-' + this.tabKey;
   this.container = $('#quicktabs-container-' + el.qt_name);

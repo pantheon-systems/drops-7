@@ -10,24 +10,35 @@ button, input[type="reset"], input[type="submit"], input[type="button"] {
 }
 
 input.form-text,
-textarea.form-textarea {
+textarea.form-textarea,
+input[type=text],
+input[type=email],
+input[type=tel],
+textarea {
   padding:10px;
   border:1px solid #ddd;
   background-color: #f0f0f0;
   line-height: 150%;
 }
-input.form-text {
+input.form-text,
+input[type=text],
+input[type=email],
+input[type=tel], {
   max-width:100%;
   -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
   -moz-box-sizing: border-box;    /* Firefox, other Gecko */
   box-sizing: border-box;
 }
 input.form-text:focus,
-textarea.form-textarea:focus {
+textarea.form-textarea:focus,
+input[type=text]:focus,
+input[type=email]:focus,
+input[type=tel]:focus {
   background-color: #f4f4f4;
   outline: $link_blue solid 2px;
 }
-input[type=submit] {
+input[type=submit],
+form button {
   color:#222;
   background:#f0f0f0;
   font-size: 85%;
@@ -55,7 +66,8 @@ input[type=submit] {
     border: none;
   }
 }
-input[type=submit]:focus {
+input[type=submit]:focus,
+form button:focus {
   outline: $green solid 2px;
 }
 input[type=reset]:focus {

@@ -229,11 +229,12 @@ function cu_shortcodes_shortcode_info() {
     'title' => t('Image Caption'),
     'description' => t('Add a caption to an image'),
     'process callback' => 'cu_shortcodes_imagecaption',
+    'tips callback' => 'cu_shortcodes_imagecaption_tips',
     'default settings' => array(),
   );
   $shortcodes['map'] = array(
     'title' => t('Map'),
-    'description' => t('Insert a Google Map'),
+    'description' => t('Insert a Campus or Google Map'),
     'process callback' => 'cu_shortcodes_map',
     'tips callback' => 'cu_shortcodes_map_tips',
     'default settings' => array(),
@@ -557,7 +558,7 @@ function cu_shortcodes_column($attrs, $content = NULL) {
  * Column tips.
  */
 function cu_shortcodes_column_tips($format, $long) {
-  $output = '<p>[column size=one-half]</p><p>your content here</p><p>[/column]</p><p>[column size=one-half order=last]</p><p>your content here</p><p>[/column]</p>';
+  $output = '<p>[column size=one-half]</p><p>Your Content Here</p><p>[/column]</p><p>[column size=one-half order=last]</p><p>Your Content Here</p><p>[/column]</p>';
   return $output;
 }
 
@@ -681,7 +682,7 @@ function cu_shortcodes_googlecalendar($attrs, $content = NULL ) {
 }
 
 function cu_shortcodes_googlecalendar_tips($format, $long) {
-  $output = '[calendar]https://www.google.com/calendar/embed?title=Faculty%20Planning%20Calendar&height=600&wkst=1&bgcolor=%23FFFFFF&src=fqd9tj22sodte3oosui2h5e13o%40group.calendar.google.com&color=%23875509&src=270ehpc2jeu16j00p4st3nvb2c%40group.calendar.google.com&color=%2342104A&src=jm056q7sfv17ngqj3e4ph60iuk%40group.calendar.google.com&color=%232952A3&src=jazzmountainclimber%40gmail.com&color=%23711616&src=hgk9ielvps4qkv7uehs6q8rc18%40group.calendar.google.com&color=%232F6309&src=625jneetmcajuamdvv3as9tft8%40group.calendar.google.com&color=%236B3304&src=en.usa%23holiday%40group.v.calendar.google.com&color=%23125A12&ctz=America%2FDenver[/calendar]';
+  $output = '[googlecalendar]YOUR GOOGLE CALENDAR EMBED URL[/googlecalendar]';
   return $output;
 }
 
@@ -742,6 +743,14 @@ function cu_shortcodes_imagecaption($attrs, $content = NULL) {
 }
 
 /**
+ * Image Caption tips.
+ */
+function cu_shortcodes_imagecaption_tips($format, $long) {
+  $output = '<p>[imagecaption align="none"]</p> <p>Image</p> <p>Your image caption here</p> <p>[/imagecaption]</p>';
+  return $output;
+}
+
+/**
  * Map shortcode.
  */
 function cu_shortcodes_map($attrs, $content = NULL) {
@@ -783,7 +792,7 @@ function cu_shortcodes_map($attrs, $content = NULL) {
  * Map tips.
  */
 function cu_shortcodes_map_tips($format, $long) {
-  $output = '[map]https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3054.215386660962!2d-105.26572850973943!3d40.04829405429418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x876beef682730725%3A0xc7604d66a96a0f1e!2sNorth+Boulder!5e0!3m2!1sen!2sus!4v1400010841644[/map]';
+  $output = '<p>[map size="small/medium/large"]YOUR GOOGLE MAPS EMBED URL[/map]</p><p>[map size="small/medium/large"]YOUR CAMPUS MAP URL[/map]</p>';
   return $output;
 }
 
@@ -791,7 +800,8 @@ function cu_shortcodes_map_tips($format, $long) {
  * Map demo.
  */
 function cu_shortcodes_map_demo() {
-  $output = '<iframe width="100%" height="325" src="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed"></iframe><br /><a href="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed">View Larger Map</a>';
+  $output = '<iframe width="100%" height="325" src="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed"></iframe><br /><a href="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed">View Larger Map</a> <iframe width="100%" height="325" src="https://www.colorado.edu/map/?id=336&em=1&open=0#?mc/40.004375,-105.264969?z/18"></iframe><a href="https://www.colorado.edu/map/?id=336&em=1&open=0#?mc/40.004375,-105.264969?z/18?sbc">View Larger Map</a>';
+
   return $output;
 }
 /**

@@ -338,8 +338,8 @@ function people_content_type_strongarm() {
   $strongarm->api_version = 1;
   $strongarm->name = 'menu_options_person';
   $strongarm->value = array(
-    0 => 'main-menu',
-    1 => 'menu-footer-menu',
+    0 => 'menu-footer-menu',
+    1 => 'main-menu',
     2 => 'menu-secondary-menu',
   );
   $export['menu_options_person'] = $strongarm;
@@ -461,6 +461,16 @@ function people_content_type_strongarm() {
   $strongarm->name = 'url_people_list_page';
   $strongarm->value = '';
   $export['url_people_list_page'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'xmlsitemap_settings_node_person';
+  $strongarm->value = array(
+    'status' => '1',
+    'priority' => '0.5',
+  );
+  $export['xmlsitemap_settings_node_person'] = $strongarm;
 
   return $export;
 }

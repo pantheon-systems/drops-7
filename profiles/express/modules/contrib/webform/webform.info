@@ -1,4 +1,3 @@
-; $Id: $
 name = Webform
 description = Enables the creation of forms and questionnaires.
 core = 7.x
@@ -34,15 +33,16 @@ files[] = views/webform_handler_relationship_submission_data.inc
 files[] = views/webform_plugin_row_submission_view.inc
 files[] = views/webform.views.inc
 
-files[] = tests/components.test
-files[] = tests/conditionals.test
-files[] = tests/permissions.test
-files[] = tests/submission.test
-files[] = tests/webform.test
+files[] = tests/WebformComponentsTestCase.test
+files[] = tests/WebformConditionalsTestCase.test
+files[] = tests/WebformGeneralTestCase.test
+files[] = tests/WebformPermissionsTestCase.test
+files[] = tests/WebformSubmissionTestCase.test
+files[] = tests/WebformTestCase.test
 
-; Information added by Drupal.org packaging script on 2016-08-28
-version = "7.x-4.14"
+; Information added by Drupal.org packaging script on 2017-10-06
+version = "7.x-4.16"
 core = "7.x"
 project = "webform"
-datestamp = "1472386754"
+datestamp = "1507320560"
 

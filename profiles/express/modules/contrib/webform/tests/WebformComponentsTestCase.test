@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * @file
+ * Webform module component tests.
+ */
+
+/**
+ *
+ */
+class WebformComponentsTestCase extends WebformTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Webform components'),
+      'description' => t('Add and remove components from a webform.'),
+      'group' => t('Webform'),
+    );
+  }
+
+  /**
+   * Webform module component tests.
+   */
+  public function testWebformComponents() {
+    // Test webform_component_list().
+    // Create a form consisting of three textfields separated by pagebreaks.
+    $test_components = $this->webformComponents();
+    $textfield = $test_components['textfield']['component'];
+
+    // Page 1 textfield.
+    $textfield['page_num'] = 1;
+    $textfield['name'] = $this->randomName();
+    $textfield['form_key'] = $this->randomName();
+    $components[1] = $textfield;
+    // Page 2 break.
+    $components[2] = array(
+      'type' => 'pagebreak',
+      'form_key' => 'pagebreak_' . $this->randomName(),
+      'pid' => 0,
+      'name' => $this->randomName(),
+      'page_num' => 2,
+    );
+    // Page 2 textfield.
+    $textfield['name'] = $this->randomName();
+    $textfield['form_key'] = $this->randomName();
+    $textfield['page_num'] = 2;
+    $components[3] = $textfield;
+    // Page 3 break.
+    $components[4] = array(
+      'type' => 'pagebreak',
+      'form_key' => 'pagebreak_' . $this->randomName(),
+      'pid' => 0,
+      // Name is the cid of another component. Should get a space added when it
+      // is used as a key in the value returned from webform_component_list().
+      'name' => '1',
+      'page_num' => 3,
+    );
+    // Page 3 textfield.
+    $textfield['name'] = $this->randomName();
+    $textfield['form_key'] = $this->randomName();
+    $textfield['page_num'] = 3;
+    $components[5] = $textfield;
+    // Page 4 break.
+    $components[6] = array(
+      'type' => 'pagebreak',
+      'form_key' => 'pagebreak_' . $this->randomName(),
+      'pid' => 0,
+      // Name is the same as Page 3 break. Tests that name is made unique.
+      'name' => '1',
+      'page_num' => 4,
+    );
+    // Page 4 textfield.
+    $textfield['name'] = $this->randomName();
+    $textfield['form_key'] = $this->randomName();
+    $textfield['page_num'] = 4;
+    $components[7] = $textfield;
+
+    // Generate a component list.
+    $node = new stdClass();
+    $node->webform['components'] = $components;
+    $webform_component_list = webform_component_list($node, NULL, TRUE, TRUE);
+    // Test return value.
+    $test_list = array(
+      1 => $components[1]['name'],
+      $components[2]['name'] => array(2 => $components[2]['name'], 3 => $components[3]['name']),
+      $components[4]['name'] . ' ' => array(4 => $components[4]['name'], 5 => $components[5]['name']),
+      $components[6]['name'] . '_2' => array(6 => $components[6]['name'], 7 => $components[7]['name']),
+    );
+    $this->assertIdentical($webform_component_list, $test_list, 'webform_component_list() returns expected value.');
+
+    // Test webform_component_parent_keys().
+    $components = array(
+      1 => array(
+        'form_key' => $this->randomName(),
+        'name' => $this->randomName(),
+        'pid' => 0,
+      ),
+      2 => array(
+        'form_key' => $this->randomName(),
+        'name' => $this->randomName(),
+        'pid' => 1,
+      ),
+      3 => array(
+        'form_key' => $this->randomName(),
+        'name' => $this->randomName(),
+        'pid' => 2,
+      ),
+    );
+
+    $node = new stdClass();
+    $node->webform['components'] = $components;
+
+    $parents = webform_component_parent_keys($node, $components[3]);
+    $test_parents = array($components[1]['form_key'], $components[2]['form_key'], $components[3]['form_key']);
+    $this->assertIdentical($parents, $test_parents, 'webform_component_parent_keys() returns expected form_keys.');
+
+    $parents = webform_component_parent_keys($node, $components[3], 'name');
+    $test_parents = array($components[1]['name'], $components[2]['name'], $components[3]['name']);
+    $this->assertIdentical($parents, $test_parents, 'webform_component_parent_keys() returns expected names.');
+
+    $parents = webform_component_parent_keys($node, $components[3], TRUE);
+    $test_parents = array($components[1], $components[2], $components[3]);
+    $this->assertIdentical($parents, $test_parents, 'webform_component_parent_keys() returns expected component arrays.');
+
+    // Test webform_get_cid().
+    $settings = array(
+      'title' => 'Test webform with multiple instances of a Form Key',
+      'type' => 'webform',
+    );
+    $node = $this->drupalCreateNode($settings);
+
+    // Add a new textarea component.
+    $components = $this->webformComponents();
+    $textarea = $components['textarea'];
+    $textarea['type'] = 'textarea';
+    $textarea['form_key'] = 'testing_key';
+    $textarea['cid'] = 1;
+    $textarea['pid'] = 0;
+    $textarea = array_merge(webform_component_invoke('textarea', 'defaults'), $textarea);
+    $node->webform['components'][1] = $textarea;
+
+    // Add a new fieldset component.
+    $fieldset = array(
+      'cid' => 2,
+      'pid' => 0,
+      'form_key' => 'another_key',
+      'name' => 'Fieldset',
+      'type' => 'fieldset',
+      'value' => '',
+      'required' => '0',
+      'weight' => '0',
+    );
+    $node->webform['components'][2] = $fieldset;
+
+    // Add a new textfield component as child of the fieldset.
+    $textfield = $components['textfield'];
+    $textfield['type'] = 'textfield';
+    $textfield['form_key'] = 'testing_key';
+    $textfield['cid'] = 3;
+    $textfield['pid'] = 2;
+    $textfield = array_merge(webform_component_invoke('textarea', 'defaults'), $textfield);
+    $node->webform['components'][3] = $textfield;
+
+    // Add another textfield component.
+    $textfield = $components['textfield'];
+    $textfield['type'] = 'textfield';
+    $textfield['form_key'] = 'dummy_key';
+    $textfield['cid'] = 4;
+    $textfield['pid'] = 0;
+    $textfield = array_merge(webform_component_invoke('textarea', 'defaults'), $textfield);
+    $node->webform['components'][4] = $textfield;
+
+    node_save($node);
+
+    // Test webform_get_cid() with providing a parent cid.
+    $this->assertTrue(webform_get_cid($node, 'testing_key', 2) == 3, t('Returned expected Webform component id for a given form_key and parent (pid).'));
+
+    // Test webform_get_cid() without providing a parent cid.
+    $this->assertTrue(webform_get_cid($node, 'testing_key') == array(1, 3), t('Returned expected Webform component ids array for a given form_key.'));
+
+    // Create and visit a new Webform test node.
+    $node = $this->webformForm();
+    $this->drupalGet('node/' . $node->nid);
+
+    // Check that each label @for points to an element.
+    $labels = $this->xpath('//label/@for');
+    foreach ($labels as $label) {
+      $for = $this->xpath("//*[@id=':id']", array(':id' => $label['for']));
+      $this->assertTrue($for, 'Label with @for "' . $label['for'] . '" points to an element.');
+    }
+  }
+
+}

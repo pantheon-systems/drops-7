@@ -105,7 +105,6 @@ function focal_point_test_drive_form_submit(&$form, &$form_state) {
  *
  * @param int $fid
  *   The fid of the image file entity in question.
- *
  * @param string $focal_point
  *   (Optional) A string in the form 'left-percent-offset, top-percent-offset'.
  *   Leave this value empty to use the value stored in the database.

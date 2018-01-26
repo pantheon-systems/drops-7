@@ -1,0 +1,15 @@
+#ignore IntelliJ files
+*.idea
+
+#ignore stupid mac files
+*.DS_STORE
+
+
+#ignore theming files
+*.sass-cache
+# svn
+*.svn*
+
+# Behat dependencies.
+tests/behat/bin/
+tests/behat/vendor/

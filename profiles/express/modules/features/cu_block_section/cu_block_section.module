@@ -45,7 +45,6 @@ function _cu_block_section_rerender($item) {
     if (bean_access('view', $bean)) {
       // Most of this taken from bean_block_view().
       $block['content'] = $bean->view($bean->view_mode);
-      $block['subject'] = $bean->title;
       $block['#theme_wrappers'] = array('block');
       $block['#block'] = (object) array(
         'region' => 'block_section',
@@ -256,4 +255,15 @@ function cu_block_section_bg_effect_options() {
     'scroll' => 'Scroll',
     'parallax' => 'Parallax',
   );
+}
+
+/**
+ * Implements hook_field_widget_form_alter.
+ *
+ * Format Inline Entity Forms.
+ */
+function cu_block_section_field_widget_form_alter(&$element, &$form_state, $context)	{
+  if (!empty($element['#bundle']) && $element['#bundle'] == 'block_section' && $element['#field_name'] == 'field_blocks_section_blocks') {
+    express_layout_format_ief($element);
+  }
 }

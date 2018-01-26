@@ -64,14 +64,14 @@ function metatag_requirements($phase) {
       list($minor, $suffix) = explode('-', $minor);
     }
 
-    // Releases of Drupal older than 7.28 did not have entity_language(), which
-    // is now required, and had a broken [node:summary] token.
-    if ($minor < 28) {
+    // Releases of Drupal older than 7.40 support did not project:module syntax
+    // for dependencies
+    if ($minor < 40) {
       $requirements['metatag'] = array(
         'severity' => REQUIREMENT_WARNING,
         'title' => 'Metatag',
-        'value' => $t('Upgrade Drupal core to v7.28 or newer'),
-        'description' => $t("This older version of Drupal core is missing functionality necessary for the module's multilingual support and contains a broken [node:summary] token, it must be upgraded to version 7.28 or newer."),
+        'value' => $t('Upgrade Drupal core to v7.40 or newer'),
+        'description' => $t("This older version of Drupal core is missing functionality necessary for Metatag to work correctly, it must be upgraded to version 7.40 or newer."),
       );
     }
 
@@ -2575,6 +2575,7 @@ function metatag_update_7113() {
  */
 function metatag_update_7114() {
   variable_del('metatag_cache_output');
+  drupal_set_message(t('Note: Output caching of meta tags has been disabled, it may be reenabled from the Metatag settings page if needed.'));
 }
 
 /**

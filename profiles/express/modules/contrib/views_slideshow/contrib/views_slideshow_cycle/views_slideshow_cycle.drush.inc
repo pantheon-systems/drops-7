@@ -140,7 +140,7 @@ function drush_views_slideshow_cycle_pause() {
 }
 
 /**
- * Command to download the jQuery.pause library.
+ * Command to download the jQuery.easing library.
  */
 function drush_views_slideshow_cycle_easing() {
   _drush_views_slideshow_cycle_install_library(

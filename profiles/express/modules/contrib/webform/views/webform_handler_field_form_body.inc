@@ -9,23 +9,36 @@
  * Field handler to present the Webform form body to the user.
  */
 class webform_handler_field_form_body extends views_handler_field {
-  function construct() {
+
+  /**
+   *
+   */
+  public function construct() {
     parent::construct();
     $this->additional_fields['nid'] = 'nid';
   }
 
-  function option_definition() {
+  /**
+   *
+   */
+  public function option_definition() {
     $options = parent::option_definition();
     $options['label'] = array('default' => 'Form', 'translatable' => TRUE);
     return $options;
   }
 
-  function query() {
+  /**
+   *
+   */
+  public function query() {
     $this->ensure_my_table();
     $this->add_additional_fields();
   }
 
-  function render($values) {
+  /**
+   *
+   */
+  public function render($values) {
     $node = node_load($values->{$this->aliases['nid']});
 
     if (node_access('view', $node)) {
@@ -39,4 +52,5 @@ class webform_handler_field_form_body extends views_handler_field {
 
     return $form_body;
   }
+
 }

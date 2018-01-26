@@ -3,7 +3,7 @@ Feature: Quicktabs
 @api @expandable
 Scenario Outline: Content Editors, Site Owners, Administrators, Developers should be able to add Expandable from the block/add screen
   Given  CU - I am logged in as a user with the <role> role
-  When I go to "block/add/expandable"
+  When I am at "block/add/expandable"
   Then I should not see <message>
 
   Examples:

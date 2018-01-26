@@ -35,12 +35,6 @@ function cu_test_content_context_context_default_contexts() {
           'region' => 'sidebar_second',
           'weight' => '9',
         ),
-        'bean-events_list_block' => array(
-          'module' => 'bean',
-          'delta' => 'events_list_block',
-          'region' => 'sidebar_second',
-          'weight' => '10',
-        ),
       ),
     ),
   );
@@ -82,12 +76,6 @@ function cu_test_content_context_context_default_contexts() {
           'region' => 'sidebar_second',
           'weight' => '9',
         ),
-        'bean-events_list_block' => array(
-          'module' => 'bean',
-          'delta' => 'events_list_block',
-          'region' => 'sidebar_second',
-          'weight' => '10',
-        ),
       ),
     ),
   );
@@ -119,12 +107,6 @@ function cu_test_content_context_context_default_contexts() {
           'delta' => 'twitter_block',
           'region' => 'content',
           'weight' => '-10',
-        ),
-        'bean-events_list_block' => array(
-          'module' => 'bean',
-          'delta' => 'events_list_block',
-          'region' => 'content',
-          'weight' => '-9',
         ),
         'bean-text_block_one' => array(
           'module' => 'bean',
@@ -347,12 +329,6 @@ function cu_test_content_context_context_default_contexts() {
           'region' => 'content',
           'weight' => '10',
         ),
-        'bean-events_list_block' => array(
-          'module' => 'bean',
-          'delta' => 'events_list_block',
-          'region' => 'sidebar_second',
-          'weight' => '-10',
-        ),
         'bean-slider' => array(
           'module' => 'bean',
           'delta' => 'slider',
@@ -531,12 +507,6 @@ function cu_test_content_context_context_default_contexts() {
           'delta' => 'text_block_twelve',
           'region' => 'sidebar_second',
           'weight' => '2',
-        ),
-        'bean-events_list_block' => array(
-          'module' => 'bean',
-          'delta' => 'events_list_block',
-          'region' => 'sidebar_second',
-          'weight' => '0',
         ),
       ),
     ),

@@ -197,6 +197,18 @@ function cu_help_express_help($variables) {
     'url' => '/node/656',
   );
 
+  $variables['admin/settings/bundles/list/addon'][] = array(
+    'title' => 'Contact Web Support',
+    'short_title' => 'Contact Web Support',
+    'url' => '/',
+  );
+
+  $variables['admin/settings/bundles/list/request'][] = array(
+    'title' => 'Contact Web Support',
+    'short_title' => 'Contact Web Support',
+    'url' => '/',
+  );
+
   $variables['admin/settings/cache/clear'][] = array(
     'title' => 'Understanding Cache Clearing',
     'short_title' => 'Cache Clearing',

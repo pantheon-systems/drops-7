@@ -30,7 +30,7 @@ function metatag_panels_page_manager_variant_operations_alter(&$operations, $han
 function metatag_panels_form($form, $form_state) {
   $handler = $form_state['handler'];
 
-  // Load available contexts
+  // Load available contexts.
   ctools_include('context-task-handler');
   $contexts = ctools_context_handler_get_all_contexts($form_state['task'], $form_state['subtask'], $handler);
 
@@ -85,7 +85,9 @@ function metatag_panels_form($form, $form_state) {
       '#collapsed' => TRUE,
     );
     $header = array(t('Keyword'), t('Value'));
-    $form['contexts']['context'] = array('#markup' => theme('table', array('header' => $header, 'rows' => $rows)));
+    $form['contexts']['context'] = array(
+      '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
+    );
     $form['contexts']['#states'] = array(
       'visible' => array(
         ':input[name="metatags_enabled"]' => array('checked' => TRUE),
@@ -175,8 +177,8 @@ function metatag_panels_ctools_render_alter($info, $page, $context) {
 
   // Substitute Panels context variables.
   foreach ($metatags as $metatag => $data) {
-    if (is_string($data['value']) && strpos($data['value'], '%') !== FALSE) {
-      $metatags[$metatag]['value'] = ctools_context_keyword_substitute($data['value'], array(), $context['handler']->conf['display']->context);
+    if (is_string($data['value']) && strpos(urldecode($data['value']), '%') !== FALSE) {
+      $metatags[$metatag]['value'] = check_plain(ctools_context_keyword_substitute(urldecode($data['value']), array(), $context['handler']->conf['display']->context));
     }
   }
 
@@ -210,7 +212,7 @@ function metatag_panels_ctools_render_alter($info, $page, $context) {
     // Render CTools context substitution values prior to rendering the meta
     // tag.
     if (is_string($data['value'])) {
-      $data['value'] = ctools_context_keyword_substitute(trim($data['value']), array(), $task_contexts);
+      $data['value'] = check_plain(ctools_context_keyword_substitute(trim(urldecode($data['value'])), array(), $task_contexts));
     }
     $metatag_instance = metatag_get_instance($metatag, $data);
 

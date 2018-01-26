@@ -6,8 +6,9 @@ I should be able to access the functionality of the WYSIWYG editor
   @api @wysiwyg
   Scenario Outline: An authenticated user should have WYSIWYG selected as the the default text format
     Given  CU - I am logged in as a user with the <role> role
-    When I go to "node/add/page"
-    Then I should see "WYSIWYG" in the "#edit-body-und-0-format--2" element
+    When I am at "node/add/page"
+      And I wait for the "cke_1_top" element to appear
+    Then I should see the button "Bold"
 
     Examples:
       | role           |
@@ -16,20 +17,22 @@ I should be able to access the functionality of the WYSIWYG editor
       | administrator  |
       | developer      |
 
-  @api @javascript @wysiwyg
+
+  @api @wysiwyg
   Scenario Outline: An authenticated user should have all the WYSIWYG shortcode and other buttons available
-    Given  CU - I am logged in as a user with the <role> role
-    When I go to "node/add/page"
-    Then I should see the "Button Shortcode Generator" button
-      And I should see the "Image Caption Shortcode Generator" button
-      And I should see the "Image Caption Shortcode Generator" button
-      And I should see the "Icon Shortcode Generator" button
-      And I should see the "Give Button Shortcode Generator" button
-      And I should see the "Expand Content Shortcode Generator" button
-      And I should see the "Map Shortcode Generator" button
-      And I should see the "Box Shortcode Generator" button
-      And I should see the "Video Shortcode Generator" button
-      And I should see the "Link" button
+    Given CU - I am logged in as a user with the <role> role
+    When I am at "node/add/page"
+      And I wait for the "cke_1_top" element to appear
+    Then I should see the button "Button Shortcode Generator"
+      And I should see the button "Image Caption Shortcode Generator"
+      And I should see the button "Image Caption Shortcode Generator"
+      And I should see the button "Icon Shortcode Generator"
+      And I should see the button "Give Button Shortcode Generator"
+      And I should see the button "Expand Content Shortcode Generator"
+      And I should see the button "Map Shortcode Generator"
+      And I should see the button "Box Shortcode Generator"
+      And I should see the button "Video Shortcode Generator"
+      And I should see the button "Link"
 
     Examples:
       | role           |

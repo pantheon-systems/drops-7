@@ -9,9 +9,9 @@ files[] = LdapAuthorizationConsumerRole.class.php
 files[] = ldap_authorization_drupal_role.module
 files[] = ldap_authorization_drupal_role.inc
 
-; Information added by Drupal.org packaging script on 2017-05-30
-version = "7.x-2.2"
+; Information added by Drupal.org packaging script on 2017-08-27
+version = "7.x-2.3"
 core = "7.x"
 project = "ldap"
-datestamp = "1496167150"
+datestamp = "1503841448"
 

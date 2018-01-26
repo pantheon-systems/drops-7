@@ -1,0 +1,140 @@
+<?php
+
+function cu_helpscout_endpoint() {
+  $endpoint = variable_get('cu_helpscout_endpoint', 'https://www.colorado.edu/webcentral');
+
+  return $endpoint;
+}
+
+function cu_helpscout_menu() {
+  $items = array();
+
+  $items['admin/config/system/cu-helpscout'] = array(
+    'title' => 'HelpScout Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_helpscout_config_form'),
+    'access arguments' => array('administer helpscout beacon'),
+  );
+
+  return $items;
+}
+
+function cu_helpscout_config_form($form, &$form_state) {
+  $form = array();
+  $default = cu_helpscout_endpoint();
+  $form['cu_helpscout_endpoint'] = array(
+    '#title' => 'URL',
+    '#type' => 'textfield',
+    '#default_value' => $default,
+  );
+  $form = system_settings_form($form);
+  return $form;
+}
+
+/**
+ * Get cached options.
+ */
+function cu_helpscout_api_cache_get($key) {
+  $cid = 'cu_helpscout:' . $key;
+  // If this request was cached, return the cached value
+  if ($cache = cache_get($cid, 'cache')) {
+    return $cache->data;
+  }
+  return FALSE;
+}
+
+/**
+ * Save options to cache.
+ */
+function cu_helpscout_api_cache_save($key, $value) {
+  $cid = 'cu_helpscout:' . $key;
+  cache_set($cid, $value, 'cache', 3600);
+}
+
+function cu_helpscout_preprocess_page(&$vars) {
+  $endpoint = cu_helpscout_endpoint() . '/helpscout/config';
+
+  if (user_access('use helpscout beacon')) {
+
+    // Information to attach to beacon form
+    global $user;
+    global $base_url;
+    $name = realname_load($user);
+    $roles = join(', ', $user->roles);
+    $site_name = variable_get('site_name', '');
+
+    $beacon = '!function(e,o,n){window.HSCW=o,window.HS=n,n.beacon=n.beacon||{};var t=n.beacon;t.userConfig={},t.readyQueue=[],t.config=function(e){this.userConfig=e},t.ready=function(e){this.readyQueue.push(e)},o.config={docs:{enabled:!0,baseUrl:"//university-of-colorado-boulder-docs.helpscoutdocs.com/"},contact:{enabled:!0,formId:"3ac3ec6d-c002-11e7-b466-0ec85169275a"}};var r=e.getElementsByTagName("script")[0],c=e.createElement("script");c.type="text/javascript",c.async=!0,c.src="https://djtflbt20bdde.cloudfront.net/",r.parentNode.insertBefore(c,r)}(document,window.HSCW||{},window.HS||{});';
+
+    $config = 'HS.beacon.config({ modal:1, showContactFields:true, attachment: true });
+
+    HS.beacon.ready(function() {
+      HS.beacon.identify({
+        name: \'' . $name . '\',
+        email: \'' . $user->mail . '\',
+        user_email: \'' . $user->mail . '\',
+        roles: \'' . $roles . '\',
+        site_name: \'' . $site_name . '\',
+        site_url: \'' . $base_url . '\',
+      });
+    });
+
+    jQuery("#navbar-bar a.navbar-icon-help").click(function(event) { event.preventDefault(); HS.beacon.open(); });';
+
+    drupal_add_js($beacon, array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'weight' => 100,
+    ));
+
+    drupal_add_js($config, array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'weight' => 101,
+    ));
+    drupal_add_css('#hs-beacon iframe {background:rgba(0,0,0,.75) !important; }', 'inline');
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_helpscout_permission() {
+  return array(
+    'use helpscout beacon' => array(
+      'title' => t('Use HelpScout Beacon'),
+    ),
+    'administer helpscout beacon' => array(
+      'title' => t('Administer HelpScout Beacon'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_secure_permissions().
+ */
+function cu_helpscout_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'administrator' => array(
+      'use helpscout beacon',
+      'administer helpscout beacon',
+    ),
+    'content_editor' => array(
+      // 'use helpscout beacon',
+    ),
+    'developer' => array(
+      'use helpscout beacon',
+      'administer helpscout beacon',
+    ),
+    'site_owner' => array(
+      // 'use helpscout beacon',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

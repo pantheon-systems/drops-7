@@ -1,0 +1,8 @@
+{
+  "name": "drupal/varnish",
+  "description": "Integration with varnish from Drupal.",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev"
+}
+

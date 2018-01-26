@@ -1,19 +1,29 @@
 <?php
+
 /**
  * @file
  * Views' relationship handlers.
  */
 
-class webform_handler_relationship_submission_data extends views_handler_relationship  {
+/**
+ *
+ */
+class webform_handler_relationship_submission_data extends views_handler_relationship {
 
-  function option_definition() {
+  /**
+   *
+   */
+  public function option_definition() {
     $options = parent::option_definition();
     $options['webform_nid'] = array('default' => NULL);
     $options['webform_cid'] = array('default' => NULL);
     return $options;
   }
 
-  function options_form(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     form_load_include($form_state, 'inc', 'webform', 'views/webform.views');
 
@@ -24,12 +34,18 @@ class webform_handler_relationship_submission_data extends views_handler_relatio
     _webform_views_options_form($form, $form_state, $nid, $cid);
   }
 
-  function options_validate(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_validate(&$form, &$form_state) {
     parent::options_validate($form, $form_state);
     _webform_views_options_validate($form, $form_state);
   }
 
-  function options_submit(&$form, &$form_state) {
+  /**
+   *
+   */
+  public function options_submit(&$form, &$form_state) {
     parent::options_submit($form, $form_state);
     _webform_views_options_submit($form, $form_state);
   }
@@ -39,7 +55,7 @@ class webform_handler_relationship_submission_data extends views_handler_relatio
    *
    * It respects the given component ids, provided via options form.
    */
-  function query() {
+  public function query() {
     $this->definition['extra'][] = array(
       'table' => NULL,
       'field' => "%alias.nid",
@@ -54,4 +70,5 @@ class webform_handler_relationship_submission_data extends views_handler_relatio
     // The rest of building the join is performed by the parent.
     parent::query();
   }
+
 }

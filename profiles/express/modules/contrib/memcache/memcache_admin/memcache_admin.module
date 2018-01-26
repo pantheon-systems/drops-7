@@ -59,9 +59,12 @@ function memcache_admin_menu() {
   );
   $memcache_servers = variable_get('memcache_servers', array('127.0.0.1:11211' => 'default'));
   $clusters = array();
-  foreach ($memcache_servers as $server => $cluster) {
-    $clusters[$cluster]['servers'][] = $server;
-    $clusters[$cluster]['bin'] = _memcache_admin_get_bin_for_cluster($cluster);
+  foreach ($memcache_servers as $server => $bin) {
+    if ($cluster = dmemcache_object_cluster($bin)) {
+      $name = $cluster['cluster'];
+      $clusters[$name]['servers'][] = $server;
+      $clusters[$name]['bin'] = _memcache_admin_get_bin_for_cluster($cluster['cluster']);
+    }
   }
 
   $count = 0;
@@ -256,50 +259,61 @@ function memcache_admin_bin_mapping($bin = 'cache') {
  *   The page output.
  */
 function memcache_admin_stats($bin = 'default') {
+  if (!class_exists('MemCacheDrupal', FALSE)) {
+    return t('There is a problem with your memcache configuration. Please review !readme for help resolving the following issue: %error.', array('!readme' => l('README.txt', 'http://cgit.drupalcode.org/memcache/tree/README.txt?id=refs/heads;id2=7.x-1.x'), '%error' => t('cache_backends not properly configured in settings.php, failed to load required file memcache.inc')));
+  }
+  if ($memcache_debug_log = variable_get('memcache_debug_log', FALSE)) {
+    if (variable_get('memcache_debug_verbose', FALSE)) {
+      $verbose = t('verbose');
+    }
+    else {
+      $verbose = '';
+    }
+    drupal_set_message(t('You are writing !verbose debug logs to !debug_log.', array('!verbose' => $verbose, '!debug_log' => $memcache_debug_log)), 'warning');
+  }
   $bin = memcache_admin_bin_mapping($bin);
   $output = '';
   $server = array();
   $stats = dmemcache_stats($bin, 'default', TRUE);
-  if (empty($stats)) {
+  if (empty($stats[$bin])) {
     // Failed to load statistics. Provide a useful error about where to get
     // more information and help.
-    drupal_set_message(t('There may be a problem with your Memcache configuration. Please review %readme and !more for more information.', array('%readme' => 'README.txt', 'admin/reports/status', '!more' => module_exists('memcache') ? t('visit the Drupal admin !status page', array('!status' => l(t('status report'), 'admin/reports/status'))) : t('!enable the memcache module', array('!enable' => l(t('enable'), 'admin/modules', array('fragment' => 'edit-modules-performance-and-scalability')))))), 'error');
+    drupal_set_message(t('Failed to retreive statistics. There may be a problem with your Memcache configuration. Please review %readme and !more for more information.', array('%readme' => 'README.txt', 'admin/reports/status', '!more' => module_exists('memcache') ? t('visit the Drupal admin !status page', array('!status' => l(t('status report'), 'admin/reports/status'))) : t('!enable the memcache module', array('!enable' => l(t('enable'), 'admin/modules', array('fragment' => 'edit-modules-performance-and-scalability')))))), 'error');
   }
   else {
-    if (count($stats[$bin])) {
-      $stats = $stats[$bin];
-      $aggregate = array_pop($stats);
-      $mc = dmemcache_object($bin);
-      if ($mc instanceof Memcached) {
-        $version = t('Memcached v!version', array('!version' => phpversion('Memcached')));
-      }
-      elseif ($mc instanceof Memcache) {
-        $version = t('Memcache v!version', array('!version' => phpversion('Memcache')));
+    $stats = $stats[$bin];
+    $aggregate = array_pop($stats);
+    $mc = dmemcache_object($bin);
+    if ($mc instanceof Memcached) {
+      $version = t('Memcached v!version', array('!version' => phpversion('Memcached')));
+    }
+    elseif ($mc instanceof Memcache) {
+      $version = t('Memcache v!version', array('!version' => phpversion('Memcache')));
+    }
+    else {
+      $version = t('Unknown');
+      drupal_set_message(t('Failed to detect the memcache PECL extension.'), 'error');
+    }
+    $memcache_servers = variable_get('memcache_servers', array('127.0.0.1:11211' => 'default'));
+
+    foreach ($stats as $server => $statistics) {
+      if (empty($statistics['uptime'])) {
+        drupal_set_message(t('Failed to connect to server at %address.', array('%address' => $server)), 'error');
       }
       else {
-        $version = t('Unknown');
-        drupal_set_message(t('Failed to detect the memcache PECL extension.'), 'error');
-      }
-      $memcache_servers = variable_get('memcache_servers', array('127.0.0.1:11211' => 'default'));
-
-      foreach ($stats as $server => $statistics) {
-        if (empty($statistics['uptime'])) {
-          drupal_set_message(t('Failed to connect to server at %address.', array('%address' => $server)), 'error');
-        }
-        else {
-          $servers[] = $server;
-          $data['server_overview'][$server] = t('v!version running !uptime', array('!version' => check_plain($statistics['version']), '!uptime' => format_interval($statistics['uptime'])));
-          $data['server_pecl'][$server] = t('n/a');
-          $data['server_time'][$server] = format_date($statistics['time']);
-          $data['server_connections'][$server] = _memcache_admin_stats_connections($statistics);
-          $data['cache_sets'][$server] = _memcache_admin_stats_sets($statistics);
-          $data['cache_gets'][$server] = _memcache_admin_stats_gets($statistics);
-          $data['cache_counters'][$server] = _memcache_admin_stats_counters($statistics);
-          $data['cache_transfer'][$server] = _memcache_admin_stats_transfer($statistics);
-          $data['cache_average'][$server] = _memcache_admin_stats_average($statistics);
-          $data['memory_available'][$server] = _memcache_admin_stats_memory($statistics);
-          $data['memory_evictions'][$server] = number_format($statistics['evictions']);
-        }
+        $servers[] = $server;
+        $data['server_overview'][$server] = t('v!version running !uptime', array('!version' => check_plain($statistics['version']), '!uptime' => format_interval($statistics['uptime'])));
+        $data['server_pecl'][$server] = t('n/a');
+        $data['server_serialize'][$server] = t('n/a');
+        $data['server_time'][$server] = format_date($statistics['time']);
+        $data['server_connections'][$server] = _memcache_admin_stats_connections($statistics);
+        $data['cache_sets'][$server] = _memcache_admin_stats_sets($statistics);
+        $data['cache_gets'][$server] = _memcache_admin_stats_gets($statistics);
+        $data['cache_counters'][$server] = _memcache_admin_stats_counters($statistics);
+        $data['cache_transfer'][$server] = _memcache_admin_stats_transfer($statistics);
+        $data['cache_average'][$server] = _memcache_admin_stats_average($statistics);
+        $data['memory_available'][$server] = _memcache_admin_stats_memory($statistics);
+        $data['memory_evictions'][$server] = number_format($statistics['evictions']);
       }
     }
 
@@ -331,6 +345,23 @@ function memcache_admin_stats($bin = 'default') {
     }
     else {
       $item['servers'] = array($servers[0] => $version);
+    }
+    $report['uptime'][] = $item;
+
+    // Report which serialize function is being used.
+    $item = array(
+      'label' => t('Serialize function')
+    );
+    $serialize_function = dmemcache_serialize();
+    if ($serialize_function != 'serialize') {
+      $serialize_function = t('!function v!version', array('!function' => $serialize_function, '!version' => phpversion(dmemcache_serialize_extension())));
+    }
+    if (count($aggregate)) {
+      $item['servers'] = $data['server_serialize'];
+      $item['total'] = $serialize_function;
+    }
+    else {
+      $item['servers'] = array($servers[0] => $serialize_function);
     }
     $report['uptime'][] = $item;
 
@@ -683,6 +714,10 @@ function memcache_admin_shutdown() {
           return;
         }
       }
+    }
+    else {
+      // Workaround for CKEditor, see https://www.drupal.org/node/2556999
+      return;
     }
   }
 

@@ -75,4 +75,8 @@ class QuickNodeContent extends QuickContent {
   public function getAjaxKeys() {
     return array('nid', 'view_mode', 'hide_title');
   }
+
+  public function getUniqueKeys() {
+    return array('nid');
+  }
 }

@@ -10,7 +10,7 @@
 function cu_block_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-block-field_block_photo'
+  // Exported field_instance: 'bean-block-field_block_photo'.
   $field_instances['bean-block-field_block_photo'] = array(
     'bundle' => 'block',
     'deleted' => 0,
@@ -108,7 +108,7 @@ function cu_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-block-field_block_text'
+  // Exported field_instance: 'bean-block-field_block_text'.
   $field_instances['bean-block-field_block_text'] = array(
     'bundle' => 'block',
     'default_value' => NULL,

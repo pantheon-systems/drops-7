@@ -9,6 +9,7 @@ dependencies[] = entityreference
 dependencies[] = features
 dependencies[] = fences
 dependencies[] = field_collection
+dependencies[] = inline_entity_form
 dependencies[] = list
 dependencies[] = options
 features[bean_type][] = block_row

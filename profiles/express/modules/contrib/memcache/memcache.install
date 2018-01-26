@@ -30,13 +30,17 @@ function memcache_enable() {
     }
     // Make a test connection to all configured memcache servers.
     $memcache_servers = variable_get('memcache_servers', array('127.0.0.1:11211' => 'default'));
-    $memcache = dmemcache_instance();
     foreach ($memcache_servers as $server => $bin) {
-      if (dmemcache_connect($memcache, $server, FALSE) === FALSE) {
-        $error = TRUE;
-      }
-      else {
-        dmemcache_close($memcache);
+      if ($cluster = dmemcache_object_cluster($bin)) {
+        $memcache = dmemcache_instance($cluster['cluster']);
+        if (dmemcache_connect($memcache, $server, $cluster['weight']) === FALSE) {
+          $error = TRUE;
+        }
+        else {
+          if (!variable_get('memcache_persistent', TRUE)) {
+            dmemcache_close($memcache);
+          }
+        }
       }
     }
   }
@@ -111,13 +115,17 @@ function memcache_requirements($phase) {
 
       // Make a test connection to all configured memcache servers.
       $memcache_servers = variable_get('memcache_servers', array('127.0.0.1:11211' => 'default'));
-      $memcache = dmemcache_instance();
       foreach ($memcache_servers as $server => $bin) {
-        if (dmemcache_connect($memcache, $server, FALSE) === FALSE) {
-          $errors[] = $t('Failed to connect to memcached server instance at %server.', array('%server' => $server));
-        }
-        else {
-          dmemcache_close($memcache);
+        if ($cluster = dmemcache_object_cluster($bin)) {
+          $memcache = dmemcache_instance($cluster['cluster']);
+          if (dmemcache_connect($memcache, $server, $cluster['weight']) === FALSE) {
+            $errors[] = $t('Failed to connect to memcached server instance at %server.', array('%server' => $server));
+          }
+          else {
+            if (!variable_get('memcache_persistent', TRUE)) {
+              dmemcache_close($memcache);
+            }
+          }
         }
       }
 

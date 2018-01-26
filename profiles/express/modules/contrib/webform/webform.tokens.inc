@@ -65,14 +65,14 @@ function webform_token_info() {
   $info['tokens']['submission']['values'] = array(
     'name' => t('Webform submission values'),
     'description' => '<div>' . t('Webform tokens from submitted data. Replace the "?" with the "form key", including any parent form keys separated by colons. You can append:') . '</div>' .
-                     '<ul>' .
-                     '<li>' . t('the question key for just that one question (grid components).') . '</li>' .
-                     '<li>' . t('the option key for just that one option (grid and select components).') . '</li>' .
-                     '<li>' . t('<code>@token</code> for the value without the label (the default).', array('@token' => ':nolabel')) . '</li>' .
-                     '<li>' . t('<code>@token</code> for just the label.', array('@token' => ':label')) . '</li>' .
-                     '<li>' . t('<code>@token</code> for both the label and value together.', array('@token' => ':withlabel')) . '</li>' .
-                     '<li>' . t('<code>@token</code> for just the key in a key|label pair (grid and select components).', array('@token' => ':key')) . '</li>' .
-                     '</ul>',
+    '<ul>' .
+    '<li>' . t('the question key for just that one question (grid components).') . '</li>' .
+    '<li>' . t('the option key for just that one option (grid and select components).') . '</li>' .
+    '<li>' . t('<code>@token</code> for the value without the label (the default).', array('@token' => ':nolabel')) . '</li>' .
+    '<li>' . t('<code>@token</code> for just the label.', array('@token' => ':label')) . '</li>' .
+    '<li>' . t('<code>@token</code> for both the label and value together.', array('@token' => ':withlabel')) . '</li>' .
+    '<li>' . t('<code>@token</code> for just the key in a key|label pair (grid and select components).', array('@token' => ':key')) . '</li>' .
+    '</ul>',
     'dynamic' => TRUE,
   );
 
@@ -109,7 +109,9 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
   // from the rendered submission if recursion has been detected.
   if ($recursion_level) {
     $markup_components = array_keys(array_filter($node->webform['components'],
-                                                 function ($component) { return $component['type'] == 'markup'; }));
+      function ($component) {
+        return $component['type'] == 'markup';
+      }));
   }
 
   $recursion_level++;
@@ -120,37 +122,47 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
       case 'serial':
         $replacements[$original] = $submission->serial ? $submission->serial : '';
         break;
+
       case 'sid':
         $replacements[$original] = $submission->sid ? $submission->sid : '';
         break;
+
       case 'access-token':
         $replacements[$original] = webform_get_submission_access_token($submission);
         break;
+
       case 'date':
         $replacements[$original] = format_date($submission->submitted, webform_variable_get('webform_date_type'), '', NULL, $language_code);
         break;
+
       case 'completed_date':
         if ($submission->completed) {
           $replacements[$original] = format_date($submission->completed, webform_variable_get('webform_date_type'), '', NULL, $language_code);
         }
         break;
+
       case 'modified_date':
         $replacements[$original] = format_date($submission->modified, webform_variable_get('webform_date_type'), '', NULL, $language_code);
         break;
+
       case 'ip-address':
         $replacements[$original] = $sanitize ? check_plain($submission->remote_addr) : $submission->remote_addr;
         break;
+
       case 'user':
         $account = user_load($submission->uid);
         $name = format_username($account);
         $replacements[$original] = $sanitize ? check_plain($name) : $name;
         break;
+
       case 'url':
         $replacements[$original] = $submission->sid ? url("node/{$node->nid}/submission/{$submission->sid}", $url_options) : '';
         break;
+
       case 'edit-url':
         $replacements[$original] = $submission->sid ? url("node/{$node->nid}/submission/{$submission->sid}/edit", $url_options) : '';
         break;
+
       case 'values':
         $excluded_components = isset($email['excluded_components']) ? $email['excluded_components'] : array();
         $excluded_components = array_merge($excluded_components, $markup_components);
@@ -179,7 +191,8 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
       foreach ($value_tokens as $name => $original) {
         if (strpos($name, $parent_token) !== 0) {
           // Token not found as a prefix or exact match for this component.
-          continue;   // Token loop continue.
+          // Token loop continue.
+          continue;
         }
         // Drill down into the renderable to find the element.
         $display_element = $submission_renderable;
@@ -187,7 +200,8 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
           if (!isset($display_element[$parent])) {
             // Sometimes an element won't exist in the submission renderable
             // due to conditional logic. If not found, skip that element.
-            continue 2;   // Token loop continue.
+            // Token loop continue.
+            continue 2;
           }
           $display_element = $display_element[$parent];
         }
@@ -231,7 +245,8 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
           // type, i.e. key, day, hour, minute, etc.
           if (strcmp($name, $matched_token . ':' . $modifier) !== 0 || !in_array($modifier, $available_modifiers)) {
             // No match.
-            continue;   // Token loop continue.
+            // Token loop continue.
+            continue;
           }
         }
 

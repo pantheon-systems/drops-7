@@ -109,7 +109,7 @@ function varnish_expire_cache($paths, $wildcards = array()) {
   if (count($wildcards)) {
     foreach ($wildcards as $path => $wildcard) {
       if ($wildcard) {
-        $paths[$path . '[/?](.*)'] = $path . '[/?](.*)';
+        $paths[$path] .= '([/?].*)?';
       }
     }
   }
@@ -119,7 +119,9 @@ function varnish_expire_cache($paths, $wildcards = array()) {
     $host_buckets = array();
     foreach ($paths as $url) {
       $parts = parse_url($url);
-      $host_buckets[$parts['host']][] = $parts['path'] . (!empty($parts['query']) ? '?' . $parts['query'] : '');
+      // Strip base path from the path because it will be added later.
+      $path = substr($parts['path'], strlen(base_path()));
+      $host_buckets[$parts['host']][] = $path . (!empty($parts['query']) ? '?' . $parts['query'] : '');
     }
     foreach ($host_buckets as $host => $purges) {
       varnish_purge_paths($host, $purges);
@@ -170,13 +172,28 @@ function varnish_purge($host, $pattern) {
   }
   $pattern = implode('|', $patterns);
 
+  // Get list of domains to ban
+  $front_domains = variable_get('varnish_front_domains', '');
+  // Trigger hook_varnish_front_domains_alter().
+  drupal_alter('varnish_front_domains', $front_domains);
+  $fronts = explode(' ', $front_domains);
   switch ($bantype) {
     case VARNISH_BANTYPE_NORMAL:
       _varnish_terminal_run(array("$command req.http.host ~ $host && req.url ~ \"$pattern\""));
+      if ($front_domains) {
+        foreach ($fronts as $value) {
+          _varnish_terminal_run(array("$command req.http.host ~ $value && req.url ~ \"$pattern\""));
+        }
+      }
       break;
 
     case VARNISH_BANTYPE_BANLURKER:
       _varnish_terminal_run(array("$command obj.http.x-host ~ $host && obj.http.x-url  ~ \"$pattern\""));
+      if ($front_domains) {
+        foreach ($fronts as $value) {
+          _varnish_terminal_run(array("$command obj.http.x-host ~ $value && obj.http.x-url ~ \"$pattern\""));
+        }
+      }
       break;
 
     default:
@@ -212,6 +229,8 @@ function varnish_purge_paths($host, array $paths) {
     }
     // Chop the final "|^" off the string, leaving "$".
     $purge_pattern = substr($purge_pattern, 0, -2);
+    // Remove extra slashes in beginning of URL.
+    $purge_pattern = preg_replace('#/+#', '/', $purge_pattern);
     // Submit this purge chunk.
     varnish_purge($host, $purge_pattern);
   }
@@ -345,7 +364,12 @@ function _varnish_terminal_run($commands) {
       if ($status['code'] == 107) {
         $secret = variable_get('varnish_control_key', '');
         $challenge = substr($status['msg'], 0, 32);
-        $pack = $challenge . "\x0A" . $secret . "\x0A" . $challenge . "\x0A";
+        if (variable_get('varnish_control_key_appendnewline',TRUE)) {
+          $pack = $challenge . "\x0A" . $secret . "\x0A" . $challenge . "\x0A";
+        }
+        else {
+          $pack = $challenge . "\x0A". $secret . $challenge . "\x0A";
+        }
         $key = hash('sha256', $pack);
         socket_write($client, "auth $key\n");
         $status = _varnish_read_socket($client);
@@ -371,7 +395,7 @@ function _varnish_execute_command($client, $command) {
   $result = socket_write($client, "$command\n");
   $status = _varnish_read_socket($client);
   if ($status['code'] != 200) {
-    watchdog('varnish', 'Recieved status code @code running %command. Full response text: @error', array(
+    watchdog('varnish', 'Received status code @code running %command. Full response text: @error', array(
       '@code' => $status['code'],
       '%command' => $command,
       '@error' => $status['msg']),

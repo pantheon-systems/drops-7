@@ -50,7 +50,16 @@ function metatag_panels_tests_default_page_manager_pages() {
     'body_classes_to_add' => '',
     'css_id' => '',
     'css' => '',
-    'contexts' => array(),
+    'contexts' => array(
+      0 => array(
+        'identifier' => 'User',
+        'keyword' => 'user',
+        'name' => 'user',
+        'type' => 'select',
+        'uid' => '1',
+        'id' => 1,
+      ),
+    ),
     'relationships' => array(),
     'name' => '',
     'metatag_panels' => array(
@@ -64,6 +73,9 @@ function metatag_panels_tests_default_page_manager_pages() {
         ),
         'keywords' => array(
           'value' => 'Test, page, keywords',
+        ),
+        'abstract' => array(
+          'value' => 'http://www.example.com/user/%user:uid/full-bio-%281%29.pdf',
         ),
       ),
     ),

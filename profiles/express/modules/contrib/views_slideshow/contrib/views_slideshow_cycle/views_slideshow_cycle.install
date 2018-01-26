@@ -11,6 +11,11 @@
 function views_slideshow_cycle_requirements($phase) {
   $requirements = array();
 
+  // If installing via Drush skip requirement checking here.
+  if (php_sapi_name() == 'cli') {
+    return $requirements;
+  }
+
   // Ensure translations do not break at install time.
   $t = get_t();
   if ($phase == 'install' || $phase == 'runtime') {

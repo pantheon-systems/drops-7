@@ -1,3 +1,19 @@
+Metatag 7.x-1.22, 2017-07-03
+----------------------------
+#2853699 by DamienMcKenna: Drupal core 7.40 is the minimum version supported.
+#2857982 by arosboro: Fixed tests due to changes in Entity Translation.
+#2864524 by JamesK: Improve field description for the abstract meta tag.
+#2868750 by DamienMcKenna: List Metatag Cxense as a related module.
+#2882048 by jyraya: i18n integration shouldn't assume a tag has a group.
+#2882703 by smustgrave: module_load_include() doesn't work quite as intended if
+  the module is not installed.
+#2864834 by DamienMcKenna: Added a note to update script 7114 to note that
+  output caching has been disabled.
+#2297647 by greggles, DamienMcKenna: Run views_invalidate_cache() when
+  metatag_views is disabled.
+#2857088 by arosboro: Fixed parsing of percentages in URLs in Metatag:Panels.
+
+
 Metatag 7.x-1.21, 2017-02-15
 ----------------------------
 #2844504 by DamienMcKenna: Add project names to all dependencies.

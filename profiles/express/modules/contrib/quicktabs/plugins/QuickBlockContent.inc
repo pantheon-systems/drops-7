@@ -98,6 +98,10 @@ class QuickBlockContent extends QuickContent {
     return array('bid', 'hide_title');
   }
 
+  public function getUniqueKeys() {
+    return array('bid');
+  }
+
   /**
    * Checks if the current user can access a block.
    */

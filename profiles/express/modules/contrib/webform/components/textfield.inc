@@ -19,6 +19,7 @@ function _webform_defaults_textfield() {
     'extra' => array(
       'width' => '',
       'maxlength' => '',
+      'minlength' => '',
       'field_prefix' => '',
       'field_suffix' => '',
       'disabled' => 0,
@@ -126,6 +127,16 @@ function _webform_edit_textfield($component) {
     '#weight' => 2,
     '#parents' => array('extra', 'maxlength'),
   );
+  $form['validation']['minlength'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minlength'),
+    '#default_value' => $component['extra']['minlength'],
+    '#description' => t('Minimum length of the textfield value. The component may still be empty unless it is set as Required.'),
+    '#size' => 5,
+    '#maxlength' => 10,
+    '#weight' => 3,
+    '#parents' => array('extra', 'minlength'),
+  );
   return $form;
 }
 
@@ -178,6 +189,9 @@ function _webform_render_textfield($component, $value = NULL, $filter = TRUE, $s
   }
   if ($component['extra']['maxlength'] > 0) {
     $element['#maxlength'] = $component['extra']['maxlength'];
+  }
+  if ($component['extra']['minlength'] > 0) {
+    $element['#minlength'] = $component['extra']['minlength'];
   }
 
   if (isset($value[0])) {
@@ -249,7 +263,7 @@ function _webform_analysis_textfield($component, $sids = array(), $single = FALS
   $rows[0] = array(t('Left Blank'), ($submissions - $nonblanks));
   $rows[1] = array(t('User entered value'), $nonblanks);
 
-  $other[] = array(t('Average submission length in words (ex blanks)'), ($nonblanks != 0 ? number_format($wordcount/$nonblanks, 2) : '0'));
+  $other[] = array(t('Average submission length in words (ex blanks)'), ($nonblanks != 0 ? number_format($wordcount / $nonblanks, 2) : '0'));
 
   return array(
     'table_rows' => $rows,

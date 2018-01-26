@@ -44,7 +44,7 @@ html.js input.webform-calendar {
 }
 .webform-progressbar-inner {
   height: 1em;
-  background-color: #74C421;
+  background-color: #74c421;
   height: 3px;
 }
 .webform-progressbar-outer {
@@ -65,10 +65,10 @@ html.js input.webform-calendar {
   border-radius: 5px;
 }
 .webform-progressbar-page.completed {
-  background-color: #74C421;
+  background-color: #74c421;
 }
 .webform-progressbar-page.current {
-  background-color: #74C421;
+  background-color: #74c421;
 }
 .webform-progressbar-page .webform-progressbar-page-number {
   display: none;

@@ -70,8 +70,8 @@ function site_verify_menu() {
 function site_verify_permission() {
   return array(
     'administer site verify' => array(
-      'title' => t('Administer site verification metatags'),
-      'description' => t('Administer search engine site ownership verification metatags.'),
+      'title' => t('Administer site verification meta tags'),
+      'description' => t('Administer search engine site ownership verification meta tags.'),
     ),
     'administer site verify uploads' => array(
       'title' => t('Administer site verification uploads'),

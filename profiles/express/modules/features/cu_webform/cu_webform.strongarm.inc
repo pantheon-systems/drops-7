@@ -13,43 +13,6 @@ function cu_webform_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'captcha_default_challenge';
-  $strongarm->value = 'recaptcha/reCAPTCHA';
-  $export['captcha_default_challenge'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'captcha_webform_allow_user_config';
-  $strongarm->value = 1;
-  $export['captcha_webform_allow_user_config'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'pathauto_node_webform_pattern';
-  $strongarm->value = '';
-  $export['pathauto_node_webform_pattern'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'recaptcha_secret_key';
-  $strongarm->value = '6Lcu0QUTAAAAAJPFHrnT8t_M9qJSmvWVDYZ4uyhU';
-  $export['recaptcha_secret_key'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'recaptcha_site_key';
-  $strongarm->value = '6Lcu0QUTAAAAAMWLXkQN8uJEdyFJQAL5PEGjFr-R';
-  $export['recaptcha_site_key'] = $strongarm;
-  
-  // moved from cu_bucket
-  
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
   $strongarm->name = 'additional_settings__active_tab_webform';
   $strongarm->value = 'edit-menu';
   $export['additional_settings__active_tab_webform'] = $strongarm;
@@ -67,8 +30,22 @@ function cu_webform_strongarm() {
   $strongarm->name = 'ant_php_webform';
   $strongarm->value = 0;
   $export['ant_php_webform'] = $strongarm;
-  
-    $strongarm = new stdClass();
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'captcha_default_challenge';
+  $strongarm->value = 'recaptcha/reCAPTCHA';
+  $export['captcha_default_challenge'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'captcha_webform_allow_user_config';
+  $strongarm->value = 1;
+  $export['captcha_webform_allow_user_config'] = $strongarm;
+
+  $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'default_menu_link_enabled_webform';
@@ -144,6 +121,27 @@ function cu_webform_strongarm() {
   $strongarm->name = 'node_submitted_webform';
   $strongarm->value = 1;
   $export['node_submitted_webform'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'pathauto_node_webform_pattern';
+  $strongarm->value = '';
+  $export['pathauto_node_webform_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'recaptcha_secret_key';
+  $strongarm->value = '6Lcu0QUTAAAAAJPFHrnT8t_M9qJSmvWVDYZ4uyhU';
+  $export['recaptcha_secret_key'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'recaptcha_site_key';
+  $strongarm->value = '6Lcu0QUTAAAAAMWLXkQN8uJEdyFJQAL5PEGjFr-R';
+  $export['recaptcha_site_key'] = $strongarm;
 
   return $export;
 }

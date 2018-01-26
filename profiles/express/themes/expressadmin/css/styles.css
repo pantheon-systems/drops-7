@@ -347,11 +347,12 @@ td.ctools-export-ui-operations { position: relative; }
 td.ctools-export-ui-operations .ctools-dropbutton { top: 8px; right: 10px; }
 
 .express-field-columns { /* Checkboxes */ }
-.express-field-columns .form-item { margin-bottom: 5px; }
-@media screen and (min-width: 480px) { .express-field-columns.form-checkboxes { -webkit-column-count: 2; -moz-column-count: 2; column-count: 2; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
-@media screen and (min-width: 768px) { .express-field-columns.form-checkboxes { -webkit-column-count: 3; -moz-column-count: 3; column-count: 3; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
-@media screen and (min-width: 960px) { .express-field-columns.form-checkboxes { -webkit-column-count: 4; -moz-column-count: 4; column-count: 4; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
-@media screen and (min-width: 1200px) { .express-field-columns.form-checkboxes { -webkit-column-count: 5; -moz-column-count: 5; column-count: 5; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+.express-field-columns .form-item { white-space: normal; margin-bottom: 5px; }
+tr.odd .express-field-columns .form-item, tr.even .express-field-columns .form-item { white-space: normal; margin-bottom: 5px; }
+@media screen and (min-width: 480px) { .express-field-columns.form-checkboxes, .express-field-columns.form-radios { -webkit-column-count: 2; -moz-column-count: 2; column-count: 2; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 768px) { .express-field-columns.form-checkboxes, .express-field-columns.form-radios { -webkit-column-count: 3; -moz-column-count: 3; column-count: 3; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 960px) { .express-field-columns.form-checkboxes, .express-field-columns.form-radios { -webkit-column-count: 4; -moz-column-count: 4; column-count: 4; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
+@media screen and (min-width: 1200px) { .express-field-columns.form-checkboxes, .express-field-columns.form-radios { -webkit-column-count: 5; -moz-column-count: 5; column-count: 5; -webkit-column-gap: 40px; -moz-column-gap: 40px; column-gap: 40px; } }
 
 /* Exposed Widgets */
 .views-exposed-form .views-exposed-widget .form-submit, #ctools-export-ui-list-form .form-submit { margin-top: 1.7em; }

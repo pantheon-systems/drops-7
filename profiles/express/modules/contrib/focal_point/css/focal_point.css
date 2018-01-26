@@ -1,6 +1,6 @@
 .focal-point-indicator {
   width: 1px;
-  height:1px;
+  height: 1px;
   cursor: move;
 }
 .focal-point-indicator:after {

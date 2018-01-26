@@ -39,42 +39,42 @@ function webform_admin_settings() {
     '#collapsed' => FALSE,
   );
 
-  $form['email']['webform_default_from_address']  = array(
+  $form['email']['webform_default_from_address'] = array(
     '#type' => 'textfield',
     '#title' => t('From address'),
     '#default_value' => webform_variable_get('webform_default_from_address'),
     '#description' => t('The default sender address for emailed webform results; often the e-mail address of the maintainer of your forms.'),
   );
 
-  $form['email']['webform_default_from_name']  = array(
+  $form['email']['webform_default_from_name'] = array(
     '#type' => 'textfield',
     '#title' => t('From name'),
     '#default_value' => webform_variable_get('webform_default_from_name'),
     '#description' => t('The default sender name which is used along with the default from address.'),
   );
 
-  $form['email']['webform_default_subject']  = array(
+  $form['email']['webform_default_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Default subject'),
     '#default_value' => webform_variable_get('webform_default_subject'),
     '#description' => t('The default subject line of any e-mailed results.'),
   );
 
-  $form['email']['webform_email_replyto']  = array(
+  $form['email']['webform_email_replyto'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use Reply-To header'),
     '#default_value' => webform_variable_get('webform_email_replyto'),
     '#description' => t('Sends all e-mail from the domain of the default address above and sets the "Reply-To" header to the actual sender. Helps prevent e-mail from being flagged as spam.'),
   );
 
-  $form['email']['webform_email_html_capable']  = array(
+  $form['email']['webform_email_html_capable'] = array(
     '#type' => 'checkbox',
     '#title' => t('HTML mail system'),
     '#default_value' => webform_variable_get('webform_email_html_capable'),
     '#description' => t('Whether the mail system configured for webform is capable of sending mail in HTML format.'),
   );
 
-  $form['email']['webform_default_format']  = array(
+  $form['email']['webform_default_format'] = array(
     '#type' => 'radios',
     '#title' => t('Format'),
     '#options' => array(
@@ -90,7 +90,7 @@ function webform_admin_settings() {
     ),
   );
 
-  $form['email']['webform_format_override']  = array(
+  $form['email']['webform_format_override'] = array(
     '#type' => 'radios',
     '#title' => t('Format override'),
     '#options' => array(
@@ -112,7 +112,7 @@ function webform_admin_settings() {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['progressbar']['webform_progressbar_style']  = array(
+  $form['progressbar']['webform_progressbar_style'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Progress bar style'),
     '#options' => array(
@@ -146,7 +146,7 @@ function webform_admin_settings() {
     '#weight' => 20,
   );
 
-  $form['advanced']['webform_tracking_mode']  = array(
+  $form['advanced']['webform_tracking_mode'] = array(
     '#type' => 'radios',
     '#title' => t('Track anonymous users by:'),
     '#options' => array(
@@ -199,7 +199,7 @@ function webform_admin_settings() {
     '#default_value' => webform_variable_get('webform_export_format'),
   );
 
-  $form['advanced']['webform_csv_delimiter']  = array(
+  $form['advanced']['webform_csv_delimiter'] = array(
     '#type' => 'select',
     '#title' => t('Default export delimiter'),
     '#description' => t('This is the delimiter used in the CSV/TSV file when downloading Webform results. Using tabs in the export is the most reliable method for preserving non-latin characters. You may want to change this to another character depending on the program with which you anticipate importing results.'),
@@ -226,7 +226,7 @@ function webform_admin_settings() {
     '#description' => t('Some export formats, such as Microsoft Excel, support word-wrapped text cells.'),
   );
 
-  $form['advanced']['webform_submission_access_control']  = array(
+  $form['advanced']['webform_submission_access_control'] = array(
     '#type' => 'radios',
     '#title' => t('Submission access control'),
     '#options' => array(
@@ -237,7 +237,7 @@ function webform_admin_settings() {
     '#description' => t('By default, the configuration form for each webform allows the administrator to choose which roles may submit the form. You may want to allow users to always submit the form if you are using a separate node access module to control access to webform nodes themselves.'),
   );
 
-  $form['advanced']['webform_token_access']  = array(
+  $form['advanced']['webform_token_access'] = array(
     '#type' => 'radios',
     '#title' => t('Token access'),
     '#options' => array(
@@ -346,14 +346,14 @@ function webform_admin_type_list() {
 }
 
 /**
- * Generate a list of all webforms avaliable on this site.
+ * Generate a list of all webforms available on this site.
  */
 function theme_webform_admin_content($variables) {
   $nodes = $variables['nodes'];
   $header = array(
     t('Title'),
     array('data' => t('View'), 'colspan' => '4'),
-    array('data' => t('Operations'), 'colspan' => '3')
+    array('data' => t('Operations'), 'colspan' => '3'),
   );
 
   $rows = array();

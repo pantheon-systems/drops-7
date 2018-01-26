@@ -1,0 +1,20 @@
+name = Travis Hosting
+description = Provides CU-specific functionality, like adding variables, to Express Core.
+core = 7.x
+version = 7.x-1.0
+package = Hosting
+
+; Enable bundles for testing.
+dependencies[] = cu_advanced_content_bundle
+dependencies[] = cu_advanced_design_bundle
+dependencies[] = cu_advanced_layout_bundle
+;dependencies[] = cu_events_bundle
+dependencies[] = cu_forms_bundle
+dependencies[] = cu_news_bundle
+dependencies[] = cu_people_bundle
+dependencies[] = cu_photo_gallery_bundle
+dependencies[] = cu_seo_bundle
+dependencies[] = cu_social_media_bundle
+
+; Enable performance module for reporting at end of test run.
+dependencies[] = performance
