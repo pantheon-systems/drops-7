@@ -8,7 +8,7 @@
  * - $classes: Classes.
  * - $slide_count: Slide count.
  *
- * @ingroup views_templates
+ * @ingroup vss_templates
  */
 ?>
 <div id="views_slideshow_slide_counter_<?php print $variables['vss_id']; ?>" class="<?php print $classes; ?>">

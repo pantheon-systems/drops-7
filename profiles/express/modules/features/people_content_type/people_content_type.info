@@ -136,5 +136,6 @@ features[variable][] = pathauto_taxonomy_term_people_filter_2_pattern
 features[variable][] = pathauto_taxonomy_term_people_filter_3_pattern
 features[variable][] = pathauto_taxonomy_term_person_type_pattern
 features[variable][] = url_people_list_page
+features[variable][] = xmlsitemap_settings_node_person
 features_exclude[dependencies][ctools] = ctools
 features_exclude[dependencies][options] = options

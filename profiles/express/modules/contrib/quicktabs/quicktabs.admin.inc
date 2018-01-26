@@ -317,7 +317,9 @@ function _quicktabs_form(array $tab, $qt) {
     }
     $tabtypes[$name] = $name;
     $content_provider = quick_content_factory($name, $tab);
-    $form = array_merge_recursive($form, $content_provider->optionsForm($delta, $qt));
+    if (is_object($content_provider)) {
+      $form = array_merge_recursive($form, $content_provider->optionsForm($delta, $qt));
+    }
   }
 
   $form['type'] = array(

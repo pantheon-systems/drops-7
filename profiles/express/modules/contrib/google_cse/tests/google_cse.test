@@ -40,7 +40,7 @@ class GoogleCSETestCase extends DrupalWebTestCase {
   /**
    * Tests all SiteSearch configuration options.
    */
-  public function testSiteSearchSettingsConfig() {
+  public function testDisabledSearchModuleConfig() {
     // Need to have user for this test.
     $this->setupGoogleCSEUser();
 
@@ -51,36 +51,43 @@ class GoogleCSETestCase extends DrupalWebTestCase {
     // @todo Figure out why going to /search/google ended up in a redirect loop.
     $this->setupGoogleCSESearchPage();
 
-    // Post to config form to save SiteSearch settings.
+    // Post to config form to save settings.
     $edit = array();
-    $edit['google_cse_sitesearch'] = "example.com/user User Search \n example.com/node Node Search";
-    $edit['google_cse_sitesearch_form'] = 'radios';
+    $edit['google_cse_results_tab'] = "Google CSE";
+    $edit['google_cse_results_prefix'] = 'Prefix Text';
     $this->drupalPost('admin/config/search/settings', $edit, t('Save configuration'));
 
     // Go to Google CSE search page.
     $this->drupalGet('node/1');
 
     // Assert that all SiteSearch options are there.
-    $this->assertText('Search the web', "Default SiteSearch radio button found.");
-    $this->assertText('User Search', "First SiteSearch radio button found.");
-    $this->assertText('Node Search', "Second SiteSearch radio button found.");
+    $this->assertText('Google CSE', "Tab label changed.");
+    $this->assertText('Prefix Text', "Prefix text added.");
+
+    // Disable Search module.
+    module_disable(array('search'));
+
+    // Flush caches for menu rebuild.
+    drupal_flush_all_caches();
+    menu_rebuild();
+
+    // See if admin form is accessible.
+    $this->drupalGet('admin/config/search/cse-settings');
+    $this->assertNoText('You are not authorized to access this page.');
 
     // Post different config options for more checks.
     $edit = array();
-    $edit['google_cse_sitesearch_form'] = 'select';
-    $edit['google_cse_sitesearch_option'] = 'Search Your Site';
-    $edit['google_cse_sitesearch_default'] = 1;
-    $edit['google_cse_sitesearch'] = "example.com/user \n example.com/node";
-    $this->drupalPost('admin/config/search/settings', $edit, t('Save configuration'));
+    $edit['google_cse_results_prefix'] = 'Changed Some Stuff';
+    $edit['google_cse_results_suffix'] = 'Suffix Text';
+    $this->drupalPost('admin/config/search/cse-settings', $edit, t('Save configuration'));
 
     // Go to Google CSE search page.
     $this->drupalGet('node/1');
 
     // Assert select options have changed.
     // Need to use raw option since the select list options are not visible.
-    $this->assertRaw('<option value="">Search Your Site</option>', "Default SiteSearch select option found.");
-    $this->assertRaw('<option value="example.com/user" selected="selected">Search &quot;example.com/user&quot;</option>', "First SiteSearch select option found and selected.");
-    $this->assertRaw('<option value="example.com/node">Search &quot;example.com/node&quot;</option>', "Second SiteSearch select option found.");
+    $this->assertText('Changed Some Stuff', "Prefix text changed.");
+    $this->assertText('Suffix Text', "Suffix text added.");
   }
 
   /**
@@ -90,6 +97,7 @@ class GoogleCSETestCase extends DrupalWebTestCase {
     // Give the user all search permissions to use in testing.
     $this->privileged_user = $this->drupalCreateUser(array(
       'search Google CSE',
+      'administer Google CSE',
       'administer search',
       'search content',
       'use advanced search',

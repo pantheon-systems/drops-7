@@ -10,6 +10,7 @@
  */
 function googleanalytics_uninstall() {
   variable_del('googleanalytics_account');
+  variable_del('googleanalytics_premium');
   variable_del('googleanalytics_cache');
   variable_del('googleanalytics_codesnippet_create');
   variable_del('googleanalytics_codesnippet_before');
@@ -41,7 +42,7 @@ function googleanalytics_uninstall() {
   variable_del('googleanalytics_visibility_roles');
   variable_del('googleanalytics_privacy_donottrack');
 
-  // Remove backup variables if exist. Remove this code in D8.
+  // Remove backup variables if they exist. Remove this code in D8.
   variable_del('googleanalytics_codesnippet_after_backup_7200');
   variable_del('googleanalytics_codesnippet_before_backup_7200');
 }
@@ -88,7 +89,8 @@ function googleanalytics_requirements($phase) {
 }
 
 /**
- * Upgrade old extension variable to new and use old name as enabled/disabled flag.
+ * Upgrade old extension variable to new and use old name as enabled/disabled
+ * flag.
  */
 function googleanalytics_update_6000() {
   variable_set('googleanalytics_trackfiles_extensions', variable_get('googleanalytics_trackfiles', '7z|aac|avi|csv|doc|exe|flv|gif|gz|jpe?g|js|mp(3|4|e?g)|mov|pdf|phps|png|ppt|rar|sit|tar|torrent|txt|wma|wmv|xls|xml|zip'));
@@ -101,7 +103,8 @@ function googleanalytics_update_6000() {
 function googleanalytics_update_6001() {
   variable_set('googleanalytics_visibility', 0);
 
-  // Remove tracking from all administrative pages, see http://drupal.org/node/34970.
+  // Remove tracking from all administrative pages, see:
+  // http://drupal.org/node/34970.
   $pages = array(
     'admin*',
     'user*',
@@ -114,11 +117,12 @@ function googleanalytics_update_6001() {
 }
 
 /**
- * Upgrade role settings and per user tracking settings
- * of "User 1" and remove outdated tracking variables.
+ * Upgrade role settings and per user tracking settings of "User 1" and remove
+ * outdated tracking variables.
  */
 function googleanalytics_update_6002() {
-  // Upgrade enabled/disabled roles to new logic (correct for upgrades from 5.x-1.4 and 6.x-1.0).
+  // Upgrade enabled/disabled roles to new logic (correct for upgrades from
+  // 5.x-1.4 and 6.x-1.0).
   $roles = array();
   $messages = array();
   foreach (user_roles() as $rid => $name) {
@@ -137,7 +141,7 @@ function googleanalytics_update_6002() {
   if (!$track_user1 = variable_get('googleanalytics_track__user1', 1)) {
     variable_set('googleanalytics_custom', 1);
 
-    // Load user 1 object, set appropriate value and save new user settings back.
+    // Load user 1 object, set appropriate value and save new user settings.
     $account = user_load(1);
     $account = user_save($account, array('data' => array('googleanalytics' => array('custom' => 0))), 'account');
     $messages[] = t('Disabled user specific page tracking for site administrator.');
@@ -152,11 +156,11 @@ function googleanalytics_update_6002() {
 }
 
 /**
- * #262468: Clear menu cache to solve stale menu data in 5.x-1.5 and 6.x-1.1
+ * #262468: Clear menu cache to solve stale menu data in 5.x-1.5 and 6.x-1.1.
  */
 function googleanalytics_update_6003() {
   menu_rebuild();
-  return t('Menu has been rebuild.');
+  return t('Menu has been rebuilt.');
 }
 
 /**
@@ -231,8 +235,9 @@ function googleanalytics_update_6006() {
 /**
  * Remove "User identifier" and "User name" from segmentation fields.
  *
- * This is a data protection and privacy law change. For more information see Google Analytics
- * terms of use section 8.1 (http://www.google.com/analytics/en-GB/tos.html).
+ * This is a data protection and privacy law change. For more information see
+ * Google Analytics terms of use section 8.1:
+ * http://www.google.com/analytics/en-GB/tos.html
  */
 function googleanalytics_update_6007() {
   $profile_fields = variable_get('googleanalytics_segmentation', array());
@@ -293,15 +298,15 @@ function googleanalytics_update_6300() {
     $messages[] = t('Upgraded custom "before" code snippet.');
   }
 
-  // Upgrade of AFTER code snippet.
-  // We cannot update this code snippet automatically. Show message that the upgrade has been skipped.
+  // Upgrade of AFTER code snippet. We cannot update this code snippet
+  // automatically. Show message that the upgrade has been skipped.
   $code_after = variable_get('googleanalytics_codesnippet_after', '');
   if (!empty($code_after)) {
     drupal_set_message(Database::getConnection()->prefixTables("Automatic upgrade of Google Analytics custom 'after' code snippet has been skipped. Backup of previous code snippet has been saved in database table '{variable}' as 'googleanalytics_codesnippet_after_backup_6300'. You need to manually upgrade the custom 'after' code snippet."), 'error');
     $messages[] = t('Skipped custom "after" code snippet.');
   }
 
-  return empty($messages) ? t('No custom code snipped found. Nothing to do.') : implode(' ', $messages);
+  return empty($messages) ? t('No custom code snippet found. Nothing to do.') : implode(' ', $messages);
 }
 
 /**
@@ -356,18 +361,20 @@ function googleanalytics_update_7002() {
     $googleanalytics_custom_vars['slots'][1]['slot'] = 1;
     $googleanalytics_custom_vars['slots'][1]['name'] = 'User roles';
     $googleanalytics_custom_vars['slots'][1]['value'] = '[current-user:role-names]';
-    $googleanalytics_custom_vars['slots'][1]['scope'] = 1; // Sets the scope to visitor-level.
+    // Sets the scope to visitor-level.
+    $googleanalytics_custom_vars['slots'][1]['scope'] = 1;
 
     variable_set('googleanalytics_custom_var', $googleanalytics_custom_vars);
-    return t('The deprecated profile segmentation setting for "User roles" has been added to custom variables. You need to deselect all selected profile fields in <a href="@admin">Google Analytics settings</a> and upgrade other profile fields manually or you may loose tracking data in future! See Google Analytics <a href="@customvar">Custom Variables</a> for more information.', array('@customvar' => 'https://developers.google.com/analytics/devguides/collection/gajs/gaTrackingCustomVariables', '@admin' => url('admin/config/system/googleanalytics')));
+    return t('The deprecated profile segmentation setting for "User roles" has been added to custom variables. You need to deselect all selected profile fields in <a href="@admin">Google Analytics settings</a> and upgrade other profile fields manually or you may lose tracking data in future! See Google Analytics <a href="@customvar">Custom Variables</a> for more information.', array('@customvar' => 'https://developers.google.com/analytics/devguides/collection/gajs/gaTrackingCustomVariables', '@admin' => url('admin/config/system/googleanalytics')));
   }
   else {
-    return t('You need to deselect all selected profile fields in <a href="@admin">Google Analytics settings</a> and upgrade other profile fields manually or you may loose tracking data in future! See Google Analytics <a href="@customvar">Custom Variables</a> for more information.', array('@customvar' => 'https://developers.google.com/analytics/devguides/collection/gajs/gaTrackingCustomVariables', '@admin' => url('admin/config/system/googleanalytics')));
+    return t('You need to deselect all selected profile fields in <a href="@admin">Google Analytics settings</a> and upgrade other profile fields manually or you may lose tracking data in future! See Google Analytics <a href="@customvar">Custom Variables</a> for more information.', array('@customvar' => 'https://developers.google.com/analytics/devguides/collection/gajs/gaTrackingCustomVariables', '@admin' => url('admin/config/system/googleanalytics')));
   }
 }
 
 /**
- * Rename googleanalytics_trackoutgoing variable to googleanalytics_trackoutbound.
+ * Rename googleanalytics_trackoutgoing variable to
+ * googleanalytics_trackoutbound.
  */
 function googleanalytics_update_7003() {
   variable_set('googleanalytics_trackoutbound', variable_get('googleanalytics_trackoutgoing', 1));
@@ -377,7 +384,8 @@ function googleanalytics_update_7003() {
 }
 
 /**
- * Rename googleanalytics_visibility variable to googleanalytics_visibility_pages for consistency.
+ * Rename googleanalytics_visibility variable to
+ * googleanalytics_visibility_pages for consistency.
  */
 function googleanalytics_update_7004() {
   variable_set('googleanalytics_visibility_pages', variable_get('googleanalytics_visibility', 1));
@@ -401,7 +409,7 @@ function googleanalytics_update_7005() {
 
   $diff = array_diff($pages, preg_split('/(\r\n?|\n)/', variable_get('googleanalytics_pages', implode("\n", $pages))));
   if (empty($diff)) {
-    // No diff to previous settings found. Update with new settings.
+    // No difference to previous settings found. Update with new settings.
     $pages = array(
       'admin',
       'admin/*',
@@ -437,7 +445,8 @@ function googleanalytics_update_7007() {
 }
 
 /**
- * Delete custom ga.js code snipptes to prevent malfunctions in new Universal Analytics tracker. A backup of your snippets will be created.
+ * Delete custom ga.js code snippets to prevent malfunctions in new Universal
+ * Analytics tracker. A backup of your snippets will be created.
  */
 function googleanalytics_update_7200() {
   $messages = array();
@@ -459,11 +468,12 @@ function googleanalytics_update_7200() {
     $messages[] = t('Manual upgrade of custom "after" code snippet from ja.js to analytics.js API is required.');
   }
 
-  return empty($messages) ? t('No custom code snipped found. Nothing to do.') : implode(' ', $messages);
+  return empty($messages) ? t('No custom code snippet found. Nothing to do.') : implode(' ', $messages);
 }
 
 /**
- * Delete obsolete custom variables. Custom variables are now custom dimensions and metrics.
+ * Delete obsolete custom variables. Custom variables are now custom dimensions
+ * and metrics.
  */
 function googleanalytics_update_7201() {
   variable_del('googleanalytics_custom_var');
@@ -475,7 +485,7 @@ function googleanalytics_update_7201() {
  * Delete obsolete JavaScript scope variable.
  */
 function googleanalytics_update_7202() {
-  // Remove obsolete scope variable
+  // Remove obsolete scope variable.
   variable_del('googleanalytics_js_scope');
 
   return t('Removed obsolete JavaScript scope variable.');

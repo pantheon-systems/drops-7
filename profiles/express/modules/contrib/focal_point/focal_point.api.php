@@ -57,7 +57,7 @@ function hook_focal_point_default_method_info_alter(&$info) {
  * @param array $element
  *   A keyed array with:
  *     - 'fid' : the Drupal file ID
- *     - 'focal_point' : the string representing the focal point position
+ *     - 'focal_point' : the string representing the focal point position.
  */
 function hook_focal_point_save($element) {
   // Your code here.
@@ -67,7 +67,7 @@ function hook_focal_point_save($element) {
  * Hook invoked after deleting a Focal_Point record.
  *
  * @param int $fid
- *  The Drupal file ID associated to the deleted Focal point
+ *   The Drupal file ID associated to the deleted Focal point.
  */
 function hook_focal_point_delete($fid) {
   // Your code here.
@@ -77,12 +77,12 @@ function hook_focal_point_delete($fid) {
  * Alters the Focal Point before saving it to the database.
  *
  * @param string $focal_point
- *  The focal point to be saved (an anchor point in the "[0-100],[0-100]"
- *  format).
- * @param integer $fid
- *  The FileID
+ *   The focal point to be saved (an anchor point in the "[0-100],[0-100]"
+ *   format).
+ * @param int $fid
+ *   The FileID.
  * @param string $original_focal_point
- *  The original focal_point if updating (could be NULL)
+ *   The original focal_point if updating (could be NULL)
  */
 function hook_focal_point_pre_save_alter(&$focal_point, $fid, $original_focal_point) {
   // Alter the focal point for FID = 1 if the original focal point is empty.

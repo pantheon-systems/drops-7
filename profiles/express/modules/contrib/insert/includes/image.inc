@@ -30,7 +30,7 @@ function image_insert_styles() {
   $insert_styles = array();
   foreach ($image_styles as $style) {
     $insert_styles['image_' . $style['name']] = array(
-      'label' => t($style['name']),
+      'label' => t(check_plain($style['label'])),
     );
   }
   return $insert_styles;

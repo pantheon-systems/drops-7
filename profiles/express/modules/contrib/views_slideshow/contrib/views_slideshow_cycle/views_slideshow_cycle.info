@@ -5,9 +5,9 @@ dependencies[] = libraries
 package = Views
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2017-02-16
-version = "7.x-3.6"
+; Information added by Drupal.org packaging script on 2017-06-08
+version = "7.x-3.9"
 core = "7.x"
 project = "views_slideshow"
-datestamp = "1487211486"
+datestamp = "1496893153"
 

@@ -3,7 +3,7 @@ Feature: People List Block
 @api @people-list-block
 Scenario Outline: An authenticated user should be able to access the form for adding a people list block
     Given  CU - I am logged in as a user with the <role> role
-    When I go to "block/add/people-list-block"
+    When I am at "block/add/people-list-block"
     Then I should not see <message>
 
     Examples:
@@ -16,7 +16,7 @@ Scenario Outline: An authenticated user should be able to access the form for ad
 @api @people-list-block
 Scenario: An anonymous user should not be able to access the form for adding person content
   Given I am an anonymous user
-  When I go to "block/add/people-list-block"
+  When I am on "block/add/people-list-block"
   Then I should see "Access denied"
 
 @api @people-list-block

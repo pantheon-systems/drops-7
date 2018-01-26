@@ -8,19 +8,40 @@
  * Context condition for entity layouts.
  */
 class express_layout_layout_context_condition extends context_condition_node {
+
+  /**
+   * Returns a form for users to enter layout context parameters.
+   *
+   * @return array
+   */
   function condition_values() {
     return _express_layout_form_options();
   }
+
+  /**
+   * Executes the express_layout context.
+   *
+   * @param $node
+   * @param $op
+   */
   function execute($node, $op) {
-    $layout = entity_load_single('express_layout', $node->nid);
-    foreach ($this->get_contexts($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']) as $context) {
-      $this->condition_met($context, $layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']);
+
+    // Some node types will not have layouts attached to them.
+    // If we check for an empty or FALSE layout, then we don't proceed.
+    if ($layout = entity_load_single('express_layout', $node->nid)) {
+      foreach ($this->get_contexts($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']) as $context) {
+        $this->condition_met($context, $layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']);
+      }
     }
   }
+
 }
 
 /**
  * Implements hook_context_default_contexts().
+ *
+ * @return array
+ *   An array with context reactions.
  */
 function express_layout_context_default_contexts() {
 
@@ -122,8 +143,7 @@ function express_layout_context_default_contexts() {
   );
   $context->condition_mode = 0;
 
-// Translatables
-// Included for use with string extractors like potx.
+  // Translatables included for use with string extractors like potx.
   t('Places blocks on a page according to Express Layout settings');
 
   $export['express_layout_blocks'] = $context;

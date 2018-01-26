@@ -104,20 +104,6 @@ td.webform-pagebreak {
   font-weight: bold;
 }
 
-/* Special theming for the options element widget (if installed) */
-.webform-options-element thead {
-  display: none;
-}
-.webform-options-element fieldset {
-  border: none;
-  background: none;
-  margin: 0;
-  padding: 0;
-}
-.webform-options-element fieldset legend {
-  display: none;
-}
-
 /* Checkboxes for allowed file extensions */
 table.webform-file-extensions td {
   vertical-align: top;

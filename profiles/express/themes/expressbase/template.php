@@ -501,7 +501,16 @@ function expressbase_menu_link(array $vars) {
  */
 function expressbase_links__system_main_menu($vars) {
   $classes = join(' ',$vars['attributes']['class']);
-  $html = '  <ul class="' . $classes . '" id="' . $vars['attributes']['id'] . '">';
+
+  // Build menu heading.
+  if ( !empty($vars['heading']) && !empty($vars['heading']['text']) && !empty($vars['heading']['level'])  && !empty($vars['heading']['class'])) {
+    $nav_heading = '<' . $vars['heading']['level'] . ' class="' . join(' ', $vars['heading']['class']) . '">' . $vars['heading']['text'] . '</' . $vars['heading']['level'] . '>';
+  }
+  else {
+    $nav_heading = '';
+  }
+
+  $html = $nav_heading . '  <ul class="' . $classes . '" id="' . $vars['attributes']['id'] . '">';
 
   // Add first and last classes to first and last list items
   reset($vars['links']);
@@ -539,10 +548,13 @@ function expressbase_links__system_main_menu($vars) {
 function expressbase_links__system_secondary_menu($vars) {
   // Prepare label - set by more_menus.module
   $classes = join(' ',$vars['attributes']['class']);
+
+  $label = variable_get('secondary_menu_label', NULL) ? '<h2 class="inline secondary-menu-label">' . variable_get('secondary_menu_label') . '</h2>': '<h2 class="element-invisible">Secondary Menu</h2>';
+
   $html = '  <ul class="' . $classes . '">';
-  $label = variable_get('secondary_menu_label') ? '<h2 class="inline secondary-menu-label">' . variable_get('secondary_menu_label') . '</h2>': '';
+
   if (theme_get_setting('use_action_menu') && !isset($vars['mobile'])) {
-    $html = '  <ul id="action-menu" class="' . $classes . '">';
+    $html = '<h2 class="element-invisible">Secondary Menu</h2> <ul id="action-menu" class="' . $classes . '">';
   } else {
     $html = $label . '  <ul class="' . $classes . '">';
   }
@@ -582,7 +594,16 @@ function expressbase_links__system_secondary_menu($vars) {
  */
 function expressbase_links__footer_menu($vars) {
   $classes = join(' ',$vars['attributes']['class']);
-  $html = '<ul id="footer-menu-links" class="' . $classes . '">';
+
+  // Build menu heading.
+  if ( !empty($vars['heading']) && !empty($vars['heading']['text']) && !empty($vars['heading']['level'])  && !empty($vars['heading']['class'])) {
+    $nav_heading = '<' . $vars['heading']['level'] . ' class="' . join(' ', $vars['heading']['class']) . '">' . $vars['heading']['text'] . '</' . $vars['heading']['level'] . '>';
+  }
+  else {
+    $nav_heading = '';
+  }
+
+  $html = $nav_heading . ' <ul id="footer-menu-links" class="' . $classes . '">';
 
   // Add first and last classes to first and last list items
   reset($vars['links']);

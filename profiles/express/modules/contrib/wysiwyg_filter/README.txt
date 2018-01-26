@@ -50,19 +50,28 @@ the URLs).
 INSTALLATION
 ============
 
-- Copy all contents of this package to your modules directory preserving
-  subdirectory structure.
+For module installation instructions please see:
+http://drupal.org/documentation/install/modules-themes/modules-7
 
-- Goto admin/build/modules to install the module.
 
-- Goto admin/settings/filters and create a new input format as follows:
+CONFIGURATION
+=============
 
-  - Input format name: WYSIWYG Filter (or something similar of your choice).
-  - Check the filters: WYSIWYG Filter and HTML Corrector. Save.
-  - Goto Rearrange tab.
-  - Drag the WYSIWYG Filter on top of the HTML Corrector. Save.
-  - Goto the Configure tab of your newly created WYSIWYG Filter and setup the
-    available options to suit your needs.
+After installation you can configure the WYWIWYG filter:
+
+1) On your site visit Admin > Configuration > Text formats (under 'Content
+   authoring'): admin/config/content/formats
+
+2) Add a new text format, or configure the existing text format that you would
+   like to apply the WYSIWYG filter to.
+
+3) Tick the 'WYSIWYG filter' option under 'Enabled filters'.
+
+4) Configure the WYSIWYG filter options to suit your needs under the 'Filter
+   settings' heading and save when done.
+
+Note: Be aware of the 'Filter processing order'. WYSIWYG Filter should normally
+be arranged above the 'HTML Corrector' if it is being used.
 
 
 SECURITY ISSUES

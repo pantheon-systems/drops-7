@@ -31,7 +31,7 @@ ul.tabs--primary li a.block-designer:before { content: "\f1fc"; }
 .exbd-block.exbd-style-tan > .block-inner > *:last-child { margin-bottom: 0; }
 .exbd-block.exbd-style-tan > .block-inner a:link, .exbd-block.exbd-style-tan > .block-inner a:visited { color: #006db1; }
 .exbd-block.exbd-heading-align-centered > .block-inner > .exbd-block-title { text-align: center; }
-.exbd-block.exbd-icon-position-default > .block-inner > .exbd-block-title > .block-title { display: flex; flex-direction: row; align-items: center; }
+.exbd-block.exbd-icon-position-inline > .block-inner > .exbd-block-title > .block-title .exbd-block.exbd-icon-position-default > .block-inner > .exbd-block-title > .block-title { display: flex; flex-direction: row; align-items: center; }
 .exbd-block.exbd-icon-position-top > .block-inner > .exbd-block-title .exbd-block-title-text { display: block; }
 .exbd-block.exbd-icon-position-top > .block-inner > .exbd-block-title .exbd-block-icon { display: inline-block; margin: 0; margin-bottom: 5px; }
 .exbd-block.exbd-icon-position-offset > .block-inner > .content { overflow: hidden; }

@@ -3,7 +3,7 @@ Feature: People Settings
   @api @settings
   Scenario Outline: An site owner/administrator/developer should be able to access the settings people page
   Given  CU - I am logged in as a user with the <role> role
-  When I go to "admin/settings/people/settings"
+  When I am at "admin/settings/people/settings"
   Then I should not see <message>
 
   Examples:

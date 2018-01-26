@@ -894,6 +894,10 @@ function file_entity_theme() {
       'variables' => array(
         'files' => array(),
         'controls' => TRUE,
+        'controls_list' => array(
+          'download' => 'download',
+          'remote_playback' => 'remote_playback',
+        ),
         'autoplay' => FALSE,
         'loop' => FALSE,
         'preload' => NULL,
@@ -904,6 +908,11 @@ function file_entity_theme() {
       'variables' => array(
         'files' => array(),
         'controls' => TRUE,
+        'controls_list' => array(
+          'fullscreen' => 'fullscreen',
+          'download' => 'download',
+          'remote_playback' => 'remote_playback',
+        ),
         'autoplay' => FALSE,
         'loop' => FALSE,
         'muted' => FALSE,
@@ -1141,8 +1150,8 @@ function file_entity_file_formatter_info() {
       'label' => t('Image'),
       'default settings' => array(
         'image_style' => '',
-        'alt' => '[file:field_file_image_alt_text]',
-        'title' => '[file:field_file_image_title_text]'
+        'alt' => '[file:field-file-image-alt-text]',
+        'title' => '[file:field-file-image-title-text]'
       ),
       'view callback' => 'file_entity_file_formatter_file_image_view',
       'settings callback' => 'file_entity_file_formatter_file_image_settings',
@@ -1677,7 +1686,19 @@ function file_entity_access($op, $file = NULL, $account = NULL) {
 
   // $file may be either an object or a file type. Since file types cannot be
   // an integer, use either fid or type as the static cache id.
-  $cache_id = is_object($file) ? $file->fid : $file;
+  $cache_id = NULL;
+  if (is_object($file) && !empty($file->fid)) {
+    $cache_id = $file->fid;
+  }
+  elseif ($op == 'create' && is_string($file)) {
+    $cache_id = $file;
+  }
+  elseif ($op == 'create' && is_object($file) && !empty($file->type)) {
+    $cache_id = $file->type;
+  }
+  else {
+    $cache_id = drupal_hash_base64(serialize($file));
+  }
 
   // If we've already checked access for this file, user and op, return from
   // cache.
@@ -1737,15 +1758,18 @@ function file_entity_access($op, $file = NULL, $account = NULL) {
  * Implements hook_file_entity_access().
  */
 function file_entity_file_entity_access($op, $file, $account) {
-  // If the file URI is invalid, deny access.
-  if (is_object($file) && !file_valid_uri($file->uri)) {
-    return FILE_ENTITY_ACCESS_DENY;
-  }
-
+  // If the op is "create," all that's needed is to check the create permission.
   if ($op == 'create') {
     if (user_access('create files')) {
       return FILE_ENTITY_ACCESS_ALLOW;
     }
+  }
+  // If the file URI is invalid, deny access.
+  if (is_object($file) && isset($file->uri) && !file_valid_uri($file->uri)) {
+    if(isset($file->is_new) && $file->is_new == true && user_access('create files')) {
+      return FILE_ENTITY_ACCESS_ALLOW;
+    }
+    return FILE_ENTITY_ACCESS_DENY;
   }
 
   if (!empty($file)) {
@@ -1794,7 +1818,7 @@ function file_entity_query_file_access_alter(QueryAlterableInterface $query) {
  * access conditions are added for field values belonging to files only.
  */
 function file_entity_query_entity_field_access_alter(QueryAlterableInterface $query) {
-  //_file_entity_query_file_entity_access_alter($query, 'entity');
+  _file_entity_query_file_entity_access_alter($query, 'entity');
 }
 
 /**
@@ -1822,11 +1846,17 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
 
   $tables = $query->getTables();
   $base_table = $query->getMetaData('base_table');
+  // Do not use the base table for general entity queries unless this is
+  // querying the file_managed table directly.
+  if ($base_table && $type == 'entity' && $base_table != 'file_managed') {
+    $base_table = '';
+  }
+
   // If no base table is specified explicitly, search for one.
   if (!$base_table) {
     $fallback = '';
     foreach ($tables as $alias => $table_info) {
-      if (!($table_info instanceof SelectQueryInterface)) {
+      if (!($table_info instanceof SelectQueryInterface || $table_info['table'] instanceof SelectQueryInterface)) {
         $table = $table_info['table'];
         // If the file_managed table is in the query, it wins immediately.
         if ($table == 'file_managed') {
@@ -1853,6 +1883,10 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
               $fallback = $table;
             }
           }
+          elseif (isset($schema['fields']['entity_id']) && isset($schema['fields']['entity_type']) && isset($schema['fields']['deleted']) && isset($schema['fields']['delta'])) {
+            // The table is a field data table, use it as fallback.
+            $base_table = $table;
+          }
         }
       }
     }
@@ -1863,6 +1897,11 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         $base_table = $fallback;
       }
       else {
+        // Ignore this query as it was a general field query and no
+        // relationships were found to the file_managed table.
+        if ($type == 'entity') {
+          return;
+        }
         throw new Exception(t('Query tagged for file access but there is no fid. Add foreign keys to file_managed.fid in schema to fix.'));
       }
     }
@@ -1925,33 +1964,36 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         }
       }
 
-      if ($subquery_conditions->count()) {
+      // If there is no subquery conditions, the query is likely for file usage.
+      // Or user can only access public files.
+      // If there are subquery conditions then add them to the subquery.
+      if ($subquery_conditions->count() >= 1) {
         $subquery->condition($subquery_conditions);
+      }
 
-        $field = 'fid';
-        // Now handle entities.
-        if ($type == 'entity') {
-          // Set a common alias for entities.
-          $base_alias = $falias;
-          $field = 'entity_id';
-        }
-        $subquery->where("$falias.$field = fm_access.fid");
+      $field = 'fid';
+      // Now handle entities.
+      if ($type == 'entity') {
+        // Set a common alias for entities.
+        $base_alias = $falias;
+        $field = ($falias == 'file_managed' ? 'fid' : 'entity_id');
+      }
+      $subquery->where("$falias.$field = fm_access.fid");
 
-        // For an entity query, attach the subquery to entity conditions.
-        if ($type == 'entity') {
-          $file_conditions->exists($subquery);
-        }
-        // Otherwise attach it to the node query itself.
-        elseif ($table == 'file_managed') {
-          // Fix for https://drupal.org/node/2073085
-          $db_or = db_or();
-          $db_or->exists($subquery);
-          $db_or->isNull($falias . '.' . $field);
-          $query->condition($db_or);
-        }
-        else {
-          $query->exists($subquery);
-        }
+      // For an entity query, attach the subquery to entity conditions.
+      if ($type == 'entity') {
+        $file_conditions->exists($subquery);
+      }
+      // Otherwise attach it to the node query itself.
+      elseif ($table == 'file_managed') {
+        // Fix for https://drupal.org/node/2073085
+        $db_or = db_or();
+        $db_or->exists($subquery);
+        $db_or->isNull($falias . '.' . $field);
+        $query->condition($db_or);
+      }
+      else {
+        $query->exists($subquery);
       }
     }
   }
@@ -1959,14 +2001,19 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
   if ($type == 'entity' && $file_conditions->count()) {
     // All the file access conditions are only for field values belonging to
     // files.
-    $file_conditions->condition("$base_alias.entity_type", 'file');
-    $or = db_or();
-    $or->condition($file_conditions);
-    // If the field value belongs to a non-file entity type then this function
-    // does not do anything with it.
-    $or->condition("$base_alias.entity_type", 'file', '<>');
-    // Add the compiled set of rules to the query.
-    $query->condition($or);
+    if ($base_alias !== 'file_managed') {
+      $file_conditions->condition("$base_alias.entity_type", 'file');
+      $or = db_or();
+      $or->condition($file_conditions);
+      // If the field value belongs to a non-file entity type then this function
+      // does not do anything with it.
+      $or->condition("$base_alias.entity_type", 'file', '<>');
+      // Add the compiled set of rules to the query.
+      $query->condition($or);
+    }
+    else {
+      $query->condition($file_conditions);
+    }
   }
 }
 
@@ -2102,7 +2149,9 @@ function file_entity_file_default_types() {
     'label' => t('Document'),
     'description' => t('A <em>Document</em> file is written information.'),
     'mimetypes' => array(
+      'text/html',
       'text/plain',
+      'application/acad',
       'application/msword',
       'application/vnd.ms-excel',
       'application/pdf',
@@ -2113,6 +2162,10 @@ function file_entity_file_default_types() {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'application/x-7z-compressed',
+      'application/x-tar',
+      'application/gzip',
     ),
   );
 
@@ -2479,6 +2532,9 @@ function file_entity_download_uri($file) {
 }
 
 function file_entity_file_get_mimetype_type($file) {
+  if (is_array($file)) {
+    $file = (object) $file;
+  }
   list($type, $subtype) = explode('/', $file->filemime, 2);
   return $type;
 }
@@ -2599,4 +2655,16 @@ function file_entity_features_pipe_file_type_alter(&$pipe, $data, $export) {
   foreach ($data as $file_type) {
     $pipe['variable'][] = "pathauto_file_{$file_type}_pattern";
   }
+}
+
+/**
+ * Implements hook_FORM_ID_alter().
+ */
+function file_entity_form_system_performance_settings_alter(&$form, &$form_state) {
+  $form['bandwidth_optimization']['file_entity_total_count_optimization'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Optimize the calculation of the total usage count of files in the files overview.'),
+    '#default_value' => variable_get('file_entity_total_count_optimization', FALSE),
+    '#description' => t('Recommended if the files admin page loads too slowly due to a high number of files.'),
+  );
 }

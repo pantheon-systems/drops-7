@@ -13,28 +13,8 @@ function linkchecker_admin_settings_form($form_state) {
   $form['settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('General settings'),
+    '#description' => t('Configure the <a href="@url">content types</a> that should be scanned for broken links.', array('@url' => url('admin/structure/types'))),
     '#collapsible' => FALSE,
-  );
-  // @todo node_type_get_names() can return an empty array!?
-  $names = node_type_get_names();
-  $form['settings']['linkchecker_scan_nodetypes'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Scan content types for links'),
-    '#default_value' => variable_get('linkchecker_scan_nodetypes', array()),
-    '#options' => array_map('check_plain', $names),
-    '#description' => t('Enable link checking for the selected content type(s).'),
-  );
-
-  $comment_dependencies = '<div class="admin-requirements">';
-  $comment_dependencies .= t('Requires: !module-list', array('!module-list' => (module_exists('comment') ? t('@module (<span class="admin-enabled">enabled</span>)', array('@module' => 'Comment')) : t('@module (<span class="admin-disabled">disabled</span>)', array('@module' => 'Comment')))));
-  $comment_dependencies .= '</div>';
-
-  $form['settings']['linkchecker_scan_comments'] = array(
-    '#default_value' => variable_get('linkchecker_scan_comments', 0),
-    '#type' => 'checkbox',
-    '#title' => t('Scan comments for links'),
-    '#description' => t('Enable this checkbox if links in comments of the above selected content type(s) should be checked.') . $comment_dependencies,
-    '#disabled' => module_exists('comment') ? FALSE : TRUE,
   );
 
   $block_custom_dependencies = '<div class="admin-requirements">';
@@ -165,10 +145,10 @@ function linkchecker_admin_settings_form($form_state) {
     '#default_value' => variable_get('linkchecker_check_useragent', 'Drupal (+http://drupal.org/)'),
     '#options' => array(
       'Drupal (+http://drupal.org/)' => 'Drupal (+http://drupal.org/)',
-      'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)' => 'Windows 7 (x64), Internet Explorer 9.0',
-      'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0' => 'Windows 7 (x64), Mozilla Firefox 17.0',
-      'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)' => 'Windows 8 (x64), Internet Explorer 10.0',
-      'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0' => 'Windows 8 (x64), Mozilla Firefox 17.0',
+      'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko' => 'Windows 8.1 (x64), Internet Explorer 11.0',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2486.0 Safari/537.36 Edge/13.10586' => 'Windows 10 (x64), Edge',
+      'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0' => 'Windows 8.1 (x64), Mozilla Firefox 47.0',
+      'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0' => 'Windows 10 (x64), Mozilla Firefox 47.0',
     ),
   );
   $form['check']['linkchecker_check_links_interval'] = array(
@@ -318,24 +298,6 @@ function linkchecker_admin_settings_form_submit($form, &$form_state) {
   // Save form settings.
   system_settings_form_submit($form, $form_state);
 
-  // Re-scan items, if node types or comment or custom block selection has been
-  // changed.
-  $additional_nodetypes_selected = array_diff($form_state['values']['linkchecker_scan_nodetypes'], $form['settings']['linkchecker_scan_nodetypes']['#default_value']);
-  if (!empty($additional_nodetypes_selected) || $form_state['values']['linkchecker_scan_comments'] > $form['settings']['linkchecker_scan_comments']['#default_value']) {
-    $node_types = array_keys(array_filter($form_state['values']['linkchecker_scan_nodetypes']));
-
-    // If one or more node types have been selected.
-    if (!empty($node_types)) {
-      module_load_include('inc', 'linkchecker', 'linkchecker.batch');
-      batch_set(_linkchecker_batch_import_nodes($node_types));
-
-      // If comment scanning of node types has been selected.
-      if ($form_state['values']['linkchecker_scan_comments'] > $form['settings']['linkchecker_scan_comments']['#default_value']) {
-        batch_set(_linkchecker_batch_import_comments($node_types));
-      }
-    }
-  }
-
   // If block scanning has been selected.
   if ($form_state['values']['linkchecker_scan_blocks'] > $form['settings']['linkchecker_scan_blocks']['#default_value']) {
     module_load_include('inc', 'linkchecker', 'linkchecker.batch');
@@ -356,13 +318,16 @@ function linkchecker_analyze_links_submit($form, &$form_state) {
   system_settings_form_submit($form, $form_state);
 
   // Start batch and analyze all nodes.
-  $node_types = array_keys(array_filter(variable_get('linkchecker_scan_nodetypes', array())));
+  $node_types = linkchecker_scan_node_types();
   if (!empty($node_types)) {
     module_load_include('inc', 'linkchecker', 'linkchecker.batch');
     batch_set(_linkchecker_batch_import_nodes($node_types));
-    if (variable_get('linkchecker_scan_comments', 0)) {
-      batch_set(_linkchecker_batch_import_comments($node_types));
-    }
+  }
+
+  $comment_types = linkchecker_scan_comment_types();
+  if (!empty($comment_types)) {
+    module_load_include('inc', 'linkchecker', 'linkchecker.batch');
+    batch_set(_linkchecker_batch_import_comments($comment_types));
   }
 
   if (variable_get('linkchecker_scan_blocks', 0)) {
@@ -390,13 +355,16 @@ function linkchecker_clear_analyze_links_submit($form, &$form_state) {
   db_truncate('linkchecker_link')->execute();
 
   // Start batch and analyze all nodes.
-  $node_types = array_keys(array_filter(variable_get('linkchecker_scan_nodetypes', array())));
+  $node_types = linkchecker_scan_node_types();
   if (!empty($node_types)) {
     module_load_include('inc', 'linkchecker', 'linkchecker.batch');
     batch_set(_linkchecker_batch_import_nodes($node_types));
-    if (variable_get('linkchecker_scan_comments', 0)) {
-      batch_set(_linkchecker_batch_import_comments($node_types));
-    }
+  }
+
+  $comment_types = linkchecker_scan_comment_types();
+  if (!empty($comment_types)) {
+    module_load_include('inc', 'linkchecker', 'linkchecker.batch');
+    batch_set(_linkchecker_batch_import_comments($comment_types));
   }
 
   if (variable_get('linkchecker_scan_blocks', 0)) {

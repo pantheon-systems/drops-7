@@ -33,6 +33,9 @@ class LdapUserConfAdmin extends LdapUserConf {
   public $userConflictResolveDefault = LDAP_USER_CONFLICT_RESOLVE_DEFAULT;
   public $userConflictOptions;
 
+  public $accountsWithSameEmailDescription;
+  public $accountsWithSameEmailOptions;
+
   public $acctCreationDescription = '';
   public $acctCreationDefault = LDAP_USER_ACCT_CREATION_LDAP_BEHAVIOR_DEFAULT;
   public $acctCreationOptions;
@@ -161,6 +164,15 @@ class LdapUserConfAdmin extends LdapUserConf {
       '#default_value' => $this->userConflictResolve,
       '#options' => $this->userConflictOptions,
       '#description' => t( $this->userConflictResolveDescription),
+    );
+
+    $form['basic_to_drupal']['accountsWithSameEmail'] = array(
+      '#type' => 'radios',
+      '#title' => t('Existing Account with Same Email Address'),
+      '#default_value' => $this->accountsWithSameEmail,
+      '#options' => $this->accountsWithSameEmailOptions,
+      '#description' => t($this->accountsWithSameEmailDescription),
+      '#disabled' => (module_exists('sharedemail') === FALSE),
     );
 
     $form['basic_to_drupal']['acctCreation'] = array(
@@ -382,7 +394,7 @@ EOT;
       $this->addServerMappingFields($form, $direction);
     }
 
-    foreach (array('orphanedCheckQty', 'orphanedDrupalAcctBehavior', 'acctCreation', 'userConflictResolve', 'drupalAcctProvisionTriggers', 'mappings__' . LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER) as $input_name) {
+    foreach (array('orphanedCheckQty', 'orphanedDrupalAcctBehavior', 'acctCreation', 'userConflictResolve', 'accountsWithSameEmail', 'drupalAcctProvisionTriggers', 'mappings__' . LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER) as $input_name) {
       $form['basic_to_drupal'][$input_name]['#states']['invisible'] =
         array(
           ':input[name=drupalAcctProvisionServer]' => array('value' => 'none'),
@@ -596,6 +608,7 @@ EOT;
 
     $this->manualAccountConflict = $values['manualAccountConflict'];
     $this->userConflictResolve  = ($values['userConflictResolve']) ? (int)$values['userConflictResolve'] : NULL;
+    $this->accountsWithSameEmail = ($values['accountsWithSameEmail']) ? (int)$values['accountsWithSameEmail'] : NULL;
     $this->acctCreation  = ($values['acctCreation']) ? (int)$values['acctCreation'] : NULL;
     $this->disableAdminPasswordField = $values['disableAdminPasswordField'];
    // $this->wsKey  = ($values['wsKey']) ? $values['wsKey'] : NULL;
@@ -741,11 +754,14 @@ EOT;
           ||
           (isset($mapping['configurable_to_ldap']) && $mapping['configurable_to_ldap']  && $direction == LDAP_USER_PROV_DIRECTION_TO_LDAP_ENTRY)
           ) {
-          $user_attr_options[$target_id] = substr($mapping['name'], 0, 25);
+          $user_attr_options[$target_id] = substr($target_id, 1, -1);
         }
       }
     }
-    $user_attr_options['user_tokens'] = '-- user tokens --';
+
+    if ($direction == LDAP_USER_PROV_DIRECTION_TO_LDAP_ENTRY) {
+      $user_attr_options['user_tokens'] = '-- user tokens --';
+    }
 
     $row = 0;
 
@@ -1016,7 +1032,14 @@ EOT;
       LDAP_USER_CONFLICT_RESOLVE => t('Associate Drupal account with the LDAP entry.  This option
       is useful for creating accounts and assigning roles before an LDAP user authenticates.'),
       );
-
+    $values['accountsWithSameEmailDescription'] = t('Allows provisioning a Drupal user account from LDAP regardless of whether another Drupal user account has the same email address. This setting depends on the "sharedemail" contrib module being enabled. ');
+    if (!module_exists('sharedemail')) {
+      $values['accountsWithSameEmailDescription'] .= t('The module is not currently enabled; you must install/enable it if you want to use this setting.');
+    }
+    $values['accountsWithSameEmailOptions'] = array(
+      LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED => t('Prevent provisioning a user account if an existing account has the same email address.'),
+      LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_ENABLED => t('Allow provisioning a user account that has the same email address as another user account.'),
+      );
     $values['acctCreationOptions'] = array(
       LDAP_USER_ACCT_CREATION_LDAP_BEHAVIOR => t('Account creation settings at
         /admin/config/people/accounts/settings do not affect "LDAP Associated" Drupal accounts.'),

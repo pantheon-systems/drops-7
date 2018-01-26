@@ -22,7 +22,7 @@
  */
 ?>
 <?php
-  // Print out the progress bar at the top of the page
+  // Print out the progress bar at the top of the page.
   print drupal_render($form['progressbar']);
 
   // Print out the preview message if on the preview page.

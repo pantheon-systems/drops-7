@@ -1,4 +1,4 @@
-.cu-search-box .search-form-wrapper { display: flex; flex-direction: column-reverse; }
+.cu-search-box .search-form-wrapper { display: flex; flex-direction: column-reverse; margin-bottom: 20px; }
 
 .search-options { display: flex; flex-direction: row; flex-wrap: wrap; font-size: 85%; }
 
@@ -26,7 +26,7 @@
 .cu-search-box .cu-search { display: flex; flex-direction: row; }
 .cu-search-box .cu-search .form-item-search-keys { flex-grow: 1; }
 .cu-search-box .cu-search .form-item, .cu-search-box .cu-search .form-actions { margin: 0; }
-.cu-search-box .cu-search input.form-text { width: 100%; line-height: 40px; height: 40px; padding: 0 8px; background-color: #fff; -webkit-appearance: none; border: none; }
+.cu-search-box .cu-search input.form-text { width: 100%; line-height: 40px; height: 40px; padding: 0 8px; background-color: #fff; -webkit-appearance: none; border-radius: 0; -webkit-border-radius: 0; border: none; }
 .cu-search-box .cu-search .form-submit { line-height: 40px; height: 40px; background: #cfb87c; color: #000; padding: 0 8px; -webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; -webkit-border-radius: 0; -moz-border-radius: 0; border-radius: 0; border: none; -webkit-appearance: none; display: block; margin: 0; }
 
 #block-google-cse-google-cse .gsc-control-cse, #block-google-cse-google-cse .gsc-control-cse .gsc-table-result { font-size: 100%; font: inherit; }
@@ -51,7 +51,7 @@
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gsc-table-result { order: 2; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result a.gs-visibleUrl, #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-visibleUrl { color: #757575; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling a { color: #007bc8; }
-#block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling-original { font-size: 75%; }
+#block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling-original, #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-visibleUrl { font-size: 75%; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-title { height: auto; }
 #block-google-cse-google-cse .gsc-results .gsc-result a.gs-title { color: #007bc8; display: block; text-decoration: none; font-size: 110%; }
 #block-google-cse-google-cse .gsc-results .gsc-result a.gs-title b { font-weight: bold; color: #005c95; }

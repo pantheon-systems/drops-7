@@ -50,16 +50,29 @@ function wysiwyg_filter_filter_wysiwyg_process($text, $filter, $format, $langcod
   // Named entities.
   $text = preg_replace('/&amp;([A-Za-z][A-Za-z0-9]*;)/', '&\1', $text);
 
+  // Preg modifiers:
+  // - x=extended (pattern with comments)
+  // - s=dotall (here for multiline comments)
+  // - m=multiline (so $ only matches EOF)
+  // - u=unicode
   return preg_replace_callback('%
     (
     <(?=[^a-zA-Z!/])  # a lone <
     |                 # or
     <!--.*?-->        # a comment
     |                 # or
-    <[^>]*(>|$)       # a string that starts with a <, up until the > or the end of the string
+    <                 # a string that starts with a <
+    (                 # ...and contains any number of
+      "[^"]*"          # double-quoted strings
+      |
+      \'[^\']*\'       # single-quoted strings
+      |
+      [^"\'>]          # any other char
+    )*
+    (>|$)             # up until the > or the end of the string
     |                 # or
     >                 # just a >
-    )%x', '_wysiwyg_filter_xss_split', $text);
+    )%xsmu', '_wysiwyg_filter_xss_split', $text);
 }
 
 /**
@@ -94,7 +107,7 @@ function _wysiwyg_filter_xss_split($m, $store = FALSE) {
     return '&lt;';
   }
 
-  if (!preg_match('%^<\s*(/\s*)?([a-zA-Z0-9]+)([^>]*)>?|(<!--.*?-->)$%', $string, $matches)) {
+  if (!preg_match('%^<\s*(/\s*)?([a-zA-Z0-9-/]+)([^>]*)>?|(<!--.*?-->)$%', $string, $matches)) {
     // Seriously malformed
     return '';
   }
@@ -103,6 +116,11 @@ function _wysiwyg_filter_xss_split($m, $store = FALSE) {
   $elem = strtolower($matches[2]);
   $attrlist = &$matches[3];
   $comment = &$matches[4];
+
+  // Convert synonyms to the element they get converted to.
+  if (!empty($filter_options['valid_elements'][$elem]) && is_string($filter_options['valid_elements'][$elem])) {
+    $elem = $filter_options['valid_elements'][$elem];
+  }
 
   if (!empty($comment)) {
     // Allow or disallow HTML comments.
@@ -152,13 +170,27 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
     $filter_options = $attr;
     return;
   }
-
   // Shortcuts for filter options.
   $allowed_attributes = &$filter_options['valid_elements'][$element];
   $allowed_properties = &$filter_options['style_properties'];
-  $allowed_style_urls = &$filter_options['style_urls'];
-  $allowed_class_names = &$filter_options['valid_classes'];
-  $allowed_element_ids = &$filter_options['valid_ids'];
+  if ($filter_options['rule_bypass_style_urls']) {
+    $allowed_style_urls = array();
+  }
+  else {
+    $allowed_style_urls = &$filter_options['style_urls'];
+  }
+  $bypass_valid_classes = $filter_options['rule_bypass_valid_classes'];
+  if (!$bypass_valid_classes) {
+    $allowed_class_names = &$filter_options['valid_classes'];
+  }
+  $bypass_valid_ids = $filter_options['rule_bypass_valid_ids'];
+  if ($bypass_valid_ids) {
+    $allowed_element_ids = array('/.*/');
+  }
+  else {
+    $allowed_element_ids = &$filter_options['valid_ids'];
+  }
+
   $nofollow_policy = &$filter_options['nofollow_policy'];
   $nofollow_domains = &$filter_options['nofollow_domains'];
 
@@ -263,13 +295,14 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
   }
 
   // The attribute list ends with a valueless attribute like "selected".
-  if ($mode == 1 && !$skip) {
+  // is_array() ensures this isn't run for synonyms.
+  if ($mode == 1 && !$skip && is_array($attrarr[$attrname])) {
     $attrarr[$attrname] = array();
   }
 
   // Check the current HTML element for required attributes.
   foreach ($allowed_attributes as $attrname => $attrinfo) {
-    if (!empty($attrinfo['required']) && !isset($attrarr[$attrname])) {
+    if (!empty($attrinfo['required']) && empty($attrarr[$attrname]['value'])) {
       // Ignore the whole element if required attribute is not present.
       return FALSE;
     }
@@ -391,13 +424,19 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
         // sign is not allowed, there's no need here to check for bad protocols.
         $dirty_names = array_filter(array_map('trim', explode(' ', decode_entities($attrinfo['value']))));
         $valid_names = array();
-        foreach ($dirty_names as $dirty_name) {
-          foreach ($allowed_class_names as $regexp) {
-            if (preg_match($regexp, $dirty_name)) {
-              $valid_names[] = $dirty_name;
+        if ($bypass_valid_classes) {
+          $valid_names = $dirty_names;
+        }
+        else {
+          foreach ($dirty_names as $dirty_name) {
+            foreach ($allowed_class_names as $regexp) {
+              if (preg_match($regexp, $dirty_name)) {
+                $valid_names[] = $dirty_name;
+              }
             }
           }
         }
+
         if (empty($valid_names)) {
           // Ignore attribute if no class name remains after validation.
           continue;
@@ -426,6 +465,7 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
           // Ignore attribute if it contains invalid value.
           continue;
         }
+
         // Element ID is valid, check_plain result.
         $attrinfo['value'] = check_plain($attrinfo['value']);
       }
@@ -440,6 +480,11 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
         // If this is <a href> element, then check domain name for rel="nofollow" policies in effect.
         if ($element == 'a' && $attrname == 'href' && $nofollow_policy != 'disabled' && !$add_nofollow) {
           $domain_found = FALSE;
+          if ($nofollow_policy == 'whitelist_current') {
+            global $base_url;
+            $parts = parse_url($base_url);
+            $nofollow_domains = array($parts['host']);
+          }
           foreach ($nofollow_domains as $domain) {
             $domain = str_replace('.', '\.', $domain); // escape dots
             if (preg_match('#://.*' . $domain . '([^a-z0-9]|$)#i', $attrinfo['value'])) {
@@ -447,7 +492,8 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
               break;
             }
           }
-          if (($nofollow_policy == 'blacklist' && $domain_found) || ($nofollow_policy == 'whitelist' && !$domain_found)) {
+          $link_is_relative = !parse_url($attrinfo['value'], PHP_URL_HOST);
+          if (($nofollow_policy == 'blacklist' && $domain_found) || (($nofollow_policy == 'whitelist' || $nofollow_policy == 'whitelist_current') && !$domain_found && !$link_is_relative)) {
             $add_nofollow = TRUE;
           }
         }

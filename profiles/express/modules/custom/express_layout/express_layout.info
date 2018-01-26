@@ -18,3 +18,4 @@ dependencies[] = views
 
 files[] = express_layout.context.inc
 files[] = bean.inline_entity_form.inc
+stylesheets[all][] = css/express-layout-admin.css

@@ -14,7 +14,7 @@ function cu_faq_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'additional_settings__active_tab_faqs';
-  $strongarm->value = 'edit-menu';
+  $strongarm->value = 'edit-xmlsitemap';
   $export['additional_settings__active_tab_faqs'] = $strongarm;
 
   $strongarm = new stdClass();
@@ -184,6 +184,16 @@ function cu_faq_strongarm() {
   $strongarm->name = 'pathauto_node_faqs_pattern';
   $strongarm->value = '[node:menu-link:parent:title]/[node:title]';
   $export['pathauto_node_faqs_pattern'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'xmlsitemap_settings_node_faqs';
+  $strongarm->value = array(
+    'status' => '1',
+    'priority' => '0.5',
+  );
+  $export['xmlsitemap_settings_node_faqs'] = $strongarm;
 
   return $export;
 }

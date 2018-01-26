@@ -231,7 +231,8 @@ function _webform_edit_validate_select($element, &$form_state) {
       $line = trim($line);
       if (preg_match('/^\<([^>]*)\>$/', $line, $matches)) {
         $group = $matches[1];
-        $key = NULL; // No need to store group names.
+        // No need to store group names.
+        $key = NULL;
       }
       elseif (preg_match('/^([^|]*)\|(.*)$/', $line, $matches)) {
         $key = $matches[1];
@@ -363,7 +364,7 @@ function _webform_render_select($component, $value = NULL, $filter = TRUE, $subm
   if ($component['extra']['aslist'] && !$component['extra']['multiple'] && $default_value === '') {
     $element['#empty_value'] = '';
     if (strlen($component['extra']['empty_option'])) {
-      $element['#empty_option'] =  $component['extra']['empty_option'];
+      $element['#empty_option'] = $component['extra']['empty_option'];
       $element['#translatable'][] = 'empty_option';
     }
   }
@@ -377,8 +378,8 @@ function _webform_render_select($component, $value = NULL, $filter = TRUE, $subm
     $value = $component['extra']['multiple'] ? array_filter(array_map('trim', explode(',', $default_value)), 'strlen') : $default_value;
   }
 
-  // Convert all values into an array; component may now be single but was previously multiple, or vice-versa
-  $value = (array)$value;
+  // Convert all values into an array; component may now be single but was previously multiple, or vice-versa.
+  $value = (array) $value;
 
   // Set the default value. Note: "No choice" is stored as an empty string,
   // which will match a 0 key for radios; NULL is used to avoid unintentional
@@ -395,7 +396,7 @@ function _webform_render_select($component, $value = NULL, $filter = TRUE, $subm
     $option_value = reset($value);
     $element['#default_value'] = $option_value === '' ? NULL : $option_value;
   }
-  
+
   if ($component['extra']['other_option'] && module_exists('select_or_other')) {
     // Set display as a select_or_other element:
     $element['#type'] = 'select_or_other';
@@ -550,7 +551,7 @@ function _webform_submit_select($component, $value) {
         // Checkboxes submit an integer value of 0 when unchecked. A checkbox
         // with a value of '0' is valid, so we can't use empty() here.
         if ($option_value === 0 && !$component['extra']['aslist'] && $component['extra']['multiple']) {
-          // Don't save unchecked values
+          // Don't save unchecked values.
         }
         else {
           $return[] = $option_value;
@@ -563,7 +564,7 @@ function _webform_submit_select($component, $value) {
       }
     }
 
-    // If no elements are selected, then save an empty string to indicate that this components should not be defaulted again
+    // If no elements are selected, then save an empty string to indicate that this components should not be defaulted again.
     if (!$return) {
       $return = array('');
     }
@@ -695,7 +696,6 @@ function _webform_analysis_select($component, $sids = array(), $single = FALSE, 
     $rows = $ordered_rows;
   }
 
-
   // Add a row for displaying the total unknown or user-entered values.
   if ($component['extra']['other_option']) {
     $count_query->addExpression('COUNT(*)', 'datacount');
@@ -762,8 +762,8 @@ function _webform_action_set_select($component, &$element, &$form_state, $value)
   // Set the value as an array for multiple select or single value otherwise.
   if ($element['#type'] == 'checkboxes') {
     $checkbox_values = $element['#options'];
-    array_walk($checkbox_values, function(&$value, $key) use($value) {
-      $value = (int)(strval($key) === $value);
+    array_walk($checkbox_values, function (&$option_value, $key) use ($value) {
+      $option_value = (int) (strval($key) === $value);
     });
   }
   else {
@@ -831,7 +831,7 @@ function _webform_csv_data_select($component, $export_options, $value) {
     foreach ($options as $key => $item) {
       // Strict search is needed to avoid a key of 0 from matching an empty
       // value.
-      $index = array_search((string)$key, (array)$value, TRUE);
+      $index = array_search((string) $key, (array) $value, TRUE);
       if ($index !== FALSE) {
         if ($export_options['select_format'] == 'separate') {
           $return[] = 'X';
@@ -867,7 +867,6 @@ function _webform_csv_data_select($component, $export_options, $value) {
 
   return $return;
 }
-
 
 /**
  * Implements _webform_options_component().
@@ -1004,6 +1003,7 @@ function _webform_select_options_callback($name, $component, $flat = FALSE) {
  *   Text to be converted into a select option array.
  * @param bool $flat
  *   Optional. If specified, return the option array and exclude any optgroups.
+ *
  * @return array
  *   An array of options suitable for use as a #options property. Note that
  *   values are not filtered and may contain tokens. Individual values should be
@@ -1023,7 +1023,7 @@ function _webform_select_options_from_text($text, $flat = FALSE) {
     $group = NULL;
     foreach ($rows as $option) {
       $option = trim($option);
-      /**
+      /*
        * If the Key of the option is within < >, treat as an optgroup
        *
        * <Group 1>

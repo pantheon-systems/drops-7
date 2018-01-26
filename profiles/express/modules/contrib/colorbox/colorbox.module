@@ -44,7 +44,7 @@ function colorbox_theme() {
         'node' => NULL,  // Left for legacy support.
         'field' => array(),
         'display_settings' => array(),
-        'delta' => null,
+        'delta' => NULL,
       ),
       'file' => 'colorbox.theme.inc',
     ),
@@ -167,7 +167,7 @@ function _colorbox_doheader() {
     return; // Don't add the JavaScript and CSS multiple times.
   }
 
-  // Insert options and translated strings as javascript settings.
+  // Insert options and translated strings as JavaScript settings.
   if (variable_get('colorbox_custom_settings_activate', 0)) {
     $js_settings = array(
       'transition' => variable_get('colorbox_transition_type', 'elastic'),
@@ -183,6 +183,7 @@ function _colorbox_doheader() {
       'next' => strip_tags(variable_get('colorbox_text_next', 'Next »')),
       'close' => strip_tags(variable_get('colorbox_text_close', 'Close')),
       'overlayClose' => variable_get('colorbox_overlayclose', 1) ? TRUE : FALSE,
+      'returnFocus' => variable_get('colorbox_returnfocus', 1) ? TRUE : FALSE,
       'maxWidth' => variable_get('colorbox_maxwidth', '98%'),
       'maxHeight' => variable_get('colorbox_maxheight', '98%'),
       'initialWidth' => variable_get('colorbox_initialwidth', '300'),
@@ -364,11 +365,18 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
   // Allow users to hide or set a custom recursion limit.
   // The module token_tweaks sets a global recursion limit that can not be bypassed.
   if (module_exists('token') && $recursion_limit = min(variable_get('token_tree_recursion_limit', 3), variable_get('colorbox_token_recursion_limit', 3))) {
+    // File entities do not have $field, only $instance.
+    if (!empty($field)) {
+      $token_types = array_merge(array_keys($field['bundles']), array('file'));
+    }
+    else {
+      $token_types = array($instance['entity_type'], 'file');
+    }
     $element['colorbox_token'] = array(
       '#type' => 'fieldset',
       '#title' => t('Replacement patterns'),
       '#theme' => 'token_tree',
-      '#token_types' => array_merge(array_keys($field['bundles']),array('file')),
+      '#token_types' => $token_types,
       '#recursion_limit' => $recursion_limit,
       '#dialog' => TRUE,
       '#states' => array(

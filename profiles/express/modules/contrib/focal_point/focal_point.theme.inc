@@ -13,7 +13,7 @@
  * @param array $variables
  *   This expects the same attributes as theme_image_style with the following
  *   one addition:
- *    - focal_point
+ *    - focal_point.
  *
  * @return string
  *   The rendered HTML of the image in question.
@@ -48,7 +48,8 @@ function theme_focal_point_image_style($variables) {
  * about a shifted focal point to markup when necessary.
  *
  * @param array $variables
- *   An associative array containing the same attributes as theme_image_resize_summary,
+ *   An associative array containing the same attributes as
+ *   theme_image_resize_summary,
  *   but with added support for the shift_x and shift_y values.
  *
  * @return string

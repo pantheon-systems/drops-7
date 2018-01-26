@@ -3,7 +3,7 @@ Feature: People
 @api @people
 Scenario Outline: An authenticated user should be able to access the form for adding person content
     Given  CU - I am logged in as a user with the <role> role
-    When I go to "node/add/person"
+    When I am at "node/add/person"
     Then I should not see <message>
 
     Examples:
@@ -16,13 +16,13 @@ Scenario Outline: An authenticated user should be able to access the form for ad
 @api @people
 Scenario: An anonymous user should not be able to access the form for adding person content
   Given I am an anonymous user
-  When I go to "node/add/person"
+  When I am on "node/add/person"
   Then I should see "Access denied"
 
 @api @people
 Scenario Outline: An authenticated user should be able to access the form for adding people list page content
     Given  CU - I am logged in as a user with the <role> role
-    When I go to "node/add/people-list-page"
+    When I am at "node/add/people-list-page"
     Then I should not see <message>
 
     Examples:
@@ -35,7 +35,7 @@ Scenario Outline: An authenticated user should be able to access the form for ad
 @api @people
 Scenario: An anonymous user should not be able to access the form for adding people list page content
   Given I am an anonymous user
-  When I go to "node/add/people-list-page"
+  When I am on "node/add/people-list-page"
   Then I should see "Access denied"
 
 @api @people
@@ -68,7 +68,7 @@ Scenario: Content editors can create person nodes
     And I select "List" from "edit-field-people-list-display-und"
     And I select "Show" from "edit-field-people-pos-filter-show-und"
   When I press the "Save" button
-    And I go to "people"
+    And I am at "people"
   Then I should see "Staff Person"
     And I should see "Faculty Person"
     And I should see a "select" element
@@ -78,7 +78,7 @@ Scenario: Content editors can create person nodes
     And fill in "Title" with "Faculty People"
     And I check the box "Faculty"
   When I press the "Save" button
-    And I go to "faculty-people"
+    And I am at "faculty-people"
   Then I should not see "Staff Person"
     And I should see "Faculty Person"
 
@@ -87,7 +87,7 @@ Scenario: Content editors can create person nodes
     And fill in "Title" with "Staff People"
     And I check the box "Staff"
   When I press the "Save" button
-    And I go to "staff-people"
+    And I am at "staff-people"
   Then I should see "Staff Person"
     And I should not see "Faculty Person"
 
@@ -96,7 +96,7 @@ Scenario: Content editors can create person nodes
     And fill in "Title" with "Department One People"
     And I check the box "Department One"
   When I press the "Save" button
-    And I go to "department-one-people"
+    And I am at "department-one-people"
   Then I should see "Staff Person"
     And I should not see "Faculty Person"
 
@@ -105,7 +105,7 @@ Scenario: Content editors can create person nodes
     And fill in "Title" with "Department Two People"
     And I check the box "Department Two"
   When I press the "Save" button
-    And I go to "department-two-people"
+    And I am at "department-two-people"
   Then I should not see "Staff Person"
     And I should see "Faculty Person"
 
@@ -121,15 +121,15 @@ Scenario: Content editors can create person nodes
       And fill in "edit-field-person-filter-3-und" with "Filter 3 Term 1, Filter 3 Term 2"
 
     When I press the "Save" button
-    Given I go to "admin/structure/taxonomy/people_filter_1"
+    Given I am at "admin/structure/taxonomy/people_filter_1"
     Then I should see "Filter 1 Term 1"
       And I should see "Filter 1 Term 2"
       And I should not see "Filter 1 Term 1, Filter 1 Term 2"
-    Given I go to "admin/structure/taxonomy/people_filter_2"
+    Given I am at "admin/structure/taxonomy/people_filter_2"
     Then I should see "Filter 2 Term 1"
       And I should see "Filter 2 Term 2"
       And I should not see "Filter 2 Term 1, Filter 2 Term 2"
-    Given I go to "admin/structure/taxonomy/people_filter_3"
+    Given I am at "admin/structure/taxonomy/people_filter_3"
     Then I should see "Filter 3 Term 1"
       And I should see "Filter 3 Term 2"
       And I should not see "Filter 3 Term 1, Filter 3 Term 2"

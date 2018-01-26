@@ -371,10 +371,13 @@ function cu_feature_callout_column_options() {
   return $options;
 }
 
+/**
+ * Implements hook_form_alter().
+ * Add states.
+ */
 function cu_feature_callout_form_bean_form_alter(&$form, &$form_state, $form_id) {
   if (($form['bean']['#value']->type == 'feature_callout')) {
-
-    //
+    $form['#validate'][] = 'cu_feature_callout_form_bean_form_validate';
     $form['field_callout_columns']['#states'] = array(
      'visible' => array(
        array(':input[name="field_callout_style[und]"]' => array('value' => 'columns')),
@@ -389,6 +392,31 @@ function cu_feature_callout_form_bean_form_alter(&$form, &$form_state, $form_id)
        array(':input[name="field_callout_style[und]"]' => array('value' => 'columns')),
        'or',
        array(':input[name="field_callout_style[und]"]' => array('value' => 'cards')),
+     ),
+    );
+  }
+}
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ * Add states.
+*/
+function cu_feature_callout_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if (($entity_form['#entity']->type == 'feature_callout')) {
+    $entity_form['field_callout_columns']['#states'] = array(
+     'visible' => array(
+       array('.field-name-field-callout-style :input' => array('value' => 'columns')),
+       'or',
+       array('.field-name-field-callout-style :input' => array('value' => 'cards')),
+       'or',
+       array('.field-name-field-callout-style :input' => array('value' => 'overlay')),
+     ),
+    );
+    $entity_form['field_callout_image_size']['#states'] = array(
+     'visible' => array(
+       array('.field-name-field-callout-style :input' => array('value' => 'columns')),
+       'or',
+       array('.field-name-field-callout-style :input' => array('value' => 'cards')),
      ),
     );
   }

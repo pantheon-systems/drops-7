@@ -148,7 +148,7 @@
     try {
       if (typeof Drupal.settings.viewsSlideshowPager != "undefined" && typeof Drupal.settings.viewsSlideshowPager[options.slideshowID].top.type != "undefined" && typeof Drupal[Drupal.settings.viewsSlideshowPager[options.slideshowID].top.type].transitionBegin == 'function') {
         Drupal[Drupal.settings.viewsSlideshowPager[options.slideshowID].top.type].transitionBegin(options);
-        if (Drupal.settings.viewsSlideshowPager[options.slideshowID].top.master_pager) {
+        if (Drupal.settings.viewsSlideshowPager[options.slideshowID].top.master_pager === 1) {
           $.each(Drupal.settings.viewsSlideshow, function(i, obj) {
             if (i != options.slideshowID) {
               options.slideshowID = i;
@@ -166,7 +166,7 @@
     try {
       if (typeof Drupal.settings.viewsSlideshowPager != "undefined" && typeof Drupal.settings.viewsSlideshowPager[options.slideshowID].bottom.type != "undefined" && typeof Drupal[Drupal.settings.viewsSlideshowPager[options.slideshowID].bottom.type].transitionBegin == 'function') {
         Drupal[Drupal.settings.viewsSlideshowPager[options.slideshowID].bottom.type].transitionBegin(options);
-        if (Drupal.settings.viewsSlideshowPager[options.slideshowID].bottom.master_pager) {
+        if (Drupal.settings.viewsSlideshowPager[options.slideshowID].bottom.master_pager === 1) {
           $.each(Drupal.settings.viewsSlideshow, function(i, obj) {
             if (i != options.slideshowID) {
               options.slideshowID = i;

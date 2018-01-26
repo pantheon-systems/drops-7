@@ -19,25 +19,20 @@ function cu_update_ping_cron() {
     // The site key is what adds a reported install to useage stats.
     $site_key = drupal_hmac_base64($base_url, drupal_get_private_key());
 
-    if ($modules = drush_get_option('modules')) {
-      $modules_list = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 AND name IN (:modules)", array(':modules' => explode(',', $modules)))->fetchAll();
-    }
-    else {
-      // Get enabled modules of site to report usage of.
-      $modules_list = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1")->fetchAll();
-    }
+    // Get enabled modules that aren't core to ping Drupal.org about.
+    $modules_list = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 AND filename NOT LIKE 'modules/%'")->fetchAll();
 
     // Loop through each module and ping d.o servers.
     foreach ($modules_list as $module) {
 
-      // If a core module, then skip.
-      // I don't think Drupal cares about those, but maybe remove this if that stat helps report usage.
-      if (substr($module->filename, 0, 7) == 'modules') {
-        continue;
-      }
-
       // Parse info file for version.
       $info = drupal_parse_info_file(str_replace('.module', '.info', $module->filename));
+
+      // Profile's come through as a module, but because of the symver trick we use the Express
+      // verion number won't match what's on Drupal.org
+      if ($module->name == 'express') {
+        $info['version'] = '7.x-2.x-dev';
+      }
 
       // This url was gathered from update.fetch.inc#152.
       $url = 'http://updates.drupal.org/release-history/' . $module->name . '/7.x?site_key=' . $site_key . '&version=' . $info['version'] . '&list=' . $module->name;
@@ -52,14 +47,16 @@ function cu_update_ping_cron() {
         $failed_attempts++;
       }
 
-      // Write a watchdog message if all request attempts fail.
-      if ($xml->status_message != 'OK') {
-        watchdog('cu_update_ping', '%module didn\'t successfully ping Drupal\'s update servers.', array('%module', $module->name));
+      // Write a watchdog message if all request succeeds.
+      if ($xml->status_message == 'OK') {
+        watchdog('cu_update_ping', 'Successful ping of Drupal\'s update servers for %module.', array('%module' => $module->name));
         continue;
       }
-
-      // Set time variable on success.
-      variable_set('cu_update_ping_time', REQUEST_TIME);
     }
+
+
+    // Set time variable on success.
+    variable_set('cu_update_ping_time', REQUEST_TIME);
+
   }
 }

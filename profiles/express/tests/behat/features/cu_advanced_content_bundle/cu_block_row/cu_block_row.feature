@@ -3,7 +3,7 @@ Feature: Block Row Block
 @api @block-row-block
 Scenario Outline: An authenticated user should be able to access the form for adding a block row block
     Given  CU - I am logged in as a user with the <role> role
-    When I go to "block/add/block-row"
+    When I am at "block/add/block-row"
     Then I should not see <message>
 
     Examples:

@@ -11,12 +11,13 @@
  * @ingroup views_filter_handlers
  */
 class webform_handler_filter_submission_data extends views_handler_filter_string {
+
   /**
    * This kind of construct makes it relatively easy for a child class
    * to add or remove functionality by overriding this function and
    * adding/removing items from this array.
    */
-  function operators() {
+  public function operators() {
     $operators = parent::operators();
 
     // Add additional operators for date/time ranges.
@@ -37,9 +38,9 @@ class webform_handler_filter_submission_data extends views_handler_filter_string
   }
 
   /**
-   * Build strings from the operators() for 'select' options
+   * Build strings from the operators() for 'select' options.
    */
-  function operator_options($which = 'title') {
+  public function operator_options($which = 'title') {
     $options = parent::operator_options($which);
 
     // Adjust the exposed filter options based on the component selected.
@@ -48,6 +49,7 @@ class webform_handler_filter_submission_data extends views_handler_filter_string
       $cid = $this->view->relationship[$this->options['relationship']]->options['webform_cid'];
 
       if ($nid && $node = $node = node_load($nid)) {
+        module_load_include('inc', 'webform', 'includes/webform.components');
         $component = $node->webform['components'][$cid];
         if (webform_component_feature($component['type'], 'views_range')) {
           $options['='] = t('Is');
@@ -62,7 +64,10 @@ class webform_handler_filter_submission_data extends views_handler_filter_string
     return $options;
   }
 
-  function operator_values($values = 1) {
+  /**
+   *
+   */
+  public function operator_values($values = 1) {
     $options = array();
     foreach ($this->operators() as $id => $info) {
       if (isset($info['values']) && $info['values'] == $values) {
@@ -74,18 +79,25 @@ class webform_handler_filter_submission_data extends views_handler_filter_string
   }
 
   /**
-   * Provide a simple textfield for equality
+   * Provide a simple textfield for equality.
    */
-  function value_form(&$form, &$form_state) {
+  public function value_form(&$form, &$form_state) {
     // TODO: Adjust the exposed filter form based on component form.
     return parent::value_form($form, $form_state);
   }
 
-  function op_greater_than($field) {
+  /**
+   *
+   */
+  public function op_greater_than($field) {
     $this->query->add_where($this->options['group'], $field, $this->value, '>');
   }
 
-  function op_less_than($field) {
+  /**
+   *
+   */
+  public function op_less_than($field) {
     $this->query->add_where($this->options['group'], $field, $this->value, '<');
   }
+
 }

@@ -100,7 +100,7 @@ function modernizr_generate_url() {
   $tests = modernizr_api_list();
 
   // Begin assembling link to re-download Modernizr
-  $link = 'https://modernizr.com/download/#-';
+  $link = 'https://modernizr.com/download/?';
 
   // Pull tests that are currently set.
   $current_tests = _modernizr_current_build();
@@ -138,6 +138,27 @@ function modernizr_generate_url() {
   // above everything. They will be populated later.
   $elements['download_modernizr1']['link'] = array();
   $elements['download_modernizr1']['description'] = array();
+
+  // Give a hint about which file is currently in use and in which directories
+  // we have searched for the file.
+  $file_path = modernizr_get_path();
+  $file_markup = $file_path ? l($file_path, $file_path) : t('No file found');
+  $elements['modernizr_file']['title'] = array(
+    '#type' => 'html_tag',
+    '#value' => t('Currently loaded file'),
+    '#tag' => 'h2',
+  );
+  $elements['modernizr_file']['file'] = array(
+    '#type' => 'markup',
+    '#markup' => $file_markup,
+  );
+  if (!$file_path) {
+    $elements['modernizr_file']['paths'] = array(
+      '#theme' => 'item_list',
+      '#title' => t('Scanned directories'),
+      '#items' => _modernizr_get_paths(),
+    );
+  }
 
   // Create the tests heading render element.
   $elements['tests']['heading-tests'] = array(

@@ -3,8 +3,25 @@
 /**
  * @file
  * The theme system, which controls the output of views slideshow.
+ */
+
+ /**
+ * @defgroup vss_templates Templates
+ * @{
+ * Slideshow and component templates.
  *
- * This just adds a wrapper div to the slideshow.
+ * @see vss_theme
+ * @}
+ */
+
+ /**
+ * @defgroup vss_theme Theme Functions
+ * @{
+ * Theme processing and display generation.
+ *
+ * Most of the logic behind the generation of the slideshow is here.
+ *
+ * @see vss_templates
  */
 
 /**
@@ -40,7 +57,6 @@ function template_preprocess_views_slideshow(&$vars) {
     $settings = $options[$main_frame_module];
     $view = $vars['view'];
     $rows = $vars['rows'];
-    $num_divs = count($rows);
     $vss_id = $view->name . '-' . $view->current_display;
 
     // Give each slideshow a unique id if there are more than one on the page.
@@ -51,6 +67,7 @@ function template_preprocess_views_slideshow(&$vars) {
     }
     else {
       $instances[$vss_id] = 1;
+      $vss_id .= '_1';
     }
 
     // Building our default methods.
@@ -180,7 +197,11 @@ function template_preprocess_views_slideshow(&$vars) {
 /**
  * The current element of the slideshow.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @return string
+ *   The html string for the slideshow element.
  */
 function theme_views_slideshow_main_section($vars) {
   return '<div id="' . $vars['plugin'] . '_main_' . $vars['vss_id'] . '" class="' . $vars['plugin'] . '_main views_slideshow_main">' . $vars['slides'] . '</div>';
@@ -189,7 +210,11 @@ function theme_views_slideshow_main_section($vars) {
 /**
  * Views Slideshow: pager.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @return string
+ *   The html string for the pager widget or an empty string if disabled.
  */
 function theme_views_slideshow_pager_widget_render($vars) {
   if (isset($vars['settings']['hide_on_single_slide']) && $vars['settings']['hide_on_single_slide'] === 1 && count($vars['rows']) < 2) {
@@ -225,6 +250,9 @@ function theme_views_slideshow_pager_widget_render($vars) {
 
 /**
  * Theme pager fields.
+ *
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_pager_fields(&$vars) {
   // Build our JavaScript settings.
@@ -288,7 +316,8 @@ function template_preprocess_views_slideshow_pager_fields(&$vars) {
 /**
  * Views Slideshow: pager item.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_pager_field_item(&$vars) {
   $vars['classes_array'][] = 'views_slideshow_pager_field_item';
@@ -304,7 +333,8 @@ function template_preprocess_views_slideshow_pager_field_item(&$vars) {
 /**
  * Views Slideshow: pager field item field.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_pager_field_field(&$vars) {
   $view = $vars['view'];
@@ -319,7 +349,11 @@ function template_preprocess_views_slideshow_pager_field_field(&$vars) {
 /**
  * Views Slideshow: Controls.
  *
- * @inggroup themeable
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @return string
+ *   The html string for the control widget.
  */
 function theme_views_slideshow_controls_widget_render($vars) {
   // Add JavaScript settings for the controls type.
@@ -354,7 +388,8 @@ function theme_views_slideshow_controls_widget_render($vars) {
 /**
  * The slideshow controls.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_controls_text(&$vars) {
   $module_path = drupal_get_path('module', 'views_slideshow');
@@ -384,7 +419,8 @@ function template_preprocess_views_slideshow_controls_text(&$vars) {
 /**
  * Views Slideshow: "previous" control.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_controls_text_previous(&$vars) {
   $vars['classes_array'][] = 'views_slideshow_controls_text_previous';
@@ -393,7 +429,8 @@ function template_preprocess_views_slideshow_controls_text_previous(&$vars) {
 /**
  * Views Slideshow: "pause" control.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_controls_text_pause(&$vars) {
   $vars['classes_array'][] = 'views_slideshow_controls_text_pause  views-slideshow-controls-text-status-play';
@@ -403,7 +440,8 @@ function template_preprocess_views_slideshow_controls_text_pause(&$vars) {
 /**
  * Views Slideshow: "next" control.
  *
- * @ingroup themeable
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_controls_text_next(&$vars) {
   $vars['classes_array'][] = 'views_slideshow_controls_text_next';
@@ -412,7 +450,11 @@ function template_preprocess_views_slideshow_controls_text_next(&$vars) {
 /**
  * Views Slideshow: Slide Counter.
  *
- * @inggroup themeable
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @return string
+ *   The html string for the counter widget.
  */
 function theme_views_slideshow_slide_counter_widget_render($vars) {
   return theme(views_theme_functions('views_slideshow_slide_counter', $vars['view'], $vars['view']->display[$vars['view']->current_display]), array(
@@ -426,6 +468,9 @@ function theme_views_slideshow_slide_counter_widget_render($vars) {
 
 /**
  * Views Slideshow: slide counter.
+ *
+ * @param array $vars
+ *   Theme variables.
  */
 function template_preprocess_views_slideshow_slide_counter(&$vars) {
   $vars['classes_array'][] = 'views_slideshow_slide_counter';
@@ -433,7 +478,12 @@ function template_preprocess_views_slideshow_slide_counter(&$vars) {
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow().
  */
@@ -442,7 +492,12 @@ function _views_slideshow_preprocess_views_slideshow(&$vars) {
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_pager_fields().
  */
@@ -451,7 +506,15 @@ function _views_slideshow_preprocess_views_slideshow_pager_fields(&$vars) {
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_pager_field_item().
  */
@@ -460,7 +523,12 @@ function _views_slideshow_preprocess_views_slideshow_pager_field_item(&$vars) {
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_controls_text().
  */
@@ -469,7 +537,10 @@ function _views_slideshow_preprocess_views_slideshow_controls_text(&$vars) {
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
  *
  * @see template_preprocess_views_slideshow_controls_text_previous().
  */
@@ -478,7 +549,12 @@ function _views_slideshow_preprocess_views_slideshow_controls_text_previous(&$va
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_controls_text_pause().
  */
@@ -487,7 +563,12 @@ function _views_slideshow_preprocess_views_slideshow_controls_text_pause(&$vars)
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_controls_text_next().
  */
@@ -496,10 +577,19 @@ function _views_slideshow_preprocess_views_slideshow_controls_text_next(&$vars) 
 }
 
 /**
- * Backwards compatability wrapper.
+ * Backwards compatibility wrapper.
+ *
+ * @param array $vars
+ *   Theme variables.
+ *
+ * @deprecated Removed in 3.5 when the hook_theme() implementation was fixed.
  *
  * @see template_preprocess_views_slideshow_slide_counter().
  */
 function _views_slideshow_preprocess_views_slideshow_slide_counter(&$vars) {
   template_preprocess_views_slideshow_slide_counter($vars);
 }
+
+/**
+ * @} End of "defgroup vss_theme".
+ */

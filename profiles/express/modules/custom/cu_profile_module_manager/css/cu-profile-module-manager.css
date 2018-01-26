@@ -6,10 +6,9 @@
   width: 24%;
 }
 .bundle-enable, .atlas-enable-bundle {
-  border-width: 0.5px 0 0.5px 0.5px;
+  border-width: 0 0 0 0.5px;
   border-style: solid;
-  border-image:
-    linear-gradient(to bottom, #cfb87c, rgba(0, 0, 0, 0)) 1 100%;
+  border-color: #ddd;
 }
 .atlas-enable-bundle a.btn {
   margin-top: 5%;

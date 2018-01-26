@@ -2,7 +2,6 @@
   global $base_root;
   global $base_path;
   $url = $base_root . $base_path . 'node/' . $node->nid . '/attachment';
-  $url = preg_replace("/^https:/i", "http:", $url);
 ?>
 
 <?php if(!$page): ?>
@@ -23,7 +22,7 @@
   <?php if (!empty($content['image_styles'])): ?>
     <div class="file-uploads">
       <strong>Image URLs:</strong><br />
-      <?php 
+      <?php
         print render($content['image_styles']);
       ?>
     </div>

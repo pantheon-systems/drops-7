@@ -70,7 +70,7 @@ function cu_related_articles_block_output($view_mode) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid'));
+      $query->fields('n', array('nid', 'created'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for categories
@@ -81,72 +81,132 @@ function cu_related_articles_block_output($view_mode) {
       $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
       $query->fields('tags', array('field_tags_tid'));
       $query->condition('tags.field_tags_tid', $tags, 'in');
-      // Sort newest articles first
-      // If two articles have the same related score, the most recent wins
-      $query->orderBy('created', 'DESC');
       // Get results
-      $results = $query->execute()->fetchCol();
-      // Count occurances of node id - more occurances = more related
-      $occurences = array_count_values($results);
-      // Sort by occurances
-      arsort($occurences);
+      $results = $query->execute()->fetchAll();
+      // Build new array with values of count of node id and created date,
+      // keyed by node id.
+      $results2 = array();
+      foreach ($results as $result) {
+        $count = 1;
+        // If a record of this nid exists, increase the count.
+        if (!empty($results2[$result->nid])) {
+          $count = $results2[$result->nid]['count'] +1;
+        }
+        $results2[$result->nid] = array(
+          'created' => $result->created,
+          'count' => $count,
+          'nid' => $result->nid,
+        );
+      }
+      // Build arrays for array_multisort().
+      $occurrences = array();
+      foreach ($results2 as $key => $row) {
+        $occurrences[$key] = $row['count'];
+      }
+      $dates = array();
+      foreach ($results2 as $key => $row) {
+        $dates[$key] = $row['created'];
+      }
+      // Sort results first by occurrences, then by created date.
+      array_multisort($occurrences, SORT_DESC, $dates, SORT_DESC, $results2);
       // Add node ids to related articles array
-      foreach ($occurences as $key => $occurence) {
-        $related_articles[$key] = $key;
+      foreach ($results2 as $result) {
+        $nid = $result['nid'];
+        $related_articles[$nid] = $nid;
       }
     }
 
     // Query #2 - Categories
-    if (!empty($categories)) {
+    if (!empty($categories) && count($related_articles) < 3) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid'));
+      $query->fields('n', array('nid', 'created'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for categories
       $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
       $query->fields('cats', array('field_article_categories_tid'));
       $query->condition('cats.field_article_categories_tid', $categories, 'in');
-      // Sort newest articles first
-      // If two articles have the same related score, the most recent wins
-      $query->orderBy('created', 'DESC');
       // Get results
-      $results = $query->execute()->fetchCol();
-      // Count occurances of node id - more occurances = more related
-      $occurences = array_count_values($results);
-      // Sort by occurances
-      arsort($occurences);
+      $results = $query->execute()->fetchAll();
+      // Build new array with values of count of node id and created date,
+      // keyed by node id.
+      $results2 = array();
+      foreach ($results as $result) {
+        $count = 1;
+        // If a record of this nid exists, increase the count.
+        if (!empty($results2[$result->nid])) {
+          $count = $results2[$result->nid]['count'] +1;
+        }
+        $results2[$result->nid] = array(
+          'created' => $result->created,
+          'count' => $count,
+          'nid' => $result->nid,
+        );
+      }
+      // Build arrays for array_multisort().
+      $occurrences = array();
+      foreach ($results2 as $key => $row) {
+        $occurrences[$key] = $row['count'];
+      }
+      $dates = array();
+      foreach ($results2 as $key => $row) {
+        $dates[$key] = $row['created'];
+      }
+      // Sort results first by occurrences, then by created date.
+      array_multisort($occurrences, SORT_DESC, $dates, SORT_DESC, $results2);
       // Add node ids to related articles array
-      foreach ($occurences as $key => $occurence) {
-        $related_articles[$key] = $key;
+      foreach ($results2 as $result) {
+        $nid = $result['nid'];
+        $related_articles[$nid] = $nid;
       }
     }
 
     // Query #3 - Tags
-    if (!empty($tags)) {
+    if (!empty($tags) && count($related_articles) < 3) {
       $query = db_select('node', 'n');
       $query->condition('n.type', 'article', '=');
       $query->condition('n.status', 1, '=');
-      $query->fields('n', array('nid'));
+      $query->fields('n', array('nid', 'created'));
       // Don't include current article
       $query->condition('n.nid', $current_nid, '!=');
       // Query for tags
       $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
       $query->fields('tags', array('field_tags_tid'));
       $query->condition('tags.field_tags_tid', $tags, 'in');
-      // Sort newest articles first
-      // If two articles have the same related score, the most recent wins
-      $query->orderBy('created', 'DESC');
       // Get results
-      $results = $query->execute()->fetchCol();
-      // Count occurances of node id - more occurances = more related
-      $occurences = array_count_values($results);
-      // Sort by occurances
-      arsort($occurences);
+      $results = $query->execute()->fetchAll();
+      // Build new array with values of count of node id and created date,
+      // keyed by node id.
+      $results2 = array();
+      foreach ($results as $result) {
+        $count = 1;
+        // If a record of this nid exists, increase the count.
+        if (!empty($results2[$result->nid])) {
+          $count = $results2[$result->nid]['count'] +1;
+        }
+        $results2[$result->nid] = array(
+          'created' => $result->created,
+          'count' => $count,
+          'nid' => $result->nid,
+        );
+      }
+      // Build arrays for array_multisort().
+      $occurrences = array();
+      foreach ($results2 as $key => $row) {
+        $occurrences[$key] = $row['count'];
+      }
+      $dates = array();
+      foreach ($results2 as $key => $row) {
+        $dates[$key] = $row['created'];
+      }
+      // Sort results first by occurrences, then by created date.
+      array_multisort($occurrences, SORT_DESC, $dates, SORT_DESC, $results2);
       // Add node ids to related articles array
-      foreach ($occurences as $key => $occurence) {
-        $related_articles[$key] = $key;
+      foreach ($results2 as $result) {
+        $nid = $result['nid'];
+        $related_articles[$nid] = $nid;
       }
     }
     // If there are related articles, show the top 3.

@@ -174,8 +174,6 @@ function profile_module_manager_get_bundles($status = 'all') {
     $bundles = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
   }
 
-  // Check for _bundle in the machine name, but also look for something in the info file.
-  // This will avoid false positives from contrib?
   foreach ($bundles as $key => $bundle) {
     if (!strpos($bundle->name, '_bundle')) {
       unset($bundles[$key]);
@@ -185,20 +183,15 @@ function profile_module_manager_get_bundles($status = 'all') {
 }
 
 /**
- * Returns an array of core modules.
+ * Returns an array of enabled core and hosting modules.
  *
- * @param string $status
- * @return mixed
+ * @return array
  */
-function profile_module_manager_get_core_modules($status = 'all') {
-  if ($status == 'all') {
-    $core_modules = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND name LIKE '%_core' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
-  }
-  if ($status == 'enabled') {
-    $core_modules = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 AND name LIKE '%_core' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
-  }
+function profile_module_manager_get_additional_dependencies() {
+  $cores = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 AND name LIKE '%_core' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
+  $hosting = db_query("SELECT name, filename FROM {system} WHERE type = 'module' AND status = 1 AND name LIKE '%_hosting' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
 
-  return $core_modules;
+  return array_merge($cores, $hosting);
 }
 
 /**
@@ -212,16 +205,16 @@ function profile_module_manager_build_ideal() {
   $profile_name = drupal_get_profile();
   $profile = install_profile_info($profile_name);
 
-  // Start with the profile
+  // Start with the profile.
   $ideal = isset($profile['dependencies']) ? $profile['dependencies'] : array();
   $ignore = isset($profile['optional-dependencies']) ? $profile['optional-dependencies'] : array();
 
   // Add core dependencies to ideal and ignore arrays.
-  $core_modules = profile_module_manager_get_core_modules('enabled');
-  foreach($core_modules as $core) {
-    // could just replace .module w/ .info from $bundle->filename
-    // which is faster?
-    $path = drupal_get_path('module', $core->name) . '/' . $core->name . '.info';
+  $modules = profile_module_manager_get_additional_dependencies();
+  foreach ($modules as $module) {
+    // Could just replace .module w/ .info from $bundle->filename.
+    // Which is faster?
+    $path = drupal_get_path('module', $module->name) . '/' . $module->name . '.info';
     $info = drupal_parse_info_file($path);
     if (isset($info['dependencies'])) {
       $ideal = array_merge($ideal, $info['dependencies']);
@@ -229,8 +222,8 @@ function profile_module_manager_build_ideal() {
     if (isset($info['optional-dependencies'])) {
       $ignore = array_merge($ignore, $info['optional-dependencies']);
     }
-    // and the core itself
-    $ideal[] = $core->name;
+    // Add the core or hosting module itself.
+    $ideal[] = $module->name;
   }
 
   // Add enabled bundle dependencies to ideal and ignore arrays.

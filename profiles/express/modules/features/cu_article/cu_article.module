@@ -139,6 +139,10 @@ function cu_article_theme_registry_alter(&$theme_registry) {
 function cu_article_preprocess_entity(&$vars) {
   $entity_type = $vars['elements']['#entity_type'];
   $bundle = $vars['elements']['#bundle'];
+
+  // Added following line based on file entity update https://github.com/CuBoulder/express/issues/1635
+  $output = array();
+
   if ($vars['elements']['#bundle'] == 'articles') {
     $content = $vars['content'];
     global $base_url;

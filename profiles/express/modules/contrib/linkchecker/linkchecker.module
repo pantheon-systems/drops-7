@@ -265,7 +265,7 @@ function _linkchecker_link_node_ids($link, $node_author_account = NULL) {
 
   // Exit if all node types are disabled or if the user cannot access content,
   // there is no need to check further.
-  $linkchecker_scan_nodetypes = array_filter(variable_get('linkchecker_scan_nodetypes', array()));
+  $linkchecker_scan_nodetypes = linkchecker_scan_node_types();
   if (empty($linkchecker_scan_nodetypes) || !user_access('access content')) {
     return array();
   }
@@ -369,7 +369,8 @@ function _linkchecker_link_node_ids($link, $node_author_account = NULL) {
 function _linkchecker_link_comment_ids($link, $comment_author_account = NULL) {
   // Exit if comments are disabled or if the user cannot access comments, there
   // is no need to check further.
-  if (!variable_get('linkchecker_scan_comments', 0) || !user_access('access comments')) {
+  $comment_types = linkchecker_scan_comment_types();
+  if (empty($comment_types) || !user_access('access comments')) {
     return array();
   }
 
@@ -619,17 +620,20 @@ function _linkchecker_status_handling(&$response, $link) {
   $response->error = trim(drupal_convert_to_utf8($response->error, 'ISO-8859-1'));
   $response->status_message = trim(drupal_convert_to_utf8($response->status_message, 'ISO-8859-1'));
 
-  // Destination anchors in HTML documents may be specified either by the A
-  // element (naming it with the name attribute), or by any other element
-  // (naming with the id attribute).
+  // Destination anchors in HTML documents may be specified either by:
+  // - the A element (naming it with the name attribute)
+  // - or by any other element (naming with the id attribute)
+  // - and must not contain a key/value pair as these type of hash fragments are
+  //   typically used by AJAX applications to prevent additionally HTTP requests
+  //   e.g. http://www.example.com/ajax.html#key1=value1&key2=value2
+  // - and must not contain '/' or ',' as this are not normal anchors.
+  // - and '#top' is a reserved fragment that must not exist in a page.
   // See http://www.w3.org/TR/html401/struct/links.html
-  //
-  // Notes:
-  // - '#top' is a reserved fragment that must not exist in a page.
   if ($response->code == 200
     && !empty($response->data)
     && !empty($response->headers['content-type'])
     && !empty($response->uri['fragment'])
+    && preg_match('/=|\/|,/', $response->uri['fragment']) == FALSE
     && !in_array($response->uri['fragment'], array('#top'))
     && in_array($response->headers['content-type'], array('text/html', 'application/xhtml+xml', 'application/xml'))
     && !preg_match('/(\s[^>]*(name|id)(\s+)?=(\s+)?["\'])(' . preg_quote($response->uri['fragment'], '/') . ')(["\'][^>]*>)/i', $response->data)
@@ -889,6 +893,14 @@ function _linkchecker_status_handling(&$response, $link) {
 }
 
 /**
+ * Implements hook_node_type_delete().
+ */
+function linkchecker_node_type_delete($info) {
+  variable_del('linkchecker_scan_node_' . $info->type);
+  variable_del('linkchecker_scan_comment_' . $info->type);
+}
+
+/**
  * Implements hook_node_prepare().
  */
 function linkchecker_node_prepare($node) {
@@ -924,7 +936,7 @@ function linkchecker_node_insert($node) {
   }
 
   // The node is going to be published.
-  if (_linkchecker_scan_nodetype($node->type) && $node->status == NODE_PUBLISHED) {
+  if (variable_get('linkchecker_scan_node_' . $node->type, FALSE) && $node->status == NODE_PUBLISHED) {
     _linkchecker_add_node_links($node);
   }
 }
@@ -941,7 +953,7 @@ function linkchecker_node_update($node) {
   }
 
   // The node is going to be published.
-  if (_linkchecker_scan_nodetype($node->type) && $node->status == NODE_PUBLISHED) {
+  if (variable_get('linkchecker_scan_node_' . $node->type, FALSE) && $node->status == NODE_PUBLISHED) {
     _linkchecker_add_node_links($node);
   }
   else {
@@ -963,7 +975,7 @@ function linkchecker_comment_delete($comment) {
 function linkchecker_comment_insert($comment) {
   // The comment is going to be published.
   $node_type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $comment->nid))->fetchField();
-  if (_linkchecker_scan_nodetype($node_type) && variable_get('linkchecker_scan_comments', 0) && $comment->status == COMMENT_PUBLISHED) {
+  if (variable_get('linkchecker_scan_comment_' . $node_type, FALSE) && $comment->status == COMMENT_PUBLISHED) {
     _linkchecker_add_comment_links($comment);
   }
 }
@@ -974,7 +986,7 @@ function linkchecker_comment_insert($comment) {
 function linkchecker_comment_update($comment) {
   // The node is going to be published.
   $node_type = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $comment->nid))->fetchField();
-  if (_linkchecker_scan_nodetype($node_type) && variable_get('linkchecker_scan_comments', 0) && $comment->status == COMMENT_PUBLISHED) {
+  if (variable_get('linkchecker_scan_comment_' . $node_type, FALSE) && $comment->status == COMMENT_PUBLISHED) {
     _linkchecker_add_comment_links($comment);
   }
   else {
@@ -1016,6 +1028,69 @@ function linkchecker_form_alter(&$form, &$form_state, $form_id) {
       // Add custom submit handler to custom block delete form.
       $form['#submit'][] = 'linkchecker_block_custom_delete_form_submit';
       break;
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function linkchecker_form_node_type_form_alter(&$form, $form_state) {
+  if (isset($form['type'])) {
+    $form['#submit'][] = 'linkchecker_node_type_form_submit';
+    $form['linkchecker'] = array(
+      '#title' => t('Link checker'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'additional_settings',
+      '#attached' => array(
+        'js' => array(drupal_get_path('module', 'linkchecker') . '/linkchecker-node-form.js'),
+      ),
+    );
+    $form['linkchecker']['linkchecker_scan_node'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Scan content'),
+      '#description' => t('Enables link checking for this content type.'),
+      '#default_value' => variable_get('linkchecker_scan_node_' . $form['#node_type']->type, FALSE),
+    );
+    if (module_exists('comment')) {
+      $form['linkchecker']['linkchecker_scan_comment'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Scan comments'),
+        '#description' => t('Enables link checking for comments.'),
+        '#default_value' => variable_get('linkchecker_scan_comment_' . $form['#node_type']->type, FALSE),
+      );
+    }
+  }
+}
+
+/**
+ * Submit handler for linkchecker_form_node_type_form_alter().
+ */
+function linkchecker_node_type_form_submit($form, $form_state) {
+  $original_linkchecker_state = $form['linkchecker']['linkchecker_scan_node']['#default_value'];
+  // Default to TRUE if comment module isn't enabled, we don't care.
+  $original_linkchecker_comment_state = TRUE;
+  if (module_exists('comment')) {
+    $original_linkchecker_comment_state = $form['linkchecker']['linkchecker_scan_comment']['#default_value'];
+  }
+  $values = $form_state['values'];
+  $loaded = FALSE;
+  $node_type = $form['#node_type']->type;
+  if (!$original_linkchecker_state && $values['linkchecker_scan_node']) {
+    // We need to scan this node-type now.
+    module_load_include('inc', 'linkchecker', 'linkchecker.batch');
+    batch_set(_linkchecker_batch_import_nodes(array($node_type)));
+    $loaded = TRUE;
+  }
+  // Use !empty here for when comment module isn't enabled and there is no
+  // field.
+  if (!$original_linkchecker_comment_state && !empty($values['linkchecker_scan_comment'])) {
+    // We need to scan comments for this node-type now.
+    if (!$loaded) {
+      module_load_include('inc', 'linkchecker', 'linkchecker.batch');
+    }
+    batch_set(_linkchecker_batch_import_comments(array($node_type)));
   }
 }
 
@@ -1778,7 +1853,7 @@ function _linkchecker_replace_fields($entity_type, $bundle_name, $entity, $old_u
  */
 function _linkchecker_cleanup_links() {
   // Remove disabled node types no longer in use.
-  $node_types = array_keys(array_filter(variable_get('linkchecker_scan_nodetypes', array())));
+  $node_types = linkchecker_scan_node_types();
   if (!empty($node_types)) {
     $subquery1 = db_select('node', 'n')
       ->fields('n', array('nid'))
@@ -1799,7 +1874,8 @@ function _linkchecker_cleanup_links() {
 
   // Remove comment link references if comment scanning is disabled.
   // @todo Remove comments of unpublished nodes.
-  if (variable_get('linkchecker_scan_comments', 0) == 0) {
+  $comment_types = linkchecker_scan_comment_types();
+  if (empty($comment_types)) {
     db_truncate('linkchecker_comment')->execute();
   }
 
@@ -2444,25 +2520,35 @@ function _linkchecker_isvalid_response_code($code) {
 }
 
 /**
- * Should the defined node type scanned for links?
+ * Return all content type enable with link checking.
  *
- * @param string $node_type
- *   Verifies if the node type is enabled for link checks and should be scanned.
- *
- * @return bool
- *   TRUE if node type should be scanned, otherwise FALSE.
+ * @return array
+ *   An array of node type names, keyed by the type.
  */
-function _linkchecker_scan_nodetype($node_type = NULL) {
-
-  $enabled = FALSE;
-  $node_types = array_keys(array_filter(variable_get('linkchecker_scan_nodetypes', array())));
-
-  // Scan specific node types only.
-  if (in_array($node_type, $node_types)) {
-    $enabled = TRUE;
+function linkchecker_scan_node_types() {
+  $types = array();
+  foreach (node_type_get_names() as $type => $name) {
+    if (variable_get('linkchecker_scan_node_' . $type, FALSE)) {
+      $types[$type] = $type;
+    }
   }
+  return $types;
+}
 
-  return $enabled;
+/**
+ * Return all content type enable with comment link checking.
+ *
+ * @return array
+ *   An array of node type names, keyed by the type.
+ */
+function linkchecker_scan_comment_types() {
+  $types = array();
+  foreach (node_type_get_names() as $type => $name) {
+    if (variable_get('linkchecker_scan_comment_' . $type, FALSE)) {
+      $types[$type] = $type;
+    }
+  }
+  return $types;
 }
 
 /**

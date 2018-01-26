@@ -139,8 +139,8 @@ define('LDAP_MORE_RESULTS_TO_RETURN', 0x5f);
 define('LDAP_CLIENT_LOOP', 0x60);
 define('LDAP_REFERRAL_LIMIT_EXCEEDED', 0x61);
 
-require_once('ldap_servers.functions.inc');
-require_once('ldap_servers.tokens.inc');
+require_once dirname(__FILE__) . '/ldap_servers.functions.inc';
+require_once dirname(__FILE__) . '/ldap_servers.tokens.inc';
 
 /**
  * Implements hook_init().
@@ -254,11 +254,6 @@ function ldap_servers_theme() {
     ),
     'ldap_servers_server' => array(
       'variables' => array('ldap_server' => NULL, 'actions' => FALSE, 'type' => 'detail'),
-      'render element' => 'element',
-      'file' => 'ldap_servers.theme.inc'
-    ),
-     'ldap_servers_https_required' => array(
-      'variables' => array('site_name' => NULL, 'site_mail' => FALSE, 'site_contact_link' => FALSE),
       'render element' => 'element',
       'file' => 'ldap_servers.theme.inc'
     ),
@@ -802,26 +797,6 @@ function ldap_servers_convert_attribute($value, $conversion = NULL) {
   return $value;
 }
 
-
-/**
- * disable a logon form if ldap preferences exclude http logon forms
- *
- * @param drupal logon form array $form
- */
-function ldap_servers_disable_http_check(&$form) {
-
-  if (variable_get('ldap_servers_require_ssl_for_credentials', 0) == 1 && !drupal_is_https()) {
-
-    $tokens = array(
-      'site_name' => variable_get('site_name', 'this site'),
-      'site_mail' =>  variable_get('site_mail', ''),
-      );
-
-    drupal_set_message(t(theme('ldap_servers_https_required', $tokens)), 'error');
-    $form['#disabled'] = TRUE;
-  }
-}
-
 function ldap_servers_ldap_extension_summary($op = 'data') {
   ldap_servers_module_load_include('inc', 'ldap_servers', 'ldap_servers.status');
   return _ldap_servers_ldap_extension_summary($op);
@@ -864,8 +839,6 @@ function ldap_servers_help($path, $arg) {
    case 'admin/help#ldap_servers':
       $servers_help .= '<h3>' . t('Configuration - Settings') . '</h3>';
       $servers_help .= '<dl>';
-      $servers_help .= '<dt>' . t('REQUIRE HTTPS ON CREDENTIAL PAGES') . '</dt>';
-      $servers_help .= '<dd>' . t('If checked, modules using LDAP will not allow credentials to be entered on or submitted to HTTP pages, only HTTPS. This option should be used with an approach to get all logon forms to be HTTPS.') . '</dd>';
       $servers_help .= '<dt>' . t('ENCRYPTION') . '</dt>';
       $servers_help .= '<dd>' . t('With encryption enabled, passwords will be stored in encrypted form. This is two way encryption because the actual password needs to used to bind to LDAP. So it offers minimal defense if someone gets in the filespace. It mainly helps avoid the accidental discovery of a clear text password.') . '</dd>';
       $servers_help .= '<dt>' . t('LOG DETAILED LDAP ACTIONS') . '</dt>';

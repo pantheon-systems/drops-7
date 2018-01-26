@@ -131,7 +131,7 @@ function responsive_preview_get_devices_list() {
         'attributes' => array(
           'class' => array('responsive-preview-configure'),
         ),
-        'html' => FALSE,
+      'html' => FALSE,
       )
     );
     $links['configure_link'] = array(

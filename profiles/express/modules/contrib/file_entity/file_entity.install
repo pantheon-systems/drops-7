@@ -239,6 +239,7 @@ function file_entity_uninstall() {
   // Remove variables.
   variable_del('file_entity_max_filesize');
   variable_del('file_entity_default_allowed_extensions');
+  variable_del('file_entity_default_file_directory');
   variable_del('file_entity_alt');
   variable_del('file_entity_title');
   variable_del('file_entity_allow_insecure_download');
@@ -960,7 +961,10 @@ function file_entity_update_7211() {
       ),
     ),
   );
-  db_create_table('file_metadata', $schema);
+
+  if (!db_table_exists('file_metadata')) {
+    db_create_table('file_metadata', $schema);
+  }
 }
 
 /**

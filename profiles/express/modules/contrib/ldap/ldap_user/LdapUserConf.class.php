@@ -70,6 +70,17 @@ class LdapUserConf {
   public $userConflictResolve = LDAP_USER_CONFLICT_RESOLVE_DEFAULT;
 
   /**
+   * Whether to allow/disallow provisioning accounts that have the same email.
+   * Depending on whether the "sharedemail" module is enabled, this variable
+   * will (by default) be set accordingly.  It can be overridden by an admin.
+   *
+   * @var int
+   *    LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED (0)
+   *    LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_ENABLED (1)
+   */
+  public $accountsWithSameEmail = LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED;
+
+  /**
    * drupal account creation model
    *
    * @var int
@@ -181,6 +192,7 @@ class LdapUserConf {
     'orphanedDrupalAcctBehavior',
     'orphanedCheckQty',
     'userConflictResolve',
+    'accountsWithSameEmail',
     'manualAccountConflict',
     'acctCreation',
     'ldapUserSynchMappings',
@@ -231,6 +243,9 @@ class LdapUserConf {
     }
     else {
       $this->inDatabase = FALSE;
+      // By default this variable should be 0 if the "sharedemail" module
+      // is not enabled, or 1 if the module is.
+      $this->accountsWithSameEmail = (int)module_exists('sharedemail');
     }
     // determine account creation configuration
     $user_register = variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
@@ -1078,7 +1093,7 @@ class LdapUserConf {
             );
             return FALSE;
           }
-          if ($account_with_same_email = user_load_by_mail($user_edit['mail'])) {
+          if(($this->accountsWithSameEmail == LDAP_USER_ACCOUNTS_WITH_SAME_EMAIL_DISABLED) && ($account_with_same_email = user_load_by_mail($user_edit['mail']))) {
             $watchdog_tokens['%email'] = $user_edit['mail'];
             $watchdog_tokens['%duplicate_name'] = $account_with_same_email->name;
             watchdog('ldap_user', 'LDAP user %drupal_username has email address

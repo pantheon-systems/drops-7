@@ -10,7 +10,7 @@
 function cu_facebook_activity_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-facebook_activity-field_fb_like_faces'
+  // Exported field_instance: 'bean-facebook_activity-field_fb_like_faces'.
   $field_instances['bean-facebook_activity-field_fb_like_faces'] = array(
     'bundle' => 'facebook_activity',
     'default_value' => array(
@@ -48,7 +48,7 @@ function cu_facebook_activity_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-facebook_activity-field_fb_url'
+  // Exported field_instance: 'bean-facebook_activity-field_fb_url'.
   $field_instances['bean-facebook_activity-field_fb_url'] = array(
     'bundle' => 'facebook_activity',
     'default_value' => NULL,

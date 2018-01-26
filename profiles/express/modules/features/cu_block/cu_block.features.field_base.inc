@@ -10,7 +10,7 @@
 function cu_block_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_block_photo'
+  // Exported field_base: 'field_block_photo'.
   $field_bases['field_block_photo'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -33,7 +33,7 @@ function cu_block_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_block_text'
+  // Exported field_base: 'field_block_text'.
   $field_bases['field_block_text'] = array(
     'active' => 1,
     'cardinality' => 1,

@@ -78,7 +78,7 @@ function hook_file_formatter_info() {
  *   Array of information on file formatters exposed by
  *   hook_file_formatter_info() implementations.
  */
-function hook_file_formatter_info_alter(&$info) {
+function hook_file_formatter_info_alter(array &$info) {
   // @todo Add example.
 }
 
@@ -170,7 +170,7 @@ function hook_file_operations() {
  *   - "delete"
  *   - "update"
  *   - "view"
- *   - "download"
+ *   - "download".
  * @param object $file
  *   The file on which the operation is to be performed, or, if it does
  *   not yet exist, the type of file to be created.
@@ -178,7 +178,7 @@ function hook_file_operations() {
  *   A user object representing the user for whom the operation is to be
  *   performed.
  *
- * @return string|NULL
+ * @return string|null
  *   FILE_ENTITY_ACCESS_ALLOW if the operation is to be allowed;
  *   FILE_ENTITY_ACCESS_DENY if the operation is to be denied;
  *   FILE_ENTITY_ACCESS_IGNORE to not affect this operation at all.
@@ -377,7 +377,7 @@ function hook_file_type($file) {
  * @param object $file
  *   File object.
  */
-function hook_file_type_alter(&$types, $file) {
+function hook_file_type_alter(array &$types, $file) {
   // Choose a specific, non-first, file type.
   $types = array($types[4]);
 }

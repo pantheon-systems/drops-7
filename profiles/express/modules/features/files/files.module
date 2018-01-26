@@ -47,7 +47,7 @@ function files_menu() {
     'access callback' => 'node_access',
     'access arguments' => array('view', 1),
   );
-  
+
   $items['node/%node/large'] = array(
     'title' => 'Authoritative Attachment',
     'description' => 'The canonical or "lightest" attached file.',
@@ -57,7 +57,7 @@ function files_menu() {
     'access callback' => 'node_access',
     'access arguments' => array('view', 1),
   );
-  
+
   $items['node/%node/medium'] = array(
     'title' => 'Authoritative Attachment',
     'description' => 'The canonical or "lightest" attached file.',
@@ -67,7 +67,7 @@ function files_menu() {
     'access callback' => 'node_access',
     'access arguments' => array('view', 1),
   );
-  
+
   $items['node/%node/small'] = array(
     'title' => 'Authoritative Attachment',
     'description' => 'The canonical or "lightest" attached file.',
@@ -89,7 +89,7 @@ function files_image_style_retrieve($node, $type) {
   }
   // Grab the files from the current node for the selected field.
   $files = field_get_items('node', $node, $file_field_name);
-  
+
   // If we have files, continue, else return 404.
   if (!empty($files)) {
     $file = reset($files);
@@ -110,11 +110,11 @@ function files_image_style_retrieve($node, $type) {
 
 /**
  * Implements hook_preprocess_node().
- * 
+ *
  * Adds image style aliases for image files
  */
 function files_preprocess_node(&$vars) {
-  
+
   if ($vars['node']->type == 'file') {
     global $base_root;
     global $base_path;
@@ -132,7 +132,6 @@ function files_preprocess_node(&$vars) {
         foreach ($styles as $style_name => $style) {
           //$url = image_style_url($style_name, $file_object->uri);
           $url = $base_root . $base_path . 'node/' . $vars['nid'] . '/' . $style_name;
-          $url = preg_replace("/^https:/i", "http:", $url);
           $output .= '<p>' . $style . '<br />' . l($url, $url) . '</p>';
         }
         $vars['content']['image_styles'][0]['#markup'] = $output;
@@ -169,9 +168,9 @@ function files_node_delete($node) {
  */
 function files_node_view($node, $view_mode) {
   switch($node->type) {
-    case 'file':	
-      if ($view_mode == 'full') { 
-        $redirect = 'node/' . $node->nid . '/attachment';     
+    case 'file':
+      if ($view_mode == 'full') {
+        $redirect = 'node/' . $node->nid . '/attachment';
         if (user_access('edit any file content')) {
           drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
               array('!redirect' => l($redirect, $redirect))),

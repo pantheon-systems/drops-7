@@ -2,7 +2,7 @@
 
 /**
  * @file
- *   Provides several different handlers for exporting webform results.
+ * Provides several different handlers for exporting webform results.
  */
 
 /**
@@ -10,7 +10,7 @@
  *
  * Defines the exporters this module implements.
  *
- * @return
+ * @return array
  *   An "array of arrays", keyed by content-types. The 'handler' slot
  *   should point to the PHP class implementing this flag.
  */
@@ -47,6 +47,7 @@ function webform_webform_exporters() {
 
   // The new Excel exporter is only available if ZipArchive is available.
   if (!class_exists('ZipArchive')) {
+    drupal_set_message(t('@format downloads are not available because this install of PHP lacks Zip archive support.', array('@format' => $exporters['excel']['title'])), 'warning');
     unset($exporters['excel']);
   }
   // By default the legacy Excel exporter is disabled.
@@ -79,7 +80,8 @@ function webform_export_fetch_definition($format = NULL) {
     drupal_alter('webform_exporters', $cache);
     foreach ($cache as $key => $exporter) {
       $cache[$key] += array('weight' => 0);
-      $cache[$key]['name'] = $key; // Used in sorting.
+      // Used in sorting.
+      $cache[$key]['name'] = $key;
     }
     uasort($cache, '_webform_components_sort');
   }

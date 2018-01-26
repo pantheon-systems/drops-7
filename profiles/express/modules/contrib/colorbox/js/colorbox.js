@@ -1,3 +1,8 @@
+/**
+ * @file
+ * Colorbox module init js.
+ */
+
 (function ($) {
 
 Drupal.behaviors.initColorbox = {

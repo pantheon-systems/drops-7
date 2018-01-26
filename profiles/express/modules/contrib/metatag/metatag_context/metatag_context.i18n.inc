@@ -64,10 +64,15 @@ function metatag_context_i18n_object_info() {
 
     // Build a suitable structure for this meta tag.
     $tag_name = $tag_info['name'];
-    $tag_group = $tag_info['group'];
-    $group_label = isset($groups[$tag_group]['label']) ? $groups[$tag_group]['label'] : $tag_group;
+    $title = $tag_info['label'];
+    if (!empty($tag_info['group'])) {
+      $tag_group = $tag_info['group'];
+      $group_label = !empty($groups[$tag_group]['label']) ? $groups[$tag_group]['label'] : $tag_group;
+      $title = $group_label . ': '. $title;
+    }
+
     $info['metatag_context']['string translation']['properties'][$tag_name] = array(
-      'title' => $group_label . ': ' . $tag_info['label'],
+      'title' => $title,
       'field' => "reactions.metatag_context_reaction.und.{$tag_name}.value",
     );
   }

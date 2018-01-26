@@ -2,11 +2,10 @@
 
 /**
  * @file
- * webform_analysis view definition.
+ * View definition webform_analysis.
  */
 
-// --- Paste exported view below ---
-
+// --- Paste exported view below ---.
 $view = new view();
 $view->name = 'webform_analysis';
 $view->description = 'Limit submissions for the webform node\'s analysis. Query must have sid as a field. Don\'t duplicate sids in result.';
@@ -56,6 +55,5 @@ $translatables['webform_analysis'] = array(
   t('All'),
 );
 
-// --- Paste exported view above ---
-
+// --- Paste exported view above ---.
 $views[$view->name] = $view;

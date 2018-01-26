@@ -11,9 +11,9 @@ scripts[] = google_cse.js
 stylesheets[all][] = google_cse.css
 
 
-; Information added by Drupal.org packaging script on 2017-05-04
-version = "7.x-3.0-alpha1+1-dev"
+; Information added by Drupal.org packaging script on 2017-10-30
+version = "7.x-3.0-alpha1+4-dev"
 core = "7.x"
 project = "google_cse"
-datestamp = "1493920389"
+datestamp = "1509396486"
 

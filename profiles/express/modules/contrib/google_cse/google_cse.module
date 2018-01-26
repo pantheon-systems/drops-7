@@ -31,16 +31,53 @@ function google_cse_help($path, $arg) {
  */
 function google_cse_menu() {
 
-  $items['admin/config/search/cse-settings'] = array(
-    'title' => 'Configure Google CSE',
-    'description' => '',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('google_cse_admin_settings'),
-    'file' => 'google_cse.admin.inc',
-    'access arguments' => array('administer search'),
+  // If no Search module in core, then we need to make our own admin page.
+  if (!module_exists('search')) {
+
+//    $items = array();
+
+    $items['admin/config/search/cse-settings'] = array(
+      'title' => 'Configure Google CSE',
+      'description' => '',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('google_cse_admin_settings'),
+      'file' => 'google_cse.admin.inc',
+      'access arguments' => array('administer Google CSE'),
+    );
+  }
+
+  $items['admin/config/search/export-cse'] = array(
+    'title' => 'Google CSE XML',
+    'description' => 'Export custom search engine code',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'google_cse_render_xml',
+    'access callback' => 'google_cse_render_xml_access',
   );
 
   return $items;
+}
+
+///**
+// * Returns xml with only the settings in google-cse-xml.tpl
+// */
+function google_cse_render_xml() {
+  $cse_array = explode(":", variable_get('google_cse_cx'));
+  $cse_variables = array(
+    "cse_creator" => $cse_array[0],
+    "cse_id" => $cse_array[1],
+    "title" => variable_get('google_cse_name'),
+  );
+
+  print theme('google_cse_xml', array('node' => $cse_variables));
+}
+
+//
+///**
+// * Checks content types that configured to allow the nodes be rendered as PBCore xml.
+// */
+function google_cse_render_xml_access() {
+
+    return TRUE;
 }
 
 /**
@@ -111,11 +148,15 @@ function google_cse_theme($existing, $type, $theme, $path) {
     'google_cse_results' => array(
       'variables' => array('form' => FALSE, 'path' => $path),
       'file' => 'google_cse.theme.inc',
-      'template' => 'google_cse_results',
+      'template' => 'templates/google_cse_results',
     ),
     // Shows a message when the search does not return any result.
     'google_cse_search_noresults' => array(
       'variables' => array(),
+    ),
+    'google_cse_xml' => array(
+      'template' => 'templates/google_cse_export',
+      'variables' => array('node' => NULL),
     ),
   );
 }
@@ -161,11 +202,10 @@ function google_cse_permission() {
     'search Google CSE' => array(
       'title' => t('Use Google CSE search'),
     ),
+    'administer Google CSE' => array(
+      'title' => t('Administer Google CSE search'),
+    ),
   );
-
- if (!module_exists('search')) {
-    $perms['administer search'] = array('title' => t('Administer search'));
-  }
 
   return $perms;
 }

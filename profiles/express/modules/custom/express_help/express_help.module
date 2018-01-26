@@ -68,12 +68,11 @@ function express_help_navbar() {
         ),
       ),
     ),
-    '#weight' => 100,
+    '#weight' => 101,
     '#wrapper_attributes' => array(
       'class' => array('pull-right'),
     ),
   );
-
   return $items;
 }
 

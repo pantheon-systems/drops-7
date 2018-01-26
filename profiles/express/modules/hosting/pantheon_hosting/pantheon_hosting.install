@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for pantheon_hosting module.
+ */
+
+/**
+ * Implemenets hook_enable().
+ */
+function pantheon_hosting_enable() {
+
+}

@@ -1,0 +1,26 @@
+engines:
+  phpmd:
+    enabled: true
+    config:
+      file_extensions: "php,inc,module,install"
+      rulesets: ".phpmd.xml"
+    checks:
+      Controversial/Superglobals:
+        enabled: false
+  phpcodesniffer:
+    enabled: true
+    config:
+      file_extensions: "php,inc,module,install"
+      encoding: utf-8
+      standard: "Drupal"
+      ignore_warnings: true
+ratings:
+  paths:
+  - "modules/custom"
+  - "modules/features"
+exclude_paths:
+- "**.scss"
+- "libraries/"
+- "tests/"
+- "modules/contrib/"
+- "**.tpl.php"

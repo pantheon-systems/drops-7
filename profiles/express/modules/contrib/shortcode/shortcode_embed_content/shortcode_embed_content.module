@@ -171,7 +171,7 @@ function shortcode_embed_content_shortcode_node($attrs, $text) {
 
 function shortcode_embed_content_node_tip($format, $long) {
   $output = '';
-  $output = '<p><strong>[embed_content nid=nodeid (class="additional class")/]</strong> ';
+  $output = '<p><strong>[embed_content nid=nodeid (class="additional class")][/embed_content]</strong> ';
   if ($long) {
     $output .= 'Embed a node by nid into the text. Additional class names can be added by the <em>class</em> parameter.</p>';
   }

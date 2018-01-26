@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Template for printing out the contents of the "Analysis" tab on a Webform.

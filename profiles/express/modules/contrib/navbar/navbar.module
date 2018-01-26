@@ -1211,3 +1211,12 @@ function navbar_modernizr_info() {
 
   return $tests;
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Clear cache so shortcut menu displays properly when switched.
+ * This should be more targeted, but only thing that has worked so far.
+ */
+function navbar_form_shortcut_set_switch_alter(&$form, &$form_values, $form_id) {
+  $form['#submit'][] = 'drupal_flush_all_caches';
+}

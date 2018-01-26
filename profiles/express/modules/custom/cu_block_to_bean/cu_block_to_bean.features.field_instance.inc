@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * cu_block_to_bean.features.field_instance.inc

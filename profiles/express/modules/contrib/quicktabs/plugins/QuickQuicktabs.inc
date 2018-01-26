@@ -33,9 +33,17 @@ class QuickQuicktabs extends QuickRenderer {
           'divs' => array(),
         ),
       );
+      
 
+    
       // If in ajax mode, we'll only be rendering one tab, otherwise all of them.
-      $tabs_to_render = $settings['ajax'] ? array($active_tab => $contents[$active_tab]) : $contents;
+      if ($settings['ajax']){
+        // check in case of $active_tab=QUICKTABS_DELTA_NONE
+        $tabs_to_render = isset ($contents[$active_tab]) ? array($active_tab => $contents[$active_tab]) : array ();
+      }else{
+        $tabs_to_render = $contents;
+      }
+    
       foreach ($tabs_to_render as $key => $tab) {
         if (!empty($tab)) {
           $attribs = array(
@@ -141,8 +149,34 @@ class QuickQuicktabs extends QuickRenderer {
   protected function construct_link_options($tabkey) {
     $qt_name = $this->quickset->getName();
     $settings = $this->quickset->getSettings();
+    $contents = $this->quickset->getContents();
+    $tab_type = $contents[$tabkey]->getType();
+    $tab_unique_keys = $contents[$tabkey]->getUniqueKeys();
+    $tab_settings = $contents[$tabkey]->getSettings();
 
     $id = 'quicktabs-tab-' . implode('-', array($qt_name, $tabkey));
+    $classes = array(
+      'quicktabs-tab',
+      'quicktabs-tab-' . $tab_type,
+    );
+    // Generate unique class for the quicktab.
+    $key_contents = array();
+    foreach ($tab_unique_keys as $key) {
+      if (isset($tab_settings[$key])) {
+        $key_content = $tab_settings[$key];
+        $key_content = str_replace(array( '_', ' ' ), '-', $key_content);
+        $key_content = preg_replace('/[^A-Za-z0-9\-]/', '', $key_content);
+        $key_contents[] = $key_content;
+      }
+    }
+    $suffix = implode('-', $key_contents);
+    // Encode class suffixes longer than 50 as hash using md5.
+    if (strlen($suffix) > 50) {
+      $suffix = md5($suffix);
+    }
+    if (strlen($suffix) > 0) {
+      $classes[] = 'quicktabs-tab-' . $tab_type . '-' . $suffix;
+    }
 
     // Need to construct the correct querystring for the tab links.
     $query = drupal_get_query_parameters(NULL, array("qt-$qt_name", 'q', 'page'));
@@ -151,6 +185,7 @@ class QuickQuicktabs extends QuickRenderer {
     $link_options = array(
       'attributes' => array(
         'id' => $id,
+        'class' => $classes,
       ),
       'query' => $query,
       'fragment' => 'qt-' . $qt_name,

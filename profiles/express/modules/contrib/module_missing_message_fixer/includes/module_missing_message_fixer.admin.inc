@@ -5,22 +5,11 @@
  * The Missing Module Message Fixer Admin Settings file.
  */
 
-include_once 'module_missing_message_fixer.helpers.inc';
-
 /**
  * Missing Module Message Fixer Form.
  */
 function module_missing_message_fixer_form() {
   $form = array();
-
-  // Set the header.
-  $header = array(
-    'name' => 'Name',
-    'type' => 'Type',
-    'filename' => 'Filename',
-  );
-
-  $rows = _module_missing_message_fixer_check_modules();
 
   // Fancy title string.
   $title = t('This list comes from the system table and is checked against the drupal_get_filename() function. See <a href="@link" target="_blank">this issue</a> for more information.', array(
@@ -45,8 +34,8 @@ function module_missing_message_fixer_form() {
   // Set the tables select to make this more granular.
   $form['table'] = array(
     '#type' => 'tableselect',
-    '#header' => $header,
-    '#options' => $rows,
+    '#header' => _module_missing_message_fixer_get_table_header(),
+    '#options' => _module_missing_message_fixer_get_table_rows(),
     '#empty' => t('No Missing Modules Found!!!'),
   );
 
@@ -55,9 +44,12 @@ function module_missing_message_fixer_form() {
 
 /**
  * Submit handler for Missing Module Message Fixer Form.
+ *
+ * @param array $form
+ * @param array $form_state
  */
-function module_missing_message_fixer_form_submit($form, &$form_state) {
-  $module = array();
+function module_missing_message_fixer_form_submit(array $form, array &$form_state) {
+  $modules = array();
   // Go through each record and add it to the array to win.
   foreach ($form_state['values']['table'] as $module) {
     $modules[] = $module;

@@ -100,7 +100,7 @@
         $currentForm.bind('change', {'settings': settings}, Drupal.webform.conditionalCheck);
 
         // Trigger all the elements that cause conditionals on this form.
-        Drupal.webform.doConditions($form, settings);
+        Drupal.webform.doConditions($currentForm, settings);
       });
     });
   };
@@ -149,7 +149,7 @@
     }
 
     /**
-     * Adds a rule's result to the current sub-condtional.
+     * Adds a rule's result to the current sub-conditional.
      */
     function executionStackAccumulate(result) {
       resultStack[stackPointer]['results'].push(result);
@@ -164,7 +164,7 @@
       // Pop stack and protect against stack underflow.
       stackPointer = Math.max(0, stackPointer - 1);
       var $conditionalResults = stackFrame['results'];
-      var filteredResults = $.map($conditionalResults, function(val) {
+      var filteredResults = $.map($conditionalResults, function (val) {
         return val ? val : null;
       });
       return stackFrame['andor'] === 'or'
@@ -188,9 +188,11 @@
             var existingValue = settings.values[elementKey] ? settings.values[elementKey] : null;
             executionStackAccumulate(window['Drupal']['webform'][rule.callback](element, existingValue, rule['value']));
             break;
+
           case 'conditional_start':
             executionStackPush(rule['andor']);
             break;
+
           case 'conditional_end':
             executionStackAccumulate(executionStackPop());
             break;
@@ -209,6 +211,9 @@
                                       : $target.find(':input').addClass('webform-conditional-disabled');
               $targetElements.webformProp('disabled', !actionResult);
               $target.toggleClass('webform-conditional-hidden', !actionResult);
+              // Anything hidden needs to be disabled so that child elements of
+              // fieldsets do not block submission by being required.
+              $target.webformProp('disabled', !actionResult);
               if (actionResult) {
                 $target.show();
               }
@@ -222,6 +227,7 @@
               }
             }
             break;
+
           case 'require':
             var $requiredSpan = $target.find('.form-required, .form-optional').first();
             if (actionResult != $requiredSpan.hasClass('form-required')) {
@@ -240,6 +246,7 @@
               Drupal.attachBehaviors($requiredSpan);
             }
             break;
+
           case 'set':
             var isLocked = targetLocked[action['target']];
             var $texts = $target.find("input:text,textarea,input[type='email']");
@@ -251,13 +258,13 @@
               $texts.val([action['argument']]);
               // A special case is made for markup. It is sanitized with filter_xss_admin on the server.
               // otherwise text() should be used to avoid an XSS vulnerability. text() however would
-              // preclude the use of tags like <strong> or <a>
+              // preclude the use of tags like <strong> or <a>.
               $markups.html(action['argument']);
             }
             else {
               // Markup not set? Then restore original markup as provided in
               // the attribute data-webform-markup.
-              $markups.each(function() {
+              $markups.each(function () {
                 var $this = $(this);
                 var original = $this.data('webform-markup');
                 if (original !== undefined) {
@@ -274,11 +281,11 @@
             break;
         }
       }); // End look on each action for one conditional
-    }); // End loop on each conditional
+    }); // End loop on each conditional.
   };
 
   /**
-   * Event handler to prevent propogation of events, typically click for disabling
+   * Event handler to prevent propagation of events, typically click for disabling
    * radio and checkboxes.
    */
   Drupal.webform.stopEvent = function () {
@@ -493,12 +500,14 @@
 
   /**
    * Utility function to compare values of a select component.
+   *
    * @param string a
    *   First select option key to compare
    * @param string b
    *   Second select option key to compare
    * @param array options
    *   Associative array where the a and b are within the keys
+   *
    * @return integer based upon position of $a and $b in $options
    *   -N if $a above (<) $b
    *   0 if $a = $b
@@ -562,6 +571,7 @@
         case 'array':
           value = existingValue;
           break;
+
         case 'string':
           value.push(existingValue);
           break;

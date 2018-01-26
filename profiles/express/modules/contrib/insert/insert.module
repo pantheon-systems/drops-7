@@ -167,7 +167,6 @@ function insert_element_process($element) {
   }
 
   $item = $element['#value'];
-  $field = field_info_field($element['#field_name']);
   $instance = field_info_instance($element['#entity_type'], $element['#field_name'], $element['#bundle']);
 
   $widget_settings = $instance['widget']['settings'];
@@ -307,7 +306,6 @@ function insert_field_widget_settings_form($field, $instance) {
     '#weight' => -10,
   );
 
-
   $form['insert']['insert_absolute'] = array(
     '#type' => 'radios',
     '#options' => array(
@@ -396,7 +394,7 @@ function theme_insert_field_widget_settings_styles($variables) {
 /**
  * Utility function to create a URL for Insert.
  *
- * This is modeled after file_create_url(), but with the modification that it
+ * This is modelled after file_create_url(), but with the modification that it
  * will consistently use absolute or relative URLs, depending on the Insert
  * setting.
  */

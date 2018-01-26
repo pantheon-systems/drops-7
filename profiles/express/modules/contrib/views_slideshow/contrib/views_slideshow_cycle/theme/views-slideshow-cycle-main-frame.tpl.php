@@ -8,7 +8,7 @@
  * - $classes: Classes.
  * - $rendered_rows: Rendered rows.
  *
- * @ingroup views_templates
+ * @ingroup vss_templates
  */
 ?>
 <div id="views_slideshow_cycle_teaser_section_<?php print $variables['vss_id']; ?>" class="<?php print $classes; ?>">

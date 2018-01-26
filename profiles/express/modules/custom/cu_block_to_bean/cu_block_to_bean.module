@@ -166,6 +166,17 @@ function cu_block_to_bean_form_bean_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ *
+ * Remove title field from wrapper beans.
+ */
+function cu_block_to_bean_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if ($entity_form['#entity']->type == 'block_wrapper') {
+    $entity_form['title']['#access'] = FALSE;
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function cu_block_to_bean_permission() {

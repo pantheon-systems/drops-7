@@ -68,7 +68,7 @@ function focal_point_schema() {
  * @param bool $overwrite
  *   If TRUE, existing focal point data will be overwritten.
  *
- * @return int|NULL
+ * @return int|null
  *   Returns the number of images that were converted or NULL.
  */
 function focal_point_migrate_imagefield_focus_data($overwrite = FALSE) {

@@ -47,6 +47,13 @@ class QuickViewContent extends QuickContent {
       '#default_value' => isset($tab['args']) ? $tab['args'] : '',
       '#description' => t('Additional arguments to send to the view as if they were part of the URL in the form of arg1/arg2/arg3. You may use %0, %1, ..., %N to grab arguments from the URL.'),
     );
+    $form['view']['use_title'] = array(
+      '#type' => 'checkbox',
+      '#return_value'=>TRUE,
+      '#title' => 'Use display title',
+      '#default_value' => isset($tab['use_title']) ? $tab['use_title'] : FALSE,
+      '#description' => t('Should quicktabs use the rendered title of the view?'),
+    );
     return $form;
   }
   
@@ -123,6 +130,9 @@ class QuickViewContent extends QuickContent {
           elseif (!$hide_empty) {
             $output['#markup'] = theme('quicktabs_tab_access_denied', array('tab' => $item));
           }
+          if(isset($this->settings['use_title']) && $this->settings['use_title'] > 0){
+            $this->title=$view->get_title();
+          }
           $view->destroy();
         }
       }
@@ -136,5 +146,9 @@ class QuickViewContent extends QuickContent {
 
   public function getAjaxKeys() {
     return array('vid', 'display', 'view_dom_id', 'view_path', 'ajax_args');
+  }
+
+  public function getUniqueKeys() {
+    return array('vid', 'display');
   }
 }

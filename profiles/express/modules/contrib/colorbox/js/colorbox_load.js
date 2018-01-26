@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Colorbox module load js.
+ */
 (function ($) {
 
 Drupal.behaviors.initColorboxLoad = {
@@ -17,7 +21,7 @@ Drupal.behaviors.initColorboxLoad = {
     $.urlParams = function (url) {
       var p = {},
           e,
-          a = /\+/g,  // Regex for replacing addition symbol with a space
+          a = /\+/g,  // Regex for replacing addition symbol with a space.
           r = /([^&=]+)=?([^&]*)/g,
           d = function (s) { return decodeURIComponent(s.replace(a, ' ')); },
           q = url.split('?');

@@ -10,7 +10,7 @@
 function cu_twitter_feed_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-twitter_block-field_twitter_block_items'
+  // Exported field_instance: 'bean-twitter_block-field_twitter_block_items'.
   $field_instances['bean-twitter_block-field_twitter_block_items'] = array(
     'bundle' => 'twitter_block',
     'default_value' => array(
@@ -50,7 +50,7 @@ function cu_twitter_feed_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-twitter_block-field_twitter_block_user'
+  // Exported field_instance: 'bean-twitter_block-field_twitter_block_user'.
   $field_instances['bean-twitter_block-field_twitter_block_user'] = array(
     'bundle' => 'twitter_block',
     'default_value' => NULL,
@@ -85,7 +85,7 @@ function cu_twitter_feed_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-twitter_block-field_twitter_style'
+  // Exported field_instance: 'bean-twitter_block-field_twitter_style'.
   $field_instances['bean-twitter_block-field_twitter_style'] = array(
     'bundle' => 'twitter_block',
     'default_value' => array(

@@ -102,7 +102,7 @@ function _webform_render_markup($component, $value = NULL, $filter = TRUE, $subm
   return $element;
 }
 
- /**
+/**
  * Helper function to replace tokens in markup component.
  *
  * Required to have access to current form values from $form_state.
@@ -143,7 +143,6 @@ function _webform_render_markup_after_build($form_element, &$form_state) {
   $form_element['#markup'] = $value;
   return $form_element;
 }
-
 
 /**
  * Implements _webform_display_component().

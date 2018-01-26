@@ -250,7 +250,20 @@ function express_block_designer_form($form, &$form_state, $delta) {
     ),
     '#default_value' => isset($settings['exbd_heading_align']) ? $settings['exbd_heading_align'] : 'default',
   );
-  // Heading style.
+  // Heading Style.
+  $form['block_designer_settings']['heading']['exbd_heading_style'] = array(
+    '#title' => 'Heading Style',
+    '#type' => 'select',
+    '#options' => array(
+      'default' => 'Default',
+      'hero' => 'Hero',
+      'hero-bold' => 'Hero Bold',
+      'supersize' => 'Supersize',
+      'supersize-bold' => 'Supersize Bold',
+    ),
+    '#default_value' => isset($settings['exbd_heading_style']) ? $settings['exbd_heading_style'] : 'default',
+  );
+  // Block style.
   $form['block_designer_settings']['style'] = array(
     '#type' => 'fieldset',
     '#title' => 'Block Style',
@@ -455,6 +468,19 @@ function express_block_designer_themes_form($form, &$form_state, $id = NULL) {
       'centered' => 'Centered',
     ),
     '#default_value' => isset($settings['exbd_heading_align']) ? $settings['exbd_heading_align'] : 'left',
+  );
+  // Heading Style.
+  $form['heading']['exbd_heading_style'] = array(
+    '#title' => 'Heading Style',
+    '#type' => 'select',
+    '#options' => array(
+      'default' => 'Default',
+      'hero' => 'Hero',
+      'hero-bold' => 'Hero Bold',
+      'supersize' => 'Supersize',
+      'supersize-bold' => 'Supersize Bold',
+    ),
+    '#default_value' => isset($settings['exbd_heading_style']) ? $settings['exbd_heading_style'] : 'default',
   );
   // Style.
   $form['style'] = array(

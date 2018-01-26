@@ -1,4 +1,5 @@
 Feature: Themes
+  Users should be able to edit and change active themes.
 
 @api @themes @clean_install
 Scenario: As a site_owner I should see all available themes

@@ -1,8 +1,9 @@
 <?php
 
-
 /**
  * @file
+ * Name: focal_point.smartcrop.inc.
+ *
  * Adds functionality to leverage the smartcrop module in order to calculate the
  * focal point of an image. This file will only be included if the smartcrop
  * module is currently enabled.
@@ -58,15 +59,17 @@ function focal_point_smartcrop_estimation(stdClass $image_data) {
   $area_height = $full_height / $slices_count;
 
   $area_entropies = array();
-  for ($i=0 ; $i < $slices_count ; $i++) {
+  for ($i = 0; $i < $slices_count; $i++) {
     $area_entropies[$i] = array();
-    for ($j=0 ; $j < $slices_count ; $j++) {
+    for ($j = 0; $j < $slices_count; $j++) {
       $area_entropies[$i][$j] = _smartcrop_gd_entropy_slice($image_data, round($i * $area_width), round($j * $area_height), $area_width, $area_height);
     }
   }
 
   // We calculate how many areas are needed to get the target width and height.
-  $target_areas_counts = array(ceil(min($target_width / $area_width, $slices_count)), ceil(min($target_height / $area_height, $slices_count)));
+  $target_areas_counts = array(
+    ceil(min($target_width / $area_width, $slices_count)), ceil(min($target_height / $area_height, $slices_count)),
+  );
 
   // We get the adjacent areas that lead to the maximum entropy.
   $best_first_area = _focal_point_smartcrop_get_best_first_area($area_entropies, $target_areas_counts);
@@ -84,7 +87,7 @@ function focal_point_smartcrop_estimation(stdClass $image_data) {
 }
 
 /**
- *  Calculate the best area to use based on its entropy.
+ * Calculate the best area to use based on its entropy.
  */
 function _focal_point_smartcrop_get_best_first_area($area_entropies, $target_areas_counts) {
   $slices_count = count($area_entropies);
@@ -109,8 +112,8 @@ function _focal_point_smartcrop_get_best_first_area($area_entropies, $target_are
  */
 function _focal_point_smartcrop_sum_entropies($area_entropies, $first_area, $target_areas_counts) {
   $entropy = 0;
-  for ($i = 0 ; $i < $target_areas_counts[0] ; $i++) {
-    for ($j = 0 ; $j < $target_areas_counts[1] ; $j++) {
+  for ($i = 0; $i < $target_areas_counts[0]; $i++) {
+    for ($j = 0; $j < $target_areas_counts[1]; $j++) {
       $entropy += $area_entropies[$first_area[0] + $i][$first_area[1] + $j];
     }
   }

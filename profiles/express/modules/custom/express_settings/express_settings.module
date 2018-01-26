@@ -401,12 +401,9 @@ function express_settings_contact_info_form($form, &$form_state) {
     'value' => t('Put your contact information here'),
     'format' => 'wysiwyg',
   ));
-  $form['contact_info'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Contact Information',
-  );
   $form['contact_info']['site_info_body'] = array(
     '#type' => 'text_format',
+    '#title' => 'Contact Information',
     '#default_value' => $site_info_body['value'],
     '#format' => $site_info_body['format'],
     '#required' => FALSE,

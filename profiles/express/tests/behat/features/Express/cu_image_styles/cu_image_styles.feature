@@ -1,11 +1,10 @@
 Feature: CU Image Styles
-  When I log into the website
-  As a developer I should see the proper domensions for image styles
+  As a developer I should see the proper dimensions for image styles.
 
 @api @image-styles
 Scenario Outline: Image styles should be the correct dimensions
   Given  CU - I am logged in as a user with the "developer" role
-  When I go to "admin/config/media/image-styles/edit/<style>"
+  When I am at "admin/config/media/image-styles/edit/<style>"
   Then I should see <message>
 
   Examples:

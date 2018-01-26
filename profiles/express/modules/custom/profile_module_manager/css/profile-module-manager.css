@@ -29,9 +29,9 @@
   height: 300px;
   position: relative;
   padding-left: 1%;
-  border-width: 0.5px 0 0.5px 0.5px;
+  border-width: 0 0 0 0.5px;
   border-style: solid;
-  border-image: linear-gradient(to bottom,#000,rgba(0,0,0,0)) 1 100%;
+  border-color: #ddd;
 }
 .pmm-actions, .bundle-enable-link, .alakazaam, .bundle-enabled {
   bottom: 10%;

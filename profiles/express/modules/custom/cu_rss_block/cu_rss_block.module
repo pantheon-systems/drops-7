@@ -23,6 +23,18 @@ function cu_rss_block_form_bean_form_alter(&$form, &$form_state, $form_id) {
     $form['#validate'][] = '_cu_rss_block_form_validate';
   }
 }
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ * Add validation to make sure url returns XML.
+*/
+function cu_rss_block_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+
+  if ($entity_form['#entity']->type == 'rss') {
+    $entity_form['#element_validate'][] = '_cu_rss_block_form_validate_ief';
+  }
+}
+
 /**
  * Validation function for cu_rss_block_form_bean_form_alter().
  * Check to see if url entered returns valid XML.
@@ -37,6 +49,24 @@ function _cu_rss_block_form_validate($form, &$form_state) {
     }
   } else {
     form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+  }
+}
+
+/**
+ * Validation function for cu_rss_block_inline_entity_form_entity_form_alter().
+ * Check to see if url entered returns valid XML.
+ */
+function _cu_rss_block_form_validate_ief($entity_form, &$form_state) {
+  $entity_values = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
+  $url = $entity_values['field_rss_bean_feed_url'][LANGUAGE_NONE][0]['url'];
+  $response = drupal_http_request($url);
+  if ($response->code == '200') {
+    $is_xml = simplexml_load_string($response->data);
+    if($is_xml===FALSE) {
+      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+    }
+  } else {
+    form_error($entity_form['field_rss_bean_feed_url'], t('This is not a valid RSS feed.'));
   }
 }
 
@@ -65,17 +95,25 @@ function cu_rss_block_preprocess_entity(&$vars) {
       $response = drupal_http_request($url);
       if ($response->code == '200') {
 
-        // remove <![CDATA[]]>
-        $xml = preg_replace_callback('/<!\[CDATA\[(.*)\]\]>/', '_cu_rss_block_cdata_filter', $response->data);
+        // Check to see if feed is still valid.
+        $is_xml = simplexml_load_string($response->data);
+        if($is_xml===FALSE) {
+          $watchdog_message = 'Feed is not valid: ' . $url;
+          watchdog('cu_rss_block', $watchdog_message, array(), WATCHDOG_NOTICE, NULL);
+        }
+        else {
+          // remove <![CDATA[]]>
+          $xml = preg_replace_callback('/<!\[CDATA\[(.*)\]\]>/', '_cu_rss_block_cdata_filter', $response->data);
 
-        // Create new XMLElement
-        $data = new SimpleXMLElement($xml);
+          // Create new XMLElement
+          $data = new SimpleXMLElement($xml);
 
-        // Convert into a nice array for us to work with.
-        $data = json_encode($data);
-        $data = json_decode($data, true);
-        // Save to cache for 30 minutes
-        cache_set('rss_feed-' . $url, $data, 'cache', time() + 60 * 30);
+          // Convert into a nice array for us to work with.
+          $data = json_encode($data);
+          $data = json_decode($data, true);
+          // Save to cache for 30 minutes
+          cache_set('rss_feed-' . $url, $data, 'cache', time() + 60 * 30);
+        }
       }
     }
     // If the feed only contains a single item

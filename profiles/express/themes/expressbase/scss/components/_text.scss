@@ -422,7 +422,11 @@ strong {
     font-weight: 600;
   }
 }
-.hero {
+.hero,
+h2.hero,
+h3.hero,
+.exbd-heading-style-hero > .block-inner > .exbd-block-title > .block-title,
+.exbd-heading-style-hero-bold > .block-inner > .exbd-block-title > .block-title {
   font-size:200%;
   line-height: 1.3;
   font-weight: 100;
@@ -430,13 +434,24 @@ strong {
     font-weight: 900;
   }
 }
-.supersize {
+.exbd-heading-style-hero-bold > .block-inner > .exbd-block-title > .block-title {
+  font-weight: 900;
+}
+
+.supersize,
+h2.supersize,
+h3.supersize,
+.exbd-heading-style-supersize > .block-inner > .exbd-block-title > .block-title,
+.exbd-heading-style-supersize-bold > .block-inner > .exbd-block-title > .block-title {
   font-size:320%;
   line-height: 1.3;
   font-weight: 100;
   strong {
     font-weight: 900;
   }
+}
+.exbd-heading-style-supersize-bold > .block-inner > .exbd-block-title > .block-title {
+  font-weight: 900;
 }
 // Breadcumbs
 .breadcrumb {

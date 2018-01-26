@@ -114,7 +114,7 @@ class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
     // Confirm each of the support locales has its own field and the appropriate
     // default value.
     foreach ($this->supportedLocales() as $langcode) {
-      $this->assertFieldByName("metatags[{$form_langcode}][hreflang_{$langcode}][value]", "[node:url-{$langcode}]", format_string('Found the hreflang field for the "%lang" locale and it has the correct default value.', array('%lang' => $langcode)));
+      $this->assertFieldByName("metatags[{$form_langcode}][hreflang_{$langcode}][default]", "[node:url-{$langcode}]", format_string('Found the hreflang field for the "%lang" locale and it has the correct default value.', array('%lang' => $langcode)));
     }
   }
 
@@ -127,7 +127,7 @@ class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
     $this->assertResponse(200);
 
     // Confirm the fields exist.
-    $this->assertHreflangFields();
+    $this->assertHreflangFields('en');
   }
 
   /**

@@ -50,4 +50,5 @@ features[variable][] = node_options_faqs
 features[variable][] = node_preview_faqs
 features[variable][] = node_submitted_faqs
 features[variable][] = pathauto_node_faqs_pattern
+features[variable][] = xmlsitemap_settings_node_faqs
 features[views_view][] = cu_faq

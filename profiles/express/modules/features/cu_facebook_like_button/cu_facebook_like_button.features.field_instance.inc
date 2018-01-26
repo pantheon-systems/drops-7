@@ -10,7 +10,7 @@
 function cu_facebook_like_button_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-facebook_like_button-field_fb_like_faces'
+  // Exported field_instance: 'bean-facebook_like_button-field_fb_like_faces'.
   $field_instances['bean-facebook_like_button-field_fb_like_faces'] = array(
     'bundle' => 'facebook_like_button',
     'default_value' => array(
@@ -48,7 +48,7 @@ function cu_facebook_like_button_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-facebook_like_button-field_fb_url'
+  // Exported field_instance: 'bean-facebook_like_button-field_fb_url'.
   $field_instances['bean-facebook_like_button-field_fb_url'] = array(
     'bundle' => 'facebook_like_button',
     'default_value' => NULL,
@@ -98,7 +98,7 @@ function cu_facebook_like_button_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-facebook_like_button-field_fb_verb'
+  // Exported field_instance: 'bean-facebook_like_button-field_fb_verb'.
   $field_instances['bean-facebook_like_button-field_fb_verb'] = array(
     'bundle' => 'facebook_like_button',
     'default_value' => array(

@@ -84,6 +84,7 @@ ul.tabs--primary li a.block-designer:before {
 
   }
   // Icons Positions
+  &.exbd-icon-position-inline > .block-inner > .exbd-block-title > .block-title
   &.exbd-icon-position-default > .block-inner > .exbd-block-title > .block-title {
     display: flex;
     flex-direction: row;

@@ -11,7 +11,7 @@ that is used within social networks when visitors link to your site,
 particularly the Open Graph submodule for use with Facebook, Pinterest,
 LinkedIn, etc (see below).
 
-This version of the module only works with Drupal 7.28 and newer.
+This version of the module only works with Drupal 7.40 and newer.
 
 For additional information, see the online documentation:
   https://www.drupal.org/docs/7/modules/metatag
@@ -381,6 +381,10 @@ functionality:
 * Parse.ly Publishing Analytics
   https://www.drupal.org/project/parsely
   Automatically generates meta tags for the Parse.ly service.
+
+* Metatag Cxense
+  https://www.drupal.org/project/metatag_cxense
+  Adds support for the Cxense meta tags used by their DMP and Insight services.
 
 
 Credits / contact
