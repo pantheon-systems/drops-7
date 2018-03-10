@@ -16,6 +16,13 @@
   .pane-fieldable-panels-pane {
     margin-bottom: 3em;
   }
+  .panel-hero {
+    .pane-custom,
+    .pane-node-field-image,
+    .pane-fieldable-panels-pane {
+      margin-bottom: 0;
+    }
+  }
 }
 
 h2.pane-title {
@@ -174,6 +181,13 @@ h2.pane-title {
         padding-top: 15%;
       }
     }
+  }
+}
+@media (max-width: 992px) {
+  // Data Stories with visualization embeds have a set height.
+  // Until the height is dynamic we need to pad it a bit on small screens.
+  .panel-pane.pane-visualization-embed {
+    padding-bottom: 5em;
   }
 }
 @media (max-width: 768px) {

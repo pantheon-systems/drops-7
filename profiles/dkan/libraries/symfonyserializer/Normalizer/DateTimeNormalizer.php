@@ -34,7 +34,11 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
         \DateTime::class => true,
     );
 
-    public function __construct(?string $format = \DateTime::RFC3339, \DateTimeZone $timezone = null)
+    /**
+     * @param string             $format
+     * @param \DateTimeZone|null $timezone
+     */
+    public function __construct($format = \DateTime::RFC3339, \DateTimeZone $timezone = null)
     {
         $this->format = $format;
         $this->timezone = $timezone;
@@ -80,7 +84,12 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface
         $timezone = $this->getTimezone($context);
 
         if (null !== $dateTimeFormat) {
-            $object = \DateTime::class === $class ? \DateTime::createFromFormat($dateTimeFormat, $data, $timezone) : \DateTimeImmutable::createFromFormat($dateTimeFormat, $data, $timezone);
+            if (null === $timezone && PHP_VERSION_ID < 70000) {
+                // https://bugs.php.net/bug.php?id=68669
+                $object = \DateTime::class === $class ? \DateTime::createFromFormat($dateTimeFormat, $data) : \DateTimeImmutable::createFromFormat($dateTimeFormat, $data);
+            } else {
+                $object = \DateTime::class === $class ? \DateTime::createFromFormat($dateTimeFormat, $data, $timezone) : \DateTimeImmutable::createFromFormat($dateTimeFormat, $data, $timezone);
+            }
 
             if (false !== $object) {
                 return $object;

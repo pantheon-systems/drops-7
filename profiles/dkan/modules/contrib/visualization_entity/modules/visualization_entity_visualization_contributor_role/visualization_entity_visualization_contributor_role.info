@@ -15,6 +15,3 @@ features[user_role][] = visualization contributor
 features_exclude[dependencies][role_export] = role_export
 project path = sites/all/modules/nucivic/visualization_entity/modules
 
-; Information added by DKAN release script on 11/14/2017
-version = 7.x-1.14
-project = dkan

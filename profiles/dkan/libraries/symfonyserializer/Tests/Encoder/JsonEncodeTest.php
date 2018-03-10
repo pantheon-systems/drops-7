@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 
 class JsonEncodeTest extends TestCase
 {
-    private $encode;
+    private $encoder;
 
     protected function setUp()
     {
@@ -50,6 +50,7 @@ class JsonEncodeTest extends TestCase
     }
 
     /**
+     * @requires function json_last_error_msg
      * @expectedException \Symfony\Component\Serializer\Exception\UnexpectedValueException
      */
     public function testEncodeWithError()

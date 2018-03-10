@@ -425,6 +425,18 @@ function filefield_sources_includes($include = TRUE, $enabled_only = TRUE) {
  * @see hook_file_download().
  */
 function filefield_sources_file_access($uri) {
+  // Always allow access to public files.
+  $scheme = file_uri_scheme($uri);
+  if ($scheme === 'public') {
+    return TRUE;
+  }
+
+  // Or if the current user has the "bypass file access" permission from the
+  // File Entity module, then reuse of any file is permitted.
+  if (user_access('bypass file access')) {
+    return TRUE;
+  }
+
   $headers = array();
   foreach (module_implements('file_download') as $module) {
     $function = $module . '_file_download';
@@ -581,7 +593,17 @@ function filefield_sources_save_file($filepath, $validators = array(), $destinat
   }
 
   // If we made it this far it's safe to record this file in the database.
-  return file_save($file);
+  if ($file = file_save($file)) {
+    // Track non-public files in the session if they were uploaded by an
+    // anonymous user. This allows modules such as the File module to only
+    // grant view access to the specific anonymous user who uploaded the file.
+    // See similar code in file_save_upload().
+    if (!$user->uid && !in_array($destination_scheme, variable_get('file_public_schema', array('public')))) {
+      $_SESSION['anonymous_allowed_file_ids'][$file->fid] = $file->fid;
+    }
+    return $file;
+  }
+  return FALSE;
 }
 
 /**

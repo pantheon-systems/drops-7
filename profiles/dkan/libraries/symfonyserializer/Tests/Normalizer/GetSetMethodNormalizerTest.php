@@ -146,6 +146,9 @@ class GetSetMethodNormalizerTest extends TestCase
         $this->assertEquals('test', $obj->getBar());
     }
 
+    /**
+     * @requires PHP 5.6
+     */
     public function testConstructorDenormalizeWithVariadicArgument()
     {
         $obj = $this->normalizer->denormalize(
@@ -154,6 +157,9 @@ class GetSetMethodNormalizerTest extends TestCase
         $this->assertEquals(array(1, 2, 3), $obj->getFoo());
     }
 
+    /**
+     * @requires PHP 5.6
+     */
     public function testConstructorDenormalizeWithMissingVariadicArgument()
     {
         $obj = $this->normalizer->denormalize(

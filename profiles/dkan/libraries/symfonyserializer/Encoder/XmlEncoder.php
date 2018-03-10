@@ -12,8 +12,6 @@
 namespace Symfony\Component\Serializer\Encoder;
 
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
-use Symfony\Component\Serializer\SerializerAwareInterface;
-use Symfony\Component\Serializer\SerializerAwareTrait;
 
 /**
  * Encodes XML data.
@@ -23,10 +21,8 @@ use Symfony\Component\Serializer\SerializerAwareTrait;
  * @author Fabian Vogler <fabian@equivalence.ch>
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwareInterface, SerializerAwareInterface
+class XmlEncoder extends SerializerAwareEncoder implements EncoderInterface, DecoderInterface, NormalizationAwareInterface
 {
-    use SerializerAwareTrait;
-
     const FORMAT = 'xml';
 
     /**
@@ -44,7 +40,7 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      * @param string   $rootNodeName
      * @param int|null $loadOptions  A bit field of LIBXML_* constants
      */
-    public function __construct(string $rootNodeName = 'response', int $loadOptions = null)
+    public function __construct($rootNodeName = 'response', $loadOptions = null)
     {
         $this->rootNodeName = $rootNodeName;
         $this->loadOptions = null !== $loadOptions ? $loadOptions : LIBXML_NONET | LIBXML_NOBLANKS;
@@ -180,9 +176,15 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         return $this->rootNodeName;
     }
 
-    final protected function appendXMLString(\DOMNode $node, string $val): bool
+    /**
+     * @param \DOMNode $node
+     * @param string   $val
+     *
+     * @return bool
+     */
+    final protected function appendXMLString(\DOMNode $node, $val)
     {
-        if ('' !== $val) {
+        if (strlen($val) > 0) {
             $frag = $this->dom->createDocumentFragment();
             $frag->appendXML($val);
             $node->appendChild($frag);
@@ -193,7 +195,13 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         return false;
     }
 
-    final protected function appendText(\DOMNode $node, string $val): bool
+    /**
+     * @param \DOMNode $node
+     * @param string   $val
+     *
+     * @return bool
+     */
+    final protected function appendText(\DOMNode $node, $val)
     {
         $nodeText = $this->dom->createTextNode($val);
         $node->appendChild($nodeText);
@@ -201,7 +209,13 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
         return true;
     }
 
-    final protected function appendCData(\DOMNode $node, string $val): bool
+    /**
+     * @param \DOMNode $node
+     * @param string   $val
+     *
+     * @return bool
+     */
+    final protected function appendCData(\DOMNode $node, $val)
     {
         $nodeText = $this->dom->createCDATASection($val);
         $node->appendChild($nodeText);
@@ -212,8 +226,10 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
     /**
      * @param \DOMNode             $node
      * @param \DOMDocumentFragment $fragment
+     *
+     * @return bool
      */
-    final protected function appendDocumentFragment(\DOMNode $node, $fragment): bool
+    final protected function appendDocumentFragment(\DOMNode $node, $fragment)
     {
         if ($fragment instanceof \DOMDocumentFragment) {
             $node->appendChild($fragment);
@@ -226,8 +242,12 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Checks the name is a valid xml element name.
+     *
+     * @param string $name
+     *
+     * @return bool
      */
-    final protected function isElementNameValid(string $name): bool
+    final protected function isElementNameValid($name)
     {
         return $name &&
             false === strpos($name, ' ') &&
@@ -270,8 +290,10 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Parse the input DOMNode attributes into an array.
+     *
+     * @return array
      */
-    private function parseXmlAttributes(\DOMNode $node, array $context = array()): array
+    private function parseXmlAttributes(\DOMNode $node, array $context = array())
     {
         if (!$node->hasAttributes()) {
             return array();
@@ -348,10 +370,13 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      *
      * @param \DOMNode     $parentNode
      * @param array|object $data
+     * @param string|null  $xmlRootNodeName
+     *
+     * @return bool
      *
      * @throws NotEncodableValueException
      */
-    private function buildXml(\DOMNode $parentNode, $data, string $xmlRootNodeName = null): bool
+    private function buildXml(\DOMNode $parentNode, $data, $xmlRootNodeName = null)
     {
         $append = true;
 
@@ -414,8 +439,12 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      *
      * @param \DOMNode     $parentNode
      * @param array|object $data
+     * @param string       $nodeName
+     * @param string       $key
+     *
+     * @return bool
      */
-    private function appendNode(\DOMNode $parentNode, $data, string $nodeName, string $key = null): bool
+    private function appendNode(\DOMNode $parentNode, $data, $nodeName, $key = null)
     {
         $node = $this->dom->createElement($nodeName);
         if (null !== $key) {
@@ -432,8 +461,12 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Checks if a value contains any characters which would require CDATA wrapping.
+     *
+     * @param string $val
+     *
+     * @return bool
      */
-    private function needsCdataWrapping(string $val): bool
+    private function needsCdataWrapping($val)
     {
         return 0 < preg_match('/[<>&]/', $val);
     }
@@ -444,9 +477,11 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
      * @param \DOMNode $node
      * @param mixed    $val
      *
+     * @return bool
+     *
      * @throws NotEncodableValueException
      */
-    private function selectNodeType(\DOMNode $node, $val): bool
+    private function selectNodeType(\DOMNode $node, $val)
     {
         if (is_array($val)) {
             return $this->buildXml($node, $val);
@@ -475,8 +510,10 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Get real XML root node name, taking serializer options into account.
+     *
+     * @return string
      */
-    private function resolveXmlRootName(array $context = array()): string
+    private function resolveXmlRootName(array $context = array())
     {
         return isset($context['xml_root_node_name'])
             ? $context['xml_root_node_name']
@@ -485,8 +522,12 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Get XML option for type casting attributes Defaults to true.
+     *
+     * @param array $context
+     *
+     * @return bool
      */
-    private function resolveXmlTypeCastAttributes(array $context = array()): bool
+    private function resolveXmlTypeCastAttributes(array $context = array())
     {
         return isset($context['xml_type_cast_attributes'])
             ? (bool) $context['xml_type_cast_attributes']
@@ -495,8 +536,12 @@ class XmlEncoder implements EncoderInterface, DecoderInterface, NormalizationAwa
 
     /**
      * Create a DOM document, taking serializer options into account.
+     *
+     * @param array $context Options that the encoder has access to
+     *
+     * @return \DOMDocument
      */
-    private function createDomDocument(array $context): \DOMDocument
+    private function createDomDocument(array $context)
     {
         $document = new \DOMDocument();
 

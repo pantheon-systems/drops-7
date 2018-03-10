@@ -1,0 +1,12 @@
+name = Token tweaks
+description = Allows administrators to disable token types or tokens to improve performance using the token tree.
+core = 7.x
+dependencies[] = token
+configure = admin/config/system/tokens
+
+; Information added by Drupal.org packaging script on 2014-01-27
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "token_tweaks"
+datestamp = "1390855428"
+

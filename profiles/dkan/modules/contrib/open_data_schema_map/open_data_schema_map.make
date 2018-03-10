@@ -4,7 +4,7 @@ api = 2
 libraries[symfonyserializer][type] = libraries
 libraries[symfonyserializer][download][type] = "git"
 libraries[symfonyserializer][download][url] = "https://github.com/symfony/serializer.git"
-libraries[symfonyserializer][download][branch] = master
+libraries[symfonyserializer][download][tag] = v3.4.2
 
 libraries[json-schema][type] = libraries
 libraries[json-schema][download][type] = "git"

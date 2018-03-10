@@ -4,11 +4,5 @@ core = 7.x
 package = Open Data
 dependencies[] = features
 dependencies[] = open_data_schema_map
+files[] = PodValidator.php
 
-; Information added by DKAN release script on 11/2/2017
-version = 7.x-1.14-RC3
-project = dkan
-
-; Information added by DKAN release script on 11/14/2017
-version = 7.x-1.14
-project = dkan

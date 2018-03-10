@@ -21,7 +21,7 @@ libraries:
   chroma:
     download:
       type: file
-      url: https://github.com/gka/chroma.js/zipball/11ef08f6922900f2e7aa04c3058808a39f1317ca
+      url: https://github.com/gka/chroma.js/zipball/ec3988cd3d88075d7a97824d5abe9a6e1a836c10
   numeral:
     download:
       type: file

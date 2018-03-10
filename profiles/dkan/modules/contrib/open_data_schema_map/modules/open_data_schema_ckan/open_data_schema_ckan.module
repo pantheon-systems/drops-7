@@ -179,7 +179,7 @@ function open_data_schema_map_nid_exists($nid) {
 function open_data_schema_map_normalize_id($content_type, $id) {
   if (open_data_schema_ckan_is_valid_guid($id)) {
     $uuid = $id;
-    $nid = reset(entity_get_id_by_uuid('node', array($nid), FALSE));
+    $nid = reset(entity_get_id_by_uuid('node', array($uuid), FALSE));
     return array('nid' => $nid, 'uuid' => $uuid);
   }
   else {

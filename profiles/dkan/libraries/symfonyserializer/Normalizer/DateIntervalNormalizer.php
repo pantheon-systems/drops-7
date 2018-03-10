@@ -26,7 +26,10 @@ class DateIntervalNormalizer implements NormalizerInterface, DenormalizerInterfa
 
     private $format;
 
-    public function __construct(string $format = 'P%yY%mM%dDT%hH%iM%sS')
+    /**
+     * @param string $format
+     */
+    public function __construct($format = 'P%yY%mM%dDT%hH%iM%sS')
     {
         $this->format = $format;
     }

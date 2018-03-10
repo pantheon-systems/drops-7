@@ -1,3 +1,4 @@
+# time:2m54.46s
 @api @enableDKAN_Workflow @disablecaptcha
 Feature:
   Workflow (Workbench) tests for emails related to DKAN Workflow Module
@@ -89,7 +90,7 @@ Feature:
     | Supervisor S1G2  | should not |
 
   # EMAIL NOTIFICATIONS: Content WITHOUT group.
-  @api @mail @globalUser
+  @api @mail @globalUser @no-group
   Scenario Outline: As a user with a workflow role I should receive an email notification if needed when the moderation status on a content without group is changed
     Given users:
       | name             | mail                       | status | roles                                 |

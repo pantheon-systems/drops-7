@@ -24,7 +24,7 @@ use Symfony\Component\Serializer\SerializerInterface;
  *
  * @final since version 3.3.
  */
-class ArrayDenormalizer implements ContextAwareDenormalizerInterface, SerializerAwareInterface
+class ArrayDenormalizer implements DenormalizerInterface, SerializerAwareInterface
 {
     /**
      * @var SerializerInterface|DenormalizerInterface
@@ -66,8 +66,10 @@ class ArrayDenormalizer implements ContextAwareDenormalizerInterface, Serializer
     /**
      * {@inheritdoc}
      */
-    public function supportsDenormalization($data, $type, $format = null, array $context = array())
+    public function supportsDenormalization($data, $type, $format = null/*, array $context = array()*/)
     {
+        $context = \func_num_args() > 3 ? func_get_arg(3) : array();
+
         return '[]' === substr($type, -2)
             && $this->serializer->supportsDenormalization($data, substr($type, 0, -2), $format, $context);
     }

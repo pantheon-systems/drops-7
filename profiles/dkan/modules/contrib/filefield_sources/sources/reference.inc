@@ -182,7 +182,9 @@ function filefield_source_reference_autocomplete($entity_type, $bundle_name, $fi
   if (!empty($field)) {
     $files = filefield_source_reference_get_files($filename, $field);
     foreach ($files as $fid => $file) {
-      $items[$file->filename ." [fid:$fid]"] = theme('filefield_source_reference_autocomplete_item', array('file' => $file));
+      if (filefield_sources_file_access($file->uri)) {
+        $items[$file->filename ." [fid:$fid]"] = theme('filefield_source_reference_autocomplete_item', array('file' => $file));
+      }
     }
   }
 

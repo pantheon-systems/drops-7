@@ -153,7 +153,9 @@ function filefield_source_clipboard_value(&$element, &$item) {
     }
 
     // Remove the temporary file generated from paste.
-    @unlink($filepath);
+    if ($filepath !== $item['uri']) {
+      @unlink($filepath);
+    }
   }
 }
 

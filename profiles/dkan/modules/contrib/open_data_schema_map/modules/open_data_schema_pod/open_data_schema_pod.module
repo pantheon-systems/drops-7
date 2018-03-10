@@ -5,18 +5,15 @@
  * Provides Schema mapping for Project Open Data.
  */
 
-require_once 'podValidator.php';
-
 /**
- * Implements hook_open_data_schema_map_validation().
+ * Implements hook_open_data_schema_map_info().
  */
-function open_data_schema_pod_open_data_schema_map_validation() {
+function open_data_schema_pod_open_data_schema_map_info() {
   return array(
     'title' => 'Project Open Data validation',
     'name' => 'pod',
-    'page callback' => 'open_data_schema_pod_validation_page',
-    'file' => 'open_data_schema_pod.pages.inc',
-    'file path' => drupal_get_path('module', 'open_data_schema_pod'),
+    'validation_class' => 'PodValidator',
+    'api_endpoint' => 'data.json',
   );
 }
 
@@ -329,35 +326,3 @@ function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$s
   }
 }
 
-/**
- * Validates individual datasets.
- */
-function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
-  if (!$clear_cache && $cache = cache_get('pod_validate_result')) {
-    $results = $cache->data;
-    $results['cache_date'] = $cache->created;
-  }
-  else {
-    $podValidator = new podValidator\validate($url);
-    $podValidator->processAll();
-    $count = $podValidator->datasetCount();
-    $ids = array();
-    $error_datasets = array();
-    $total_errors = 0;
-    if ($errors = $podValidator->getErrors()) {
-      $total_errors = count($errors);
-      foreach ($errors as $error) {
-        $error_datasets[$error['id']] = 1;
-      }
-      $errors = open_data_schema_validation_process_errors($errors);
-    }
-    $results = array(
-      'errors' => $errors,
-      'count' => $count,
-      'total_errors' => $total_errors,
-      'error_datasets' => $error_datasets,
-    );
-    $cache = cache_set('pod_validate_result', $results, 'cache');
-  }
-  return $results;
-}

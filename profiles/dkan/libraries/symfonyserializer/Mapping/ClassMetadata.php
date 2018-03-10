@@ -39,7 +39,12 @@ class ClassMetadata implements ClassMetadataInterface
      */
     private $reflClass;
 
-    public function __construct(string $class)
+    /**
+     * Constructs a metadata for the given class.
+     *
+     * @param string $class
+     */
+    public function __construct($class)
     {
         $this->name = $class;
     }

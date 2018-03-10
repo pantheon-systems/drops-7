@@ -7,6 +7,9 @@
 
 $module_path = drupal_get_path('module', 'open_data_schema_map');
 require_once $module_path . '/open_data_schema_map.file_cache.inc';
+include __DIR__ . '/autoload.php';
+require_once $module_path . '/src/OdsmValidatorInterface.php';
+require_once $module_path . '/src/OdsmValidator.php';
 
 define('OPEN_DATA_SCHEMA_MAP_ADMIN_PATH', 'admin/config/services/odsm');
 
@@ -142,18 +145,18 @@ function open_data_schema_map_menu() {
   );
 
   // Read validation implementation and add to menu.
-  foreach (module_implements('open_data_schema_map_validation') as $module) {
-    $data = module_invoke($module, 'open_data_schema_map_validation');
+  foreach (module_implements('open_data_schema_map_info') as $module) {
+    $data = module_invoke($module, 'open_data_schema_map_info');
     $path = OPEN_DATA_SCHEMA_MAP_ADMIN_PATH . '/validate/' . $data['name'];
 
     $items[$path] = array(
       'title' => $data['title'],
-      'page callback' => $data['page callback'],
-      'page arguments' => array(),
+      'page callback' => 'open_data_schema_map_validation_page',
+      'page arguments' => array($data['validation_class'], $data['api_endpoint']),
       'access arguments' => array('administer open data schema mapper'),
       'type' => MENU_NORMAL_ITEM,
-      'file' => $data['file'],
-      'file path' => $data['file path'],
+      'file' => 'open_data_schema_map.pages.inc',
+      'file path' => drupal_get_path('module', 'open_data_schema_map'),
     );
   }
 
@@ -1126,6 +1129,13 @@ function open_data_schema_map_endpoint_process_field($api_field, $token, $type, 
   if ($token && isset($token['value']) && isset($token['type'])) {
     $result = open_data_schema_mapper_token_replace($token['value'], $type, $entity);
     $result = open_data_schema_mapper_field_type_check($result, $token);
+    // node_tokens() encodes all but body or summary fields, uses safe_.
+    // Decode HTML entities since it's allowed in JSON and XML.
+    // Only using on [*:title] and [node:og_group_ref].
+    // New token [node:body_raw] is available.
+    if (strpos($token['value'], ':title') !== FALSE || $token['value'] == '[node:og_group_ref]') {
+      $result = htmlspecialchars_decode($result, ENT_QUOTES);
+    }
   }
   drupal_alter('open_data_schema_map_process_field', $result, $api_field, $token);
   return $result;
@@ -1359,18 +1369,22 @@ function open_data_schema_map_additional_fields_add($fields, $api) {
  * @return array
  *   Error rows with node links added
  */
-function open_data_schema_validation_process_errors($rows) {
+function _open_data_schema_validation_process_errors($rows) {
   foreach ($rows as $key => $row) {
-    if (!isset($ids[$row['id']])) {
-      $nid = entity_get_id_by_uuid('node', array($row['id']));
-      $nid = $nid[$row['id']];
-      $node = node_load($nid);
-      $ids[$row['id']] = $node;
+    if (isset($row['id'])) {
+      if (!isset($ids[$row['id']])) {
+        $nids = entity_get_id_by_uuid('node', array($row['id']));
+        if ($nids) {
+          $nid = $nids[$row['id']];
+          $node = node_load($nid);
+          $ids[$row['id']] = $node;
+        }
+      }
+      else {
+        $node = $ids[$row['id']];
+      }
+      $rows[$key]['title'] = l($node->title, 'node/' . $node->nid);
     }
-    else {
-      $node = $ids[$row['id']];
-    }
-    $rows[$key]['title'] = l($node->title, 'node/' . $node->nid);
   }
   return $rows;
 }
@@ -1619,4 +1633,106 @@ function _open_data_schema_map_keyword_string($string) {
   // Convert whitespaces and underscore to dash.
   $string = preg_replace("/[\s_]/", "-", $string);
   return $string;
+}
+
+/**
+ * Validates individual datasets.
+ *
+ * @param string $validator_class
+ *   Validator class
+ * @param bool $clear_cache
+ *   If TRUE, will clear cached validation results.
+ *
+ * @return array
+ *   Array of errors, count, total_errors, error_datasets
+ */
+function _open_data_schema_map_process_validate($validator_class, $clear_cache = FALSE) {
+  if (!class_exists($validator_class)) {
+    $message = t('Validation Class Not Found: @class', array('@class' => $validator_class));
+    drupal_set_message($message);
+    $results = array(
+      'errors' => $message,
+      'total_errors' => 1,
+    );
+    return $results;
+  }
+
+  $cache_key = strtolower($validator_class) . '_validate_result';
+  if (!$clear_cache && $cache = cache_get($cache_key)) {
+    $results = $cache->data;
+    $results['cache_date'] = $cache->created;
+  }
+  else {
+    /* @var $validator OdsmValidatorInterface */
+    $validator = new $validator_class();
+    $validator->validate();
+    $count = $validator->datasetCount();
+    $error_datasets = array();
+    $total_errors = 0;
+    if ($errors = $validator->getErrors()) {
+      $total_errors = count($errors);
+      foreach ($errors as $error) {
+        if (isset($error['id'])) {
+          $error_datasets[$error['id']] = 1;
+        }
+      }
+      $errors = _open_data_schema_validation_process_errors($errors);
+    }
+    $results = array(
+      'errors' => $errors,
+      'count' => $count,
+      'total_errors' => $total_errors,
+      'error_datasets' => $error_datasets,
+    );
+    cache_set($cache_key, $results, 'cache');
+    $results['cache_date'] = time();
+  }
+  return $results;
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function open_data_schema_map_token_info() {
+  $info['tokens']['node']['body_raw'] = array(
+    'name' => t('Body Raw Value'),
+    'description' => t('The raw value of the body node field. This is not checked for any injected code/escaped.'),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function open_data_schema_map_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  // Provide [node:body_raw] token replacement. This is not a safe value.
+  $replacements = array();
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'body_raw':
+          if ($items = field_get_items('node', $node, 'body', $language_code)) {
+            $output = $items[0]['value'];
+            // Basic UTF8 checking for security. body_raw is not a safe value.
+            if (drupal_validate_utf8($output)) {
+              $replacements[$original] = $output;
+            }
+          }
+          break;
+
+      }
+    }
+  }
+
+  return $replacements;
 }

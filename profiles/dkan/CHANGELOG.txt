@@ -1,7 +1,46 @@
+7.x-1.14.4
+----------
+ - #2404 Avoid undefined offset on nuboot_radix/includes/panel.inc line 45
+ - #2402 Update Drupal core to 7.57
+ - #2375 Improvements to automated tests
+
+ 7.x-1.14.3
+----------
+ - #2377 Upgrade entity to 1.9
+
+7.x-1.14.2
+----------
+ - #2359 Upgrade filefield_sources to 1.11
+ - #2341 Modifies curl settings so url headers and info can be properly acquired with curl
+ - #2370 Patch features to add new line after <?php
+ - #2346 Updated Help page; can add your company to listing
+ - Remove out-dated owners.md file
+ - #2345 Site Manager Monthly Maintenance checklist
+ - #2347 Moving the "Adding New Content" page to main admin doc tree
+ - #2321 Update @resource_all_09 scenario
+ - #2327 Add results count to dkan admin views
+ - #2337 Pin sphinx to 1.5.6
+ - #2332 Remove redundant debug output
+
+7.x-1.14.1
+----------
+ - #2280 Fix contextual filter on list_of_users_groups view
+ - #2284 Change the default title for harvested resources to use the format value rather than url value
+ - #2265 Fix hero background image setup
+ - #2288 Use geojson icon for GeoJSON files in listings
+ - #2283 Share MySQL Credentials With Docker Containers
+ - #2273 Remove dkan_workflow_permissions dependency
+ - #2275 Docker Proxy Config Updates
+ - #2263 Fix harvest validation for accessLevel values
+ - #2249 Change timezone handling to 'none' on temporal coverage field
+ - #2103 Fixed field mapping defaults for open data schema APIs
+ - #2237 Migration of CircleCI from V1 to V2
+
 7.x-1.14
 --------
+ - Added new module Token Tweaks to allow ui control of token recursion level in effort to help avoid memory issues with Token (see https://www.drupal.org/node/1058912)
  - #2208 Fix access to groups field when adding a resource inside the dataset form.
- - #2188 Move DKAN repository to GetDKAN organization in Github 
+ - #2188 Move DKAN repository to GetDKAN organization in Github
  - #2033 Remove "author" facet from search page (generally never relevant information)
  - #2205 Update docs files with organization changes (NuCivic to GetDKAN)
  - #2206 Update autocomplete_deluxe, better_exposed_filters, file_entity, media, media_youtube, tablefield and views to latest version

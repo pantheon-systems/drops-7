@@ -1,5 +1,11 @@
+7.x-1.14.1
+----------
+- #110 Lock symfonyserializer library to the 3.4.2 tag
+- #109 Fixed id argument for package_show and group_package_show in ckan endpoints
+- #65 Added DCAT / POD URL Validation.
+
 7.x-1.14
--------
+--------
 - #95 Add UI for odsm cache admin.
 - #2103 Added Dataset Federated Data Filtering
 

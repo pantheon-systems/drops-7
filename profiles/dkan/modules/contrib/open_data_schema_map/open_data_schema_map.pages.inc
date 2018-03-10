@@ -527,3 +527,92 @@ function open_data_schema_map_endpoint($api) {
     }
   }
 }
+
+
+/**
+ * Callback for validation page.
+ */
+function open_data_schema_map_validation_page($validator_class, $api_endpoint) {
+  $render = array();
+
+  $results = _open_data_schema_map_process_validate($validator_class);
+  $cache_date = isset($results['cache_date']) ? $results['cache_date'] : '';
+  $cache_form = drupal_get_form('open_data_schema_map_validate_cache_clear', $cache_date, $validator_class, $api_endpoint);
+
+  $total = array(
+    array(
+      $results['count'],
+      count($results['error_datasets']),
+      $results['total_errors'],
+    ),
+  );
+
+  $total_table = theme('table', array(
+    'header' => array(
+      t('Total Datasets'),
+      t('Datasets with Errors'),
+      t('Errors'),
+    ), 'rows' => $total,
+  ));
+
+  $render['total'] = array(
+    '#type' => 'markup',
+    '#markup' => $total_table,
+  );
+
+  if ($results['errors']) {
+    $headers = array('id', 'property', 'error', 'link');
+    $table = theme('table', array('header' => $headers, 'rows' => $results['errors']));
+    $render['fieldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'errors',
+      '#attributes' => array('class' => array('collapsible', 'collapsed')),
+      'content' => array(
+        '#markup' => $table,
+      ),
+      '#attached' => array('js' => array('misc/collapse.js', 'misc/form.js')),
+    );
+  }
+
+  return drupal_render($cache_form) . drupal_render($render);
+}
+
+/**
+ * Returns the render array for the form.
+ */
+function open_data_schema_map_validate_cache_clear($form, $form_state, $created, $validator_class, $api_endpoint) {
+  if (!empty($created)) {
+    $form['cache'] = array(
+      '#type' => 'markup',
+      '#markup' => t('Result cached %date.', array('%date' => date('F j, Y, g:i a', $created))),
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Clear cache'),
+    );
+  }
+
+  $form['validator_class'] = array(
+    '#type' => 'hidden',
+    '#value' => $validator_class,
+  );
+  $form['api_endpoint'] = array(
+    '#type' => 'hidden',
+    '#value' => $api_endpoint,
+  );
+  return $form;
+}
+
+/**
+ * Add a submit handler/function to the form.
+ */
+function open_data_schema_map_validate_cache_clear_submit($form, &$form_state) {
+  if ($form_state['triggering_element']['#id'] == 'edit-submit') {
+    $validator_class = $form_state['input']['validator_class'];
+    $cache_key = strtolower($validator_class) . '_validate_result';
+    cache_clear_all($cache_key, 'cache');
+
+    drupal_set_message(t('The validator cache has been cleared.'));
+  }
+}
+
