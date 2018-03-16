@@ -1,0 +1,15 @@
+name = "ECK - Entitycache"
+description = "Integrates the ECK module with the Entitycache module"
+
+package = Performance and scalability
+core = 7.x
+
+dependencies[] = eck
+dependencies[] = entitycache
+
+; Information added by Drupal.org packaging script on 2017-01-04
+version = "7.x-2.0-rc9"
+core = "7.x"
+project = "eck"
+datestamp = "1483524281"
+

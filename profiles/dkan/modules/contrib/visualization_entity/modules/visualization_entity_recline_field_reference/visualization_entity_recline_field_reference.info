@@ -1,0 +1,14 @@
+name = Visualization Entity Recline Field Reference
+description = DKAN Integration module. Provides a field to visualization entity to link DKAN resources. See http://github.com/NuCivic/dkan for more information.
+core = 7.x
+package = Data Visualization
+
+dependencies[] = entityreference
+dependencies[] = dkan_dataset_content_types
+dependencies[] = recline
+dependencies[] = uuidreference
+dependencies[] = uuidreference_select
+features[features_api][] = api:2
+features[field_base][] = field_uuid_resource
+project path = profiles/dkan/modules/contrib
+

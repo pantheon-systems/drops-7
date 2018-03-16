@@ -1,0 +1,239 @@
+<?php
+
+/**
+ * Tests for legacy field replacement.
+ */
+class DraftyTitleTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty with title translation',
+      'description' => 'Test replaced field translation.',
+      'group' => 'Drafty',
+      'dependencies' => array('title', 'entity_translation'),
+    );
+  }
+
+  protected function setUp() {
+    parent::setUp('locale', 'entity_translation', 'title', 'drafty', 'drafty_enforce', 'drafty_1992010');
+
+    // Create a power user.
+    $admin_user = $this->drupalCreateUser(array(
+      'administer modules',
+      'view the administration theme',
+      'administer languages',
+      'administer entity translation',
+      'translate any entity'
+    ));
+    $this->drupalLogin($admin_user);
+
+    // Enable a translation language.
+    $edit = array('langcode' => 'it');
+    $this->drupalPost('admin/config/regional/language/add', $edit, t('Add language'));
+    $this->assertTrue(drupal_multilingual(), t('Italian language installed.'));
+
+    // Enable URL language negotiation.
+    $name = 'language_content[enabled][locale-url]';
+    $edit = array($name => 1);
+    $this->drupalPost('admin/config/regional/language/configure', $edit, t('Save settings'));
+    $this->assertFieldByName($name, 1, t('URL language negotiation enabled.'));
+
+    // Enable node translation.
+    $name = 'entity_translation_entity_types[node]';
+    $edit = array($name => 1);
+    $this->drupalPost('admin/config/regional/entity_translation', $edit, t('Save configuration'));
+    $this->assertFieldByName($name, 'node', t('Node translation enabled.'));
+
+    // Replace the title field.
+    $entity_type = 'node';
+    foreach (title_field_replacement_info($entity_type) as $legacy_field => $info) {
+      title_field_replacement_toggle($entity_type, 'page', $legacy_field);
+      $t_args = array('%legacy_field' => $legacy_field);
+      $this->assertTrue(field_info_instance($entity_type, $info['field']['field_name'], 'page'), t('The %legacy_field field has been correctly replaced.', $t_args));
+    }
+
+    // Ensure static caches do not interfere with API calls.
+    drupal_static_reset();
+  }
+
+  /**
+   * Tests title module interaction with draft translation creation.
+   */
+  public function testProgrammaticTranslationWorkflow() {
+    // Create a node and assign it an original language different from
+    // the default language.
+    $langcode = 'it';
+    $original_values = array(
+      'title' => $langcode . '_' . $this->randomName(),
+    );
+
+    $node = (object) ($original_values + array(
+        'type' => 'page',
+        'status' => 1,
+      ));
+    entity_translation_get_handler('node', $node)->setOriginalLanguage($langcode);
+    $node->language = $langcode;
+    node_save($node);
+    $original_vid = $node->vid;
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field values correctly created from the legacy field values.');
+
+    // Pollute synchronization cache to ensure the expected values are stored
+    // anyway.
+    title_entity_sync('node', $node, $langcode);
+
+    // Create a translation using the default language.
+    $translation_langcode = language_default()->language;
+    $translated_values = array(
+      'title' => $translation_langcode . '_' . $this->randomName(),
+    );
+    foreach ($translated_values as $name => $value) {
+      $node->{$name} = $value;
+    }
+    $translation = array(
+      'language' => $translation_langcode,
+      'source' => $langcode,
+      'uid' => $this->loggedInUser->uid,
+      'status' => 1,
+      'translate' => 0,
+      'created' => REQUEST_TIME,
+      'changed' => REQUEST_TIME,
+    );
+    entity_translation_get_handler('node', $node)->setTranslation($translation);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $new_vid = $node->vid;
+    //  Drafty doesn't allow us to load the draft revision while it's being
+    //  created by design, so find it manually based on the two revisions IDs
+    //  we know about.
+    $vid = db_select('node_revision')
+      ->fields('node_revision', array('vid'))
+      ->condition('nid', $node->nid)
+      ->condition('vid', $original_vid, '>')
+      ->condition('vid', $new_vid, '<')
+      ->execute()->fetchField();
+
+    $node = node_load($node->nid, $vid, TRUE);
+
+    $vids = db_query('SELECT vid FROM {node_revision} WHERE nid = :nid', array(':nid' => $node->nid))->fetchCol();
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    // Even though the language is set to that of the translation, no
+    // translation should happen since it's in a draft revision.
+    $this->assertFalse($this->checkFieldValues($node, $translated_values, $translation_langcode), 'Field translation for draft revision does not override.');
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field original values correctly preserved.');
+
+    drafty()->publishRevision('node', $node->nid, $vid);
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $this->assertTrue($this->checkFieldValues($node, $translated_values, $translation_langcode), 'Field translation overrides once draft is published.');
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode, FALSE), 'Replacing field original values correctly preserved.');
+
+    // Delete the translation.
+    entity_translation_get_handler('node', $node)->removeTranslation($translation_langcode);
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $langcode);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $langcode), 'Replacing field translations correctly deleted.');
+
+    // Make the node language neutral.
+    entity_translation_get_handler('node', $node)->setOriginalLanguage(LANGUAGE_NONE);
+    foreach ($original_values as $name => $value) {
+      $field_name = $name . '_field';
+      $node->{$field_name}[LANGUAGE_NONE] = $node->{$field_name}[$langcode];
+      $node->{$field_name}[$langcode] = array();
+    }
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, LANGUAGE_NONE), 'Term original language correctly changed to the former translation language.');
+
+    // Change the node language to the former translation language.
+    entity_translation_get_handler('node', $node)->setOriginalLanguage($translation_langcode);
+    foreach ($original_values as $name => $value) {
+      $field_name = $name . '_field';
+      $node->{$field_name}[$translation_langcode] = $node->{$field_name}[LANGUAGE_NONE];
+      $node->{$field_name}[LANGUAGE_NONE] = array();
+    }
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid, $translation_langcode);
+    $this->assertTrue($this->checkFieldValues($node, $original_values, $translation_langcode), 'Term original language correctly changed to language neutral.');
+
+    // Make a replacing field untranslatable and change its value.
+    $field_name = 'title_field';
+    $field = field_info_field($field_name);
+    $field['translatable'] = FALSE;
+    field_update_field($field);
+    $original_values['title'] = LANGUAGE_NONE . '_' . $this->randomName();
+    $node->title = $original_values['title'];
+    node_save($node);
+    $this->assertTrue($this->checkLegacyValues($node, $original_values), 'Legacy field values correctly stored.');
+    $node = $this->nodeLoad($node->nid);
+    $this->assertEqual($node->{$field_name}[LANGUAGE_NONE][0]['value'], $original_values['title'], 'Untranslatable replacing field on translatable entity correctly handled.');
+  }
+
+  /**
+   * Loads a term using the given language as active language.
+   */
+  protected function nodeLoad($nid, $langcode = NULL) {
+    drupal_static_reset();
+    title_active_language($langcode);
+    return node_load($nid, NULL, TRUE);
+  }
+
+  /**
+   * Returns the drupalPost() $edit array corresponding to the given values.
+   */
+  protected function editValues($values, $langcode) {
+    $edit = array();
+    foreach ($values as $name => $value) {
+      $edit["{$name}_field[{$langcode}][0][value]"] = $value;
+    }
+    return $edit;
+  }
+
+  /**
+   * Checks that the field values and optionally the legacy ones match the given values.
+   */
+  protected function checkFieldValues($entity, $values, $langcode, $legacy_match = TRUE) {
+    foreach ($values as $name => $value) {
+      $field_name = $name . '_field';
+      if (!empty($entity->{$field_name}[$langcode])) {
+        $field_value = $entity->{$field_name}[$langcode][0]['value'];
+      }
+      else {
+        return FALSE;
+      }
+      if ($field_value != $value) {
+        debug($field_value);
+        debug($value);
+        return FALSE;
+      }
+      if ($legacy_match !== ($field_value == $entity->{$name})) {
+        debug($legacy_match);
+        debug($field_value);
+        debug($entity->{$name});
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Checks that the legacy field values stored in the database match the given values.
+   */
+  protected function checkLegacyValues($node, $values) {
+    $record = db_query('SELECT * FROM {node} n WHERE n.nid = :nid', array(':nid' => $node->nid))->fetchAssoc();
+    foreach ($values as $name => $value) {
+      debug($record[$name]);
+      debug($value);
+      if ($record[$name] != $value) {
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+}

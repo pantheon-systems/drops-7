@@ -1,0 +1,177 @@
+<?php
+/**
+ * @file
+ * Panelizer tests.
+ */
+
+/**
+ * Verifies Panelizer configuration options for taxonomy terms.
+ */
+class PanelizerTermTest extends PanelizerTestHelper {
+
+  protected $vocabulary;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer term workflow (excluding IPE)',
+      'description' => 'Test the typical workflow of working with terms, excluding IPE.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    parent::setUp();
+
+    // Create a user with the necessary permissions.
+    $perms = array(
+      // Master permission for all Panelizer operations.
+      'administer panelizer',
+
+      // Full control over this entity.
+      'administer taxonomy',
+    );
+    $admin = $this->drupalCreateUser($perms);
+    $this->drupalLogin($admin);
+
+    $edit = array(
+      'name' => 'Panelizer Vocabulary',
+      'machine_name' => 'panelizer_vocabulary',
+      'description' => 'Panelizer worflow test vocabulary',
+      'hierarchy' => 1,
+      'module' => 'panelizer',
+      'weight' => -10,
+    );
+    $vocabulary = (object) $edit;
+    taxonomy_vocabulary_save($vocabulary);
+    $this->vocabulary = $vocabulary;
+  }
+
+  /**
+   * Helper function to create a taxonomy term.
+   *
+   * @return object
+   *   A taxonomy term object.
+   */
+  protected function createTestTerm() {
+    $edit = array(
+      'name' => t('Test Panelizer Term'),
+      'description' => "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book",
+      'parent' => array(0),
+      'vid' => $this->vocabulary->vid,
+    );
+    $term = (object) $edit;
+    taxonomy_term_save($term);
+    return $term;
+  }
+
+  /**
+   * Test the vocabulary configuration functionality.
+   */
+  function testVocabularyConfiguration() {
+    // Load the vocabulary's settings page.
+    $this->drupalGet('admin/structure/taxonomy/' . $this->vocabulary->machine_name . '/edit');
+    $this->assertResponse(200);
+
+    // Confirm that the appropriate fields are present.
+    $this->assertFieldByName('panelizer[status]');
+    $this->assertFieldByName('panelizer[help]');
+    foreach (array('page_manager', 'default') as $view_mode) {
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][status]');
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][default]');
+      $this->assertFieldByName('panelizer[view modes][' . $view_mode . '][choice]');
+    }
+
+    // Panelize the test vocabulary.
+    $edit = array(
+      'panelizer[status]' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertResponse(200);
+
+    $term = $this->createTestTerm();
+
+    // Verify the term can be panelized.
+    $this->drupalGet('taxonomy/term/' . $term->tid);
+    $this->assertResponse(200);
+    $this->assertLink('Customize display', 0, 'The customize display link appears on the page');
+    $this->assertLinkByHref('taxonomy/term/' . $term->tid . '/panelizer', 0, 'A link to customize the node appears on the page');
+
+    // Allow panelization of the "Default" view mode.
+    $edit = array(
+      'panelizer[view modes][default][status]' => TRUE,
+      'panelizer[view modes][default][default]' => TRUE,
+    );
+    $this->drupalPost('admin/structure/taxonomy/panelizer_vocabulary/edit', $edit, t('Save'));
+    $this->assertResponse(200);
+
+    // Check that the view mode has been panelized.
+    $this->drupalGet('taxonomy/term/' . $term->tid);
+    $this->assertResponse(200);
+    $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panelizer-view-mode'));
+    $this->assertEqual(count($elements), 1, 'The term is panelized.');
+  }
+
+  /**
+   *
+   */
+  function testTermPanelizeIt() {
+    $view_mode = 'default';
+    $view_mode_label = t('Default');
+    $this->togglePanelizer('taxonomy_term', $this->vocabulary->machine_name, $view_mode, 1, 0, 0);
+    $term = $this->createTestTerm();
+
+    // Check that the view mode can be panelized.
+    $this->drupalGet('taxonomy/term/' . $term->tid . '/panelizer');
+    $this->assertResponse(200);
+    $this->assertText($view_mode_label);
+    $this->assertLink('panelize', 0, "The panelize link for the {$view_mode} view mode appears on the page.");
+    $this->assertLinkByHref('taxonomy/term/' . $term->tid . '/panelizer/' . $view_mode, 0, "A link to panelize the {$view_mode} view mode appears on the page.");
+
+    // Verify that the view mode is not currently panelized.
+    $this->drupalGet('taxonomy/term/' . $term->tid . '/panelizer/' . $view_mode);
+    $this->assertResponse(200);
+    $this->assertRaw(t('This %entity is not currently panelized.', array('%entity' => 'Taxonomy term')));
+
+    // Panelize the view mode.
+    $this->drupalPost(NULL, array(), t('Panelize it!'));
+    $this->assertResponse(200);
+
+    // Check that the view mode has been panelized.
+    $this->drupalGet('taxonomy/term/' . $term->tid);
+    $this->assertResponse(200);
+    $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panelizer-view-mode'));
+    $this->assertEqual(count($elements), 1, 'The term is panelized.');
+  }
+
+  /**
+   *
+   */
+  function testTermPanelsDefault() {
+    $view_mode = 'default';
+    $this->togglePanelizer('taxonomy_term', $this->vocabulary->machine_name, $view_mode, 1, 1, 0);
+    $term = $this->createTestTerm();
+
+    // Verify that the view mode has a default panel.
+    $this->drupalGet('admin/structure/taxonomy/panelizer_vocabulary/panelizer');
+    $this->assertResponse(200);
+    $this->assertLinkByHref('admin/structure/taxonomy/panelizer_vocabulary/panelizer/' . $view_mode, 0, 'User is able to provide default panel for ' . $view_mode);
+
+    $edit = array(
+      'layout' => 'twocol_bricks',
+    );
+    $this->drupalPost('admin/structure/taxonomy/panelizer_vocabulary/panelizer/' . $view_mode . '/layout', $edit, t('Save'));
+
+    // Check that the layout has been set.
+    $this->drupalGet('taxonomy/term/' . $term->tid);
+    $this->assertResponse(200);
+    $elements = $this->xpath('//div[contains(@class,:class)]', array(':class' => 'panel-2col-bricks'));
+    $this->assertEqual(count($elements), 1, 'The default term layout has been set.');
+  }
+
+}

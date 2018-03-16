@@ -1,0 +1,101 @@
+<?php
+/**
+ * @file
+ * Test the Pathauto integration for Panelizer.
+ */
+
+/**
+ *
+ */
+class PanelizerWithPathautoTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer w Pathauto',
+      'description' => 'Test Pathauto integration.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'pathauto';
+    parent::setUp($modules);
+
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Pathauto.
+      'create url aliases',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   * Confirm that saving the Panelizer page doesn't remove the Pathauto alias.
+   */
+  function testNodeSave() {
+    // Enable Panelizer for the 'page' content type.
+    $this->togglePanelizer();
+    // Enable the Panels view mode too.
+    $this->simpleEnablePage('node_view');
+
+    // Create a node and give it a custom alias.
+    $args = array(
+      'path[pathauto]' => FALSE,
+      'path[alias]' => 'test-page',
+    );
+    $node = $this->createNode($args);
+
+    // Confirm the node loads from the custom alias.
+    $this->drupalGet('test-page');
+    $this->assertResponse(200);
+    $this->assertText($node->title);
+    $this->assertLink('Customize display', 0, 'The customize display link appears on the page');
+    $this->assertLinkByHref('node/' . $node->nid . '/panelizer', 0, 'A link to customize the node appears on the page');
+
+    // Update its Panelizer display.
+    $this->drupalGet('node/' . $node->nid . '/panelizer/page_manager/settings');
+    $this->assertResponse(200);
+    $this->assertFieldByName('css_class');
+    $args = array(
+      'css_class' => 'panelizer-test',
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    // Confirm the settings saved correctly.
+    $this->assertText(t('The settings have been updated.'));
+
+    // Confirm that settings have been saved for this entity.
+    $records = $this->getPanelizerEntityRecords('node', $node->nid);
+    $this->assertTrue(count($records));
+
+    // Load the page again from its system path and confirm that the display
+    // has been customized.
+    $this->drupalGet('node/' . $node->nid);
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => 'panelizer-test'));
+    $this->assertEqual(count($elements), 1, 'The node is using the overridden display.');
+
+    // Confirm that the node alias still works.
+    $this->drupalGet('test-page');
+    $this->assertResponse(200);
+    $this->assertText($node->title);
+    $this->assertLink('Customize display', 0, 'The customize display link appears on the page');
+    $this->assertLinkByHref('node/' . $node->nid . '/panelizer', 0, 'A link to customize the node appears on the page');
+    $elements = $this->xpath('//body[contains(@class,:class)]', array(':class' => 'panelizer-test'));
+    $this->assertEqual(count($elements), 1, 'The node is using the overridden display.');
+  }
+
+}

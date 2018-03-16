@@ -1,0 +1,22 @@
+7.x-1.x
+-------
+- Improved handling of missing remote zip files during resource preview generation.
+- Improved check used to determine if bootstrap is available.
+- Added cache support for recline previews.
+- Added delimiter configuration on chart settings. 
+
+7.x-1.12.x
+----------
+- Make recline previews work on subdir paths.
+
+7.x-1.11 2016-02-03
+------------------
+- Remove unneeded fields UI dependency.
+- Upgraded included version of Recline.js library.
+- Add a check to see if the bootstrap library is already loaded before adding it.
+
+7.x-1.1 2014-06-27
+------------------
+- Added CHANGELOG.txt
+- Change references to nuCivic
+- Fix bug with negative lattitude (nuams/dkan#138)

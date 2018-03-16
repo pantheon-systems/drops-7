@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ * Replaces all system object management pages in Drupal core with real views.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function admin_views_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function admin_views_form_views_ui_edit_form_alter(&$form, &$form_state) {
+  array_unshift($form['actions']['save']['#validate'], '_admin_views_form_views_ui_edit_form_validate');
+}
+
+/**
+ * Custom validation function when Views UI edit form is submitted.
+ */
+function _admin_views_form_views_ui_edit_form_validate(&$form, &$form_state) {
+  if (isset($form_state['view'])) {
+    // Retrieve system paths on the current view.
+    $system_paths = admin_views_system_paths($form_state['view']);
+    // If system paths exist, check if any duplicates.
+    if (!empty($system_paths)) {
+      $duplicate_paths = array();
+      foreach ($system_paths as $path => $path_views) {
+        foreach ($path_views as $path_view) {
+          foreach ($path_view as $view_name => $view_display) {
+            $system_view[$path] = array($view_name => $view_display);
+            if (admin_views_duplicate_path($system_view)) {
+              $duplicate_paths[] = $path;
+            }
+          }
+        }
+      }
+      // If any duplicates, display error message.
+      if (!empty($duplicate_paths)) {
+        form_set_error('', t('Paths are already in use by other system views: <em>!path</em>. Enter a different path, or modify, disable, or delete the conflicting views.', array(
+          '!path' => implode(', ', $duplicate_paths))));
+      }
+    }
+  }
+}
+
+/**
+ * Paths for enabled system views.
+ *
+ * @param object $view
+ *   (optional) A view to be checked for system view displays. If not
+ *   included, all views are checked.
+ *
+ * @return array
+ *   An array of system paths, including view name and view display.
+ */
+function admin_views_system_paths($view = NULL) {
+  $system_paths = array();
+  if ($view == NULL) {
+    $views = views_get_all_views();
+  }
+  else {
+    $views[] = $view;
+  }
+  foreach ($views as $view) {
+    if ($view->disabled) {
+      continue;
+    }
+    foreach ($view->display as $display => $settings) {
+      if (isset($settings->display_plugin) && $settings->display_plugin == 'system' && isset($settings->display_options['path'])) {
+        $system_paths[$settings->display_options['path']][] = array($view->name => $display);
+      }
+    }
+  }
+  return $system_paths;
+}
+
+/**
+ * Determine if there are duplicate views system paths.
+ *
+ * @param array $view
+ *   Array including a system path, and the view name and display where it
+ *   is located.
+ *
+ * @return boolean
+ *   Duplicate path exists other than current view name/display combination.
+ */
+function admin_views_duplicate_path($view) {
+  $system_paths = admin_views_system_paths();
+  $view_path = key($view);
+  if (!isset($system_paths[$view_path])) {
+    return FALSE;
+  }
+  $view_name = key($view[$view_path]);
+  $view_display = $view[$view_path][$view_name];
+  foreach ($system_paths[$view_path] as $system_views) {
+    foreach ($system_views as $system_view_name => $system_view_display) {
+      if (!($system_view_name == $view_name && $system_view_display == $view_display)) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}

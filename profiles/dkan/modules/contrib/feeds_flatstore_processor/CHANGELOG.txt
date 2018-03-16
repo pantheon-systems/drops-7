@@ -1,0 +1,8 @@
+7.x-1.1
+-------
+- Moved development to Nucivic's github: https://github.com/NuCivi/feeds_flatstore_proccesor
+
+7.x-1.0
+-------
+- Moved development to github: https://github.com/nuams/feeds_flatstore_proccesor
+- Several bugs fixed.

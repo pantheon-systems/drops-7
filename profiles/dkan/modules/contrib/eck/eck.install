@@ -1,0 +1,529 @@
+<?php
+/**
+ * @file
+ * ECK's requirements, schemas, and logic for install and uninstall.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function eck_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'update') {
+    // I guess we just need to check whether the module exists, and then the
+    // update can enable it if it is not enabled.
+    $requirements['ctools'] = array(
+      'title' => 'CTools Module Required',
+      'description' => "ECK uses the plugin implementation offered by the CTools module",
+    );
+    if (module_exists('ctools')) {
+      $requirements['ctools']['severity'] = REQUIREMENT_OK;
+    }
+    else {
+      $requirements['ctools']['severity'] = REQUIREMENT_ERROR;
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_schema().
+ *
+ * Create the database table that will store the entities information.
+ * All that we need for each entity is a name and a label.
+ */
+function eck_schema() {
+
+  $schema = array();
+
+  // Schema for an eck only cache table.
+  $schema['cache_eck'] = drupal_get_schema_unprocessed('system', 'cache');
+
+  // Schema for the eck table.
+  $schema['eck_entity_type'] = array(
+    'description' => "The base table for entity type information",
+    'fields' => array(
+      'id' => array(
+        'description' => "The primary identifier for a bundle",
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => "The machine name of the entity",
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => "The entity's Label",
+        'type' => 'varchar',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'properties' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'initial' => serialize(array()),
+        'description' => 'A serialized list of properties attached to this entity.',
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+    'indexes' => array(),
+  );
+
+  $schema['eck_bundle'] = array(
+    'description' => "The base table for bundle information",
+    'fields' => array(
+      'id' => array(
+        'description' => "The primary identifier for a bundle",
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'machine_name' => array(
+        'description' => "A combination of the entity type and the name of"
+        . "this bundle, this combination is unique",
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'entity_type' => array(
+        'description' => "The entity type this bundle belongs to",
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => "The bundle's name",
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => "A human readable name for the bundle (not that the type is not human readable)",
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'config' => array(
+        'description' => 'A serialized list of the bundle settings.',
+        'type' => 'text',
+        'serialize' => TRUE,
+        'initial' => serialize(array()),
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique' => array(
+      'machine_name' => array('machine_name'),
+    ),
+  );
+
+  // At the installation stage, ECK has not been created, so what is this for?
+  // The schema is not only used during installation, it is used at many other
+  // stages and by many other processes withing drupal. Because we are creating
+  // tables dynamically with eck, we need to expose those schemas through this
+  // function, that is why we are doing this.
+
+  return $schema;
+}
+
+/**
+ * Update 7000.
+ */
+function eck_update_7000() {
+  // To implement bundles (types), I have decided to have one table that will
+  // hold all of the types information. So for this update we need to create the
+  // table, and add all of the current entities with their types to the table,
+  // so we can unify the implementations of bundles in code.
+
+  $schema = array(
+    'description' => "The base table for entities types information",
+    'fields' => array(
+      'id' => array(
+        'description' => "The primary identifier for a(n) entity type",
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'entity' => array(
+        'description' => "The entity this type belongs to",
+        'type' => 'varchar',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => "The type (bundle) name that will be used",
+        'type' => 'varchar',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => "A human readable name for the bundle (not that the type is not human readable)",
+        'type' => 'varchar',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'entity_type'      => array('entity', 'type'),
+    ),
+  );
+
+  db_create_table('eck_types', $schema);
+
+  // Now we add a type (bundle) to the table for each entity in the eck table.
+
+  $results = db_select('eck', 't')->fields('t')->execute();
+
+  foreach ($results as $record) {
+    $nid = db_insert('eck_types')
+    ->fields(array(
+        'entity' => $record->name,
+        'type' => $record->name,
+        'label' => $record->label,
+    ))
+    ->execute();
+
+    // Also we want to add a field to all the enity tables for the type, and
+    // populated with the current type.
+    db_add_field("eck_{$record->name}", 'type', array(
+      'description' => 'The type of the entity',
+      'type' => 'varchar',
+      'default' => '',
+      'length' => 255,
+      'not null' => TRUE,
+      'initial' => $record->name,
+    ));
+
+  }
+}
+
+/**
+ * Update 7001.
+ */
+function eck_update_7001() {
+  // For importing and exporting things it is always good to have a uuid, so we
+  // will add that colunm to the current entity types.
+
+  // Now we add a type (bundle) to the table for each entity in the eck table.
+  $results = db_select('eck', 't')->fields('t')->execute();
+
+  foreach ($results as $record) {
+    // Also we want to add a field to all the enity tables for the type, and
+    // populated with the current type.
+    db_add_field("eck_{$record->name}", 'uuid', array(
+      'type' => 'char',
+      'length' => 36,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'The Universally Unique Identifier.',
+    ));
+  }
+}
+
+/**
+ * Update 7002.
+ */
+function eck_update_7002() {
+  // The more I think about it, the more it makes sense to replicate the
+  // "status" property from nodes, this is just a flag that lets the system know
+  // whether a piece of data should be seen by the public or not. Instead of a
+  // boolean, I think that a int instead of boolean could be more useful, that
+  // way more complicated workflows can be implemented. For example if a piece
+  // of data needs to be reviewed before showing it to the public, and int can
+  // campture those different states: 0- don't show 1 - show 3 - needs review 4
+  // - revised by editor, etc. Also instead of status, I think that "state" is a
+  // more appropiate name.
+
+  $results = db_select('eck', 't')->fields('t')->execute();
+
+  foreach ($results as $record) {
+    db_add_field("eck_{$record->name}", 'state', array(
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => 'The state of the entity',
+    ));
+  }
+}
+
+/**
+ * Adds the properties column to the eck table.
+ */
+function eck_update_7003() {
+  db_add_field('eck', 'properties', array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'serialize' => TRUE,
+    'initial' => serialize(array(
+      'uuid' => 1,
+      'uid' => 1,
+      'created' => 1,
+      'changed' => 1,
+      'state' => 1,
+    )),
+    'description' => 'A serialized list of additional properties attached to this entity.',
+  ));
+}
+
+/**
+ * Adds the custom properties column to the eck table.
+ */
+function eck_update_7004() {
+  db_add_field('eck', 'custom_properties', array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'serialize' => TRUE,
+    'initial' => serialize(array()),
+    'description' => 'A serialized list of custom properties attached to this entity.',
+  ));
+}
+
+/**
+ * Update 7005.
+ */
+function eck_update_7005() {
+  // Change the name of the eck table to eck_entity_type.
+  db_rename_table('eck', 'eck_entity_type');
+
+  // Change the name of the eck_types table to eck_bundle.
+  db_rename_table('eck_types', 'eck_bundle');
+
+  // Remove the id key from eck_entity_type.
+  db_drop_field('eck_entity_type', 'id');
+
+  // Create the index with the right field names.
+  db_add_primary_key('eck_entity_type', array('name'));
+
+  // Drop the eck_bundle index entity_type.
+  db_drop_index('eck_bundle', 'entity_type');
+
+  // Change eck_bundle entity field to entity_type.
+  db_change_field('eck_bundle', 'entity', 'entity_type',
+    array(
+      'description' => "The entity type this bundle belongs to",
+      'type' => 'varchar',
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => TRUE,
+    )
+  );
+
+  // Change eck_bundle type field to name.
+  db_change_field('eck_bundle', 'type', 'name',
+    array(
+      'description' => "The bundle's name",
+      'type' => 'varchar',
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => TRUE,
+    )
+  );
+
+  // Create the index with the right field names.
+  db_add_index('eck_bundle', 'entity_type_bundle_name', array('entity_type', 'name'));
+}
+
+/**
+ * Update 7006.
+ */
+function eck_update_7006() {
+  // We already made sure in hook_requirements that the module ctools exists
+  // in the system, so now we can safely enable it.
+  module_enable(array('ctools'));
+
+  // Lets start with then entity type table
+  // Let's add an id field to the entity_type table, and set it up as a primary
+  // key.
+  db_drop_primary_key('eck_entity_type');
+
+  db_add_field('eck_entity_type', 'id', array(
+    'description' => "The primary identifier for an entity type",
+    'type' => 'serial',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+  ), array('primary key' => array('id', 'name')));
+
+  // Let's take the properties and translate them to the new form.
+  $results = db_select('eck_entity_type', 't')->fields('t')->execute();
+
+  foreach ($results as $record) {
+    // @todo for each entity type we want to drop all the indexes
+    // they will have to be managed dynamically by the behaviors even though
+    // I don't know how to do that yet.
+    $entity_table = "eck_{$record->name}";
+
+    if (db_index_exists($entity_table, 'uid')) {
+      db_drop_index($entity_table, 'uid');
+    }
+    if (db_index_exists($entity_table, "{$record->name}_created")) {
+      db_drop_index($entity_table, "{$record->name}_created");
+    }
+    if (db_index_exists($entity_table, "{$record->name}_changed")) {
+      db_drop_index($entity_table, "{$record->name}_changed");
+    }
+
+    $new_properties = array();
+
+    $properties = $record->properties;
+    $properties = unserialize($properties);
+    foreach ($properties as $property => $status) {
+      switch ($property) {
+        case 'uuid':
+          $new_properties['uuid'] = array('label' => 'UUID', 'type' => 'uuid');
+          break;
+
+        case 'uid':
+          $new_properties['uid'] = array(
+            'label' => 'Author', 'type' => 'integer', 'behavior' => 'author');
+          break;
+
+        case 'created':
+          $new_properties['created'] = array(
+            'label' => 'Created', 'type' => 'integer', 'behavior' => 'created');
+          break;
+
+        case 'changed':
+          $new_properties['changed'] = array(
+            'label' => 'Changed', 'type' => 'integer', 'behavior' => 'changed');
+          break;
+
+        case 'state':
+          $new_properties['state'] = array(
+            'label' => 'State', 'type' => 'positive_integer');
+          break;
+
+      }
+    }
+
+    $custom_properties = $record->custom_properties;
+    $custom_properties = unserialize($custom_properties);
+
+    foreach ($custom_properties as $property => $info) {
+      $type = $info['type'];
+      $label = $info['label'];
+      switch ($type) {
+        case 'text':
+          $new_properties[$property] = array('label' => $label, 'type' => $type);
+          break;
+
+        case 'decimal':
+          $new_properties[$property] = array('label' => $label, 'type' => $type);
+          break;
+
+        default:
+          $new_properties[$property] = array('label' => $label, 'type' => 'integer');
+          break;
+
+      }
+    }
+
+    $encode_new = drupal_json_encode($new_properties);
+
+    db_update('eck_entity_type')
+    ->fields(array(
+      'properties' => $encode_new,
+    ))
+    ->condition('name', $record->name, '=')
+    ->execute();
+  }
+
+  // Now we can drop the custom_properties field now that everything has
+  // been moved.
+  db_drop_field('eck_entity_type', 'custom_properties');
+
+  // Now the changes to the eck_bundle table.
+  // First lets drop that index.
+  db_drop_index('eck_bundle', 'entity_type_bundle_name');
+
+  db_add_field('eck_bundle', 'machine_name', array(
+    'description' => "A combination of the entity type and the name of "
+    . "this bundle, this combination is unique",
+    'type' => 'varchar',
+    'length' => 128,
+    'default' => "",
+    'not null' => TRUE,
+  ));
+}
+
+/**
+ * Update 7007.
+ */
+function eck_update_7007() {
+
+  // Let's generate the machine names for each bundle.
+  $results = db_select('eck_bundle', 't')->fields('t')->execute();
+
+  foreach ($results as $record) {
+    $name = $record->name;
+    $entity_type = $record->entity_type;
+    $record->machine_name = "{$entity_type}_{$name}";
+    db_update('eck_bundle')
+    ->fields(array(
+      'machine_name' => $record->machine_name,
+    ))
+    ->condition('id', $record->id, '=')
+    ->execute();
+  }
+}
+
+/**
+ * Update 7008.
+ */
+function eck_update_7008() {
+  // Well it seems that the way to fix the menu display problems is by deleting
+  // the offending links and letting them get repopulated when the cache is
+  // flushed.
+  module_load_include('inc', 'eck', 'classes');
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    foreach (Bundle::loadByEntityType($entity_type) as $bundle) {
+      $query = db_delete('menu_links');
+      $query->condition('link_path', "admin/structure/entity-type/{$entity_type->name}/{$bundle->name}/delete");
+      $query->execute();
+    }
+  }
+}
+
+/**
+ * Add 'config' field to eck_bundle table.
+ */
+function eck_update_7009() {
+  // Add config field for bundles.
+  db_add_field('eck_bundle', 'config', array(
+    'description' => 'A serialized list of the bundle settings.',
+    'type' => 'text',
+    'serialize' => TRUE,
+    'initial' => serialize(array()),
+    'not null' => TRUE,
+  ));
+}
+
+/**
+ * Eliminating the multiple primary ids in the bundle and entity type tables.
+ */
+function eck_update_7010() {
+  db_add_unique_key("eck_entity_type", "name", array('name'));
+  db_add_unique_key("eck_bundle", "machine_name", array('machine_name'));
+}
+
+/**
+ * Add an eck cache table.
+ */
+function eck_update_7011() {
+  $schema = drupal_get_schema_unprocessed('system', 'cache');
+  db_create_table('cache_eck', $schema);
+}

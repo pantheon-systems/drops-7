@@ -1,0 +1,41 @@
+7.x-1.14.1
+----------
+- #110 Lock symfonyserializer library to the 3.4.2 tag
+- #109 Fixed id argument for package_show and group_package_show in ckan endpoints
+- #65 Added DCAT / POD URL Validation.
+
+7.x-1.14
+--------
+- #95 Add UI for odsm cache admin.
+- #2103 Added Dataset Federated Data Filtering
+
+7.x-1.13.4
+----------
+- #89 Fixed handling of dataset language setting to pass DCAT validation.
+- #88 Fixed bug: multiple urls cause data.json describedBy field to be truncated.
+
+7.x-1.13.2 2017-03-16
+---------------------
+- #86 Fix validation page permission check using wrong permission name.
+- #85 Add checks for property existance during odsm features rebuild.
+
+7.x-1.12.14
+-----------
+- Add support for validation of data.json files from sites with self-signed certificates.
+- Fix exported feature component not reverting correctly.
+
+7.x-1.12.12
+-----------
+- Added support for federal and non-federal on POD validation.
+
+7.x-1.12.11 2016-10-20
+----------------------
+- Sync up versioning to DKAN
+- Stop trying to determine the media type for resources in POD when format is set to "data". This was causing errors and we should trust the "format" field.
+- Add DCAT support
+- Output booleans values as true booleans
+
+7.x-1.0 2016-08-24
+------------------
+
+- Initial official release after years of building from "master"

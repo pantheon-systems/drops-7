@@ -1,0 +1,36 @@
+{
+  "name": "{{machine_name}}",
+  "description": "{{Description}}",
+  "browserSyncProxy" : "http://drupal7.dev",
+  "bowerDir": "./bower_components",
+  "css": {
+    "file" : "{{machine_name}}.style.scss",
+    "src": [
+      "scss/**/*.scss"
+    ],
+    "dest": "assets/css",
+    "includePaths": [
+      "./bower_components/bootstrap-sass/assets/stylesheets",
+      "./bower_components/font-awesome/scss"
+    ]
+  },
+  "js": {
+    "file" : "{{machine_name}}.script.js",
+    "src": [
+      "assets/js/**/*.js"
+    ],
+    "dest": "assets/js"
+  },
+  "images": {
+    "src": [
+      "assets/images/**/*"
+    ],
+    "dest": "assets/images/"
+  },
+  "fonts": {
+    "src": [
+      "./bower_components/font-awesome/fonts/**.*"
+    ],
+    "dest": "./assets/fonts/"
+  }
+}

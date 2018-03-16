@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Tests for media_youtube.module.
+ */
+
+/**
+ * Provides methods specifically for testing Media YouTube's YouTube video handling.
+ */
+class MediaYouTubeTestHelper extends MediaInternetTestHelper {
+  function setUp() {
+    // Since this is a base class for many test cases, support the same
+    // flexibility that DrupalWebTestCase::setUp() has for the modules to be
+    // passed in as either an array or a variable number of string arguments.
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'media_youtube';
+    parent::setUp($modules);
+  }
+}
+
+/**
+ * Test the MediaInternetYouTubeHandler provider.
+ */
+class MediaInternetYouTubeTestCase extends MediaYouTubeTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'YouTube file handler provider',
+      'description' => 'Test the YouTube handler provider.',
+      'group' => 'Media YouTube',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('media_youtube_test');
+
+    // Disable the private file system which is automatically enabled by
+    // DrupalTestCase so we can test the upload wizard correctly.
+    variable_del('file_private_path');
+
+    $web_user = $this->drupalCreateUser(array('create files', 'add media from remote sources', 'edit own video files'));
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   * Tests YouTube file handler.
+   */
+  function testYouTubeFileHandling() {
+    // Step 1: Add a video file by providing a URL to the resource on YouTube.
+    $edit = array();
+    $edit['embed_code'] = 'https://www.youtube.com/watch?v=9g2U12SsRns';
+    $this->drupalPost('file/add/web', $edit, t('Next'));
+
+    // Check that the file exists in the database.
+    $fid = $this->getLastFileId();
+    $file = file_load($fid);
+    $this->assertTrue($file, t('File found in database.'));
+
+    // Check that the video file has been uploaded.
+    $this->assertRaw(t('!type %name was uploaded.', array('!type' => 'Video', '%name' => $file->filename)), t('Video file uploaded.'));
+
+    // Verify that the video formatter is used to render the full video.
+    $video_info = array(
+      'uri' => $file->uri,
+      'options' => array(
+        'width' => 640,
+        'height' => 390,
+        'autohide' => 2,
+        'autoplay' => FALSE,
+        'color' => 'red',
+        'enablejsapi' => FALSE,
+        'loop' => FALSE,
+        'modestbranding' => FALSE,
+        'nocookie' => FALSE,
+        'origin' => '',
+        'protocol' => 'https:',
+        'protocol_specify' => FALSE,
+        'rel' => TRUE,
+        'showinfo' => TRUE,
+        'theme' => 'dark',
+        'captions' => FALSE,
+      ),
+    );
+    $default_output = theme('media_youtube_video', $video_info);
+    $this->assertRaw($default_output, 'Video displayed using the Media: YouTube Video formatter.');
+
+    // Edit the file.
+    $this->drupalGet('file/' . $file->fid . '/edit');
+
+    // Verify that the image formatter is used to render the video preview.
+    $wrapper = file_stream_wrapper_get_instance_by_uri($file->uri);
+    $image_info = array(
+      'uri' => $file->uri,
+      'style_name' => 'media_thumbnail',
+      'path' => $wrapper->getLocalThumbnailPath(),
+      'alt' => isset($file->override['attributes']['alt']) ? $file->override['attributes']['alt'] : $file->filename,
+    );
+    $default_output = theme('image_style', $image_info);
+    $this->assertRaw($default_output, 'Video displayed using the Media: YouTube Image formatter.');
+  }
+}

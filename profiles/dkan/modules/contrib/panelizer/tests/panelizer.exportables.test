@@ -1,0 +1,169 @@
+<?php
+
+/**
+ * @file
+ * Test the exportables functionality for Panelizer.
+ */
+
+class PanelizerExportablesTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer exportables',
+      'description' => 'Test how exported configurations work.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need this extra module for the default it exports.
+    $modules[] = 'panelizer_test_exportables';
+
+    parent::setUp($modules);
+
+    // Enable Panelizer for the 'page' content type.
+    $this->togglePanelizer();
+    // Enable the Panels view mode too.
+    $this->simpleEnablePage('node_view');
+
+    // Reset the static variable used to identify permissions, otherwise the
+    // permissions check in drupalCreateUser will fail because of the new perms
+    // added for the newly Panelizered entity display.
+    $this->checkPermissions(array(), TRUE);
+  }
+
+  /**
+   * Verify that the exported configuration can be edited.
+   */
+  function testExportablesAreConfigurable() {
+    $perms = array(
+      // Standard node permissions.
+      'administer content types',
+      'access administration pages',
+
+      // Panelizer.
+      'administer panelizer',
+
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Load the Panelizer admin page for the 'page' content type.
+    $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager');
+    $this->assertResponse(200);
+
+    // The two defaults that were exported.
+    $defaults = array(
+      'node:page:with_storage' => 'Test (with Storage API)',
+      'node:page:without_storage' => 'Test (without Storage API)',
+    );
+
+    // Confirm the two exported displays are listed.
+    foreach ($defaults as $default => $label) {
+      $this->assertText($default);
+    }
+
+    // Try loading the exported displays' configuration pages.
+    foreach ($defaults as $default => $label) {
+      // $default = urlencode($default);
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/settings');
+      $this->assertResponse(200);
+      $this->assertFieldByName('title', $label);
+      $this->assertFieldByName('css_class', str_replace(':', '-', $default));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/context');
+      $this->assertResponse(200);
+      $this->assertText(t('Built in context'));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/access');
+      $this->assertResponse(200);
+      $this->assertText(t('No criteria selected, this test will pass.'));
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/layout');
+      $this->assertResponse(200);
+      $this->assertFieldByName('categories');
+      $this->drupalGet('admin/structure/types/manage/page/panelizer/page_manager/' . $default . '/content');
+      $this->assertResponse(200);
+    }
+  }
+
+  /**
+   * Verify that the exported configuration can be edited when applied to an
+   * individual entity.
+   */
+  function testExportablesChangeablePreEntity() {
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'edit own page content',
+
+      // Allow access to the 'panelizer' tab.
+      'administer panelizer node page overview',
+      // Permission to manage the 'content', i.e. the display.
+      'administer panelizer node page content',
+      // Allow choosing the display that is used.
+      'administer panelizer node page choice',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Create a node.
+    $edit = array(
+      'panelizer[page_manager][name]' => 'node:page:without_storage',
+    );
+    $node = $this->createNode($edit);
+    $this->assertNotEqual($node->nid, 0);
+
+    // Load the Panelizer main page.
+    $this->drupalGet('node/' . $node->nid . '/panelizer');
+    $this->assertResponse(200);
+
+    // Confirm there's a link to the 'content' page, and load it.
+    $path = 'node/' . $node->nid . '/panelizer/page_manager/content';
+    $this->assertLinkByHref(url($path));
+    $this->drupalGet($path);
+    $this->assertResponse(200);
+
+    // Confirm the 'Add content' link is on the page.
+    $this->assertLink(t('Add content'));
+    $ajax_path = 'panels/ajax/editor/select-content/panelizer:node:' . $node->nid . ':page_manager:' . $node->vid . '/center';
+    // Need to pass the path through url() to get the correct syntax for the
+    // actual link.
+    $this->assertLinkByHref(url($ajax_path));
+
+    // Load the AJAX path to see what it contains.
+    $json = $this->drupalGetAJAX($ajax_path);
+    $this->assertResponse(200);
+
+    // Examine the JSON response from the AJAX API.
+    $this->verbose('<pre>' . print_r($json, TRUE) . '</pre>');
+    // $this->assertEqual(count($json), 2);
+    $this->assertTrue(isset($json[0]['command']));
+    $this->assertEqual($json[0]['command'], 'settings');
+    $this->assertTrue(isset($json[0]['settings']));
+    $this->assertTrue(isset($json[0]['merge']));
+    $this->assertEqual($json[0]['merge'], 'TRUE');
+    $this->assertTrue(isset($json[1]['command']));
+
+    // This is what should happen.
+    $this->assertEqual($json[1]['command'], 'modal_display');
+    $this->assertTrue(isset($json[1]['title']));
+    if (isset($json[1]['title'])) {
+      $this->assertEqual($json[1]['title'], t('Add content to Center'));
+    }
+    $this->assertTrue(isset($json[1]['output']));
+
+    // This is what should not happen.
+    $this->assertNotEqual($json[1]['command'], 'alert');
+    $this->assertFalse(isset($json[1]['text']));
+    if (isset($json[1]['text'])) {
+      $this->assertNotEqual($json[1]['text'], t('You are not authorized to access this page.'), 'Access Denied error in the AJAX response.');
+    }
+  }
+
+}

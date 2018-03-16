@@ -1,0 +1,270 @@
+<?php
+
+/**
+ * @file
+ * Tests for taxonomy_menu.module.
+ */
+
+/**
+ * Class with common helper methods.
+ */
+class TaxonomyMenuWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Returns a new vocabulary with random properties.
+   */
+  function createVocabulary() {
+    // Create a vocabulary.
+    $vocabulary = new stdClass();
+    $vocabulary->name = $this->randomName();
+    $vocabulary->description = $this->randomName();
+    $vocabulary->machine_name = drupal_strtolower($this->randomName());
+    $vocabulary->help = '';
+    $vocabulary->nodes = array('article' => 'article');
+    $vocabulary->weight = mt_rand(0, 10);
+    taxonomy_vocabulary_save($vocabulary);
+    return $vocabulary;
+  }
+
+  /**
+   * Returns a new term with random properties in vocabulary $vid.
+   */
+  function createTerm($vocabulary) {
+    $term = $this->createNewTerm($vocabulary);
+    taxonomy_term_save($term);
+    return $term;
+  }
+
+  /**
+   * Get the first available text format
+   */
+  function getTextFormat() {
+    static $format = NULL;
+    if ($format === NULL) {
+      $format = db_query_range('SELECT format FROM {filter_format}', 0, 1)->fetchField();
+    }
+    return $format;
+  }
+
+  /**
+   * Create a new term record
+   */
+  function createNewTerm($vocabulary, $name = NULL, $parent = NULL) {
+    $term = new stdClass();
+    $term->name = ($name === NULL) ? $this->randomName() : $name;
+    $term->description = $this->randomName();
+    $term->format = $this->getTextFormat();
+    $term->vid = $vocabulary->vid;
+    if ($parent !== NULL) {
+      $term->parent = array($parent->tid);
+    }
+
+    return $term;
+  }
+}
+
+/**
+ * Tests for taxonomy vocabulary functions.
+ */
+class TaxonomyMenuUnitTest extends TaxonomyMenuWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'CRUD',
+      'description' => 'Test CRUD functions',
+      'group' => 'Taxonomy menu',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('taxonomy_menu');
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer blocks', 'administer taxonomy', 'administer menu', 'administer nodes', 'create article content', 'create page content', 'edit any article content', 'edit any page content', 'delete any article content', 'delete any page content', 'access content overview'));
+    $this->drupalLogin($admin_user);
+    $this->vocabulary = $this->createVocabulary();
+    $this->term = $this->createTerm($this->vocabulary);
+  }
+
+  function testTaxonomyMenuCRUD() {
+    $edit = array();
+    $edit['taxonomy_menu[vocab_parent]'] = 'main-menu:0';
+    $this->drupalPost('admin/structure/taxonomy/' . $this->vocabulary->machine_name . '/edit', $edit, 'Save');
+
+    $this->assertResponse(200);
+
+    $term = $this->term;
+    $this->assertLink($term->name);
+
+    $term = $this->term;
+    taxonomy_term_delete($term->tid);
+    $this->drupalGet('<front>');
+
+    $this->assertNoLink($term->name);
+
+    $node = $this->drupalCreateNode();
+    $this->drupalPost("node/$node->nid/delete", array(), t('Delete'));
+    $this->drupalGet("node/$node->nid");
+    $this->assertResponse(404);
+
+  }
+
+  function testTaxonomyMenuCustomMenu() {
+    // Create a custom menu.
+    $edit = array();
+    $custom_name = $this->randomName(16);
+    $machine_name = drupal_substr(hash('sha256', $custom_name), 0, MENU_MAX_MENU_NAME_LENGTH_UI);
+    $edit['title'] = $custom_name;
+    $edit['menu_name'] = $machine_name;
+    $this->drupalPost('admin/structure/menu/add', $edit, 'Save');
+
+    // Move the menu block to a region.
+    $edit = array();
+    $edit['blocks[menu_menu-' . $machine_name . '][region]'] = 'sidebar_first';
+    $this->drupalPost('admin/structure/block', $edit, 'Save blocks');
+    $this->assertResponse(200);
+
+    $edit = array();
+    $edit['taxonomy_menu[vocab_parent]'] = 'menu-' . $machine_name . ':0';
+    $this->drupalPost('admin/structure/taxonomy/' . $this->vocabulary->machine_name . '/edit', $edit, 'Save');
+
+    $term = $this->term;
+    $this->drupalGet('<front>');
+    $this->assertLink($term->name);
+
+    $term = $this->term;
+    taxonomy_term_delete($term->tid);
+    $this->drupalGet('<front>');
+
+    $this->assertNoLink($term->name);
+  }
+}
+
+/**
+ * Tests for features requiring a taxonomy hierarchy
+ */
+class TaxonomyMenuHierarchyTest extends TaxonomyMenuWebTestCase {
+
+  var $forest = array(
+    "term1" => array(
+      "term1_1" => TRUE,
+      "term1_2" => array(
+        "term1_2_1" => TRUE,
+        "term1_2_2" => TRUE,
+      ),
+    ),
+    "term2" => array(
+      "term2_1" => TRUE,
+      "term2_2" => TRUE,
+    ),
+    "term3" => TRUE
+  );
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Hierarchy',
+      'description' => 'Test functions related to taxonomy hierarchy',
+      'group' => 'Taxonomy menu',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('taxonomy_menu');
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'create article content', 'administer blocks', 'administer taxonomy', 'administer menu'));
+    $this->drupalLogin($admin_user);
+    $this->vocabulary = $this->createVocabulary();
+    $this->terms = array();
+    foreach ($this->forest as $name => $children) {
+      $this->terms[] = new TaxonomyMenuTreeNode($this, NULL, $name, $children);
+    }
+  }
+
+
+  function testTaxonomyMenuHierarchy() {
+    $edit = array();
+    $edit['taxonomy_menu[vocab_parent]'] = 'navigation:0';
+    $this->drupalPost('admin/structure/taxonomy/' . $this->vocabulary->machine_name . '/edit', $edit, 'Save');
+
+    $this->assertResponse(200);
+
+    // By default, auto expand is on : we must find the whole hierarchy
+    foreach ($this->terms as $term)  {
+      $this->assertLink($term->name); // 1st level
+      foreach ($term->children as $child) {
+        $this->assertLink($child->name); // 2nd level
+        foreach ($child->children as $granchild) {
+          $this->assertLink($granchild->name); // 3 level
+          // No sub level.
+        }
+      }
+    }
+
+    // Set auto expand to off
+    $edit = array();
+    $edit['taxonomy_menu[options][expanded]'] = FALSE;
+    //$edit['taxonomy_menu[options][rebuild]'] = '1'; // Rebuild menu on submit
+    $this->drupalPost('admin/structure/taxonomy/' . $this->vocabulary->machine_name . '/edit', $edit, 'Save');
+    $this->assertResponse(200);
+    //$this->drupalGet('admin/structure/taxonomy/'.  $this->vocabulary->machine_name . '/edit');
+
+    // We should have links to the first level of the hierarchy only
+    $this->drupalGet('<front>');
+    foreach ($this->terms as $term)  {
+      $this->assertLink($term->name);
+      foreach ($term->children as $child) {
+        $this->assertNoLink($child->name);
+      }
+    }
+
+    // Move to term1_2 : we should have links to
+    // - 1st level
+    // - siblings of term1_2
+    // - children of term1_2
+    $this->clickLink("term1");
+    $this->clickLink("term1_2");
+
+    foreach ($this->terms as $term)  {
+      $this->assertLink($term->name); // 1st level
+      foreach ($term->children as $child) {
+        // second level
+        if ($term->name != "term1") {
+          $this->assertNoLink($child->name);
+        }
+        else {
+          // We must have a link AND the children
+          $this->assertLink($child->name);
+          if ($child->name == "term1_2") {
+            foreach ($child->children as $grandchild) {
+              $this->assertLink($grandchild->name);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper class to build the tree and keep data on hand
+ */
+class TaxonomyMenuTreeNode {
+  function __construct(&$testcase, $parent, $name, $children) {
+    $this->name = $name;
+    $this->children = array();
+    $this->parent = $parent;
+
+    $this->term = $testcase->createNewTerm($testcase->vocabulary, $name, $parent ?$parent->term : NULL);
+
+    taxonomy_term_save($this->term);
+    if (is_array($children)) {
+      foreach ($children as $name => $grandchildren) {
+        $this->children[$name] = new TaxonomyMenuTreeNode($testcase, $this, $name, $grandchildren);
+      }
+    }
+  }
+
+  function display($level = "") {
+    foreach ($this->children as $child) {
+      $child->display($level . "  ");
+    }
+  }
+}
+

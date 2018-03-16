@@ -1,0 +1,583 @@
+<?php
+
+/**
+ * @file
+ * Integrates Recline.js visualization tools.
+ */
+
+// Trying to parse a big file in a browser could freeze it.
+define('FILE_SIZE_PREVIEW_LIMIT', 3000000);
+
+module_load_include('inc', 'recline', 'recline.field');
+
+/**
+ * Check if a preview it's embedded or not.
+ */
+function recline_embedded() {
+  return menu_get_item(current_path())['path'] === 'node/%/recline-embed';
+}
+
+/**
+ * Check if bootstrap is already added.
+ */
+function is_boostrap_available() {
+  global $theme;
+  $themes = list_themes();
+  if ($theme == 'nuboot_radix' || isset($themes[$theme]->base_themes['nuboot_radix'])) {
+    return TRUE;
+  }
+  else {
+    $re = '/bootstrap(\\.min)?\\.js/';
+    $js = array_keys(drupal_add_js());
+    foreach ($js as $j) {
+      if (preg_match($re, $j)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function recline_menu() {
+  $items = array();
+
+  $items['admin/dkan/recline'] = array(
+    'title' => 'Recline Configuration',
+    'description' => 'Configurable items for recline module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recline_configuration_form'),
+    'access arguments' => array('access recline configuration'),
+  );
+  $items['node/%node/recline-embed'] = array(
+    'title' => 'Embed',
+    'page callback' => 'recline_embed',
+    'page arguments' => array(1),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function recline_permission() {
+  $permissions['access recline configuration'] = array(
+    'title' => t('Configure recline module items.'),
+    'description' => t('Access recline module configuration items.'),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Callback for admin/dkan/recline page.
+ */
+function recline_configuration_form() {
+  $form = array();
+  $form['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>' . t('
+      Recline\'s module configuration items'
+    ) . '</p>',
+  );
+  $form['preview_limit'] = array(
+    '#type' => 'textfield',
+    '#title' => t('File size preview limit'),
+    '#default_value' => format_size(variable_get('file_size_preview_limit', FILE_SIZE_PREVIEW_LIMIT)),
+    '#attributes' => array('placeholder' => 'e.g 20MB'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save',
+    '#submit' => array('recline_configuration_form_save'),
+  );
+  return $form;
+}
+
+/**
+ * Submit function for recline_configuration_form.
+ */
+function recline_configuration_form_save($form, &$form_state) {
+  if (isset($form['preview_limit']['#value'])) {
+    variable_set('file_size_preview_limit', parse_size($form['preview_limit']['#value']));
+    drupal_set_message(t('Recline Configuration saved'), 'status', FALSE);
+  }
+}
+
+/**
+ * Callback function to render the view in a frame.
+ */
+function recline_embed($node) {
+
+  // Search for a field of type 'recline_field'. Render content of first found.
+  $fields_info = field_info_instances('node', $node->type);
+  foreach ($fields_info as $field_name => $value) {
+    $field_info = field_info_field($field_name);
+    $type = $field_info['type'];
+    if ($type == 'recline_field') {
+      $content = field_view_field('node', $node, $field_name);
+      if ($content) {
+        print theme('recline_embed', array('title' => $node->title, 'content' => render($content)));
+        recline_add_cache_header();
+        drupal_exit();
+      }
+    }
+  }
+
+  // If no populated field of type 'recline_field' is found, display 404 page.
+  drupal_fast_404();
+  drupal_not_found();
+}
+
+/**
+ * Adds cache header for pages and endpoints that require.
+ */
+function recline_add_cache_header() {
+  // Start with default page cache.
+  $max_age = variable_get('page_cache_maximum_age', 0);
+  // Support using APE module.
+  if (module_exists('ape')) {
+    $max_age = ape_cache_set();
+    // Check to see if another module or hook has already set an APE header.
+    // This allows rules or other module integration to take precedent.
+    if (is_null($max_age)) {
+      if (ape_check_path(variable_get('ape_alternatives', ''), $_GET['q'])) {
+        $max_age = variable_get('ape_alternative_lifetime', 0);
+      }
+      else {
+        $max_age = variable_get('page_cache_maximum_age', 0);
+      }
+    }
+    // Allow max_age to be altered by hook_ape_cache_alter().
+    $original_max_age = $max_age;
+    drupal_alter('ape_cache_expiration', $max_age, $original_max_age);
+  }
+  $name = 'Cache-Control';
+  $value = 'no-cache, must-revalidate, post-check=0, pre-check=0';
+  // Set cache header if age dictates.
+  if ($max_age > 0) {
+    $value = 'public, max-age=' . $max_age;
+  }
+  drupal_add_http_header($name, $value);
+}
+
+/**
+ * Process variables for embed-html.tpl.php.
+ *
+ * The $variables array contains the following elements:
+ * - content: the rendered content.
+ *
+ * @see embed-html.tpl.php
+ */
+function template_preprocess_recline_embed(&$variables) {
+  global $base_url, $language;
+  $variables['base_url'] = $base_url;
+  $variables['language'] = $language;
+  $variables['language_dir'] = $language->direction == LANGUAGE_RTL ? 'rtl' : 'ltr';
+  $variables['head']     = drupal_get_html_head();
+  $variables['css']      = drupal_add_css();
+  $variables['styles']   = drupal_get_css();
+  $variables['scripts']  = drupal_get_js();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function recline_theme() {
+  return array(
+    'recline_default_formatter' => array(
+      'variables' => array('item' => NULL),
+      'file' => 'recline.theme.inc',
+    ),
+    'recline_widget' => array(
+      'render element' => 'element',
+      'file' => 'recline.theme.inc',
+    ),
+    'recline_embed' => array(
+      'variables' => array('title' => NULL, 'content' => NULL),
+      'template' => 'recline-embed',
+    ),
+    'recline_embed_button' => array(
+      'variables' => array('node' => NULL),
+      'template' => 'recline-embed-button',
+    ),
+  );
+}
+
+/**
+ * Adds default location if libraries module is not installed or loaded yet.
+ */
+function _recline_library_path() {
+  if (module_exists('libraries')) {
+    $library_path = libraries_get_path('recline');
+  }
+  else {
+    $library_path = 'sites/all/libraries/recline';
+  }
+  return $library_path;
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function recline_libraries_info() {
+  $libraries['recline'] = array(
+    'name' => 'Recline',
+    'vendor url' => 'http://reclinejs.com',
+    'download url' => 'https://github.com/okfn/recline/zipball/master',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'README.md',
+      'pattern' => '@v+([0-9][.][0-9])@',
+      'lines' => 49,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/grid.css',
+        'css/slickgrid.css',
+        'css/flot.css',
+        'css/map.css',
+        'css/multiview.css',
+        'css-site/pygments.css',
+      ),
+      'js' => array(
+        'dist/recline.js',
+      ),
+    ),
+  );
+
+  $libraries['lodash'] = array(
+    'name' => 'lodash',
+    'vendor url' => 'https://github.com/lodash/lodash',
+    'download url' => 'https://github.com/lodash/lodash/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/lodash.compat.min.js',
+      ),
+    ),
+  );
+
+  $libraries['backbone'] = array(
+    'name' => 'backbone',
+    'vendor url' => 'https://github.com/jashkenas/backbone',
+    'download url' => 'https://github.com/jashkenas/backbone/archive/master.zip',
+    'version' => '1.1.2',
+    'files' => array(
+      'js' => array(
+        'backbone-min.js',
+      ),
+    ),
+  );
+
+  $libraries['csv'] = array(
+    'name' => 'csv',
+    'vendor url' => 'https://github.com/okfn/csv.js',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'csv.js',
+      ),
+    ),
+  );
+
+  $libraries['slickgrid'] = array(
+    'name' => 'SlickGrid',
+    'vendor url' => 'https://github.com/mleibman/SlickGrid',
+    'download url' => 'https://github.com/mleibman/SlickGrid/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'slick.grid.js',
+      'pattern' => '/SlickGrid v(\d+\.\d+)/',
+    ),
+    'files' => array(
+      'js' => array(
+        'lib/jquery.event.drag-2.2.js',
+        'lib/jquery.event.drop-2.2.js',
+        'slick.core.js',
+        'slick.formatters.js',
+        'slick.editors.js',
+        'slick.grid.js',
+        'lib/jquery-ui-1.8.16.custom.min.js',
+        'plugins/slick.rowselectionmodel.js',
+        'plugins/slick.rowmovemanager.js',
+      ),
+      'css' => array(
+        'slick.grid.css',
+      ),
+    ),
+  );
+
+  $libraries['mustache'] = array(
+    'name' => 'mustache',
+    'vendor url' => 'http://github.com/janl/mustache.js',
+    'download url' => 'http://github.com/janl/mustache.js.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'mustache.min.js',
+      ),
+    ),
+  );
+
+  $libraries['moment'] = array(
+    'name' => 'moment',
+    'vendor url' => 'https://github.com/moment/moment',
+    'download url' => 'https://github.com/moment/moment/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'min/moment.min.js',
+      ),
+    ),
+  );
+
+  $libraries['leaflet'] = array(
+    'name' => 'Leaflet',
+    'vendor url' => 'http://leaflet.cloudmade.com',
+    'download url' => 'https://github.com/Leaflet/Leaflet.git',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/leaflet.js',
+      ),
+      'css' => array(
+        'dist/leaflet.css',
+      ),
+    ),
+  );
+
+  $libraries['flot'] = array(
+    'name' => 'Flot',
+    'vendor url' => 'https://github.com/flot/flot',
+    'download url' => 'https://github.com/flot/flot.git',
+    'version' => '0.8.1',
+    'files' => array(
+      'js' => array(
+        'jquery.flot.js',
+      ),
+    ),
+  );
+
+  $libraries['recline_deeplink'] = array(
+    'name' => 'Recline DeepLink',
+    'vendor url' => 'https://github.com/NuCivic/recline-deeplink',
+    'download url' => 'https://github.com/NuCivic/recline-deeplink',
+    'path' => '',
+    'version' => array(
+      'file' => 'bower.js',
+      'pattern' => '@+([0-9][.][0-9][.][0-9])@',
+      'lines' => 3,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/recline.deeplink.min.js',
+      ),
+    ),
+  );
+
+  $libraries['deep_diff'] = array(
+    'name' => 'Deep Diff',
+    'vendor url' => 'https://github.com/flitbit/diff',
+    'download url' => 'https://github.com/flitbit/diff',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'Readme.md',
+      'pattern' => '@([0-9][.][0-9][.][0-9])@',
+      'lines' => 20,
+      'cols' => 100,
+    ),
+    'files' => array(
+      'js' => array(
+        'releases/deep-diff-0.3.0.min.js',
+      ),
+    ),
+  );
+
+  $libraries['leaflet_markercluster'] = array(
+    'name' => 'Leaflet MarkerCluster',
+    'vendor url' => 'https://github.com/Leaflet/Leaflet.markercluster',
+    'download url' => 'https://github.com/Leaflet/Leaflet.markercluster/archive/c5864dbfca9e71c86ac61b432862cc77f8fd8e68.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'CHANGELOG.md',
+      'pattern' => '@([0-9][.][0-9])@',
+      'lines' => 20,
+      'cols' => 100,
+    ),
+    'files' => array(
+      'css' => array(
+        'dist/MarkerCluster.css',
+        'dist/MarkerCluster.Default.css',
+      ),
+      'js' => array(
+        'dist/leaflet.markercluster.js',
+      ),
+    ),
+  );
+
+  $libraries['xls'] = array(
+    'name' => 'xls',
+    'vendor url' => 'https://github.com/NuCivic/recline.backend.xlsx',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'dist/recline.backend.xlsx.min.js',
+      ),
+    ),
+  );
+
+  $libraries['jsxlsx'] = array(
+    'name' => 'jsxlsx',
+    'vendor url' => 'https://github.com/SheetJS/js-xls',
+    'version' => '0.7.5',
+    'files' => array(
+      'js' => array(
+        'dist/xlsx.core.min.js',
+      ),
+    ),
+  );
+
+  $libraries['jsonview'] = array(
+    'name' => 'jQuery JSONView',
+    'vendor url' => 'https://github.com/yesmeck/jquery-jsonview',
+    'download url' => 'https://github.com/yesmeck/jquery-jsonview',
+    'path' => '',
+    'version' => array(
+      'file' => 'bower.json',
+      'pattern' => '@+([0-9][.][0-9][.][0-9])@',
+      'lines' => 4,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/jquery.jsonview.js',
+      ),
+      'css' => array(
+        'dist/jquery.jsonview.css',
+      ),
+    ),
+  );
+
+  $libraries['highlight'] = array(
+    'name' => 'Highlight.js',
+    'vendor url' => 'https://github.com/isagalaev/highlight.js',
+    'download url' => 'https://github.com/isagalaev/highlight.js',
+    'path' => '',
+    'version' => '8.8.0',
+    'files' => array(
+      'js' => array(
+        'highlight.pack.js',
+      ),
+      'css' => array(
+        'styles/default.css',
+      ),
+    ),
+  );
+
+  if (!is_boostrap_available()) {
+    $libraries['recline']['files']['js'][] = 'vendor/bootstrap/3.2.0/js/bootstrap.js';
+    $libraries['recline']['files']['css'][] = 'vendor/bootstrap/3.2.0/css/bootstrap.css';
+  }
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_library().
+ */
+function recline_library() {
+  $module_path = drupal_get_path('module', 'recline');
+  $libraries['highlight'] = array(
+    'title' => 'Highlight.js',
+    'website' => 'https://github.com/isagalaev/highlight.js',
+    'version' => '8.8.0',
+    'js' => array(
+      $module_path . '/lib/highlight/highlight.pack.js' => array('group' => JS_DEFAULT),
+    ),
+    'css' => array(
+      $module_path . '/lib/highlight/styles/default.css',
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Discovers extension based off of mimetype.
+ *
+ * @param string $mimetype
+ *   Mimetype to search for.
+ *
+ * @return string
+ *   Extension or mimetype.
+ */
+function recline_get_data_type($mimetype) {
+  include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+  $type = '';
+  $mapping = file_mimetype_mapping();
+  $offset = array_search($mimetype, $mapping['mimetypes']);
+  if ($offset) {
+    $type = array_search($offset, $mapping['extensions']);
+  }
+  else {
+    $type = $mimetype;
+  }
+  return $type;
+}
+
+/**
+ * Returns array of delimiters.
+ */
+function recline_delimiters() {
+  return array(
+    ',' => ',',
+    ';' => ';',
+    '|' => '|',
+    '+' => '+',
+    "\t" => 'tab',
+  );
+}
+
+/**
+ * Implements hook_file_download().
+ */
+function recline_file_download($uri, $field_type = 'file') {
+  return file_file_download($uri, 'recline_field');
+}
+
+/**
+ * Implements hook_file_resup_supported_field_widget_types().
+ */
+function recline_file_resup_supported_field_widget_types() {
+  return 'recline_widget';
+}
+
+/**
+ * Returns array of possible view types supported by Recline.
+ */
+function recline_view_options() {
+  $options = array(
+    'grid' => t('Grid'),
+    'graph' => t('Graph'),
+    'map' => t('Map'),
+  );
+  return $options + module_invoke_all('recline_view_options');
+}

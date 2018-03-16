@@ -1,0 +1,26 @@
+name = Panels
+description = Core Panels display functions; provides no external UI, at least one other Panels module should be enabled.
+core = 7.x
+package = "Panels"
+configure = admin/structure/panels
+dependencies[] = ctools
+files[] = panels.module
+files[] = includes/common.inc
+files[] = includes/legacy.inc
+files[] = includes/plugins.inc
+files[] = plugins/views/panels_views_plugin_row_fields.inc
+
+; Tests.
+; Task handlers for entities. These inherit off one base class to make it easier
+; to repeat tests across multiple entity types.
+files[] = tests/PanelsEntityViewWebTestCase.test
+files[] = tests/PanelsNodeViewWebTestCase.test
+files[] = tests/PanelsTermViewWebTestCase.test
+files[] = tests/PanelsUserViewWebTestCase.test
+
+; Information added by Drupal.org packaging script on 2017-02-06
+version = "7.x-3.9"
+core = "7.x"
+project = "panels"
+datestamp = "1486394388"
+

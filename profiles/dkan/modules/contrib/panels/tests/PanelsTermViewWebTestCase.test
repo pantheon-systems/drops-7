@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Some rudimentary tests for the term_view handler.
+ */
+
+class PanelsTermViewWebTestCase extends PanelsEntityViewWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panels term_view tests',
+      'description' => 'Test the standard term_view task handler.',
+      'group' => 'Panels',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_name = 'term_view';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $view_label = 'Taxonomy term template';
+
+}

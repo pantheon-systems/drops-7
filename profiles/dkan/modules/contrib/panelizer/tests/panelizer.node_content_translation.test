@@ -1,0 +1,161 @@
+<?php
+/**
+ * @file
+ * Test the content translation integration for Panelizer.
+ */
+
+/**
+ *
+ */
+class PanelizerNodeContentTranslationTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer node translations',
+      'description' => 'Test node translations using Content Translation.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need the module that manages all languages.
+    $modules[] = 'locale';
+
+    // Enable the Content Translation module.
+    $modules[] = 'translation';
+    parent::setUp($modules);
+
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Locale.
+      'administer languages',
+
+      // Content Translation.
+      'translate content',
+
+      // Panelizer.
+      'administer panelizer',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+
+    // Enable extra locales.
+    $this->setupLocales();
+
+    // Enable content translation for the 'page' content type.
+    variable_set('language_content_type_page', 2);
+  }
+
+  /**
+   * Verify that when a node is translated the customized Panelizer display is
+   * cloned to the new node.
+   */
+  function testContentTranslation() {
+    $entity_type = 'node';
+    // The content type that is being tested.
+    $content_type = 'page';
+    // The view mode that is being tested.
+    $view_mode = 'page_manager';
+    // The text that will be checked for on the page.
+    $sample_text = 'Hello world';
+
+    // @todo Enable a second language.
+    // @todo Allow the content type to be translated.
+
+    // Ensure node_view panel page is enabled for full page override to work.
+    $this->simpleEnablePage($entity_type . '_view');
+
+    // Enable Panelizer for this content type; receive an updated handler so
+    // that it can be used later.
+    $handler = $this->togglePanelizer($entity_type, $content_type, 'page_manager', 1, 1, 1);
+
+    // Create a node with the English language; it will inherit the default
+    // Panelizer display.
+    $options = array(
+      'title' => 'English test page',
+      'type' => $content_type,
+      'language' => 'en',
+    );
+    $node = $this->drupalCreateNode($options);
+    $this->verbose(print_r($node, TRUE));
+
+    // Check that the post can been panelized.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+    $this->assertLink('Customize display', 0, 'The customize display link appears on the page');
+    $this->assertLinkByHref('node/' . $node->nid . '/panelizer', 0, 'A link to customize the node appears on the page');
+
+    // Check that the view mode can be panelized.
+    $this->drupalGet('node/' . $node->nid . '/panelizer/' . $view_mode . '/content');
+    $this->assertResponse(200);
+    $this->assertLink(t('Full page override'), 0, 'The panelize link for the "Full page override" view mode appears on the page');
+
+    // Load the default display for this node.
+    $panelizer = new StdClass();
+    $panelizer->name = NULL;
+    $panelizer->entity_type = 'node';
+    $panelizer->entity_id = $node->nid;
+    $panelizer->view_mode = $view_mode;
+    $panelizer->display_is_modified = TRUE;
+    $panelizer->display = $handler->get_default_display($content_type, $view_mode);
+    $panelizer->did = $panelizer->display->did;
+    $node->panelizer[$view_mode] = $panelizer;
+    $this->verbose('<pre>' . print_r($node, TRUE) . '</pre>');
+
+    // Customize the page.
+    $this->addTestPane($node->panelizer[$view_mode]->display, $sample_text);
+
+    // Save the node to update the display. Use the handler directly otherwise
+    // the in-memory handler object won't have the updated settings; see above.
+    $handler->hook_entity_update($node);
+    $this->verbose('<pre>' . print_r($node, TRUE) . '</pre>');
+    $node = node_load($node->nid);
+    $this->verbose('<pre>' . print_r($node, TRUE) . '</pre>');
+
+    // Confirm the node view page shows the test string.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+    $this->assertText($sample_text);
+
+    // Confirm the node has a custom Panelizer config.
+    $this->assertTrue(isset($node->panelizer[$view_mode]));
+    $this->assertTrue(!empty($node->panelizer[$view_mode]->did));
+
+    // Translate the node into French.
+    $this->drupalGet('node/add/page', array('query' => array('translation' => $node->nid, 'target' => 'fr')));
+    $args = array(
+      'title' => 'French test page',
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+
+    // Confirm that the page saved correctly.
+    $t_args = array('@type' => t('Basic page'), '%title' => $args['title']);
+    $this->assertText(strip_tags(t('@type %title has been created.', $t_args)));
+
+    // Load the translated node.
+    $node_fr = $this->drupalGetNodeByTitle($args['title']);
+    $this->verbose('<pre>' . print_r($node_fr, TRUE) . '</pre>');
+
+    // Load the node page.
+    $this->drupalGet('node/' . $node_fr->nid);
+    $this->assertResponse(200);
+    $this->assertText($sample_text);
+
+    // Confirm that the translated node has a copy of the display, i.e the
+    // same contents but a different did.
+    $this->assertTrue(isset($node_fr->panelizer[$view_mode]));
+    $this->assertTrue(!empty($node_fr->panelizer[$view_mode]->did));
+  }
+
+}

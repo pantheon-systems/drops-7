@@ -1,0 +1,8 @@
+0.2.0
+-----
+Add spectrum colorpicker.
+
+0.3.0
+-----
+Add query editor and filter editor.
+Merge updates from civic_141 branch

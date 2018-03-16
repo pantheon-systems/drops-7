@@ -1,0 +1,16 @@
+name = UUID Reference
+description = Field to reference another entity by its UUID.
+core = 7.x
+package = uuid
+
+dependencies[] = field
+dependencies[] = uuid
+
+files[] = uuidreference.test
+
+; Information added by drupal.org packaging script on 2013-10-19
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "uuidreference"
+datestamp = "1382151143"
+

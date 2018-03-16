@@ -1,0 +1,20 @@
+name = Workbench Email
+description = Provides email templates during specific transitions
+package = Workbench
+core = 7.x
+
+configure = admin/config/workbench/email
+
+dependencies[] = workbench_moderation
+dependencies[] = token
+
+; Add a dependency on Drupal 7.12, when the ability to stop emails being sent
+; was added to core.
+dependencies[] = system (>=7.12)
+
+; Information added by Drupal.org packaging script on 2017-01-31
+version = "7.x-3.12"
+core = "7.x"
+project = "workbench_email"
+datestamp = "1485883387"
+

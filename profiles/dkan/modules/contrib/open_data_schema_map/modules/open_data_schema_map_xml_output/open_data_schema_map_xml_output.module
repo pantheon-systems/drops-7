@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Provides XML output for Open Data Schema Map.
+ */
+$module_path = drupal_get_path('module', 'open_data_schema_map_xml_output');
+include implode('/', array($module_path, 'autoload.php'));
+
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
+
+define("DEFAULT_XML_ROOT", "records");
+define("DEFAULT_XML_TAG", "record");
+
+/**
+ * Implements hook_schema_alter().
+ */
+function open_data_schema_map_xml_output_schema_alter(&$schema) {
+  $schema['open_data_schema_map']['fields']['xml_root'] = array(
+    'type' => 'varchar',
+    'description' => "XML Root",
+    'length' => 60,
+    'not null' => False,
+    'default' => 'records'
+  );
+  $schema['open_data_schema_map']['fields']['xml_defaulttag'] = array(
+    'type' => 'varchar',
+    'description' => "XML Defaulttag",
+    'length' => 60,
+    'not null' => False,
+    'default' => 'record'
+  );
+}
+
+/**
+ * Implements hook_odsm_form_alter().
+ */
+function open_data_schema_map_xml_output_odsm_form_alter(&$form, $api) {
+  $form['xml_root'] = array(
+    '#title' => 'XML Root',
+    '#type' => 'textfield',
+    '#description' => t('(XML only) Enter the XML Root Name (default: records).'),
+    '#required' => FALSE,
+    '#default_value' => ($api && property_exists($api, 'xml_root')) ? $api->xml_root : '',
+    '#weight' => 3,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="outputformat"]' => array('value' => 'xml'),
+      ),
+    ),
+  );
+  $form['xml_defaulttag'] = array(
+    '#title' => 'XML Default Node',
+    '#type' => 'textfield',
+    '#description' => t('(XML only) Enter the XML Default Node Name (default: record).'),
+    '#required' => FALSE,
+    '#default_value' => ($api && property_exists($api, 'xml_defaulttag')) ? $api->xml_defaulttag : '',
+    '#weight' => 4,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="outputformat"]' => array('value' => 'xml'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_odsm_page_overview_alter().
+ */
+function open_data_schema_map_xml_output_odsm_page_overview_alter(&$data) {
+  unset($data['xml_root']);
+  unset($data['xml_defaulttag']);
+}
+
+/**
+ * Implements hook_odsm_output_format().
+ */
+function open_data_schema_map_xml_output_odsm_output_format() {
+  return array(
+    'xml' => array(
+      'callback' => 'open_data_schema_map_xml_output_render',
+      'headers' => array(
+        'Content-Type' => 'application/xml',
+      ),
+    ),
+  );
+}
+
+/**
+ * Render function for hook_odsm_output_format implementation
+ */
+
+function open_data_schema_map_xml_output_render($api, $result) {
+  // We are returning XML, so tell the browser.
+  $xml_root = DEFAULT_XML_ROOT;
+  $xml_defaulttag = DEFAULT_XML_TAG;
+  if (isset($api->xml_root) && $api->xml_root != '') {
+    $xml_root = $api->xml_root;
+  }
+  if (isset($api->xml_defaulttag) && $api->xml_defaulttag != '') {
+    $xml_defaulttag = $api->xml_defaulttag;
+  }
+
+  $xml = array();
+  $xml[$xml_defaulttag] = $result;
+  unset($xml[$xml_defaulttag]['key']);
+
+  //Allow alter xml before create the output
+  drupal_alter('open_data_schema_map_xml_output_render_data', $xml, $api);
+
+  $encoders = array(
+    new XmlEncoder($xml_root)
+  );
+
+  $normalizers = array(new GetSetMethodNormalizer());
+  $serializer = new Serializer($normalizers, $encoders);
+
+  $output =  $serializer->serialize($xml, 'xml');
+
+  //Allow alter xml after create the output
+  drupal_alter('open_data_schema_map_xml_output_post_render_data', $output, $api);
+
+  return $output;
+}
+

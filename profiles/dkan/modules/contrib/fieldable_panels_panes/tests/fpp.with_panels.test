@@ -1,0 +1,180 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module with Panels.
+ */
+
+class FppWithPanelsTest extends FppTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for Panels',
+      'description' => 'Confirm that FPP works with Panels.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+
+    // Helper.
+    $modules[] = 'fpp_with_panels_test';
+
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+
+    // Create a user with all the permissions
+    $permissions = array(
+      // Needed for Page Manager.
+      'administer page manager',
+      'use page manager',
+    );
+    $this->adminUser = $this->createAdminUser($permissions);
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Make sure admin titles with XSS code can't break the site.
+   */
+  function testAdminTitleLinkWithAmpersands() {
+    // Create an FPP with an XSS payload in the admin title.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = 'This is a "test" & it should work';
+    $fpp->reusable = 1;
+    $fpp->link = 1;
+    $fpp->path = 'fpp-with-panels-test';
+    $fpp = fieldable_panels_panes_save($fpp);
+
+    // Load the test Panels page.
+    ctools_include('page', 'page_manager', 'plugins/tasks');
+    $page = page_manager_page_load('fpp_with_panels_test');
+    $this->verbose(print_r($page, TRUE));
+
+    // Load the handlers for this page.
+    $handlers = page_manager_load_task_handlers(page_manager_get_task('page'), $page->name);
+    foreach ($page->default_handlers as $name => $handler) {
+      $display = $handler->conf['display'];
+      $this->verbose(print_r($display, TRUE));
+
+      // Generate a pane for the FPP.
+      $pane = panels_new_pane('fieldable_panels_pane', 'fpid:' . $fpp->fpid);
+      $pane->panel = 'middle';
+
+      // Add the pane to the display.
+      $display->panels[$pane->panel][] = $pane->pid;
+      $display->content[$pane->pid] = $pane;
+
+      // Save the display.
+      panels_save_display($display);
+      $this->verbose(print_r($display, TRUE));
+    }
+    // Save the page.
+    page_manager_page_save($page);
+
+    // Reload the display.
+    $page = page_manager_page_load('fpp_with_panels_test');
+    $this->verbose(print_r($page, TRUE));
+
+    // Load the test Panels page.
+    $this->drupalGet('fpp-with-panels-test');
+    $this->assertResponse(200);
+
+    // Confirm that the string is on the page in htmlencoded format.
+    $this->assertRaw(str_replace('&', '&amp;', $fpp->title));
+
+    // Confirm that the text does not exist on the page as-is, i.e. it has been
+    // htmlencoded.
+    $this->assertNoRaw($fpp->title);
+    $this->assertNoRaw(str_replace('&', '&amp;', str_replace('&', '&amp;', $fpp->title)));
+
+    // Confirm the link exists.
+    $this->assertLink($fpp->title);
+  }
+
+  /**
+   * Make sure titles with XSS code can't break the site.
+   */
+  function testTitleXSS() {
+    // Create an FPP with an XSS payload in the entity title.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = "<script>alert('XSS!');</script>";
+    $fpp->reusable = 1;
+    $fpp->admin_title = '';
+    $fpp = fieldable_panels_panes_save($fpp);
+
+    $this->checkAdminUIPaneTitleXSS($fpp);
+  }
+
+  /**
+   * Make sure admin titles with XSS code can't break the site.
+   */
+  function testAdminTitleXSS() {
+    // Create an FPP with an XSS payload in the admin title.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = 'XSS test';
+    $fpp->reusable = 1;
+    $fpp->admin_title = "<script>alert('XSS!');</script>";
+    $fpp = fieldable_panels_panes_save($fpp);
+
+    $this->checkAdminUIPaneTitleXSS($fpp);
+  }
+
+  /**
+   * Test that an XSS attack in a pane title won't work in the Panels UI.
+   *
+   * @param object $fpp
+   *   A full FPP entity object.
+   */
+  function checkAdminUIPaneTitleXSS($fpp) {
+    // Load the test Panels page.
+    ctools_include('page', 'page_manager', 'plugins/tasks');
+    $page = page_manager_page_load('fpp_with_panels_test');
+    $this->verbose(print_r($page, TRUE));
+
+    // Load the handlers for this page.
+    $handlers = page_manager_load_task_handlers(page_manager_get_task('page'), $page->name);
+    foreach ($page->default_handlers as $name => $handler) {
+      $display = $handler->conf['display'];
+      $this->verbose(print_r($display, TRUE));
+
+      // Generate a pane for the FPP.
+      $pane = panels_new_pane('fieldable_panels_pane', 'fpid:' . $fpp->fpid);
+      $pane->panel = 'middle';
+
+      // Add the pane to the display.
+      $display->panels[$pane->panel][] = $pane->pid;
+      $display->content[$pane->pid] = $pane;
+
+      // Save the display.
+      panels_save_display($display);
+      $this->verbose(print_r($display, TRUE));
+    }
+    // Save the page.
+    page_manager_page_save($page);
+
+    // Reload the display.
+    $page = page_manager_page_load('fpp_with_panels_test');
+    $this->verbose(print_r($page, TRUE));
+
+    // Load the Panels page's edit page.
+    $this->drupalGet('admin/structure/pages/nojs/operation/page-fpp_with_panels_test/handlers/fpp_with_panels_test__default/content');
+    $this->assertResponse(200);
+
+    // Confirm the whether the XSS string is still present but that the threat
+    // has been removed.
+    $this->assertText("alert('XSS!');", 'The XSS test title string was found.');
+    $this->assertNoRaw("<script>alert('XSS!');</script>", 'The XSS test title was properly defanged.');
+  }
+
+}

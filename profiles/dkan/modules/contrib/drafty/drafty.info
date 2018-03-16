@@ -1,0 +1,23 @@
+name = Drafty
+description = Facilitates handling of draft revisions.
+core = 7.x
+
+dependencies[] = entity
+
+test_dependencies[] = field_collection
+test_dependencies[] = entity_translation
+test_dependencies[] = title (>7.x-1.0-alpha7)
+test_dependencies[] = taxonomy
+
+; Tests
+files[] = tests/drafty.test
+files[] = tests/drafty.entity_translation.test
+files[] = tests/drafty.field_collection.test
+files[] = tests/drafty.title.test
+
+; Information added by Drupal.org packaging script on 2017-02-17
+version = "7.x-1.0-beta4"
+core = "7.x"
+project = "drafty"
+datestamp = "1487368194"
+

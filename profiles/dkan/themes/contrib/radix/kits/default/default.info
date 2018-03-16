@@ -1,0 +1,38 @@
+name        = {{Name}}
+description = {{Description}}
+screenshot  = screenshot.png
+core        = 7.x
+
+; Base - Radix
+base theme  = radix
+hidden = true
+
+; Regions
+regions[content] = Content
+
+; Breakpoints
+breakpoints[xs] = (max-width: 767px)
+breakpoints[sm] = (min-width: 768px) and (max-width: 991px)
+breakpoints[md] = (min-width: 992px) and (max-width: 1199px)
+breakpoints[lg] = (min-width: 1200px)
+
+; Panels
+plugins[panels][layouts] = panels/layouts
+plugins[panels][styles] = panels/styles
+
+; CSS - General
+stylesheets[all][]     = assets/css/{{machine_name}}.style.css
+
+; Javascript
+scripts[] = assets/js/{{machine_name}}.script.js
+
+; Maximum depth for dropdown menus (1 = no dropdowns, 2 = single dropdown,
+; 3 or greater = nested dropdown menus).
+settings[main_menu_max_depth] = 2
+
+; Information added by Drupal.org packaging script on 2017-02-02
+version = "7.x-3.6"
+core = "7.x"
+project = "radix"
+datestamp = "1486032196"
+

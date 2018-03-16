@@ -1,0 +1,193 @@
+7.x-1.45, 2017-05-11
+-------------------
+- No changes since last release.
+
+7.x-1.44, 2017-04-13
+-------------------
+- No changes since last release.
+
+7.x-1.43, 2017-02-22
+-------------------
+- No changes since last release.
+
+7.x-1.42, 2017-02-17
+-------------------
+- Update Media module to 7.x-2.0-rc3.
+
+Panopoly Images 7.x-1.41, 2016-11-17
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.40, 2016-08-20
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.39, 2016-08-18
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.38, 2016-08-03
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.37, 2016-06-16
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.36, 2016-06-16
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.35, 2016-05-04
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.34, 2016-04-20
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.33, 2016-04-14
+-----------------------------
+- Missing comma in panopoly-images.css.
+
+Panopoly Images 7.x-1.32, 2016-03-03
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.31, 2016-02-25
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.30, 2016-01-06
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.29, 2015-11-18
+-----------------------------
+- Tighten up media browser thumbnails.
+
+Panopoly Images 7.x-1.28, 2015-10-21
+-----------------------------
+- Type-o findthe in watchdog() text panopoly_images module.
+
+Panopoly Images 7.x-1.27, 2015-09-02
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.26, 2015-08-19
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.25, 2015-07-08
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.24, 2015-07-02
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.23, 2015-06-17
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.22, 2015-06-04
+-----------------------------
+- Update to latest ManualCrop 7.x-1.22-dev.
+- Caption filter doesn't select the correct image size when an image's size is
+  manually adjusted.
+- Panopoly_images module pass incorrect arguments when calling watchdog() inside
+  hook_init() implementaion.
+
+Panopoly Images 7.x-1.21, 2015-04-29
+-----------------------------
+- Set human-readable names for all of Panopoly's image styles.
+- Page full of variables after changing layout.
+- Update Features module to version 2.5.
+- Panopoly Images targets img elements.
+- Caption filter does not work with Quarter Size image format - or with floated
+  captions.
+
+Panopoly Images 7.x-1.20, 2015-03-25
+-----------------------------
+- CHANGELOG.txt updates for 1.19 went wrong.
+
+Panopoly Images 7.x-1.19, 2015-03-19
+------------------------------
+- Updated CHANGELOG.txt for 7.x-1.19 release.
+- Relabeled view modes baffles.
+
+Panopoly Images 7.x-1.18, 2015-02-26
+-----------------------------
+- Panopoly CSS causes issues with WYSIWYG image because of image style class names.
+
+Panopoly Images 7.x-1.17, 2015-02-18
+-----------------------------
+- HP Fatal error:  [] operator not supported for strings in panopoly_images/panopoly_images.module on line 90.
+
+Panopoly Images 7.x-1.16, 2015-02-12
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.15, 2015-01-12
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.14, 2014-11-19
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.13, 2014-10-17
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.12, 2014-10-15
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.11, 2014-08-14
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.10, 2014-08-06
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.9, 2014-07-31
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.8, 2014-07-25
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.7, 2014-07-16
+-----------------------------
+- Fixed 'file_display' components are always overridden (update Media / File Entity).
+- Fixed Cropped image not being served in WYSIWYG as "Original Size".
+
+Panopoly Images 7.x-1.6, 2014-05-22
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.5, 2014-04-30
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.4, 2014-04-24
+-----------------------------
+- Update manualcrop.make to match Drupal.org Whitelist.
+
+Panopoly Images 7.x-1.3, 2014-04-23
+-----------------------------
+- Improve compatibility with focal_point.
+- Manualcrop breaks Video widget.
+- Crop pictures when inserting them.
+- Update Media to at least 7.x-2.0-alpha3+37-dev for PSA-2014-001.
+
+Panopoly Images 7.x-1.2, 2014-13-08
+-----------------------------
+- Add CHANGELOG.txt
+
+Panopoly Images 7.x-1.1, 2014-01-13
+-----------------------------
+- Update all features.

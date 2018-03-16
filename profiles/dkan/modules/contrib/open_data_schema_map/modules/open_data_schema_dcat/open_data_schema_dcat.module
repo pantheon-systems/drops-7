@@ -1,0 +1,258 @@
+<?php
+
+/**
+ * @file
+ * Provides Schema mapping for DCAT.
+ */
+
+/**
+ * Implements hook_open_data_schema_map_info().
+ */
+function open_data_schema_dcat_open_data_schema_map_info() {
+  return array(
+    'title' => 'DCAT validation',
+    'name' => 'dcat',
+    'validation_class' => 'DcatValidator',
+    'api_endpoint' => 'catalog.json',
+  );
+}
+
+/**
+ * Implements hook_open_data_schema().
+ */
+function open_data_schema_dcat_open_data_schema() {
+  $schemas_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_dcat') . '/data/';
+  return array(
+    array(
+      'short_name' => 'dcat',
+      'title' => 'DCAT-AP',
+      'schema_file' => $schemas_path . 'dcatap-1.1.json',
+      'description' => t('DCAT Schema. See https://gitlab.com/european-data-portal/ckan-dcatap-schema/blob/master/ckan-dcatap-1.1.json for more awesome details.'),
+    ),
+    array(
+      'short_name' => 'dcat_dataset',
+      'title' => 'DCAT-AP (Dataset)',
+      'schema_file' => $schemas_path . 'dataset-1.1.json',
+      'description' => t('DCAT Schema (Dataset). See https://gitlab.com/european-data-portal/ckan-dcatap-schema/blob/master/ckan-dcatap-1.1.json for more awesome details.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_open_data_schema_fill_references().
+ */
+function open_data_schema_dcat_open_data_schema_fill_references($schema_name, &$schema) {
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_dcat');
+  switch ($schema_name) {
+    case 'dcat':
+    case 'dcat_dataset':
+      $references = array(
+        'dcat:Distribution',
+        'dcat:contactPoint',
+      );
+      $files = array();
+      // Process $ref keys to include referenced json file.
+      foreach ($references as $key) {
+        $json = $module_path . '/data/';
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          $json = $json . $schema['properties'][$key]['anyOf'][0]['items']['$ref'];
+        }
+        elseif(isset($schema['properties'][$key]['$ref'])) {
+          $json = $json . $schema['properties'][$key]['$ref'];
+        }
+        $json = file_get_contents($json);
+        $json = drupal_json_decode($json);
+        unset($json['$schema']);
+        unset($json['id']);
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          unset($json['title']);
+          unset($schema['properties'][$key]['anyOf'][0]['items']['$ref']);
+          if (isset($schema['properties'][$key]['anyOf'][0]['items']['minItems'])) {
+            $schema['properties'][$key]['anyOf'][0]['minItems'] = $schema['properties'][$key]['anyOf'][0]['items']['minItems'];
+          }
+          if ($schema['properties'][$key]['anyOf'][0]['items']['uniqueItems']) {
+            $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          }
+          $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          $schema['properties'][$key]['anyOf'][0]['items'] = $json;
+        }
+        else {
+          $schema['properties'][$key] = $json;
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_xml_output_post_render_data().
+ */
+function open_data_schema_dcat_open_data_schema_map_xml_output_post_render_data_alter(&$output, &$api) {
+  if ($api->api_schema == 'dcat') {
+    //We implement this replace because with default serializer we can't create items as <item_name attribute="...">value</item>
+    $output = str_replace('<dct:issued', '<dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date"', $output);
+    $output = str_replace('<dct:modified', '<dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date"', $output);
+//    $output = str_replace('<dcat:accessURL>', '<dcat:accessURL rdf:datatype="http://www.w3.org/2001/XMLSchema#anyURI"/>', $output);
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_xml_output_render_data_alter().
+ */
+function open_data_schema_dcat_open_data_schema_map_xml_output_render_data_alter(&$xml, &$api) {
+  global $base_url, $language;
+
+  //If is dcat schema then add attributes on the xml root
+  if ($api->api_schema == 'dcat' || $api->api_schema == 'dcat_dataset') {
+    $xml['@xmlns:foaf'] = "http://xmlns.com/foaf/0.1/";
+    $xml['@xmlns:owl'] = "http://www.w3.org/2002/07/owl#";
+    $xml['@xmlns:rdfs'] = "http://www.w3.org/2000/01/rdf-schema#";
+    $xml['@xmlns:rdf'] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    $xml['@xmlns:dcat'] = "http://www.w3.org/ns/dcat#";
+    $xml['@xmlns:dct'] = "http://purl.org/dc/terms/";
+    $xml['@xmlns:adms'] = "http://www.w3.org/ns/adms#";
+    $xml['@xmlns:dc'] = "http://purl.org/dc/elements/1.1/";
+    $xml['@xmlns:time'] = "http://www.w3.org/2006/time#";
+    $xml['@xmlns:dcterms'] = "http://purl.org/dc/terms/";
+    $xml['@xmlns:vcard'] = "http://www.w3.org/2006/vcard/ns#";
+
+    $datasets_url = array();
+    $distribution_data = array();
+
+    if (!empty($xml['dcat:Dataset'])) {
+      foreach ($xml['dcat:Dataset'] as &$dataset) {
+        if (isset($dataset['dct:temporal'])) {
+          $dataset['dct:temporal'][0]['schema:startDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
+          $dataset['dct:temporal'][0]['schema:endDate']['@rdf:datatype'] = 'http://www.w3.org/2001/XMLSchema#date';
+          $dataset['dct:temporal']['dct:PeriodOfTime'] = $dataset['dct:temporal'];
+          unset ($dataset['dct:temporal']);
+        }
+        if (isset($dataset['dcat:contactPoint'])) {
+          $dataset['dcat:contactPoint'] = array('vcard:Kind' => $dataset['dcat:contactPoint']); 
+        }
+        else {
+          unset($dataset['dcat:contactPoint']);
+        }
+        $datasets_url[] = array('@rdf:resource' => $dataset['@rdf:about']);
+
+        //Process Distributions
+        if (!empty($dataset['dcat:Distribution'])) {
+        $distribution_url = array();
+          foreach ($dataset['dcat:Distribution'] as $distribution) {
+            if (isset($distribution['dcat:accessURL'])) {
+              $distribution['dcat:accessURL'] = array('@rdf:resource' => $distribution['dcat:accessURL']);
+            }
+            $distribution['@rdf:about'] = $distribution['foaf:page'];
+            $distribution['dcat:downloadURL'] = array('@rdf:resource' => $distribution['dcat:downloadURL']);
+            $distribution_data[] = $distribution;
+            $distribution_url[] = array('@rdf:resource' => $distribution['foaf:page']);
+          }
+          $dataset['dcat:distribution'] = $distribution_url;
+          unset($dataset['dcat:Distribution']);
+        }
+
+        if (!empty($dataset['dct:language'])) {
+          if (function_exists('dkan_dataset_content_types_allowed_language_values')) {
+            $values = dkan_dataset_content_types_allowed_language_values();
+            $languages = array();
+            foreach ($dataset['dct:language'] as $delta => $value) {
+              $key = array_search($dataset['dct:language'][$delta], $values);
+              if ($key) {
+                $languages[] = $key;
+              }
+            }
+            if ($languages) {
+              $dataset['dct:language'] = $languages;
+            }
+          }
+        }
+      }
+    }
+
+
+    //Add catalog information
+    $publisher = array('@rdf:about' => $base_url  .'/publisher/n0', 'foaf:name' => 'DKAN', 'foaf:homepage' => $base_url, 'dct:type' => array('@rdf:resource' => 'http://purl.org/adms/publishertype/NonProfitOrganisation'));
+    $catalog = array(
+      'dct:title' => variable_get('site_name', t('Dataset')),
+      'dct:description' =>  variable_get('site_slogan', t('Description')),
+      'dcterms:publisher' => array('@rdf:resource' => $base_url  .'/publisher/n0'),
+      'foaf:homepage' => $base_url . '/search/type/dataset',
+      'dct:language' => $language->language,
+      'dct:issued' => date('c'),
+      'dct:modified' => date('c'),
+    );
+
+    //Add dataset information
+    $catalog = $catalog + array('dcat:dataset' => $datasets_url);
+
+
+    if ($api->api_schema == 'dcat') {
+      $xml = array('dcat:Catalog' => $catalog) + $xml + array('dcat:Distribution' => $distribution_data) + array('foaf:Agent' => $publisher);
+    }
+    else {
+      $xml = $xml + array('dcat:Distribution' => $distribution_data) + array('foaf:Agent' => $publisher);
+    }
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function open_data_schema_dcat_page_alter(&$page) {
+
+  //If is the homepage then add the alternative url for catalog.xml
+  if (drupal_is_front_page()) {
+    drupal_add_html_head_link(array('rel' => 'alternate', 'type' => 'application/rdf+xml', 'href' => url('catalog.xml', array('absolute' => TRUE))));
+  }
+
+  //If is a dataset node add the link with filter for the specific dataset
+  $node = menu_get_object();
+
+  if (is_object($node) && $node->type == 'dataset') {
+    $uuid = $node->uuid;
+    $alias = drupal_get_path_alias('node/' . $node->nid);
+    drupal_add_html_head_link(array('rel' => 'alternate', 'type' => 'application/rdf+xml', 'href' => url($alias . '.xml', array('absolute' => TRUE))));
+  }
+}
+
+/**
+ * Implements hook_url_inbound_alter().
+ */
+function open_data_schema_dcat_url_inbound_alter(&$path, $original_path, $path_language) {
+  // While the path for single-dataset endpoints appears to be catalog/dataset.xml
+  // in admin/config/services/odsm, it gets rewritten as [dataset URL].xml
+  $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+  if ($extension == 'xml') {
+    //Is trying to get dcat information from dataset?
+    $path_alias = preg_replace('/\\.[^.\\s]{3,4}$/', '', $path);
+    $internal_path = drupal_lookup_path('source', $path_alias, $path_language);
+    $internal_path = explode('/', $internal_path);
+
+    if (count($internal_path) == 2 && $internal_path[0] == 'node' && is_numeric($internal_path[1])) {
+      $dataset = node_load($internal_path[1]);
+
+      if ($dataset->type == 'dataset') {
+        //Use dcat dataset endpoint
+        $path = 'catalog/dataset.xml';
+        $_GET['dct:identifier'] = $dataset->uuid;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_url_outbound_alter().
+ */
+function open_data_schema_dcat_url_outbound_alter(&$path, &$options, $original_path) {
+  // See above. Rewites outbound links for dataset-specific endpoints
+  if (preg_match('|^catalog/dataset\.xml(/.*)?|', $path, $matches)) {
+    if (isset($options['query']['dct:identifier'])) {
+      $uuid = $options['query']['dct:identifier'];
+      $node = current(entity_uuid_load('node', array($uuid)));
+      $path_alias = drupal_lookup_path('alias', 'node/' . $node->nid);
+
+      $path = "$path_alias" . ".xml";
+    }
+  }
+}

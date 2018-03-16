@@ -1,0 +1,479 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the Manual Crop module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function manualcrop_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $libraries = array('jquery.imagesloaded', 'jquery.imgareaselect');
+    $t = get_t();
+
+    foreach ($libraries as $name) {
+      $info = libraries_detect($name);
+
+      if ($info['installed']) {
+        $requirements[$name] = array(
+          'title' => $info['name'],
+          'value' => $info['version'],
+          'severity' => REQUIREMENT_OK,
+        );
+      }
+      else {
+        $requirements[$name] = array(
+          'title' => $info['name'],
+          'value' => $t('Not installed'),
+          'description' => $t('Download and copy the <a href="@link">@name</a> library to %path.', array(
+            '@link' => $info['vendor url'],
+            '@name' => $info['name'],
+            '%path' => 'sites/all/libraries/' . $name,
+          )),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function manualcrop_install() {
+  // Our hooks should run after the Insert module.
+  db_query("UPDATE {system} SET weight = 20 WHERE name = 'manualcrop'");
+
+  // Grant the crop permission to all user roles.
+  _manualcrop_grant_crop_permission();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function manualcrop_uninstall() {
+  variable_del('manualcrop_cache_control');
+  variable_del('manualcrop_force_effect_order');
+
+  if (module_exists('file_entity') && function_exists('file_type_load_all')) {
+    // Remove the settings for individual file types.
+    foreach (file_type_load_all() as $type) {
+      variable_del('manualcrop_file_entity_settings_' . $type->type);
+    }
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function manualcrop_schema() {
+  $schema['manualcrop'] = array(
+    'description' => 'Holds the crop-area position and size all cropped images.',
+    'fields' => array(
+      'fid' => array(
+        'description' => 'The {file_managed}.fid of the image file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'vid' => array(
+        'description' => 'The {file_managed_revisions}.vid (if it exists) of the file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'style_name' => array(
+        'description' => 'The machine name of the style.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'x' => array(
+        'description' => 'The x-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'y' => array(
+        'description' => 'The y-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'width' => array(
+        'description' => 'The width of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'height' => array(
+        'description' => 'The height of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'foreign keys' => array(
+      'file' => array(
+        'table' => 'file_managed',
+        'columns' => array('fid' => 'fid'),
+      ),
+    ),
+    'primary key' => array('fid', 'vid', 'style_name'),
+    'indexes' => array(
+      'vid' => array('vid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Replace the style id with a style name column.
+ */
+function manualcrop_update_7100(&$sandbox) {
+  // Add the style name field.
+  db_add_field('manualcrop', 'style_name', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+
+  // Select all style names.
+  $styles = db_query('SELECT m.isid, s.name FROM {manualcrop} m INNER JOIN {image_styles} s ON m.isid = s.isid GROUP BY m.isid');
+
+  foreach ($styles as $style) {
+    // Set the style name for each used style.
+    db_query('UPDATE {manualcrop} SET style_name = :name WHERE isid = :isid', array(
+      ':name' => $style->name,
+      ':isid' => $style->isid,
+    ));
+  }
+
+  // Create the new PK.
+  db_drop_primary_key('manualcrop');
+  db_add_primary_key('manualcrop', array('fid', 'style_name'));
+
+  // Remove the style id field.
+  db_drop_field('manualcrop', 'isid');
+
+  foreach (image_styles() as $style_name => $style) {
+    // Only styles that have an id should be updated.
+    if (isset($style['isid']) && !empty($style['effects'])) {
+      // Check if the first effect is a Manual Crop effect.
+      $effect = reset($style['effects']);
+
+      if ($effect['module'] == 'manualcrop') {
+        // Update the effect data.
+        unset($effect['data']['isid']);
+        $effect['data']['style_name'] = $style_name;
+        image_effect_save($effect);
+      }
+    }
+  }
+}
+
+/**
+ * Add a module weight so hooks are ran after the Insert module.
+ */
+function manualcrop_update_7101(&$sandbox) {
+  db_query("UPDATE {system} SET weight = 20 WHERE name = 'manualcrop'");
+}
+
+/**
+ * Migrate all Manual Crop widgets to the default image widget.
+ */
+function manualcrop_update_7102(&$sandbox) {
+  foreach (field_info_fields() as $field_name => $field) {
+    // Only update image fields.
+    if ($field['type'] == 'image') {
+      foreach ($field['bundles'] as $entity_type => $bundles) {
+        foreach ($bundles as $bundle_name) {
+          // Get the field instance and its settings.
+          $instance = field_info_instance($entity_type, $field_name, $bundle_name);
+          $settings = $instance['widget']['settings'];
+
+          // Only continue for the Image and Manual Crop widget.
+          if ($instance['widget']['type'] == 'manualcrop_image' || ($instance['widget']['type'] == 'image_image' && isset($settings['styles_mode']))) {
+            // Change the widget type to the default image widget.
+            $instance['widget']['type'] = 'image_image';
+
+            // Rename all settings.
+            $settings = array_merge($settings, array(
+              'manualcrop_enable' => TRUE,
+              'manualcrop_thumblist' => !empty($settings['thumblist']),
+              'manualcrop_inline_crop' => !empty($settings['inline_crop']),
+              'manualcrop_crop_info' => !empty($settings['crop_info']),
+              'manualcrop_instant_preview' => !empty($settings['instant_preview']),
+              'manualcrop_instant_crop' => !empty($settings['instant_crop']),
+              'manualcrop_default_crop_area' => !empty($settings['default_crop_area']),
+              'manualcrop_styles_mode' => (isset($settings['styles_mode']) ? $settings['styles_mode'] : 'exclude'),
+              'manualcrop_styles_list' => (isset($settings['styles_list']) ? $settings['styles_list'] : array()),
+              'manualcrop_require_cropping' => (isset($settings['require_cropping']) ? $settings['require_cropping'] : array()),
+            ));
+
+            if (isset($settings['insert_manualcrop_only'])) {
+              $settings['manualcrop_filter_insert'] = $settings['insert_manualcrop_only'];
+            }
+
+            // Remove the old setting names.
+            $instance['widget']['settings'] = array_diff_key($settings, array_flip(array(
+              'thumblist',
+              'inline_crop',
+              'crop_info',
+              'instant_preview',
+              'instant_crop',
+              'default_crop_area',
+              'styles_mode',
+              'styles_list',
+              'require_cropping',
+              'insert_manualcrop_only',
+            )));
+
+            field_update_instance($instance);
+          }
+        }
+      }
+    }
+  }
+
+  field_cache_clear();
+}
+
+/**
+ * Update the image fields so the settings no longer contain the styles that
+ * weren't selected in the interface.
+ */
+function manualcrop_update_7103(&$sandbox) {
+  foreach (field_info_fields() as $field_name => $field) {
+    // Only update image fields.
+    if ($field['type'] == 'image') {
+      foreach ($field['bundles'] as $entity_type => $bundles) {
+        foreach ($bundles as $bundle_name) {
+          // Get the field instance and its settings.
+          $instance = field_info_instance($entity_type, $field_name, $bundle_name);
+          $settings = &$instance['widget']['settings'];
+
+          // Update the image styles settings.
+          if (!empty($settings['manualcrop_styles_list']) || !empty($settings['manualcrop_require_cropping'])) {
+            if (!empty($settings['manualcrop_styles_list'])) {
+              $settings['manualcrop_styles_list'] = array_filter($settings['manualcrop_styles_list']);
+            }
+
+            if (!empty($settings['manualcrop_require_cropping'])) {
+              $settings['manualcrop_require_cropping'] = array_filter($settings['manualcrop_require_cropping']);
+            }
+
+            field_update_instance($instance);
+          }
+        }
+      }
+    }
+  }
+
+  field_cache_clear();
+}
+
+/**
+ * Remove unneeded image effect data and rename the "reusestyle" setting
+ * to "reuse_crop_style".
+ */
+function manualcrop_update_7104(&$sandbox) {
+  require_once 'manualcrop.helpers.inc';
+
+  foreach (manualcrop_styles_with_crop(TRUE) as $info) {
+    $effect = $info['effect'];
+    $save = FALSE;
+
+    if (_manualcrop_is_own_effect($effect, FALSE)) {
+      // Remove the style_name setting.
+      if (isset($effect['data']['style_name'])) {
+        unset($effect['data']['style_name']);
+        $save = TRUE;
+      }
+
+      // Rename the reusestyle setting.
+      if (isset($effect['data']['reusestyle'])) {
+        $effect['data']['reuse_crop_style'] = $effect['data']['reusestyle'];
+        unset($effect['data']['reusestyle']);
+        $save = TRUE;
+      }
+
+      if ($save) {
+        image_effect_save($effect);
+      }
+    }
+  }
+}
+
+/**
+ * Grant the "Crop images" pemission to all user roles.
+ */
+function manualcrop_update_7105(&$sandbox) {
+  _manualcrop_grant_crop_permission();
+}
+
+/**
+ * Add the style_priority setting to all auto reuse image effects.
+ */
+function manualcrop_update_7106(&$sandbox) {
+  require_once 'manualcrop.helpers.inc';
+
+  foreach (manualcrop_styles_with_crop(TRUE) as $info) {
+    $effect = $info['effect'];
+
+    if (_manualcrop_is_own_effect($effect, FALSE) && $effect['name'] == 'manualcrop_auto_reuse') {
+      $effect['data'] += array('style_priority' => array());
+      image_effect_save($effect);
+    }
+  }
+}
+
+/**
+ * Re-run update 7103 to remove all styles that weren't selected in the interface.
+ */
+function manualcrop_update_7107(&$sandbox) {
+  manualcrop_update_7103($sandbox);
+}
+
+/**
+ * Add the vid field.
+ */
+function manualcrop_update_7108() {
+  // Add the vid field.
+  db_add_field('manualcrop', 'vid', array(
+    'description' => 'The {file_managed_revisions}.vid (if it exists) of the file.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+
+  // Update the primary key so it includes teh vid field.
+  db_drop_primary_key('manualcrop');
+  db_add_primary_key('manualcrop', array('fid', 'vid', 'style_name'));
+}
+
+/**
+ * Removed the has_js cookie check.
+ */
+function manualcrop_update_7109(&$sandbox) {
+  variable_del('manualcrop_skip_js_check');
+}
+
+/**
+ * Migrate the existing file revisions data.
+ */
+function manualcrop_update_7110() {
+  // This update is only needed when using file revisions.
+  if (!db_table_exists('file_managed_revisions')) {
+    return;
+  }
+
+  // Rename the current table and create an empty copy.
+  db_rename_table('manualcrop', 'manualcrop_old');
+  db_create_table('manualcrop', array(
+    'description' => 'Holds the crop-area position and size all cropped images.',
+    'fields' => array(
+      'fid' => array(
+        'description' => 'The {file_managed}.fid of the image file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'vid' => array(
+        'description' => 'The {file_managed_revisions}.vid (if it exists) of the file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'style_name' => array(
+        'description' => 'The machine name of the style.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'x' => array(
+        'description' => 'The x-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'y' => array(
+        'description' => 'The y-position of the left top cropping-area corner.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'width' => array(
+        'description' => 'The width of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'height' => array(
+        'description' => 'The height of the cropping-area.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'foreign keys' => array(
+      'file' => array(
+        'table' => 'file_managed',
+        'columns' => array('fid' => 'fid'),
+      ),
+    ),
+    'primary key' => array('fid', 'vid', 'style_name'),
+  ));
+
+  // Create new entries for each file revision.
+  db_query('INSERT INTO {manualcrop} (fid, style_name, x, y, width, height, vid)
+    SELECT mo.fid as fid, mo.style_name as style_name, mo.x as x, mo.y as y, mo.width as width, mo.height as height, fmr.vid as vid
+    FROM {file_managed_revisions} fmr
+    INNER JOIN {manualcrop_old} mo ON fmr.fid = mo.fid
+    WHERE mo.vid = 0');
+
+  // Copy back any rows that were newly created, with a vid.
+  db_query('INSERT INTO {manualcrop} SELECT * FROM {manualcrop_old} WHERE vid != 0');
+
+  // Drop the old table.
+  db_drop_table('manualcrop_old');
+}
+
+/**
+ * Add index on vid.
+ */
+function manualcrop_update_7111() {
+  db_add_index('manualcrop', 'vid', array('vid'));
+}
+
+/**
+ * Grant the crop permission to all user roles.
+ */
+function _manualcrop_grant_crop_permission() {
+  foreach (user_roles() as $rid => $role) {
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => $rid,
+        'permission' => 'use manualcrop',
+      ))
+      ->fields(array(
+        'module' => 'manualcrop',
+      ))
+      ->execute();
+  }
+}

@@ -1,0 +1,178 @@
+<?php
+
+/**
+ * Test drafty revision support with field collections.
+ */
+class DraftyFieldCollectionTest extends DraftyWebTestCase {
+
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'field_collection';
+    parent::setUp($modules);
+
+    $field = array(
+      'field_name' => 'field_collection_test',
+      'type' => 'field_collection',
+      'cardinality' => 5,
+    );
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => 'field_collection_test',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    );
+    field_create_instance($instance);
+
+    // Add a text field to the field collection for more human readable testing.
+    $field = array(
+      'field_name' => 'field_fc_title',
+      'type' => 'text',
+    );
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => 'field_fc_title',
+      'entity_type' => 'field_collection_item',
+      'bundle' => 'field_collection_test',
+    );
+    field_create_instance($instance);
+  }
+
+  protected $type;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty field collection',
+      'description' => 'Test revision manipulation with field collections.',
+      'group' => 'Drafty',
+      'dependencies' => array('field_collection'),
+    );
+  }
+
+  function testDraftyFieldCollection() {
+    // Create an initial node with no field collection content.
+    $node = new stdClass();
+    $node->title = 'Title A';
+    $node->type = 'article';
+    $node->status = 1;
+    $this->setRevision($node);
+    node_save($node);
+
+    // Save the vid for later comparison.
+    $published_vid = $node->vid;
+
+    // Save a new draft of the node with the field collection field populated.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $node->title = 'Title B';
+    $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_collection_test'));
+    $field_collection_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title A';
+    $node->field_collection_test[LANGUAGE_NONE][0]['entity'] = $field_collection_item;
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+
+    $draft_vid = $node->vid;
+    // Confirm that the published and draft version IDs differ.
+    $this->assertNotEqual($published_vid, $draft_vid);
+
+    // Confirm that loading the node gets the published revision.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $this->assertEqual($node->field_collection_test, array());
+
+    // Now publish the draft.
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $this->assertNotEqual($node->vid, $draft_vid);
+
+    // Now update the field collection with a new value for the text field.
+    // Also add a new field collection.
+    $fc_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title B';
+    $node->field_collection_test[LANGUAGE_NONE][0]['entity'] = $fc_item;
+    $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_collection_test'));
+    $field_collection_item->field_fc_title[LANGUAGE_NONE][0]['value'] = 'FC Title C';
+    $field_collection_item->setHostEntity('node', $node);
+    $node->title = 'Title C';
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    $node->field_collection_test[LANGUAGE_NONE][1]['entity'] = $field_collection_item;
+    node_save($node);
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+
+    $new_draft_vid = $node->vid;
+    $node = node_load($node->nid);
+    // Ensure the version ID increments.
+    $this->assertNotEqual($draft_vid, $new_draft_vid);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    // Ensure the second field collection is not populated in the published
+    // revision.
+    $this->assertTrue(!isset($node->field_collection_test[LANGUAGE_NONE][1]));
+
+    // Publish the new draft.
+    $vid = drafty()->publishRevision('node', $node->nid, $new_draft_vid);
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title C');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][1]['value']);
+    $this->assertFalse($fc_item->archived);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title C');
+    $this->assertFieldCollectionArchivedCount(0);
+    $this->assertFieldCollectionNotArchivedCount(2);
+
+    // The published version should also increment the version ID.
+    $this->assertNotEqual($node->vid, $draft_vid);
+    $this->assertNotEqual($node->vid, $new_draft_vid);
+    $this->assertTrue($node->vid > $new_draft_vid);
+
+    // Republish the old revision.
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $this->assertTrue(!isset($node->field_collection_test[LANGUAGE_NONE][1]));
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+    $this->assertNotEqual($node->vid, $new_draft_vid);
+    $this->assertNotEqual($node->vid, $draft_vid);
+
+    // Explicitly load the non-default revision and confirm the field collection
+    // is marked archived.
+    $node = node_load($node->nid, $new_draft_vid);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][0]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title A');
+    $this->assertFalse($fc_item->archived);
+    $fc_item = field_collection_item_load($node->field_collection_test[LANGUAGE_NONE][1]['value']);
+    $this->assertEqual($fc_item->field_fc_title[LANGUAGE_NONE][0]['value'], 'FC Title C');
+    $this->assertFalse($fc_item->archived);
+
+    $this->assertFieldCollectionArchivedCount(1);
+    $this->assertFieldCollectionNotArchivedCount(1);
+  }
+
+  protected function assertFieldCollectionArchivedCount($count) {
+    $archived_count = db_query('SELECT COUNT(*) FROM {field_collection_item} WHERE archived = 1')->fetchField();
+    $this->assertEqual($archived_count, $count);
+  }
+
+  protected function assertFieldCollectionNotArchivedCount($count) {
+    $not_archived_count = db_query('SELECT COUNT(*) FROM {field_collection_item} WHERE archived = 0')->fetchField();
+    $this->assertEqual($not_archived_count, $count);
+  }
+}

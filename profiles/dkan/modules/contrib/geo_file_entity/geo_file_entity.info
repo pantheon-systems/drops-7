@@ -1,0 +1,9 @@
+name = Geo File Entity
+core = 7.x
+package = NuCivic
+dependencies[] = eck
+dependencies[] = features
+dependencies[] = file
+features[eck_entity_type][] = geo_file
+features[features_api][] = api:2
+project path = sites/all/modules/nucivic

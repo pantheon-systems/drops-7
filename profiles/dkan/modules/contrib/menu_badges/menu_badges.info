@@ -1,0 +1,12 @@
+name = "Menu Badges"
+description = "Add badges to menu items, for things like unread counts."
+core = 7.x
+dependencies[] = menu
+dependencies[] = link_badges
+files[] = views/views_menu_badges_display_menu_badge.inc
+; Information added by Drupal.org packaging script on 2017-02-04
+version = "7.x-1.3"
+core = "7.x"
+project = "menu_badges"
+datestamp = "1486231986"
+

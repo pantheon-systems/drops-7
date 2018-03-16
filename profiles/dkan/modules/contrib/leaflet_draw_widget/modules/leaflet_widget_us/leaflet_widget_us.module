@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_leaflet_widget_geographic_areas().
+ */
+function leaflet_widget_us_leaflet_widget_geographic_areas() {
+  $states = file_get_contents(drupal_get_path('module', 'leaflet_widget_us') . '/inc/states.json');
+
+  return $states;
+}

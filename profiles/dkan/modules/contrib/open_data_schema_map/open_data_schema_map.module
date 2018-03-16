@@ -1,0 +1,1738 @@
+<?php
+
+/**
+ * @file
+ * Maps entity types to Open Data schemas.
+ */
+
+$module_path = drupal_get_path('module', 'open_data_schema_map');
+require_once $module_path . '/open_data_schema_map.file_cache.inc';
+include __DIR__ . '/autoload.php';
+require_once $module_path . '/src/OdsmValidatorInterface.php';
+require_once $module_path . '/src/OdsmValidator.php';
+
+define('OPEN_DATA_SCHEMA_MAP_ADMIN_PATH', 'admin/config/services/odsm');
+
+/**
+ * Class OpenDataSchemaMapException
+ */
+class OpenDataSchemaMapException extends Exception {
+  private $data;
+
+  /**
+   * Override Exception constructor to add data parameter.
+   *
+   * {@inheritdoc}
+   */
+  public function __construct($message, $code = 0, $data = NULL) {
+    parent::__construct($message, $code);
+    $this->data = !empty($data) ? $data : $message;
+  }
+
+  /**
+   * Returns the data associated with the exception.
+   */
+  public function getData() {
+    return $this->data;
+  }
+
+  /**
+   * Returns HTTP status error given a code.
+   */
+  public function getHTTPError() {
+    $code = $this->getCode();
+    switch ($code) {
+      case 400:
+        return '400 Bad Request';
+
+      case 403:
+        return '403 Forbidden';
+
+      case 404:
+        return '404 Not Found';
+
+      case 406:
+        return '406 Not Acceptable';
+
+      case 412:
+        return '412 Precondition Failed';
+
+      case 422:
+        return '422 Unprocessable Entity';
+
+      default:
+        return '500 Internal Server Error';
+
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function open_data_schema_map_menu() {
+  $items = array();
+  $pre = OPEN_DATA_SCHEMA_MAP_ADMIN_PATH;
+
+  $apis = open_data_schema_map_api_load_all();
+  if ($apis) {
+    foreach ($apis as $num => $api) {
+      $description = isset($api->description) ? $api->description : '';
+      if ($api->enabled) {
+        $items[$api->endpoint] = array(
+          'title' => $api->name,
+          'description' => $description,
+          'page callback' => 'open_data_schema_map_endpoint',
+          'page arguments' => array($api),
+          'access arguments' => array('access content'),
+          'file' => 'open_data_schema_map.pages.inc',
+        );
+      }
+    }
+  }
+  $items[$pre] = array(
+    'title' => 'Open Data Schema Mapper',
+    'description' => 'Map Drupal structures to Open Data specfications',
+    'page callback' => 'open_data_schema_map_page_overview',
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.pages.inc',
+  );
+  $items[$pre . '/overview'] = array(
+    'title' => 'Overview',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items[$pre . '/add/api'] = array(
+    'title' => 'Add API',
+    'description' => 'Add a new API Endpoint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('open_data_schema_map_manage'),
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.pages.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items[$pre . '/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Open Data Schema Map Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('open_data_schema_map_admin_settings_form'),
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items[$pre . '/edit/%open_data_schema_map_api'] = array(
+    'title' => 'Edit API',
+    'description' => 'Edit an existing API Endpoint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('open_data_schema_map_manage', 5),
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.pages.inc',
+  );
+  $items[$pre . '/cache/%open_data_schema_map_api'] = array(
+    'title' => 'API Cache File',
+    'description' => 'Administer an existing API Endpoint File Cache',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('open_data_schema_map_cache_manage', 5),
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.file_cache.inc',
+  );
+  $items[$pre . '/delete/%open_data_schema_map_api'] = array(
+    'title' => 'Delete API',
+    'description' => 'Delete an existing API Endpoint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('open_data_schema_map_delete', 5),
+    'access arguments' => array('administer open data schema mapper'),
+    'file' => 'open_data_schema_map.pages.inc',
+  );
+
+  // Read validation implementation and add to menu.
+  foreach (module_implements('open_data_schema_map_info') as $module) {
+    $data = module_invoke($module, 'open_data_schema_map_info');
+    $path = OPEN_DATA_SCHEMA_MAP_ADMIN_PATH . '/validate/' . $data['name'];
+
+    $items[$path] = array(
+      'title' => $data['title'],
+      'page callback' => 'open_data_schema_map_validation_page',
+      'page arguments' => array($data['validation_class'], $data['api_endpoint']),
+      'access arguments' => array('administer open data schema mapper'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'open_data_schema_map.pages.inc',
+      'file path' => drupal_get_path('module', 'open_data_schema_map'),
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function open_data_schema_map_permission() {
+  return array(
+    'administer open data schema mapper' => array(
+      'title' => t('Administer Open Data Schema Mapper'),
+      'description' => t('Make and update open data schema maps'),
+      'restrict access' => TRUE,
+    ));
+}
+
+
+/**
+ * Implements hook_libraries_info().
+ */
+function open_data_schema_map_libraries_info() {
+  $libraries['symfonyserializer'] = array(
+    'name' => 'Simfony Serializer',
+    'vendor url' => 'https://github.com/symfony/serializer',
+    'download url' => 'https://github.com/symfony/serializer/zipball/master',
+    'version' => 'master',
+    'files' => array(),
+  );
+
+  $libraries['json-schema'] = array(
+    'name' => 'Justinrainbow JSON-Schema',
+    'vendor url' => 'https://github.com/justinrainbow/json-schema.git',
+    'download url' => 'https://github.com/justinrainbow/json-schema/tree/master/src/JsonSchema',
+    'version' => 'master',
+    'files' => array(),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Registers declared schemas.
+ */
+function open_data_schema_map_register() {
+  static $schemas = array();
+  if ($schemas) {
+    return $schemas;
+  }
+  foreach (module_implements('open_data_schema') as $module) {
+    $module_schemas = module_invoke($module, 'open_data_schema');
+    foreach ($module_schemas as $schema) {
+      $schemas[$schema['short_name']] = $schema;
+    }
+  }
+  return $schemas;
+}
+
+/**
+ * Implements hook_help().
+ */
+function open_data_schema_map_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/services/odsm':
+      return t('Create APIs using Drupal entities that map to Open Data specifications. See !docs for more instructions.',
+     array('!docs' => l(t('documentation'), 'https://github.com/GetDKAN/open_data_schema_map#open-data-schema-map')));
+  }
+  return NULL;
+}
+
+/**
+ * Provides form type from field type.
+ *
+ * @param string $field_type
+ *   Field type
+ *
+ * @return string
+ *   Form type
+ */
+function open_data_schema_map_form_field_type($field_type) {
+  switch ($field_type) {
+    case "string":
+      return 'textfield';
+  }
+  return '';
+}
+
+/**
+ * Recursive function to generate mapping form.
+ *
+ * @param array $form
+ *   Form api ready array to build.
+ * @param array $schema
+ *   Schema array which is reduced.
+ * @param object $api
+ *   $api object which is passed around because procedural.
+ * @param array $defaults
+ *   Array of defaults which matches up with the $schema.
+ *
+ * @return array
+ *   Form array
+ */
+function open_data_schema_map_form_recursion(&$form, $schema, $api, $defaults = NULL) {
+  $entity_ref_fields = open_data_schema_map_entity_ref_fields($api->type, $api->bundle);
+  foreach ($schema as $key => $value) {
+    // Skip if not a top level item.
+    if (!is_array($value)) {
+      continue;
+    }
+    if (count($value) == count($value, COUNT_RECURSIVE)) {
+      $desc = isset($value['description']) ? $value['description'] : '';
+      $description = t('Machine name: %machine_name field type: %type description: %desc', array(
+        '%machine_name' => $key, '%type' => $value['type'], '%desc' => $desc));
+      $default = isset($defaults[$key]) ? $defaults[$key] : '';
+      $form[$key] = array(
+        '#title' => $value['title'],
+        '#type' => 'textfield',
+        '#maxlength' => 512,
+        '#description' => $description,
+        '#default_value' => $default,
+      );
+    }
+    elseif ($key) {
+      $form[$key] = array(
+        '#title' => $key,
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+      );
+      $entity_ref_fields = open_data_schema_map_entity_ref_fields($api->type, $api->bundle);
+      if ($value['type'] == 'array' && $entity_ref_fields) {
+        $odsm_entity_reference = isset($defaults[$key]['odsm_entity_reference']['value']) ? $defaults[$key]['odsm_entity_reference']['value'] : '';
+        $osd_key_map = $odsm_entity_reference ? open_data_schema_map_token_tree('[node:' . str_replace('_', '-', $odsm_entity_reference) . ']') : '';
+        $form[$key]['odsm_entity_reference'] = array(
+          '#title' => $key . ' Multivalue Field',
+          '#type' => 'select',
+          '#options' => array('' => t('-- none --')) + $entity_ref_fields,
+          '#default_value' => $odsm_entity_reference,
+          '#description' => t('This array can iterate over multi-value fields as long as they are an entity reference. Select entity reference field to use. If none is selected this output will not loop and accept single value tokens. "Nth" represents iteratable tokens.') . $osd_key_map,
+        );
+      }
+      open_data_schema_map_form_recursion($form[$key], $schema[$key], $api, $defaults[$key]);
+    }
+  }
+  return $form;
+}
+
+/**
+ * Recursive function that walks throw tokens to output rows.
+ *
+ * @param array $rows
+ *   Output rows
+ * @param array $token_info
+ *   Tokens
+ */
+function open_data_schema_map_token_rows(&$rows, $token_info) {
+  if (isset($token_info['children'])) {
+    foreach ($token_info['children'] as $token_child => $token_child_info) {
+      if (is_array($token_child_info)) {
+        $token_child = str_replace('1', 'Nth', $token_child);
+        $token_child_info['name'] = str_replace('1', 'Nth', $token_child_info['name']);
+        $token_child_info['raw token'] = str_replace('1', 'Nth', $token_child_info['raw token']);
+        $token_child_info['token'] = str_replace('1', 'N', $token_child_info['token']);
+        $token_child_info['description'] = str_replace('1', 'Nth', $token_child_info['description']);
+        $token_child_info['parent'] = str_replace('1', 'Nth', $token_child_info['parent']);
+        $row = _token_token_tree_format_row($token_child, $token_child_info);
+        unset($row['data']['value']);
+        $rows[] = $row;
+        if (isset($token_info['children'])) {
+          open_data_schema_map_token_rows($rows, $token_child_info);
+        }
+      }
+    }
+  }
+
+}
+
+/**
+ * Creates token tree for single token.
+ *
+ * @param string $token
+ *   Token
+ *
+ * @return string
+ *   Rendered token
+ */
+function open_data_schema_map_token_tree($token) {
+  module_load_include('inc', 'token', 'token.pages');
+
+  $tree = token_build_tree('node');
+  if (!isset($tree[$token])) {
+    $token = substr($token, 0, -1) . ":?]";
+  }
+  if (isset($tree[$token])) {
+    $token_info = $tree[$token];
+    if (isset($token_info['children'])) {
+      $shifted = array_shift($token_info['children']);
+      $token_info['children'] = array($shifted['raw token'] => $shifted);
+    }
+
+    $row = _token_token_tree_format_row($token, $token_info);
+    unset($row['data']['value']);
+    $rows = array($row);
+    open_data_schema_map_token_rows($rows, $token_info);
+
+    $element = array(
+      '#theme' => 'tree_table',
+      '#header' => array(
+        t('Name'),
+        t('Token'),
+        t('Description'),
+      ),
+      '#rows' => $rows,
+      '#attributes' => array('class' => array('token-tree')),
+      '#empty' => t('No tokens available'),
+      '#attached' => array(
+        'js' => array(drupal_get_path('module', 'token') . '/token.js'),
+        'css' => array(drupal_get_path('module', 'token') . '/token.css'),
+        'library' => array(array('token', 'treeTable')),
+      ),
+    );
+    $element['#caption'] = t("Click a token to insert it into the field you've last clicked.");
+    $element['#attributes']['class'][] = 'token-click-insert';
+    return drupal_render($element);
+  }
+  return '';
+}
+
+/**
+ * Lists APIs created with this module.
+ */
+function open_data_schema_map_api_table() {
+  $apis = open_data_schema_map_api_load_all();
+  foreach ($apis as $num => $api) {
+    unset($apis[$num]->id);
+    unset($apis[$num]->description);
+    unset($apis[$num]->mapping);
+    unset($apis[$num]->arguments);
+    $apis[$num]->edit = l(t('edit'), 'admin/config/services/odsm/edit/' . $api->machine_name);
+    $apis[$num]->cache = open_data_schema_map_file_cache_admin_link($api);
+  }
+  return $apis;
+}
+
+/**
+ * Determines whether a machine name exists.
+ *
+ * @param string $machine_name
+ *   API machine name.
+ *
+ * @return bool
+ *   Returns FALSE
+ */
+function open_data_schema_map_api_exist($machine_name) {
+  return FALSE;
+}
+
+/**
+ * Loads all APIs.
+ */
+function open_data_schema_map_api_load_all() {
+  $list = array();
+  $records = &drupal_static(__FUNCTION__, array());
+  if ($records) {
+    return $records;
+  }
+  $results = db_query("select machine_name from {open_data_schema_map}")->fetchAll();
+  foreach ($results as $result) {
+    $list[] = $result->machine_name;
+  }
+
+  drupal_alter('open_data_schema_map_endpoints', $list);
+
+  foreach ($list as $item) {
+    $records[] = open_data_schema_map_api_load($item);
+  }
+
+  return $records;
+}
+
+/**
+ * Loads API.
+ *
+ * @param string $machine_name
+ *   API machine name.
+ *
+ * @return object
+ *   API object.
+ */
+function open_data_schema_map_api_load($machine_name) {
+  if ($record = module_invoke_all('open_data_schema_map_load', $machine_name)) {
+    return $record[0];
+  }
+  elseif ($record = db_query("select * from {open_data_schema_map} where machine_name = :machine_name", array(':machine_name' => $machine_name))->fetchObject()) {
+    $record->mapping = unserialize($record->mapping);
+    $record->arguments = unserialize($record->arguments);
+    return $record;
+  }
+  return NULL;
+}
+
+/**
+ * Loads schema from file.
+ *
+ * @param string $schema_name
+ *   Schema name
+ *
+ * @return array
+ *   Schema array
+ */
+function open_data_schema_map_schema_load($schema_name) {
+  $schemas = &drupal_static(__FUNCTION__, array());
+  if ($schemas) {
+    return $schemas;
+  }
+  $schemas = open_data_schema_map_register();
+  $loaded_schema = $schemas[$schema_name];
+  $json_file = $loaded_schema['schema_file'];
+  $json = file_get_contents($json_file);
+  $schema = drupal_json_decode($json);
+  foreach (module_implements('open_data_schema_fill_references') as $module) {
+    $hook_implementation = $module . '_open_data_schema_fill_references';
+    $hook_implementation($schema_name, $schema);
+  }
+  return $schema;
+}
+
+/**
+ * Retrieves public, published dataset nodes.
+ *
+ * @param object $api
+ *   Api object.
+ * @param int $limit
+ *   Number of results to return.
+ * @param int $offset
+ *   Offset of results to return.
+ * @param array $args
+ *   - query: current value of query.
+ *   - value: value field
+ *   - token: token to get data from
+ *
+ * @return array
+ *   An array of dataset nodes.
+ */
+function open_data_schema_map_endpoint_query($api, $limit = 0, $offset = 0, $args = array()) {
+  $type = $api->type;
+  $bundle = $api->bundle;
+  $args = is_array($args) ? $args : array($args);
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', $type)
+    ->entityCondition('bundle', $bundle)
+    ->propertyCondition('status', 1)
+    ->propertyOrderBy('created', 'DESC')
+    // Run the query as user 1.
+    ->addMetaData('account', user_load(1));
+
+  if ($limit) {
+    $query->range($offset, $limit);
+  }
+  foreach ($args as $arg => $arg_value) {
+    $field = open_data_schema_map_discover_field($arg_value['token']['value']);
+    drupal_alter('open_data_schema_map_args', $field, $arg_value, $api->machine_name);
+    // Pass conditions if no queries.
+    if (!isset($arg_value['query']) || !$arg_value['query']) {
+      continue;
+    }
+    if (!empty($field) && $field[0] == 'node') {
+      if (substr($field[1], 0, 5) == 'field' || $field[1] == 'og_group_ref') {
+        $query->fieldCondition($field[1], $arg_value['value'], $arg_value['query']);
+      }
+      else {
+        $query->propertyCondition($field[1], $arg_value['query']);
+      }
+    }
+  }
+  drupal_alter('open_data_schema_map_endpoint_query', $query, $api->machine_name);
+  $entities = $query->execute();
+  $ids = NULL;
+  if ($entities) {
+    $ids = array_keys($entities[$type]);
+  }
+
+  return $ids;
+}
+
+/**
+ * Returns array from token.
+ *
+ * @param string $token
+ *   Token
+ *
+ * @return array
+ *   Array from token
+ */
+function open_data_schema_map_discover_field($token) {
+  $token = rtrim(trim($token, '['), ']');
+  return explode(':', $token);
+}
+
+/**
+ * Discovers callback for argument options.
+ *
+ * @param string $id
+ *   Argument option
+ *
+ * @return string
+ *   Callback
+ */
+function open_data_schema_map_schema_options_callback($id) {
+  $schema_types = open_data_schema_map_schema_types();
+  foreach ($schema_types as $schema_type => $data) {
+    if ($data['id'] == $id) {
+      return $data['options_callback'];
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Discovers callback for schema type.
+ *
+ * @param string $id
+ *   Schema type
+ *
+ * @return string
+ *   Callback
+ */
+function open_data_schema_map_schema_types_callback($id) {
+  $schema_types = open_data_schema_map_schema_types();
+  foreach ($schema_types as $schema_type => $data) {
+    if ($data['id'] == $id) {
+      return $data['callback'];
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Creates array of schema types.
+ */
+function open_data_schema_map_schema_types() {
+  $schemas = array(
+    'json-4' => array(
+      'id' => 'http://json-schema.org/draft-04/schema#',
+      'callback' => 'open_data_schema_map_json_4',
+      'options_callback' => 'open_data_schema_mapper_args_options_json_4',
+    ),
+    'json-3' => array(
+      'id' => 'http://json-schema.org/draft-03/schema#',
+      'callback' => 'open_data_schema_map_json_3',
+      'options_callback' => 'open_data_schema_mapper_args_options_json_3',
+    ),
+  );
+
+  drupal_alter('open_data_schema_map_schema_types', $schemas);
+  return $schemas;
+}
+
+/**
+ * Creates argument form.
+ *
+ * @param int $num_args
+ *   Number of args
+ * @param array $options
+ *   Options array
+ * @param array $defaults
+ *   Defaults array
+ * @param object $api
+ *   API Object
+ *
+ * @return array
+ *   Form array
+ */
+function open_data_schema_map_args_form($num_args, $options, $defaults, $api) {
+  $map = $api->mapping;
+  $form = $columns = array();
+  for ($i = 1; $i <= $num_args; $i++) {
+    if (isset($defaults[$i]['field']) &&
+      isset($map[$defaults[$i]['field']]['value']) &&
+      $token = $map[$defaults[$i]['field']]['value']) {
+      $token = open_data_schema_map_discover_field($token);
+      if ($token[0] == 'node') {
+        if (substr($token[1], 0, 5) == 'field') {
+          $field = str_replace('-', '_', $token[1]);
+          $field_info = field_info_field($field);
+          foreach ($field_info['columns'] as $column => $data) {
+            $columns[$column] = $column;
+          }
+        }
+      }
+    }
+    $form[$i] = array(
+      '#title' => 'Argument ' . $i,
+      '#type' => 'fieldset',
+    );
+    $form[$i]['field'] = array(
+      '#title' => 'Schema Field',
+      '#type' => 'select',
+      '#description' => t('Schema field to use as an argument. The schema field is the "key" in /endpoint?key=123456. Also available are special arguments "offset" and "limit."'),
+      '#options' => $options,
+      '#default_value' => isset($defaults[$i]['field']) ? $defaults[$i]['field'] : '',
+    );
+    $form[$i]['required'] = array(
+      '#title' => 'Required',
+      '#type' => 'checkbox',
+      '#description' => t('Whether argument is required.'),
+      '#default_value' => isset($defaults[$i]['required']) ? $defaults[$i]['required'] : 1,
+    );
+    $special_args = open_data_schema_map_special_arguments();
+    if (isset($defaults[$i]['field']) && isset($special_args[$defaults[$i]['field']])) {
+      $form[$i]['value'] = array(
+        '#title' => 'Default ' . $special_args[$defaults[$i]['field']] . ' Value',
+        '#type' => 'textfield',
+        '#description' => t('Defaut value for !value. IE /endpoint?%field=X.', array('!value' => $special_args[$defaults[$i]['field']], '%field' => $defaults[$i]['field'])),
+        '#default_value' => isset($defaults[$i]['value']) ? $defaults[$i]['value'] : '',
+      );
+    }
+    else {
+      if ($columns) {
+        $form[$i]['value'] = array(
+          '#title' => 'Schema Field Column',
+          '#type' => 'select',
+          '#options' => $columns,
+          '#description' => t('Value for schema field. Only for tokens with [nodes:field_FIELD_NAME]. This is the column name in the field table to grab. Defaults to "safe_value".'),
+          '#default_value' => isset($defaults[$i]['value']) ? $defaults[$i]['value'] : '',
+        );
+      }
+    }
+  }
+  return $form;
+}
+
+/**
+ * Special fields for arguments.
+ *
+ * @return array
+ *   Array of arguments
+ */
+function open_data_schema_map_special_arguments() {
+  return array(
+    'offset' => t('offset'),
+    'limit' => t('limit'),
+  );
+}
+
+/**
+ * Finds entity reference fields for a given bundle.
+ *
+ * @param string $entity
+ *   Entity machine name.
+ * @param string $bundle
+ *   Bundle machine name.
+ * @param array $ref_fields
+ *   List of fields
+ *
+ * @return array
+ *   Array of entity reference or similar fields.
+ */
+function open_data_schema_map_entity_ref_fields($entity, $bundle, $ref_fields = array('entityreference', 'taxonomy')) {
+  // Get instances.
+  $instances = field_info_instances($entity, $bundle);
+
+  // Get reference fields.
+  $query = db_select('field_config', 'f');
+  $query->fields('f', array('field_name'));
+  $or = db_or();
+  $or->condition('cardinality', '1', '>');
+  $or->condition('cardinality', '-1', '=');
+  $query->condition($or);
+  $query->distinct();
+  $rows = $query->execute();
+  $field_names = array();
+
+  foreach ($rows as $row) {
+    $field_name = $row->field_name;
+    // See if reference field is used in bundle.
+    if (isset($instances[$field_name])) {
+      $field_names[$field_name] = $instances[$field_name]['label'];
+    }
+  }
+
+  return $field_names;
+}
+
+/**
+ * Creates form from JSON 4 schema.
+ *
+ * @param array $schema
+ *   Schema array
+ * @param object $api
+ *   API object
+ * @param array $defaults
+ *   Array of defaults
+ *
+ * @return array
+ *   Form array
+ */
+function open_data_schema_map_json_4($schema, $api, $defaults) {
+  $form = array();
+  $form['#title'] = $schema['title'] ? $schema['title'] : t('Mapping');
+  $form['#description'] = $schema['description'] ? $schema['description'] : t('Fields to map.');
+  $form['#type'] = 'fieldset';
+  foreach ($schema['properties'] as $item => $data) {
+    if (!isset($data['type'])) {
+      if (isset($data['anyOf'][0]['type'])) {
+        $data['type'] = $data['anyOf'][0]['type'];
+      }
+      else {
+        $data['type'] = 'string';
+      }
+    }
+    $desc = isset($data['description']) ? $data['description'] . t('Type:') . $data['type'] : t('Type:') . $data['type'];
+    $form[$item] = array(
+      '#title' => $data['title'] . ' (' . $item . ')',
+      '#type' => 'textfield',
+      '#maxlength' => 512,
+      '#description' => $desc,
+      '#default_value' => isset($defaults[$item]['value']) ? $defaults[$item]['value'] : '',
+      '#field_type' => $data['type'],
+    );
+    if ($data['type'] == 'array' && isset($data['anyOf'][0]['items']['type']) && $data['anyOf'][0]['items']['type'] == 'object') {
+      $entity_ref_fields = open_data_schema_map_entity_ref_fields($api->type, $api->bundle);
+      $odsm_entity_reference = isset($defaults[$item]['odsm_entity_reference']['value']) ? $defaults[$item]['odsm_entity_reference']['value'] : '';
+      $osd_key_map = $odsm_entity_reference ? open_data_schema_map_token_tree('[node:' . str_replace('_', '-', $odsm_entity_reference) . ']') : '';
+      $form[$item] = array(
+        '#title' => $data['title'],
+        '#type' => 'fieldset',
+        '#description' => isset($data['description']) ? $data['description'] : '',
+      );
+      $form[$item]['odsm_entity_reference'] = array(
+        '#title' => $item . ' Multivalue Field',
+        '#type' => 'select',
+        '#options' => array('' => t('-- none --')) + $entity_ref_fields,
+        '#default_value' => $odsm_entity_reference,
+        '#description' => t('This array can iterate over multi-value fields. Select multi-value field to use. If none is selected this output will not loop and accept single value tokens. Selecting and saving an entity reference will produce a list of chaiabale tokens. For non entity reference fields, replace "?" with "Nth:value". "Nth" represents iteratable tokens.') . $osd_key_map,
+      );
+      foreach ($data['anyOf'][0]['items']['properties'] as $subitem => $subdata) {
+        $desc = isset($subdata['description']) ? $subdata['description'] : '';
+        $desc .= isset($subdata['type']) ? ' ' . t('Type:') . $subdata['type'] : '';
+        $form[$item][$subitem] = array(
+          '#title' => $subdata['title'] . ' (' . $subitem . ')',
+          '#type' => 'textfield',
+          '#maxlength' => 256,
+          '#description' => $desc,
+          '#default_value' => isset($defaults[$item][$subitem]['value']) ? $defaults[$item][$subitem]['value'] : '',
+        );
+      }
+    }
+    if ($data['type'] == 'object') {
+      $description = '';
+      if (isset($data['description'])) {
+        $description = $data['description'];
+      }
+      $form[$item] = array(
+        '#title' => $data['title'],
+        '#type' => 'fieldset',
+        '#description' => $description,
+      );
+      if (isset($data['properties'])) {
+        foreach ($data['properties'] as $subitem => $subdata) {
+          $desc = isset($subdata['description']) ? $subdata['description'] : '';
+          $desc .= isset($subdata['type']) ? ' ' . t('Type:') . $subdata['type'] : '';
+          $form[$item][$subitem] = array(
+            '#title' => $subdata['title'] . ' (' . $subitem . ')',
+            '#type' => 'textfield',
+            '#maxlength' => 512,
+            '#description' => $desc,
+            '#default_value' => isset($defaults[$item][$subitem]['value']) ? $defaults[$item][$subitem]['value'] : '',
+          );
+        }
+      }
+    }
+  }
+  return $form;
+}
+
+/**
+ * Constructs form for json schema 3.
+ *
+ * @param array $form
+ *   Form array
+ * @param array $schema
+ *   Schema
+ * @param object $api
+ *   API object
+ * @param array $defaults
+ *   Array of defaults
+ */
+function open_data_schema_map_json_3_recursion(&$form, $schema, $api, $defaults = NULL) {
+  foreach ($schema as $item => $data) {
+    $default_value = isset($defaults[$item]['value']) ? $defaults[$item]['value'] : '';
+    // Skip if not a top level item.
+    if (!is_array($data)) {
+      continue;
+    }
+    $field_type = $data['type'] ? $data['type'] : 'string';
+    $form[$item] = array(
+      '#title' => $item,
+      '#type' => 'textfield',
+      '#maxlength' => 512,
+      '#description' => $data['description'],
+      '#field_type' => $field_type,
+      '#default_value' => $default_value,
+    );
+    if ($field_type == 'object' || $field_type == 'array' && $data['items']['type'] == 'object') {
+      $entity_ref_fields = open_data_schema_map_entity_ref_fields($api->type, $api->bundle);
+      $odsm_entity_reference = isset($defaults[$item]['odsm_entity_reference']['value']) ? $defaults[$item]['odsm_entity_reference']['value'] : '';
+      $osd_key_map = $odsm_entity_reference ? open_data_schema_map_token_tree('[node:' . str_replace('_', '-', $odsm_entity_reference) . ']') : '';
+      $form[$item] = array(
+        '#title' => $item,
+        '#type' => 'fieldset',
+        '#description' => $data['description'],
+        '#field_type' => $field_type,
+      );
+      $form[$item]['odsm_entity_reference'] = array(
+        '#title' => $item . ' Multivalue Field',
+        '#type' => 'select',
+        '#options' => array('' => t('-- none --')) + $entity_ref_fields,
+        '#default_value' => $odsm_entity_reference,
+        '#description' => t('This array can iterate over multi-value fields as long as they are an entity reference. Select entity reference field to use. If none is selected this output will not loop and accept single value tokens. "Nth" represents iteratable tokens.') . $osd_key_map,
+      );
+      if ($data['type'] == 'object') {
+        open_data_schema_map_json_3_recursion($form[$item], $data['properties'], $api, $defaults[$item]);
+      }
+      elseif ($data['type'] == 'array' && $data['items']['type'] == 'object') {
+        open_data_schema_map_json_3_recursion($form[$item], $data['items']['properties'], $api, $defaults[$item]);
+      }
+    }
+  }
+}
+
+/**
+ * Creates form from JSON 3 schema.
+ *
+ * @param array $schema
+ *   Schema array
+ * @param object $api
+ *   API object
+ * @param array $defaults
+ *   Array of defaults
+ *
+ * @return array
+ *   Form array
+ */
+function open_data_schema_map_json_3($schema, $api, $defaults) {
+  $form = array();
+  $form['#title'] = t('Mapping');
+  $form['#description'] = $schema['description'] ? $schema['description'] : t('Fields to map.');
+  $form['#type'] = 'fieldset';
+  open_data_schema_map_json_3_recursion($form, $schema['properties'], $api, $defaults);
+
+  return $form;
+}
+
+/**
+ * Creates option list from available arguments.
+ *
+ * @param array $schema
+ *   Schema array
+ *
+ * @return array
+ *   Options array
+ */
+function open_data_schema_mapper_args_options_json_4($schema) {
+  $options = array();
+  foreach ($schema['properties'] as $id => $data) {
+    $options[$id] = $id;
+  }
+  return $options;
+}
+
+/**
+ * Creates option list from available arguments.
+ *
+ * @param array $schema
+ *   Schema array
+ *
+ * @return array
+ *   Options array
+ */
+function open_data_schema_mapper_args_options_json_3($schema) {
+  $options = array();
+  foreach ($schema['properties'] as $id => $data) {
+    $options[$id] = $id;
+  }
+  return $options;
+}
+
+/**
+ * Wrapper around token_replace.
+ *
+ * @param string $token
+ *   Token
+ * @param string $entity_type
+ *   Entity Type
+ * @param object $entity
+ *   Entity object
+ *
+ * @return string
+ *   Token replaced string
+ */
+function open_data_schema_mapper_token_replace($token, $entity_type, $entity) {
+  $rend_tokens = array();
+
+  // Does the token have an "or".
+  $output = '';
+  if (preg_match('/\] \|\| \[/', $token)) {
+    $tokens = explode(' || ', $token);
+    foreach ($tokens as $token) {
+      if ($output = token_replace($token, array($entity_type => $entity), array('clear' => TRUE))) {
+        return $output;
+      }
+    }
+  }
+  // Does the token have an "and".
+  elseif (preg_match('/\] && \[/', $token)) {
+    $tokens = explode(' && ', $token);
+    foreach ($tokens as $token) {
+      $rend_tokens[] = token_replace($token, array($entity_type => $entity), array('clear' => TRUE));
+    }
+    $output = implode(' ', $rend_tokens);
+  }
+  else {
+    $output = token_replace($token, array($entity_type => $entity), array('clear' => TRUE));
+  }
+
+  return $output;
+}
+
+/**
+ * Provides working arguments by validating fields and queries.
+ *
+ * @param array $map
+ *   Map array
+ * @param array $queries
+ *   Queries array
+ * @param array $args
+ *   Args array
+ *
+ * @return array
+ *   Array of args
+ */
+function open_data_schema_map_endpoint_args(&$map, $queries, $args = array()) {
+  $output = array();
+  foreach ($args as $num => $arg) {
+    if ($queries) {
+      foreach ($queries as $query_field => $query_value) {
+        // Make sure query passed to enpoint is actual argument field.
+        if ($arg['field'] == $query_field) {
+          $output[$num]['field'] = $query_field;
+          $output[$num]['query'] = $query_value;
+          $output[$num]['token'] = isset($map[$arg['field']]) ? $map[$arg['field']] : '';
+          $output[$num]['value'] = isset($args[$num]['value']) ? $args[$num]['value'] : 'value';
+        }
+      }
+    }
+    if ($arg['required'] == 1 && (!isset($output[$num]) || empty($output[$num]['query']))) {
+      return array('required' => $arg['field']);
+    }
+  }
+  return $output;
+}
+
+/**
+ * Process entities using api.
+ *
+ * @param array $ids
+ *   IDs array
+ * @param object $api
+ *   API Object
+ *
+ * @return array
+ *   Array of processed entities
+ */
+function open_data_schema_map_endpoint_process_map($ids, $api) {
+  $output = array();
+  if ($ids) {
+    foreach ($ids as $key => $id) {
+      $result = array();
+      $entity = entity_load_single($api->type, $id);
+      open_data_schema_map_endpoint_process_map_recursion($result, $api->mapping, $api->type, $entity);
+      $output[] = $result;
+    }
+  }
+  return $output;
+}
+
+/**
+ * Walks through map adding to results.
+ *
+ * @param array $result
+ *   Results array
+ * @param array $map
+ *   Map array
+ * @param string $type
+ *   API type
+ * @param object $entity
+ *   Entiy object
+ */
+function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $type, $entity) {
+  foreach ($map as $api_field => $token) {
+    // Don't show results for fields without tokens.
+    if ($token) {
+      if (isset($token['value']) && !$token['value']) {
+        continue;
+      }
+      if (isset($token['odsm_entity_reference']) && $token['odsm_entity_reference']) {
+        $values = '';
+        if ($ref_field = $token['odsm_entity_reference']['value']) {
+          $field_language = field_language($type, $entity, $ref_field);
+          $values = isset($entity->{$ref_field}[$field_language]) ? $entity->{$ref_field}[$field_language] : NULL;
+        }
+        unset($token['odsm_entity_reference']);
+        if ($values) {
+          foreach ($values as $num => $item) {
+            $sub_result = array();
+            foreach ($token as $subfield => $subtoken) {
+              $subtoken['value'] = str_replace('Nth', $num, $subtoken['value']) ? str_replace('Nth', $num, $subtoken['value']) : $subtoken['value'];
+              if ($subtoken['value']) {
+                $subvalue = open_data_schema_map_endpoint_process_field($api_field, $subtoken, $type, $entity);
+                $sub_result[$subfield] = $subvalue;
+              }
+            }
+            if ($result) {
+              $result[$api_field][] = $sub_result;
+            }
+          }
+        }
+        foreach ($token as $subfield => $subtoken) {
+          if (isset($subtoken['odsm_entity_reference']) && $subtoken['odsm_entity_reference']) {
+            open_data_schema_map_endpoint_process_map_recursion($result[$api_field][$subfield], $map[$api_field][$subfield], $type, $entity);
+          }
+        }
+      }
+      else {
+        if (!in_array('value', array_keys($token)) && count($token)) {
+          // If field has depth make recursive call.
+          $result[$api_field] = array();
+          open_data_schema_map_endpoint_process_map_recursion($result[$api_field], $map[$api_field], $type, $entity);
+        }
+        elseif ($field_value = open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity)) {
+          $result[$api_field] = $field_value;
+        }
+        else {
+          unset($result[$api_field]);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Processes individual field.
+ *
+ * @param string $api_field
+ *   API field
+ * @param array $token
+ *   Token array
+ * @param string $type
+ *   API type
+ * @param object $entity
+ *   Entity object
+ *
+ * @return array
+ *   Array of results
+ */
+function open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity) {
+  $result = array();
+  if ($token && isset($token['value']) && isset($token['type'])) {
+    $result = open_data_schema_mapper_token_replace($token['value'], $type, $entity);
+    $result = open_data_schema_mapper_field_type_check($result, $token);
+    // node_tokens() encodes all but body or summary fields, uses safe_.
+    // Decode HTML entities since it's allowed in JSON and XML.
+    // Only using on [*:title] and [node:og_group_ref].
+    // New token [node:body_raw] is available.
+    if (strpos($token['value'], ':title') !== FALSE || $token['value'] == '[node:og_group_ref]') {
+      $result = htmlspecialchars_decode($result, ENT_QUOTES);
+    }
+  }
+  drupal_alter('open_data_schema_map_process_field', $result, $api_field, $token);
+  return $result;
+}
+
+/**
+ * Checks output for expected types and adjusts.
+ *
+ * @param string $value
+ *   Value
+ * @param array $token
+ *   Token array
+ *
+ * @return mixed
+ *   Casted value
+ */
+function open_data_schema_mapper_field_type_check($value, $token) {
+  if ($token['type'] == 'array') {
+    if ($value) {
+      if (preg_match('/, /', $value)) {
+        $value = explode(', ', $value);
+      }
+      else {
+        $value = array($value);
+      }
+    }
+  }
+  elseif ($token['type'] == 'boolean') {
+    $value = (boolean) $value;
+  }
+  elseif ($token['type'] == 'object') {
+    // TODO: make object.
+  }
+  return $value;
+}
+
+/**
+ * Grabs special from arguments and removes it.
+ *
+ * @param array $args
+ *   Args array
+ * @param string $type
+ *   API type
+ *
+ * @return string
+ *   Arg
+ */
+function open_data_schema_map_endpoint_special_arg(&$args, $type) {
+  $value = '';
+  foreach ($args as $num => $arg) {
+    if ($arg['field'] == $type) {
+      unset($args[$num]);
+      return $arg['query'];
+    }
+  }
+
+  return $value;
+}
+
+/**
+ * Implements hook_open_data_schema_map_args_alter().
+ */
+function open_data_schema_map_open_data_schema_map_args_alter(&$field, &$arg) {
+  if ($arg['token']['value'] == '[node:url:arg:last]' || $arg['token']['value'] == '[node:url:args:last]') {
+    // Query against a like statement to reduce forloop.
+    $results = db_select('url_alias', 'url')
+              ->fields('url', array('source', 'alias'))
+              ->condition('alias', '%/' . $arg['query'], 'LIKE')
+              ->execute()
+              ->fetchAll();
+    $field[1] = 'nid';
+    foreach ($results as $result) {
+      $alias = explode('/', $result->alias);
+      if ($alias[count($alias) - 1] == $arg['query']) {
+        $nid = explode('/', $result->source);
+        $arg['query'] = $nid[count($nid) - 1];
+        return;
+      }
+    }
+    throw new OpenDataSchemaMapException(
+      t('"!query" does not return results', array('!query' => $arg['query'])),
+      404,
+      array(
+        '__type' => 'Query Error',
+        'name_or_id' => t("Query '!query' doesn't return results", array('!query' => $arg['query'])),
+      )
+    );
+  }
+  elseif ($arg['token']['value'] == '[node:url]') {
+    $field[1] = 'nid';
+    $query = db_select('url_alias', 'url');
+    $query->fields('f', array('source'));
+    $query->condition('alias', $arg['query'], '=');
+    $query->distinct();
+    $rows = $query->execute();
+    foreach ($rows as $row) {
+      if ($row->source) {
+        $nid = explode('/', $row->source);
+        $arg['query'] = $nid[count($nid) - 1];
+        return;
+      }
+    }
+  }
+}
+
+/**
+ * Function that renders and odsm api for endpoint.
+ *
+ * @param object $api
+ *   API object
+ * @param array $query
+ *   Query array
+ * @param array $queries
+ *   Queries array
+ *
+ * @return array
+ *   Array of results/headers
+ */
+function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
+  if (!isset($queries)) {
+    $queries = drupal_get_query_parameters();
+  }
+  if (!isset($query)) {
+    $query = $_GET;
+  }
+  $headers = array();
+  try {
+    $args = open_data_schema_map_endpoint_args($api->mapping, $queries, $api->arguments);
+    if (isset($args['required'])) {
+      $error_data = array(
+        '__type' => 'Validation Error',
+        'name_or_id' => array('Missing Value'),
+      );
+      throw new OpenDataSchemaMapException(t('Required field "!field" is missing', array('!field' => $args['required'])), 400, $error_data);
+    }
+    // This endpoint is created in code.
+    if (isset($api->callback) && function_exists($api->callback)) {
+      $function = $api->callback;
+      $result = $function($queries, $api->arguments);
+    }
+    // This endpoint was created with the UI.
+    else {
+      $offset = open_data_schema_map_endpoint_special_arg($args, 'offset');
+      $limit = open_data_schema_map_endpoint_special_arg($args, 'limit');
+      $ids = open_data_schema_map_endpoint_query($api, $limit, $offset, $args);
+      $result = open_data_schema_map_endpoint_process_map($ids, $api);
+    }
+  }
+  catch (OpenDataSchemaMapException $e) {
+    $headers['Status'] = $e->getHTTPError();
+    $result['error'] = $e->getData();
+  }
+
+  // This is easier to debug than drupal_alter().
+  $modules = module_implements('open_data_schema_map_results_alter');
+  // Make SURE pod is last.
+  if (in_array('open_data_schema_pod', $modules) && end($modules) != 'open_data_schema_pod') {
+    $temp = array();
+    foreach ($modules as $module) {
+      if ($module != 'open_data_schema_pod') {
+        $temp[] = $module;
+      }
+    }
+    $temp[] = 'open_data_schema_pod';
+    $modules = $temp;
+  }
+  if (!isset($ids)) {
+    $ids = array();
+  }
+  foreach ($modules as $module) {
+    $function = $module . '_open_data_schema_map_results_alter';
+    $function($result, $api->machine_name, $api->api_schema, $ids);
+  }
+  return array(
+    'result' => $result,
+    'headers' => $headers,
+  );
+}
+
+/**
+ * Discovers additional fields.
+ *
+ * @param object $api
+ *   API Object
+ *
+ * @return array
+ *   Array of additional fields
+ */
+function open_data_schema_map_additional_fields($api) {
+  $tokens = array();
+  $additional_fields = array();
+  foreach ($api->mapping as $schema_id => $item) {
+    if (isset($item['value']) && $item['value'] && !is_array($item['value'])) {
+      $tokens[] = $item['value'];
+    }
+  }
+  $fields = field_info_instances('node', 'dataset');
+  foreach ($fields as $field_name => $instance) {
+    if (!in_array('[node:' . $field_name . ']', $tokens)) {
+      $additional_fields[] = $field_name;
+    }
+  }
+  return $additional_fields;
+}
+
+/**
+ * Adds additional fields to mapping.
+ *
+ * @param array $fields
+ *   Fields array
+ * @param object $api
+ *   API object
+ *
+ * @return object
+ *   Updated API object
+ */
+function open_data_schema_map_additional_fields_add($fields, $api) {
+  foreach ($fields as $field_name) {
+    $api->mapping['dkan_additional_fields'][$field_name]['value'] = '[node:' . $field_name . ']';
+    $api->mapping['dkan_additional_fields'][$field_name]['type'] = 'array';
+  }
+  return $api;
+}
+
+/**
+ * Adds node links to errors.
+ *
+ * @param array $rows
+ *   Array of error rows
+ *
+ * @return array
+ *   Error rows with node links added
+ */
+function _open_data_schema_validation_process_errors($rows) {
+  foreach ($rows as $key => $row) {
+    if (isset($row['id'])) {
+      if (!isset($ids[$row['id']])) {
+        $nids = entity_get_id_by_uuid('node', array($row['id']));
+        if ($nids) {
+          $nid = $nids[$row['id']];
+          $node = node_load($nid);
+          $ids[$row['id']] = $node;
+        }
+      }
+      else {
+        $node = $ids[$row['id']];
+      }
+      $rows[$key]['title'] = l($node->title, 'node/' . $node->nid);
+    }
+  }
+  return $rows;
+}
+
+/**
+ * Implements hook_tokens_alter().
+ */
+function open_data_schema_map_tokens_alter(array &$replacements, array $context) {
+  if (isset($replacements['[node:field-odfe-program-code]']) && !empty($context['data']['node']->field_odfe_program_code['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_odfe_program_code['und'] as $key => $item) {
+      $field[] = str_replace("-", ":", $item['value']);
+    }
+    $replacements['[node:field-odfe-program-code]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field_related_content]']) && isset($context['data']['node']->field_related_content['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_related_content['und'] as $key => $item) {
+      $field[] = $item['url'];
+    }
+    $replacements['[node:field_related_content]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field-frequency]']) && isset($context['data']['node']->field_frequency['und'])) {
+    $replacements['[node:field-frequency]'] = open_data_schema_map_accrual_iso_8601_value($replacements['[node:field-frequency]']);
+  }
+  if (isset($replacements['[node:field-data-dictionary]'])) {
+    // Check if is a url.
+    $url = check_url($context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value']);
+    $output = valid_url($url, TRUE) ? $url : $context['data']['node']->field_data_dictionary[LANGUAGE_NONE][0]['value'];
+    $replacements['[node:field-data-dictionary]'] = $output;
+  }
+}
+
+/**
+ * Provides value for human readable name.
+ *
+ * @param string $name
+ *   Name
+ *
+ * @return string
+ *   Human readable name
+ */
+function open_data_schema_map_accrual_iso_8601_value($name) {
+  if ($name == 'Annually') {
+    $name = 'Annual';
+  }
+  $iso = open_data_schema_map_accrual_iso_8601();
+  if (isset($iso[$name])) {
+    return $iso[$name];
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Provides iso 8601 accrual periodicity.
+ *
+ * @return array
+ *   Array of iso values
+ */
+function open_data_schema_map_accrual_iso_8601() {
+  return array(
+    'Decennial' => 'R/P10Y',
+    'Quadrennial' => 'R/P4Y',
+    'Annual' => 'R/P1Y',
+    'Bimonthly' => 'R/P2M',
+    'Semiweekly' => 'R/P3.5D',
+    'Daily' => 'R/P1D',
+    'Biweekly' => 'R/P2W',
+    'Semiannual' => 'R/P6M',
+    'Biennial' => 'R/P2Y',
+    'Triennial' => 'R/P3Y',
+    'Three times a week' => 'R/P0.33W',
+    'Three times a month' => 'R/P0.33M',
+    'Continuously updated' => 'R/PT1S',
+    'Monthly' => 'R/P1M',
+    'Quarterly' => 'R/P3M',
+    'Semimonthly' => 'R/P0.5M',
+    'Three times a year' => 'R/P4M',
+    'Weekly' => 'R/P1W',
+  );
+}
+
+/**
+ * Implements hook_open_data_schema_map_results_alter().
+ */
+function open_data_schema_map_open_data_schema_map_results_alter(&$result, $api_machine_name, $schema) {
+  $api = open_data_schema_map_api_load($api_machine_name);
+  if ($api->filter_enabled && in_array($api_machine_name, _open_data_schema_map_get_available_filters('machine_name'))) {
+    $ghosts = 0;
+    $itemcount = count($result);
+    $include_datasets_with_no_publishers = variable_get('odsm_settings_no_publishers', 1);
+    watchdog('open_data_schema_map', "Generating data.json: about to iterate over $itemcount datasets.");
+    // Determine whether to filter the data.json feed by publisher.
+    $publishers = array();
+    $included_agency_nids = variable_get('odsm_settings_groups', array());
+    $filter_by_publisher = FALSE;
+    // If none of the groups are selected, don't filter the data.json by
+    // publisher. If any of the groups are checked, only those groups
+    // will be included.
+
+    // NIDs are zero if unchecked, so use sum.
+    if (array_sum($included_agency_nids)) {
+      $filter_by_publisher = TRUE;
+      $publishers = array();
+      $agencies = db_query("SELECT node.title AS node_title, node.nid AS nid
+        FROM {node} node
+        WHERE ((node.status = '1') AND (node.type IN  ('group')) )
+        ORDER BY node_title ASC"
+      );
+      foreach ($agencies as $agency) {
+        if (in_array($agency->nid, $included_agency_nids)) {
+          $publishers[] = htmlentities($agency->node_title);
+        }
+      }
+    }
+    foreach ($result as $key => $dataset) {
+      // Exclude "ghost datasets," i.e., datasets with no title.
+      if (is_array($dataset) && !isset($dataset['title'])) {
+        unset($result[$key]);
+        watchdog('open_data_schema_map', 'Ghost dataset: <pre>@key</pre>', array('@key' => print_r($result[$key])), TRUE);
+        $ghosts++;
+        continue;
+      }
+      // Remove datasets that don't have a publisher.
+      elseif (!$include_datasets_with_no_publishers && !isset($dataset['publisher']['name'])) {
+        unset($result[$key]);
+        continue;
+      }
+      // Remove datasets that are not on the included publishers list.
+      elseif ($filter_by_publisher && isset($dataset['publisher']['name']) && !_open_data_schema_map_settings_contains($dataset['publisher']['name'], $publishers)) {
+        unset($result[$key]);
+        continue;
+      }
+
+      // Do some cleanup to improve data.json validation.
+      if (isset($dataset['@type']) && $dataset['@type'] == 'dcat:Dataset') {
+        // Default hasEmail to site email.
+        if (isset($dataset['contactPoint'])
+          && isset($dataset['contactPoint']['hasEmail'])
+          && $dataset['contactPoint']['hasEmail'] == 'mailto:') {
+          $result[$key]['contactPoint']['hasEmail'] .= variable_get('site_mail');
+        }
+        if (!isset($dataset['keyword'])) {
+          if (isset($dataset['publisher']['name'])) {
+            $result[$key]['keyword'] = array(_open_data_schema_map_keyword_string($dataset['publisher']['name']));
+          }
+          else {
+            $result[$key]['keyword'] = array('health');
+          }
+        }
+        if (!isset($dataset['description'])) {
+          $result[$key]['description'] = t('No description provided');
+        }
+        if (isset($dataset['distribution'])) {
+          foreach ($dataset['distribution'] as $num => $dist) {
+            if (empty($dist['mediaType'])) {
+              $result[$key]['distribution'][$num]['mediaType'] = 'application/unknown';
+            }
+            if (empty($dist['downloadURL']) || $dist['downloadURL'] == 'http://') {
+              unset($result[$key]['distribution'][$num]['downloadURL']);
+            }
+            if (!$dist['format']) {
+              unset($result[$key]['distribution'][$num]['format']);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get available filters.
+ *
+ * @param string $return_type
+ *   Valid values are 'machine_name', 'api_schema', 'name'
+ *
+ * @return array
+ *   Array of filters values of $return_type
+ */
+function _open_data_schema_map_get_available_filters($return_type = 'machine_name') {
+  $available_filters = array();
+  $available_filters_machine_name = array(
+    'data_json_1_1',
+    'dcat_v1_1',
+    'dcat_v1_1_json',
+  );
+
+  // Validate return_type.
+  if (!in_array($return_type, array('machine_name', 'api_schema', 'name'))) {
+    watchdog('open_data_schema_map',
+      'Invalid return type @return_type specified for _open_data_schema_map_get_available_filters()',
+      array('@return_type' => $return_type)
+    );
+    return NULL;
+  }
+
+  $apis = open_data_schema_map_api_load_all();
+  foreach ($apis as $num => $api) {
+    if (in_array($api->machine_name, $available_filters_machine_name)) {
+      $available_filters[] = $api->$return_type;
+    }
+  }
+
+  return $available_filters;
+}
+
+/**
+ * Utility function to see if an agency is in a list of publishers.
+ *
+ * @param string $agency_string
+ *   A string with the name of the agency or agencies that publish a dataset.
+ * @param array $publishers
+ *   An array with the names of publishers to be included.
+ *
+ * @return bool
+ *   Boolean (true if $agency_string contains one or more of the publishers).
+ */
+function _open_data_schema_map_settings_contains($agency_string, array $publishers) {
+  foreach ($publishers as $publisher) {
+    if (stripos($agency_string, $publisher) !== FALSE) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * String utility function.
+ *
+ * @param string $string
+ *   Input string
+ *
+ * @return string
+ *   Keyword alphanumeric string w/only dashes.
+ */
+function _open_data_schema_map_keyword_string($string) {
+  // Lower case everything.
+  $string = strtolower($string);
+  // Make alphanumeric (removes all other characters).
+  $string = preg_replace("/[^a-z0-9_\s-]/", "", $string);
+  // Clean up multiple dashes or whitespaces.
+  $string = preg_replace("/[\s-]+/", " ", $string);
+  // Convert whitespaces and underscore to dash.
+  $string = preg_replace("/[\s_]/", "-", $string);
+  return $string;
+}
+
+/**
+ * Validates individual datasets.
+ *
+ * @param string $validator_class
+ *   Validator class
+ * @param bool $clear_cache
+ *   If TRUE, will clear cached validation results.
+ *
+ * @return array
+ *   Array of errors, count, total_errors, error_datasets
+ */
+function _open_data_schema_map_process_validate($validator_class, $clear_cache = FALSE) {
+  if (!class_exists($validator_class)) {
+    $message = t('Validation Class Not Found: @class', array('@class' => $validator_class));
+    drupal_set_message($message);
+    $results = array(
+      'errors' => $message,
+      'total_errors' => 1,
+    );
+    return $results;
+  }
+
+  $cache_key = strtolower($validator_class) . '_validate_result';
+  if (!$clear_cache && $cache = cache_get($cache_key)) {
+    $results = $cache->data;
+    $results['cache_date'] = $cache->created;
+  }
+  else {
+    /* @var $validator OdsmValidatorInterface */
+    $validator = new $validator_class();
+    $validator->validate();
+    $count = $validator->datasetCount();
+    $error_datasets = array();
+    $total_errors = 0;
+    if ($errors = $validator->getErrors()) {
+      $total_errors = count($errors);
+      foreach ($errors as $error) {
+        if (isset($error['id'])) {
+          $error_datasets[$error['id']] = 1;
+        }
+      }
+      $errors = _open_data_schema_validation_process_errors($errors);
+    }
+    $results = array(
+      'errors' => $errors,
+      'count' => $count,
+      'total_errors' => $total_errors,
+      'error_datasets' => $error_datasets,
+    );
+    cache_set($cache_key, $results, 'cache');
+    $results['cache_date'] = time();
+  }
+  return $results;
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function open_data_schema_map_token_info() {
+  $info['tokens']['node']['body_raw'] = array(
+    'name' => t('Body Raw Value'),
+    'description' => t('The raw value of the body node field. This is not checked for any injected code/escaped.'),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function open_data_schema_map_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  // Provide [node:body_raw] token replacement. This is not a safe value.
+  $replacements = array();
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'body_raw':
+          if ($items = field_get_items('node', $node, 'body', $language_code)) {
+            $output = $items[0]['value'];
+            // Basic UTF8 checking for security. body_raw is not a safe value.
+            if (drupal_validate_utf8($output)) {
+              $replacements[$original] = $output;
+            }
+          }
+          break;
+
+      }
+    }
+  }
+
+  return $replacements;
+}

@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * Tests for drafty.module.
+ */
+
+/**
+ * Defines a base class for testing Drafty revision support.
+ */
+class DraftyWebTestCase extends NodeWebTestCase {
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'drafty';
+    parent::setUp($modules);
+  }
+
+  /**
+   * Make it easy for drafty_enforce to subclass.
+   *
+   * @param $entity
+   *   An entity object.
+   */
+  protected function setRevision($entity) {
+    $entity->revision = TRUE;
+  }
+}
+
+/**
+ * Test drafty revision support with a single entity.
+ */
+class DraftyTestCase extends DraftyWebTestCase {
+
+  protected $type;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty',
+      'description' => 'Test revision manipulation.',
+      'group' => 'Drafty',
+    );
+  }
+
+
+  /**
+   * Create a node and check creation of draft and published revisions.
+   */
+  function testDraftRevisions() {
+    $node = new stdClass();
+    $node->title = 'Title A';
+    $node->type = 'article';
+    $node->status = 1;
+    $this->setRevision($node);
+    node_save($node);
+
+    // Save the vid for later comparison.
+    $published_vid = $node->vid;
+
+    // Save a new draft.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+    $node->title = 'Title B';
+    $this->setRevision($node);
+    $node->is_draft_revision = TRUE;
+    node_save($node);
+
+    $draft_vid = $node->vid;
+    // Confirm that the published and draft version IDs differ.
+    $this->assertNotEqual($published_vid, $draft_vid);
+
+    // Confirm that loading the node gets the published revision.
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title A');
+
+    drafty()->publishRevision('node', $node->nid, $draft_vid);
+
+    $node = node_load($node->nid);
+    $this->assertEqual($node->title, 'Title B');
+    $this->assertNotEqual($node->vid, $draft_vid);
+  }
+}

@@ -1,0 +1,14 @@
+name = Safeword Context support
+description = "Adds Context support to Safeword."
+dependencies[] = context
+dependencies[] = safeword
+package = "Context"
+core = 7.x
+files[] = safeword_context_condition.inc
+
+; Information added by Drupal.org packaging script on 2014-11-02
+version = "7.x-1.13"
+core = "7.x"
+project = "safeword"
+datestamp = "1414891233"
+

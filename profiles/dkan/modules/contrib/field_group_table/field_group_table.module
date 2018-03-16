@@ -1,0 +1,402 @@
+<?php
+/**
+ * @file
+ * Adds a "Table" format to Field Groups.
+ */
+
+define('FIELD_GROUP_TABLE_LABEL_HIDDEN', 1);
+define('FIELD_GROUP_TABLE_LABEL_ABOVE', 2);
+define('FIELD_GROUP_TABLE_LABEL_CAPTION', 3);
+define('FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP', 1);
+define('FIELD_GROUP_TABLE_EMPTY_LABEL_MERGE', 2);
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function field_group_table_ctools_plugin_api($owner, $api) {
+  if ($owner == 'field_group' && $api == 'field_group') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function field_group_table_theme() {
+  return array(
+    'field_group_table_wrapper' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_group_formatter_info().
+ */
+function field_group_table_field_group_formatter_info() {
+  return array(
+    'display' => array(
+      'table' => array(
+        'label' => t('Table'),
+        'description' => t('This fieldgroup renders fields in a 2-column table with the label in the left column, and the value in the right column.'),
+        'instance_settings' => array(
+          'label_visibility' => FIELD_GROUP_TABLE_LABEL_CAPTION,
+          'desc' => '',
+          'first_column' => '',
+          'second_column' => '',
+          'empty_label_behavior' => FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP,
+          'table_row_striping' => FALSE,
+          'always_show_field_label' => FALSE,
+          'classes' => '',
+        ),
+      ),
+    ),
+    'form' => array(
+      'table' => array(
+        'label' => t('Table'),
+        'description' => t('This fieldgroup renders fields in a 2-column table with the label in the left column, and the value in the right column.'),
+        'instance_settings' => array(
+          'label_visibility' => FIELD_GROUP_TABLE_LABEL_CAPTION,
+          'desc' => '',
+          'first_column' => '',
+          'second_column' => '',
+          'empty_label_behavior' => FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP,
+          'table_row_striping' => FALSE,
+          'always_show_field_label' => FALSE,
+          'classes' => '',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_group_format_settings().
+ */
+function field_group_table_field_group_format_settings($group) {
+  // Add a wrapper for extra settings to use by others.
+  $form = array(
+    'instance_settings' => array(
+      '#tree' => TRUE,
+      '#weight' => 2,
+    ),
+  );
+
+  $field_group_types = field_group_formatter_info();
+  $mode = $group->mode == 'form' ? 'form' : 'display';
+  $formatter = $field_group_types[$mode][$group->format_type];
+  $settings = $group->format_settings['instance_settings'];
+
+  // Add optional instance_settings.
+  switch ($group->format_type) {
+    case 'table':
+      $form['instance_settings']['label_visibility'] = array(
+        '#title' => t('Label visibility'),
+        '#description' => t('This option determines how to display the Field group label and description.'),
+        '#type' => 'select',
+        '#options' => array(
+          FIELD_GROUP_TABLE_LABEL_HIDDEN => t('Hidden'),
+          FIELD_GROUP_TABLE_LABEL_ABOVE => t('Above table'),
+          FIELD_GROUP_TABLE_LABEL_CAPTION => t('Table caption'),
+        ),
+        '#default_value' => isset($settings['label_visibility']) ? $settings['label_visibility'] : $formatter['instance_settings']['label_visibility'],
+      );
+      $form['instance_settings']['desc'] = array(
+        '#title' => t('Description for the group.'),
+        '#type' => 'textarea',
+        '#default_value' => isset($settings['desc']) ? $settings['desc'] : $formatter['instance_settings']['desc'],
+      );
+      $form['instance_settings']['first_column'] = array(
+        '#title' => t('First column header'),
+        '#description' => t('Use this field to add a table header.'),
+        '#type' => 'textfield',
+        '#default_value' => isset($settings['first_column']) ? $settings['first_column'] : $formatter['instance_settings']['first_column'],
+      );
+      $form['instance_settings']['second_column'] = array(
+        '#title' => t('Second column header'),
+        '#description' => t('Use this field to add a table header.'),
+        '#type' => 'textfield',
+        '#default_value' => isset($settings['second_column']) ? $settings['second_column'] : $formatter['instance_settings']['second_column'],
+      );
+      $form['instance_settings']['empty_label_behavior'] = array(
+        '#title' => t('Empty label behavior'),
+        '#type' => 'select',
+        '#options' => array(
+          FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP => t('Keep empty label cell'),
+          FIELD_GROUP_TABLE_EMPTY_LABEL_MERGE => t('Merge cells'),
+        ),
+        '#default_value' => isset($settings['empty_label_behavior']) ? $settings['empty_label_behavior'] : $formatter['instance_settings']['empty_label_behavior'],
+      );
+      $form['instance_settings']['table_row_striping'] = array(
+        '#title' => t('Table row striping'),
+        '#description' => t('Adds zebra striping on the table rows.'),
+        '#type' => 'checkbox',
+        '#default_value' => isset($settings['table_row_striping']) ? $settings['table_row_striping'] : $formatter['instance_settings']['table_row_striping'],
+      );
+      $form['instance_settings']['always_show_field_label'] = array(
+        '#title' => t('Always show field label'),
+        '#description' => t('Forces the field label to always display in the first column and renders the field normally.'),
+        '#type' => 'checkbox',
+        '#default_value' => isset($settings['always_show_field_label']) ? $settings['always_show_field_label'] : $formatter['instance_settings']['always_show_field_label'],
+      );
+
+      break;
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_group_pre_render().
+ */
+function field_group_table_field_group_pre_render(&$element, $group, &$form) {
+  // We only process the 'table' group type.
+  if ($group->format_type != 'table') {
+    return;
+  }
+
+  $mode = $group->mode == 'form' ? 'form' : 'display';
+  $settings = $group->format_settings['instance_settings'];
+  $label = check_plain($group->label);
+
+  // Build the caption and description of this group.
+  $caption = array();
+  if (isset($settings['label_visibility']) && ($settings['label_visibility']== FIELD_GROUP_TABLE_LABEL_ABOVE)) {
+    $caption = array(
+      '#type' => 'item',
+      '#title' => $label,
+      '#description' => field_filter_xss($settings['desc']),
+    );
+  }
+
+  // Build the table header if necessary.
+  $header = array();
+  if ($settings['first_column'] || $settings['second_column']) {
+    $header = array(
+      check_plain($settings['first_column']),
+      check_plain($settings['second_column']),
+    );
+  }
+
+  // Create the element.
+  $element += array(
+    '#theme' => 'field_group_table_wrapper',
+    '#title' => $group->label,
+    '#mode' => $mode,
+    '#groups' => array_keys($form['#groups']),
+    '#settings' => $settings,
+    '#attributes' => array(
+      'class' => array_merge(array('field-group-table', $group->group_name), explode(' ', $settings['classes'])),
+    ),
+    '#caption' => $caption,
+    // We will add the table rows upon rendering, as doing it here means
+    // messing up the field group hierarchy, which causes issues.
+    '#field_group_table' => array(
+      '#theme' => "table__field_group_table__$group->group_name",
+      '#header' => $header,
+      '#caption' => (isset($settings['label_visibility']) && ($settings['label_visibility']== FIELD_GROUP_TABLE_LABEL_CAPTION)) ? $label : NULL,
+      '#attributes' => array(
+        'class' => array('field-group-format', $group->group_name),
+      ),
+    ),
+  );
+}
+
+/**
+ * Returns HTML for a field_group_table_wrapper.
+ */
+function theme_field_group_table_wrapper($variables) {
+  $element = $variables['element'];
+  $mode = $element['#mode'];
+  $settings = $element['#settings'];
+
+  // Allow modules to alter the rows, useful for removing empty rows.
+  $children = element_children($element, TRUE);
+  drupal_alter('field_group_table_rows', $element, $children);
+
+  // Build the table rows.
+  $rows = array();
+  foreach ($children as $child) {
+    $variables = array(
+      'element' => $element[$child],
+      'settings' => $settings,
+      'mode' => $mode,
+    );
+    unset($element[$child]);
+
+    $rows[] = _field_group_table_row_build($variables);
+  }
+
+  $element['#field_group_table']['#rows'] = $rows;
+
+  $render = array(
+    '#theme' => 'container',
+    '#attributes' => array(
+      'id' => isset($element['#id']) ? $element['#id'] : '',
+    ) + $element['#attributes'],
+  );
+
+  $render['#children'] = drupal_render($element['#caption']) . "\n";
+  $render['#children'] .= drupal_render($element['#field_group_table']) . "\n";
+
+  return drupal_render($render);
+}
+
+/**
+ * Builds a table row for rendering.
+ */
+function _field_group_table_row_build($variables) {
+  // Merge defaults.
+  $variables += array(
+    'row_class' => array(),
+    'content_attributes' => array(),
+  );
+
+  $table_row_striping = isset($variables['settings']['table_row_striping']) ? $variables['settings']['table_row_striping'] : false;
+
+  $row = array(
+    'data' => array(),
+    'no_striping' => !$table_row_striping,
+    'class' => $variables['row_class'],
+  );
+
+  switch ($variables['mode']) {
+    case 'display':
+      // In some cases (like with field extra fields) #title and #label_display
+      // may not be set. In that case we try to use #label as the title instead,
+      // as that is commonly used.
+      $title = '';
+      if (isset($variables['element']['#title'])) {
+        $title = $variables['element']['#title'];
+      }
+      elseif (isset($variables['element']['#label'])) {
+        $title = $variables['element']['#label'];
+      }
+      $label_display = isset($variables['element']['#label_display']) ? isset($variables['element']['#label_display']) : 'above';
+
+      // Display the label in the first column, if 'always show field label' is
+      // set.
+      if (isset($variables['settings']['always_show_field_label'])) {
+        $row['data'][] = array(
+          'data' => $title,
+          'header' => TRUE,
+          'class' => array('field-label'),
+        );
+      }
+      // Display the label in the first column, if it's set to "above" and the
+      // title isn't empty.
+      elseif ($label_display == 'above' && $title != '') {
+        $row['data'][] = array(
+          'data' => $title,
+          'header' => TRUE,
+          'class' => array('field-label'),
+        );
+
+        // Do not display the label in the second column.
+        $variables['element']['#label_display'] = 'hidden';
+      }
+      // Display an empty cell if we won't display the title and 'empty label
+      // behavior' is set to keep empty label cells.
+      elseif ($variables['settings']['empty_label_behavior'] == FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP) {
+        $row['data'][] = array(
+          'data' => '&nbsp;',
+          'header' => TRUE,
+          'class' => array('field-label', 'field-label-hidden'),
+        );
+      }
+      // Otherwise we merge the cells.
+      else {
+        $variables['content_attributes']['colspan'] = 2;
+      }
+
+      break;
+
+    case 'form':
+      $class = array('field-label');
+
+      list($title, $required) = field_group_table_find_element_title($variables['element']);
+
+      if ($title != '' || ($title == '' && $variables['settings']['empty_label_behavior'] == FIELD_GROUP_TABLE_EMPTY_LABEL_KEEP)) {
+        $row['data'][] = array(
+          'data' => ($title == '') ? '&nbsp;' : array(
+            '#type' => 'item',
+            '#title' => $title,
+            '#required' => $required,
+          ),
+          'header' => TRUE,
+          'class' => $class,
+        );
+      }
+      else {
+        $variables['content_attributes']['colspan'] = 2;
+      }
+
+      break;
+  }
+
+  // Add the field's content.
+  $row['data'][] = $variables['content_attributes'] + array(
+    'data' => $variables['element'],
+    'class' => array('field-content'),
+  );
+
+  return $row;
+}
+
+/**
+ * Find first #title that is not that of a container, unset and return it.
+ *
+ * @param array $element
+ * @return array(string, bool)|null
+ */
+function field_group_table_find_element_title(array &$element) {
+  if (isset($element['#title']) && isset($element['#type']) && $element['#type'] !== 'container') {
+    $title = $element['#title'];
+    $required = $element['#required'];
+
+    $element['#title'] = '';
+    $element['#required'] = FALSE;
+
+    return array($title, $required);
+  }
+  else {
+    foreach (element_children($element) as $key) {
+      if ($return = field_group_table_find_element_title($element[$key])) {
+        return $return;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_group_table_rows_alter().
+ *
+ * In some cases a child may be completely empty and therefore will be useless,
+ * because it will render as an empty table row. See
+ * http://drupal.org/node/1985606 for example. This function removes the most
+ * common occurrences of empty rows.
+ */
+function field_group_table_field_group_table_rows_alter(&$element, &$children) {
+  // Only operate on "display" mode.
+  if ($element['#mode'] != 'display') {
+    return;
+  }
+
+  $render_api_properties = array('#theme', '#markup', '#prefix', '#suffix');
+
+  foreach ($children as $index => $child) {
+    // A row containing another field group is not empty.
+    if (in_array($child, $element['#groups'])) {
+      continue;
+    }
+
+    // A row containing render API code is not empty.
+    if (is_array($element[$child]) && array_intersect($render_api_properties, array_keys($element[$child]))) {
+      continue;
+    }
+
+    // This an empty row, remove it.
+    unset($children[$index]);
+    unset($element[$child]);
+  }
+}

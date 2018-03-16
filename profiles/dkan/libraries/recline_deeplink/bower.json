@@ -1,0 +1,35 @@
+{
+  "name": "recline-deeplink",
+  "version": "0.0.1",
+  "keywords": [
+    "recline",
+    "reclinejs",
+    "deeplink"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "vendor",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "backbone": "1.0.0",
+    "underscore": "1.4.4",
+    "flot": "0.8.1",
+    "flotr2": "*",
+    "jquery": "2.0.3",
+    "json": "*",
+    "leaflet": "0.7.3",
+    "leaflet.markercluster": "~0.4.0",
+    "moment": "2.0.0",
+    "mustache": "0.5.2",
+    "showdown": "~0.3.1",
+    "slickgrid": "2.0.1",
+    "timeline": "2.29.1",
+    "underscore.deferred": "*",
+    "bootstrap-css": "2.3.2",
+    "deep-diff": "~0.3.0"
+  }
+}

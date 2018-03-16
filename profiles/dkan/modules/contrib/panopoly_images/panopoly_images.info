@@ -1,0 +1,35 @@
+name = Panopoly Images
+description = Provides scaling and cropping to images.
+core = 7.x
+package = Panopoly
+project = panopoly_images
+dependencies[] = ctools
+dependencies[] = defaultconfig
+dependencies[] = features
+dependencies[] = file_entity
+dependencies[] = image
+dependencies[] = manualcrop
+dependencies[] = media
+dependencies[] = strongarm
+features[ctools][] = file_entity:file_default_displays:1
+features[ctools][] = strongarm:strongarm:1
+features[defaultconfig][] = strongarm:focal_point_enabled_for
+features[defaultconfig][] = strongarm:manualcrop_file_entity_settings_image
+features[features_api][] = api:2
+features[file_display][] = image__link__file_field_file_default
+features[image][] = panopoly_image_featured
+features[image][] = panopoly_image_full
+features[image][] = panopoly_image_half
+features[image][] = panopoly_image_original
+features[image][] = panopoly_image_quarter
+features[image][] = panopoly_image_spotlight
+features[image][] = panopoly_image_square
+features[image][] = panopoly_image_thumbnail
+features[image][] = panopoly_image_video
+
+; Information added by Drupal.org packaging script on 2017-05-11
+version = "7.x-1.45"
+core = "7.x"
+project = "panopoly_images"
+datestamp = "1494506035"
+

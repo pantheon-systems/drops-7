@@ -1,0 +1,75 @@
+<?php
+/**
+ * @file
+ * Test the Workbench Moderation integration for Panelizer.
+ */
+
+/**
+ *
+ */
+class PanelizerWithWorkbenchModerationTest extends PanelizerTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Panelizer w Workbench Moderation',
+      'description' => 'Test Workbench Moderation integration.',
+      'group' => 'Panelizer',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'workbench_moderation';
+    parent::setUp($modules);
+
+    $perms = array(
+      // Standard node permissions.
+      'create page content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+
+      // Panelizer.
+      'administer panelizer',
+    );
+    $web_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   * Confirm that creating a new draft creates the appropriate
+   * {panelizer_entity} record.
+   */
+  function testNewDraft() {
+    // @todo
+  }
+
+  /**
+   * Confirm that publishing a new draft works correctly.
+   */
+  function testPublishDraft() {
+    // @todo
+  }
+
+  /**
+   * Confirm that deleting a draft will only delete the appropriate
+   * {panelizer_entity} record.
+   */
+  function testDeletingDraft() {
+    // @todo.
+  }
+
+  /**
+   * Confirm that reverting to a specific draft will create the appropriate
+   * {panelizer_entity} record.
+   */
+  function testRevertingDraft() {
+    // @todo.
+  }
+
+}

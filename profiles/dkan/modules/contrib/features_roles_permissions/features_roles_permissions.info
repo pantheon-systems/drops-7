@@ -1,0 +1,13 @@
+name = Features Roles Permissions
+description = Includes all permissions for the exported role.
+core = 7.x
+package = "Features"
+dependencies[] = features
+dependencies[] = user
+
+; Information added by Drupal.org packaging script on 2015-03-25
+version = "7.x-1.2"
+core = "7.x"
+project = "features_roles_permissions"
+datestamp = "1427278086"
+

@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Search facets module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function search_api_facetapi_install() {
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_YEAR, 'Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_MONTH, 'F Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_DAY, 'F j, Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_HOUR, 'H:__');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_MINUTE, 'H:i');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_SECOND, 'H:i:S');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function search_api_facetapi_uninstall() {
+  variable_del('search_api_facets_search_ids');
+  // We have to use the literal values here, as the Facet API module could have
+  // already been disabled at this point.
+  variable_del('date_format_search_api_facetapi_YEAR');
+  variable_del('date_format_search_api_facetapi_MONTH');
+  variable_del('date_format_search_api_facetapi_DAY');
+  variable_del('date_format_search_api_facetapi_HOUR');
+  variable_del('date_format_search_api_facetapi_MINUTE');
+  variable_del('date_format_search_api_facetapi_SECOND');
+}
+
+/**
+ * Set up date formats.
+ */
+function search_api_facetapi_update_7101() {
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_YEAR, 'Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_MONTH, 'F Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_DAY, 'F j, Y');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_HOUR, 'H:__');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_MINUTE, 'H:i');
+  variable_set('date_format_search_api_facetapi_' . FACETAPI_DATE_SECOND, 'H:i:S');
+}

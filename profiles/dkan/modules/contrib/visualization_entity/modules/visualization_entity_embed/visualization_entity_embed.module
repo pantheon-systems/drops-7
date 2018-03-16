@@ -1,0 +1,191 @@
+<?php
+
+/**
+ * @file
+ * Creates a panel pane to allow users embed visualizations.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function visualization_entity_embed_menu() {
+  $items = array();
+  $items['visualization-entity-embed-autocomplete'] = array(
+    'page callback' => 'visualization_entity_embed_option_autocomplete',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function visualization_entity_embed_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * The 'admin info' callback for panel pane.
+ */
+function visualization_entity_embed_admin_info($subtype, $conf, $contexts) {
+  if (!empty($conf)) {
+    $block = new stdClass();
+    $block->title = $conf['override_title'] ? $conf['override_title_text'] : '';
+    if(isset($conf['source'])) {
+      $block->content = t('Source: @source', array(
+        '@source' => $conf['source'],
+      ));
+    }
+
+    return $block;
+  }
+
+}
+
+/**
+ * The 'Edit form' callback for the content type.
+ */
+function visualization_entity_embed_edit_form($form, &$form_state) {
+  ctools_include('dependent');
+
+  $conf = $form_state['conf'];
+
+  /// Start from here
+  $form['source_origin'] = array(
+    '#title' => t('Source origin'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      'local' => t('DKAN Visualization'),
+      'remote' => t('URL - use for external visualization services, or embed URLs from DKAN resource previews'),
+    ),
+    '#default_value' => (!empty($conf['source_origin'])) ? $conf['source_origin'] : 'local',
+    '#required' => FALSE,
+  );
+
+  $form['local_source'] = array(
+    '#title' => t('Visualization'),
+    '#description' => t('Start typing your visualization’s title for autocomplete'),
+    '#type' => 'textfield',
+    '#autocomplete_path' => 'visualization-entity-embed-autocomplete',
+    '#default_value' => $conf['local_source'],
+    '#attributes' => array(
+      'class' => array('form-control')
+    ),
+    '#process' => array('form_process_autocomplete', 'ajax_process_form'),
+    '#dependency' => array('radio:source_origin' => array('local')),
+    '#required' => FALSE,
+  );
+  $form['remote_source'] = array(
+    '#title' => t('Url'),
+    '#description' => t('Enter an embed URL for a visualization'),
+    '#type' => 'textfield',
+    '#default_value' => $conf['remote_source'],
+    '#attributes' => array(
+      'class' => array('form-control')
+    ),
+    '#process' => array('ctools_dependent_process'),
+    '#dependency' => array('radio:source_origin' => array('remote')),
+    '#required' => FALSE,
+    '#maxlength' => '500',
+  );
+  $form['width'] = array(
+    '#title' => t('Width'),
+    '#description' => t('Configure the width (e.g. 100%)'),
+    '#type' => 'textfield',
+    '#default_value' => $conf['width'],
+    '#required' => TRUE,
+  );
+  $form['height'] = array(
+    '#title' => t('Height'),
+    '#description' => t('Configure the height (e.g. 420)'),
+    '#type' => 'textfield',
+    '#default_value' => $conf['height'],
+    '#required' => TRUE,
+  );
+
+  return $form;
+}
+
+/**
+ * Autocomplete callback.
+ */
+function visualization_entity_embed_option_autocomplete($text) {
+  $query = db_select('eck_visualization', 'v')
+    ->condition('v.title', '%' . db_like($text) . '%', 'LIKE')
+    ->fields('v')
+    ->orderBy('created', 'desc');
+
+  $result = $query->execute()->fetchAll();
+
+  $options = array();
+  foreach ($result as $visualization) {
+    $options[$visualization->title . ' [id:' . $visualization->id . ']'] = $visualization->title;
+  }
+
+  return drupal_json_output($options);
+}
+
+/**
+ * The submit form stores the data in $conf.
+ */
+function visualization_entity_embed_edit_form_submit($form, &$form_state) {
+  foreach (array_keys($form_state['plugin']['defaults']) as $key) {
+    if (isset($form_state['values'][$key])) {
+      if($key === 'local_source' && !empty($form_state['values']['local_source'])) {
+        $form_state['conf']['local_source'] = $form_state['values']['local_source'];
+      } elseif ($key === 'remote_source' && !empty($form_state['values']['remote_source'])) {
+        $form_state['conf']['remote_source'] = $form_state['values']['remote_source'];
+      } else {
+        $form_state['conf'][$key] = $form_state['values'][$key];
+      }
+    }
+  }
+}
+
+/**
+ * The 'Render' callback for the content type.
+ */
+function visualization_entity_embed_render($subtype, $conf, $panel_args, $context = NULL) {
+
+  // Check if we need to load a local source or a remote.
+  if (!empty($conf['local_source'])) {
+    $source = check_plain($conf['local_source']);
+    $re = '/\\[id:(\\d+)\\]/';
+    preg_match($re, $source, $matches);
+    $source = $matches[1];
+    $visualization = entity_load_single('visualization', $source);
+    $source = '/visualization/' . $visualization->type . '/' . $visualization->id . '/iframe';
+  } else {
+    $source = check_plain($conf['remote_source']);
+    $visualization = '';
+  }
+
+  // Get with and height from the conf.
+  $width = check_plain($conf['width']);
+  $height = check_plain($conf['height']);
+
+  // Creates a block for embed.
+  $block = new stdClass();
+  $block->title = '';
+  $block->content = '<iframe src="' . $source . '" height="' . $height . '" width="' . $width . '" frameBorder="0" scrolling="no"></iframe>';
+
+  $embed = array(
+    'block' => $block,
+    'visualization' => $visualization,
+    'conf' => $conf,
+    'panels_args' => $panel_args,
+    'subtype' => $subtype,
+    'context' => $context,
+    'width' => $width,
+    'height' => $height,
+  );
+
+  // Allow other bundles modify how the embed is being rendered.
+  module_invoke_all('visualization_entity_embed_render_alter', $embed);
+
+  return $block;
+}

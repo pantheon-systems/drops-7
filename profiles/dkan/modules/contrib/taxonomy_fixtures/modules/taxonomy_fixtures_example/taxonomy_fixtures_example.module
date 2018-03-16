@@ -1,0 +1,23 @@
+<?php
+/**
+ * @file
+ * Code for the Taxonomy fixtures example module.
+ */
+
+/**
+ * Implements hook_taxonomy_fixtures_vocabulary().
+ */
+function taxonomy_fixtures_example_taxonomy_fixtures_vocabulary() {
+  $data_path = drupal_get_path('module', 'taxonomy_fixtures_example') . '/data';
+  $vocabularies = array();
+
+  $vocabularies['tags'] = array(
+    'export_path' => $data_path,
+    'map' =>     array(
+      'name' => 'name',
+      'weight' => 'weight',
+    ),
+  );
+
+  return $vocabularies;
+}

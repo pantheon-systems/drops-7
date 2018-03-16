@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Tests for drafty_enforce.module.
+ */
+
+/**
+ * Test the node_load_multiple() function.
+ */
+class DraftyEnforceTestCase extends DraftyTestCase {
+
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'drafty_enforce';
+    parent::setUp($modules);
+  }
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Drafty Enforce',
+      'description' => 'Test revision manipulation with drafty enforce enabled.',
+      'group' => 'Drafty',
+    );
+  }
+
+  /**
+   * @inheritdoc
+   */
+  protected function setRevision($entity) {
+  }
+}

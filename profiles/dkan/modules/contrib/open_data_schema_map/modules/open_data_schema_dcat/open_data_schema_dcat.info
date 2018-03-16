@@ -1,0 +1,10 @@
+name = DCAT Schema
+description = Provides DCAT Schema for Open Data Schema Map.
+core = 7.x
+package = Open Data
+dependencies[] = features
+dependencies[] = open_data_schema_map
+dependencies[] = open_data_schema_map_xml_output
+dependencies[] = pathauto
+files[] = DcatValidator.php
+

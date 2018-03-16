@@ -1,0 +1,140 @@
+<?php
+/**
+ * @file
+ * Confirm the language integration works correctly.
+ */
+
+class FppLocaleTest extends FppTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for language handling',
+      'description' => 'Confirm that language handling works correctly.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+
+    // Needed
+    $modules[] = 'locale';
+
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+    $this->title = 'Test FPP';
+  }
+
+  /**
+   * Verify the language selector exists.
+   */
+  function testLanguageSelector() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200);
+
+    // Confirm the language selector is present on the page.
+    $this->assertFieldByName('language');
+  }
+
+  /**
+   * Verify the language selector exists.
+   */
+  function testNoLanguageSelector() {
+    module_disable(array('locale'));
+
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200);
+
+    // Confirm the language selector is present on the page.
+    $this->assertNoFieldByName('language');
+  }
+
+  /**
+   * Verify the language selector works with no language selected.
+   */
+  function testLanguageNone() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200);
+
+    // Confirm the language selector is present on the page.
+    $this->assertFieldByName('language');
+    $edit = array(
+      'title' => $this->title,
+      'language' => LANGUAGE_NONE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertResponse(200);
+    $this->assertText($this->title);
+
+    // The entity created should have fpid 1.
+    $fpp = fieldable_panels_panes_load(1);
+    $this->assertEqual($this->title, $fpp->title);
+
+    // Confirm that the FPP's language is still 'none'.
+    $language = entity_language('fieldable_panels_pane', $fpp);
+    $this->assertEqual($language, LANGUAGE_NONE);
+  }
+
+  /**
+   * Verify the language selector works with a specific language.
+   */
+  function testLanguageEnglish() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200);
+
+    // Confirm the language selector is present on the page.
+    $this->assertFieldByName('language');
+    $edit = array(
+      'title' => $this->title,
+      'language' => 'en',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertResponse(200);
+    $this->assertText($this->title);
+
+    // The entity created should have fpid 1.
+    $fpp = fieldable_panels_panes_load(1);
+    $this->assertEqual($this->title, $fpp->title);
+
+    // Confirm that the FPP's language is still 'none'.
+    $language = entity_language('fieldable_panels_pane', $fpp);
+    $this->assertEqual($language, 'en');
+  }
+
+}

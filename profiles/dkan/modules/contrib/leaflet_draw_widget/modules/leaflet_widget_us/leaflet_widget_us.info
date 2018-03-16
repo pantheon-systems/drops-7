@@ -1,0 +1,4 @@
+name = Leaflet Widget US for Geofield
+description = "Extend Leaflet widget with a options to select state from USA."
+core = 7.x
+dependencies[] = leaflet_widget

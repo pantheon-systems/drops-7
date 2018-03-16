@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * @file
+ * Themeless output of a node's tablefield on the path 'node/%/themeless'.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function tablefield_themeless_menu() {
+  $items = array();
+  $items['node/%node/themeless'] = array(
+    'title' => 'Themeless TableField',
+    'page callback' => 'tablefield_themeless_view',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function tablefield_themeless_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  $node = is_numeric(arg(1)) ? node_load(arg(1)) : NULL;
+  // Get all fields of entity type.
+  $fields = $node ? field_info_instances('node', $node->type) : array();
+  // Get all table fields.
+  $tablefield = array();
+  foreach ($fields as $key => $value) {
+    if ($value['widget']['type'] === 'tablefield') {
+      $tablefield[] = $key;
+    }
+  }
+  // Add a 'Themeless TableField' tab only if the content type has a TableField.
+  if ($node && $root_path == 'node/%' && isset($tablefield[0]) && !empty($tablefield[0])) {
+    $data['tabs'][0]['output'][] = array(
+      '#theme' => 'menu_local_task',
+      '#link' => array(
+        'title' => t('Themeless TableField'),
+        'href' => 'node/' . arg(1) . '/themeless',
+        'localized_options' => array(),
+      ),
+    );
+  }
+}
+
+/**
+ * Get a node by a menucallback and return the first table field as JSON.
+ *
+ * @param object $node
+ *   Fully loaded node object.
+ */
+function tablefield_themeless_view($node) {
+  // Get all fields of entity type.
+  $fields = field_info_instances('node', $node->type);
+  // Get all table fields.
+  $tablefield = array();
+  foreach ($fields as $key => $value) {
+    if ($value['widget']['type'] === 'tablefield') {
+      $tablefield[] = $key;
+    }
+  }
+  // Populate $node->content with a render() array.
+  node_build_content($node, 'themeless');
+
+  $build = $node->content;
+
+  // Get the field instance of the first found table field.
+  $instance = isset($tablefield[0]) ? field_info_instance('node', $tablefield[0], $node->type) : NULL;
+  $settings = isset($instance) ? field_get_display($instance, 'themeless', 'node') : NULL;
+  // XML.
+  if (isset($settings['settings']['xml']) && isset($build[$tablefield[0]][0]['#markup']) && $settings['settings']['xml']) {
+    // We are returning XML, so tell the browser.
+    drupal_add_http_header('Content-Type', 'application/xml');
+    // Render the content of the first found table field.
+    print $build[$tablefield[0]][0]['#markup'];
+  }
+  // JSON.
+  elseif (isset($build[$tablefield[0]][0]['#markup'])) {
+    // We are returning JSON, so tell the browser.
+    drupal_add_http_header('Content-Type', 'application/json');
+    // Render the content of the first found table field.
+    print $build[$tablefield[0]][0]['#markup'];
+  }
+  // HTML.
+  elseif ($tablefield[0] && $settings['type'] !== 'format_themeless') {
+    $output = field_view_field('node', $node, $tablefield[0], $settings);
+    print drupal_render($output);
+  }
+  else {
+    $nodata['code'] = $instance ? 204 : 404;
+    $nodata['message'] = $instance ? t('No Content: the tablefield is empty') : t('Not Found: no tablefield found');
+    print drupal_json_output($nodata);
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function tablefield_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['themeless'] = array(
+    'label' => t('Themeless'),
+    'custom settings' => FALSE,
+  );
+}

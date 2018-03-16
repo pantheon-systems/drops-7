@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function token_tweaks_menu() {
+  $items['admin/config/system/tokens'] = array(
+    'title' => 'Tokens',
+    'description' => 'Configure behavior of tokens on the site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('token_tweaks_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'token_tweaks.admin.inc',
+  );
+
+  return $items;
+}
+
+function token_tweaks_preprocess_token_tree(&$variables) {
+  $variables['recursion_limit'] = min(variable_get('token_tree_recursion_limit', 3), $variables['recursion_limit']);
+}
+
+function token_tweaks_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'token_info_alter') {
+    // Ensure our hook_token_info_alter() hook gets run last.
+    unset($implementations['token_tweaks']);
+    $implementations['token_tweaks'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_token_info_alter().
+ *
+ * Disable token listings
+ */
+function token_tweaks_token_info_alter(&$info) {
+  if (!variable_get('token_tweaks_alter_tokens', TRUE)) {
+    return;
+  }
+
+
+}

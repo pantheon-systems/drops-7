@@ -1,0 +1,224 @@
+<?php
+
+/**
+ * @file
+ * Tests for node transition hooks with workbench_moderation.module.
+ */
+
+class WorkbenchModerationTransitionTestCase extends WorkbenchModerationTestCase {
+  protected $properties;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Transition hook test',
+      'description' => 'Tests the usage of hook_workbench_moderation_transition().',
+      'group' => 'Workbench Moderation',
+    );
+  }
+
+  function setUp($modules = array()) {
+    // Enable a test module that will publish and unpublish nodes for us and
+    // provide hook implementations.
+    parent::setUp(array_merge($modules, array('workbench_moderation_test')));
+    $this->drupalLogin($this->moderator_user);
+
+    $this->properties = array('title', 'nid', 'vid', 'previous_state', 'new_state');
+  }
+
+  /**
+   * Asserts that transition values are as expected.
+   *
+   * @param array $expected
+   *   An array of values to be set by the transition.
+   */
+  private function assertTransition($expected = array()) {
+    foreach ($this->properties as $name) {
+      $value = workbench_moderation_test_get($name);
+      $this->assertEqual($value, $expected[$name], "Transition success: $name set to $value");
+    }
+  }
+
+  function testTransitionFromNodeForm() {
+    // Create a new node and publish it immediately.
+    $body_name = 'body[' . LANGUAGE_NONE . '][0]';
+    $edit = array(
+      'title' => $this->randomName(),
+      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[format]" => filter_default_format(),
+      'workbench_moderation_state_new' => workbench_moderation_state_published(),
+    );
+    $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
+
+    // Test the published state transition.
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $edit['title'],
+      'previous_state' => 'draft',
+      'new_state' => 'published',
+      'status' => 1,
+    );
+    $this->assertTransition($expected);
+
+    // Create a new draft of the published node.
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+    $edit = array('title' => 'Draft node revision1');
+    $this->drupalPost("node/{$node->nid}/edit", $edit, t('Save'));
+
+    $expected = array(
+      'nid' => 1,
+      'vid' => 2,
+      'title' => $edit['title'],
+      'previous_state' => 'published',
+      'new_state' => 'draft',
+      'status' => 0,
+    );
+    $this->assertTransition($expected);
+
+    // Moderate to needs review and check transition.
+    $this->drupalGet("node/1/moderation/2/change-state/needs_review", array(
+      'query' => array('token' => $this->drupalGetToken("1:2:needs_review"))
+    ));
+    $expected = array(
+      'nid' => 1,
+      'vid' => 2,
+      'title' => $edit['title'],
+      'previous_state' => 'draft',
+      'new_state' => 'needs_review',
+      'status' => 0,
+    );
+    $this->assertTransition($expected);
+
+    // Publish the revision and check transition.
+    $this->drupalGet("node/1/moderation/2/change-state/published", array(
+      'query' => array('token' => $this->drupalGetToken("1:2:published"))
+    ));
+    $expected = array(
+      'nid' => 1,
+      'vid' => 2,
+      'title' => $edit['title'],
+      'previous_state' => 'needs_review',
+      'new_state' => 'published',
+      'status' => 1,
+    );
+    $this->assertTransition($expected);
+
+    // Create a new node and make sure it is unpublished.
+    $body_name = 'body[' . LANGUAGE_NONE . '][0]';
+    $edit = array(
+      'title' => $this->randomName(),
+      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[format]" => filter_default_format(),
+    );
+    $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
+
+    // Get the new node.
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    $expected = array(
+      'nid' => $node->nid,
+      'vid' => $node->vid,
+      'title' => $edit['title'],
+      'previous_state' => 'draft',
+      'new_state' => 'draft',
+      'status' => 0,
+    );
+    $this->assertTransition($expected);
+  }
+
+  function testUnpublishTransition() {
+    // Create a new node and publish it immediately. Assumes that
+    // WorkbenchModerationPublishFromNodeFormTestCase passes.
+    $body_name = 'body[' . LANGUAGE_NONE . '][0]';
+    $edit = array(
+      'title' => $this->randomName(),
+      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[format]" => filter_default_format(),
+      'workbench_moderation_state_new' => workbench_moderation_state_published(),
+    );
+    $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $edit['title'],
+      'previous_state' => 'draft',
+      'new_state' => 'published',
+      'status' => 1,
+    );
+    $this->assertTransition($expected);
+
+    // Unpublish the node via the unpublish confirmation form.
+    $this->drupalPost("node/{$node->nid}/moderation/{$node->vid}/unpublish", array(), t('Unpublish'));
+
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $edit['title'],
+      'previous_state' => 'published',
+      'new_state' => 'draft',
+      'status' => 0,
+    );
+    $this->assertTransition($expected);
+  }
+
+  public function testTransitionFromNodeSave() {
+    // Create a brand new unpublished node programmatically.
+    $edit = array(
+      'title' => $this->randomName(),
+      'type' => $this->content_type,
+      'status' => NODE_NOT_PUBLISHED,
+    );
+    $this->node = $this->drupalCreateNode($edit);
+
+    // Get the new node.
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $edit['title'],
+      'previous_state' => 'draft',
+      'new_state' => 'draft',
+      'status' => 0,
+    );
+    $this->assertTransition($expected);
+
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+    $node = node_load($node->nid, NULL, TRUE);
+    // Update the status external to our processes.
+    $node->status = 1;
+    $node->title = 'New title';
+    node_save($node);
+
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $node->title,
+      'previous_state' => 'draft',
+      'new_state' => 'published',
+      'status' => 1,
+    );
+    $this->assertTransition($expected);
+
+    // Ensure that multiple saves that do not spawn a new PHP request are
+    // handled correctly to protect against stale static cache.
+    $node = $this->drupalGetNodeByTitle($node->title);
+    $node = node_load($node->nid, NULL, TRUE);
+
+    $node->status = 1;
+    $node->title = 'Newer title';
+    node_save($node);
+    $expected = array(
+      'nid' => 1,
+      'vid' => 1,
+      'title' => $node->title,
+      'previous_state' => 'published',
+      'new_state' => 'published',
+      'status' => 1,
+    );
+    $this->assertTransition($expected);
+  }
+
+}

@@ -1,0 +1,64 @@
+## Customize the test machine
+machine:
+
+  timezone:
+    America/New_York # Set the timezone
+
+  # Version of ruby to use
+  php:
+    version: 5.6.22
+
+  # Override /etc/hosts
+  #hosts:
+    #circlehost: 127.0.0.1
+    #dev.mycompany.com: 127.0.0.1
+
+  # Add some environment variables
+  environment:
+    # For xvfb / selenium setup (not sure why)
+    #DISPLAY: ':99.0'
+    DATABASE_URL: mysql://ubuntu:@127.0.0.1:3306/circle_test
+## Customize checkout
+## Note: Only post is supported.
+checkout:
+  post:
+    # Remove the extra composer stuff that circleci loads and that is causing conflicts with drush.
+    - rm -rf ~/.composer
+
+## Customize dependencies
+dependencies:
+
+  cache_directories:
+     #- "test/vendor"
+     #- "~/.composer"
+     #- "~/.drush"
+     #- "~/backups"
+     #- "test/sites/default"
+  pre:
+    - rm /opt/circleci/php/$(phpenv global)/etc/conf.d/xdebug.ini
+    - echo "memory_limit = 256M" > $PHPENV_ROOT/versions/$(phpenv global)/etc/conf.d/memory.ini
+    - echo "always_populate_raw_post_data = -1" > $PHPENV_ROOT/versions/$(phpenv global)/etc/conf.d/deprecated.ini    
+  override:
+    - mkdir $CIRCLE_ARTIFACTS/junit
+    - 'bash dkan-module-init.sh --deps --build=$DATABASE_URL'
+    - cd open_data_schema_map && composer install && cd ..
+    - 'ahoy drush --yes runserver :8888':
+        background: true
+  # we automatically cache and restore many dependencies between
+  # builds. If you need to, you can add custom paths to cache:
+  #cache_directories:
+  #  - "custom_1"   # relative to the build directory
+  #  - "~/custom_2" # relative to the user's home directory
+
+## Customize database setup
+database:
+  override:
+    # replace CircleCI's generated database.yml
+    #- cp config/database.yml.ci config/database.yml
+    #- bundle exec rake db:create db:schema:load
+
+## Customize test commands
+test:
+  override:
+  # Fix for behat bug not recognizing symlinked feature files.
+     - open_data_schema_map/bin/phpunit --configuration open_data_schema_map/test

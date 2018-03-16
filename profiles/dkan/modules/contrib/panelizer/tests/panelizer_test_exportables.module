@@ -1,0 +1,212 @@
+<?php
+
+/**
+ * @file
+ *
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function panelizer_test_exportables_ctools_plugin_api($module = NULL, $api = NULL) {
+  if ($module == "panelizer" && $api == "panelizer") {
+    return array("version" => "1");
+  }
+}
+
+/**
+ * Implements hook_panelizer_defaults().
+ */
+function panelizer_test_exportables_panelizer_defaults() {
+  $export = array();
+
+  $panelizer = new stdClass();
+  $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
+  $panelizer->api_version = 1;
+  $panelizer->title = 'Test (with Storage API)';
+  $panelizer->panelizer_type = 'node';
+  $panelizer->panelizer_key = 'page';
+  $panelizer->access = array();
+  $panelizer->view_mode = 'page_manager';
+  $panelizer->name = 'node:page:with_storage';
+  $panelizer->css_id = '';
+  $panelizer->css_class = 'node-page-with_storage';
+  $panelizer->css = '';
+  $panelizer->no_blocks = FALSE;
+  $panelizer->title_element = 'H2';
+  $panelizer->link_to_entity = TRUE;
+  $panelizer->extra = array();
+  $panelizer->pipeline = 'standard';
+  $panelizer->contexts = array();
+  $panelizer->relationships = array();
+  $display = new panels_display();
+  $display->layout = 'flexible';
+  $display->layout_settings = array();
+  $display->panel_settings = array(
+    'style_settings' => array(
+      'default' => NULL,
+      'center' => NULL,
+    ),
+  );
+  $display->cache = array();
+  $display->storage_type = 'panelizer_default';
+  $display->storage_id = 'node:page:with_storage';
+  $display->title = '%node:title';
+  $display->uuid = '4c374a0f-7b0b-476a-a0b4-86c8507c9a1d';
+  $display->content = array();
+  $display->panels = array();
+  $pane = new stdClass();
+  $pane->pid = 'new-e469448b-1f59-4eed-9551-00aede8e914d';
+  $pane->panel = 'center';
+  $pane->type = 'entity_field';
+  $pane->subtype = 'node:body';
+  $pane->shown = TRUE;
+  $pane->access = array();
+  $pane->configuration = array(
+    'label' => 'hidden',
+    'formatter' => 'text_default',
+    'delta_limit' => 0,
+    'delta_offset' => '0',
+    'delta_reversed' => FALSE,
+    'formatter_settings' => array(),
+    'context' => 'panelizer',
+  );
+  $pane->cache = array();
+  $pane->style = array(
+    'settings' => NULL,
+  );
+  $pane->css = array();
+  $pane->extras = array();
+  $pane->position = 0;
+  $pane->locks = array();
+  $pane->uuid = 'e469448b-1f59-4eed-9551-00aede8e914d';
+  $display->content['new-e469448b-1f59-4eed-9551-00aede8e914d'] = $pane;
+  $display->panels['center'][] = 'new-e469448b-1f59-4eed-9551-00aede8e914d';
+  $pane = new stdClass();
+  $pane->pid = 'new-59b236d1-4b04-4009-9845-a9a41141658d';
+  $pane->panel = 'center';
+  $pane->type = 'node_links';
+  $pane->subtype = 'node_links';
+  $pane->shown = TRUE;
+  $pane->access = array();
+  $pane->configuration = array(
+    'override_title' => FALSE,
+    'override_title_text' => '',
+    'build_mode' => 'page_manager',
+    'identifier' => '',
+    'link' => TRUE,
+    'context' => 'panelizer',
+  );
+  $pane->cache = array();
+  $pane->style = array(
+    'settings' => NULL,
+  );
+  $pane->css = array(
+    'css_class' => 'link-wrapper',
+  );
+  $pane->extras = array();
+  $pane->position = 3;
+  $pane->locks = array();
+  $pane->uuid = '59b236d1-4b04-4009-9845-a9a41141658d';
+  $display->content['new-59b236d1-4b04-4009-9845-a9a41141658d'] = $pane;
+  $display->panels['center'][] = 'new-59b236d1-4b04-4009-9845-a9a41141658d';
+  $display->hide_title = PANELS_TITLE_FIXED;
+  $display->title_pane = 'new-e469448b-1f59-4eed-9551-00aede8e914d';
+  $panelizer->display = $display;
+  $export[$panelizer->name] = $panelizer;
+
+  $panelizer = new stdClass();
+  $panelizer->disabled = FALSE; /* Edit this to true to make a default panelizer disabled initially */
+  $panelizer->api_version = 1;
+  $panelizer->title = 'Test (without Storage API)';
+  $panelizer->panelizer_type = 'node';
+  $panelizer->panelizer_key = 'page';
+  $panelizer->access = array();
+  $panelizer->view_mode = 'page_manager';
+  $panelizer->name = 'node:page:without_storage';
+  $panelizer->css_id = '';
+  $panelizer->css_class = 'node-page-without_storage';
+  $panelizer->css = '';
+  $panelizer->no_blocks = FALSE;
+  $panelizer->title_element = 'H2';
+  $panelizer->link_to_entity = TRUE;
+  $panelizer->extra = array();
+  $panelizer->pipeline = 'standard';
+  $panelizer->contexts = array();
+  $panelizer->relationships = array();
+  $display = new panels_display();
+  $display->layout = 'flexible';
+  $display->layout_settings = array();
+  $display->panel_settings = array(
+    'style_settings' => array(
+      'default' => NULL,
+      'center' => NULL,
+    ),
+  );
+  $display->cache = array();
+  $display->title = '%node:title';
+  $display->uuid = '4c374a0f-7b0b-476a-a0b4-86c8507c9a1c';
+  $display->content = array();
+  $display->panels = array();
+  $pane = new stdClass();
+  $pane->pid = 'new-e469448b-1f59-4eed-9551-00aede8e914f';
+  $pane->panel = 'center';
+  $pane->type = 'entity_field';
+  $pane->subtype = 'node:body';
+  $pane->shown = TRUE;
+  $pane->access = array();
+  $pane->configuration = array(
+    'label' => 'hidden',
+    'formatter' => 'text_default',
+    'delta_limit' => 0,
+    'delta_offset' => '0',
+    'delta_reversed' => FALSE,
+    'formatter_settings' => array(),
+    'context' => 'panelizer',
+  );
+  $pane->cache = array();
+  $pane->style = array(
+    'settings' => NULL,
+  );
+  $pane->css = array();
+  $pane->extras = array();
+  $pane->position = 0;
+  $pane->locks = array();
+  $pane->uuid = 'e469448b-1f59-4eed-9551-00aede8e914f';
+  $display->content['new-e469448b-1f59-4eed-9551-00aede8e914f'] = $pane;
+  $display->panels['center'][] = 'new-e469448b-1f59-4eed-9551-00aede8e914f';
+  $pane = new stdClass();
+  $pane->pid = 'new-59b236d1-4b04-4009-9845-a9a411416580';
+  $pane->panel = 'center';
+  $pane->type = 'node_links';
+  $pane->subtype = 'node_links';
+  $pane->shown = TRUE;
+  $pane->access = array();
+  $pane->configuration = array(
+    'override_title' => FALSE,
+    'override_title_text' => '',
+    'build_mode' => 'page_manager',
+    'identifier' => '',
+    'link' => TRUE,
+    'context' => 'panelizer',
+  );
+  $pane->cache = array();
+  $pane->style = array(
+    'settings' => NULL,
+  );
+  $pane->css = array(
+    'css_class' => 'link-wrapper',
+  );
+  $pane->extras = array();
+  $pane->position = 3;
+  $pane->locks = array();
+  $pane->uuid = '59b236d1-4b04-4009-9845-a9a411416580';
+  $display->content['new-59b236d1-4b04-4009-9845-a9a411416580'] = $pane;
+  $display->panels['center'][] = 'new-59b236d1-4b04-4009-9845-a9a411416580';
+  $display->hide_title = PANELS_TITLE_FIXED;
+  $display->title_pane = 'new-e469448b-1f59-4eed-9551-00aede8e914f';
+  $panelizer->display = $display;
+  $export[$panelizer->name] = $panelizer;
+
+  return $export;
+}

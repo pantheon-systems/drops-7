@@ -1,0 +1,30 @@
+name = Workbench Moderation
+description = Provides content moderation services
+package = Workbench
+core = 7.x
+
+configure = admin/config/workbench/moderation
+
+files[] = workbench_moderation.module
+files[] = includes/workbench_moderation_handler_field_history_link.inc
+files[] = includes/workbench_moderation_handler_field_links.inc
+files[] = includes/workbench_moderation_handler_field_state.inc
+files[] = includes/workbench_moderation_handler_filter_state.inc
+files[] = includes/workbench_moderation_handler_filter_moderated_type.inc
+files[] = includes/workbench_moderation_handler_filter_user_can_moderate.inc
+files[] = workbench_moderation.migrate.inc
+files[] = tests/external_node_update.test
+files[] = tests/workbench_moderation.test
+files[] = tests/workbench_moderation.files.test
+files[] = tests/workbench_moderation.perms.test
+files[] = tests/workbench_moderation.node_access.test
+files[] = tests/workbench_moderation.transition.test
+
+dependencies[] = drafty
+
+; Information added by Drupal.org packaging script on 2016-11-02
+version = "7.x-3.0"
+core = "7.x"
+project = "workbench_moderation"
+datestamp = "1478119457"
+

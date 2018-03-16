@@ -1,0 +1,18 @@
+7.x-1.x
+-------
+- Added help text to chart creation form.
+- Added validation on axis ticks configuration.
+- Fixed x-frame-options error on embeded chart visualizations.
+- Add help text to configuration fields in the chart entity form.
+- Added 'Data type' settings also for series values ('y' values).
+- Fixed parsing of 'Numeral' values on series.
+
+7.x-1.2
+-------
+- Update eck to 7.x-2.0-rc9.
+- Removed dataproxy as an option from the Select backend source type field on charts.
+- Fixed 'edit/delete' paths used on 'edit/delete' links on visualization tables.
+- Fixed the Chart form to comply with Section 508 requirements for keyboard access.
+- Use vertical goal for horizontal bar charts.
+
+

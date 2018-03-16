@@ -1,0 +1,389 @@
+<?php
+/**
+ * @file
+ * Menu Badges module file.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function menu_badges_permission() {
+  return array(
+    'administer menu badges' => array(
+      'title' => t('Administer Menu Badges'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function menu_badges_menu() {
+  $items = array();
+  $items['admin/structure/menu/menu-badges-tabs'] = array(
+    'title' => 'Tab Menu Badges',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('menu_badges_tabs_admin_form'),
+    'access arguments' => array('administer menu badges'),
+    'file' => 'menu_badges.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function menu_badges_theme($existing, $type, $theme, $path) {
+  return array(
+    'menu_badges_tabs_admin_form' => array(
+      'render element' => 'form',
+      'file' => 'menu_badges.admin.inc',
+    ),
+    'menu_badges_views_view' => array(
+      'arguments' => array('view_array' => array(), 'view' => NULL),
+      'file' => 'theme.inc',
+      'path' => drupal_get_path('module', 'menu_badges') . '/theme',
+      'template' => 'menu-badges-views-view',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function menu_badges_form_menu_edit_item_alter(&$form, &$form_state, $form_id) {
+  if (user_access('administer menu badges')) {
+    $menu_badge_options = array('' => t('None')) + menu_badges_get_badge_options();
+    $form['menu_badges_callback'] = array(
+      '#type' => 'select',
+      '#title' => t('Display menu badge'),
+      '#options' => $menu_badge_options,
+      '#description' => t('Display the value from a menu badge function on this menu item.'),
+      '#default_value' => isset($form['options']['#value']['link_badge']['key']) ? $form['options']['#value']['link_badge']['key'] : '',
+    );
+    array_unshift($form['#submit'], 'menu_badges_menu_edit_item_submit');
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function menu_badges_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  $tab_badges = variable_get('menu_badges_tab_callbacks', array());
+  if (empty($tab_badges)) {
+    return;
+  }
+  if (!empty($data['tabs'][0]['output'])) {
+    foreach (array_keys($data['tabs'][0]['output']) as $i => $tab) {
+      if (!empty($tab_badges[$data['tabs'][0]['output'][$i]['#link']['path']])) {
+        $data['tabs'][0]['output'][$i]['#link']['localized_options']['link_badge'] = array(
+          'callback' => $tab_badges[$data['tabs'][0]['output'][$i]['#link']['path']]['callback'],
+        );
+        if (!empty($tab_badges[$data['tabs'][0]['output'][$i]['#link']['path']]['arguments'])) {
+          $data['tabs'][0]['output'][$i]['#link']['localized_options']['link_badge']['arguments'] = $tab_badges[$data['tabs'][0]['output'][$i]['#link']['path']]['arguments'];
+        }
+      }
+    }
+  }
+  if (!empty($data['tabs'][1]['output'])) {
+    foreach (array_keys($data['tabs'][1]['output']) as $i => $tab) {
+      if (!empty($tab_badges[$data['tabs'][1]['output'][$i]['#link']['path']])) {
+        $data['tabs'][1]['output'][$i]['#link']['localized_options']['link_badge'] = array(
+          'callback' => $tab_badges[$data['tabs'][1]['output'][$i]['#link']['path']]['callback'],
+        );
+        if (!empty($tab_badges[$data['tabs'][1]['output'][$i]['#link']['path']]['arguments'])) {
+          $data['tabs'][1]['output'][$i]['#link']['localized_options']['link_badge']['arguments'] = $tab_badges[$data['tabs'][1]['output'][$i]['#link']['path']]['arguments'];
+        }
+      }
+    }
+  }
+  if (!empty($data['actions']['output'])) {
+    foreach (array_keys($data['actions']['output']) as $i => $tab) {
+      if (!empty($tab_badges[$data['actions']['output'][$i]['#link']['path']])) {
+        $data['actions']['output'][$i]['#link']['localized_options']['link_badge'] = array(
+          'callback' => $tab_badges[$data['actions']['output'][$i]['#link']['path']]['callback'],
+        );
+        if (!empty($tab_badges[$data['actions']['output'][$i]['#link']['path']]['arguments'])) {
+          $data['actions']['output'][$i]['#link']['localized_options']['link_badge']['arguments'] = $tab_badges[$data['actions']['output'][$i]['#link']['path']]['arguments'];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for saving menu badge options.
+ */
+function menu_badges_menu_edit_item_submit(&$form, &$form_state) {
+  if ($form_state['values']['op'] == $form_state['values']['submit']) {
+    if (empty($form_state['values']['menu_badges_callback'])) {
+      unset($form_state['values']['options']['link_badge']);
+    }
+    else {
+      $badges = menu_badges_get_badges();
+      $form_state['values']['options']['link_badge']['callback'] = $badges[$form_state['values']['menu_badges_callback']]['callback'];
+      if (!empty($badges[$form_state['values']['menu_badges_callback']]['arguments'])) {
+        $form_state['values']['options']['link_badge']['arguments'] = $badges[$form_state['values']['menu_badges_callback']]['arguments'];
+      }
+      $form_state['values']['options']['link_badge']['key'] = $form_state['values']['menu_badges_callback'];
+    }
+  }
+}
+
+/**
+ * Get all menu badge definitions.
+ * @param $reset
+ */
+function menu_badges_get_badges($reset = FALSE) {
+  $badges = &drupal_static(__FUNCTION__);
+  if (!isset($badges) || $reset) {
+    $badges = array();
+    $badges += module_invoke_all('menu_badges_options');
+    menu_badges_standardize_format($badges);
+  }
+  return $badges;
+}
+
+/**
+ * Get all menu badge options suitable for a select.
+ */
+function menu_badges_get_badge_options() {
+  $options = menu_badges_get_badges();
+  uasort($options, 'menu_badges_sort_by_module');
+  $options = menu_badges_flatten_options($options);
+  return $options;
+}
+
+/**
+ * Flatten menu badges array.
+ * @param $badges
+ */
+function menu_badges_flatten_options($badges) {
+  $flattened = array();
+  foreach ($badges as $key => $definition) {
+    $flattened[$definition['module_name']][$key] = $definition['label'];
+  }
+  return $flattened;
+}
+
+/**
+ * Standardize the format for people who may be using the initial string-based format.
+ * @param $badges
+ */
+function menu_badges_standardize_format(&$badges) {
+  foreach ($badges as $key => $definition) {
+    if (is_string($definition)) {
+      // Original hook format.
+      $badges[$key] = array(
+        'callback' => $key,
+        'module' => 'menu_badges',
+      );
+    }
+    // Add module name.
+    $module_info = system_get_info('module', $definition['module']);
+    $badges[$key]['module_name'] = $module_info['name'];
+    $badges[$key]['key'] = $key;
+  }
+}
+
+/**
+ * Sort by module name then label.
+ * @param $a
+ * @param $b
+ */
+function menu_badges_sort_by_module($a, $b) {
+  $module_cmp = strcmp($a['module_name'], $b['module_name']);
+  if ($module_cmp != 0) {
+    return $module_cmp;
+  }
+  return strcmp($a['label'], $b['label']);
+}
+
+/**
+ * Implements hook_menu_badges_options().
+ */
+function menu_badges_menu_badges_options() {
+  $options = array(
+    'menu_badges_test_badge' => array(
+      'callback' => 'menu_badges_test_badge',
+      'label' => t('Test Badge'),
+      'module' => 'menu_badges',
+    ),
+  );
+  if (module_exists('privatemsg')) {
+    $options += array(
+      'menu_badges_privatemsg_unread_count' => array(
+        'callback' => 'menu_badges_privatemsg_unread_count',
+        'label' => t('PrivateMsg: Unread count (current user)'),
+        'module' => 'privatemsg',
+      ),
+      'menu_badges_privatemsg_unread_count_uid' => array(
+        'callback' => '',
+        'arguments' => array('menu_arg' => 1),
+        'label' => t('PrivateMsg: Unread count (for user/% tab.)'),
+        'module' => 'privatemsg',
+      ),
+    );
+  }
+  if (module_exists('commerce_cart')) {
+    $options += array(
+      'menu_badges_commerce_cart_item_count' => array(
+        'callback' => 'menu_badges_commerce_cart_item_count',
+        'label' => t('Commerce: Cart items count'),
+        'module' => 'commerce',
+      ),
+    );
+  }
+  if (module_exists('user_relationships')) {
+    $options += array(
+      'menu_badges_ur_pending_incoming_current' => array(
+        'callback' => 'menu_badges_ur_pending',
+        'arguments' => array('role' => 'requestee'),
+        'label' => t('User Relationships: Pending Incoming Requests (current user)'),
+        'module' => 'user_relationships',
+      ),
+      'menu_badges_ur_pending_incoming_uid' => array(
+        'callback' => 'menu_badges_ur_pending',
+        'arguments' => array('role' => 'requestee', 'menu_arg' => 1),
+        'label' => t('User Relationships: Pending Incoming Requests (for user/% tab)'),
+        'module' => 'user_relationships',
+      ),
+      'menu_badges_ur_pending_outgoing_current' => array(
+        'callback' => 'menu_badges_ur_pending',
+        'arguments' => array('role' => 'requester'),
+        'label' => t('User Relationships: Pending Outgoing Requests (current user)'),
+        'module' => 'user_relationships',
+      ),
+      'menu_badges_ur_pending_outgoing_uid' => array(
+        'callback' => 'menu_badges_ur_pending',
+        'arguments' => array('role' => 'requester', 'menu_arg' => 1),
+        'label' => t('User Relationships: Pending Outgoing Requests (for user/% tab)'),
+        'module' => 'user_relationships',
+      ),
+    );
+  }
+  if (module_exists('views')) {
+    $options += menu_badges_get_views_badges();
+  }
+  return $options;
+}
+
+/**
+ * Get a list of badges defined by Views.
+ */
+function menu_badges_get_views_badges() {
+  $options = array();
+  if (module_exists('views')) {
+    $views = views_get_enabled_views();
+    foreach ($views as $view) {
+      foreach ($view->display as $display) {
+        if ($display->display_plugin == 'menu_badge') {
+          $options['views_' . $view->name . '_' . $display->id] = array(
+            'callback' => 'menu_badges_execute_view',
+            'arguments' => array('view_name' => $view->name, 'view_display_id' => $display->id),
+            'label' => $view->human_name . ': ' . $display->display_title,
+            'module' => 'views',
+          );
+        }
+      }
+    }
+  }
+  return $options;
+}
+
+/**
+ * Execute a view for badge display.
+ * @param $arguments
+ */
+function menu_badges_execute_view($arguments) {
+  $view = views_get_view($arguments['view_name']);
+  if (!empty($view->display[$arguments['view_display_id']])) {
+    $view_args = array();
+    $result = $view->execute_display($arguments['view_display_id'], $view_args);
+    if (!empty($result) || $result === "0" || $result === 0) {
+      return $result;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * User Relationships incoming relationship requests.
+ * @param unknown_type $arguments
+ */
+function menu_badges_ur_pending($arguments) {
+  if (module_exists('user_relationships')) {
+    if (isset($arguments['menu_arg'])) {
+      $arguments['uid'] = arg($arguments['menu_arg']);
+    }
+    if (!isset($arguments['uid'])) {
+      global $user;
+      $arguments['uid'] = $user->uid;
+    }
+    $count = db_select('user_relationships', 'ur')->condition($arguments['role'] . '_id', $arguments['uid'])->condition('approved', 0)->countQuery()->execute()->fetchField();
+    if ($count > 0) {
+      return $count;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Drupal Commcerce cart items count callback.
+ * @param array $arguments
+ */
+function menu_badges_commerce_cart_item_count() {
+  global $user;
+
+  if (module_exists('commerce_cart') && $order = commerce_cart_order_load($user->uid)) {
+    // Count the number of product line items on the order.
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $quantity = commerce_line_items_quantity($wrapper->commerce_line_items, commerce_product_line_item_types());
+    if ($quantity > 0) {
+      return $quantity;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * PrivateMsg unread message count callback.
+ * @param array $arguments
+ */
+function menu_badges_privatemsg_unread_count($arguments) {
+  if (module_exists('privatemsg')) {
+    if (isset($arguments['menu_arg'])) {
+      $arguments['uid'] = arg($arguments['menu_arg']);
+    }
+    if (isset($arguments['uid'])) {
+      $unread_count = privatemsg_unread_count(user_load($arguments['uid']));
+    }
+    else {
+      $unread_count = privatemsg_unread_count();
+    }
+    if ($unread_count > 0) {
+      return $unread_count;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function menu_badges_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'menu_badges') . '/views',
+  );
+}
+
+/**
+ * A test badge callback...
+ * @param array $arguments
+ */
+function menu_badges_test_badge($arguments) {
+  return 'Test';
+}

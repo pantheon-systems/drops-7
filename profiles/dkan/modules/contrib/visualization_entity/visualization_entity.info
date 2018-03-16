@@ -1,0 +1,12 @@
+name = Visualization Entity
+description = Base module to create visualizations
+core = 7.x
+package = Data Visualization
+
+dependencies[] = eck
+dependencies[] = features
+features[eck_entity_type][] = visualization
+features[features_api][] = api:2
+mtime = 1421114365
+project path = sites/all/modules/nucivic
+

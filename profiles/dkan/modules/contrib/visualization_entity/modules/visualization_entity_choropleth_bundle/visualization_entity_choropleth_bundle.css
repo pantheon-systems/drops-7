@@ -1,0 +1,39 @@
+
+html body.page-visualization.page-visualization-choropleth-visualization {
+  margin-top: 0px !important;
+}
+
+body.page-visualization.page-visualization-choropleth-visualization
+.region-content {
+  margin: 0px;
+}
+
+.progress-info{
+  position: absolute;
+  z-index: 99999;
+  background: gold;
+  font-size: 11px;
+  padding: 1px;
+  padding-right: 4px;
+  padding-left: 4px;
+  border-radius: 3px;
+  left: 50%;
+  margin-left: -162px;
+  font-weight: bold;
+  box-shadow: 0px 3px 7px #aaa;
+}
+
+.leaflet-overlay-pane svg {
+  width: auto !important;
+  height: auto !important;
+  display: block;
+}
+
+.leaflet-control{
+  color: black;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  color: black !important;
+}

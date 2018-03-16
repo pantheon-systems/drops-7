@@ -1,0 +1,332 @@
+<?php
+
+/**
+ * @file
+ * Simple Google Maps module.
+ *
+ * Provides a Google Maps link/map formatter for simple Text fields. Note that
+ * this is just a field formatter for Text fields, not a field. See README.txt
+ * for more information.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ * Defines a formatter for maps and map links.
+ */
+function simple_gmap_field_formatter_info() {
+  $formatters = array();
+
+  $formatters['simple_gmap'] = array(
+    'label' => t('Google Map from one-line address'),
+    'field types' => array('text', 'computed'),
+    'settings' => array(
+      'include_map' => 1,
+      'include_static_map' => 0,
+      'include_link' => 0,
+      'include_text' => 0,
+      'iframe_height' => 200,
+      'iframe_width' => 200,
+      'static_scale' => 1,
+      'zoom_level' => 14,
+      'link_text' => t('View larger map'),
+      'map_type' => 'm',
+      'langcode' => 'en',
+      'apikey' => '',
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function simple_gmap_theme($existing, $type, $theme, $path) {
+  return array(
+    'simple_gmap_output' => array(
+      'variables' => array(
+        'include_map' => TRUE,
+        'include_static_map' => 0,
+        'include_link' => FALSE,
+        'include_text' => FALSE,
+        'width' => 200,
+        'height' => 200,
+        'static_scale' => 1,
+        'url_suffix' => '',
+        'zoom' => 12,
+        'static_map_type' => 'roadmap',
+        'link_text' => t('View larger map'),
+        'address_text' => '',
+        'map_type' => 'm',
+        'langcode' => 'en',
+        'apikey' => NULL,
+      ),
+      'template' => 'simple-gmap-output',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ * Formats map/link fields.
+ */
+function simple_gmap_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+
+  global $language;
+
+  $element = array();
+
+  // Figure out what to display for each item we have here.
+  $embed = (int) $display['settings']['include_map'] ? TRUE : FALSE;
+  $static = (isset($display['settings']['include_static_map']) && (int) $display['settings']['include_static_map']) ? TRUE : FALSE;
+  $link = (int) $display['settings']['include_link'] ? TRUE : FALSE;
+  $text = (int) $display['settings']['include_text'] ? TRUE : FALSE;
+
+  $height = check_plain($display['settings']['iframe_height']);
+  $width = check_plain($display['settings']['iframe_width']);
+  $static_scale = (int) check_plain($display['settings']['static_scale']);
+  $link_text = $link ? check_plain($display['settings']['link_text']) : '';
+  $zoom_level = (int) $display['settings']['zoom_level'];
+  $apikey = check_plain($display['settings']['apikey']);
+
+  // Figure out a language code to use. Google cannot recognize 'und'.
+  $lang_to_use = isset($display['settings']['langcode']) ? check_plain($display['settings']['langcode']) : 'en';
+  if ($lang_to_use == 'page') {
+    $lang_to_use = $langcode;
+  }
+  if ($lang_to_use == LANGUAGE_NONE) {
+    $lang_to_use = $language->language;
+  }
+
+  // For some reason, static gmaps accepts a different value for map type.
+  $static_map_types = array(
+    'm' => 'roadmap',
+    'k' => 'satellite',
+    'h' => 'hybrid',
+    'p' => 'terrain',
+  );
+
+  $map_type = isset($display['settings']['map_type']) ? check_plain($display['settings']['map_type']) : 'm';
+  // Default to standard map if not recognized.
+  if (!in_array($map_type, array('m', 'k', 'h', 'p'))) {
+    $map_type = 'm';
+  }
+
+  foreach ($items as $delta => $item) {
+    $url_value = urlencode($item['value']);
+    $address_value = check_plain($item['value']);
+    $address = $text ? $address_value : '';
+
+    $element[$delta] = array(
+      '#theme' => 'simple_gmap_output',
+      '#include_map' => $embed,
+      '#include_static_map' => $static,
+      '#include_link' => $link,
+      '#include_text' => $text,
+      '#width' => $width,
+      '#height' => $height,
+      '#static_scale' => $static_scale,
+      '#url_suffix' => $url_value,
+      '#zoom' => $zoom_level,
+      '#link_text' => ($link_text == 'use_address') ? $address_value : $link_text,
+      '#address_text' => $address,
+      '#map_type' => $map_type,
+      '#langcode' => $lang_to_use,
+      '#static_map_type' => $static_map_types[$map_type],
+      '#apikey' => $apikey,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function simple_gmap_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $type = $display['type'];
+
+  $element['embedded_label'] = array(
+    '#type' => 'markup',
+    '#markup' => '<h3>' . t('Embedded map') . '</h3>',
+  );
+
+  $element['include_map'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include embedded dynamic map'),
+    '#default_value' => (int) $settings['include_map'],
+  );
+
+  $element['include_static_map'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include embedded static map'),
+    '#default_value' => (isset($settings['include_static_map'])) ? (int) $settings['include_static_map'] : 0,
+  );
+
+  $element['apikey'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Google Maps API key'),
+    '#default_value' => check_plain($settings['apikey']),
+    '#description' => t('Static Maps will not work without an API key. See the <a href="https://developers.google.com/maps/documentation/static-maps" target="_blank">Static Maps API page</a> to learn more and obtain a key.'),
+  );
+
+  $element['iframe_width'] = array(
+    '#title' => t('Width of embedded map'),
+    '#type' => 'textfield',
+    '#description' => t('You can set sizes in px or percent (ex: 600px or 100%). Note that static maps only accept sizes in pixels, without the suffix px (ex: 600).'),
+    '#default_value' => check_plain($settings['iframe_width']),
+  );
+
+  $element['iframe_height'] = array(
+    '#title' => t('Height of embedded map'),
+    '#type' => 'textfield',
+    '#description' => t('You can set sizes in px or percent (ex: 600px or 100%). Note that static maps only accept sizes in pixels, without the suffix px (ex: 600).'),
+    '#default_value' => check_plain($settings['iframe_height']),
+  );
+
+  $element['static_scale'] = array(
+    '#title' => t('Load Retina sized static image'),
+    '#type' => 'select',
+    '#description' => t('Choose "Yes" to double the width and height of the static image for use on retina displays. (Only applicable to static map)'),
+    '#options' => array(
+      1 => t('No'),
+      2 => t('Yes'),
+    ),
+    '#default_value' => (int) $settings['static_scale'],
+  );
+
+  $element['link_label'] = array(
+    '#type' => 'markup',
+    '#markup' => '<h3>' . t('Link to map') . '</h3>',
+  );
+
+  $element['include_link'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include link to map'),
+    '#default_value' => (int) $settings['include_link'],
+  );
+
+  $element['link_text'] = array(
+    '#title' => t('Link text'),
+    '#type' => 'textfield',
+    '#default_value' => check_plain($settings['link_text']),
+    '#description' => t("Enter the text to use for the link to the map, or enter 'use_address' (without the quotes) to use the entered address text as the link text"),
+  );
+
+  $element['generic_label'] = array(
+    '#type' => 'markup',
+    '#markup' => '<h3>' . t('General settings') . '</h3>',
+  );
+
+  $element['zoom_level'] = array(
+    '#title' => t('Zoom level'),
+    '#type' => 'select',
+    '#description' => t('Choose a default zoom level for embedded and linked maps'),
+    '#options' => array(
+      1 => t('1 - Minimum'),
+      2 => 2,
+      3 => 3,
+      4 => 4,
+      5 => 5,
+      6 => 6,
+      7 => 7,
+      8 => 8,
+      9 => 9,
+      10 => 10,
+      11 => 11,
+      12 => 12,
+      13 => 13,
+      14 => t('14 - Default'),
+      15 => 15,
+      16 => 16,
+      17 => 17,
+      18 => 18,
+      19 => 19,
+      20 => t('20 - Maximum'),
+    ),
+    '#default_value' => (int) $settings['zoom_level'],
+  );
+
+  $element['include_text'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include original address text'),
+    '#default_value' => (int) $settings['include_text'],
+  );
+
+  $element['map_type'] = array(
+    '#title' => t('Map type'),
+    '#type' => 'select',
+    '#description' => t('Choose a default map type for embedded and linked maps'),
+    '#options' => array(
+      'm' => t('Map'),
+      'k' => t('Satellite'),
+      'h' => t('Hybrid'),
+      'p' => t('Terrain'),
+    ),
+    '#default_value' => check_plain($settings['map_type']),
+  );
+
+  $element['langcode'] = array(
+    '#title' => t('Language'),
+    '#type' => 'textfield',
+    '#default_value' => check_plain($settings['langcode']),
+    '#description' => t("Enter a two-letter language code that Google Maps can recognize, or enter 'page' (without the quotes) to use the current page's language code"),
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function simple_gmap_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  if (!isset($settings['include_static_map'])) {
+    $settings['include_static_map'] = 0;
+  }
+
+  $map_types = array(
+    'm' => t('Map'),
+    'k' => t('Satellite'),
+    'h' => t('Hybrid'),
+    'p' => t('Terrain'),
+  );
+  $map_type = isset($settings['map_type']) ? check_plain($settings['map_type']) : 'm';
+  $map_type = isset($map_types[$map_type]) ? $map_types[$map_type] : $map_types['m'];
+
+  $summary = array();
+
+  if ($settings['include_map']) {
+    $summary[] = t('Embedded map: @width x @height', array('@width' => $settings['iframe_width'], '@height' => $settings['iframe_height']));
+  }
+  if ($settings['include_static_map']) {
+    $summary[] = t('Static map: @width x @height, Scale: @static_scale',
+      array(
+        '@width' => $settings['iframe_width'],
+        '@height' => $settings['iframe_height'],
+        '@static_scale' => $settings['static_scale'],
+      ));
+  }
+  if ($settings['include_link']) {
+    $summary[] = t('Map link: @link_text', array('@link_text' => $settings['link_text']));
+  }
+
+  if ($settings['include_map'] || $settings['include_static_map'] || $settings['include_link']) {
+    $language = isset($display['settings']['langcode']) ? check_plain($display['settings']['langcode']) : 'en';
+    $summary[] = t('Map Type: @map_type', array('@map_type' => $map_type));
+    $summary[] = t('Zoom Level: @zoom_level', array('@zoom_level' => $settings['zoom_level']));
+    $summary[] = t('Language: @language', array('@language' => $language));
+  }
+
+  if ($settings['include_text']) {
+    $summary[] = t('Original text displayed');
+  }
+
+  return implode(', ', $summary);
+}

@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Test module for Workbench Moderation.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function workbench_moderation_test_menu() {
+  return array(
+    'workbench_moderation_test/%node' => array(
+      'title' => 'Publish a node',
+      'page callback' => 'workbench_moderation_test_update_node',
+      'page arguments' => array(1),
+      'access arguments' => array('bypass workbench moderation'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function workbench_moderation_test_menu_alter(&$items) {
+  // This menu altering replicates what restws_menu_alter() does.
+  // @see https://www.drupal.org/node/1838640
+  array_unshift($items['node/%node']['page arguments'], 'additional parameter', $items['node/%node']['page callback']);
+  $items['node/%node']['page callback'] = 'workbench_moderation_test_menu_node_callback';
+}
+
+function workbench_moderation_test_menu_node_callback($ignored_parameter, $page_callback) {
+  $args = func_get_args();
+  return call_user_func_array($page_callback, array_slice($args, 2));
+}
+
+/**
+ * Page callback. Publishes, unpublishes or resaves the given node.
+ *
+ * @param object $node
+ *   The node to publish, unpublish or resave.
+ * @param string $action
+ *   Optionally the action to take, either 'publish' or 'unpublish'. If omitted
+ *   the node will be resaved.
+ */
+function workbench_moderation_test_update_node($node, $action = NULL) {
+  if (!empty($action)) {
+    $node->status = $action == 'publish' ? NODE_PUBLISHED : NODE_NOT_PUBLISHED;
+  }
+  node_save($node);
+  return array('#markup' => t('Node status: @status', array('@status' => $node->status ? t('published') : t('unpublished'))));
+}
+
+/**
+ * Implements hook_workbench_moderation_transition().
+ */
+function workbench_moderation_test_workbench_moderation_transition($node, $previous_state, $new_state) {
+  foreach (array('title', 'nid', 'vid', 'status') as $key) {
+    workbench_moderation_test_set($key, $node->{$key});
+  }
+  workbench_moderation_test_set('previous_state', $previous_state);
+  workbench_moderation_test_set('new_state', $new_state);
+}
+
+/**
+ * Sets values for testing api hooks.
+ *
+ * @param $name
+ *   The name of the value to store.
+ * @param $value
+ *   The value to store.
+ *
+ * @return string | NULL
+ *   The value of a requested named variable, if requested.
+ */
+function workbench_moderation_test_set($name, $value = NULL) {
+  $values = variable_get('workbench_moderation_test', array());
+  if (!is_null($value)) {
+    $values[$name] = $value;
+    variable_set('workbench_moderation_test', $values);
+  }
+  return isset($values[$name]) ? $values[$name] : NULL;
+}
+
+/**
+ * Gets values for testing api hooks.
+ *
+ * @param $name
+ *   The name of the value to store.
+ *
+ * @return string | NULL
+ *   The value of the variable, if set.
+ */
+function workbench_moderation_test_get($name) {
+  return workbench_moderation_test_set($name);
+}

@@ -1,0 +1,110 @@
+div.font_icon_select_options {
+  font-family: 'font_icon_select_current_font';
+  overflow-y: scroll;
+  border: 2px solid #ececec;
+  max-height: 250px;
+}
+div.font_icon_select_options.restrict_list {
+  max-height: none;
+}
+div.font_icon_select_options input[type="checkbox"],
+div.font_icon_select_options input[type="radio"] {
+  display: none;
+}
+div.font_icon_select_options.closed {
+  height: 0px;
+}
+div.font_icon_select_options.blacklist .selectionInner.checked {
+  background: red;
+}
+div.font_icon_select_options.whitelist .selectionInner.checked {
+  background: green;
+}
+.font_icon_select_options label {
+  display: table;
+  float: left;
+  text-align: center;
+}
+div.selectionOuter {
+  display: table-row;
+}
+div.selectionInner {
+  display: table-cell;
+  vertical-align: middle;
+  background: #f7f5f5;
+  height: 50px;
+  width: 50px;
+  cursor: default;
+  border: 1px solid #fff;
+  color: #505050;
+  cursor: pointer;
+}
+div.selection {
+  font-size: 1.5em;
+}
+div.selectionInner:hover {
+  background: #9e9e9e;
+  color: #fff;
+}
+div.selectionInner.disabled {
+  background: #9e9e9e;
+  color: #fff;
+  opacity: .5;
+}
+div.selectionInner.selected {
+  background: #1595d3;
+  color: #fff;
+  -webkit-box-shadow: inset 0px 0px 18px 0px rgba(50, 50, 50, 0.5);
+  -moz-box-shadow: inset 0px 0px 18px 0px rgba(50, 50, 50, 0.5);
+  box-shadow: inset 0px 0px 18px 0px rgba(50, 50, 50, 0.5);
+}
+.font_icon_select_options .label {
+  display: table-cell;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .9em;
+}
+div.currentSelectionWrapper.invisible {
+  display: none;
+}
+label.selectionWrapper.currentSelection {
+  font-family: 'font_icon_select_current_font';
+}
+label.selectionWrapper.currentSelection div.selectionInner {
+  color: #fff;
+  background: #1595d3;
+  cursor: default;
+}
+div.iconSelectButtonWrapper {
+  clear: both;
+}
+input.removeSelectedIcon.invisible {
+  display: none;
+}
+
+/* hide the labels if there is a class on the wrappers */
+.font_icon_select_options.hideLabels label.selectionWrapper .label,
+div.label.hide {
+  display: none;
+}
+/* checkbox to show the icon labels */
+.fontIconLabelVisibilityToggleWrapper {width:100%;}
+.fontIconLabelVisibilityToggleWrapper label {display:inline-block;margin-left:.5em;}
+
+div.field-name-field-icon.invisible {
+  display: none;
+}
+
+.font_icon_select_options .form-item {
+  padding: 0px !important;
+}
+
+.font_icon_select_instance_options.blacklist .font_icon_selection_outer_wrapper.suppression_list_toggled {
+  display: none;
+}
+
+.font_icon_select_instance_options.whitelist .font_icon_selection_outer_wrapper {
+  display:none
+}
+.font_icon_select_instance_options.whitelist .font_icon_selection_outer_wrapper.suppression_list_toggled {
+  display:block;
+}

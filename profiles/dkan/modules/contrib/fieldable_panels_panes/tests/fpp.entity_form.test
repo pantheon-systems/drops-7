@@ -1,0 +1,220 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module to ensure the basic form works.
+ */
+
+class FppEntityFormTest extends FppTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests',
+      'description' => 'Confirm that the entity form fields work as intended.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+    $this->title = t('Test FPP');
+  }
+
+  /**
+   * Confirm that the basic form fields show on the 'add' form.
+   */
+  function testNewEntity() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/add');
+    $this->assertResponse(200);
+
+    // Check all of the default fields.
+
+    // The basic title field.
+    $this->assertFieldByName('title');
+
+    // The "make title a link" option's fields.
+    $this->assertFieldByName('link');
+    $this->assertFieldByName('path');
+
+    // The admin title & description fields.
+    $this->assertFieldByName('admin_title');
+    $this->assertFieldByName('admin_description');
+
+    // By default all FPPs will be reusable.
+    $this->assertFieldByName('reusable');
+
+    // Because FPPs can be reusable they can be grouped in categories in the
+    // Panels admin UI.
+    $this->assertFieldByName('category');
+
+    // The language selector is not present because the Locale module is not
+    // enabled by default.
+    $this->assertNoFieldByName('language');
+
+    // The revision selector is disabled by default because you only don't
+    // create a new revision on a new object.
+    $this->assertNoFieldByName('revision');
+    $this->assertNoFieldByName('log');
+  }
+
+  /**
+   * Confirm that the edit form has the correct fields for reusable FPPs.
+   */
+  function testExistingReusable() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Create a reusable FPP.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = $this->title;
+    $fpp->reusable = 1;
+    $saved_fpp = fieldable_panels_panes_save($fpp);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid . '/edit');
+    $this->assertResponse(200);
+
+    // Check all of the fields that are suitable for a reusable FPP.
+
+    // The basic title field.
+    $this->assertFieldByName('title');
+
+    // The "make title a link" option's fields.
+    $this->assertFieldByName('link');
+    $this->assertFieldByName('path');
+
+    // The admin title & description fields.
+    $this->assertFieldByName('admin_title');
+    $this->assertFieldByName('admin_description');
+
+    // The 'reusable' option is not changable after the FPP's initial creation.
+    $this->assertNoFieldByName('reusable');
+
+    // Because FPPs can be reusable they can be grouped in categories in the
+    // Panels admin UI.
+    $this->assertFieldByName('category');
+
+    // The language selector is not present because the Locale module is not
+    // enabled by default.
+    $this->assertNoFieldByName('language');
+
+    // The revision fields are visible when editing a reusable FPP.
+    $this->assertFieldByName('revision');
+    $this->assertFieldByName('log');
+  }
+
+  /**
+   * Confirm that the edit form has the correct fields for non-reusable FPPs.
+   */
+  function testExistingNonReusable() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Create a reusable FPP.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = $this->title;
+    $fpp->reusable = 0;
+    $saved_fpp = fieldable_panels_panes_save($fpp);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid . '/edit');
+    $this->assertResponse(200);
+
+    // Check all of the fields that are suitable for a reusable FPP.
+
+    // The basic title field.
+    $this->assertFieldByName('title');
+
+    // The "make title a link" option's fields.
+    $this->assertFieldByName('link');
+    $this->assertFieldByName('path');
+
+    // The admin title & description fields.
+    $this->assertFieldByName('admin_title');
+    $this->assertFieldByName('admin_description');
+
+    // The 'reusable' option is not changable after the FPP's initial creation,
+    // and these fields will be hidden for non-reusable FPPs.
+    $this->assertNoFieldByName('reusable');
+    $this->assertNoFieldByName('category');
+
+    // The language selector is not present because the Locale module is not
+    // enabled by default.
+    $this->assertNoFieldByName('language');
+
+    // When editing a non-reusable FPP the revision option may not be disabled
+    // but the log field will be available.
+    $this->assertNoFieldByName('revision');
+    $this->assertFieldByName('log');
+  }
+
+  /**
+   * Confirm that the edit form has the correct fields for non-reusable FPPs
+   * when the allow_reusable_access is enabled.
+   */
+  function testAllowReusableAccessOption() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    // Create a non-reusable FPP.
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = $this->title;
+    $fpp->reusable = 0;
+    $saved_fpp = fieldable_panels_panes_save($fpp);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid . '/edit');
+    $this->assertResponse(200);
+
+    // The 'reusable' option is not changable after the FPP's initial creation,
+    // and these fields will be hidden for non-reusable FPPs.
+    $this->assertNoFieldByName('reusable');
+    $this->assertNoFieldByName('category');
+
+    // When editing a non-reusable FPP the revision option may not be disabled
+    // but the log field will be available.
+    $this->assertNoFieldByName('revision');
+    $this->assertFieldByName('log');
+
+    // Change the 'allow_reusable_access' option.
+    variable_set('fpp_allow_reusable_access', TRUE);
+
+    // Load the fpp-add form.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid . '/edit');
+    $this->assertResponse(200);
+
+    // The 'reusable' option is now changable again because the
+    // "allow_reusable_access" option has been enabled.
+    $this->assertFieldByName('reusable');
+    $this->assertFieldByName('category');
+
+    // The revision fields should be visible when editing a reusable FPP.
+    $this->assertFieldByName('revision');
+    $this->assertFieldByName('log');
+  }
+
+}

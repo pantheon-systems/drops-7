@@ -1,0 +1,46 @@
+.link-badge {
+  background: #f03d25;
+  /* IE9 doesn't support background gradients combined with border-radius. Sigh. */
+  /*filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f06067', endColorstr='#c70103'); */
+  background: -webkit-gradient(linear, left top, left bottom, from(#f06067), to(#c70103)); 
+  background: -moz-linear-gradient(top,  #f06067,  #c70103); 
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: bold;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  padding: 2px 4px 3px 4px;
+  -webkit-box-shadow: 1px 1px 2px rgba(50, 50, 50, 0.75);
+  -moz-box-shadow:    1px 1px 2px rgba(50, 50, 50, 0.75);
+  box-shadow:         1px 1px 2px rgba(50, 50, 50, 0.75);
+  font-size: 80%;
+  line-height: 1.0em;
+  margin-top: -0.75em;
+  text-shadow: 1px 1px 0px #bb0000;
+  font-family:  "Lucida Grande","Lucida Sans Unicode",sans-serif;
+}
+.link-badge-badge-wrapper {
+  position: relative;
+  right: 4px;
+  top: -12px;
+  margin-right: -20px;
+  margin-bottom: -8px;
+  display: inline-block;
+}
+body .tabs ul.primary,
+ul.action-links li {
+  margin-top: -9px;
+  padding-top: 9px;
+}
+.link-badge {
+  display: inline-block;
+  margin-top: -10px;
+}
+
+@-moz-document url-prefix() {
+  .link-badge {
+    font-size: 85%;
+    padding: 2px 4px 2px 4px;
+  }
+}

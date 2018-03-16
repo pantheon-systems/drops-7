@@ -1,0 +1,12 @@
+name = "BUEditor Plus"
+description = "Provides better control of where BUEditor appears and allows editor assignment based upon input format"
+core = "7.x"
+package = "Content authoring"
+dependencies[] = bueditor
+
+; Information added by drupal.org packaging script on 2013-07-06
+version = "7.x-1.4"
+core = "7.x"
+project = "bueditor_plus"
+datestamp = "1373133952"
+

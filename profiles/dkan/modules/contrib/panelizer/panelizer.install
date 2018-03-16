@@ -1,0 +1,1347 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the panelizer module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function panelizer_schema() {
+  $schema = array();
+
+  // Fields that are shared between the two tables.
+  $common_fields = array(
+    'view_mode' => array(
+      'type' => 'varchar',
+      'length' => '128',
+      'description' => 'Contains the view mode this panelizer is for.',
+      'not null' => TRUE,
+    ),
+    'did' => array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'description' => 'The display ID of the panel.',
+      'no export' => TRUE,
+    ),
+    'name' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'description' => 'The name of the default being used if there is one.',
+    ),
+    'css_id' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'description' => 'The CSS ID this panel should use.',
+      'default' => '',
+    ),
+    'css_class' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'description' => 'The CSS class this panel should use.',
+      'default' => '',
+    ),
+    'css' => array(
+      'type' => 'text',
+      'size' => 'big',
+      'description' => 'Any CSS the author provided for the panel.',
+      'object default' => '',
+    ),
+    'no_blocks' => array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'description' => 'Whether or not the node disable sidebar blocks.',
+      'default' => 0,
+    ),
+    'title_element' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'description' => 'The HTML element the title should use.',
+      'default' => 'H2',
+    ),
+    'link_to_entity' => array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'description' => 'Whether or not the title should link to the entity.',
+      'default' => 1,
+    ),
+    'extra' => array(
+      'type' => 'text',
+      'size' => 'big',
+      'description' => 'Contains extra data that can be added by modules.',
+      'serialize' => TRUE,
+      'object default' => array(),
+    ),
+    'pipeline' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'description' => 'The render pipeline this panel uses.',
+      'default' => 'standard',
+    ),
+    'contexts' => array(
+      'type' => 'text',
+      'size' => 'big',
+      'description' => 'The contexts configured by the node author.',
+      'serialize' => TRUE,
+      'object default' => array(),
+    ),
+    'relationships' => array(
+      'type' => 'text',
+      'size' => 'big',
+      'description' => 'The relationship contexts configured by the node author.',
+      'serialize' => TRUE,
+      'object default' => array(),
+    ),
+  );
+
+  $schema['panelizer_entity'] = array(
+    'export' => array(
+      'bulk export' => FALSE,
+      'can disable' => FALSE,
+      'identifier' => 'panelizer_node',
+    ),
+    'description' => 'Node panelizer references.',
+    'fields' => array(
+      'entity_type' => array(
+        'description' => 'The type of the entity this panel is attached to.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'entity_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The entity ID this panel is attached to.',
+      ),
+      'revision_id' => array(
+        'description' => 'The revision id of the entity.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ) + $common_fields,
+    'primary key' => array('entity_type', 'entity_id', 'revision_id', 'view_mode'),
+    'indexes' => array(
+      'revision_id' => array('revision_id'),
+    ),
+  );
+
+  $schema['panelizer_defaults'] = array(
+    'description' => 'Node type panelizer references.',
+    'export' => array(
+      'primary key' => 'pnid',
+      'key' => 'name',
+      'key name' => 'Name',
+      'admin_title' => 'title',
+      'identifier' => 'panelizer',
+      'default hook' => 'panelizer_defaults',
+      'api' => array(
+        'owner' => 'panelizer',
+        'api' => 'panelizer',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+      // 'create callback' => 'panelizer_export_create_callback',
+      'save callback' => 'panelizer_export_save_callback',
+      'export callback' => 'panelizer_export_export_callback',
+      'delete callback' => 'panelizer_export_delete_callback',
+      'subrecords callback' => 'panelizer_export_delete_callback_subrecords',
+    ),
+    'fields' => array(
+      'pnid' => array(
+        'type' => 'serial',
+        'description' => 'The database primary key.',
+        'no export' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'The human readable title of this default.',
+      ),
+      'panelizer_type' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'description' => 'The panelizer entity type, such as node or user.',
+      ),
+      'panelizer_key' => array(
+        'type' => 'varchar',
+        'length' => '128',
+        'description' => 'The panelizer entity bundle.',
+      ),
+      'access' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Contains the access control for editing this default.',
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+    ) + $common_fields,
+    'primary key' => array('pnid'),
+    'indexes' => array(
+      'name' => array('name'),
+      'type_key' => array('panelizer_type', 'panelizer_key'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function panelizer_install() {
+  // Set the module weight so it can execute after Panels.
+  db_update('system')
+    ->fields(array(
+      'weight' => 21,
+    ))
+    ->condition('name', 'panelizer')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function panelizer_uninstall() {
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    if (isset($entity_info['bundles'])) {
+      foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+        // View mode variables.
+        if (!empty($entity_info['view modes'])) {
+          foreach ($entity_info['view modes'] as $view_mode => $view_info) {
+            variable_del('panelizer_' . $entity_type . ':' . $bundle_name . ':' . $view_mode . '_selection');
+          }
+        }
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . ':default_selection');
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . ':page_manager_selection');
+
+        // Other variables.
+        variable_del('panelizer_defaults_' . $entity_type . '_' . $bundle_name);
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . '_allowed_layouts');
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . '_allowed_layouts_default');
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . '_allowed_types');
+        variable_del('panelizer_' . $entity_type . ':' . $bundle_name . '_default');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function panelizer_requirements($phase) {
+  $return = array();
+
+  if ($phase === 'runtime') {
+    // Check for fields displaying on view modes through core config.
+    $view_modes_to_report = array();
+
+    foreach (entity_get_info() as $entity_type => $entity_info) {
+      if (isset($entity_info['view modes'])) {
+        $view_modes = array_keys($entity_info['view modes']);
+        // Add default to the list of view modes because that might be panelized
+        // too.
+        $view_modes[] = 'default';
+
+        if (!empty($entity_info['bundles'])) {
+          $bundles = $entity_info['bundles'];
+        }
+        else {
+          $bundles = array($entity_type => $entity_type);
+        }
+
+        foreach ($bundles as $bundle => $bundle_info) {
+          foreach ($view_modes as $view_mode) {
+            if (panelizer_view_mode_extra_field_displays($entity_type, $bundle, $view_mode)) {
+              $view_modes_to_report[] = array(
+                'entity_type' => $entity_type,
+                'bundle' => $bundle,
+                'view_mode' => $view_mode,
+              );
+              // @todo Should the display be updated to hide the fields?
+              // panelizer_hide_fields_on_panelized_view_mode($entity_type, $bundle, $view_mode);
+            }
+          }
+        }
+      }
+    }
+
+    if (!empty($view_modes_to_report)) {
+      $count = count($view_modes_to_report);
+      $return['double_display'] = array(
+        'title' => t('Panelizer'),
+        'value' => t('@number view mode / bundle / entity combination(s) use Panelizer but still have field displays configured.', array('@number' => $count)),
+        'description' => t('Panelizer replaces the normal entity display. Any view mode that use Panelizer should have all fields hidden through the normal display settings in order to avoid the overhead of generating the output twice.'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+      $description_links = array();
+      foreach ($view_modes_to_report as $view_mode_array) {
+        extract($view_mode_array);
+        $handler = panelizer_entity_plugin_get_handler($entity_type);
+        $path = $handler->admin_bundle_display_path($bundle, $view_mode);
+        $description_links[] = array(
+          'href' => $path,
+          'title' => implode(':', $view_mode_array),
+        );
+      }
+
+      $theme_variables = array(
+        'links' => $description_links,
+        'heading' => array(
+          'text' => 'Entity view modes that should have all fields hidden:',
+          'level' => 'h6',
+        ),
+      );
+      $return['double_display']['description'] .= theme('links', $theme_variables);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Check whether a view mode uses core display of fields and panelizer.
+ *
+ * @return bool
+ *   Whether or not a bundle/view_mode is panelized and has fields displaying
+ *   through core settings.
+ */
+function panelizer_view_mode_extra_field_displays($entity_type, $bundle, $view_mode) {
+  $handler = panelizer_entity_plugin_get_handler($entity_type);
+
+  if (panelizer_is_panelized($handler, $bundle, $view_mode)) {
+    $bundle = field_extract_bundle($entity_type, $bundle);
+    $instances = field_info_instances($entity_type, $bundle);
+
+    // @todo, handle extra fields.
+    // field_info_extra_fields($entity_type, $bundle, 'display');
+
+    // Look through all the fields and look for fields that aren't hidden.
+    // As soon as one is found, end this function. Finding any non-hidden
+    // fields is the point of this function.
+    foreach ($instances as $instance) {
+      if (!empty($instance['display'][$view_mode]['type']) && $instance['display'][$view_mode]['type'] !== 'hidden') {
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Hide all fields on a view mode.
+ *
+ * @todo, connect this function to a form and/or ajax callback.
+ */
+function panelizer_hide_fields_on_panelized_view_mode($entity_type, $bundle, $view_mode) {
+
+  $bundle = field_extract_bundle($entity_type, $bundle);
+  $instances = field_info_instances($entity_type, $bundle);
+
+  foreach ($instances as $instance) {
+    if (!empty($instance['display'][$view_mode]['type'])) {
+      $instance['display'][$view_mode]['type'] = 'hidden';
+      field_update_instance($instance);
+    }
+  }
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function panelizer_update_dependencies() {
+  // Update 7115 requires UUID support in CTools and Panels.
+  $dependencies['panelizer'][7115] = array(
+    'panels' => 7302,
+  );
+
+  // These updates requires Panels storage support, which was added in
+  // panels_update_7305.
+  $dependencies['panelizer'][7302] = array(
+    'panels' => 7305,
+  );
+  $dependencies['panelizer'][7303] = array(
+    'panels' => 7305,
+  );
+
+  return $dependencies;
+}
+
+/**
+ * Update the panelizer variable to be more feature module friendly.
+ */
+function panelizer_update_7100() {
+  $panelizer_defaults = variable_get('panelizer_defaults', array());
+
+  if (!empty($panelizer_defaults)) {
+    foreach ($panelizer_defaults as $entity => $bundles) {
+      foreach ($bundles as $bundle => $values) {
+        variable_set('panelizer_defaults_' . $entity . '_' . $bundle, $values);
+      }
+    }
+  }
+
+  variable_del('panelizer_defaults');
+  return t('Updated panelizer variables.');
+}
+
+/**
+ * Update the panelizer node table to be the panelizer entity table.
+ */
+function panelizer_update_7101() {
+  // Rename the table.
+  db_rename_table('panelizer_node', 'panelizer_entity');
+
+  // Remove the primary key.
+  db_drop_primary_key('panelizer_entity');
+
+  // Add the entity type.
+  $spec = array(
+    'description' => 'The type of the entity this panel is attached to.',
+    'type' => 'varchar',
+    'length' => 255,
+  );
+  db_add_field('panelizer_entity', 'entity_type', $spec);
+
+  // Rename nid to entity_id.
+  $spec = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The entity ID this panel is attached to.',
+  );
+  db_change_field('panelizer_entity', 'nid', 'entity_id', $spec);
+
+  // Update the entity_type field to 'node' since all pre-existing
+  // panelizer objects are nodes.
+  db_update('panelizer_entity')
+    ->fields(array('entity_type' => 'node'))
+    ->execute();
+
+  // Add the new index
+  db_add_primary_key('panelizer_entity', array('entity_type', 'entity_id'));
+}
+
+/**
+ * Add revision support.
+ */
+function panelizer_update_7102() {
+  // Remove the primary key.
+  db_drop_primary_key('panelizer_entity');
+
+  // Add the revision ID field.
+  $spec = array(
+    'description' => 'The revision id of the entity.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+  );
+  db_add_field('panelizer_entity', 'revision_id', $spec);
+
+  db_query("UPDATE {panelizer_entity} pe LEFT JOIN {node} n ON pe.entity_id = n.nid SET pe.revision_id = n.vid");
+
+  // Add the new index.
+  db_add_primary_key('panelizer_entity', array('entity_type', 'entity_id', 'revision_id'));
+
+  return t('Added revision support.');
+}
+
+/**
+ * Set primary keys to NOT NULL.
+ */
+function panelizer_update_7103() {
+  $spec = array(
+    'description' => 'The type of the entity this panel is attached to.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+  );
+  db_change_field('panelizer_entity', 'entity_type', 'entity_type', $spec);
+
+  $spec = array(
+    'description' => 'The revision id of the entity.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+  );
+  db_change_field('panelizer_entity', 'revision_id', 'revision_id', $spec);
+
+  $spec = array(
+    'type' => 'serial',
+    'description' => 'The database primary key.',
+    'no export' => TRUE,
+    'not null' => TRUE,
+  );
+  db_change_field('panelizer_defaults', 'pnid', 'pnid', $spec);
+}
+
+/**
+ * Add the {panelizer_defaults}.access field.
+ */
+function panelizer_update_7104() {
+  $spec = array(
+    'type' => 'text',
+    'size' => 'big',
+    'description' => 'Contains the access control for editing this default.',
+    'serialize' => TRUE,
+    'object default' => array(),
+  );
+  db_add_field('panelizer_defaults', 'access', $spec);
+}
+
+/**
+ * Add the view mode field.
+ */
+function panelizer_update_7105() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => '128',
+    'description' => 'Contains the view mode this panelizer is for.',
+    'not null' => TRUE,
+  );
+  db_add_field('panelizer_defaults', 'view_mode', $spec);
+  db_add_field('panelizer_entity', 'view_mode', $spec);
+
+  db_update('panelizer_defaults')
+    ->fields(array(
+      'view_mode' => 'page_manager',
+    ))
+    ->execute();
+
+  db_update('panelizer_entity')
+    ->fields(array(
+      'view_mode' => 'page_manager',
+    ))
+    ->execute();
+}
+
+/**
+ * Add the view_mode to the primary key for the {panelizer_entity} table.
+ */
+function panelizer_update_7106() {
+  db_drop_primary_key('panelizer_entity');
+
+  if (db_index_exists('panelizer_entity', 'PRIMARY')) {
+    throw new DrupalUpdateException(t('Could not drop the panelizer_entity primary key in order to recreate it.'));
+  }
+
+  // Add the new index.
+  db_add_primary_key('panelizer_entity', array(
+    'entity_type',
+    'entity_id',
+    'revision_id',
+    'view_mode',
+  ));
+
+  if (db_index_exists('panelizer_entity', 'PRIMARY')) {
+    return t('The Panelizer database scheme has been updated.');
+  }
+  else {
+    throw new DrupalUpdateException(t('There was a problem recreating the panelizer_entity primary key.'));
+  }
+}
+
+/**
+ * Add the css class and element title fields.
+ */
+function panelizer_update_7107() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => '255',
+    'description' => 'The CSS class this panel should use.',
+    'default' => '',
+  );
+  db_add_field('panelizer_defaults', 'css_class', $spec);
+  db_add_field('panelizer_entity', 'css_class', $spec);
+
+  $spec = array(
+    'type' => 'varchar',
+    'length' => '255',
+    'description' => 'The HTML element the title should use.',
+    'default' => 'H2',
+  );
+  db_add_field('panelizer_defaults', 'title_element', $spec);
+  db_add_field('panelizer_entity', 'title_element', $spec);
+}
+
+/**
+ * Add the link_to_entity field
+ */
+function panelizer_update_7108() {
+  $spec = array(
+    'type' => 'int',
+    'size' => 'tiny',
+    'description' => 'Whether or not the title should link to the entity.',
+    'default' => 1,
+  );
+  db_add_field('panelizer_defaults', 'link_to_entity', $spec);
+  db_add_field('panelizer_entity', 'link_to_entity', $spec);
+}
+
+/**
+ * Add the extra field so that modules can extend panelizer more easily.
+ */
+function panelizer_update_7109() {
+  $spec = array(
+    'type' => 'text',
+    'size' => 'big',
+    'description' => 'Contains extra data that can be added by modules.',
+    'serialize' => TRUE,
+    'object default' => array(),
+  );
+  db_add_field('panelizer_defaults', 'extra', $spec);
+  db_add_field('panelizer_entity', 'extra', $spec);
+}
+
+/**
+ * Changing the size of the entity_type field of panelizer_entity.
+ */
+function panelizer_update_7110() {
+  db_drop_primary_key('panelizer_entity');
+  $spec = array(
+    'description' => 'The type of the entity this panel is attached to.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+  );
+  $keys = array(
+    'primary key' => array('entity_type', 'entity_id', 'revision_id', 'view_mode'),
+  );
+  db_change_field('panelizer_entity', 'entity_type', 'entity_type', $spec, $keys);
+}
+
+/**
+ * This update script was removed, nothing to see here.
+ */
+function panelizer_update_7111() {
+  // Nothing.
+}
+
+/**
+ * Fix Panelizer settings.
+ */
+function panelizer_update_7112() {
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    if (!empty($entity_info) && !empty($entity_info['bundles'])) {
+      foreach ($entity_info['bundles'] as $bundle => &$bundle_info) {
+        $var_name = 'panelizer_defaults_' . $entity_type . '_' . $bundle;
+        $settings = variable_get($var_name);
+        if (!empty($settings) && !empty($settings['view modes'])) {
+          foreach ($settings['view modes'] as $view_mode => &$config) {
+            // If the bundle itself or this view mode are disabled, make sure
+            // all settings are disabled.
+            if (empty($settings['status']) || empty($config['status'])) {
+              foreach ($config as $key => $val) {
+                $config[$key] = 0;
+              }
+            }
+          }
+          // Update the settings.
+          variable_set($var_name, $settings);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Make {panelizer_entity}.view_mode NOT NULL.
+ */
+function panelizer_update_7113() {
+  db_drop_primary_key('panelizer_entity');
+
+  $spec = array(
+    'description' => 'Contains the view mode this panelizer is for.',
+    'type' => 'varchar',
+    'length' => '128',
+    'not null' => TRUE,
+  );
+  $keys = array('primary key' =>
+    array('entity_type', 'entity_id', 'revision_id', 'view_mode'),
+  );
+  db_change_field('panelizer_entity', 'view_mode', 'view_mode', $spec, $keys);
+}
+
+/**
+ * Clear the menu cache to fix the display actions page arguments.
+ */
+function panelizer_update_7114() {
+  variable_set('menu_rebuild_needed', TRUE);
+}
+
+/**
+ * Ensure that each Panelizer display is only used once, so that each
+ * revision has a separate record.
+ */
+function panelizer_update_7115(&$sandbox) {
+  // This loops through all of the records in {panelizer_entity}, looks for any
+  // displays that are used more than once and clones any additional copies
+  // that are needed. The goal is to have each display only used once.
+
+  // Process records by groups of 1 (arbitrary value). Doing this one at a time
+  // because some sites can have a LOT of revisions.
+  $limit = 1;
+
+  // When ran through Drush it's Ok to process a larger number of objects at a
+  // time.
+  if (drupal_is_cli()) {
+    $limit = 10;
+  }
+
+  // The update hasn't been ran before.
+  if (!isset($sandbox['progress'])) {
+    // The count of records visited so far.
+    $sandbox['progress'] = 0;
+
+    // Load any 'did' values that are used in more than one revision.
+    $records = db_query("SELECT did
+      FROM {panelizer_entity}
+      WHERE revision_id > 0 AND did <> 0 AND did IS NOT NULL
+      GROUP BY did
+      HAVING count(revision_id) > 1");
+
+    // If there are no records, there's nothing to do.
+    if ($records->rowCount() == 0) {
+      return t('No Panelizer display records need fixing.');
+    }
+
+    // Total records that must be processed.
+    $sandbox['max'] = $records->rowCount();
+
+    watchdog('panelizer', 'Need to fix @count duplicate displays.', array('@count' => $records->rowCount()));
+  }
+
+  // Loop through the records in smaller chunks.
+  $dids = db_query_range("SELECT did
+    FROM {panelizer_entity}
+    WHERE revision_id > 0 AND did <> 0 AND did IS NOT NULL
+    GROUP BY did
+    HAVING count(revision_id) > 1", 0, $limit)->fetchCol();
+
+  // Track the entities that need to be reset.
+  $cache_clear = array();
+
+  ctools_include('plugins', 'panels');
+  ctools_include('content');
+
+  // Load all of the requested displays.
+  foreach (panels_load_displays($dids) as $original_did => $display) {
+    // Load each panelizer_entity record for this display.
+    $panelizers = db_query("SELECT * FROM {panelizer_entity} WHERE did=:did", array(':did' => $display->did));
+    $ctr = 0;
+    foreach ($panelizers as $panelizer) {
+      $ctr++;
+      // Skip the first record.
+      if ($ctr === 1) {
+        $ctr++;
+        continue;
+      }
+
+      // Reset the 'did' value so that a new record can be created.
+      unset($display->did);
+
+      // Regenerate the UUID.
+      $display->uuid = ctools_uuid_generate();
+
+      // Save the display, thus creating a new 'did' value. Also, using
+      // db_insert() as it's safer than using drupal_write_record() directly
+      // during an update script. Also, doing each field individually to avoid
+      // corrupting data during hook_panels_display_save.
+      $display->did = db_insert('panels_display')
+        ->fields(array(
+          'layout' => $display->layout,
+          'layout_settings' => serialize($display->layout_settings),
+          'panel_settings' => serialize($display->panel_settings),
+          'cache' => serialize($display->cache),
+          'title' => $display->title,
+          'hide_title' => $display->hide_title,
+          'title_pane' => $display->title_pane,
+          'uuid' => $display->uuid,
+        ))
+        ->execute();
+      $message = 'Panelizer update 7115: created display %did for %entity_type %entity_id';
+      $message_args = array(
+        '%did' => $display->did,
+        '%entity_type' => $panelizer->entity_type,
+        '%entity_id' => $panelizer->entity_id,
+      );
+      watchdog('panelizer', $message, $message_args, WATCHDOG_NOTICE);
+
+      // Reset the 'pid' values of each pane, using a new UUID. Because its
+      // non-numeric, when the display is saved it'll create a new record for
+      // each pane, but still keep all of the internal pointers accurate.
+      foreach ($display->panels as $region => $panes) {
+        foreach ((array) $panes as $position => $pid) {
+          // Pane not found. Shouldn't happen, but you never know.
+          if (!isset($display->content[$pid])) {
+            watchdog('panelizer', 'Panelizer update 7115: couldn\'t load pane %pid for display %did', array('%pid' => $pid, '%did' => $display->did), WATCHDOG_WARNING);
+            continue;
+          }
+
+          // Load the pane.
+          $new_pane = clone $display->content[$pid];
+
+          // This appears to only serve the purpose of ensuring necessary APIs
+          // and include files are loaded.
+          ctools_get_content_type($new_pane->type);
+
+          // Remove the pid, it'll be created during the database insertion.
+          unset($new_pane->pid);
+
+          // Generate a new UUID.
+          $new_pane->uuid = ctools_uuid_generate();
+
+          // Update the pane's did.
+          $new_pane->did = $display->did;
+
+          // Create the pane record, save the return ID as the pane pid. Again,
+          // using db_insert directly because it's safer than
+          // drupal_write_record during an update script. Also, doing the fields
+          // individually so that the data isn't corrupted during
+          // hook_panels_pane_insert.
+          $new_pane->pid = db_insert('panels_pane')
+            ->fields(array(
+              'did' => $new_pane->did,
+              'panel' => $new_pane->panel,
+              'type' => $new_pane->type,
+              'subtype' => $new_pane->subtype,
+              'shown' => $new_pane->shown,
+              'access' => serialize($new_pane->access),
+              'configuration' => serialize($new_pane->configuration),
+              'cache' => serialize($new_pane->cache),
+              'style' => serialize($new_pane->style),
+              'css' => serialize($new_pane->css),
+              'extras' => serialize($new_pane->extras),
+              'locks' => serialize($new_pane->locks),
+              'uuid' => $new_pane->uuid,
+            ))
+            ->execute();
+
+          // Tell the world.
+          module_invoke_all('panels_pane_insert', $new_pane);
+          watchdog('panelizer', 'Panelizer update 7115: created pane %pid for display %did', array('%pid' => $new_pane->pid, '%did' => $new_pane->did), WATCHDOG_NOTICE);
+
+          // Update the optional title pane.
+          if (isset($display->title_pane) && $display->title_pane == $pid) {
+            $display->title_pane = $new_pane->pid;
+            // Do a simple update query to write it so we don't have to rewrite
+            // the whole record. We can't just save writing the whole record
+            // here because it was needed to get the did. Chicken, egg, more
+            // chicken.
+            db_update('panels_display')
+              ->fields(array(
+                'title_pane' => $new_pane->pid
+              ))
+              ->condition('did', $display->did)
+              ->execute();
+          }
+        }
+      }
+
+      // Allow other modules to take action when a display is saved.
+      module_invoke_all('panels_display_save', $display);
+
+      // Assign the new display to this Panelizer record.
+      $panelizer->did = $display->did;
+
+      // Update the {panelizer} record.
+      db_update('panelizer_entity')
+        ->fields((array) $panelizer)
+        ->condition('entity_type', $panelizer->entity_type)
+        ->condition('entity_id', $panelizer->entity_id)
+        ->condition('revision_id', $panelizer->revision_id)
+        ->condition('view_mode', $panelizer->view_mode)
+        ->execute();
+
+      // Clear this entity's cache.
+      $cache_clear[$panelizer->entity_type][] = $panelizer->entity_id;
+
+    }
+    watchdog('panelizer', 'Panelizer update 7115: finished fixing %did', array('%did' => $original_did), WATCHDOG_NOTICE);
+
+    $sandbox['progress']++;
+  }
+
+  // Clear the caches for any entities that are updated.
+  foreach ($cache_clear as $entity_type => $entity_ids) {
+    entity_get_controller($entity_type)->resetCache($entity_ids);
+  }
+
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('Fixed @count Panelizer record(s) (out of @total) that were using the same display.', array('@count' => $sandbox['progress'], '@total' => $sandbox['max']));
+}
+
+/**
+ * Notify the site builder that the "Panelizer" tabs have been renamed.
+ */
+function panelizer_update_7116() {
+  drupal_set_message(t('Note: the "Panelizer" tabs on content, user, term pages, etc have been renamed to "Customize display".'));
+}
+
+/**
+ * Clear the menu cache to pull in the new menu paths.
+ */
+function panelizer_update_7117() {
+  variable_set('menu_rebuild_needed', TRUE);
+  drupal_set_message(t('Note: the main Panelizer configuration page has moved to the "Structure" menu instead of the "Config" menu.'));
+}
+
+/**
+ * Reload the menus to fix the 'content' default local tasks.
+ */
+function panelizer_update_7118() {
+  variable_set('menu_rebuild_needed', TRUE);
+}
+
+/**
+ * Fix any {panelizer_entity} records that were broken by update 7115. This may
+ * take some time.
+ */
+function panelizer_update_7119(&$sandbox) {
+  // Process records by groups of 10 (arbitrary value).
+  $limit = 10;
+  // When ran through Drush it's Ok to process a larger number of objects at a
+  // time.
+  if (drupal_is_cli()) {
+    $limit = 100;
+  }
+
+  // The update hasn't been ran before.
+  if (!isset($sandbox['progress'])) {
+    // The count of records visited so far.
+    $sandbox['progress'] = 0;
+
+    // Load any 'panelizer_entity' values that are corrupt.
+    $records = db_query("SELECT DISTINCT entity_type, entity_id
+      FROM {panelizer_entity}
+      WHERE contexts LIKE 's:%'
+        OR relationships LIKE 's:%'
+        OR extra LIKE 's:%'");
+
+    // If there are no records, there's nothing to do.
+    if ($records->rowCount() == 0) {
+      return t('No {panelizer_entity} records were corrupted by update 7115.');
+    }
+
+    // Total records that must be processed.
+    $sandbox['max'] = $records->rowCount();
+
+    watchdog('panelizer', 'Need to fix {panelizer_entity} records for @count entities that were damaged by update 7115.', array('@count' => $records->rowCount()));
+  }
+
+  // Get a small batch of records.
+  $records = db_query_range("SELECT DISTINCT entity_type, entity_id
+    FROM {panelizer_entity}
+    WHERE contexts LIKE 's:%'
+      OR relationships LIKE 's:%'
+      OR extra LIKE 's:%'", 0, $limit);
+
+  // Loop over each record.
+  foreach ($records as $record) {
+    // Track whether this entity needs to be fixed.
+    $entity_updated = FALSE;
+
+    // Get each {panelizer_record} for this entity.
+    $entity_records = db_query("SELECT *
+      FROM {panelizer_entity}
+      WHERE entity_type = :entity_type
+        AND entity_id = :entity_id
+      ORDER BY revision_id", (array)$record);
+    foreach ($entity_records as $panelizer) {
+      $last_display = NULL;
+
+      // Unserialize each of the serialized values.
+      foreach (array('contexts', 'relationships', 'extra') as $val) {
+        $panelizer->$val = unserialize($panelizer->$val);
+      }
+
+      // Keep track of whether the record needs to be saved.
+      $panelizer_updated = FALSE;
+
+      // Verify each of the items is an array or if it was double-serialized.
+      foreach (array('contexts', 'relationships', 'extra') as $val) {
+        if (is_string($panelizer->$val)) {
+          $panelizer->$val = unserialize($panelizer->$val);
+          $panelizer_updated = TRUE;
+          $entity_updated = TRUE;
+        }
+      }
+
+      // Update the {panelizer_entity} record.
+      if ($panelizer_updated) {
+        db_update('panelizer_entity')
+          ->fields(array(
+            'contexts' => serialize($panelizer->contexts),
+            'relationships' => serialize($panelizer->relationships),
+            'extra' => serialize($panelizer->extra),
+          ))
+          ->condition('entity_type', $panelizer->entity_type)
+          ->condition('entity_id', $panelizer->entity_id)
+          ->condition('revision_id', $panelizer->revision_id)
+          ->condition('view_mode', $panelizer->view_mode)
+          ->execute();
+      }
+    }
+
+    // The entity was updated so clear its cache.
+    if ($entity_updated) {
+      entity_get_controller($panelizer->entity_type)->resetCache(array($panelizer->entity_id));
+    }
+
+    $sandbox['progress']++;
+  }
+
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('Fixed {panelizer_entity} records for @count entities out of @total total.', array('@count' => $sandbox['progress'], '@total' => $sandbox['max']));
+}
+
+/**
+ * Update 7115 may have resulted in {panels_pane} records not being created
+ * properly. This will create them, and may take some time.
+ */
+function panelizer_update_7120(&$sandbox) {
+  // Process records by groups of 1 (arbitrary value). Doing this one at a time
+  // because some sites can have a LOT of revisions.
+  $limit = 1;
+
+  // When ran through Drush it's Ok to process a larger number of objects at a
+  // time.
+  if (drupal_is_cli()) {
+    $limit = 10;
+  }
+
+  // The update hasn't been ran before.
+  if (!isset($sandbox['progress'])) {
+    // The count of records visited so far.
+    $sandbox['progress'] = 0;
+
+    // Load any 'panelizer_entity' values that are corrupt.
+    $records = db_query("SELECT DISTINCT entity_type, entity_id
+      FROM {panelizer_entity} pe
+        LEFT OUTER JOIN {panels_pane} pp
+          ON pe.did = pp.did
+      WHERE pe.did > 0
+        AND pp.did IS NULL");
+
+    // If there are no records, there's nothing to do.
+    if ($records->rowCount() == 0) {
+      return t('No panes were lost by update 7115.');
+    }
+
+    // Total records that must be processed.
+    $sandbox['max'] = $records->rowCount();
+
+    watchdog('panelizer', 'Need to fix panes for @count entities that were lost by update 7115.', array('@count' => $records->rowCount()));
+  }
+
+  // Get a small batch of records.
+  $records = db_query_range("SELECT DISTINCT entity_type, entity_id
+    FROM {panelizer_entity} pe
+      LEFT OUTER JOIN {panels_pane} pp
+        ON pe.did = pp.did
+    WHERE pe.did > 0
+      AND pp.did IS NULL", 0, $limit);
+
+  watchdog('panelizer', 'Fixing panes for @count entities that were lost by update 7115.', array('@count' => $records->rowCount()));
+
+  // Loop over each record.
+  foreach ($records as $record) {
+    // Track whether this entity was changed.
+    $entity_updated = FALSE;
+
+    // Keep track of the last display for each entity.
+    $last_display = NULL;
+
+    // Get each {panelizer_record} for this entity. Load these in REVERSE order
+    // because the panes were moved to the last revision.
+    $entity_records = db_query("SELECT *
+      FROM {panelizer_entity}
+      WHERE entity_type = :entity_type
+        AND entity_id = :entity_id
+      ORDER BY revision_id DESC", (array)$record);
+    foreach ($entity_records as $panelizer) {
+      // If this is a custom display, load it.
+      if (!empty($panelizer->did)) {
+        $display = panels_load_display($panelizer->did);
+
+        // Check if the display is bereft of panes.
+        if (empty($display->content)) {
+          // Hopefully the "last display" won't be blank.
+          if (empty($last_display)) {
+            watchdog('panelizer', "Unable to load records for display did for entity_type entity_id. Sorry.", (array)$panelizer);
+          }
+          else {
+            foreach ($last_display->content as $pane) {
+              // Clone the pane to avoid accidental damage.
+              $new_pane = clone $pane;
+
+              // Erase the pid so a new record can be saved.
+              $new_pane->pid = NULL;
+
+              // Tie the pane to this display.
+              $new_pane->did = $display->did;
+
+              // Update the pane's UUID.
+              $new_pane->uuid = ctools_uuid_generate();
+
+              // Serialize some of the fields prior to saving.
+              foreach (array('access', 'configuration', 'cache', 'style', 'css', 'extras', 'locks') as $val) {
+                $new_pane->$val = serialize($new_pane->$val);
+              }
+
+              // Create the pane record.
+              db_insert('panels_pane')
+                ->fields((array)$new_pane)
+                ->execute();
+
+              // Tell the world.
+              module_invoke_all('panels_pane_insert', $new_pane);
+            }
+          }
+        }
+
+        // This display included all of its panes, so skip the fixing and just
+        // use it as the 'last' display for the next loop.
+        else {
+          $last_display = $display;
+        }
+      }
+    }
+
+    // The entity was updated, to clear its cache.
+    if ($entity_updated) {
+      entity_get_controller($panelizer->entity_type)->resetCache(array($panelizer->entity_id));
+    }
+
+    $sandbox['progress']++;
+  }
+
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('Recovered panes for @count entities out of @total total.', array('@count' => $sandbox['progress'], '@total' => $sandbox['max']));
+}
+
+/**
+ * Fix the 'selection' variables.
+ */
+function panelizer_update_7121() {
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    if (isset($entity_info['bundles'])) {
+      foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+        // View mode variables.
+        if (!empty($entity_info['view modes'])) {
+          foreach ($entity_info['view modes'] as $view_mode => $view_info) {
+            $var_name = 'panelizer_' . $entity_type . ':' . $bundle_name . ':' . $view_mode . '_selection';
+            $var = variable_get($var_name);
+            if (empty($var)) {
+              variable_del($var_name);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Remove {panelizer_entity} records with only default values.
+ */
+function panelizer_update_7300(&$sandbox) {
+  // Initialize sandbox.
+  if (empty($sandbox)) {
+    $sandbox['progress'] = 0;
+    $sandbox['processed_entity_types'] = array();
+
+    // Get a list of all records using a default display.
+    $sandbox['max'] = db_query('SELECT COUNT(DISTINCT entity_type) FROM {panelizer_entity} WHERE did = 0')->fetchField();
+
+    // Bail if no records found.
+    if (empty($sandbox['max'])) {
+      return t('No records need to be fixed.');
+    }
+
+    watchdog('panelizer', 'Default panelizer records will be removed for @count entity types.', array('@count' => $sandbox['max']));
+  }
+
+  // Main sandbox query and loop.  Processes one entity type at a time.
+  $query = db_select('panelizer_entity', 'pe')
+    ->distinct()
+    ->fields('pe', array('entity_type'));
+  if (!empty($sandbox['processed_entity_types'])) {
+    $query->condition('entity_type', $sandbox['processed_entity_types'], 'NOT IN');
+  }
+  $entity_types = $query->execute()->fetchCol();
+  foreach ($entity_types as $entity_type) {
+    // Get the default panelizer names for the entity type.
+    $default_names = array();
+    $entity_info = entity_get_info($entity_type);
+    if (!empty($entity_info) && !empty($entity_info['bundles'])) {
+      foreach ($entity_info['bundles'] as $bundle => $bundle_info) {
+        $var_name = 'panelizer_defaults_' . $entity_type . '_' . $bundle;
+        $settings = variable_get($var_name);
+        if (!empty($settings) && !empty($settings['view modes'])) {
+          foreach ($settings['view modes'] as $view_mode => $config) {
+            $default_name = implode(':', array($entity_type, $bundle, 'default'));
+            if ($view_mode != 'page_manager') {
+              $default_name .= ':' . $view_mode;
+            }
+            $default_names[] = $default_name;
+          }
+        }
+      }
+    }
+
+    // Delete panelizer records that have one of the default names.
+    $deleted = db_delete('panelizer_entity')
+      ->condition('name', $default_names, 'IN')
+      ->condition('entity_type', $entity_type)
+      ->execute();
+    if ($deleted > 0) {
+      watchdog('panelizer', '@count default panelizer records were removed for entity type: @entity_type.', array('@count' => $deleted, '@entity_type' => $entity_type));
+    }
+    else {
+      watchdog('panelizer', 'No default panelizer records were found for entity type: @entity_type.', array('@entity_type' => $entity_type));
+    }
+
+    // Update sandbox progress.
+    $sandbox['progress']++;
+    $sandbox['processed_entity_types'][] = $entity_type;
+  }
+
+  if ($sandbox['progress'] != $sandbox['max']) {
+    $sandbox['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
+}
+
+/**
+ * Add an index to {panelizer_entity} revision IDs.
+ */
+function panelizer_update_7301() {
+  if (!db_index_exists('panelizer_entity', 'revision_id')) {
+    db_add_index('panelizer_entity', 'revision_id', array('revision_id'));
+    return t('Added an extra index on the {panelizer_entity} table for the revision_id column.');
+  }
+  else {
+    return t('There was already an index on the {panelizer_entity} table for the revision_id column, so nothing was done.');
+  }
+}
+
+/**
+ * Set the storage type and ID on existing {panelizer_default} records.
+ */
+function panelizer_update_7302(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    // Initialize batch update information.
+    $sandbox['progress'] = (float)0;
+    $sandbox['current_did'] = -1;
+    $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+      FROM {panels_display} pd
+        JOIN {panelizer_defaults} p ON p.did = pd.did
+      WHERE pd.storage_type = ''")->fetchField();
+    if (empty($sandbox['max'])) {
+      return t('Nothing to be fixed in Panelizer update 7302.');
+    }
+  }
+
+  // Set a limit of how many rows to process per batch.
+  $limit = 100;
+
+  // Run the query
+  $result = db_query_range("SELECT pd.did, p.name
+    FROM {panels_display} pd
+      JOIN {panelizer_defaults} p ON p.did = pd.did
+    WHERE pd.storage_type = '' AND pd.did > :current_did
+    ORDER BY pd.did ASC", 0, $limit, array(
+      ':current_did' => $sandbox['current_did'],
+    ));
+
+  // No results means that it's finished.
+  if (empty($result)) {
+    $sandbox['progress'] = $sandbox['max'];
+  }
+  else {
+    foreach ($result as $row) {
+      db_update('panels_display')
+        ->fields(array(
+          'storage_type' => 'panelizer_default',
+          'storage_id' => $row->name,
+        ))
+        ->condition('did', $row->did)
+        ->execute();
+
+      // Update our progress information.
+      $sandbox['progress']++;
+      $sandbox['current_did'] = $row->did;
+    }
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    return t('Added the storage type for panelizer_defaults to relevant panels displays');
+  }
+}
+
+/**
+ * Set the storage type and ID on existing {panelizer_entity} records. This may
+ * take some time to complete.
+ */
+function panelizer_update_7303(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    // Initialize batch update information.
+    $sandbox['progress'] = (float)0;
+    $sandbox['current_did'] = -1;
+    $sandbox['max'] = db_query("SELECT COUNT(pd.did)
+      FROM {panels_display} pd
+        JOIN {panelizer_entity} p ON p.did = pd.did
+      WHERE pd.storage_type = ''")->fetchField();
+    if (empty($sandbox['max'])) {
+      return t('Nothing to be fixed in Panelizer update 7303.');
+    }
+  }
+
+  // Set a limit of how many rows to process per batch.
+  $limit = 100;
+
+  // Look for records to be updated.
+  $result = db_query_range("SELECT pd.did, p.entity_type, p.entity_id, p.view_mode
+    FROM {panels_display} pd
+      JOIN {panelizer_entity} p ON p.did = pd.did
+    WHERE pd.storage_type = '' AND pd.did > :current_did
+    ORDER BY pd.did ASC", 0, $limit, array(
+      ':current_did' => $sandbox['current_did'],
+    ));
+
+  // No results means that it's finished.
+  if (empty($result)) {
+    $sandbox['progress'] = $sandbox['max'];
+  }
+  else {
+    foreach ($result as $row) {
+      db_update('panels_display')
+        ->fields(array(
+          'storage_type' => 'panelizer_entity',
+          'storage_id' => implode(':', array($row->entity_type, $row->entity_id, $row->view_mode)),
+        ))
+        ->condition('did', $row->did)
+        ->execute();
+
+      // Update our progress information.
+      $sandbox['progress']++;
+      $sandbox['current_did'] = $row->did;
+    }
+  }
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  if ($sandbox['#finished']) {
+    return t('Added the storage type for panelizer_entities to relevant panels displays');
+  }
+}

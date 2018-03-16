@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Views Reference Filter module hook implementations.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function entityreference_filter_views_api() {
+  return array('api' => 3);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function entityreference_filter_menu() {
+  $items = array();
+
+  $items['entityreference_filter/update/%/%/%'] = array(
+    'title' => 'Update dependent filter',
+    'page callback' => 'entityreference_filter_update_callback',
+    'page arguments' => array(2, 3, 4),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'delivery callback' => 'ajax_deliver',
+    'file' => 'entityreference_filter.views.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * After build form callback for exposed form with entity reference filters.
+ */
+function entityreference_filter_exposed_form_after_build($form) {
+  // Prevent Firefox from remembering values between page reloads.
+  foreach ($form['#entityreference_filter_dynamic'] as $filters) {
+    foreach ($filters as $filter) {
+      if (isset($form[$filter])) {
+        if (!isset($form[$filter]['#attributes'])) {
+          $form[$filter]['#attributes'] = array();
+        }
+        $form[$filter]['#attributes']['autocomplete'] = 'off';
+        foreach (element_children($form[$filter]) as $child) {
+          if (!isset($form[$filter][$child]['#attributes'])) {
+            $form[$filter][$child]['#attributes'] = array();
+          }
+          $form[$filter][$child]['#attributes']['autocomplete'] = 'off';
+        }
+      }
+    }
+  }
+
+  if (empty($form['#entityreference_filter_autosubmit'])) {
+    $form['#attached']['js'][] = array(
+      'type' => 'setting',
+      'data' => array(
+        'entityreference_filter' => array(
+          $form['#id'] => array(
+            'view' => $form['#entityreference_filter_view'] . '/' . $form['#entityreference_filter_display'],
+            'args' => $form['#entityreference_filter_args'],
+            'dynamic' => $form['#entityreference_filter_dynamic'],
+          ),
+        ),
+      ),
+    );
+  }
+
+  return $form;
+}

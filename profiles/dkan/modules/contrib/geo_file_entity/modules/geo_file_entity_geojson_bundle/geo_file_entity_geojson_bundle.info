@@ -1,0 +1,16 @@
+name = Geo File Entity Geojson Bundle
+core = 7.x
+package = NuCivic
+dependencies[] = eck
+dependencies[] = features
+dependencies[] = geo_file_entity
+dependencies[] = recline
+dependencies[] = text
+features[eck_bundle][] = geo_file_geojson
+features[features_api][] = api:2
+features[field_base][] = field_file
+features[field_base][] = field_name_attribute
+features[field_instance][] = geo_file-geojson-field_file
+features[field_instance][] = geo_file-geojson-field_name_attribute
+features_exclude[dependencies][file] = file
+project path = sites/all/modules/nucivic/geo_file_entity/modules
