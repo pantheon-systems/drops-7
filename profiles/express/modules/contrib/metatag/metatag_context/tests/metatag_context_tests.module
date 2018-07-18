@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Primary hook implementations for Metatag:Context tests.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_context_tests_ctools_plugin_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "context" && $api == "context") {
+    return array("version" => "3");
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function metatag_context_tests_menu() {
+  $items['metatag-context-test'] = array(
+    'title' => t('Metatag:Context test page'),
+    'page callback' => 'metatag_context_tests_test_page',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback for displaying the test page.
+ */
+function metatag_context_tests_test_page() {
+  return t('Hello');
+}

@@ -1,0 +1,40 @@
+<?php
+/**
+ * @file
+ * Install and update functions for the module.
+ */
+
+/**
+ * Implements hook_requirements().
+ *
+ * Ensure that varnish's connection is good.
+ */
+function varnish_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    $requirements['varnish']['title'] = $t('Varnish status');
+    $status = varnish_get_status();
+    foreach ($status as $terminal => $state) {
+      list($server, $port) = explode(':', $terminal);
+      if (!$state) {
+        $requirements['varnish']['value'] = $t('Varnish connection broken');
+        $requirements['varnish']['severity'] = REQUIREMENT_ERROR;
+        $requirements['varnish']['description'] = $t('The Varnish control terminal is not responding at %server on port %port.', array('%server' => $server, '%port' => $port));
+        return $requirements;
+      }
+      else {
+        $version = floatval(variable_get('varnish_version', 2.1));
+        if ($version <= 2.1) {
+          $requirements['varnish']['value'] = $t('Varnish is running. Observe more detailed statistics !link.', array('!link' => l($t('here'), 'admin/reports/varnish')));
+        }
+        else {
+          $requirements['varnish']['value'] = $t('Running');
+        }
+      }
+    }
+  }
+  return $requirements;
+}

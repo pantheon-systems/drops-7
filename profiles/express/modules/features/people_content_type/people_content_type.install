@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Set up some things beforehand.
+ */
+
+/**
+* Implements hook_install().
+*/
+function people_content_type_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'people_content_type')
+    ->execute();
+}
+
+/**
+ * Copy field_person_bio to body.
+ */
+function people_content_type_update_7101() {
+
+  // Start with data field.
+  $result = db_query('SELECT * FROM {field_data_field_person_bio}');
+  foreach ($result as $record) {
+    $record->body_value = $record->field_person_bio_value;
+    unset($record->field_person_bio_value);
+    $record->body_format = $record->field_person_bio_format;
+    unset($record->field_person_bio_format);
+    drupal_write_record('field_data_body', $record);
+  }
+  // Copy revision field.
+  $result = db_query('SELECT * FROM {field_revision_field_person_bio}');
+  foreach ($result as $record) {
+    $record->body_value = $record->field_person_bio_value;
+    unset($record->field_person_bio_value);
+    $record->body_format = $record->field_person_bio_format;
+    unset($record->field_person_bio_format);
+    drupal_write_record('field_revision_body', $record);
+  }
+}
+/**
+ * Delete legacy fields from person node type:
+ * field_extra, field_person_interests,field_person_bio.
+ */
+function people_content_type_update_7102() {
+  // Get fields
+  $fields = array(
+    'field_extra',
+    'field_person_interests',
+    'field_person_bio',
+  );
+  // Delete fields from person nodes
+  foreach ($fields as $field) {
+    if ($instance = field_info_instance('node', $field, 'person')) {
+      field_delete_instance($instance);
+    }
+  }
+}
+
+/**
+ * Update plid for people settings menu item.
+ */
+function people_content_type_update_7103() {
+  // Rebuild menu to make sure all menu items exist.
+  menu_rebuild();
+  // Get plid of admin/settings/people
+  $query = db_select('menu_links', 'ml');
+  $query->fields('ml', array('mlid', 'link_path','plid'));
+  $query->condition('ml.link_path', 'admin/settings/people', '=');
+  $menu = $query->execute()->fetchCol();
+  $plid = current($menu);
+
+  // Update plid of admin/settings/people/settings.
+  db_update('menu_links')
+  ->expression('plid', $plid)
+  ->condition('link_path', 'admin/settings/people/settings')
+  ->execute();
+}

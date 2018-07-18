@@ -1,0 +1,29 @@
+.search-form-wrapper {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.search-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  font-size: 85%;
+}
+.search-options .search-option:not(:first-child) {
+  margin-left:15px;
+}
+.search-options label {
+  display: inline-block;
+}
+
+#content .keymatch-results,
+#content .search-results {
+  margin-left: 0;
+  margin-right: 0;
+}
+#content .keymatch-results h3,
+#content .search-results h3 {
+  font-style: normal;
+}
+.search-results .google-appliance-info {
+  word-break: break-all;
+}

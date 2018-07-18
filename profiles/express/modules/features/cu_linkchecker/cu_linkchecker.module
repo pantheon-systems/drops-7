@@ -1,0 +1,62 @@
+<?php
+/**
+ * @file
+ * Code for the CU Linkchecker feature.
+ */
+
+include_once 'cu_linkchecker.features.inc';
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_linkchecker_page_alter(&$page) {
+  if (current_path() == 'admin/reports/linkchecker' && variable_get('linkchecker_disable_cron_link_check', 0)) {
+    drupal_set_message('Link checking has been temporarily disabled on your site. Links will not be checked again until an administrator turns back on the functionality.', 'warning');
+  }
+}
+
+function cu_linkchecker_menu() {
+  $items = array();
+  $items['admin/settings/seo/linkchecker-analyze'] = array(
+    'title' => 'Link Checker - Analyze Content',
+    'description' => 'Scan your content for links. Run this if you have just enabled the SEO Bundle.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_linkchecker_analyze_form'),
+    'access arguments' => array('access broken links report'),
+    'weight' => 25,
+  );
+  return $items;
+}
+
+function cu_linkchecker_analyze_form() {
+  $form = array();
+  $link_report_link = l('Broken Links Report', 'admin/reports/linkchecker');
+  $form['description'] = array(
+    '#markup' => '<p>Analyze your site content for links. The links will be queued to check for broken links. After the initial analysis, all new or modified links are automatically added to the queue. Broken links will appear in the ' . $link_report_link . '.</p>',
+  );
+  $form['clear']['linkchecker_analyze'] = array(
+    '#type' => 'submit',
+    '#value' => t('Analyze content for links'),
+    '#submit' => array('cu_linkchecker_analyze_form_submit'),
+  );
+  return $form;
+}
+
+function cu_linkchecker_analyze_form_submit($form, $form_state) {
+  module_load_include('inc', 'linkchecker', 'linkchecker.admin');
+  linkchecker_analyze_links_submit($form, $form_state);
+  variable_set('cu_linkchecker_status', 1);
+  drupal_set_message('The site\'s content has been analyzed for links and the links have been added to the link checker queue.');
+}
+
+/**
+ * Implements hook_node_type_insert().
+ *
+ * Enable linkchecking when new content types are added.
+ */
+function cu_linkchecker_node_type_insert($info) {
+  if ($info->type !== 'video' && $info->type !== 'file') {
+    variable_set('linkchecker_scan_node_' . $info->type, 1);
+  }
+  watchdog('cu_linkchecker', 'Linkchecker has been enabled on the :type content type.', array(':type' => $info->type));
+}

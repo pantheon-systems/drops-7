@@ -1,0 +1,52 @@
+// Layout settings form
+@media (min-width: 960px) {
+  #cu-layout-settings-form .form-checkboxes {
+    display: table;
+  }
+  #cu-layout-settings-form .form-checkboxes .form-type-checkbox {
+    display: table-cell;
+    padding:10px;
+  }
+}
+.feature-layout-wrapper {
+  //padding-bottom: 20px;
+  .feature-layout-hero-wrapper {
+    position: relative;
+    width: 100vw;
+    max-width: none;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    height: auto;
+    display: block;
+    clear:both;
+    .layout-boxed &,
+    .express-layout-boxed & {
+      max-width:1200px;
+      margin: 0 auto;
+      left:-20px;
+      right: auto;
+    }
+  }
+}
+.feature-layout-wrapper.feature-layout-wrapper-has-callouts {
+  @media screen and (min-width:960px) {
+    & {
+      padding-right:280px;
+      .feature-layout-hero-wrapper {
+        left: calc(50% + 140px);
+
+        .layout-boxed &,
+        .express-layout-boxed & {
+          left: -20px;
+        }
+      }
+    }
+  }
+
+}
+.feature-layout-hero-wrapper img.image-hero {
+  max-width: none;
+  width: 100%;
+}

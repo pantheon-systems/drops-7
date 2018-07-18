@@ -1,0 +1,7 @@
+name = Title Image
+description = Context reaction for styling the page title with an image
+core = 7.x
+version = 7.x-1.0
+package = CU-Advanced Design
+
+dependencies[] = context

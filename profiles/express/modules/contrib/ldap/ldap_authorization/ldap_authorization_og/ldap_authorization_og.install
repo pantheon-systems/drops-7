@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP Authorization OG module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_authorization_og_uninstall() {
+  module_load_include('inc', 'ldap_servers', 'ldap_servers.user_data_remove');
+  batch_set(ldap_severs_user_data_setup_batch('og_group'));
+  $batch =& batch_get();
+}
+  

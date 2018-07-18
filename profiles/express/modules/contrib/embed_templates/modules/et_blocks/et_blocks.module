@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * @file
+ * Contains Drupal hooks for Embed Templates - Blocks module.
+ */
+
+/**
+ * Implements hook_block_info().
+ *
+ * @return array
+ *   Block definition.
+ */
+function et_blocks_block_info() {
+  $options = array(
+    'renderer' => array('block'),
+  );
+
+  $embeds = embed_templates_get_embeds($options);
+  $blocks = array();
+
+  foreach ($embeds as $value) {
+    // Add block with type and ID of entity.
+    $blocks['et_blocks_' . $value->id] = array(
+      'info' => t('ET Block: ' . $value->name),
+    );
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * @param string $delta
+ *   Machine name of the block.
+ *
+ * @return array|null
+ *   Render array for the block.
+ */
+function et_blocks_block_view($delta = '') {
+
+  // We only care about deltas with the et_blocks prefix.
+  if (strpos($delta, 'et_blocks_') !== FALSE) {
+
+    // Query for the block embed entity.
+    $id = explode('et_blocks_', $delta);
+
+    // If ID isn't numeric, then we can't do the query and need to return.
+    if (!is_numeric($id[1])) {
+      return NULL;
+    }
+
+    $options = array(
+      'renderer' => array('block'),
+      'id' => array($id[1]),
+    );
+    $embed = embed_templates_get_embeds($options);
+    // Embeds are keyed by ID so we need to shift off first element.
+    $match = array_shift($embed);
+
+    // Render embed if it is published and user has access to view.
+    if ($match && $match->status == 'published' && user_access('view ' . $match->type . ' embeds')) {
+      $block['content'] = theme('embed_templates_' . $match->type, unserialize($match->data));
+      return $block;
+    }
+  }
+}
+
+/**
+ * Takes a string and returns values between start and end.
+ *
+ * @param string $string
+ *   String to manipulate.
+ * @param int $start
+ *   Start of the characters to look for.
+ * @param int $end
+ *   End of the characters to look for.
+ *
+ * @return string
+ *   String found between those two characters.
+ */
+function get_string_between($string, $start, $end) {
+  $string = ' ' . $string;
+  $ini = strpos($string, $start);
+  if ($ini == 0) {
+    return '';
+  }
+  $ini += strlen($start);
+  $len = strpos($string, $end, $ini) - $ini;
+  return substr($string, $ini, $len);
+}

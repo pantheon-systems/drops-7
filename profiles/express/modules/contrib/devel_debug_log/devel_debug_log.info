@@ -1,0 +1,12 @@
+name = Devel debug log
+description = Creates a page that shows debug messages.
+package = Development
+core = 7.x
+dependencies[] = devel
+
+; Information added by Drupal.org packaging script on 2014-06-02
+version = "7.x-1.2"
+core = "7.x"
+project = "devel_debug_log"
+datestamp = "1401723828"
+

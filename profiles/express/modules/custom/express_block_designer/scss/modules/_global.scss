@@ -1,0 +1,55 @@
+@mixin block($color) {
+
+  // @include rounded($radius: $radius_small);
+  padding:10px;
+  @media screen and (min-width:960px) {
+    padding:20px;
+  }
+  background-color: $color;
+  //color:#fff;
+  & > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@mixin styleRadio($label: null, $color: null, $border: null, $underline: null) {
+  //position: relative;
+  height: 130px;
+  display: inline-block;
+
+  &:after {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @if $label {
+      content: 'Example Text';
+    }
+    @else {
+      content: 'Example Text';
+    }
+    content: ' ';
+    @if $color {
+      @if lightness($color) > lightness(#aaa) {
+        color: #000;
+      }
+      @else {
+        color: #fff;
+      }
+    }
+
+    height:100px;
+    position: absolute;
+    bottom:0;
+    right:10px;
+    left:10px;
+    @if $color {
+      background-color: $color;
+    }
+    @if $border {
+      border:1px solid $border;
+    }
+    @if $underline {
+      border-bottom:1px solid $underline;
+    }
+  }
+}

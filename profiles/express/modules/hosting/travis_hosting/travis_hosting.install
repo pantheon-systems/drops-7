@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for travis_hosting module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function travis_hosting_install() {
+  // Setting performance logging variables.
+  variable_set('performance_detail', 1);
+  variable_set('performance_nodrush', 1);
+  variable_set('performance_threshold_accesses', '2');
+
+  // Don't check for summary detail since not using in report.
+  // variable_set('performance_summary', 1).
+  // Don't add query logging since it adds memory overhead.
+  // variable_set('performance_query', 1).
+}

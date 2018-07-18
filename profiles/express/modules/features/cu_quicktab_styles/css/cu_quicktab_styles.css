@@ -1,0 +1,462 @@
+.quicktabs-wrapper ul.quicktabs-tabs li {
+  display: inline-block;
+}
+.quicktabs_main {
+  clear: both;
+}
+.quicktabs-style-vertical .quicktabs_main {
+  clear: none;
+}
+
+/* Line */
+
+div.quicktabs-style-line .item-list ul.quicktabs-style-line {
+  height: 31px;
+  margin: 1.5em 0;
+  /* overflow: hidden; */
+  background-image: url(tabs/tabs-background.png);
+  background-position: bottom center;
+  background-repeat: repeat-x;
+  padding:0;
+}
+div.quicktabs-style-line .item-list ul.quicktabs-style-line li {
+  display: inline;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+div.quicktabs-style-line .item-list ul.quicktabs-style-line li a {
+
+
+  color: #666;
+  display: block;
+  float: left;
+  line-height: 32px;
+  margin: 0 2px 0 0;
+  padding: 0 10px;
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-top-right-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-topright: 3px;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+div.quicktabs-style-line .item-list ul.quicktabs-style-line li a:hover {
+  text-decoration: none;
+  background-color: #ddd;
+}
+div.quicktabs-style-line .item-list ul.quicktabs-style-line li.active a {
+  background-color: #fff;
+  background-image: none;
+  border:1px solid #ddd;
+  border-bottom: none;
+  color: #333;
+  line-height: 30px;
+}
+
+
+
+
+/* Circles */
+
+div.quicktabs-style-circles .item-list ul.quicktabs-style-circles {
+  border-bottom:1px solid #363636;
+  margin: 1.5em 0;
+  /* overflow: hidden; */
+}
+div.quicktabs-style-circles .item-list ul.quicktabs-style-circles li {
+  display: inline;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+div.quicktabs-style-circles .item-list ul.quicktabs-style-circles li a {
+  background-image:url(circles/circles.png);
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  color: #666;
+  display: block;
+  float: left;
+  line-height: 100%;
+  margin: 0 5px;
+  padding: 8px;
+}
+div.quicktabs-style-circles .item-list ul.quicktabs-style-circles li a:hover {
+  text-decoration: none;
+}
+div.quicktabs-style-circles .item-list ul.quicktabs-style-circles li.active a {
+  background-image:url(circles/circles-active.png);
+
+  color: #333;
+
+}
+.quicktabs-tabpage {
+}
+
+
+/* Dark */
+
+div.quicktabs-style-dark.quicktabs-wrapper {
+  background-color: #444444;
+    padding:10px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+
+}
+
+
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs {
+  height:25px;
+  margin: 0;
+  padding:0 10px;
+}
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li {
+  margin: 0;
+  padding: 0;
+}
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li a {
+  color:#fff;
+  display: block;
+  float: left;
+  font-size: 85%;
+  line-height: 25px;
+  margin-right:5px;
+  padding:0 5px;
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-top-right-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-topright: 3px;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li a:hover {
+  text-decoration: none;
+}
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li.active a,
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li.active a:hover,
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li.active a:focus,
+div.quicktabs-style-dark .item-list ul.quicktabs-tabs li.active a:active {
+  background-color: #fff;
+  color:#363636;
+  font-weight: 600;
+}
+div.quicktabs-style-dark .quicktabs_main {
+  background: #fff;
+  padding:10px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+.quicktabs-tabpage {
+}
+
+/* Minimal */
+div.quicktabs-style-minimal {
+  border: 1px solid #e7e7e7;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  border-radius: 2px;
+}
+div.quicktabs-style-minimal div.quicktabs-style-minimal {
+  border: none;
+}
+div.quicktabs-style-minimal .item-list ul.quicktabs-style-minimal {
+  border-bottom: 1px solid #e7e7e7;
+  /* overflow: hidden; */
+  padding: 0;
+  margin: 0;
+}
+div.quicktabs-style-minimal .item-list ul.quicktabs-style-minimal li {
+  padding: 0;
+  margin: 0;
+}
+div.quicktabs-style-minimal .item-list ul.quicktabs-style-minimal li a {
+  line-height: 20px;
+  margin: 10px 0;
+  display: block;
+  float: left;
+  border-left:1px solid #e7e7e7;
+  padding: 0 10px;
+  color: #666;
+}
+div.quicktabs-style-minimal .item-list ul.quicktabs-style-minimal li.first a {
+  border: none;
+}
+div.quicktabs-style-minimal .item-list ul.quicktabs-style-minimal li.active a {
+  color: #333;
+}
+div.quicktabs-style-minimal .quicktabs-tabpage  {
+  padding:20px 20px 10px 20px;
+}
+div.quicktabs-style-minimal .quicktabs-tabpage .block {
+  margin-bottom: 0;
+}
+
+/* Simple */
+
+div.quicktabs-style-simple .item-list ul.quicktabs-style-simple {
+  /* overflow: hidden; */
+  margin: 0;
+  padding: 0;
+  padding-left: 1px;
+  height: 32px;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+}
+div.quicktabs-style-simple .item-list ul.quicktabs-style-simple li {
+  margin: 0;
+  padding: 0;
+  margin-left: -1px;
+  float: left;
+  display: block;
+}
+div.quicktabs-style-simple .item-list ul.quicktabs-style-simple li a {
+  color: #666;
+  display: block;
+  float: left;
+  line-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  background: #f3f3f3;
+  border: 1px solid #e7e7e7;
+  position: relative;
+}
+div.quicktabs-style-simple .item-list ul.quicktabs-style-simple li.active a {
+  background: #fff;
+  border-bottom:none;
+  color: #333;
+  height: 33px;
+}
+div.quicktabs-style-simple .quicktabs-tabpage  {
+  padding:20px 20px 10px 20px;
+  border:1px solid #e7e7e7;
+}
+div.quicktabs-style-simple .quicktabs-tabpage .block {
+  margin-bottom: 0;
+}
+
+
+/* Tabs */
+
+div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs {
+  background-image: url(tabs/tabs-background.png);
+  background-position: bottom center;
+  background-repeat: repeat-x;
+  height: 26px;
+  margin: 1.5em 0;
+  /* overflow: hidden; */
+
+}
+div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs li {
+  display: inline;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs li a {
+  background-image:url(tabs/tabs-tab-background.png);
+  background-position: bottom center;
+  background-repeat: repeat-x;
+  border:1px solid #ddd;
+  border-bottom: none;
+  color: #666;
+  display: block;
+  float: left;
+  line-height: 25px;
+  margin: 0 5px;
+  padding: 0 8px;
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-top-right-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-topright: 3px;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs li a:hover {
+  text-decoration: none;
+}
+div.quicktabs-style-tabs .item-list ul.quicktabs-style-tabs li.active a {
+  background-color: #fff;
+  background-image: none;
+
+  color: #333;
+
+}
+.quicktabs-tabpage {
+}
+
+
+/* Triangles */
+
+
+div.quicktabs-style-triangles .item-list  ul.quicktabs-style-triangles {
+  border-bottom:1px solid #363636;
+  margin: 1.5em 0;
+  /* overflow: hidden; */
+
+}
+div.quicktabs-style-triangles .item-list  ul.quicktabs-style-triangles li {
+  display: inline;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+div.quicktabs-style-triangles .item-list  ul.quicktabs-style-triangles li a {
+  background-image:url(triangles/triangles.png);
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  color: #666;
+  display: block;
+  float: left;
+  line-height: 100%;
+  margin: 0 5px;
+  padding: 8px;
+}
+div.quicktabs-style-triangles .item-list ul.quicktabs-style-triangles li a:hover {
+  text-decoration: none;
+}
+div.quicktabs-style-triangles .item-list ul.quicktabs-style-triangles li.active a {
+  background-image:url(triangles/triangles-active.png);
+
+  color: #333;
+
+}
+.quicktabs-tabpage {
+}
+
+
+
+/**
+ * Override of misc/vertical-tabs.css.
+ */
+div.quicktabs-style-vertical.quicktabs-wrapper {
+  background-color: #fff;
+  background-image:url(vertical_tabs/vertical-tabs-background.png);
+  background-repeat: repeat-y;
+  border: 1px solid #ccc;
+  margin: 10px 0;
+  position: relative;
+}
+div.quicktabs-style-vertical.quicktabs-wrapper::after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs {
+  border-bottom: 1px solid #ccc;
+  float: left; /* LTR */
+  font-size: 85%;
+  margin: 0 -100% -1px 0; /* LTR */
+  padding: 0;
+  width: 150px;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li {
+  list-style: none;
+  list-style-image: none;
+  margin: 0;
+  padding:0;
+  display: block;
+  float: none;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li a {
+  border-top: 1px solid #ccc;
+  display: block;
+  float: none;
+  padding: 10px;
+  white-space: normal;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.first a {
+  border-top: 0;
+}
+
+
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li a:hover,
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li a:focus {
+  background: #d5d5d5;
+  text-decoration: none;
+  outline: 0;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.active a,
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.active a:hover,
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.active a:focus,
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.active a:active {
+  background: #fff;
+  border-right-color: #fff;
+  border-top: 1px solid #ccc;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.first.active a,
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.first.active a:hover {
+  border-top: 0;
+}
+div.quicktabs-style-vertical .item-list ul.quicktabs-tabs li.first.active a:focus strong {
+  text-decoration: underline;
+}
+div.quicktabs-style-vertical .quicktabs_main {
+  margin: 0 0 0 150px;
+  padding: 10px 15px 10px 0;
+}
+div.quicktabs-style-vertical .quicktabs-tabpage  {
+  padding:0 20px;
+}
+
+
+
+
+/* UI Tabs */
+
+.quicktabs-ui-wrapper ul.ui-tabs-nav {
+  /* overflow: hidden; */
+  margin: 0;
+  padding: 0;
+  padding-left: 1px;
+  height: 30px;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+  font-size:85%;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li {
+  margin: 0;
+  padding: 0;
+  margin-left: -1px;
+  float: left;
+  display: block;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li a {
+  color: #333;
+  display: block;
+  float: left;
+  line-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  background: #f3f3f3;
+  border: 1px solid #e7e7e7;
+  position: relative;
+   -webkit-transition: none 0.5s ease;
+  -moz-transition: none 0.5s ease;
+  -ms-transition: none 0.5s ease;
+  -o-transition: none 0.5s ease;
+  transition: none 0.5s ease;
+}
+.quicktabs-ui-wrapper ul.ui-tabs-nav li.ui-tabs-active a {
+  background: #fff;
+  border-bottom:1px solid #007BC8;
+  color: #333;
+  height: 30px;
+}
+.quicktabs-ui-wrapper .ui-tabs-panel  {
+  padding:20px 20px 10px 20px;
+  border:1px solid #e7e7e7;
+  background: #fff;
+  color: #333;
+}
+.quicktabs-ui-wrapper .ui-tabs-panel .block {
+  margin-bottom: 0;
+}

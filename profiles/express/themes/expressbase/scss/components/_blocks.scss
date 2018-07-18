@@ -1,0 +1,20 @@
+.block {
+  margin-bottom: 20px;
+}
+.region-post-title {
+  .block:last-child {
+    margin-bottom: 0;
+  }
+  .block-express-layout {
+    .block:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+#block-system-main,
+.block-express-layout {
+  margin-bottom: 0;
+}
+.new-block-row {
+  clear: both;
+}

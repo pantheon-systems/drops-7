@@ -1,0 +1,314 @@
+<?php
+
+include_once 'cu_redirect.features.inc';
+
+/**
+ * Implements hook_menu().
+ *
+ * Adds menu tab to redirect screens for deleting redirects.
+ */
+function cu_redirect_menu() {
+  $items = array();
+  $items['admin/config/search/redirect/delete'] = array(
+    'title' => 'Delete redirects',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_redirect_delete_form'),
+    'access arguments' => array('administer redirects'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  return $items;
+}
+
+function cu_redirect_permission() {
+  return array(
+    'view redirects' => array(
+      'title' => t('view redirects'),
+      'description' => t('View redirects.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_redirect_validate().
+ *
+ * @param $redirect
+ * @param $form
+ * @param $form_state
+ */
+function cu_redirect_redirect_validate($redirect, $form, $form_state) {
+  // Set error if user is trying to use the frontpage as the source for a redirect.
+  if ($redirect->source == variable_get('site_frontpage', 'node')) {
+    form_set_error('cu_redirect', t('The redirect source "@from" cannot be the same path as the homepage.', array('@from' => $redirect->source)));
+  }
+}
+
+/**
+ * Adds a redirect if none exists.
+ */
+function cu_redirect_add_redirect($source = NULL, $destination = NULL) {
+  if ($source == NULL || $destination == NULL) {
+    return;
+  }
+  // Make redirect if none exists.
+  if (_cu_redirect_check_existing($source)) {
+    _cu_redirect_set_redirect($source, $destination);
+  }
+}
+
+/**
+ * Check for existing redirect.
+ */
+function _cu_redirect_check_existing($source = NULL) {
+  // Get internal path.
+  drupal_get_normal_path($source);
+
+  // Check for existing redirect.
+  $query = db_select('redirect', 'r');
+  $query->addField('r', 'source');
+  $query->condition('r.source', $source);
+  $redirect = $query->execute()->fetchCol();
+
+  if (empty($redirect)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Make a redirect.
+ */
+function _cu_redirect_set_redirect($source = NULL, $destination = NULL) {
+  try {
+    $redirect = new stdClass();
+    redirect_object_prepare($redirect);
+    $redirect->source = $source;
+    $redirect->redirect = $destination;
+    // Always make redirects from UID 1.
+    $redirect->uid = 1;
+    redirect_save($redirect);
+  } catch (Exception $e) {
+    watchdog_exception('cu_redirect', $e);
+    throw $e;
+  }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Delete any redirects created by UID 1 after 30 days if they haven't been
+ * accessed.
+ *
+ * @return mixed
+ * @throws \Exception
+ */
+function cu_redirect_cron() {
+
+  // If site hasn't launched, don't delete redirects.
+  if (variable_get('cu_inventory_status', NULL) != 'launched') {
+    return;
+  }
+
+  // Get all redirects created by UID 1 that haven't been accessed in 365 days.
+  $interval = 86400 * 365;
+  $query = db_select('redirect');
+  $query->addField('redirect', 'rid');
+  $query->condition('uid', 1, '=');
+  $query->condition('access', REQUEST_TIME - $interval, '<');
+  $query->addTag('redirect_purge');
+  $rids = $query->execute()->fetchCol();
+
+  // Delete any redirects that are returned.
+  if (count($rids)) {
+    // Since this function is in a module file, no include is necessary.
+    redirect_delete_multiple($rids);
+    watchdog('cu_redirect', format_plural(count($rids), 'Removed 1 inactive redirect from the database.', 'Removed @count inactive redirects from the database.'));
+  }
+}
+
+/**
+ * Submit handler for clear stale links submit button.
+ */
+function cu_redirect_unaccessed_links_submit($form, &$form_state) {
+  drupal_goto('admin/config/search/redirect/delete');
+}
+
+/**
+ * Implements hook_form().
+ *
+ * Callback for admin/config/search/redirect/delete
+ * Form for deleting unaccessed redirects.
+ */
+function cu_redirect_delete_form($form, &$form_state) {
+  if (isset($form_state['values']['submit']) && empty($form_state['values']['confirm'])) {
+    return cu_redirect_delete_form_confirm();
+  }
+  $form['description'] = array(
+    '#markup' => '<p>Your site may contain redirects that have never been accessed. Continue to delete all unaccessed redirects.</p>',
+  );
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Continue',
+    '#submit' => array('cu_redirect_delete_form_submit'),
+  );
+
+  return $form;
+}
+function cu_redirect_delete_form_confirm($form, &$form_state) {
+  $form = confirm_form($form, t('Are you sure you want to delete all unaccessed redirects? This action cannot be undone.'), 'admin/config/search/redirect', '', t('Delete'), t('Cancel'), 'confirm redirect delete');
+  return $form;
+}
+/**
+ * Submit function for cu_redirect_delete_form()
+ */
+function cu_redirect_delete_form_submit($form, &$form_state) {
+  if (empty($form_state['values']['confirm redirect delete'])) {
+    // We need to rebuild the form to go to a second step. For example, to
+    // show the confirmation form for the deletion of redirects.
+    $form_state['rebuild'] = TRUE;
+  }
+  else {
+    $query = db_select('redirect');
+    $query->addField('redirect', 'rid');
+    //$query->condition('uid', 1, '=');
+    $query->condition('access', 0, '=');
+    $query->addTag('redirect_purge');
+    $rids = $query->execute()->fetchCol();
+
+    // Delete any redirects that are returned.
+    if (count($rids)) {
+      // Since this function is in a module file, no include is necessary.
+      redirect_delete_multiple($rids);
+      watchdog('cu_redirect', format_plural(count($rids), 'Removed 1 inactive redirect from the database.', 'Removed @count inactive redirects from the database.'));
+      drupal_set_message('Redirects that were never accessed have been cleared.');
+    }
+    else {
+      drupal_set_message('There are no redirects that were never accessed. No redirects have been removed.', 'warning');
+    }
+    $form_state['redirect'] = 'admin/config/search/redirect';
+  }
+}
+
+/**
+ * Cancel function for cu_redirect_delete_form().
+ */
+function cu_redirect_delete_form_cancel($form, &$form_state) {
+  $form_state['redirect'] = 'admin/config/search/redirect';
+}
+
+/**
+ * Implements hook_redirect_save().
+ *
+ * @param $redirect
+ *   The redirect that is being inserted or updated.
+ */
+function cu_redirect_redirect_presave($redirect) {
+  // If redirect is made from node/add or node/edit page, make UID admin.
+  // This is for cleaning up non-user created redirects
+  if (strpos(current_path(), 'node') == 0) {
+    $redirect->uid = 1;
+  }
+
+  // Make new redirects have a count of one to avoid them being deleted.
+  // This avoids applying a patch to the redirect module.
+  // Explanation of bug: https://www.drupal.org/node/1396446
+  if ($redirect->is_new == TRUE) {
+    $redirect->count = 1;
+    $redirect->access = REQUEST_TIME;
+  }
+}
+
+/**
+ * Implements hook_form_FORMID_alter().
+ *
+ * Adds the curret site path as a prefix when creating a URL alias
+ */
+function cu_redirect_form_node_form_alter(&$form, $form_state)
+{
+  $form['path']['alias']['#field_prefix'] = $GLOBALS['base_url'] . '/' . (variable_get('clean_url', 0) ? '' : '?q=');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove 300 redirect option from form.
+ */
+function cu_redirect_form_redirect_edit_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form['advanced']['status_code'])) {
+    unset($form['advanced']['status_code']['#options'][300]);
+  }
+
+
+}
+
+/**
+ * Implements hook_redirect_insert().
+ *
+ * Displays a message on redirect creation.
+ *
+ * @param object $redirect
+ *   The redirect object that is being inserted.
+ */
+function cu_redirect_redirect_insert($redirect) {
+  drupal_set_message(t('Redirect from !source to !redirect was created.', array(
+    '!source' => l($redirect->source, $redirect->source),
+    '!redirect' => $redirect->redirect ? l($redirect->redirect, $redirect->redirect) : l('<front>', '<front>')
+  )));
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function cu_redirect_menu_alter(&$items) {
+  $items['admin/config/search/redirect']['title'] = t('Redirects');
+  $items['admin/config/search/redirect/list']['title'] = t('URL');
+  $items['admin/config/search/redirect/wildcards'] = $items['admin/config/search/match_redirect'];
+  $items['admin/config/search/redirect/wildcards']['title'] = t('Wildcards');
+  $items['admin/config/search/redirect/wildcards']['type'] = MENU_LOCAL_TASK;
+  $items['admin/config/search/redirect/wildcards']['weight'] = 12;
+  $items['admin/config/search/redirect/wildcards']['access arguments'] = array('view redirects');
+  //unset($items['admin/config/search/match_redirect']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function cu_redirect_form_match_redirect_list_form_alter(&$form, &$form_state, $form_id) {
+  $dev = user_role_load_by_name('developer');
+  $admin = user_role_load_by_name('administrator');
+
+  if (!user_has_role($dev->rid) && !user_has_role($admin->rid)) {
+    $redirects_count = $form['redirects'] ?? [];
+    foreach ($redirects_count as $key => $redirect) {
+      $form['redirects'][$key]['operations']['#type'] = 'hidden';
+    }
+    $form['actions']['#type'] = 'hidden';
+  }
+}
+
+/**
+ * Implements hook_node_validate().
+ *
+ * Prevent users from entering absolute paths on node forms.
+ */
+function cu_redirect_node_validate($node, $form, &$form_state) {
+    $path_info = $form_state['values']['path'] ?? NULL;
+    $validation_error_message = "Enter a custom path by which this content can be accessed. Do not enter the full url.";
+    
+    if (isset($path_info['alias']) && !empty($path_info['alias'])) {
+        if (strpos($path_info['alias'], '://') !== FALSE) {
+            form_set_error('path', $validation_error_message);
+        }
+
+        $parsed_path = parse_url($path_info['alias']);
+
+        // Look for periods in URLs before a slash.
+        // if ((int)strpos($parsed_path['path'], '.') < (int)strpos($parsed_path['path'], '/')) {
+        // Looking only for periods might be good enough for now?
+        if ((int)strpos($parsed_path['path'], '.')) {
+            form_set_error('path', $validation_error_message);
+        }
+    }
+}

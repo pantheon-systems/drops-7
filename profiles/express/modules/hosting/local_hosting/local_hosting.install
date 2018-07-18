@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for local_hosting module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function local_hosting_install() {
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'local_hosting');
+  $settings_file_path = DRUPAL_ROOT . '/sites/default/';
+  $file_content = '
+/**
+ * Include a post local settings file if it exists.
+ */
+$local_post_settings = dirname(__FILE__) . \'/settings.local.php\';
+if (file_exists($local_post_settings)) {
+  include $local_post_settings;
+}
+';
+
+  // Set settings file to allow writes.
+  shell_exec('chmod -R 777 ' . $settings_file_path);
+
+  // Load local settings file from settings.php.
+  file_put_contents($settings_file_path . 'settings.php', $file_content, FILE_APPEND | LOCK_EX);
+
+  // Copy local settings file over.
+  shell_exec('cp ' . $module_path . '/settings.local.php ' . $settings_file_path);
+}

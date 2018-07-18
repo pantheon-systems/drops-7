@@ -1,0 +1,78 @@
+<?php
+/**
+ * @file
+ * Code for the Photo Gallery feature.
+ */
+
+include_once('photo_gallery.features.inc');
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got node--photo-gallery.tpl.php in our module
+ * directory.
+ */
+function photo_gallery_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'photo_gallery');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+function photo_gallery_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'photo_gallery') . '/css/photo-gallery.css');
+}
+/**
+ *  Implements hook_form_FORM_ID_alter.
+ */
+function photo_gallery_form_photo_gallery_node_form_alter(&$form, &$form_state, $form_id) {
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
+}
+
+/**
+ * Implements module_preprocess_page().
+ */
+function photo_gallery_preprocess_node(&$vars) {
+  if ($vars['node']->type == 'page') {
+    // Add thumbnail to OpenGraph meta for facebook sharing
+    if ($vars['view_mode'] == 'full' && !empty($vars['field_photo'])) {
+      // Get node thumbnail
+      $image = express_get_node_thumbnail($vars['node'], 'field_photo', 'medium');
+
+      // build and add meta element
+      $element = array(
+        '#tag' => 'meta', // The #tag is the html tag -
+        '#attributes' => array( // Set up an array of attributes inside the tag
+          'property' => 'og:image',
+          'content' => $image['path'],
+        ),
+      );
+      drupal_add_html_head($element, 'open_graph_image');
+      $og_parameters = array(
+        'width' => $image['info']['width'],
+        'height' => $image['info']['height'],
+        'type' => $image['info']['mime_type'],
+      );
+      foreach ($og_parameters as $key => $param) {
+        $element = array(
+          '#tag' => 'meta', // The #tag is the html tag -
+          '#attributes' => array( // Set up an array of attributes inside the tag
+            'property' => 'og:image:' . $key,
+            'content' => $param,
+          ),
+        );
+        drupal_add_html_head($element, 'open_graph_image_' . $key);
+      }
+    }
+  }
+}

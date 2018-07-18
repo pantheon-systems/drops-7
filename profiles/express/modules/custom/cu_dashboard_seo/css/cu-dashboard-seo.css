@@ -1,0 +1,19 @@
+.seo-checklist-item {
+  margin-bottom: 20px;
+  border:1px solid #e7e7e7;
+  padding:10px;
+}
+.seo-dashboard-container .fa-times {
+  color: #e51c23;
+}
+
+.seo-dashboard-container .fa-check {
+  color: #1D881A;
+}
+
+.seo-checklist-item h3 {
+  margin-bottom: 10px;
+}
+.seo-checklist-item p:last-child {
+  margin-bottom: 0;
+}

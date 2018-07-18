@@ -1,0 +1,327 @@
+<?php
+
+/**
+ * @file
+ * Run cron tasks to check the activity of the site, notify site_owners, and take the site down if it meets the criteria.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add additional validation to the invite.
+ */
+function cu_atlas_form_user_external_invite_form_alter(&$form, &$form_state, $form_id) {
+  $form['#validate'][] = 'cu_atlas_form_user_external_invite_form_validate';
+}
+
+/**
+ * Change site from Available to Installed if Available when an invite is sent.
+ */
+function cu_atlas_form_user_external_invite_form_validate($form, &$form_state) {
+  $atlas_id = variable_get('atlas_id', FALSE);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  if ($site_array && $site_array['status'] == 'available') {
+    $site_data['_etag'] = $site_array['_etag'];
+    $site_data['status'] = 'installing';
+    atlas_api_request('sites', $atlas_id, 'PATCH', $site_data);
+    drupal_set_message('Site status updated to Installing');
+  }
+}
+
+/**
+ * Recursively disable form elements.
+ */
+function _cu_atlas_recursive(&$element) {
+  foreach (element_children($element) as $name) {
+    $element[$name]['#attributes']['disabled'] = 'disabled';
+    _cu_atlas_recursive($element[$name]);
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_atlas_statistics().
+ * IMPORTANT! If you are using a Boolean type for a field in Atlas, you need to
+ * return FALSE rather than a null value.
+ */
+function cu_atlas_atlas_statistics() {
+  $statistics_data = array();
+
+  // Count Nodes.
+  $node_query = db_select('node', 'n');
+  $node_query->fields('n', array('type'));
+  $node_query->addExpression('COUNT(type)', 'count_type');
+  $node_query->addExpression('MAX(changed)', 'max_changed');
+  $node_query->groupBy('n.type');
+  $node_query->orderBy('max_changed', 'DESC');
+
+  $node_result = $node_query->execute();
+
+  // Counts for each node type.
+  $all_node_types = $node_result->fetchAll();
+  $node_type_counts = array();
+  foreach ($all_node_types as $object) {
+    $node_type_counts[$object->type] = $object->count_type;
+  }
+
+  $node_key_white_list = array(
+    'page',
+    'file',
+    'faqs',
+    'content_list_page',
+    'webform',
+    'article',
+    'article_list_page',
+    'person',
+    'person_list_page',
+    'photo_gallery',
+  );
+  $node_counts_white_listed = array_intersect_key($node_type_counts, array_flip($node_key_white_list));
+  $node_types_off_list = array_diff_key($node_type_counts, array_flip($node_key_white_list));
+
+  if (!empty($node_counts_white_listed)) {
+    $statistics_data['nodes_by_type'] = $node_counts_white_listed;
+  }
+  if (!empty($node_types_off_list)) {
+    $statistics_data['nodes_other'] = implode(", ", array_keys($node_types_off_list));
+  }
+
+  // Count Beans.
+  $bean_query = db_select('bean', 'b');
+  $bean_query->fields('b', array('type'));
+  $bean_query->addExpression('COUNT(type)', 'count_bean');
+  $bean_query->groupBy('b.type');
+
+  $bean_result = $bean_query->execute();
+  // Counts for each bean type.
+  $all_beans = $bean_result->fetchAll();
+
+  $bean_counts = array();
+  foreach ($all_beans as $object) {
+    $bean_counts[$object->type] = $object->count_bean;
+  }
+  // Total up the number of nodes.
+  $number_beans = array_sum($bean_counts);
+  if (empty($number_beans)) {
+    $number_beans = 0;
+  }
+  if ($number_beans > 0) {
+    $statistics_data['beans_total'] = $number_beans;
+  }
+
+  $bean_key_white_list = array(
+    'hero_unit',
+    'slider',
+    'block',
+    'content_list',
+    'feature_callout',
+    'quicktab',
+    'video_reveal',
+    'block_row',
+    'block_section',
+    'cu_events_calendar_block',
+    'events_calendar_grid',
+    'rss',
+    'articles',
+    'article_feature',
+    'article_grid',
+    'article_slider',
+    'people_list_block',
+    'social_links',
+    'facebook_activity',
+    'facebook_like_button',
+    'twitter_block',
+  );
+  $bean_counts_white_listed = array_intersect_key($bean_counts, array_flip($bean_key_white_list));
+  $bean_types_off_list = array_diff_key($bean_counts, array_flip($bean_key_white_list));
+
+  if (!empty($bean_counts_white_listed)) {
+    $statistics_data['beans_by_type'] = $bean_counts_white_listed;
+  }
+  if (!empty($bean_types_off_list)) {
+    $statistics_data['beans_other'] = implode(", ", array_keys($bean_types_off_list));
+  }
+
+  // String variables.
+  $variables_to_check = array(
+    'site_403',
+    'site_404',
+    'theme_default',
+    'ga_account',
+    'livechat_license_number',
+    'cron_last',
+  );
+  foreach ($variables_to_check as $variable) {
+    // Make sure variable has a value.
+    if (variable_get($variable)) {
+      $variable_name = 'variable_' . $variable;
+      $statistics_data[$variable_name] = variable_get($variable, '');
+    }
+  }
+
+  // Profile + Core code version.
+  if (module_exists('express_version')) {
+    $statistics_data['express_code_version'] = express_version_get_version();
+  }
+
+  // Core schema version.
+  $version = _get_installed_schema_version(variable_get('express_core_version', 'cu_core'));
+  $statistics_data['express_core_schema_version'] = (int) $version;
+
+  // Module Manager.
+  if (module_exists('profile_module_manager')) {
+    if ($diff = profile_module_manager_is_config_ideal()) {
+      $checks = implode(", ", $diff);
+      $statistics_data['profile_module_manager'] = $checks;
+    }
+  }
+
+  // Custom Logo.
+  $white = variable_get('custom_white_logo');
+  $black = variable_get('custom_black_logo');
+  $retina = variable_get('custom_logo_retina');
+  if ((isset($white) && $white != 0) || (isset($black) && $black != 0) || (isset($retina) && $retina != 0)) {
+    $statistics_data['custom_logo_settings'] = TRUE;
+  }
+  if (empty($statistics_data['custom_logo_settings'])) {
+    $statistics_data['custom_logo_settings'] = FALSE;
+  }
+
+
+  // Check if the selected theme is responsive.
+  $is_responsive = theme_get_setting('alpha_responsive');
+  if ($is_responsive == NULL || $is_responsive == 0) {
+    $is_responsive = FALSE;
+  }
+  elseif ($is_responsive == 1) {
+    $is_responsive = TRUE;
+  }
+  $statistics_data['theme_is_responsive'] = $is_responsive;
+
+  if (_get_bundle_stats()) {
+    // Add report of stats related to bundles.
+    $statistics_data['bundles'] = _get_bundle_stats();
+  }
+
+  return $statistics_data;
+}
+
+/**
+ * Helper to return the schema_version of any module, theme, or profile.
+ *
+ * Because drupal_get_installed_schema_version() does not return profiles again
+ * at this bootstrap level as of 7.41.  SEE FIT-1165.
+ *
+ * @param string $project_name
+ *   String of the modules, theme or profile.
+ *
+ * @return int
+ *   Value from the schema_version column.
+ */
+function _get_installed_schema_version($project_name = NULL) {
+  $installed_schema_version = db_query("SELECT schema_version FROM {system} WHERE name = :name", array(':name' => $project_name))->fetchField();
+  return $installed_schema_version;
+}
+
+/**
+ * Callback function to return statistics relating to bundles.
+ *
+ * @return array
+ *   List of enabled bundles as an array.
+ */
+function _get_bundle_stats() {
+  $bundle_stats = array();
+  // Get enabled bundles.
+  $enabled_bundles = db_query("SELECT name, schema_version FROM {system} WHERE type = 'module' AND status = 1 AND name LIKE '%_bundle' ORDER BY weight ASC, name ASC")->fetchAllAssoc('name');
+  // Turn returned object into an array.
+  // Compare to list of Express bundles. We do not report for Express Plus
+  // bundles. They can hook in themselves.
+  $express_bundles = array(
+    'cu_advanced_content_bundle',
+    'cu_advanced_design_bundle',
+    'cu_advanced_layout_bundle',
+    'cu_events_bundle',
+    'cu_feeds_bundle',
+    'cu_forms_bundle',
+    'cu_news_bundle',
+    'cu_people_bundle',
+    'cu_photo_gallery_bundle',
+    'cu_seo_bundle',
+    'cu_social_media_bundle',
+    'cu_seo_admin_bundle',
+    'cu_test_content_admin_bundle',
+    'cu_debug_admin_bundle',
+  );
+
+  $other_bundles = array();
+
+  foreach ($enabled_bundles as $key => $bundle) {
+    if (in_array($bundle->name, $express_bundles)) {
+      $bundle_stats[$bundle->name] = array(
+        'schema_version' => $bundle->schema_version,
+      );
+    }
+
+    else {
+      // For non-express bundles concatenate bundle name and schema version as 'bundle_name - schema_version' .
+      array_push($other_bundles, $bundle->name . ' - ' . $bundle->schema_version);
+    }
+  }
+  // Concatenate strings in $other_bundles array to create one long string.
+  $bundle_stats['other'] = implode("; ", $other_bundles);
+  return $bundle_stats;
+}
+
+/**
+ * Custom version of https://www.drupal.org/project/disable_all_forms.
+ *
+ * Disable all form elements.
+ */
+function cu_atlas_init() {
+  global $base_url;
+  if (variable_get('atlas_status') == 'available') {
+    if (user_is_logged_in()) {
+      drupal_set_message(
+        t('Most forms are disabled because this site is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
+          array('@base_url' => $base_url)
+        ),
+        'warning');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_atlas_form_alter(&$form, &$form_state, $form_id) {
+  if (variable_get('atlas_status') == 'available') {
+    $exceptions = array(
+      'user_login',
+      'views_exposed_form',
+      'ctools_export_ui_list_form',
+      'user_external_invite_form',
+      'atlas_admin_settings',
+    );
+    if (!in_array($form_id, $exceptions)) {
+      $form['#after_build'][] = '_cu_atlas_recursive';
+    }
+  }
+}
+
+/**
+ * Implements hook_menu_alter.
+ *
+ * Bundle enable isn't an actual form, so we have to alter the page as well.
+ */
+function cu_atlas_page_alter(&$page) {
+  $onConfPage = strpos(current_path(), 'admin/settings/bundles/list/confirm');
+  if (variable_get('atlas_status') == 'available' && $onConfPage === 0) {
+    global $base_url;
+    drupal_set_message(
+      t('Enabling bundles has been disabled on this site while it is in the <i>available</i> status. <a href="@base_url/admin/config/development/atlas">Update Atlas Settings</a> or <a href="@base_url/admin/people/invite">Invite a User</a>',
+        array('@base_url' => $base_url)
+      ),
+      'error');
+    $page['content']['system_main']['main']['#markup'] = '<p>Enabling bundles has been disabled on this site while it is in the <i>available</i> status.</p><div class="btn btn-primary disabled">Confirm</div></a><a href="https://express.local/p12751474eb1/admin/settings/bundles/list/" title="Cancel"><div class="btn btn-default">Cancel</div>';
+  }
+}

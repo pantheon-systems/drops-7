@@ -1,0 +1,72 @@
+<?php
+
+function express_404_menu() {
+  $items['admin/reports/notfound'] = array(
+    'title' => 'Top 404s',
+    'description' => 'This page displays the top 404s for your site via Google Analytics Reports.',
+    'page callback' => 'express_404_page',
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function express_404_views_api() {
+  return array(
+    'api' => "3.0",
+  );
+}
+
+function express_404_page() {
+  $output = '';
+
+  $google_api = variable_get('google_analytics_reports_api_client_id');
+
+  if (isset($google_api)) {
+    $output = views_embed_view('404_pages', $display_id = 'block');
+  } else {
+    $output = t('No Google Analytics Reports API Client ID detected, you must contact a site owner in order to <a href="@url" target="_blank">authorize</a> your reports API.', array('@url' => url('admin/config/system/google-analytics-reports-api')));
+  }
+
+  return $output;
+}
+function express_404_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'access google analytics reports',
+    ),
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'content_editor' => array(
+      'access google analytics reports',
+    ),
+    'developer' => array(
+      'administer google analytics reports api',
+      'access google analytics reports',
+    ),
+    'edit_my_content' => array(
+      'access google analytics reports',
+    ),
+    'site_editor' => array(
+      'access google analytics reports',
+    ),
+    'site_owner' => array(
+      'administer google analytics reports api',
+      'access google analytics reports',
+    ),
+    'edit_only' => array(
+      'access google analytics reports',
+    ),
+    'access_manager' => array(
+    ),
+    'configuration_manager' => array(
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

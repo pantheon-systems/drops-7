@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Tests for Metatag for when i18n is enabled but not actually configured.
+ */
+
+/**
+ * Tests for Metatag for when i18n is enabled but not actually configured.
+ */
+class MetatagCoreWithI18nDisabledTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with i18n disabled',
+      'description' => 'Test Metatag integration with the i18n module enabled but the integration disabled.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need the i18n and i18n_strings modules.
+    $modules[] = 'i18n';
+    $modules[] = 'i18n_string';
+
+    // Enable all of the modules that are needed.
+    parent::setUp($modules);
+
+    // Add more locales.
+    $this->setupLocales();
+
+    // Set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      // From i18n.
+      'translate admin strings',
+      'translate user-defined strings',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Turn off i18n integration.
+    variable_set('metatag_i18n_disabled', TRUE);
+
+    // Reload the translations.
+    drupal_flush_all_caches();
+    module_load_include('admin.inc', 'i18n_string');
+    i18n_string_refresh_group('metatag');
+  }
+
+  /**
+   * Test translations of the output tags.
+   */
+  public function testI18nOutput() {
+    // Plan out the different translation string tests.
+    $string_en = 'Welcome to the homepage!';
+    $string_fr = 'Bonjour pour le homepage!';
+    $config_name = 'metatag:frontpage:title';
+
+    $this->searchTranslationPage('', $config_name);
+
+    // Confirm the string is not present yet.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Load the front page's meta tags.
+    $instance = 'global:frontpage';
+    $config = metatag_config_load($instance);
+
+    // Set something specific as the homepage.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('');
+    $this->assertResponse(200, 'Loaded the homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_en);
+
+    // Confirm the string is still not translatable.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Get the translation string lid for the front page's title.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertEqual($lid, 0, 'Did not find a locales_source string for the front page output title tag.');
+
+    // Load the French front page.
+    $this->drupalGet('fr');
+    $this->assertResponse(200, 'Loaded the French homepage.');
+
+    // Confirm the page's title is what we set it to.
+    $this->assertTitle($string_en);
+  }
+
+}

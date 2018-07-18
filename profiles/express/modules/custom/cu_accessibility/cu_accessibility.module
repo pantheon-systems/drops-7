@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * @file
+ * Module for accessibility
+ */
+
+/**
+ * Alter forms for field widgets provided by other modules.
+ *
+ * @param array $element
+ *   The field widget form element as constructed by hook_field_widget_form().
+ * @param string $form_state
+ *   An associative array containing the current state of the form.
+ * @param array $context
+ *   An associative array containing the following key-value pairs, matching the
+ *   arguments received by hook_field_widget_form():
+ *   - form: The form structure to which widgets are being attached. This may be
+ *     a full form structure, or a sub-element of a larger form.
+ *   - field: The field structure.
+ *   - instance: The field instance structure.
+ *   - langcode: The language associated with $items.
+ *   - items: Array of default values for this field.
+ *   - delta: The order of this item in the array of subelements (0, 1, 2, etc).
+ *
+ * Add a #process callback to the imagefield widget element so we can perform
+ * alters.
+ *
+ * @see hook_field_widget_form()
+ * @see hook_field_widget_WIDGET_TYPE_form_alter()
+ */
+function cu_accessibility_field_widget_form_alter(&$element, &$form_state, $context) {
+  // Add a css class to widget form elements for all fields of type mytype.
+  if ($context['field']['type'] == 'mytype') {
+    // Be sure not to overwrite existing attributes.
+    $element['#attributes']['class'][] = 'myclass';
+  }
+}
+
+/**
+ * Alter widget forms for a specific widget provided by another module.
+ *
+ * Modules can implement hook_field_widget_WIDGET_TYPE_form_alter() to modify a
+ * specific widget form, rather than using hook_field_widget_form_alter() and
+ * checking the widget type.
+ *
+ * @param array $element
+ *   The field widget form element as constructed by hook_field_widget_form().
+ * @param array $form_state
+ *   An associative array containing the current state of the form.
+ * @param array $context
+ *   An associative array containing the following key-value pairs, matching the
+ *   arguments received by hook_field_widget_form():
+ *   - "form": The form structure where widgets are being attached to. This
+ *     might be a full form structure, or a sub-element of a larger form.
+ *   - "field": The field structure.
+ *   - "instance": The field instance structure.
+ *   - "langcode": The language associated with $items.
+ *   - "items": Array of default values for this field.
+ *   - "delta": The order of this item in the array of subelements (0, 1, 2,
+ *     etc).
+ *
+ * @see hook_field_widget_form()
+ * @see hook_field_widget_form_alter()
+ */
+function cu_accessibility_field_widget_image_image_form_alter(&$element, &$form_state, $context) {
+  // Add the custom process function and validator to the image field.
+  foreach (element_children($element) as $delta) {
+    $element[$delta]['#element_validate'] = array('_accesible_img_validate','file_managed_file_validate');
+    $element[$delta]['#process'][] = 'cu_accessibility_imagefield_widget_process';
+  }
+}
+
+/**
+ * Element #process callback function.
+ */
+function cu_accessibility_imagefield_widget_process($element, &$form_state, $form) {
+  $instance = field_widget_instance($element, $form_state);
+  $settings = $instance['settings'];
+  // Make Alt field as required only if Alt field enabled and Image field is
+  // required.
+  $element['alt']['#required'] = (bool) $instance['required'] && $settings['alt_field'];
+  // Show Alt field and Title field on node creation form if Alt/Title fields
+  // enabled.
+  $element['alt']['#access'] = $settings['alt_field'];
+  $element['title']['#access'] = $settings['title_field'];
+  return $element;
+}
+
+/**
+ * Element validate function for image field.
+ */
+function _accesible_img_validate($element, &$form_state, $form) {
+  // Alternate text required when field enabled and a file exists.
+  if ($element['alt']['#access'] && $element['#file'] && empty($element['alt']['#value'])) {
+    form_error($element['alt'], t('Alternate text field is required.'));
+  }
+}

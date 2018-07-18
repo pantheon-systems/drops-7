@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * Drupal hooks for express_content_edit_lock module.
+ */
+
+/**
+ * Implements hook_install.
+ */
+function express_content_edit_lock_install() {
+  variable_set('lock_allow_users', array());
+  variable_set('lock_leave_message', '');
+  variable_set('lock_by_role', array());
+  variable_set('lock_user_dev', FALSE);
+}
+
+/**
+ * Implements hook_uninstall.
+ */
+function express_content_edit_lock_uninstall() {
+  variable_del('lock_allow_users');
+  variable_del('lock_leave_message');
+  variable_del('lock_by_role');
+  variable_del('lock_user_dev');
+}

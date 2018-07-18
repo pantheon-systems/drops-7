@@ -1,0 +1,297 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag base tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag base tags work correctly.
+ */
+class MetatagTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Basic',
+      'description' => 'Test the basic meta tags.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'abstract',
+    'cache-control',
+    'canonical',
+    'content-language',
+    'description',
+    'expires',
+    'generator',
+    'geo.placename',
+    'geo.position',
+    'geo.region',
+    'icbm',
+    'image_src',
+    'keywords',
+    'news_keywords',
+    'next',
+    'original-source',
+    'pragma',
+    'prev',
+    'rating',
+    'referrer',
+    'refresh',
+    // @todo 'revisit-after',
+    'rights',
+    'robots',
+    // 'set_cookie',
+    'shortlink',
+    'standout',
+    'title',
+  );
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'abstract'.
+   */
+  public function abstract_test_field_xpath() {
+    return "//textarea[@name='metatags[und][abstract][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'cache_control'.
+   */
+  public function cache_control_test_output_xpath() {
+    return "//meta[@http-equiv='cache-control']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'canonical'.
+   */
+  public function canonical_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'canonical'.
+   */
+  public function canonical_test_output_xpath() {
+    return "//link[@rel='canonical']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_name_attribute() for 'content_language'.
+   */
+  public function content_language_test_name_attribute() {
+    return 'http-equiv';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'content_language'.
+   */
+  public function content_language_test_tag_name() {
+    return 'content-language';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'description'.
+   */
+  public function description_test_field_xpath() {
+    return "//textarea[@name='metatags[und][description][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'geo_placename'.
+   */
+  public function geo_placename_test_tag_name() {
+    return 'geo.placename';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'geo_position'.
+   */
+  public function geo_position_test_tag_name() {
+    return 'geo.position';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'geo_region'.
+   */
+  public function geo_region_test_tag_name() {
+    return 'geo.region';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'image_src'.
+   */
+  public function image_src_test_output_xpath() {
+    return "//link[@rel='image_src']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'image_src'.
+   */
+  public function image_src_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'image_src'.
+   */
+  public function image_src_test_value() {
+    return 'http://example.com/images/test-image.gif';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'next'.
+   */
+  public function next_test_output_xpath() {
+    return "//link[@rel='next']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'next'.
+   */
+  public function next_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_tag_name() for 'original-source'.
+   */
+  public function original_source_test_tag_name() {
+    return 'original-source';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_name_attribute() for 'pragma'.
+   */
+  public function pragma_test_name_attribute() {
+    return 'http-equiv';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'prev'.
+   */
+  public function prev_test_output_xpath() {
+    return "//link[@rel='prev']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'prev'.
+   */
+  public function prev_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'rating'.
+   */
+  public function rating_test_key() {
+    return 'metatags[und][rating][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'general'.
+   */
+  public function rating_test_value() {
+    return 'general';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'rating'.
+   */
+  public function rating_test_field_xpath() {
+    return "//select[@name='metatags[und][rating][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'referrer'.
+   */
+  public function referrer_test_key() {
+    return 'metatags[und][referrer][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'referrer'.
+   */
+  public function referrer_test_value() {
+    return 'origin';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'referrer'.
+   */
+  public function referrer_test_field_xpath() {
+    return "//select[@name='metatags[und][referrer][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_name_attribute() for 'refresh'.
+   */
+  public function refresh_test_name_attribute() {
+    return 'http-equiv';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'robots'.
+   */
+  public function robots_test_key() {
+    return 'metatags[und][robots][value][index]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'robots'.
+   */
+  public function robots_test_value() {
+    return TRUE;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'robots'.
+   */
+  public function robots_test_field_xpath() {
+    return "//input[@name='metatags[und][robots][value][index]' and @type='checkbox']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'revisit-after'.
+   */
+  public function revisit_after_test_value() {
+    return 2;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'shortlink'.
+   */
+  public function shortlink_test_output_xpath() {
+    return "//link[@rel='shortlink']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'shortlink'.
+   */
+  public function shortlink_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'title'.
+   */
+  public function title_test_output_xpath() {
+    return "//title";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'title'.
+   */
+  public function title_test_value_attribute() {
+    return '';
+  }
+
+}

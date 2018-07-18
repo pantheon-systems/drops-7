@@ -1,0 +1,99 @@
+/* Bundle List Description */
+.modules-bundle-description {
+  margin-bottom: 20px;
+}
+/* Wrapper for all bundles */
+.module-bundles-wrapper {
+
+}
+/* Single bundle wrapper */
+.module-bundle-wrapper {
+
+}
+/* Single bundle */
+.module-bundle {
+
+}
+
+.bundle {
+  width: 25%;
+  height: auto;
+  float: left;
+}
+
+/* Enableable bundleable */
+.bundle-enable {
+  float: left;
+  margin: 1% 1% 1% 0;
+  width: 100%;
+  height: 300px;
+  position: relative;
+  padding-left: 1%;
+  border-width: 0 0 0 0.5px;
+  border-style: solid;
+  border-color: #ddd;
+}
+.pmm-actions, .bundle-enable-link, .alakazaam, .bundle-enabled {
+  bottom: 10%;
+  position: absolute;
+}
+.bundle-demo-link {
+  position: absolute;
+  bottom: 10%;
+  right: 10%;
+}
+.enabled-modules-admin {
+  clear: both;
+  margin: 1% 1% 1% 0;
+  width: 100%;
+  height: 300px;
+  position: relative;
+  padding-left: 1%;
+  border-width: 0.5px 0 0.5px 0.5px;
+  border-style: solid;
+  border-image: linear-gradient(to bottom,#000,rgba(0,0,0,0)) 1 100%;
+}
+@media screen and (max-width:768px) {
+  .bundle-enable {
+    width: 100%;
+  }
+}
+@media screen and (min-width:768px) and (max-width:927px) {
+  .bundle-enable {
+    width: 49%;
+  }
+}
+@media screen and (min-width:927px) and (max-width:1229px) {
+  .bundle-enable {
+    width: 32.1%;
+  }
+}
+@media screen and (min-width:1229px) {
+  .bundle-enable {
+    width: 24%;
+  }
+}
+
+@media screen and (min-width:768px) {
+  .module-bundle {
+  }
+}
+@media screen and (min-width:768px) {
+  .module-bundle {
+  }
+}
+.bundle-enabled .module-bundle {
+
+}
+.bundle-disabled .module-bundle {
+
+}
+/* Bundle description */
+.module-bundle-description {
+
+}
+/* Bundle actions */
+.bundle-actions {
+  padding-top: 10px;
+  font-size: 75%;
+}

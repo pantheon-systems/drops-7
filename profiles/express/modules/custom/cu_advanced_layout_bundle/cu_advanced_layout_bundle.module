@@ -1,0 +1,140 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+function cu_advanced_layout_bundle_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'anonymous user' => array(
+      'view any block_section bean',
+    ),
+    'authenticated user' => array(
+      'view any block_section bean',
+    ),
+    'content_editor' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'developer' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'edit_my_content' => array(
+      'view any block_section bean',
+    ),
+    'site_editor' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'site_owner' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_layout_bundle_express_help($variables) {
+
+  $variables['admin/structure/context/list/%/edit'][] = array(
+    'title' => 'Context help',
+    'short_title' => 'Context help',
+    'url' => '/node/444',
+  );
+  $variables['admin/structure/context'][] = array(
+    'title' => 'Context Help',
+    'short_title' => 'Context Help',
+    'url' => '/node/444',
+  );
+  $variables['block/add/block-row'][] = array(
+    'title' => 'Block row help',
+    'short_title' => 'Block row help',
+    'url' => '/node/712',
+  );
+  $variables['block/edit/block-row'][] = array(
+    'title' => 'Block row help',
+    'short_title' => 'Block row help',
+    'url' => '/node/712',
+  );
+  $variables['block/add/block-section'][] = array(
+    'title' => 'Block section help',
+    'short_title' => 'Block section help',
+    'url' => '/node/560',
+  );
+  $variables['block/edit/block-section'][] = array(
+    'title' => 'Block section help',
+    'short_title' => 'Block section help',
+    'url' => '/node/560',
+  );
+
+
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_advanced_layout_bundle';
+      return $a;
+    },
+    $variables);
+}
+
+/**
+ * Implements hook_express_help_fields().
+ *
+ * Add contextual help for advanced layout functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_layout_bundle_express_help_fields($variables) {
+
+}
+
+/**
+ * Implements hook_express_bean_list_groups().
+ * Provided by express_add_content.api.php.
+ */
+function cu_advanced_layout_bundle_express_bean_list_groups($bundles) {
+
+  $bundles['advanced_layout']['title'] = 'Advanced Layout';
+  $bundles['advanced_layout']['types'][] = 'Block Row';
+  $bundles['advanced_layout']['types'][] = 'Block Section';
+  $bundles['advanced_layout']['types'][] = 'Block Wrapper';
+
+  return $bundles;
+}

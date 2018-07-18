@@ -1,0 +1,214 @@
+<?php
+
+/**
+ * @file
+ * Allows for caching of core entities.
+ */
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function entitycache_entity_info_alter(&$entity_info) {
+  foreach (entitycache_supported_core_entities(TRUE) as $type => $controller) {
+    $entity_info[$type]['field cache'] = FALSE;
+    $entity_info[$type]['entity cache'] = TRUE;
+    $entity_info[$type]['controller class'] = $controller;
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function entitycache_flush_caches() {
+  $bins = array();
+  $entities = entitycache_supported_core_entities(TRUE);
+  foreach (array_keys($entities) as $type) {
+    $bins[] = 'cache_entity_' . $type;
+  }
+  return $bins;
+}
+
+/**
+ * Helper function to list all supported core entities.
+ *
+ * @param $enabled
+ *   If set, only return enabled modules.
+ *
+ * @return
+ *   An array of core entities.
+ */
+function entitycache_supported_core_entities($enabled = FALSE) {
+  $return = array(
+    'comment' => 'EntityCacheCommentController',
+    'file' => 'EntityCacheDefaultEntityController',
+    'node' => 'EntityCacheNodeController',
+    'taxonomy_term' => 'EntityCacheTaxonomyTermController',
+    'taxonomy_vocabulary' => 'EntityCacheTaxonomyVocabularyController',
+    'user' => 'EntityCacheUserController',
+  );
+  // If the $enabled param is past, remove modules from the array if they're
+  // not enabled.
+  if ($enabled) {
+    if (!module_exists('comment')) {
+      unset($return['comment']);
+    }
+    if (!module_exists('taxonomy')) {
+      unset($return['taxonomy_term']);
+      unset($return['taxonomy_vocabulary']);
+    }
+    $return = array_diff_key($return, drupal_map_assoc(variable_get('entitycache_disabled_entity_types', array())));
+  }
+  return $return;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function entitycache_entity_insert($entity, $type) {
+  // It is possible for other _insert() hooks to load an entity before it has
+  // been properly saved, for example file_field_insert(). This may cause
+  // an incomplete entity to be cached, since hooks which run after the one
+  // loading the entity do not have a chance to run. Therefore ensure the cache
+  // is always cleared when inserting new entities.
+  // Since hook_entity_insert() runs last, there's a good chance of acting
+  // after other modules are finished loading.
+  $info = entity_get_info($type);
+  list($id) = entity_extract_ids($type, $entity);
+  if (!empty($info['entity cache']) && empty($entity->migrate)) {
+    // file_field_insert() no longer exists. Don't take this out
+    // just yet though because other modules might also misbehave.
+    // cache_clear_all($id, 'cache_entity_' . $type);
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function entitycache_entity_delete($entity, $type) {
+  $info = entity_get_info($type);
+  list($id) = entity_extract_ids($type, $entity);
+  if (!empty($info['entity cache'])) {
+    cache_clear_all($id, 'cache_entity_' . $type);
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function entitycache_entity_update($entity, $type) {
+  // It is possible for other _update() hooks to load an entity before it has
+  // been properly saved, for example file_field_update(). This may cause
+  // an incomplete entity to be cached, since hooks which run after the one
+  // loading the entity do not have a chance to run. Therefore ensure the cache
+  // is always cleared when updating entities.
+  // Since hook_entity_insert() runs last, there's a good chance of acting
+  // after other modules are finished loading.
+  $info = entity_get_info($type);
+  list($id) = entity_extract_ids($type, $entity);
+  if (!empty($info['entity cache']) && empty($entity->migrate)) {
+    cache_clear_all($id, 'cache_entity_' . $type);
+  }
+}
+
+/**
+ * Implements hook_entitycache_node_load().
+ *
+ * This forces book information to be added on each request, to avoid expensive
+ * cache clears.
+ */
+function book_entitycache_node_load($nodes) {
+  book_node_load($nodes, array());
+}
+
+/**
+ * Implements hook_entitycache_node_load().
+ *
+ * This forces poll information to be loaded on each request, since it loads
+ * user-specific information during the request.
+ */
+function poll_entitycache_node_load($nodes) {
+  $polls = array();
+  foreach ($nodes as $node) {
+    if ($node->type == 'poll') {
+      $polls[$node->nid] = $node;
+    }
+  }
+  if (!empty($polls)) {
+    poll_load($polls);
+  }
+}
+
+/**
+ * Implements hook_comment_publish().
+ *
+ * @todo: core should not call this hook outside of a comment_save().
+ */
+function entitycache_comment_publish($comment) {
+  if (empty($comment->migrate)) {
+    cache_clear_all($comment->cid, 'cache_entity_comment');
+    cache_clear_all($comment->nid, 'cache_entity_node');
+  }
+}
+
+/**
+ * Implements hook_comment_unpublish().
+ *
+ * @todo: core should not call this hook outside of a comment_save().
+ */
+function entitycache_comment_unpublish($comment) {
+  if (empty($comment->migrate)) {
+    cache_clear_all($comment->cid, 'cache_entity_comment');
+    cache_clear_all($comment->nid, 'cache_entity_node');
+  }
+}
+
+/**
+ * Implements hook_comment_insert().
+ */
+function entitycache_comment_insert($comment) {
+  cache_clear_all($comment->nid, 'cache_entity_node');
+}
+
+/**
+ * Implements hook_comment_update().
+ */
+function entitycache_comment_update($comment) {
+  cache_clear_all($comment->nid, 'cache_entity_node');
+}
+
+/**
+ * Implements hook_entitycache_ENTITY_TYPE_load().
+ */
+function entitycache_entitycache_comment_load($comments) {
+  foreach ($comments as $comment) {
+    $comment->new = $comment->new = node_mark($comment->nid, $comment->changed);
+  }
+}
+
+/**
+ * Implements hook_comment_update().
+ */
+function entitycache_comment_delete($comment) {
+  cache_clear_all($comment->nid, 'cache_entity_node');
+}
+
+/**
+ * Implements hook_user_cancel().
+ */
+function entitycache_user_cancel($edit, $account, $method) {
+  cache_clear_all($account->uid, 'cache_entity_user');
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function entitycache_user_logout($account) {
+  cache_clear_all($account->uid, 'cache_entity_user');
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function entitycache_user_login(&$edit, $account) {
+  cache_clear_all($account->uid, 'cache_entity_user');
+}

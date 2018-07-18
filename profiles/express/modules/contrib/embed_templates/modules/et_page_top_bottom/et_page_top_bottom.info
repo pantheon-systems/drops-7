@@ -1,0 +1,11 @@
+name = Embed Templates - Page Top or Bottom
+description = Provides a way for users to place an embed at the top or bottom of a page.
+core = 7.x
+package = Embed Templates
+dependencies[] = embed_templates
+
+; Information added by Drupal.org packaging script on 2018-05-04
+version = "7.x-1.0-beta4+1-dev"
+core = "7.x"
+project = "embed_templates"
+datestamp = "1525470484"

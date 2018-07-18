@@ -1,0 +1,24 @@
+name = Google Analytics Reports
+package = Statistics
+description = Display statistics from Google Analytics using Views.
+core = 7.x
+dependencies[] = google_analytics_reports_api
+dependencies[] = views
+
+configure = admin/config/system/google-analytics-reports-api
+
+files[] = handlers/google_analytics_reports_handler_filter.inc
+files[] = handlers/google_analytics_reports_handler_filter_date.inc
+files[] = handlers/google_analytics_reports_handler_filter_string.inc
+files[] = handlers/google_analytics_reports_handler_filter_numeric.inc
+files[] = handlers/google_analytics_reports_handler_field.inc
+files[] = handlers/google_analytics_reports_handler_argument.inc
+files[] = plugins/google_analytics_reports_plugin_query_google_analytics.inc
+files[] = plugins/google_analytics_reports_plugin_argument_default_google_analytics_reports_path.inc
+
+; Information added by Drupal.org packaging script on 2016-07-10
+version = "7.x-3.1"
+core = "7.x"
+project = "google_analytics_reports"
+datestamp = "1468152170"
+

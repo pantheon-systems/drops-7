@@ -1,0 +1,8 @@
+#google-cse-results-searchbox-form div, #google-cse-results-searchbox-form input {
+    margin: 0;
+    display: inline;
+}
+
+#google-cse-results-searchbox-form .form-radios div {
+    display: block;
+}

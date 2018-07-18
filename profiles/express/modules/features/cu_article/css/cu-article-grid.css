@@ -1,0 +1,31 @@
+.article-view-mode-grid { margin-bottom: 20px; }
+.article-view-mode-grid img { width: 100%; height: auto; max-width: 100%; display: block; margin-bottom: 10px; }
+
+.article-grid > .row { display: flex; flex-direction: row; flex-wrap: wrap; }
+
+.article-grid-summary-display .article-grid-article-title { font-weight: 600; }
+
+.article-view-mode-grid h3 { margin: 5px 0; padding: 0; font-size: 100%; }
+
+.article-grid-summary-hide .article-view-mode-grid h3 { font-weight: normal; }
+
+.article-grid-summary { font-size: 85%; }
+
+.article-grid-summary-hide .article-grid-summary { display: none; }
+
+/* Article Feature Block */
+.article-feature-block-more-link { text-align: center; }
+
+.article-feature-block .article-view-mode-sidebar img { width: 50px; }
+
+.article-feature-block.article-feature-inline-2 .article-view-mode-feature, .article-feature-block.article-feature-inline-3 .article-view-mode-feature { border-bottom: none; }
+@media screen and (min-width: 768px) and (max-width: 959px) { .article-feature-block.article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-block.article-feature-inline-3 .article-view-mode-sidebar img { width: 65px; } }
+@media screen and (min-width: 960px) { .article-feature-block.article-feature-inline-2 .article-view-mode-sidebar img, .article-feature-block.article-feature-inline-3 .article-view-mode-sidebar img { width: 80px; height: auto; } }
+
+@media all and (min-width: 768px) { .article-feature-stacked .article-feature-remaining { border-top: 1px solid #e7e7e7; padding-top: 20px; display: flex; flex-direction: row; margin: 0 -20px; }
+  .article-feature-stacked .field-name-field-article-link { border-top: 1px solid #e7e7e7; clear: both; padding-top: 10px; }
+  .article-feature-stacked .article-view-mode-feature, .article-feature-stacked .article-view-mode-sidebar { border-bottom: none; }
+  .article-feature-stacked .article-feature-remaining .article-view-mode-feature, .article-feature-stacked .article-feature-remaining .article-view-mode-sidebar { padding: 0 20px; width: 33.3333%; } }
+@media all and (min-width: 960px) { .article-feature-stacked .article-view-mode-sidebar img.image-square { width: 75px; height: auto; } }
+
+.article-feature-remaining .article-teaser-meta { margin-top: 5px; }

@@ -1,0 +1,407 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for Google Analytics Reports module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function google_analytics_reports_install() {
+  db_update('system')
+    ->fields(array('weight' => 11))
+    ->condition('name', 'google_analytics_reports', '=')
+    ->execute();
+
+  // Import Google Analytics fields.
+  google_analytics_reports_fields_import();
+}
+
+/**
+ * Implements hook_schema().
+ */
+function google_analytics_reports_schema() {
+  $schema['google_analytics_reports_fields'] = array(
+    'description' => 'Dimensions and metrics from Google Analytics.',
+    'fields' => array(
+      'gaid' => array(
+        'description' => 'The primary identifier for a column.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'type' => array(
+        'description' => 'The type of column.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data_type' => array(
+        'description' => 'The type of data this column represents.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'column_group' => array(
+        'description' => 'The dimensions/metrics group the column belongs to.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'ui_name' => array(
+        'description' => 'The name/label of the column used in user interfaces (UI).',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The full description of the column.',
+        'type' => 'text',
+        'size' => 'medium',
+      ),
+      'calculation' => array(
+        'description' => 'This shows how the metric is calculated. Only available for calculated metrics.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+    ),
+    'indexes' => array(
+      'type' => array('type'),
+    ),
+    'unique keys' => array(
+      'gaid' => array('gaid'),
+    ),
+    'primary key' => array('gaid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function google_analytics_reports_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  // Do not install module if old Google Analytics Reports Views module
+  // is exists.
+  if (($phase == 'install') || ($phase == 'runtime')) {
+    if (module_exists('google_analytics_reports_views')) {
+      $requirements['google_analytics_reports_views'] = array(
+        'title' => $t('Google Analytics Reports'),
+        'value' => $t('You must uninstall and permanently delete all files of <strong>Google Analytics Reports Views</strong> module before installing the new version of Google Analytics Reports module.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  // Warning about using Google Analytics Reports blocks without Ajax loading.
+  if (($phase == 'runtime') && (module_exists('blocks')) && (!module_exists('ajaxblocks'))) {
+    $theme_default = variable_get('theme_default');
+    module_load_include('inc', 'block', 'block.admin');
+    // List of all blocks.
+    $blocks = block_admin_display_prepare_blocks($theme_default);
+    foreach ($blocks as $block) {
+      // Check if Google Analytics Reports blocks are enabled.
+      if (($block['module'] == 'views') && ($block['status']) && (strpos($block['info'], 'Google Analytics Reports') === 0)) {
+        $requirements['google_analytics_reports_blocks'] = array(
+          'title' => $t('Google Analytics Reports blocks'),
+          'value' => $t('You are using Google Analytics Reports blocks which may increase page load time because of requests to Google Analytics. It is recommended to load these blocks using Ajax via !ajaxblocks module.', array('!ajaxblocks' => l($t('Ajax Blocks'), 'https://www.drupal.org/project/ajaxblocks'))),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_analytics_reports_uninstall() {
+  // Delete module variables.
+  variable_del('google_analytics_reports_metadata_etag');
+  variable_del('google_analytics_reports_metadata_last_time');
+}
+
+/**
+ * Divide start_end filter into two start_date and end_date filters.
+ */
+function google_analytics_reports_update_7300() {
+
+  // Find all Google Analytics views.
+  $ga_views = db_select('views_view', 'v')
+    ->fields('v', array('vid'))
+    ->condition('base_table', 'google_analytics')
+    ->execute()
+    ->fetchAll();
+
+  foreach ($ga_views as $ga_view) {
+    // Find all displays settings.
+    $ga_views_displays = db_select('views_display', 'v')
+      ->fields('v', array('id', 'display_options'))
+      ->condition('vid', $ga_view->vid)
+      ->execute()
+      ->fetchAll();
+
+    if ($ga_views_displays) {
+      foreach ($ga_views_displays as $ga_views_display) {
+        $display_options = unserialize($ga_views_display->display_options);
+
+        // If view has start_end filter.
+        if (isset($display_options['filters']['start_end'])) {
+
+          // Copy start_end filter into start_date and end_date filters.
+          $start_date = $end_date = $start_end = $display_options['filters']['start_end'];
+
+          $start_date['operator'] = $end_date['operator'] = '=';
+          $start_date['value']['min'] = $end_date['value']['min'] = '';
+          $start_date['value']['max'] = $end_date['value']['max'] = '';
+          $start_date['value']['value'] = $start_end['value']['max'];
+          $start_date['id'] = $start_date['field'] = 'start_date';
+
+          $end_date['value']['value'] = $start_end['value']['min'];
+          $end_date['id'] = $end_date['field'] = 'end_date';
+
+          unset($display_options['filters']['start_end']);
+          $display_options['filters']['start_date'] = $start_date;
+          $display_options['filters']['end_date'] = $end_date;
+
+          $display_options = serialize($display_options);
+
+          db_update('views_display')
+            ->fields(array('display_options' => $display_options))
+            ->condition('vid', $ga_view->vid)
+            ->condition('id', $ga_views_display->id)
+            ->execute();
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Convert datapoins with (n) in name into datapoints with XX.
+ */
+function google_analytics_reports_update_7301() {
+  // Find all Google Analytics views.
+  $ga_views = db_select('views_view', 'v')
+    ->fields('v', array('vid'))
+    ->condition('base_table', 'google_analytics')
+    ->execute()
+    ->fetchAll();
+
+  foreach ($ga_views as $ga_view) {
+    // Find all displays settings.
+    $ga_views_displays = db_select('views_display', 'v')
+      ->fields('v', array('id', 'display_options'))
+      ->condition('vid', $ga_view->vid)
+      ->execute()
+      ->fetchAll();
+
+    if ($ga_views_displays) {
+      foreach ($ga_views_displays as $ga_views_display) {
+
+        // Convert (n) into XX.
+        $replaced_data = str_replace('(n)', 'XX', $ga_views_display->display_options);
+
+        // Fix serialize data.
+        // See http://stackoverflow.com/a/21389439/3365600.
+        $fixed_data = preg_replace_callback('!s:(\d+):"(.*?)";!', function($match) {
+          return ($match[1] == strlen($match[2])) ? $match[0] : 's:' . strlen($match[2]) . ':"' . $match[2] . '";';
+        }, $replaced_data);
+
+        db_update('views_display')
+          ->fields(array('display_options' => $fixed_data))
+          ->condition('vid', $ga_view->vid)
+          ->condition('id', $ga_views_display->id)
+          ->execute();
+
+      }
+    }
+  }
+}
+
+/**
+ * Replace deprecated datapoins with new ones.
+ */
+function google_analytics_reports_update_7302() {
+  // Find all Google Analytics views.
+  $ga_views = db_select('views_view', 'v')
+    ->fields('v', array('vid'))
+    ->condition('base_table', 'google_analytics')
+    ->execute()
+    ->fetchAll();
+
+  foreach ($ga_views as $ga_view) {
+    // Find all displays settings.
+    $ga_views_displays = db_select('views_display', 'v')
+      ->fields('v', array('id', 'display_options'))
+      ->condition('vid', $ga_view->vid)
+      ->execute()
+      ->fetchAll();
+
+    if ($ga_views_displays) {
+      foreach ($ga_views_displays as $ga_views_display) {
+
+        $old_datapoins = array(
+          'visitorType',
+          'visitCount',
+          'daysSinceLastVisit',
+          'visitors',
+          'newVisits',
+          'percentNewVisits',
+          'visitLength',
+          'visits',
+          'timeOnSite',
+          'entranceBounceRate',
+          'visitBounceRate',
+          'avgTimeOnSite',
+          'goalValuePerVisit',
+          'pageviewsPerVisit',
+          'searchVisits',
+          'percentVisitsWithSearch',
+          'visitsWithEvent',
+          'eventsPerVisitWithEvent',
+          'visitsToTransaction',
+          'transactionsPerVisit',
+          'transactionRevenuePerVisit',
+          'socialInteractionsPerVisit',
+          'visitorAgeBracket',
+          'visitorGender',
+        );
+
+        $new_datapoints = array(
+          'userType',
+          'sessionCount',
+          'daysSinceLastSession',
+          'users',
+          'newUsers',
+          'percentNewSessions',
+          'sessionDurationBucket',
+          'sessions',
+          'sessionDuration',
+          'bounceRate',
+          'bounceRate',
+          'avgSessionDuration',
+          'goalValuePerSession',
+          'pageviewsPerSession',
+          'searchSessions',
+          'percentSessionsWithSearch',
+          'sessionsWithEvent',
+          'eventsPerSessionWithEvent',
+          'sessionsToTransaction',
+          'transactionsPerSession',
+          'transactionRevenuePerSession',
+          'socialInteractionsPerSession',
+          'userAgeBracket',
+          'userGender',
+        );
+
+        // Replace deprecated datapoins with new ones.
+        $replaced_data = str_replace($old_datapoins, $new_datapoints, $ga_views_display->display_options);
+
+        // Fix serialize data.
+        // See http://stackoverflow.com/a/21389439/3365600.
+        $fixed_data = preg_replace_callback('!s:(\d+):"(.*?)";!', function($match) {
+          return ($match[1] == strlen($match[2])) ? $match[0] : 's:' . strlen($match[2]) . ':"' . $match[2] . '";';
+        }, $replaced_data);
+
+        db_update('views_display')
+          ->fields(array('display_options' => $fixed_data))
+          ->condition('vid', $ga_view->vid)
+          ->condition('id', $ga_views_display->id)
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Disable and uninstall old Google Analytics Reports Views module.
+ */
+function google_analytics_reports_update_7303(&$sandbox) {
+  if (module_exists('google_analytics_reports_views')) {
+    module_disable(array('google_analytics_reports_views'));
+    drupal_uninstall_modules(array('google_analytics_reports_views'));
+    return t('Old Google Analytics Reports Views module has been successfully uninstalled.');
+  }
+}
+
+/**
+ * Import Google Analytics fields.
+ */
+function google_analytics_reports_update_7304(&$sandbox) {
+  // A copy of the current schema. It may be changed in the future.
+  // @see https://www.drupal.org/node/150220.
+  $schema['google_analytics_reports_fields'] = array(
+    'description' => 'Dimensions and metrics from Google Analytics.',
+    'fields' => array(
+      'gaid' => array(
+        'description' => 'The primary identifier for a column.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'type' => array(
+        'description' => 'The type of column.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data_type' => array(
+        'description' => 'The type of data this column represents.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'column_group' => array(
+        'description' => 'The dimensions/metrics group the column belongs to.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'ui_name' => array(
+        'description' => 'The name/label of the column used in user interfaces (UI).',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The full description of the column.',
+        'type' => 'text',
+        'size' => 'medium',
+      ),
+      'calculation' => array(
+        'description' => 'This shows how the metric is calculated. Only available for calculated metrics.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+    ),
+    'indexes' => array(
+      'type' => array('type'),
+    ),
+    'unique keys' => array(
+      'gaid' => array('gaid'),
+    ),
+    'primary key' => array('gaid'),
+  );
+  db_create_table('google_analytics_reports_fields', $schema['google_analytics_reports_fields']);
+
+  module_load_include('module', 'google_analytics_reports');
+  google_analytics_reports_fields_import();
+}

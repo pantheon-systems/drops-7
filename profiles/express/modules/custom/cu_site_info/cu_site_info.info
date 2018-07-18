@@ -1,0 +1,5 @@
+name = Site Information Block
+description = "Fill in with contact information"
+core = 7.x
+package = CU-Core
+version = 7.x-1.0

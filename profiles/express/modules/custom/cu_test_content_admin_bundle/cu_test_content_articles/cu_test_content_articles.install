@@ -1,0 +1,323 @@
+<?php
+
+function cu_test_content_articles_install() {
+
+  $terms = array(
+    'Article Tag One' => array(),
+    'Article Tag Two' => array(),
+    'Article Tag Three' => array(),
+    'Article Tag Four' => array(),
+    'Article Tag Five' => array(),
+    'Article Tag Six' => array(),
+    'Article Tag Seven' => array(),
+    'Article Tag Eight' => array(),
+    'Article Tag Nine' => array(),
+    'Article Tag Ten' => array(),
+  );
+  _cu_test_content_articles_terms_create_taxonomy_terms_insert('tags', $terms);
+
+  $terms = array(
+    'Article Category One' => array(),
+    'Article Category Two' => array(),
+    'Article Category Three' => array(),
+    'Article Category Four' => array(),
+    'Article Category Five' => array(),
+    'Article Category Six' => array(),
+    'Article Category Seven' => array(),
+    'Article Category Eight' => array(),
+    'Article Category Nine' => array(),
+    'Article Category Ten' => array(),
+  );
+  _cu_test_content_articles_terms_create_taxonomy_terms_insert('category', $terms);
+
+  $nodes =  array(
+    '1' => array(
+      'title' => 'This is Article Number One',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '2' => array(
+        'title' => 'This is Article Number Two',
+	      'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '3' => array(
+	     'title' => 'This is Article Number Three',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '4' => array(
+	     'title' => 'This is Article Number Four',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '5' => array(
+	     'title' => 'This is Article Number Five',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '6' => array(
+	     'title' => 'This is Article Number Six',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '7' => array(
+	     'title' => 'This is Article Number Seven',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '8' => array(
+	     'title' => 'This is Article Number Eight',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '9' => array(
+	     'title' => 'This is Article Number Nine',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '10' => array(
+	     'title' => 'This is Article Number Ten',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '11' => array(
+      'title' => 'This is Article Number Eleven',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '12' => array(
+        'title' => 'This is Article Number Twelve',
+	      'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '13' => array(
+	     'title' => 'This is Article Number Thirteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '14' => array(
+	     'title' => 'This is Article Number Fourteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '15' => array(
+	     'title' => 'This is Article Number Fifteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '16' => array(
+	     'title' => 'This is Article Number Sixteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '17' => array(
+	     'title' => 'This is Article Number Seventeen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '18' => array(
+	     'title' => 'This is Article Number Eighteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '19' => array(
+	     'title' => 'This is Article Number Nineteen',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	   '20' => array(
+	     'title' => 'This is Article Number Twenty',
+	     'body' => _cu_test_content_articles_dummy_text(),
+	   ),
+	 );
+	 _cu_test_content_articles_create_nodes($nodes);
+	 _cu_test_content_articles_create_news_node();
+}
+
+function _cu_test_content_articles_dummy_text() {
+  $response = drupal_http_request('http://loripsum.net/api/10/');
+  if ($response->code == '200') {
+    return $response->data;
+  } else {
+    return 'No dummy text.';
+  }
+}
+
+function _cu_test_content_articles_create_nodes($nodes) {
+  $temp_articles = variable_get('cu_test_content_articles', array());
+  $vocabulary = taxonomy_vocabulary_machine_name_load('tags');
+  $tags = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
+  $vocabulary = taxonomy_vocabulary_machine_name_load('category');
+  $categories = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
+
+  $weight = 0;
+  $time = time();
+  $date_range = 60 * 60 * 24 * 15; // 15 days
+  foreach ($nodes as $elem) {
+    $count = $weight+1;
+    $node_title = $elem['title'];
+    $node = new StdClass();
+    $node->title = $node_title;
+    $node->language = LANGUAGE_NONE;
+    if (isset($elem['body'])) {
+      $node->body[$node->language][0]['value'] = $elem['body'];
+      $node->body[$node->language][0]['safe_value'] = $elem['body'];
+    }
+
+    $node->body[$node->language][0]['format']  = 'wysiwyg';
+
+    $rand_tags = array_rand($tags, 2);
+
+    $node->field_tags[$node->language][0]['tid'] = $rand_tags[0];
+    $node->field_tags[$node->language][1]['tid'] = $rand_tags[1];
+
+    $rand_categories = array_rand($categories, 2);
+
+    $node->field_article_categories[$node->language][0]['tid'] = $rand_categories[0];
+
+    $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
+
+    $file = (object) array(
+      'uid' => $count,
+      'uri' => $file_path,
+      'filemime' => file_get_mimetype($file_path),
+      'status' => 1,
+    );
+
+    // You can specify a subdirectory, e.g. public://foo/
+    $file = file_copy($file, 'public://');
+    $node->field_image[LANGUAGE_NONE][0] = (array) $file;
+    $node->field_image[LANGUAGE_NONE][0]['alt'] = 'Photo Alt Text';
+    $node->field_article_thumbnail[LANGUAGE_NONE][0] = (array) $file;
+    $node->field_article_thumbnail[LANGUAGE_NONE][0]['alt'] = 'Photo Alt Text';
+    $node->type = 'article';
+    $node->uid = 1;
+
+    // Set created date
+    $created = $time - ($date_range * $weight);
+    $node->created = $created;
+    node_save($node);
+    $temp_articles[$node->nid] = $node->title;
+    drupal_set_message("Article $node->title - $node->nid created.");
+    $weight++;
+  }
+  variable_set('cu_test_content_articles', $temp_articles);
+}
+
+function _cu_test_content_articles_create_news_node() {
+  $nodes = array(
+    '1' => array(
+      'title' => 'News & Announcements',
+      'link_title' => 'News',
+    ),
+  );
+  foreach ($nodes as $elem) {
+    $node_title = $elem['title'];
+    $node = new StdClass();
+    $node->title = $node_title;
+    $node->language = LANGUAGE_NONE;
+    $node->body[$node->language][0]['format']  = 'wysiwyg';
+    $node->type = 'article_list_page';
+    $node->menu = array(
+      'menu_name' => 'main-menu',
+      'plid' => $plid,
+      'link_title' => $elem['link_title'],
+      'enabled' => TRUE,
+      'weight' => 99,
+    );
+    $node->uid = 1;
+    node_save($node);
+    variable_set('cu_test_content_article_list_page', $node->nid);
+  }
+}
+
+/*
+ * Create terms
+ *
+ */
+function _cu_test_content_articles_terms_create_taxonomy_terms_insert($vocab_name, $terms, $parent = NULL) {
+  $temp_terms = variable_get('cu_test_content_articles_terms_' . $vocab_name, array());
+  if (!(isset($parent))) {
+    $parent = 0;
+  }
+  $vocab = taxonomy_vocabulary_machine_name_load($vocab_name);
+  // Get the vocabulary ID.
+  $vid = $vocab->vid;
+  foreach ($terms as $parent_name => $children) {
+    // Create the parent term.
+    $term = new stdClass();
+    $term->name = $parent_name;
+    $term->vid = $vid;
+    $term->parent = $parent;
+    $status = taxonomy_term_save($term);
+    if (!$status) {
+      throw new Exception("Could not save taxonomy term $parent_name with these params -> vid: $vid parent: $parent");
+    }
+    if (isset($children)) {
+      _cu_test_content_articles_terms_create_taxonomy_terms_insert($vocab_name, $children, $term->tid);
+    }
+    $temp_term = taxonomy_get_term_by_name($term->name, $vocab_name);
+    $temp_term = current($temp_term);
+    $temp_terms[$temp_term->tid] = $term->name;
+    drupal_set_message("Term $term->name - $temp_term->tid created.");
+  }
+  if ($vocab_name == 'tags') {
+    _cu_test_content_articles_create_list_page($temp_terms);
+  }
+  variable_set('cu_test_content_articles_terms_' . $vocab_name, $temp_terms);
+  return TRUE;
+}
+
+function _cu_test_content_articles_create_list_page($terms) {
+  $temp_article_list_pages = variable_get('cu_test_content_article_list_pages', array());
+  foreach ($terms as $tid => $term) {
+    $node_title = $term;
+    $node = new StdClass();
+    $node->title = $node_title;
+    $node->language = LANGUAGE_NONE;
+    $node->field_article_page_filter[$node->language][0]['tid'] = $tid;
+    $node->type = 'article_list_page';
+    $node->uid = 1;
+    node_save($node);
+    $temp_article_list_pages[$node->nid] = $node->title;
+    drupal_set_message("Article List Page $node->title - $node->nid created.");
+    $weight++;
+  }
+  variable_set('cu_test_content_article_list_pages', $temp_article_list_pages);
+}
+
+
+/*
+ * Implements hook_uninstall
+ *
+ * remove test articles
+ *
+ */
+function cu_test_content_articles_uninstall() {
+  $temp_articles = variable_get('cu_test_content_articles', NULL);
+  if ($temp_articles) {
+    foreach ($temp_articles as $nid => $name) {
+      node_delete($nid);
+      drupal_set_message("Node $name - $nid deleted.");
+    }
+    variable_del('cu_test_content_articles');
+  }
+  $temp_article_list = variable_get('cu_test_content_article_list_page', NULL);
+  if ($temp_article_list) {
+    node_delete($temp_article_list);
+    drupal_set_message("Node $temp_article_list deleted.");
+    variable_del('cu_test_content_article_list_page');
+  }
+
+  $temp_article_list_pages = variable_get('cu_test_content_article_list_pages', NULL);
+  if ($temp_article_list_pages) {
+    foreach ($temp_article_list_pages as $nid => $name) {
+      node_delete($nid);
+      drupal_set_message("Node $name - $nid deleted.");
+    }
+  }
+
+  $temp_terms = variable_get('cu_test_content_articles_terms_tags', NULL);
+  if ($temp_terms) {
+
+    foreach ($temp_terms as $tid => $name) {
+      taxonomy_term_delete($tid);
+      drupal_set_message("Term $name - $tid deleted.");
+    }
+    variable_del('cu_test_content_articles_terms_tags');
+  }
+
+  $temp_terms = variable_get('cu_test_content_articles_terms_category', NULL);
+  if ($temp_terms) {
+
+    foreach ($temp_terms as $tid => $name) {
+      taxonomy_term_delete($tid);
+      drupal_set_message("Term $name - $tid deleted.");
+    }
+    variable_del('cu_test_content_articles_terms_category');
+  }
+
+
+}

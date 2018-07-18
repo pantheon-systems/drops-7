@@ -1,0 +1,337 @@
+@import "../../expressbase/scss/modules/_colors.scss";
+@import "../../expressbase/scss/modules/_global.scss";
+body {
+  background-color: $bg_dark2;
+  border-top:4px solid $cugold;
+}
+.layout-boxed {
+  background: #e7e7e7;
+  padding:0px 0 40px;
+  border:none;
+
+  #page {
+    @include rgbashadow(0,0,8px,#000,.15);
+  }
+}
+.layout-boxed.layout-responsive #page{
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top:4px solid $cugold;
+}
+.layout-boxed.layout-fixed #page{
+  width:1200px;
+  margin: 0 auto;
+  border-top:4px solid $cugold;
+}
+.layout-wide #backstretch {
+  display: none;
+}
+#secondary-menu-wrapper {
+  background:#fff;
+  color:#666;
+  a {
+    color:#333;
+  }
+}
+#main-menu-wrapper {
+  background: #f2f2f2;
+  border-top: 1px solid #e7e7e7;
+}
+#navigation {
+  margin-top: -1px;
+}
+#navigation {
+  ul#main-menu {
+    a {
+      color:#666;
+      font-weight: 600;
+      padding:0 12px;
+      border-top:1px solid #e7e7e7;
+    }
+
+    a:hover,
+    a.active,
+    a.active-trail {
+      border-top:1px solid #333;
+      color:#222;
+    }
+  }
+  ul#action-menu {
+    a {
+      color:#666;
+    }
+    a:hover,
+    a.active,
+    a.active-trail {
+      color:#222;
+    }
+  }
+}
+.intro-wide-wrapper,
+.post-wide-wrapper {
+  background:#fff;
+}
+.slider-wrapper {
+  background-color: $bg_dark2;
+  padding: 20px;
+  color:#fff;
+  a {
+    color:$cugold;
+  }
+  a:hover {
+    color:#fff;
+  }
+}
+.page-title-image-boxed {
+  padding-top: 20px;
+}
+.has-feature-title-image #page-title-wrapper {
+  display: none;
+}
+.feature-layout-title-image a {
+  color:#fff;
+}
+#page-title-wrapper {
+  background:$bg_dark1;
+  @include gradient($color: $bg_dark1);
+  border-bottom: 4px solid $cugold;
+  color:#fff;
+  padding:40px 20px;
+  a {
+    color:$cugold;
+  }
+}
+h1#page-title-image-title {
+  font-size: 140%;
+}
+.page-title-breadcrumbs {
+  background-color: #fff;
+  padding-top:20px;
+}
+.breadcrumb {
+  padding: 0;
+}
+@media screen and (min-width:768px) {
+  .page-title-inner {
+    display: table;
+    width:100%;
+    h1,
+    .breadcrumb {
+      display: table-cell;
+      vertical-align: middle;
+    }
+    h1#page-title {
+      width:66.666%;
+      padding-right:40px;
+      font-size: 180%;
+    }
+    .breadcrumb {
+      text-align: right;
+      a,
+      span {
+        white-space: nowrap;
+      }
+    }
+  }
+}
+#main {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+#post-title-wide-wrapper,
+#post-title-wrapper {
+  padding-bottom: 0;
+}
+#main-content-wrapper {
+  padding-top: 20px;
+}
+#content-wrapper {
+  background: #fff;
+  //padding-bottom:20px;
+}
+
+.front #content-wrapper {
+  // padding-top: 0;
+}
+#post-title-wrapper {
+  padding-top: 20px;
+}
+.after-content-wrapper {
+  background-color: #fff;
+  padding-top: 40px;
+  padding-bottom: 20px;
+}
+.after-content2-wrapper {
+  background-color: #f5f5f5;
+  padding-top: 40px;
+  padding-bottom: 20px;
+}
+
+.footer-section {
+  background-color: $bg_dark2;
+  border-top: 4px solid $cugold;
+  color:#fff;
+  a {
+    color: $cugold;
+  }
+  a:hover {
+    color: #fff;
+  }
+}
+.footer-wrapper {
+  padding-top: 40px;
+  padding-bottom: 20px;
+}
+
+.layout-feature {
+  #content-wrapper,
+  #main {
+    padding: 0;
+  }
+}
+.feature-layout-wrapper {
+  padding-top: 20px;
+}
+
+// Mobile Menu
+#mobile-navigation-wrapper{
+  color:#fff;
+  ul#main-menu-mobile,
+  ul#footer-menu-mobile {
+    background-color: #333;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #444;
+    }
+    a.active,
+    a.active-trail {
+      color:#000;
+      background-color: $cugold;
+      font-weight: 600;
+    }
+  }
+  ul#secondary-menu-mobile {
+    background-color: #444;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #555;
+    }
+    a.active,
+    a.active-trail {
+      color:#000;
+      background-color: $cugold;
+      font-weight: 600;
+    }
+  }
+  ul#secondary-menu-mobile,
+  ul#footer-menu-mobile {
+    border-top:3px solid #ddd;
+  }
+}
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: $bg_dark1;
+$activeFG: #fff;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border-bottom:1px solid $border;
+    border-top:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    //border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+  li.expanded  {
+    border-left:1px solid $activeBG;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}
+
+#page-title-image {
+  overflow: visible;
+  .page-title-image-inner {
+    //margin: 0 -20px;
+    h1 {
+      margin: 0 20px;
+    }
+    .breadcrumb {
+      background-color: #fff;
+      padding:10px 20px 0;
+    }
+  }
+}

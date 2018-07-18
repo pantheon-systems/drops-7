@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Update scripts, etc for the Metatag Favicons module.
+ */
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Clear the Metatag caches so the updated mask-icon spec can be used.
+ */
+function metatag_favicons_update_7100() {
+  metatag_config_cache_clear();
+}

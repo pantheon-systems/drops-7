@@ -1,0 +1,38 @@
+<?php
+/**
+ * @file
+ * Code for the CU People Administration Override feature.
+ */
+
+include_once 'cu_people_administration_override.features.inc';
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * This function allows for people to create new user accounts by calling
+ * the original functionality in the user module, effectively overriding the
+ * problem of contextual filters interfering with the call to user create.
+ */
+function cu_people_administration_override_menu_alter(&$items) {
+  // Re-point the /admin/user/user/create path back to the User module's
+  // callback, since Views is taking over /admin/user/user.
+  $items['admin/people/create']['page callback'] = 'user_admin';
+  $items['admin/people/create']['file'] = 'user.admin.inc';
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function cu_people_administration_override_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_people_administration_override');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'view', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('view');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}

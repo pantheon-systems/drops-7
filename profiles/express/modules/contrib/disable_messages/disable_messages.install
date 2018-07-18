@@ -1,0 +1,63 @@
+<?php
+
+/*
+ * @file
+ * Filter Messages Module install file
+ */
+
+/**
+ * Implements hook_install().
+ */
+function disable_messages_install() {
+  variable_set('disable_messages_enable', '1');
+  variable_set('disable_messages_ignore_patterns', '');
+  variable_set('disable_messages_ignore_regex', array());
+  variable_set('disable_messages_ignore_case', '1');
+  variable_set('disable_messages_filter_by_page', 0);
+  variable_set('disable_messages_page_filter_paths', '');
+  variable_set('disable_messages_exclude_users', '');
+  variable_set('disable_messages_enable_debug', '0');
+  variable_set('disable_messages_debug_visible_div', '0');
+  // Add the access message permission to all roles.
+  $result = db_query('SELECT r.rid FROM {role} r');
+  foreach ($result as $role) {
+    // Add view all message permission for all users.
+    $permissions = array('view status messages', 'view warning messages', 'view error messages');
+    foreach ($permissions as $perm) {
+      db_query("
+        INSERT INTO {role_permission} (rid, permission, module)
+          VALUES (:rid, :perm, :module)
+        ",
+        array(
+          ':rid' => $role->rid,
+          ':perm' => $perm,
+          ':module' => 'disable_messages',
+        )
+      );
+    }
+  }
+  drupal_set_message(st('Added view all message type permissions for all roles. You can change this in !link', array('!link' => l(st('administer permissions'), 'admin/people/permissions', array('fragment' => 'module-disable_messages')))));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function disable_messages_uninstall() {
+  variable_del('disable_messages_enable');
+  variable_del('disable_messages_ignore_patterns');
+  variable_del('disable_messages_ignore_regex');
+  variable_del('disable_messages_ignore_case');
+  variable_del('disable_messages_filter_by_page');
+  variable_del('disable_messages_page_filter_paths');
+  variable_del('disable_messages_exclude_users');
+  variable_del('disable_messages_enable_debug');
+  variable_del('disable_messages_debug_visible_div');
+  // Permission deletions are handled by core
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function disable_messages_update_7100() {
+  // Do nothing other than force update of theme registry.
+}

@@ -1,0 +1,39 @@
+default:
+  # Ignore certain tags so they don't have to be excluded on the commandline.
+  gherkin:
+    filters:
+        tags: "~@broken"
+  # Not sure if this is the best, but it sounds nice.
+  formatters:
+      pretty: true
+  suites:
+    bundle:
+      paths: [ "%paths.base%/bundle_features" ]
+      contexts: [ FeatureContext ]
+  extensions:
+      Behat\MinkExtension:
+        base_url: "http://127.0.0.1:8057/"
+        files_path: "%paths.base%/assets"
+        javascript_session: sauce
+        sessions:
+          default:
+            goutte:
+              guzzle_parameters:
+                  verify: false
+          sauce:
+            sauce_labs:
+              # Browser defaults to Firefox if left out.
+              browser: "chrome"
+              #browser: "internet explorer"
+              capabilities:
+                # Need to add this fake data or else Sauce Labs fails.
+                # Problem in the behat/mink-extension project.
+                # Located in vendor/behat/mink-extension/src/Behat/MinkExtension/ServiceContainer/Driver/SauceLabsFactory.php
+                custom-data:
+                  foo: "bar"
+                  baz: "biz"
+                # OS to test against.
+                platform: "macOS 10.13"
+                #platform: "Windows 10"
+                # Version of browser to use.
+                #version: "63.0"

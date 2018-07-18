@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Devel debug log module install/schema hooks.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function devel_debug_log_schema() {
+  $schema = array();
+
+  $schema['devel_debug_log'] = array(
+    'description' => 'Table for storing debug messages.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The message identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'description' => 'The Unix timestamp when the message was saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'The title of the debug message.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'message' => array(
+        'description' => 'The debug message.',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'serialized' => array(
+        'description' => 'Indicates whether the message is serialized.',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_disable().
+ */
+function devel_debug_log_disable() {
+  // Empty debug table when the module is disabled.
+  db_delete('devel_debug_log')
+    ->execute();
+}

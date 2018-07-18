@@ -1,0 +1,704 @@
+<?php
+
+/**
+ * @file
+ * Embed Templates tests.
+ */
+class EmbedTemplatesTrackingPixelTestCase extends DrupalWebTestCase {
+  protected $privileged_user;
+
+  /**
+   * Tell Drupal about the module's tests.
+   *
+   * @return array
+   *   An array of information to display on Testing UI page.
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'Embed Templates Tests',
+      'description' => 'Tests the embed templates renderers.',
+      'group' => 'Embed Templates',
+    );
+  }
+
+  /**
+   * Perform steps to setup Drupal installation for test runs.
+   */
+  public function setUp() {
+
+    $modules = array(
+      'et_test',
+      'embed_templates',
+      'context',
+      'context_ui',
+      'entity',
+      'et_blocks',
+      'et_beans',
+      'et_page_top_bottom',
+      'et_unthemed_page',
+      'et_tracking_pixels',
+    );
+
+    parent::setUp($modules);
+
+    // All tests essentially need a user who can create embeds.
+    $this->setupUser();
+
+    // Setup a page with no embed code so that we can make sure no embeds appear there.
+    $this->setupNoEmbedsPage();
+  }
+
+  /**
+   * Since most tests need a user to create embeds.
+   */
+  private function setupUser() {
+    // Give the user all needed permissions to use in testing.
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'access administration pages',
+      'view the administration theme',
+      'administer contexts',
+      'access content',
+      'create url aliases',
+      'administer embed templates',
+      'administer blocks',
+      'access bean overview',
+      'administer beans',
+      'edit facebook embeds',
+      'view facebook embeds',
+      'edit doubleclick embeds',
+      'view doubleclick embeds',
+      'edit twitter embeds',
+      'view twitter embeds',
+      'edit et_bean embeds',
+      'view et_bean embeds',
+      'edit et_block embeds',
+      'view et_block embeds',
+      'edit et_unthemed_page embeds',
+      'view et_unthemed_page embeds',
+      'edit alter_type embeds',
+      'publish embeds',
+      'unpublish embeds',
+      'delete embeds',
+    ));
+
+    // Login user in order to edit config forms and use search.
+    $this->drupalLogin($this->privileged_user);
+  }
+
+  /**
+   * Creates a generic page with no embed codes on it.
+   */
+  private function setupNoEmbedsPage() {
+    $node = new stdClass();
+    $node->title = 'Embed codes page';
+    $node->body = 'Some text.';
+    $node->type = 'page';
+    node_object_prepare($node);
+    $node->status = 1;
+
+    $node = node_submit($node);
+    node_save($node);
+
+    $node = new stdClass();
+    $node->title = 'No embed codes page';
+    $node->type = 'page';
+    node_object_prepare($node);
+    $node->status = 1;
+    $node->path['alias'] = 'no-embeds';
+
+    $node = node_submit($node);
+    node_save($node);
+  }
+
+  /**
+   * Creates a generic page with no embed codes on it.
+   */
+  private function createEmbed($options = array()) {
+    $embed = entity_create('embed_templates', $options);
+    entity_save('embed_templates', $embed);
+  }
+
+  /**
+   * Tests adding a basic Facebook tracking pixel.
+   */
+  public function testFacebookTopBottomPixel() {
+
+    // @todo maybe test with pages already set up rather than node/1?
+
+    // Post to config form to save a Facebook tracking pixel.
+    $edit = array();
+    $edit['label'] = "Facebook Pixel";
+    $edit['path'] = 'node/1';
+    $edit['account_id'] = '123456';
+    $edit['action'] = 'PageAction';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/facebook', $edit, t('Save'));
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Assert tracking pixel code is rendered.
+    // Need to use raw since code is not visible.
+    $this->assertRaw("fbq('init', '123456');", "Facebook ID found.");
+    $this->assertRaw("fbq('track', 'PageAction');", "Facebook tracking action found.");
+
+    // Go to page with no tracking pixel on it.
+    $this->drupalGet('no-embeds');
+
+    // Assert tracking pixel code is not rendered.
+    $this->assertNoRaw("fbq('init', '123456');", "No tracking pixel found.");
+
+    // Set pixel to bottom of page.
+    $edit = array();
+    $edit['position'] = "bottom";
+    $this->drupalPost('admin/content/embeds/facebook/1/edit', $edit, t('Save'));
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Check and see it moved to page_bottom region.
+    $this->assertRaw('<div class="region region-page-bottom">
+    <!-- Facebook Pixel Code -->
+<script>', "Facebook tracking pixel moved to bottom of page.");
+
+    // Unpublish pixel and see that it works.
+    $edit = array();
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds/facebook/1/edit', $edit, t('Save'));
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Check and see it is not showing up.
+    $this->assertNoRaw('<div class="region region-page-bottom">
+    <!-- Facebook Pixel Code -->
+<script>', "Facebook tracking pixel was unpublished.");
+  }
+
+  /**
+   * Tests adding a basic Twitter tracking pixel and placing via Context by path.
+   */
+  public function testTwitterContextPixel() {
+
+    // Post to config form to save a Twitter tracking pixel.
+    $edit = array();
+    $edit['label'] = "Twitter Pixel";
+    $edit['account_id'] = '123456';
+    $edit['activity'] = 'PageAction';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/twitter', $edit, t('Save'));
+
+    // Add a context.
+    $context = new stdClass();
+    $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+    $context->api_version = 3;
+    $context->name = 'custom_pixel';
+    $context->description = '';
+    $context->tag = '';
+    $context->conditions = array(
+      'path' => array(
+        'values' => array(
+          'node/1' => 'node/1',
+        ),
+      ),
+    );
+    $context->reactions = array(
+      'et_page_top_bottom' => array(
+        'et_page_top_bottom' => '1',
+      ),
+    );
+    $context->condition_mode = 0;
+    context_save($context);
+
+    // Need to flush caches for Context to be active on node/1.
+    drupal_flush_all_caches();
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Assert tracking pixel code is rendered.
+    // Need to use raw since code is not visible.
+    $this->assertRaw("twq('init', '123456');", "Twitter ID found.");
+    $this->assertRaw("twq('track', 'PageAction');", "Twitter tracking action found.");
+
+    // Go to page with no tracking pixel on it.
+    $this->drupalGet('no-embeds');
+
+    // Assert tracking pixel code is not rendered.
+    $this->assertNoRaw("twq('init', '123456');", "No tracking pixel found.");
+  }
+
+  /**
+   * Tests adding a basic Facebook tracking pixel and bulk operations.
+   */
+  public function testDoubleClickBulkOperationsPixel() {
+
+    // Post to config form to save a DoubleClick tracking pixel.
+    $edit = array();
+    $edit['label'] = "DoubleClick Pixel";
+    $edit['path'] = 'node/1';
+    $edit['account_id'] = '123456';
+    $edit['activity'] = 'PageAction';
+    $edit['creation'] = '10/21/1999';
+    $edit['page_location'] = 'http://www.example.com';
+    $edit['type'] = 'type_one';
+    $edit['category'] = 'category_one';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/doubleclick', $edit, t('Save'));
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Assert tracking pixel code is rendered.
+    // Need to use raw since code is not visible.
+    $this->assertRaw('<iframe src="https://123456.fls.doubleclick.net/activityi;src=123456;type=type_one;cat=category_one;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;ord=\' + a + \'?" width="1" height="1" frameborder="0" style="display:none"', "DoubleClick iframe found.");
+    $this->assertRaw("Activity name of this tag: PageAction", "DoubleClick activity found.");
+
+    // Unpublish pixel.
+    $edit = array();
+    $edit['table[0]'] = TRUE;
+    $edit['select'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds', $edit, t('Submit'));
+
+    // Confirm unpublishing.
+    $edit = array();
+    $this->drupalPost(NULL, $edit, t('Unpublish'));
+
+    // Make sure pixel is still there.
+    $this->assertText('DoubleClick Pixel', 'Tracking pixel still exists.');
+
+    // Go to page with tracking pixel on it. Should not appear.
+    $this->drupalGet('node/1');
+
+    $this->assertNoRaw('<iframe src="https://123456.fls.doubleclick.net/activityi;src=123456', "DoubleClick ID found.");
+    $this->assertNoRaw("Activity name of this tag: PageAction", "DoubleClick activity found.");
+
+    // Delete Tracking pixel.
+    $edit = array();
+    $edit['select'] = 'delete';
+    $edit['table[0]'] = TRUE;
+    $this->drupalPost('admin/content/embeds', $edit, t('Submit'));
+
+    // Confirm deletion.
+    $edit = array();
+    $this->drupalPost(NULL, $edit, t('Delete'));
+
+    // Make sure pixel is gone.
+    $this->assertNoText('DoubleClick Pixel', 'Tracking pixel has been deleted.');
+
+    // Go to page with tracking pixel on it. Should not appear.
+    $this->drupalGet('node/1');
+
+    $this->assertNoRaw('<iframe src="https://123456.fls.doubleclick.net/activityi;src=123456', "DoubleClick ID found.");
+    $this->assertNoRaw("Activity name of this tag: PageAction", "DoubleClick activity found.");
+  }
+
+  /**
+   * Tests placement of an embed template bean.
+   */
+  public function testBeanRenderer() {
+
+    // Post to config form to save a bean template entity.
+    $edit = array();
+    $edit['label'] = 'Template Bean';
+    $edit['account_id'] = '123456';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/et_bean', $edit, t('Save'));
+
+    // See bean on overview page.
+    $this->drupalGet('admin/content/blocks');
+    $this->assertText('Template Bean', 'Template Bean exists.');
+
+    // Place bean as block.
+    $edit = array();
+    $edit['regions[bartik]'] = 'content';
+    $edit['title'] = 'Template Bean';
+    $this->drupalPost('admin/structure/block/manage/bean/template-bean/configure', $edit, t('Save block'));
+
+    // See that label is disabled.
+    $this->drupalGet('block/template-bean/edit');
+    $this->assertRaw('<input disabled="disabled" type="text" id="edit-label" name="label" value="Template Bean"', 'Label is disabled.');
+
+    // See that title can be edited.
+    $edit = array();
+    $edit['title'] = 'A Bean Block';
+    $this->drupalPost('block/template-bean/edit', $edit, t('Save'));
+
+    // See that bean template is rendered.
+    $this->drupalGet('/');
+    $this->assertText('Dummy Placeholder', 'Template Bean rendered.');
+
+    // See that you can change the embed template label and that the bean label changes and renders.
+    $edit = array();
+    $edit['label'] = 'Template Bean Changed';
+    $this->drupalPost('admin/content/embeds/et_bean/1/edit', $edit, t('Save'));
+
+    // See bean on overview page.
+    $this->drupalGet('admin/content/blocks');
+    $this->assertText('Template Bean Changed', 'Template Bean label changed.');
+
+    // Still rendering.
+    $this->drupalGet('/');
+    $this->assertText('Dummy Placeholder', 'Template Bean rendered.');
+
+    // See that when you delete the embed template, the bean is also deleted.
+    $edit = array();
+    $this->drupalPost('admin/content/embeds/et_bean/1/edit', $edit, t('Delete'));
+
+    // Confirm deletion.
+    $edit = array();
+    $this->drupalPost(NULL, $edit, t('Delete'));
+
+    // See that embed was deleted.
+    $this->drupalGet('admin/content/embeds');
+    $this->assertNoText('Template Bean Changed', 'Template Bean embed was deleted.');
+
+    // See that bean was deleted.
+    $this->drupalGet('admin/content/blocks');
+    $this->assertNoText('Template Bean Changed', 'Template Bean bean was deleted.');
+  }
+
+  /**
+   * Tests placement of an embed template block.
+   */
+  public function testBlockRenderer() {
+
+    // Post to config form to save a bean template entity.
+    $edit = array();
+    $edit['label'] = 'Template Block';
+    $edit['account_id'] = '123456';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/et_block', $edit, t('Save'));
+
+    // See that the block was created.
+    $this->drupalGet('admin/structure/block');
+    $this->assertText('Template Block', 'Template Block exists.');
+
+    // Place block.
+    $edit = array();
+    $edit['regions[bartik]'] = 'content';
+    $edit['title'] = 'Template Block';
+    $this->drupalPost('admin/structure/block/manage/et_blocks/et_blocks_1/configure', $edit, t('Save block'));
+
+    $this->drupalGet('/');
+    $this->assertText('Dummy Placeholder', 'Template Block rendered.');
+
+    // Unpublish pixel and see that it works.
+    $edit = array();
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds/et_block/1/edit', $edit, t('Save'));
+
+    $this->drupalGet('/');
+    $this->assertNoText('Dummy Placeholder', 'Template Block unpublished.');
+  }
+
+  /**
+   * Tests rendering of embed template landing pages.
+   */
+  public function testLandingPageRenderer() {
+
+    // Post to config form to save a landing page entity.
+    $edit = array();
+    $edit['label'] = 'A Landing Page';
+    $edit['path'] = 'landing-page.html';
+    $edit['account_id'] = '123456';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds/add/et_unthemed_page', $edit, t('Save'));
+
+    // Need to flush caches to get new hook_menu entry to render.
+    drupal_flush_all_caches();
+
+    // See that the landing page renders.
+    $this->drupalGet('landing-page.html');
+    $this->assertText('Dummy Placeholder', 'Landing page rendered.');
+    $this->assertText('Account ID: 123456', 'Account ID rendered.');
+
+    // Unpublish embed.
+    $edit = array();
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds/et_unthemed_page/1/edit', $edit, t('Save'));
+
+    // Need to flush caches to get new hook_menu removed.
+    drupal_flush_all_caches();
+
+    // See that the landing page returns a 404.
+    $this->drupalGet('google.html');
+    $this->assertResponse(404, 'Landing page not found.');
+  }
+
+  /**
+   * Tests searching on embed overview page.
+   */
+  public function testSearchOverviewPage() {
+
+    // Create some embeds for searching purposes.
+    // Data blob can be the same for these.
+    $data = 'a:1:{s:10:"account_id";s:6:"123456";}';
+
+    // Create unthemed_page.
+    $options = array(
+      'name' => 'Unthemed Page',
+      'renderer' => 'unthemed_page',
+      'type' => 'et_unthemed_page',
+      'path' => 'unthemed-page',
+      'status' => 'published',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Create page_top_bottom.
+    $options = array(
+      'name' => 'Facebook Pixel',
+      'renderer' => 'page_top_bottom',
+      'type' => 'facebook',
+      'path' => 'facebook-pixel',
+      'status' => 'published',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Create another page_top_bottom.
+    $options = array(
+      'name' => 'Twitter Pixel',
+      'renderer' => 'page_top_bottom',
+      'type' => 'twitter',
+      'path' => 'twitter-pixel',
+      'status' => 'unpublished',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Create bean.
+    $options = array(
+      'name' => 'ET Bean',
+      'renderer' => 'bean',
+      'type' => 'et_bean',
+      'path' => '',
+      'status' => 'published',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Search for path.
+    // Should return two results.
+    $edit = array();
+    $edit['path'] = 'pixel';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('Facebook Pixel', 'Pixel path one found.');
+    $this->assertText('Twitter Pixel', 'Pixel path two found.');
+    $this->assertNoText('unthemed_page', 'Unthemed page not found.');
+
+    // Search for type.
+    // Should return one result.
+    $edit = array();
+    $edit['type'] = 'et_bean';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('et_bean', 'Bean found.');
+    $this->assertNoText('unthemed_page', 'Unthemed page not found.');
+
+    // Shouldn't return any results.
+    $edit = array();
+    $edit['type'] = 'et_block';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('No results matched your search. All embeds are shown.', 'No results found.');
+
+    // Search for renderer.
+    // Should only return one result since I am combining with name.
+    $edit = array();
+    $edit['renderer'] = 'page_top_bottom';
+    $edit['name'] = 'Twitter';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('Twitter Pixel', 'Twitter Pixel found.');
+    $this->assertNoText('Facebook Pixel', 'Facebook Pixel not found.');
+
+    // Search for status.
+    // Should only return one result.
+    $edit = array();
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('Twitter Pixel', 'Twitter Pixel found.');
+    $this->assertNoText('Facebook Pixel', 'Facebook Pixel not found.');
+
+    // Search for name.
+    // Should return two results.
+    $edit = array();
+    $edit['name'] = 'Pixel';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('Twitter Pixel', 'Twitter Pixel found.');
+    $this->assertText('Facebook Pixel', 'Facebook Pixel found.');
+    $this->assertNoText('et_bean', 'Bean Embed not found.');
+
+    // Search with all filters engaged.
+    // Should only return Facebook pixel.
+    $edit = array();
+    $edit['name'] = 'Facebook';
+    $edit['renderer'] = 'page_top_bottom';
+    $edit['type'] = 'facebook';
+    $edit['path'] = 'facebook-pixel';
+    $edit['status'] = 'published';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('Facebook Pixel', 'Facebook Pixel found.');
+    $this->assertNoText('et_bean', 'Bean Embed not found.');
+
+    // Changing one filter should fail search and return all embeds.
+    $edit = array();
+    $edit['name'] = 'Facebook';
+    $edit['renderer'] = 'page_top_bottom';
+    $edit['type'] = 'facebook';
+    $edit['path'] = 'facebook-pixel';
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds', $edit, t('Search'));
+
+    $this->assertText('No results matched your search. All embeds are shown.', 'No results found.');
+  }
+
+  /**
+   * Tests permissions relating to the embed_templates module.
+   */
+  public function testPermissions() {
+
+    // See that user can't access form to add this embed type.
+    $this->drupalGet('admin/content/embeds/add/no_permissions');
+    $this->assertResponse(403, 'Denied Access to add form for embed template.');
+
+    // Create a no permissions embed.
+    $data = 'a:1:{s:10:"account_id";s:6:"123456";}';
+    $options = array(
+      'name' => 'No permissions',
+      'renderer' => 'unthemed_page',
+      'type' => 'no_permissions',
+      'path' => 'no_perms.html',
+      'status' => 'no_perms',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Make sure user can't use the edit form either.
+    $this->drupalGet('admin/content/embeds/no_permissions/1/edit');
+    $this->assertResponse(403, 'Denied Access to edit form for embed template.');
+
+    // Make sure the no_perms status doesn't show up on add/edit form.
+    // Also make sure one permission that should show up is there.
+    $this->drupalGet('admin/content/embeds/add/et_unthemed_page');
+    $this->assertNoRaw('<option value="no_perms">No permissions</option>', "No permissions status not found on add form.");
+    $this->assertRaw('<option value="published">Published</option>', "Publish status found on add form.");
+
+    // Make sure no_perms status doesn't show up on overview form.
+    // Also make sure one permission that should show up is there.
+    $this->drupalGet('admin/content/embeds');
+    $this->assertNoRaw('<option value="no_perms">No Permissions For You</option>', "No permissions status not found on overview screen.");
+    $this->assertRaw('<option value="published">Publish Embed Codes</option>', "Publish status found on overview screen.");
+  }
+
+  /**
+   * Test that alter functions work for API hooks.
+   */
+  public function testAlterHooks() {
+    // See that label of form has changed to alter hook label.
+    $this->drupalGet('admin/content/embeds/add/alter_type');
+    $this->assertText('Add Alter Hook Fun Time Embed', 'Alter hook label found.');
+    $this->assertNoText('Alter Hook Template', 'Custom type label not found.');
+
+    // See that custom status label has changed via alter hook.
+    $this->assertNoRaw('<option value="alter_status">Test Alter Hooks</option>', "Alter hook status label found.");
+    $this->assertRaw('<option value="alter_status">Alter Hooks Are Good</option>', "Custom status label not found.");
+  }
+
+  /**
+   * Test that checks for a previous bug where empty values are being printed into templates.
+   */
+  public function testIsEmpty() {
+
+    // Create data without a second tracking action.
+    $data = 'a:1:{s:10:"account_id";s:6:"123456";}';
+
+    // Create Facebook pixel.
+    $options = array(
+      'name' => 'Is Empty',
+      'renderer' => 'page_top_bottom',
+      'type' => 'facebook',
+      'path' => 'node/1',
+      'status' => 'published',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Shouldn't see an empty Facebook tracking action.
+    $this->assertNoRaw("fbq('track', '');", "No empty Facebook tracking action.");
+  }
+
+  /**
+   * Assert that an embed code isn't added to the page via Context when it is unpublished.
+   */
+  public function testUnpublishedContext() {
+    // Create data without a second tracking action.
+    $data = 'a:1:{s:10:"account_id";s:6:"123456";}';
+
+    // Create Facebook pixel.
+    $options = array(
+      'name' => 'Not Published',
+      'renderer' => 'page_top_bottom',
+      'type' => 'twitter',
+      'path' => '',
+      'status' => 'published',
+      'data' => $data,
+    );
+    $this->createEmbed($options);
+
+    // Add a context.
+    $context = new stdClass();
+    $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+    $context->api_version = 3;
+    $context->name = 'custom_pixel';
+    $context->description = '';
+    $context->tag = '';
+    $context->conditions = array(
+      'path' => array(
+        'values' => array(
+          'node/1' => 'node/1',
+        ),
+      ),
+    );
+    $context->reactions = array(
+      'et_page_top_bottom' => array(
+        'et_page_top_bottom' => '1',
+      ),
+    );
+    $context->condition_mode = 0;
+    context_save($context);
+
+    // Need to flush caches for Context to be active on node/1.
+    drupal_flush_all_caches();
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Assert tracking pixel code is rendered.
+    // Need to use raw since code is not visible.
+    $this->assertRaw("twq('init', '123456');", "Twitter ID found.");
+
+    // Change status to unpublished to make sure embed is not rendered.
+    $edit = array();
+    $edit['status'] = 'unpublished';
+    $this->drupalPost('admin/content/embeds/facebook/1/edit', $edit, t('Save'));
+
+    // Go to page with tracking pixel on it.
+    $this->drupalGet('node/1');
+
+    // Assert tracking pixel is not rendered.
+    $this->assertNoRaw("twq('init', '123456');", "Twitter ID found.");
+  }
+
+}

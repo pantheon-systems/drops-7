@@ -1,0 +1,10 @@
+@media (min-width: 960px) { #cu-layout-settings-form .form-checkboxes { display: table; }
+  #cu-layout-settings-form .form-checkboxes .form-type-checkbox { display: table-cell; padding: 10px; } }
+.feature-layout-wrapper .feature-layout-hero-wrapper { position: relative; width: 100vw; max-width: none; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; height: auto; display: block; clear: both; }
+.layout-boxed .feature-layout-wrapper .feature-layout-hero-wrapper, .express-layout-boxed .feature-layout-wrapper .feature-layout-hero-wrapper { max-width: 1200px; margin: 0 auto; left: -20px; right: auto; }
+
+@media screen and (min-width: 960px) { .feature-layout-wrapper.feature-layout-wrapper-has-callouts { padding-right: 280px; }
+  .feature-layout-wrapper.feature-layout-wrapper-has-callouts .feature-layout-hero-wrapper { left: calc(50% + 140px); }
+  .layout-boxed .feature-layout-wrapper.feature-layout-wrapper-has-callouts .feature-layout-hero-wrapper, .express-layout-boxed .feature-layout-wrapper.feature-layout-wrapper-has-callouts .feature-layout-hero-wrapper { left: -20px; } }
+
+.feature-layout-hero-wrapper img.image-hero { max-width: none; width: 100%; }

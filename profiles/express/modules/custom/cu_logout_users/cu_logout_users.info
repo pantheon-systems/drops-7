@@ -1,0 +1,4 @@
+name = Prevent User Logins
+description = Prevents users from logging into the website.
+core = 7.x
+package = CU-Core

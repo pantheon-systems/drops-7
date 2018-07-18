@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag GooglePlus tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag GooglePlus tags work correctly.
+ */
+class MetatagGooglePlusTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: GooglePlus',
+      'description' => 'Test the Google Plus meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    // @todo Can't test the output of this tag, it depends upon changes to the
+    // html.tpl.php file.
+    // 'itemtype',
+    'itemprop:name',
+    'itemprop:description',
+    'itemprop:image',
+    'author',
+    'publisher',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_google_plus';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // The itemprop meta tags don't have 'itemprop' in their attribute value,
+    // 'itemprop' is the name of the attribute itself.
+    return str_replace('itemprop_', '', $tag_name);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'itemprop';
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'author'.
+   */
+  public function author_test_output_xpath() {
+    return "//link[@rel='author']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'author'.
+   */
+  public function author_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'itemtype'.
+   */
+  public function itemtype_test_key() {
+    return 'metatags[und][itemtype][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'itemtype'.
+   */
+  public function itemtype_test_value() {
+    return 'Article';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'itemprop_image'.
+   */
+  public function itemprop_image_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'itemtype'.
+   */
+  public function itemtype_test_field_xpath() {
+    return "//select[@name='metatags[und][itemtype][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'itemtype'.
+   */
+  public function itemtype_test_output_xpath() {
+    return "//html[@rel='itemtype']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'publisher'.
+   */
+  public function publisher_test_output_xpath() {
+    return "//link[@rel='publisher']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'publisher'.
+   */
+  public function publisher_test_value_attribute() {
+    return 'href';
+  }
+
+}

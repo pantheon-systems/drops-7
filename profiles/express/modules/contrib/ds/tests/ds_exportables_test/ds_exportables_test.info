@@ -1,0 +1,11 @@
+name = Display Suite exportables test
+description = Tests for exportables with Display Suite.
+package = "Display Suite"
+core = 7.x
+hidden = TRUE
+
+; Information added by Drupal.org packaging script on 2018-04-18
+version = "7.x-2.15"
+core = "7.x"
+project = "ds"
+datestamp = "1524068596"

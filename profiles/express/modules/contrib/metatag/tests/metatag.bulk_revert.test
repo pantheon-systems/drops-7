@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module to ensure the bulk revert functionality works.
+ */
+
+/**
+ * Tests for the Metatag module to ensure the bulk revert functionality works.
+ */
+class MetatagBulkRevertTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag bulk revert',
+      'description' => 'Test the Metatag bulk revert functionality.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
+    );
+  }
+
+  /**
+   * Test the Bulk Revert functionality works.
+   */
+  function testBulkRevertPageLoads() {
+    $this->adminUser = $this->createAdminUser();
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet('admin/config/search/metatags/bulk-revert');
+    $this->assertResponse(200);
+
+    // Confirm each of the entity checkboxes is present.
+    foreach (entity_get_info() as $entity_type => $entity_info) {
+      foreach (array_keys($entity_info['bundles']) as $bundle) {
+        if (metatag_entity_supports_metatags($entity_type, $bundle)) {
+          $this->assertFieldByName("update[{$entity_type}:{$bundle}]");
+        }
+      }
+    }
+
+    // Confirm each of the meta tags is available as a checkbox.
+    foreach (metatag_get_info('tags') as $tag_name => $tag) {
+      $this->assertFieldByName("tags[{$tag_name}]");
+    }
+
+    // Confirm each of the languages has a checkbox.
+    $this->assertFieldByName("languages[" . LANGUAGE_NONE . "]");
+    foreach (language_list() as $language) {
+      $this->assertFieldByName("languages[{$language->language}]");
+    }
+  }
+
+}

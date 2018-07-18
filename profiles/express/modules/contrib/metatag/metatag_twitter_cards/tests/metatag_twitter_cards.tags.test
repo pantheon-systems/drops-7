@@ -1,0 +1,143 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag Twitter Cards tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag Twitter Cards tags work correctly.
+ */
+class MetatagTwitterCardsTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Twitter Cards',
+      'description' => 'Test the Twitter Cards meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'twitter:app:country',
+    'twitter:app:id:googleplay',
+    'twitter:app:id:ipad',
+    'twitter:app:id:iphone',
+    'twitter:app:name:googleplay',
+    'twitter:app:name:ipad',
+    'twitter:app:name:iphone',
+    'twitter:app:url:googleplay',
+    'twitter:app:url:ipad',
+    'twitter:app:url:iphone',
+    'twitter:card',
+    'twitter:creator',
+    'twitter:creator:id',
+    'twitter:data1',
+    'twitter:data2',
+    'twitter:description',
+    'twitter:dnt',
+    'twitter:image',
+    'twitter:image0',
+    'twitter:image1',
+    'twitter:image2',
+    'twitter:image3',
+    'twitter:image:alt',
+    'twitter:image:height',
+    'twitter:image:width',
+    'twitter:label1',
+    'twitter:label2',
+    'twitter:player',
+    'twitter:player:height',
+    'twitter:player:stream',
+    'twitter:player:stream:content_type',
+    'twitter:player:width',
+    'twitter:site',
+    'twitter:site:id',
+    'twitter:title',
+    'twitter:url',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_twitter_cards';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // All OG tags use colons to separate levels.
+    $tag_name = str_replace('_', ':', $tag_name);
+
+    // Fix a few specific tags.
+    $tag_name = str_replace('content:type', 'content_type', $tag_name);
+
+    return $tag_name;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'twitter:card'.
+   */
+  public function twitter_card_test_key() {
+    return 'metatags[und][twitter:card][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:card'.
+   */
+  public function twitter_card_test_value() {
+    return 'summary';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'twitter:card'.
+   */
+  public function twitter_card_test_field_xpath() {
+    return "//select[@name='metatags[und][twitter:card][value]']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:image'.
+   */
+  public function twitter_image_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:image0'.
+   */
+  public function twitter_image0_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:image1'.
+   */
+  public function twitter_image1_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:image2'.
+   */
+  public function twitter_image2_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'twitter:image3'.
+   */
+  public function twitter_image3_test_value() {
+    return $this->randomImageUrl();
+  }
+
+}

@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_logout_users_enable() {
+  // Truncate sessions table.
+  db_truncate('sessions')->execute();
+}
+

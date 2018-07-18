@@ -1,0 +1,14 @@
+name = Job Scheduler Trigger
+description = Creates scheduler triggers that fire up at certain days, times
+core = 7.x
+# @codingStandardsIgnoreLine
+php = 5.2
+dependencies[] = job_scheduler
+dependencies[] = trigger
+configure = admin/config/system/job_scheduler
+; Information added by Drupal.org packaging script on 2018-02-13
+version = "7.x-2.0"
+core = "7.x"
+project = "job_scheduler"
+datestamp = "1518514085"
+

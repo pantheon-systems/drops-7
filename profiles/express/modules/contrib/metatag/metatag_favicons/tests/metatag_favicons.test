@@ -1,0 +1,233 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag Favicons module.
+ */
+
+/**
+ * Tests for the Metatag Favicons module.
+ */
+class MetatagFaviconsTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag Favicons tests',
+      'description' => 'Test the Metatag:Favicons module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_favicons';
+
+    parent::setUp($modules);
+
+    // Create an admin user and log them in.
+    $this->adminUser = $this->createAdminUser();
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Confirm that it's possible to load the main admin page.
+   */
+  public function testAdminPage() {
+    $this->drupalGet('admin/config/search/metatags');
+    $this->assertResponse(200);
+
+    // Confirm the page is correct.
+    $this->assertText(t('To view a summary of the default meta tags and the inheritance, click on a meta tag type.'));
+  }
+
+  /**
+   * Confirm the mask-icon meta tag works correctly.
+   */
+  public function testMaskIconValue() {
+    // The SVG image is copied from the archive obtained from
+    // https://www.drupal.org/about/media-kit/logos on 6/20/2016.
+    $svg_path = drupal_get_path('module', 'metatag_favicons') . '/tests/druplicon-vector.svg';
+    $relative_path = url($svg_path, array('absolute' => FALSE));
+    $absolute_path = url($svg_path, array('absolute' => TRUE));
+
+    // Testbot doesn't have "clean_url" enabled.
+    $relative_path = str_replace('?q=', '', $relative_path);
+    $absolute_path = str_replace('?q=', '', $absolute_path);
+
+    // Try filling in a path relative to the Drupal installation.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    metatag_config_save($config);
+
+    // Load the config page.
+    $this->drupalGet('admin/config/search/metatags');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag's value is on the page.
+    $this->assertText(t('Icon: SVG') . ':');
+    $this->assertText($absolute_path);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+
+    // Before proceeding, clear the site's caches.
+    drupal_flush_all_caches();
+
+    // Try filling in a relative path.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $relative_path;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $relative_path);
+
+    // Before proceeding, clear the site's caches.
+    drupal_flush_all_caches();
+
+    // Test filling in an absolute path.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $absolute_path;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+
+    // Before proceeding, clear the site's caches.
+    drupal_flush_all_caches();
+
+    // Test filling in an absolute path for an external file.
+    $path = 'https://www.example.com/example.svg';
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $path;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertNotEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['href'], $path);
+  }
+
+  /**
+   * Confirm the mask-icon meta tag 'color' attribute works correctly.
+   */
+  public function testMaskIconColor() {
+    // The SVG image is copied from the archive obtained from
+    // https://www.drupal.org/about/media-kit/logos on 6/20/2016.
+    $svg_path = drupal_get_path('module', 'metatag_favicons') . '/tests/druplicon-vector.svg';
+    $absolute_path = url($svg_path, array('absolute' => TRUE));
+
+    // Testbot doesn't have "clean_url" enabled.
+    $absolute_path = str_replace('?q=', '', $absolute_path);
+
+    // Try a color string.
+    $color = 'red';
+
+    // Update the global config.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    $config->config['mask-icon']['color'] = $color;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
+
+    // Before proceeding, clear the site's caches.
+    drupal_flush_all_caches();
+
+    // Try a color hex code.
+    $color = '#990000';
+
+    // Update the global config.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    $config->config['mask-icon']['color'] = $color;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
+
+    // Try a color RGB value.
+    $color = 'rgb(153, 0, 0)';
+
+    // Update the global config.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    $config->config['mask-icon']['color'] = $color;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
+
+    // Try empty color.
+    $color = '';
+
+    // Update the global config.
+    $config = metatag_config_load('global');
+    $config->config['mask-icon']['value'] = $svg_path;
+    $config->config['mask-icon']['color'] = $color;
+    metatag_config_save($config);
+
+    // Load the front page.
+    $this->drupalGet('<front>');
+    $this->assertResponse(200);
+
+    // Confirm the meta tag is present.
+    $xpath = $this->xpath("//link[@rel='mask-icon']");
+    $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertFalse(isset($xpath[0]['color']));
+  }
+
+}

@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag Dublin Core tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag Dublin Core tags work correctly.
+ */
+class MetatagDcTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Dublin Core',
+      'description' => 'Test the Dublin Core meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'dcterms.contributor',
+    'dcterms.coverage',
+    'dcterms.creator',
+    'dcterms.date',
+    'dcterms.description',
+    'dcterms.format',
+    'dcterms.identifier',
+    'dcterms.language',
+    'dcterms.publisher',
+    'dcterms.relation',
+    'dcterms.rights',
+    'dcterms.source',
+    'dcterms.subject',
+    'dcterms.title',
+    'dcterms.type',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_dc';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    return str_replace('dcterms_', 'dcterms.', $tag_name);
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_key() for 'dcterms.type'.
+   */
+  public function dcterms_type_test_key() {
+    return 'metatags[und][dcterms.type][value]';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'dcterms.type'.
+   */
+  public function dcterms_type_test_value() {
+    return 'Text';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_field_xpath() for 'dcterms.type'.
+   */
+  public function dcterms_type_test_field_xpath() {
+    return "//select[@name='metatags[und][dcterms.type][value]']";
+  }
+
+}

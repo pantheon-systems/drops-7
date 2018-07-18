@@ -1,0 +1,15 @@
+guid,uid,cn,lname,fname,house,department,faculty,staff,student,gpa,probation
+101,1,hpotter,Potter,Harry,Gryffindor,,N,N,Y,3.8,N
+102,2,hgrainger,Granger,Hermione,Gryffindor,,N,N,Y,4,N
+103,3,rweasley,Weasley,Ron,Gryffindor,,N,N,Y,3.6,N
+104,4,fweasley,Weasley,Fred,Gryffindor,,N,N,Y,3,N
+105,5,gweasley,Weasley,George,Gryffindor,,N,N,Y,2.7,N
+106,6,dmalfoy,Malfoy,Draco,Slytherin,,N,N,Y,3.7,Y
+107,7,triddle,Riddle,Tom,Slytherin,,N,N,Y,3.6,N
+108,8,ggoyle,Goyle,Gregory,Slytherin,,N,N,Y,3.3,Y
+109,9,ssnape,Snape,Severus ,Slytherin,Defence Against the Dark Arts professor ,Y,Y,N,,
+110,10,adumbledore,Dumbledore,Albus,,Head Master Of Hogwarts,Y,Y,N,,
+111,11,mmcgonagall,McGonagall,Minerva,Gryffindor,Tranfiguration/ Deputy Head Mistress,Y,Y,N,,
+112,12,spomana,Pomona,Sprout,Hufflepuff,Herbology,Y,Y,N,,
+113,13,rhagrid,Hagrid,Rubeus,Gryffindor,,N,Y,N,,
+119,19,service-account,Service,Account,,,,,,,

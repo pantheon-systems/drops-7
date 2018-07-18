@@ -1,0 +1,23 @@
+/**
+ * @file
+ * Google Analytics Reports styles.
+ */
+
+.google-analytics-reports-summary-top-sources,
+.google-analytics-reports-summary-top-keywords {
+  float: left;
+  width: 50%;
+}
+.google-analytics-reports-summary-top-sources > div {
+  padding-right: 1%;
+}
+
+.google-analytics-reports-pages-top-referrals,
+.google-analytics-reports-pages-top-keywords {
+  float: left;
+  width: 50%;
+}
+
+.google-analytics-reports-pages-top-referrals > div {
+  padding-right: 1%;
+}

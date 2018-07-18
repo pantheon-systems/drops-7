@@ -1,0 +1,21 @@
+name = SMTP Authentication Support
+description = "Allow for site emails to be sent through an SMTP server of your choice."
+core = 7.x
+package = Mail
+configure = admin/config/system/smtp
+files[] = smtp.mail.inc
+files[] = smtp.phpmailer.inc
+files[] = smtp.transport.inc
+
+; Test suite.
+files[] = tests/smtp.unit.test
+
+; For the tests the Maillog module is also required.
+test_dependencies[] = maillog
+
+; Information added by Drupal.org packaging script on 2017-06-27
+version = "7.x-1.7"
+core = "7.x"
+project = "smtp"
+datestamp = "1498593247"
+

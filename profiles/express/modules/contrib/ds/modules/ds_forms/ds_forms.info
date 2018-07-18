@@ -1,0 +1,11 @@
+name = "Display Suite Forms"
+description = "Manage the layout of forms in Display Suite."
+core = "7.x"
+package = "Display Suite"
+dependencies[] = ds
+
+; Information added by Drupal.org packaging script on 2018-04-18
+version = "7.x-2.15"
+core = "7.x"
+project = "ds"
+datestamp = "1524068596"

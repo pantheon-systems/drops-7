@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Primary hook implementations for Metatag:Google CSE.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_google_cse_ctools_plugin_api($owner, $api) {
+  if ($owner == 'metatag' && $api == 'metatag') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function metatag_google_cse_theme() {
+  $info['metatag_google_cse'] = array(
+    'render element' => 'element',
+  );
+
+  return $info;
+}
+
+/**
+ * Theme callback for a normal meta tag.
+ *
+ * The format is:
+ * <meta name="[name]" content="[value]" />
+ */
+function theme_metatag_google_cse($variables) {
+  $element = &$variables['element'];
+
+  if ($element['#name'] === 'google_rating') {
+    $element['#name'] = 'rating';
+  }
+
+  $args = array(
+    '#name'  => 'name',
+    '#value' => 'content',
+  );
+  element_set_attributes($element, $args);
+  unset($element['#value']);
+  return theme('html_tag', $variables);
+}

@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module to ensure the hreflang meta tags work correctly.
+ */
+
+class MetatagHreflangTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for hreflang',
+      'description' => 'Test Metatag integration with the locale module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need Locale for the multiple languages.
+    $modules[] = 'locale';
+
+    parent::setUp($modules);
+  }
+
+  // @todo Make sure the hreflang meta tag is added for each enabled language.
+}

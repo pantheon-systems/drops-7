@@ -1,0 +1,185 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function ldap_feeds_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+  return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_feeds_plugins().
+ */
+function ldap_feeds_feeds_plugins() {
+
+  $path = drupal_get_path('module', 'ldap_feeds');
+  $info = array();
+
+  $info['FeedsLdapQueryFetcher'] = array(
+    'name' => 'LDAP Query Fetcher',
+    'description' => 'Fetch content from ldap query',
+    'handler' => array(
+      'parent' => 'FeedsFetcher', // This is the key name, not the class name.
+      'class' => 'FeedsLdapQueryFetcher',
+      'file' => 'FeedsLdapQueryFetcher.inc',
+      'path' => $path,
+    ),
+  );
+
+  $info['FeedsDrupalUserLdapEntryFetcher'] = array(
+    'name' => 'Drupal User LDAP Entry Fetcher',
+    'description' => 'Fetches one entry for each LDAP authenticated user.  Fetches both LDAP entry attributes such as
+    <code>cn, dn,</code> etc.
+      and Drupal user data such as <code>uid, name, mail, created, status, language, </code>and <code>signature</code>.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher', // This is the key name, not the class name.
+      'class' => 'FeedsDrupalUserLdapEntryFetcher',
+      'file' => 'FeedsDrupalUserLdapEntryFetcher.inc',
+      'path' => $path,
+    ),
+  );
+
+  $info['FeedsLdapEntryParser'] = array(
+    'name'        => t('LDAP Entry Parser for Feeds'),
+    'description' => t('Parse an LDAP Entry Array'),
+    'handler'     => array(
+      'parent' => 'FeedsParser',
+      'class'  => 'FeedsLdapEntryParser',
+      'file'   => 'FeedsLdapEntryParser.inc',
+      'path'   => $path,
+    ),
+  );
+
+  return $info;
+
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Clear Feed's plugin cache so that this plugin shows up.
+ */
+function ldap_feeds_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
+
+function ldap_feeds_drupal_user_attributes() {
+
+  $attributes = array(
+    'uid' => array('token' => 'drupal.uid', 'description' => 'Drupal used id.  e.g. 413'),
+    'name' => array('token' => 'drupal.name', 'description' => 'Drupal username.  e.g. jdoe'),
+    'mail' => array('token' => 'drupal.mail', 'description' => 'Drupal email address.  e.g. jdoe@gmail.com'),
+    'created' => array('token' => 'drupal.created', 'description' => 'Drupal account created timestamp in unix e.g. 432432432'),
+    'status' => array('token' => 'drupal.status', 'description' => 'Drupal user status  e.g. 1 or 0'),
+    'language' => array('token' => 'drupal.language', 'description' => 'Drupal language.'),
+    'signature' => array('token' => 'drupal.signature', 'description' => 'Drupal signature.  e.g. Happy Joe'),
+    'login' => array('token' => 'drupal.login', 'description' => 'Drupal unix timestamp of last login  e.g. 1317494439'),
+    'init' => array('token' => 'drupal.init', 'description' => 'Drupal user init  e.g. jdoe@gmail.com'),
+  );
+  // ldap_authentication and some other modules may want to add additional drupal user tokens
+  // largely derived from the $user->data array, but possibly from related data such as authmaps
+  // some use cases for alter are simply edge cases
+
+  drupal_alter('ldap_feeds_drupal_user_attributes', $attributes);
+
+  return $attributes;
+}
+
+/**
+ * show some sample ldap user data to help with mapping interface
+ */
+
+function ldap_feeds_form_feeds_ui_mapping_form_alter(&$form, &$form_state, $form_id) {
+
+  $importer = feeds_importer_load($form['#importer']);
+
+  if ($importer->config['fetcher']['plugin_key'] == 'FeedsDrupalUserLdapEntryFetcher') {
+    ldap_feeds_drupal_user_legend($form, $importer);
+  }
+  elseif ($importer->config['fetcher']['plugin_key'] == 'FeedsLdapQueryFetcher') {
+    ldap_feeds_query_legend($form, $importer);
+  }
+}
+
+/**
+ * add additional data to mapping form for ldap query fetcher
+ */
+function ldap_feeds_query_legend(&$form, $importer) {
+
+  $source = feeds_source($importer->id);
+  $fetcher = feeds_plugin('FeedsLdapQueryFetcher', $source->importer->id);
+ // $fetcher_result = new FeedsLdapQueryFetcher($source->config);
+ // $records = $fetcher->getRaw(); // FeedsSource $source
+ // foreach ($records[0] as $field_name => $value) {
+  //  $sources[$field_name] = array(
+  //    'name' => array('#markup' => $field_name),
+   //   'description' => array('#markup' =>  _ldap_feeds_query_legend($records, $field_name)));
+ // }
+ // $form['legendset']['#description'] = t('Name column is the value that should go in the SOURCE column above.  Description column are from first few records of query in fetcher.', $tokens);
+ // $form['legendset']['legend']['sources'] = $sources;
+
+}
+
+function _ldap_feeds_query_legend($records, $field_name) {
+  $examples = array();
+  foreach ($records as $i => $record) {
+    $examples[] = $record[$field_name];
+    if ($i > 5 ) {
+      break;
+    }
+  }
+  return join(', ', array_filter($examples));
+}
+/**
+ * add additional data to mapping form for drupal user fetcher
+ */
+function ldap_feeds_drupal_user_legend(&$form, $importer) {
+
+  $sources = array();
+  $servers = ldap_servers_get_servers(NULL, 'enabled');
+  $form['legendset']['#description'] = "";
+  $drupal_user_attributes = $importer->config['fetcher']['config']['availableDrupalUserAttributes'];
+
+  foreach ($drupal_user_attributes as $attr_name => $attr_conf) {
+    $id = $attr_conf['token'];
+    $sources[$id] = array('name' => array('#markup' => $id), 'description' => array('#markup' => ''));
+  }
+
+  foreach ($servers as $sid => $ldap_server) {
+    if ($ldap_server->testingDrupalUsername) {
+      $account = user_load_by_name($ldap_server->testingDrupalUsername);
+
+      foreach ($drupal_user_attributes as $attr_name => $attr_conf) {
+        if ($attr_name == 'count') {
+          continue;
+        }
+        $id = $attr_conf['token'];
+        if ($account) {
+          $sources[$id] = array('name' => array('#markup' => $id), 'description' => array('#markup' => $account->{$attr_name}));
+        }
+      }
+
+      $ldap_user = ldap_servers_get_user_ldap_data($ldap_server->testingDrupalUsername, $sid);
+      foreach ($ldap_user['attr'] as $id => $value) {
+        if (!is_numeric($id) && is_scalar($ldap_user['attr'][$id][0]) && $ldap_user['attr'][$id]['count'] == 1) {
+          $sources[$id] = array('name' => array('#markup' => $id), 'description' => array('#markup' => $ldap_user['attr'][$id][0]));
+        }
+        elseif ($ldap_user['attr'][$id]['count'] > 1) {
+          $item = t('MULTIVALUED ATTRIBUTE:') . join(" , \n", $ldap_user['attr'][$id]);
+          $sources[$id] = array('name' => array('#markup' => $id), 'description' => array('#markup' => $item));
+        }
+      }
+      $form['legendset']['#description'] .= t('LDAP Attributes in the source "description" column are from testing ldap user (%testing_user) on the server %sid, which is configured in
+        the ldap server form.', array('%sid' => $sid, '%testing_user' => $ldap_server->testingDrupalUsername));
+    }
+    else {
+      foreach (array('dn' => 'distinguished name', 'cn' => 'cname') as $id => $value) {
+        $sources[$id] = array('name' => array('#markup' => $id), 'description' => array('#markup' => $value));
+      }
+    }
+  }
+  $form['legendset']['legend']['sources'] = $sources;
+
+}

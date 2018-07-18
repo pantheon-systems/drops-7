@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_sitemap_install() {
+  // Set default values for form display.
+  $menus = array(
+    'main-menu' => 'main-menu',
+    'menu-footer-menu' => 'menu-footer-menu',
+    'menu-secondary-menu' => 'menu-secondary-menu',
+  );
+  variable_set('cu_sitemap_menus', $menus);
+
+}
+
+/**
+ * Implements hook_enable().
+ */
+function cu_sitemap_enable() {
+
+}

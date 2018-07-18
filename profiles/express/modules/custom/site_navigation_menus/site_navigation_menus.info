@@ -1,0 +1,17 @@
+name = Site Navigation Menus
+description = Subnavigation and Full expandable menu blocks
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = menu
+dependencies[] = menu_block
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[menu_custom][] = menu-footer-menu
+features[menu_custom][] = menu-mobile-menu
+features[menu_custom][] = menu-secondary-menu
+features[variable][] = menu_block_menu_order
+stylesheets[all][] = css/site-navigation-menus.css
+scripts[] = js/site-navigation-menus.js

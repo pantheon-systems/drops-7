@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Update, uninstall, etc scripts for Metatag: Views.
+ */
+
+/**
+ * Implements hook_disable().
+ */
+function metatag_views_disable() {
+  // Clear the Views caches to avoid the now-missing Metatag integration from
+  // borking the system.
+  views_invalidate_cache();
+}

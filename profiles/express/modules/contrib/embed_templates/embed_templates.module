@@ -1,0 +1,437 @@
+<?php
+
+/**
+ * @file
+ * Provides a custom entity for adding embed codes to pages.
+ */
+
+/**
+ * Implements hook_entity_info().
+ *
+ * @return array
+ *   Entity information for embed templates.
+ */
+function embed_templates_entity_info() {
+  $info = array();
+
+  $info['embed_templates'] = array(
+    'label' => t('Embed'),
+    'base table' => 'embed_templates',
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    'uri callback' => 'entity_class_uri',
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'module' => 'embed_templates',
+    'fieldable' => FALSE,
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_embed_templates_status().
+ *
+ * @return array
+ *   A list of custom status definitions.
+ */
+function embed_templates_embed_templates_status() {
+  $custom_status = array();
+
+  $custom_status['published'] = array(
+    'label' => 'Published',
+    'operation_callback' => NULL,
+    'bulk_operation_label' => 'Publish Embed Codes',
+    'confirmation_label' => 'Publish',
+    'add_permission' => 'publish embeds',
+  );
+
+  $custom_status['unpublished'] = array(
+    'label' => 'Unpublished',
+    'operation_callback' => NULL,
+    'bulk_operation_label' => 'Unpublish Embed Codes',
+    'confirmation_label' => 'Unpublish',
+    'add_permission' => 'unpublish embeds',
+  );
+
+  return $custom_status;
+}
+
+/**
+ * Implements hook_entity_presave().
+ *
+ * Calls status operation callback if one exists.
+ */
+function embed_templates_entity_presave($entity, $type) {
+  // Only look for callback if the status has actually changed.
+  if ($type == 'embed_templates' && ((isset($entity->original) && $entity->status != $entity->original->status) || $entity->is_new)) {
+    // Gather operation from status.
+    $operations = embed_templates_get_operations();
+    foreach ($operations as $key => $value) {
+      // Call function if there is one.
+      if ($key == $entity->status && $value['operation_callback'] != NULL) {
+        call_user_func($value['operation_callback'], $entity);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ *   List of menu items.
+ */
+function embed_templates_menu() {
+  $items = array();
+  $access_permission = array('administer embed templates');
+
+  $items['admin/content/embeds'] = array(
+    'title' => 'Embeds',
+    'page callback' => 'drupal_get_form',
+    'file' => 'forms/embed_templates.overview_form.inc',
+    'page arguments' => array('embed_templates_overview_form'),
+    'access arguments' => $access_permission,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['titles/autocomplete'] = array(
+    'page callback' => '_embed_templates_title_autocomplete',
+    'access arguments' => $access_permission,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/content/embeds/add'] = array(
+    'title' => 'Add Embed',
+    'page callback' => 'et_add_page',
+    'file' => 'embed_templates.pages.inc',
+    'access arguments' => $access_permission,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  // Add CRUD paths for each custom embed type.
+  $embed_types = embed_templates_get_embed_types();
+  foreach ($embed_types as $key => $type) {
+    // Need to create permission string before declaring it in menu array.
+    $access_permission = array('edit ' . $key . ' embeds');
+
+    $items['admin/content/embeds/add/' . $key] = array(
+      'title' => 'Add ' . $type['label'] . ' Embed',
+      'description' => 'Create an embed entity of type: ' . $type['label'] . '.',
+      'page callback' => 'drupal_get_form',
+      'file' => 'forms/embed_templates.embed_form.inc',
+      'page arguments' => array('embed_templates_form'),
+      'access arguments' => $access_permission,
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/content/embeds/' . $key . '/%/edit'] = array(
+      'title' => 'Edit Embed',
+      'page callback' => 'drupal_get_form',
+      'file' => 'forms/embed_templates.embed_form.inc',
+      'page arguments' => array('embed_templates_form', 4),
+      'access arguments' => $access_permission,
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Adds an action link for creating embeds to the embed overview page.
+ */
+function embed_templates_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'admin/content/embeds' page.
+  if ($root_path == 'admin/content/embeds') {
+    $data['actions']['output'][] = array(
+      '#theme' => 'menu_local_action',
+      '#link' => array(
+        'title' => t('Add Embeds'),
+        'href' => 'admin/content/embeds/add',
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * @return array
+ *   List of permissions.
+ */
+function embed_templates_permission() {
+  $permissions['administer embed templates'] = array(
+    'title' => t('Administer embed templates'),
+  );
+
+  // Add permissions for each embed type.
+  $embed_types = embed_templates_get_embed_types();
+  foreach ($embed_types as $key => $type) {
+    $permissions['edit ' . $key . ' embeds'] = array(
+      'title' => t('Edit !type Embeds', array('!type' => $type['label'])),
+    );
+    $permissions['view ' . $key . ' embeds'] = array(
+      'title' => t('View !type Embeds', array('!type' => $type['label'])),
+    );
+  }
+
+  // Add operation permissions for publish, unpublish, and delete.
+  // Permissions map to custom status machine_name.
+  $permissions['unpublish embeds'] = array(
+    'title' => t('Publish Embeds'),
+  );
+  $permissions['publish embeds'] = array(
+    'title' => t('Unpublish Embeds'),
+  );
+  $permissions['delete embeds'] = array(
+    'title' => t('Delete Embeds'),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Create a theme template for each embed type.
+ *
+ * @param array $existing
+ *   An array of existing theme definitions.
+ * @param string $type
+ *   Whether a theme, module, etc. is being processed.
+ * @param string $theme
+ *   Name of the thing being processed.
+ * @param string $path
+ *   The directory path of the theme or module.
+ *
+ * @return array
+ *   List of new theme definitions.
+ */
+function embed_templates_theme($existing, $type, $theme, $path) {
+  $embed_types = embed_templates_get_embed_types();
+  $templates = array();
+
+  foreach ($embed_types as $key => $embed_type) {
+    // Check for template path in case we have embeds added through API hook.
+    $template = $embed_type['template'] != NULL ? $embed_type['template'] : 'templates/embed-templates-' . $key;
+    $path = $embed_type['path'] != NULL ? $embed_type['path'] : drupal_get_path('module', 'embed_templates');
+
+    $templates['embed_templates_' . $key] = array(
+      'variables' => array('data' => NULL),
+      'path' => $path,
+      'template' => $template,
+    );
+  }
+
+  // Add custom template.
+  $templates['embed_templates_custom'] = array(
+    'variables' => array('data' => NULL),
+    'template' => 'templates/embed-sanitizer-custom',
+  );
+
+  return $templates;
+}
+
+/**
+ * Get all embeds from database.
+ *
+ * @return array
+ *   A list of all embeds with correct headers for table display.
+ */
+function embed_templates_get_embeds($conditions = array(), $sortable_header = NULL) {
+
+  // If headers sent in, then add sortable.
+  if ($sortable_header) {
+    $query = db_select('embed_templates', 'tp')->extend('TableSort');
+    $query->orderByHeader($sortable_header);
+  }
+  else {
+    $query = db_select('embed_templates', 'tp');
+  }
+
+  $query->fields('tp');
+
+  // Loop through options array and add conditions.
+  // Conditions have to match the db columns.
+  foreach ($conditions as $key => $condition) {
+    $query->condition($key, $condition, 'IN');
+  }
+
+  return $query->execute()->fetchAllAssoc('id');
+}
+
+/**
+ * Return all embed types that are available.
+ *
+ * @return array
+ *   A list of all embed types.
+ */
+function embed_templates_get_embed_types() {
+  $types = array();
+
+  // Add custom types other modules may have created.
+  $types = module_invoke_all('embed_templates_types');
+
+  // Allow other modules to alter the final array.
+  drupal_alter('embed_templates_types', $types);
+
+  // I saw the cast in the actions_list() function, but it wasn't fully explained.
+  // they say...See module_implements() for an explanation of this cast.
+  return (array) $types;
+}
+
+/**
+ * Return an embed type.
+ *
+ * @return array|null
+ *   Definition of a specific embed type if it exists.
+ */
+function embed_templates_get_embed_type($type = NULL) {
+  // If no declared type set error message.
+  if ($type == NULL) {
+    drupal_set_message('No embed type sent to query.', 'error');
+    watchdog('embed_templates', 'No embed type sent to embed_templates_get_embed_type().');
+    return NULL;
+  }
+
+  // Get all embed types.
+  $embed_types = embed_templates_get_embed_types();
+
+  // Return the desired embed type.
+  foreach ($embed_types as $key => $value) {
+    if ($type == $key) {
+      return $value;
+    }
+  }
+}
+
+/**
+ * Returns a list of all renderers associated to an embed type.
+ *
+ * @return array
+ *   List of renderers.
+ */
+function embed_templates_get_renderers() {
+  $embed_types = embed_templates_get_embed_types();
+  return array_map(function ($arr) {
+    return $arr['renderer'];
+  }, $embed_types);
+}
+
+/**
+ * Return the renderer that matches an embed type.
+ *
+ * @param null $type
+ *   Embed type to search.
+ *
+ * @return mixed|null
+ *   Name of the renderer.
+ */
+function embed_templates_get_renderer($type = NULL) {
+  $renderers = embed_templates_get_renderers();
+
+  // Return type if found.
+  foreach ($renderers as $key => $value) {
+    if ($key === $type) {
+      return $value;
+    }
+  }
+
+  // Return error.
+  drupal_set_message('Embed Renderer could not be found.', 'error');
+  return NULL;
+}
+
+/**
+ * Looks for a form submission callback for an embed type.
+ *
+ * @param null $type
+ *   Type to search for.
+ *
+ * @return null|string
+ *   Name of submission callback or NULL if none.
+ */
+function embed_templates_get_submission_callback($type = NULL) {
+  $embed_types = embed_templates_get_embed_types();
+
+  foreach ($embed_types as $key => $value) {
+    if ($key === $type) {
+      return $value['submission_callback'];
+    }
+  }
+
+  // Return error.
+  drupal_set_message('Submission callback could not be found.', 'error');
+  return NULL;
+}
+
+/**
+ * Looks for embed add/edit form definition for embed type.
+ *
+ * @param null $type
+ *   Type to search for.
+ *
+ * @return null|string
+ *   Name of from callback or NULL if none.
+ */
+function embed_templates_get_form_callback($type = NULL) {
+  $embed_types = embed_templates_get_embed_types();
+
+  foreach ($embed_types as $key => $value) {
+    if ($key === $type) {
+      return $value['form_callback'];
+    }
+  }
+
+  // Return error.
+  drupal_set_message('Form callback could not be found.', 'error');
+  return NULL;
+}
+
+/**
+ * Gets all statuses for editing embeds.
+ *
+ * @return array
+ *   List of status definitions.
+ */
+function embed_templates_get_operations() {
+  $custom_statuses = array();
+  $custom_statuses = module_invoke_all('embed_templates_status');
+
+  // Allow other modules to alter the final array.
+  drupal_alter('embed_templates_status', $custom_statuses);
+
+  // I saw the cast in the actions_list() function, but it wasn't fully explained.
+  // they say...See module_implements() for an explanation of this cast.
+  return (array) $custom_statuses;
+}
+
+/**
+ * Return suggestions for path autocomplete.
+ *
+ * @param string $search
+ *   The search result.
+ */
+function _embed_templates_title_autocomplete($search) {
+  $matches = array();
+
+  // Query node table based on titles.
+  $query = db_select('node', 'n');
+  $query->join('node_type', 'nt', 'n.type = nt.type');
+
+  $results = $query->fields('n')
+    ->fields('nt', array('name'))
+    ->condition('n.title', '%' . db_like($search) . '%', 'LIKE')
+    ->range(0, 10)
+    ->execute();
+
+  // Add results to JSON output. "Node path" => "node type: node title (node ID)".
+  foreach ($results as $result) {
+    $matches['node/' . $result->nid] = check_plain($result->name . ': ' . $result->title . ' (' . $result->nid . ')');
+  }
+
+  drupal_json_output($matches);
+}

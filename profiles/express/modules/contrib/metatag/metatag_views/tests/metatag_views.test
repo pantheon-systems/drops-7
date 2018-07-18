@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module for the direct Views integration.
+ */
+
+/**
+ * Tests for the Metatag module for the direct Views integration.
+ */
+class MetatagViewsTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag:Views tests',
+      'description' => 'Test Metatag integration via the Metatag:Views module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'views';
+
+    // Enable the hidden submodule to manage some default configs.
+    $modules[] = 'metatag_views_tests';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Test the Metatag:Views translations on an exported page.
+   */
+  public function testExportedPage() {
+    $this->drupalGet('metatag-views-test');
+    $this->assertResponse(200);
+
+    // Test the page title.
+    $this->assertTitle('Test Views page title');
+
+    // Test the description meta tag.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Testing Metatag:Views.');
+
+    // Test the keywords meta tag.
+    $xpath = $this->xpath("//meta[@name='keywords']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one keywords meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Test, page, keywords');
+  }
+
+  // @todo Test an in-db display.
+  // @todo Test the master display.
+  // @todo Test separate displays.
+}

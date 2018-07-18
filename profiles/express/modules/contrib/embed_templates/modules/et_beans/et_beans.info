@@ -1,0 +1,12 @@
+name = Embed Templates - Beans
+description = Provides a way for users to place embed templates via blocks.
+core = 7.x
+package = Embed Templates
+dependencies[] = embed_templates
+dependencies[] = bean
+
+; Information added by Drupal.org packaging script on 2018-05-04
+version = "7.x-1.0-beta4+1-dev"
+core = "7.x"
+project = "embed_templates"
+datestamp = "1525470484"

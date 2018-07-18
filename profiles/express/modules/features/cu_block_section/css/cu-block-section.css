@@ -1,0 +1,63 @@
+.block-section { padding: 40px 20px; background-position: center center; background-size: cover; background-repeat: no-repeat; width: 100%; }
+
+@media screen and (max-width: 767px) { .block-section.parallax-window { background-attachment: scroll !important; background-position: center center !important; } }
+.block-section-overlay { position: relative; }
+
+.block-section-overlay:after { content: " "; top: 0; bottom: 0; left: 0; right: 0; position: absolute; z-index: 0; }
+
+.block-section-overlay.block-section-text-white:after { background: rgba(0, 0, 0, 0.5); }
+
+.block-section-overlay.block-section-text-black:after { background: rgba(255, 255, 255, 0.5); }
+
+.block-section-text-white { color: #fff; }
+
+.block-section-text-black { color: #363636; }
+
+#zone-intro .block-section-content .block, .block-section-content .block { margin-bottom: 20px; }
+
+#zone-intro .block-section-content .block:last-child, .block-section-content .block:last-child { margin-bottom: 0; }
+
+.block-section-background-white { background-color: #fff; }
+
+.block-section-background-black { background-color: #000; }
+
+.block-section-background-gray { background-color: #f4f4f4; }
+
+.block-section-background-dark_gray { background-color: #333; }
+
+.block-section-background-gold { background-color: #cfb87c; }
+
+.block-section-background-tan { background-color: #fffbf0; }
+
+.block-section-background-light_blue { background-color: #EBF7FF; }
+
+.block-section-text-white .block-section-content-bg-visible { padding: 20px; background: rgba(0, 0, 0, 0.75); }
+.block-section-text-white .block-section-content-bg-solid { padding: 20px; background: #000; }
+.block-section-text-white a:link, .block-section-text-white a:visited { color: #cfb87c; }
+.block-section-text-white a:hover { color: #fff; }
+
+.block-section-text-black .block-section-content-bg-visible { padding: 20px; background: rgba(255, 255, 255, 0.85); }
+
+.block-section-text-black .block-section-content-bg-solid { padding: 20px; background: #fff; }
+
+#zone-intro .block-section-content .grid-1, .container-12 .block-section-content .grid-1, .block-section-content .grid-1 { width: 6.333%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-2, .container-12 .block-section-content .grid-2, .block-section-content .grid-2 { width: 14.667%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-3, .container-12 .block-section-content .grid-3, .block-section-content .grid-3 { width: 23.0%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-4, .container-12 .block-section-content .grid-4, .block-section-content .grid-4 { width: 31.333%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-5, .container-12 .block-section-content .grid-5, .block-section-content .grid-5 { width: 39.667%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-6, .container-12 .block-section-content .grid-6, .block-section-content .grid-6 { width: 48.0%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-7, .container-12 .block-section-content .grid-7, .block-section-content .grid-7 { width: 56.333%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-8, .container-12 .block-section-content .grid-8, .block-section-content .grid-8 { width: 64.667%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-9, .container-12 .block-section-content .grid-9, .block-section-content .grid-9 { width: 73.0%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-10, .container-12 .block-section-content .grid-10, .block-section-content .grid-10 { width: 81.333%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-11, .container-12 .block-section-content .grid-11, .block-section-content .grid-11 { width: 89.667%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+#zone-intro .block-section-content .grid-12, .container-12 .block-section-content .grid-12, .block-section-content .grid-12 { width: 98.0%; display: inline; float: left; position: relative; margin-left: 1%; margin-right: 1%; }
+
+#zone-intro .block-section-content { font-size: 120%; }
+
+@media screen and (max-width: 740px) { #zone-intro .block-section-content, .block-section-content { font-size: 100%; }
+  #zone-intro .block-section-content .grid-1, #zone-intro .block-section-content .grid-2, #zone-intro .block-section-content .grid-3, #zone-intro .block-section-content .grid-4, #zone-intro .block-section-content .grid-5, #zone-intro .block-section-content .grid-6, #zone-intro .block-section-content .grid-7, #zone-intro .block-section-content .grid-8, #zone-intro .block-section-content .grid-9, #zone-intro .block-section-content .grid-10, #zone-intro .block-section-content .grid-11, #zone-intro .block-section-content .grid-12, .block-section-content .grid-1, .block-section-content .grid-2, .block-section-content .grid-3, .block-section-content .grid-4, .block-section-content .grid-5, .block-section-content .grid-6, .block-section-content .grid-7, .block-section-content .grid-8, .block-section-content .grid-9, .block-section-content .grid-10, .block-section-content .grid-11, .block-section-content .grid-12 { width: 98%; float: none; display: block; } }
+.block-section-content-wrapper { position: relative; z-index: 1; }
+
+@media screen and (min-width: 740px) { .block-section-content-wrapper { margin: 0 auto; } }
+@media screen and (min-width: 980px) { .block-section-content-wrapper { margin: 0 auto; } }

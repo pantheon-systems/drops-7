@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * @file
+ * Code for the Quicktab Beans feature.
+ */
+
+include_once 'quicktab_beans.features.inc';
+
+/**
+ * Implements hook_menu_alter().
+ */
+function quicktab_beans_menu_alter(&$items) {
+  // Assign quicktabs permission to quicktab bean add
+  $items['block/add/quicktab']['access arguments'] = array('administer quicktabs');
+  // Send user to quicktab add page instead of bean add page
+  $items['block/add/quicktab']['page callback'] = 'drupal_goto';
+  $items['block/add/quicktab']['page arguments'] = array( 'admin/structure/quicktabs/add');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Extendes the quicktabs add/edit page to add a new title field.
+ */
+function quicktab_beans_form_quicktabs_form_alter(&$form, $form_state) {
+  // Rename "title" to "label" for more consistancy.
+  $form['title']['#title'] = t('Label');
+  $form['title']['#description'] = t('The Quicktab label is only visible within the administration UI. It will not be shown to users.');
+
+  // Add "title" field.
+  $form['quicktab_beans_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#weight' => -8,
+    '#description' => t('The Quicktab title will appear above the quicktabs. Leave blank for none.'),
+  );
+
+  // Define default value in order to not get PHP notice.
+  $default_value = '';
+  if (isset($form['machine_name']['#default_value'])) {
+    $default_value = $form['machine_name']['#default_value'];
+  }
+
+  // Populate our new "title" field with a default_value from the bean title.
+  $bean = bean_load_delta($default_value);
+  if (!empty($bean->title)) {
+    $form['quicktab_beans_title']['#default_value'] = $bean->title;
+  }
+
+  // Add a form submit to update the bean title with the 'quicktab_beans_title' value.
+  $form['#submit'][] = 'quicktab_beans_form_quicktabs_submit';
+}
+
+/**
+ * Submit handler for quicktabs_form.
+ *
+ * Processes our new 'quicktab_beans_title' field and saves it to the bean.
+ */
+function quicktab_beans_form_quicktabs_submit($form, $form_state) {
+  $bean = bean_load_delta($form_state['values']['machine_name']);
+  if (!empty($bean)) {
+    $bean->title = $form_state['values']['quicktab_beans_title'];
+    bean_save($bean);
+  }
+}
+
+/**
+ * Implements hook_quicktabs_insert().
+ *
+ * Create a bean each time a quicktab is created.
+ */
+function quicktab_beans_quicktabs_insert($quicktab) {
+  _quicktab_beans_create_bean($quicktab);
+}
+
+
+/**
+ * Implements hook_quicktabs_update().
+ *
+ * Create a bean if there isn't one already.
+ */
+function quicktab_beans_quicktabs_update($quicktab) {
+  $bean = bean_load_delta($quicktab->machine_name);
+  if (!is_object($bean)) {
+   _quicktab_beans_create_bean($quicktab);
+  }
+}
+
+/**
+ * Implements hook_quicktabs_delete().
+ *
+ * Removes the associated bean when deleting a quicktab.
+ */
+function quicktab_beans_quicktabs_delete($machine_name) {
+  $bean = bean_load_delta($machine_name);
+  if (is_object($bean)) {
+    bean_delete($bean);
+  }
+}
+
+/**
+ * Creates a bean of type 'quicktab' from a given quicktab instance.
+ */
+function _quicktab_beans_create_bean($quicktab) {
+  $bean = bean_create(array('type' => 'quicktab'));
+  $bean->label = 'Quicktab: ' . $quicktab->machine_name;
+  $bean->title = $quicktab->title;
+  $bean->delta = $quicktab->machine_name;
+  $bean->save();
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ *
+ * Renders a quicktab within a quicktab bean type.
+ */
+function quicktab_beans_entity_view_alter(&$build, $type) {
+  if ($type == 'bean' && $build['#bundle'] == 'quicktab') {
+    $build['quicktab'] = quicktabs_build_quicktabs($build['#entity']->delta);
+  }
+}
+
+/**
+ * Implements hook_FORM_ID_form_alter().
+ *
+ * Disables auto-populated bean label/title fields on bean configuration form
+ * for quicktab beans.
+ */
+function quicktab_beans_form_bean_form_alter(&$form, &$form_state) {
+  if ($form['#bundle'] == 'quicktab') {
+    $form['qt_beans_help'] = array(
+      '#markup' => t('These fields are automatically populated from the quicktab instance: !link', array(
+        '!link' => l($form['bean']['#value']->delta, 'admin/structure/quicktabs/manage/' . $form['bean']['#value']->delta . '/edit'))
+      ),
+      '#weight' => -99,
+    );
+    $form['label']['#disabled'] = TRUE;
+    $form['title']['#disabled'] = TRUE;
+  }
+}
+
+/**
+ * Alter the Quicktabs instance before it gets rendered.
+ *
+ * @param &$quicktabs
+ *   A loaded Quicktabs object, either from the database or from code.
+ */
+function quicktab_beans_quicktabs_alter(&$quicktabs) {
+  drupal_add_js(drupal_get_path('module', 'quicktab_beans') . '/js/qt_pager.js');
+}
+

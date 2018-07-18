@@ -1,0 +1,4 @@
+form#user-admin-permissions { position: relative; }
+form#user-admin-permissions #permissions, form#user-admin-permissions table.sticky-header { z-index: 2; }
+form#user-admin-permissions #permissions th, form#user-admin-permissions table.sticky-header th { font-size: 75%; font-weight: bold; z-index: 2; }
+form#user-admin-permissions #permissions .permission-machine-name { font-size: 75%; opacity: .75; }

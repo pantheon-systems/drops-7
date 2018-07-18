@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Colorbox feature.
+ */
+
+include_once 'cu_colorbox.features.inc';

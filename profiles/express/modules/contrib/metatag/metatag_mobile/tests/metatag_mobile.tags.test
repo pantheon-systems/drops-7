@@ -1,0 +1,225 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag Mobile tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag Mobile tags work correctly.
+ */
+class MetatagMobileTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Mobile',
+      'description' => 'Test the mobile meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'alternate_handheld',
+    'amphtml',
+    'android-app-link-alternative',
+    'android-manifest',
+    'apple-itunes-app',
+    'apple-mobile-web-app-capable',
+    'apple-mobile-web-app-status-bar-style',
+    'apple-mobile-web-app-title',
+    'application-name',
+    'cleartype',
+    'format-detection',
+    'HandheldFriendly',
+    'ios-app-link-alternative',
+    'MobileOptimized',
+    'msapplication-allowDomainApiCalls',
+    'msapplication-allowDomainMetaTags',
+    'msapplication-badge',
+    'msapplication-config',
+    'msapplication-navbutton-color',
+    'msapplication-notification',
+    'msapplication-square150x150logo',
+    'msapplication-square310x310logo',
+    'msapplication-square70x70logo',
+    'msapplication-starturl',
+    'msapplication-task',
+    'msapplication-task-separator',
+    'msapplication-tilecolor',
+    'msapplication-tileimage',
+    'msapplication-tooltip',
+    'msapplication-wide310x150logo',
+    'msapplication-window',
+    'theme-color',
+    'viewport',
+    'x-ua-compatible',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_mobile';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // These tags all use dashes instead of underlines.
+    $tag_name = str_replace('_', '-', $tag_name);
+
+    // Fix a few specific tags.
+    $tag_name = str_replace('mobileoptimized', 'MobileOptimized', $tag_name);
+    $tag_name = str_replace('handheldfriendly', 'HandheldFriendly', $tag_name);
+
+    return $tag_name;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'alternate-handheld'.
+   */
+  public function alternate_handheld_test_output_xpath() {
+    return "//link[@rel='alternate' and @media='handheld']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'alternate-handheld'.
+   */
+  public function alternate_handheld_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'amphtml'.
+   */
+  public function amphtml_test_output_xpath() {
+    return "//link[@rel='amphtml']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'amphtml'.
+   */
+  public function amphtml_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'android-app-link-alternative'.
+   */
+  public function android_app_link_alternative_test_output_xpath() {
+    return "//link[@rel='alternate' and starts-with(@href, 'android-app:')]";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_preprocess_output() for
+   * 'android-app-link-alternative'.
+   */
+  public function android_app_link_alternative_test_preprocess_output($string) {
+    return 'android-app://' . $string;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for
+   * 'android-app-link-alternative'.
+   */
+  public function android_app_link_alternative_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for 'android_manifest'.
+   */
+  public function android_manifest_test_output_xpath() {
+    return "//link[@rel='manifest']";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for 'android_manifest'.
+   */
+  public function android_manifest_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_name_attribute() for 'cleartype'.
+   */
+  public function cleartype_test_name_attribute() {
+    return 'http-equiv';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_xpath() for
+   * 'ios_app_link_alternative'.
+   */
+  public function ios_app_link_alternative_test_output_xpath() {
+    return "//link[@rel='alternate' and starts-with(@href, 'ios-app:')]";
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_output_prefix() for
+   * 'ios_app_link_alternative'.
+   */
+  public function ios_app_link_alternative_test_preprocess_output($string) {
+    return 'ios-app://' . $string;
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value_attribute() for
+   * 'ios_app_link_alternative'.
+   */
+  public function ios_app_link_alternative_test_value_attribute() {
+    return 'href';
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'msapplication-square150x150logo'.
+   */
+  public function msapplication_square150x150logo_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'msapplication-square310x310logo'.
+   */
+  public function msapplication_square310x310logo_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'msapplication-square70x70logo'.
+   */
+  public function msapplication_square70x70logo_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'msapplication-tileimage'.
+   */
+  public function msapplication_tileimage_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_value() for 'msapplication-wide310x150logo'.
+   */
+  public function msapplication_wide310x150logo_test_value() {
+    return $this->randomImageUrl();
+  }
+
+  /**
+   * Implements {meta_tag_name}_test_name_attribute() for 'x-ua-compatible'.
+   */
+  public function x_ua_compatible_test_name_attribute() {
+    return 'http-equiv';
+  }
+
+}

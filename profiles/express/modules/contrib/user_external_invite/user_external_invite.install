@@ -1,0 +1,191 @@
+<?php
+
+/**
+ * @file
+ * Set-up database schema and install tasks for user_external_invite module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function user_external_invite_schema() {
+  $schema['user_external_invite'] = array(
+    'description' => 'Stores invites',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the Invite entity',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'mail' => array(
+        'description' => 'Email address',
+        'type' => 'varchar',
+        'length' => 254,
+        'not null' => TRUE,
+        'default' => variable_get('site_mail', 'admin@example.com'),
+      ),
+      'core_rid' => array(
+        'description' => 'Core role ID to be granted',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 2,
+      ),
+      'addon_rids' => array(
+        'description' => 'Additional roles to be granted',
+        'type' => 'varchar',
+        'length' => 254,
+        'default' => NULL,
+      ),
+      'expire' => array(
+        'description' => 'Valid until unix timestamp',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => REQUEST_TIME + (60 * 60 * 24 * 5),
+      ),
+      'status' => array(
+        'description' => 'Status of the Invitation',
+        'type' => 'varchar',
+        'length' => 254,
+        'not null' => TRUE,
+        'default' => 'Pending',
+      ),
+      'uid' => array(
+        'description' => 'User ID of who sent the invite',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'message' => array(
+        'description' => 'Custom message included with invite',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'invite_expired' => array('expire'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function user_external_invite_install() {
+  // Add content for initial templates.
+  _user_external_invite_initial_templates();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function user_external_invite_uninstall() {
+  // Delete variables related to this module.
+  variable_del('user_external_invite_roles');
+  variable_del('user_external_invite_days_valid_for');
+  variable_del('user_external_invite_delete_old_invites');
+  variable_del('user_external_invite_confirmation_template');
+  variable_del('user_external_invite_use_universal_from_email');
+  variable_del('user_external_invite_invite_template');
+  variable_del('user_external_invite_accepted_confirmation_template');
+  variable_del('user_external_invite_accepted_template');
+  variable_del('user_external_invite_universal_from_email');
+}
+
+/**
+ * Populate email templates with generic content.
+ */
+function _user_external_invite_initial_templates() {
+  variable_set('user_external_invite_invite_template', '[user_external_invite:invite_custom]
+
+You have been invited to join the [site:name] website as a user with [user_external_invite:invite_role] access privileges.
+
+To accept this invitation:
+1) Go to [user_external_invite:invite_link]
+2) Login with your username and password.
+
+Upon completion, you will receive an email confirming your access. Please note that invite is only valid until [user_external_invite:invite_expiration]. You will have to contact the site owner if you haven\'t accepted the invite by that date.' );
+  
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following:
+
+[user_external_invite:invited_emails]
+
+An email invitation has been sent requesting the user to login and accept the invitation. Upon completion, a confirmation email will be sent. Please note that invite is valid until [user_external_invite:invite_expiration] and you will have to send out another invite if the invitee hasn\'t accepted it by this date.
+ 
+ If you did not submit this request or need to modify it, please contact your administrator at [site:mail].');
+
+  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.');
+
+  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] website as a user with [user_external_invite:invite_role] access privileges.
+
+To access and edit this site:
+1) Go to [site:login-url]
+2) Login with your username and password.');
+}
+
+/**
+ * Add status row to table.
+ */
+function user_external_invite_update_7001() {
+  if (!db_field_exists('user_external_invite', 'status')) {
+    $spec = array(
+      'description' => 'Status of the Invitation',
+      'type' => 'varchar',
+      'length' => 254,
+      'not null' => TRUE,
+      'default' => 'Pending',
+    );
+    db_add_field('user_external_invite', 'status', $spec);
+  }
+}
+
+/**
+ * Add index to expire field.
+ */
+function user_external_invite_update_7002() {
+  if (db_field_exists('user_external_invite', 'expire')) {
+    db_add_index('user_external_invite', 'invite_expired', array('expire'));
+  }
+}
+
+/**
+ * Add core and add on role id fields.
+ */
+function user_external_invite_update_7003() {
+
+  if (!db_field_exists('user_external_invite', 'core_rid')) {
+    $spec = array(
+      'description' => 'Core role ID to be granted',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 2,
+    );
+    db_add_field('user_external_invite', 'core_rid', $spec);
+  }
+
+  if (!db_field_exists('user_external_invite', 'addon_rids')) {
+    $spec = array(
+      'description' => 'Additional roles to be granted',
+      'type' => 'varchar',
+      'length' => 254,
+      'default' => NULL,
+    );
+    db_add_field('user_external_invite', 'addon_rids', $spec);
+  }
+  
+  // Add new core_rid field to any pending invites.
+  if ($results = db_select('user_external_invite', 'ext')->fields('ext')->execute()->fetchAssoc()) {
+    db_query('UPDATE user_external_invite SET core_rid = rid');
+  }
+}
+
+/**
+ * Delete old rid field.
+ */
+function user_external_invite_update_7004() {
+  if (db_field_exists('user_external_invite', 'rid')) {
+    db_drop_field('user_external_invite', 'rid');
+  }
+}

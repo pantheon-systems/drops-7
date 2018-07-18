@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Code for the CU Tracking Pixel Overview feature.
+ */
+
+include_once 'cu_tracking_pixel_overview.features.inc';
+
+function cu_tracking_pixel_overview_views_pre_render(&$view) {
+  if ($view->name =='manage_tracking_pixels') {
+    if (!user_access('administer tracking pixels')) {
+      unset($view->field['nothing']);
+      unset($view->field['nothing_1']);
+    }
+  }
+}

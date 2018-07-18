@@ -1,0 +1,20 @@
+<?php
+
+/**
+* Implements hook_install().
+*/
+function photo_gallery_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'photo_gallery')
+    ->execute();
+}
+
+/**
+ * Enable views_content_cache.
+ */
+function photo_gallery_update_7001() {
+  module_enable(array('views_content_cache'));
+}

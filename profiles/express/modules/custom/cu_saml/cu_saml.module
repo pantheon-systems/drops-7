@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * Sets up simplesamlphp_auth for Express sites.
+ * @file
+ */
+
+include_once 'cu_saml.features.inc';
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_saml_secure_permissions($role) {
+  $permissions = array(
+    'developer' => array(
+      'administer simpleSAMLphp authentication',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}

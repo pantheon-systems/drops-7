@@ -1,0 +1,450 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module and node entities.
+ */
+
+/**
+ * Tests for the Metatag module and node entities.
+ */
+class MetatagCoreNodeTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for nodes',
+      'description' => 'Test Metatag edit functionality for nodes.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
+    );
+  }
+
+  /**
+   * Tests creation of a standard entity.
+   */
+  public function testEntityCreationWorkflow() {
+    $content_type = 'metatag_test';
+    $content_type_path = str_replace('_', '-', $content_type);
+    $label = 'Test';
+
+    // Create a content type.
+    $this->createContentType($content_type, $label);
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'create ' . $content_type . ' content',
+      'delete any ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+
+      // Used later for revision handling.
+      'view revisions',
+      'revert revisions',
+      'delete revisions',
+
+      // This permission is required in order to create new revisions.
+      'administer nodes',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Assign default values for the new content type.
+    // Load the "add default configuration" page.
+    $this->drupalGet('admin/config/search/metatags/config/add');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText(t('Select the type of default meta tags you would like to add.'));
+
+    // Submit the initial form to select an entity bundle.
+    $this->drupalPost(NULL, array(
+      'instance' => 'node:' . $content_type,
+    ), t('Add and configure'));
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText('Node: ' . $label);
+
+    // Submit the form with some values.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[node:title]',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText(strip_tags(t('The meta tag defaults for @label have been saved.', array('@label' => 'Node: ' . $label))));
+
+    // Verify that the user was redirected to the settings page again.
+    $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
+
+    // Create a test node.
+    // Load the node form.
+    $this->drupalGet('node/add/' . $content_type_path);
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly.
+    // @todo Update this to extract the page title.
+    $this->assertText(strip_tags(t('Create @name', array('@name' => $label))));
+
+    // Verify that it's possible to submit values to the form.
+    module_load_include('inc', 'devel_generate');
+    $body = devel_create_para(200);
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[node:title] ponies',
+      'title' => 'Who likes magic',
+      'body[und][0][value]' => $body,
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // The meta tags that will be checked for.
+    $expected = array(
+      'und' => array(
+        'abstract' => array(
+          'value' => '[node:title] ponies',
+        ),
+      ),
+    );
+
+    // Verify that the node saved correctly.
+    // $xpath = $this->xpath("//h1");
+    $t_args = array('@type' => 'Test', '%title' => 'Who likes magic');
+    // This doesn't work for some reason, it seems the HTML is stripped off
+    // during output so the %title's standard Drupal wrappers don't match.
+    // $this->assertText(t('@type %title has been created.', $t_args));
+    // .. so this has to be done instead.
+    $this->assertText(strip_tags(t('@type %title has been created.', $t_args)));
+
+    // Verify the node data saved correctly.
+    $matches = array();
+    $nid = 0;
+    if (preg_match('@node/(\d+)$@', $this->getUrl(), $matches)) {
+      $nid = end($matches);
+      $node = node_load($nid);
+      $this->verbose($node, 'node_load(' . $nid . ')');
+
+      // Only the non-default values are stored.
+      $this->assertEqual($expected, $node->metatags);
+
+      // Confirm the APIs can load the data for this node.
+      $metatags = metatag_metatags_load('node', $node->nid);
+      $this->verbose($metatags, 'metatag_metatags_load("node", ' . $node->nid . ')');
+      $this->assertEqual($expected, $metatags);
+      $metatags = metatag_metatags_load_multiple('node', array($node->nid));
+      $this->verbose($metatags, 'metatag_metatags_load_multiple("node", array(' . $node->nid . '))');
+      $this->assertEqual(array($node->nid => array($node->vid => $expected)), $metatags);
+
+      // Confirm the APIs can load the data for this node revision.
+      $metatags = metatag_metatags_load('node', $node->nid, $node->vid);
+      $this->verbose($metatags, 'metatag_metatags_load("node", ' . $node->nid . ', ' . $node->vid . ')');
+      $this->assertEqual($expected, $metatags);
+      $metatags = metatag_metatags_load_multiple('node', array($node->nid), array($node->vid));
+      $this->verbose($metatags, 'metatag_metatags_load_multiple("node", array(' . $node->nid . '), array(' . $node->vid . '))');
+      $this->assertEqual(array($node->nid => array($node->vid => $expected)), $metatags);
+    }
+
+    // This shouldn't happen, it indicates a problem.
+    else {
+      $this->fail(t('Could not determine the ID for the created node.'));
+    }
+
+    // Verify the title is using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
+
+    // Verify the node summary is being used correctly.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1);
+    $this->assertEqual($xpath[0]['content'], DrupalDefaultMetaTag::text_summary($body, 380));
+
+    // Verify the maxlength functionality is working correctly.
+    $maxlength = 10;
+    variable_set('metatag_maxlength_description', $maxlength);
+    metatag_config_cache_clear();
+    $this->drupalGet('node/' . $nid);
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1);
+    $this->assertEqual($xpath[0]['content'], trim(substr($xpath[0]['content'], 0, $maxlength)));
+    // Delete the variable so it goes back to the default.
+    variable_del('metatag_maxlength_description');
+    metatag_config_cache_clear();
+
+    // Core's canonical tag is a relative URL, whereas Metatag outputs an
+    // absolute URL.
+    $old_canonical = url('node/' . $node->nid);
+    $new_canonical = url('node/' . $node->nid, array('absolute' => TRUE));
+
+    // Confirm that the canonical tag is in the correct format.
+    $xpath = $this->xpath("//link[@rel='canonical']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one canonical meta tag found.');
+    $this->assertEqual($xpath[0]['href'], $new_canonical);
+    $this->assertNotEqual($xpath[0]['href'], $old_canonical);
+
+    // Try loading the node revisions page.
+    $this->drupalGet('node/' . $node->nid . '/revisions');
+    // Verify the page did not load correctly. This is because the revisions
+    // page can't be loaded if there's only one revision.
+    $this->assertResponse(403);
+
+    // Try creating a revision of the node.
+    $old_title = $node->title;
+    $old_vid = $node->vid;
+    $new_title = 'Who still likes magic';
+    // Load the node-edit page.
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200);
+    // Try submitting text to the page.
+    $args = array(
+      'metatags[und][abstract][value]' => '[node:title] kittens',
+      'title' => $new_title,
+      'revision' => 1,
+      'log' => 'Creating a new revision',
+    );
+    $this->drupalPost(NULL, $args, t('Save'));
+    // Verify the page submission loaded correctly.
+    $this->assertResponse(200);
+
+    // A new version of the expected results.
+    $expected_updated = array(
+      'und' => array(
+        'abstract' => array(
+          'value' => '[node:title] kittens',
+        ),
+      ),
+    );
+
+    // Verify that the node saved correctly.
+    // $xpath = $this->xpath("//h1");
+    $t_args = array('@type' => 'Test', '%title' => $new_title);
+    // This doesn't work for some reason, it seems the HTML is stripped off
+    // during output so the %title's standard Drupal wrappers don't match.
+    // $this->assertText(t('@type %title has been updated.', $t_args));
+    // .. so this has to be done instead.
+    $this->assertText(strip_tags(t('@type %title has been updated.', $t_args)));
+
+    // Verify the title is still using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $old_title . ' ponies', 'Did not find the new abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $new_title . ' kittens', 'Found the old abstract meta tag.');
+
+    // Load the node revisions page.
+    $this->drupalGet('node/' . $node->nid . '/revisions');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200, 'Loaded the revisions page for this node.');
+
+    // Confirm there are two revisions.
+    $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
+    $this->assertEqual(count($xpath), 2, 'There are two revisions of this node.');
+
+    // Load the previous revision.
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $old_vid . '/view');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200, 'Loaded the original revision of this node.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $new_title . ' kittens', 'Did not find the new abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $old_title . ' ponies', 'Found the old abstract meta tag.');
+
+    // Load the updated node; force-load it to make sure it's loaded properly.
+    $updated_node = node_load($node->nid, NULL, TRUE);
+    $updated_vid = $updated_node->vid;
+    $this->verbose($updated_node, 'node_load(' . $node->nid . ', NULL, TRUE)');
+
+    // Confirm the APIs can load the data for this node.
+    $metatags = metatag_metatags_load('node', $updated_node->nid);
+    $this->verbose($metatags, 'metatag_metatags_load("node", ' . $updated_node->nid . ')');
+    $this->assertEqual($expected_updated, $metatags);
+    $this->assertNotEqual($expected, $metatags);
+    // This one is complicated. If only the entity id is passed in it will load
+    // the {metatag} records for *all* of the entity's revisions.
+    $metatags = metatag_metatags_load_multiple('node', array($updated_node->nid));
+    $this->verbose($metatags, 'metatag_metatags_load_multiple("node", array(' . $updated_node->nid . '))');
+    $this->assertEqual(array($updated_node->nid => array($node->vid => $expected, $updated_node->vid => $expected_updated)), $metatags);
+
+    // Confirm the APIs can load the data for this node revision.
+    $metatags = metatag_metatags_load('node', $updated_node->nid, $updated_vid);
+    $this->verbose($metatags, 'metatag_metatags_load("node", ' . $updated_node->nid . ', ' . $updated_node->vid . ')');
+    $this->assertEqual($expected_updated, $metatags);
+    $this->assertNotEqual($expected, $metatags);
+    $metatags = metatag_metatags_load_multiple('node', array($updated_node->nid), array($updated_node->vid));
+    $this->verbose($metatags, 'metatag_metatags_load_multiple("node", array(' . $updated_node->nid . '), array(' . $updated_node->vid . '))');
+    $this->assertEqual(array($updated_node->nid => array($updated_node->vid => $expected_updated)), $metatags);
+
+    // Load the current revision again.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200, 'Loaded the current revision of this node.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $old_title . ' ponies', 'Did not find the old abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $new_title . ' kittens', 'Found the new abstract meta tag.');
+
+    // Revert to the original revision.
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $old_vid . '/revert');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200, 'Loaded the form to revert to the original revision of this node.');
+    // Try submitting the form.
+    $this->drupalPost(NULL, array(), t('Revert'));
+    // Verify the page submission loaded correctly.
+    $this->assertResponse(200);
+    // Confirm there are now three revisions.
+    $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
+    $this->assertEqual(count($xpath), 3, 'There are now three revisions of this node.');
+
+    // Load the current revision, which will now have the old meta tags.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200, 'Loaded the current revision of this node.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $new_title . ' kittens', 'Did not find the new abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $old_title . ' ponies', 'Found the old abstract meta tag again.');
+
+    // Delete the original revision.
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $old_vid . '/delete');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200, 'Loaded the form to delete the original revision of this node.');
+    // Try submitting the form.
+    $this->drupalPost(NULL, array(), t('Delete'));
+    // Verify the page submission loaded correctly.
+    $this->assertResponse(200);
+    // Confirm there are now two revisions again.
+    $xpath = $this->xpath("//body//div[@class='content']//table//tbody//tr");
+    $this->assertEqual(count($xpath), 2, 'There are two revisions of this node again.');
+
+    // Clear the caches and then load the current revision, just to confirm
+    // that the page is still loading correctly.
+    metatag_config_cache_clear();
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200, 'Loaded the current revision of this node again.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $new_title . ' kittens', 'Did not find the new abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $old_title . ' ponies', 'Found the old abstract meta tag again.');
+
+    // Delete the second revision.
+    $this->drupalGet('node/' . $node->nid . '/revisions/' . $updated_vid . '/delete');
+    // Verify the page loaded correctly.
+    $this->assertResponse(200, 'Loaded the form to delete the second revision of this node.');
+    // Try submitting the form.
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertResponse(200);
+    // Verify that the revisions page no longer loads because there's only one
+    // revision now.
+    $this->drupalGet('node/' . $node->nid . '/revisions');
+    $this->assertResponse(403, 'No longer able to load the node revisions page.');
+
+    // Clear the caches and then load the current revision, just to confirm
+    // that the page is still loading correctly.
+    metatag_config_cache_clear();
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200, 'Loaded the current revision of this node again.');
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertNotEqual($xpath[0]['content'], $new_title . ' kittens', 'Did not find the new abstract meta tag.');
+    $this->assertEqual($xpath[0]['content'], $old_title . ' ponies', 'Found the old abstract meta tag again.');
+  }
+
+  /**
+   * Tests different 'preview' options. #1: Disabled.
+   */
+  public function testNodePreviewOption0() {
+    $this->checkNodePreviewOption(0);
+  }
+
+  /**
+   * Tests different 'preview' options. #2: Optional, without preview.
+   */
+  public function testNodePreviewOption1NoPreview() {
+    $this->checkNodePreviewOption(1, FALSE);
+  }
+
+  /**
+   * Tests different 'preview' options. #2: Optional, with preview.
+   */
+  public function testNodePreviewOption1Preview() {
+    $this->checkNodePreviewOption(1, TRUE);
+  }
+
+  /**
+   * Tests different 'preview' options. #3: Preview required.
+   */
+  public function testNodePreviewOption2() {
+    $this->checkNodePreviewOption(2);
+  }
+
+  /**
+   * Change the node preview option at the content type level, confirm meta tags
+   * still save correctly.
+   *
+   * @param int $option
+   *   A suitable value for the 'node_preview' option for a content type, must
+   *   be either 0, 1 or 2.
+   * @param bool $preview
+   *   Whether to perform a preview. Has the following implications:
+   *   - if $option === 0, $preview is ignored, no preview is performed.
+   *   - if $option === 1, $preview is considered, a preview may be performed.
+   *   - if $option === 2, $preview is ignored, a preview is performed.
+   */
+  function checkNodePreviewOption($option, $preview = FALSE) {
+    $content_type = 'article';
+    $label = 'Test';
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'create ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+
+      // Required for customizing the node preview option.
+      'administer content types',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Set the node preview mode.
+    $this->drupalGet('admin/structure/types/manage/' . $content_type);
+    $this->assertResponse(200);
+    $edit = array(
+      'node_preview' => $option,
+    );
+    $this->drupalPost(NULL, $edit, t('Save content type'));
+    $this->assertText(strip_tags(t('The content type %name has been updated.', array('%name' => t('Article')))));
+
+    // Create a test node.
+    $this->drupalGet('node/add/' . $content_type);
+    $this->assertResponse(200);
+
+    // Save a custom meta tag.
+    $edit = array(
+      'metatags[und][abstract][value]' => '[node:title] ponies',
+      'title' => 'Who likes magic',
+    );
+
+    // A preview may be optionally performed. Core allows three combinations:
+    // * 0 = Disallowed.
+    // * 1 = Optional.
+    // * 2 = Required.
+    if (($option === 1 && $preview) || $option === 2) {
+      $this->drupalPost(NULL, $edit, t('Preview'));
+      $this->drupalPost(NULL, array(), t('Save'));
+    }
+    else {
+      $this->drupalPost(NULL, $edit, t('Save'));
+    }
+    $this->assertResponse(200);
+
+    // Verify the title is using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
+  }
+
+}

@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Tests for Metatag's string handling when the i18n module is enabled.
+ */
+
+/**
+ * Tests for Metatag's string handling when the i18n module is enabled.
+ */
+class MetatagCoreStringHandlingWithI18nTest extends MetatagCoreStringHandlingTest {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for string handling w i18n',
+      'description' => "Tests Metatag's string handling when i18n is enabled.",
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'i18n'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    parent::setUp(array('i18n', 'i18n_string'));
+  }
+
+}

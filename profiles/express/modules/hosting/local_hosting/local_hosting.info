@@ -1,0 +1,8 @@
+name = Local Hosting
+description = Provides setup for whatever the local development environment is today.
+core = 7.x
+version = 7.x-1.0
+package = Hosting
+
+; Create users for login without LDAP.
+dependencies[] = cu_local_users

@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Primary hook implementations for Metatag Context.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function metatag_context_menu() {
+  $items['admin/config/search/metatags/context'] = array(
+    'title' => 'By path',
+    'page callback' => 'metatag_context_context_overview',
+    'access arguments' => array('administer meta tags'),
+    'file' => 'metatag_context.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/config/search/metatags/context/add'] = array(
+    'title' => 'Add a meta tag by path',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('metatag_context_config_add_form'),
+    'access arguments' => array('administer meta tags'),
+    'file' => 'metatag_context.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['admin/config/search/metatags/context/%context'] = array(
+    'title' => 'Configure metatags by path',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('metatag_context_config_edit_form', 5),
+    'access arguments' => array('administer meta tags'),
+    'file' => 'metatag_context.admin.inc',
+  );
+  $items['admin/config/search/metatags/context/%context/delete'] = array(
+    'title' => 'Delete metatags by path',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('metatag_context_delete_form', 5),
+    'access arguments' => array('administer meta tags'),
+    'file' => 'metatag_context.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function metatag_context_context_plugins() {
+  return array(
+    'metatag_context_reaction' => array(
+      'handler' => array(
+        'path' => drupal_get_path('module', 'metatag_context'),
+        'file' => 'metatag_context.context.inc',
+        'class' => 'metatag_context_reaction',
+        'parent' => 'context_reaction',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function metatag_context_context_registry() {
+  return array(
+    'reactions' => array(
+      'metatag_context_reaction' => array(
+        'title' => t('Meta Data'),
+        'description' => t('Control page meta tags using the Metatag module.'),
+        'plugin' => 'metatag_context_reaction',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_context_page_reaction().
+ */
+function metatag_context_context_page_reaction() {
+  if ($plugin = context_get_plugin('reaction', 'metatag_context_reaction')) {
+    $plugin->execute();
+  }
+}
+
+/**
+ * Implements hook_entity_prepare_view().
+ */
+function metatag_context_entity_prepare_view($entities, $entity_type, $langcode = NULL) {
+  // Store the current entities.
+  drupal_static('metatag_context_entities', array($entity_type, $entities));
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function metatag_context_page_alter(&$page) {
+  // By default do not add meta tags to admin pages. To enable meta tags on
+  // admin pages set the 'metatag_tag_admin_pages' variable to TRUE.
+  if (path_is_admin(current_path()) && !variable_get('metatag_tag_admin_pages', FALSE)) {
+    return;
+  }
+
+  // Load the meta tags that have been generated for this page.
+  $metatags = drupal_static('metatag_context', array());
+
+  if (!empty($metatags)) {
+    // The page region can be changed.
+    $region = variable_get('metatag_page_region', 'content');
+    $page[$region]['metatags']['context'] = $metatags;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_context_ctools_plugin_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "context" && $api == "context") {
+    return array("version" => "3");
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function metatag_context_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'page_alter') {
+    // Run metatag_context_page_alter() last.
+    $group = $implementations['metatag_context'];
+    unset($implementations['metatag_context']);
+    $implementations['metatag_context'] = $group;
+  }
+}

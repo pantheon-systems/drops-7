@@ -1,0 +1,14 @@
+name = Memcache
+description = High performance integration with memcache.
+package = Performance and scalability
+core = 7.x
+files[] = memcache.inc
+files[] = tests/memcache.test
+files[] = tests/memcache-lock.test
+
+; Information added by Drupal.org packaging script on 2017-02-24
+version = "7.x-1.6"
+core = "7.x"
+project = "memcache"
+datestamp = "1487954088"
+

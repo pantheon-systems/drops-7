@@ -1,0 +1,19 @@
+/* This file will hold styles that are loaded using the same media query as the normal grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the widescreen layout unless they are overridden by the widescreen styles. */
+ 
+.layout-boxed #page {
+  width: 960px;
+  margin: 0 auto;
+  -webkit-box-shadow: 0 0 10px rgb(0,0,0);
+  -moz-box-shadow: 0 0 10px rgb(0,0,0);
+  box-shadow: 0 0 10px rgb(0,0,0);
+}
+.rgba .layout-boxed #page {
+  -webkit-box-shadow: 0 0 10px rgba(0,0,0,.5);
+  -moz-box-shadow: 0 0 10px rgba(0,0,0,.5);
+  box-shadow: 0 0 10px rgba(0,0,0,.5);
+}
+#backstretch {
+  display: block;
+}

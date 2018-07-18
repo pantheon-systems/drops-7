@@ -1,0 +1,54 @@
+<?php
+
+/**
+* Implements hook_install().
+*/
+function cu_article_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'cu_article')
+    ->execute();
+}
+
+/**
+ * Set default value for field_data_field_article_grid_summary & field_revision_field_article_grid_summary.
+ */
+function cu_article_update_7001() {
+  $result = db_query('SELECT * FROM {bean} WHERE type = \'article_grid\'');
+  foreach ($result as $record) {
+    $bid = $record->bid;
+    $vid = $record->vid;
+    $values = array(
+      'entity_type' => 'bean',
+      'bundle' => 'article_grid',
+      'deleted' => 0,
+      'entity_id' => $bid,
+      'revision_id' => $vid,
+      'language' => 'und',
+      'delta' => 0,
+      'field_article_grid_summary_value' => 'summary-display',
+    );
+    db_insert('field_data_field_article_grid_summary')
+    ->fields($values)
+    ->execute();
+    db_insert('field_revision_field_article_grid_summary')
+    ->fields($values)
+    ->execute();
+  }
+}
+
+/**
+ * Enable related articles.
+ */
+function cu_article_update_7002() {
+  module_enable(array('cu_related_articles'));
+}
+
+/**
+ * Enable article slider module.
+ */
+function cu_article_update_7003() {
+  module_enable(array('cu_article_slider'));
+}

@@ -1,0 +1,98 @@
+@import 'modules/_global.scss';
+
+
+/* Styles for Express Block Designer */
+
+.block-bean-type-feature-callout {
+  &.content-grid-style--cards {
+    &.exbd-style-dark-gray,
+    &.exbd-style-light-gray,
+    &.exbd-style-light-blue,
+    &.exbd-style-tan{
+      .block-inner {
+        padding-bottom: 0;
+      }
+    }
+  }
+
+  /*
+  &.content-grid-style--cards {
+    .block-inner {
+      padding:0;
+      background:none;
+      color: inherit;
+    }
+    .block-title {
+      margin-bottom:10px;
+    }
+    &.exbd-style-dark-gray {
+      .content-grid-style-cards {
+        .content-grid-item-inner {
+          background:#222;
+          .content-grid-content {
+            color:#fff;
+            a:link,
+            a:visited {
+              color:$cugold;
+            }
+          }
+        }
+      }
+    }
+  }
+  */
+
+  &.content-grid-style--tiles,
+  &.content-grid-style--tiles_alt {
+    // Remove background, color applied by block designer
+    .block-inner {
+      padding:0;
+      background:none;
+      color: inherit;
+    }
+    .block-title {
+      margin-bottom:10px;
+    }
+    &.exbd-style-light-gray {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#f4f4f4;
+      }
+    }
+    &.exbd-style-lightblue {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#EBF7FF;
+      }
+    }
+    &.exbd-style-tan {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#FFFBF0;
+      }
+    }
+
+    &.exbd-style-dark-gray {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        background:#222;
+        color:#fff;
+        a:link,
+        a:visited {
+          color:$cugold;
+        }
+      }
+    }
+    &.exbd-style-underline {
+      .content-grid-style-tiles,
+      .content-grid-style-tiles_alt {
+        padding-bottom: 20px;
+      }
+    }
+  }
+}
+.block-bean-type-feature-callout.lightblue,
+.block-bean-type-feature-callout.blockgray,
+.block-bean-type-feature-callout.blockdarkgray {
+
+}

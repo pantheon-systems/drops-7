@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module for Media integration.
+ */
+
+/**
+ * Tests for the Metatag module for Media integration.
+ */
+class MetatagCoreWithMediaTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Media',
+      'description' => 'Test Metatag integration with the Media module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'file_entity', 'media'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'file_entity';
+    $modules[] = 'media';
+    // The filter is in the WYSIWYG submodule.
+    $modules[] = 'media_wysiwyg';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Make sure the media filter is enabled.
+   */
+  public function testMediaFilter() {
+    $desc = 'The description.';
+
+    // Create a node and check how the meta tag is displayed.
+    $node = $this->drupalCreateNode(array(
+      'body' => array(
+        LANGUAGE_NONE => array(
+          array(
+            'value' => $desc . '[[{"fid":"1","view_mode":"default","type":"media","attributes":{"height":"100","width":"100","class":"media-element file-default"}}]]',
+            'format' => filter_default_format(),
+          ),
+        ),
+      ),
+    ));
+
+    // Load the node page.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Check the 'description' tag to make sure the Media string was filtered.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual($xpath[0]['content'], $desc);
+  }
+
+}

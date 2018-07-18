@@ -1,0 +1,11 @@
+name = Quicktabs Styles
+description = Adds predefined tab styles to choose from per Quicktabs instance.
+core = 7.x
+configure=admin/structure/quicktabs/styles
+dependencies[] = "quicktabs"
+; Information added by Drupal.org packaging script on 2017-06-16
+version = "7.x-3.8"
+core = "7.x"
+project = "quicktabs"
+datestamp = "1497619449"
+

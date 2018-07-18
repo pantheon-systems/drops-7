@@ -1,0 +1,267 @@
+<?php
+
+/**
+ * @file
+ * Base class for testing a module's custom tags.
+ */
+
+/**
+ * Base class for testing a module's custom tags.
+ */
+abstract class MetatagTagsTestBase extends MetatagTestHelper {
+
+  /**
+   * All of the meta tags defined by this module which will be tested.
+   */
+  public $tags = array();
+
+  /**
+   * The tag to look for when testing the output.
+   */
+  public $test_tag = 'meta';
+
+  /**
+   * The attribute to look for to indicate which tag.
+   */
+  public $test_name_attribute = 'name';
+
+  /**
+   * The attribute to look for when testing the output.
+   */
+  public $test_value_attribute = 'content';
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_test';
+    parent::setUp($modules);
+
+    // Create an admin user that can manage meta tags.
+    $account = $this->createAdminUser();
+    $this->drupalLogin($account);
+  }
+
+  /**
+   * Tests that this module's tags are available.
+   */
+  function testTagsArePresent() {
+    // Load the global config.
+    $this->drupalGet('admin/config/search/metatags/config/global');
+    $this->assertResponse(200);
+
+    // Confirm the various meta tags are available.
+    foreach ($this->tags as $tag) {
+      // Convert tag names to something more suitable for a function name.
+      $tag_name = str_replace(array('.', '-', ':'), '_', $tag);
+
+      // Look for a custom method named "{$tag_name}_test_field_xpath", if found
+      // use that method to get the xpath definition for this meta tag,
+      // otherwise it defaults to just looking for a text input field.
+      $method = "{$tag_name}_test_field_xpath";
+      if (method_exists($this, $method)) {
+        $xpath = $this->$method();
+      }
+      else {
+        $xpath = "//input[@name='metatags[und][{$tag}][value]' and @type='text']";
+      }
+      $this->assertFieldByXPath($xpath, NULL, format_string('The "%tag" tag field was found.', array('%tag' => $tag)));
+    }
+  }
+
+  /**
+   * Confirm that each tag can be saved and that the output of each tag is
+   * correct.
+   */
+  function testTagsInputOutput() {
+    // Load the global config.
+    $this->drupalGet('admin/config/search/metatags/config/global');
+    $this->assertResponse(200);
+
+    // Update the Global defaults and test them.
+    $all_values = $values = array();
+    foreach ($this->tags as $tag_raw) {
+      // Convert tag names to something more suitable for a function name.
+      $tag_name = str_replace(array('.', '-', ':', ' '), '_', $tag_raw);
+
+      // Look for a custom method named "{$tag_name}_test_key", if found use
+      // that method to get the test string for this meta tag, otherwise it
+      // defaults to the meta tag's name.
+      $method = "{$tag_name}_test_key";
+      if (method_exists($this, $method)) {
+        $test_key = $this->$method();
+      }
+      else {
+        $test_key = "metatags[und][{$tag_raw}][value]";
+      }
+
+      // Look for a custom method named "{$tag_name}_test_value", if found use
+      // that method to get the test string for this meta tag, otherwise it
+      // defaults to just generating a random string.
+      $method = "{$tag_name}_test_value";
+      if (method_exists($this, $method)) {
+        $test_value = $this->$method();
+      }
+      else {
+        // Generate a random string.
+        $test_value = $this->getTestTagValue();
+      }
+
+      $values[$test_key] = $test_value;
+
+      // Look for a custom method named "{$tag_name}_test_preprocess_output", if
+      // found use that method provide any additional processing on the value
+      // e.g. adding a prefix.
+      $method = "{$tag_name}_test_preprocess_output";
+      if (method_exists($this, $method)) {
+        $test_value = $this->$method($test_value);
+      }
+
+      $all_values[$tag_name] = $test_value;
+    }
+    $this->drupalPost(NULL, $values, 'Save');
+    $this->assertText(strip_tags(t('The meta tag defaults for @label have been saved.', array('@label' => 'Global'))));
+
+    // Load the test page.
+    $this->drupalGet('moosqueakoinkmeow');
+    $this->assertResponse(200);
+    $this->assertText(t('Test page.'));
+
+    // Look for the values.
+    foreach ($this->tags as $tag_raw) {
+      // Convert tag names to something more suitable for a function name.
+      $tag_name = str_replace(array('.', '-', ':', ' '), '_', $tag_raw);
+
+      // Verify this meta tag was output.
+      $this->assertTrue(!empty($all_values[$tag_name]));
+
+      // Look for a custom method named "{$tag_name}_test_output_xpath", if
+      // found use that method to get the xpath definition for this meta tag,
+      // otherwise it defaults to just looking for a meta tag matching:
+      // <$test_tag $test_name_attribute=$tag_name $test_value_attribute=$value />
+      $method = "{$tag_name}_test_output_xpath";
+      if (method_exists($this, $method)) {
+        $xpath_string = $this->$method();
+      }
+      else {
+        // Look for a custom method named "{$tag_name}_test_tag", if
+        // found use that method to get the xpath definition for this meta tag,
+        // otherwise it defaults to $this->test_tag.
+        $method = "{$tag_name}_test_tag";
+        if (method_exists($this, $method)) {
+          $xpath_tag = $this->$method();
+        }
+        else {
+          $xpath_tag = $this->test_tag;
+        }
+
+        // Look for a custom method named "{$tag_name}_test_name_attribute", if
+        // found use that method to get the xpath definition for this meta tag,
+        // otherwise it defaults to $this->test_name_attribute.
+        $method = "{$tag_name}_test_name_attribute";
+        if (method_exists($this, $method)) {
+          $xpath_name_attribute = $this->$method();
+        }
+        else {
+          $xpath_name_attribute = $this->test_name_attribute;
+        }
+
+        // Look for a custom method named "{$tag_name}_test_tag_name", if
+        // found use that method to get the xpath definition for this meta tag,
+        // otherwise it defaults to $tag_name.
+        $method = "{$tag_name}_test_tag_name";
+        if (method_exists($this, $method)) {
+          $xpath_name_tag = $this->$method();
+        }
+        else {
+          $xpath_name_tag = $this->getTestTagName($tag_name);
+        }
+
+        // Compile the xpath.
+        $xpath_string = "//{$xpath_tag}[@{$xpath_name_attribute}='{$xpath_name_tag}']";
+      }
+
+      // Something should have been found.
+      $this->assertTrue(!empty($xpath_string));
+
+      // Look for a custom method named "{$tag_name}_test_value_attribute", if
+      // found use that method to get the xpath definition for this meta tag,
+      // otherwise it defaults to $this->test_value_attribute.
+      $method = "{$tag_name}_test_value_attribute";
+      if (method_exists($this, $method)) {
+        $xpath_value_attribute = $this->$method();
+      }
+      else {
+        $xpath_value_attribute = $this->test_value_attribute;
+      }
+
+      // Extract the meta tag from the HTML.
+      $xpath = $this->xpath($xpath_string);
+      $this->assertEqual(count($xpath), 1, format_string('One @name tag found.', array('@name' => $tag_name)));
+
+      // Most meta tags have an attribute, but some don't.
+      if (!empty($xpath_value_attribute)) {
+        $this->assertTrue($xpath_value_attribute);
+        $this->assertTrue(isset($xpath[0][$xpath_value_attribute]));
+        // Help with debugging.
+        if (!isset($xpath[0][$xpath_value_attribute])) {
+          $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
+        }
+        else {
+          if ((string) $xpath[0][$xpath_value_attribute] != $all_values[$tag_name]) {
+            $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
+          }
+          $this->assertTrue($xpath[0][$xpath_value_attribute]);
+          $this->assertEqual($xpath[0][$xpath_value_attribute], $all_values[$tag_name]);
+          // , "The meta tag was found with the expected value.");
+        }
+      }
+      else {
+        $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
+        $this->assertTrue((string) $xpath[0]);
+        $this->assertEqual((string) $xpath[0], $all_values[$tag_name], "The meta tag was found with the expected value.");
+      }
+    }
+  }
+
+  /**
+   * Convert a tag's internal name to the string which is actually used in HTML.
+   *
+   * The meta tag internal name will be machine names, i.e. only contain a-z,
+   * A-Z, 0-9 and the underline character. Meta tag names will actually contain
+   * any possible character.
+   *
+   * @param string $tag_name
+   *   The tag name to be converted.
+   *
+   * @return string
+   *   The converted tag name.
+   */
+  public function getTestTagName($tag_name) {
+    return $tag_name;
+  }
+
+  /**
+   * Generate a random value for testing meta tag fields.
+   *
+   * As a reasonable default, this will generating two words of 8 characters
+   * each with simple machine name -style strings.
+   *
+   * @return string
+   *   A normal string.
+   */
+  public function getTestTagValue() {
+    return $this->randomMachineName() . ' ' . $this->randomMachineName();
+  }
+
+  /**
+   * Generate a URL for an image.
+   *
+   * @return string
+   *   An absolute URL to a non-existant image.
+   */
+  public function randomImageUrl() {
+    return 'http://www.example.com/images/' . $this->randomMachineName() . '.png';
+  }
+
+}

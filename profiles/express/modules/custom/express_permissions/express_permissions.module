@@ -1,0 +1,1058 @@
+<?php
+
+/**
+ * @file
+ * Defines roles and permissions for the Express profile.
+ * Also used to alter some existing core and contrib permissions.
+ */
+
+/**
+ * Implements hook_permission().
+ *
+ * Add 'add taxonomy' permission.
+ */
+function express_permissions_permission() {
+  $permissions = array(
+    'create vocabulary' => array(
+      'title' => t('Create Vocabulary'),
+      'description' => 'Used to override default Taxonomy permissions.  Users with Administer Taxonomy cannot add new vocabularies without this additional permission.',
+    ),
+  );
+  return $permissions;
+}
+
+/**
+ * Implements hook_menu_alter.
+ * Alters permissions on some core and contrib menus
+ */
+function express_permissions_menu_alter(&$items) {
+  // Prevent users from adding taxonomies.
+  $items['admin/structure/taxonomy/add']['access arguments'] = array('create vocabulary');
+}
+
+/**
+ * Define site roles in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @return
+ *   An array defining all the roles for the site.
+ */
+function express_permissions_secure_permissions_roles() {
+  return array(
+    'anonymous user',
+    'authenticated user',
+    'edit_my_content',
+    'edit_only',
+    'site_editor',
+    'site_owner',
+    'administrator',
+    'developer',
+    'content_editor',
+    'access_manager',
+    'configuration_manager',
+  );
+}
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+function express_permissions_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'access administration pages',
+      'access bean overview',
+      'access ckeditor link',
+      'access content',
+      'access content overview',
+      'access contextual links',
+      'access express settings',
+      'access user profiles',
+      'access users overview',
+      'access_google_appliance_content',
+      'administer beans',
+      // 'administer blocks',
+      'administer checked out documents',
+      'administer contexts',
+      'administer express settings',
+      'administer express site status',
+      'administer express theme picker',
+      'administer menu',
+      'administer nodes',
+      'administer people settings',
+      'administer redirects',
+      'administer xmlsitemap',
+      'assign content_editor role',
+      'assign edit_my_content role',
+      'assign site_editor role',
+      'assign site_owner role',
+      'assign edit_only role',
+      'assign access_manager role',
+      'assign configuration_manager role',
+      'cancel users with role authenticated user',
+      'cancel users with role content_editor',
+      'cancel users with role edit_my_content',
+      'cancel users with role site_owner',
+      'cancel users with role site_editor',
+      'cancel users with role edit_only',
+      'cancel users with role access_manager',
+      'cancel users with role configuration_manager',
+      'check out documents',
+      'clear full caches',
+      'clear path caches',
+      'create any block bean',
+      'create any feature_callout bean',
+      'create any hero_unit bean',
+      'create any slider bean',
+      'create faqs content',
+      'create file content',
+      'create page content',
+      'create url aliases',
+      'customize shortcut links',
+      'delete any block bean',
+      'delete any faqs content',
+      'delete any file content',
+      'delete any hero_unit bean',
+      'delete any page content',
+      'delete any slider bean',
+      'delete own faqs content',
+      'delete own file content',
+      'delete own page content',
+      'delete revisions',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit cu blocks',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'edit users with role authenticated user',
+      'edit users with role authenticated user',
+      'edit users with role content_editor',
+      'edit users with role edit_my_content',
+      'edit users with role site_owner',
+      'edit users with role site_editor',
+      'edit users with role edit_only',
+      'edit users with role access_manager',
+      'edit users with role configuration_manager',
+      'execute node_assign_owner_action',
+      'execute node_make_sticky_action',
+      'execute node_make_unsticky_action',
+      'execute node_promote_action',
+      'execute node_publish_action',
+      'execute node_unpromote_action',
+      'execute node_unpublish_action',
+      'execute node_unpublish_by_keyword_action',
+      'execute views_bulk_operations_delete_item',
+      'invite new user',
+      'preview focal point',
+      'revert revisions',
+      'use bigmenu',
+      'use text format wysiwyg',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view express environment indicator',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'enable module bundles',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'administer cache settings',
+      'configure profile module manager',
+      'view unused beans',
+      'diff view changes',
+      'view redirects',
+      'administer matchredirect',
+    ),
+    'anonymous user' => array(
+      'access content',
+      'access_google_appliance_content',
+      'view any block bean',
+      'view any feature_callout bean',
+      'view any hero_unit bean',
+      'view any quicktab bean',
+      'view any slider bean',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+    ),
+    'authenticated user' => array(
+      'access content',
+      'access_google_appliance_content',
+      'delete own webform submissions',
+      'skip CAPTCHA',
+      'view any block bean',
+      'view any feature_callout bean',
+      'view any hero_unit bean',
+      'view any quicktab bean',
+      'view any slider bean',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+    ),
+    'content_editor' => array(
+      'access administration pages',
+      'access bean overview',
+      'access ckeditor link',
+      'access content overview',
+      'access contextual links',
+      'access express settings',
+      'access user profiles',
+      'administer beans',
+      'administer contexts',
+      'administer menu',
+      'administer nodes',
+      'check out documents',
+      'clear path caches',
+      'create any block bean',
+      'create any feature_callout bean',
+      'create any hero_unit bean',
+      'create any slider bean',
+      'create faqs content',
+      'create file content',
+      'create page content',
+      'create url aliases',
+      'customize shortcut links',
+      'delete any block bean',
+      'delete any faqs content',
+      'delete any file content',
+      'delete any hero_unit bean',
+      'delete any page content',
+      'delete any slider bean',
+      'delete own faqs content',
+      'delete own file content',
+      'delete own page content',
+      'delete revisions',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit cu blocks',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'execute node_assign_owner_action',
+      'execute node_make_sticky_action',
+      'execute node_make_unsticky_action',
+      'execute node_promote_action',
+      'execute node_publish_action',
+      'execute node_unpromote_action',
+      'execute node_unpublish_action',
+      'execute node_unpublish_by_keyword_action',
+      'execute views_bulk_operations_delete_item',
+      'preview focal point',
+      'revert revisions',
+      //'use bigmenu',
+      'use text format wysiwyg',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view bean page',
+      'view bean revisions',
+      'view any unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'diff view changes',
+      'view express environment indicator',
+    ),
+    'developer' => array(
+      'access administration pages',
+      'access all views',
+      'access bean overview',
+      'access ckeditor link',
+      'access configuration administration',
+      'access content',
+      'access content overview',
+      'access contextual links',
+      'access cu version information',
+      'access environment indicator',
+      'access express settings',
+      'access site in maintenance mode',
+      'access site reports',
+      'access user profiles',
+      'access users overview',
+      'access_google_appliance_content',
+      'administer actions',
+      'administer bean settings',
+      'administer bean types',
+      'administer beans',
+      'administer bigmenu',
+      'administer blocks',
+      'administer boxes',
+      'administer CAPTCHA settings',
+      'administer checked out documents',
+      'administer ckeditor link',
+      'administer content types',
+      'administer contexts',
+      'administer rave alerts',
+      'administer express settings',
+      'administer express site status',
+      'administer express theme picker',
+      'administer features',
+      'administer fields',
+      'administer field collections',
+      'administer fieldgroups',
+      'administer filters',
+      'administer fitvids',
+      'administer google analytics',
+      'administer honeypot',
+      'administer image styles',
+      'administer menu',
+      'administer meta tags',
+      'administer modernizr',
+      'administer module filter',
+      'administer module missing message fixer',
+      'administer modules',
+      'administer nodes',
+      'administer people settings',
+      'administer pathauto',
+      'administer permissions',
+      'administer recaptcha',
+      'administer redirect settings',
+      'administer redirects',
+      'administer shortcuts',
+      'administer site configuration',
+      'administer software updates',
+      'administer string overrides',
+      'administer system menus',
+      'administer taxonomy',
+      'administer themes',
+      'administer url aliases',
+      'administer users',
+      'administer video styles',
+      'administer views',
+      'administer xmlsitemap',
+      'administer_google_appliance',
+      'admin_display_suite',
+      'assign all roles',
+      'block IP addresses',
+      'bypass follow form validation',
+      'cancel account',
+      'change administration theme',
+      'change own username',
+      'check out documents',
+      'clear full caches',
+      'clear path caches',
+      'context ajax block access',
+      'create any block bean',
+      'create any feature_callout bean',
+      'create any hero_unit bean',
+      'create any slider bean',
+      'create faqs content',
+      'create file content',
+      'create page content',
+      'create person content',
+      'create url aliases',
+      'create vocabulary',
+      'customize shortcut links',
+      'delete any block bean',
+      'delete any faqs content',
+      'delete any file content',
+      'delete any hero_unit bean',
+      'delete any page content',
+      'delete any slider bean',
+      'delete own faqs content',
+      'delete own file content',
+      'delete own page content',
+      'delete revisions',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit bean view mode',
+      'edit boxes',
+      'edit cu blocks',
+      'edit locked contexts',
+      'edit meta tags',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'execute node_assign_owner_action',
+      'execute node_make_sticky_action',
+      'execute node_make_unsticky_action',
+      'execute node_promote_action',
+      'execute node_publish_action',
+      'execute node_unpromote_action',
+      'execute node_unpublish_action',
+      'execute node_unpublish_by_keyword_action',
+      'execute views_bulk_operations_delete_item',
+      'export secure permissions',
+      'generate features',
+      'invite new user',
+      'manage features',
+      'notify of path changes',
+      'opt-in or out of tracking',
+      'preview focal point',
+      'revert revisions',
+      'select account cancellation method',
+      'switch shortcut sets',
+      'use bigmenu',
+      'use PHP for tracking visibility',
+      'use text format full_html',
+      'use text format wysiwyg',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view express environment indicator',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'enable module bundles',
+      'enable admin bundles',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'exclude from message filtering',
+      'configure profile module manager',
+      'administer cache settings',
+      'administer elysia_cron',
+      'execute elysia_cron',
+      'view elysia_cron',
+      'view unused beans',
+      'diff view changes',
+      'view redirects',
+      'administer matchredirect',
+    ),
+    'edit_my_content' => array(
+      'access ckeditor link',
+      'access user profiles',
+      'access content overview',
+      'access_google_appliance_content',
+      'administer nodes',
+      'check out documents',
+      'clear path caches',
+      'edit own page content',
+      'edit own person content',
+      'preview focal point',
+      'skip CAPTCHA',
+      'use text format wysiwyg',
+      'view any block bean',
+      'view any feature_callout bean',
+      'view any hero_unit bean',
+      'view any quicktab bean',
+      'view any slider bean',
+      'view own unpublished content',
+      'view the administration theme',
+      'access navbar',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'diff view changes',
+    ),
+    'site_editor' => array(
+      'access administration pages',
+      'access bean overview',
+      'access ckeditor link',
+      'access content',
+      'access content overview',
+      'access contextual links',
+      'access express settings',
+      'access user profiles',
+      'administer beans',
+      // 'administer blocks',
+      'administer checked out documents',
+      'administer contexts',
+      'administer menu',
+      'administer nodes',
+      'administer redirects',
+      'clear path caches',
+      'check out documents',
+      'create any block bean',
+      'create any feature_callout bean',
+      'create any hero_unit bean',
+      'create any slider bean',
+      'create faqs content',
+      'create file content',
+      'create page content',
+      'create url aliases',
+      'customize shortcut links',
+      'delete any block bean',
+      'delete any faqs content',
+      'delete any file content',
+      'delete any hero_unit bean',
+      'delete any page content',
+      'delete any slider bean',
+      'delete own faqs content',
+      'delete own file content',
+      'delete own page content',
+      'delete revisions',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit cu blocks',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'execute node_assign_owner_action',
+      'execute node_make_sticky_action',
+      'execute node_make_unsticky_action',
+      'execute node_promote_action',
+      'execute node_publish_action',
+      'execute node_unpromote_action',
+      'execute node_unpublish_action',
+      'execute node_unpublish_by_keyword_action',
+      'execute views_bulk_operations_delete_item',
+      'preview focal point',
+      'revert revisions',
+      'use bigmenu',
+      'use text format wysiwyg',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'diff view changes',
+      'view redirects',
+      'view express environment indicator',
+    ),
+    'site_owner' => array(
+      'access administration pages',
+      'access bean overview',
+      'access ckeditor link',
+      'access content',
+      'access content overview',
+      'access contextual links',
+      'access express settings',
+      'access user profiles',
+      'access users overview',
+      'administer beans',
+      // 'administer blocks',
+      'administer checked out documents',
+      'administer contexts',
+      'administer express settings',
+      'administer express theme picker',
+      'administer menu',
+      'administer nodes',
+      'administer people settings',
+      'administer redirects',
+      'assign content_editor role',
+      'assign edit_my_content role',
+      'assign site_owner role',
+      'assign site_editor role',
+      'assign edit_only role',
+      'assign access_manager role',
+      'assign configuration_manager role',
+      'cancel users with role authenticated user',
+      'cancel users with role content_editor',
+      'cancel users with role edit_my_content',
+      'cancel users with role site_editor',
+      'cancel users with role site_owner',
+      'cancel users with role edit_only',
+      'cancel users with role access_manager',
+      'cancel users with role configuration_manager',
+      'check out documents',
+      'clear full caches',
+      'clear path caches',
+      'create any block bean',
+      'create any feature_callout bean',
+      'create any hero_unit bean',
+      'create any slider bean',
+      'create faqs content',
+      'create file content',
+      'create page content',
+      'create url aliases',
+      'customize shortcut links',
+      'delete any block bean',
+      'delete any faqs content',
+      'delete any file content',
+      'delete any hero_unit bean',
+      'delete any page content',
+      'delete any slider bean',
+      'delete own faqs content',
+      'delete own file content',
+      'delete own page content',
+      'delete revisions',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit cu blocks',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'edit users with role authenticated user',
+      'edit users with role content_editor',
+      'edit users with role edit_my_content',
+      'edit users with role site_owner',
+      'edit users with role site_editor',
+      'edit users with role edit_only',
+      'edit users with role access_manager',
+      'edit users with role configuration_manager',
+      'execute node_assign_owner_action',
+      'execute node_make_sticky_action',
+      'execute node_make_unsticky_action',
+      'execute node_promote_action',
+      'execute node_publish_action',
+      'execute node_unpromote_action',
+      'execute node_unpublish_action',
+      'execute node_unpublish_by_keyword_action',
+      'execute views_bulk_operations_delete_item',
+      'invite new user',
+      'preview focal point',
+      'revert revisions',
+      'use block designer',
+      'use bigmenu',
+      'use text format wysiwyg',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'enable module bundles',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'diff view changes',
+      'view redirects',
+      'view express environment indicator',
+      'administer express site status',
+    ),
+    'edit_only' => array(
+      'access administration pages',
+      'access bean overview',
+      'access ckeditor link',
+      'access content overview',
+      'access contextual links',
+      'access express settings',
+      'access navbar',
+      'administer nodes',
+      'check out documents',
+      'clear path caches',
+      'create url aliases',
+      'customize shortcut links',
+      'diff view changes',
+      'edit any block bean',
+      'edit any faqs content',
+      'edit any file content',
+      'edit any hero_unit bean',
+      'edit any page content',
+      'edit any slider bean',
+      'edit own faqs content',
+      'edit own file content',
+      'edit own page content',
+      'preview focal point',
+      'revert revisions',
+      'use text format wysiwyg',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view error messages',
+      'view revisions',
+      'view status messages',
+      'view the administration theme',
+      'view warning messages',
+    ),
+    'access_manager' => array(
+      'access administration pages',
+      'access user profiles',
+      'access users overview',
+      'assign content_editor role',
+      'assign edit_my_content role',
+      'assign site_editor role',
+      'assign site_owner role',
+      'assign edit_only role',
+      'assign access_manager role',
+      'assign configuration_manager role',
+      'cancel users with role authenticated user',
+      'cancel users with role content_editor',
+      'cancel users with role edit_my_content',
+      'cancel users with role site_owner',
+      'cancel users with role site_editor',
+      'cancel users with role edit_only',
+      'cancel users with role access_manager',
+      'cancel users with role configuration_manager',
+      'edit users with role authenticated user',
+      'edit users with role content_editor',
+      'edit users with role edit_my_content',
+      'edit users with role site_owner',
+      'edit users with role site_editor',
+      'edit users with role edit_only',
+      'edit users with role access_manager',
+      'edit users with role configuration_manager',
+      'invite new user',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+    ),
+    'configuration_manager' => array(
+      'access administration pages',
+      'access bean overview',
+      'access content',
+      'access content overview',
+      'access express settings',
+      'administer block designer themes',
+      'administer cu share',
+      'administer redirects',
+      'administer express settings',
+      'administer express theme picker',
+      'administer rss feeds',
+      'administer site search',
+      'clear full caches',
+      'clear path caches',
+      'create url aliases',
+      'revert revisions',
+      'use bigmenu',
+      'view any block bean',
+      'view any hero_unit bean',
+      'view any slider bean',
+      'view any unpublished content',
+      'view bean page',
+      'view bean revisions',
+      'view own unpublished content',
+      'view revisions',
+      'view the administration theme',
+      'access navbar',
+      'enable module bundles',
+      'view status messages',
+      'view warning messages',
+      'view error messages',
+      'diff view changes',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Add validation to user form.
+ */
+function express_permissions_form_user_profile_form_alter(&$form, &$form_state) {
+  global $user;
+  $form['#validate'][] = 'express_permissions_site_owner_cap';
+
+  $new_role_options = array();
+  // Get Roles of user being edited.
+  $original_role_options = $form['account']['roles']['#options'];
+
+  foreach ($original_role_options as $rid => $role_name) {
+    // Format role name to be  more readable.
+    $new_role_name = check_plain($role_name);
+    $new_role_name = ucwords(str_replace('_', ' ', $new_role_name));
+    if ($role_name == 'edit_only') {
+      if (in_array('developer', $user->roles) || in_array('administrator', $user->roles)) {
+        $new_role_name =  '<i>' . $new_role_name . ' (temp role hidden from site owners)</i>';
+      }
+    }
+    if ($role_name == 'access_manager') {
+      $new_role_name =  '<i>' . $new_role_name . ' (Add-on Role)</i>';
+    }
+    if ($role_name == 'configuration_manager') {
+      $new_role_name =  '<i>' . $new_role_name . ' (Add-on Role)</i>';
+    }
+    if ($role_name == 'campaign_manager') {
+      $new_role_name =  '<i>' . $new_role_name . ' (Add-on Role)</i>';
+    }
+    if ($role_name == 'form_manager') {
+      $new_role_name =  '<i>' . $new_role_name . ' (Add-on Role)</i>';
+    }
+    $new_role_options[$rid] = $new_role_name;
+
+  }
+  $form['account']['roles']['#options'] = $new_role_options;
+}
+
+/**
+ * Validation function for user form.
+ *
+ * Check to make sure that there are no more than 5 site owners.
+ */
+function express_permissions_site_owner_cap(&$form, &$form_state) {
+  // Limit of how many of the role we should allow.
+  $site_owners_limit = (int) variable_get("express_permissions_owner_cap", 4);
+  $addon_limit = (int) variable_get('express_permissions_addon_cap', 3);
+
+  // Get Roles of user being edited.
+  $current_roles = $form_state['user']->roles;
+
+  // Get Role ID.
+  $site_owner_role = user_role_load_by_name('site_owner');
+  $config_manager_role = user_role_load_by_name('configuration_manager');
+  $access_manager_role = user_role_load_by_name('access_manager');
+
+  // Check to see if the user already has the role.
+  // We should only run the validation of the role is being added.
+  if (!isset($current_roles[$site_owner_role->rid]) && in_array($site_owner_role->rid, $form_state['values']['roles'], TRUE)) {
+    $current_site_owners = express_permissions_get_users_in_role('site_owner');
+    // If adding the role to this user would be over the limit, set an error.
+    if (count($current_site_owners) >= $site_owners_limit) {
+      form_set_error('roles', 'You have exceeded the allowed limit of '. ($site_owners_limit - 1) .' Site Owners. To grant the role to this user you must first remove it from someone else. Current Site Owners include: '.
+        implode(', ', _expr_get_realnames_without_test_users($current_site_owners)));
+    }
+  }
+
+  if (!isset($current_roles[$config_manager_role->rid]) && in_array($config_manager_role->rid, $form_state['values']['roles'], TRUE)) {
+    $current_config_managers = express_permissions_get_users_in_role('configuration_manager');
+    if (count($current_config_managers) >= $addon_limit) {
+      form_set_error('roles', 'You have exceeded the allowed limit of '. ($addon_limit - 1) .' Configuration Managers. To grant the role to this user you must first remove it from someone else. Current Configuration Managers include: '.
+        implode(', ', _expr_get_realnames_without_test_users($current_config_managers)));
+    }
+  }
+
+  if (!isset($current_roles[$access_manager_role->rid]) && in_array($access_manager_role->rid, $form_state['values']['roles'], TRUE)) {
+    $current_access_managers = express_permissions_get_users_in_role('access_manager');
+    if (count($current_access_managers) >= $addon_limit) {
+      form_set_error('roles', 'You have exceeded the allowed limit of '. ($addon_limit - 1) .' Access Managers. To grant the role to this user you must first remove it from someone else. Current Access Managers include: '.
+        implode(', ', _expr_get_realnames_without_test_users($current_access_managers)));
+    }
+  }
+}
+
+
+/**
+ * @param $users
+ *
+ * @return array
+ */
+function _expr_get_realnames_without_test_users($users) {
+  $test_accounts = [
+    'osr-test-owner' => 'osr-test-owner@colorado.edu',
+    'osr-test-content' => 'osr-test-content@colorado.edu',
+    'osr-test-edit-own' => 'osr-test-edit-own@colorado.edu',
+    'osr-test-edit-only' => 'osr-test-edit-only@colorado.edu',
+    'osr-test-sis' => 'osr-test-sis@colorado.edu',
+    'osr-test-site-editor' => 'osr-test-site-editor@colorado.edu',
+    'osr-test-form-mgr' => 'osr-test-form-mgr@colorado.edu',
+    'osr-test-config-mgr' => 'osr-test-config-mgr@colorado.edu',
+    'osr-test-access-mgr' => 'osr-test-access-mgr@colorado.edu',
+    // Missing campaign manager?
+  ];
+
+  $users = array_filter($users, function ($val) use($test_accounts) {
+    if (array_key_exists($val->name, $test_accounts)) {
+      return FALSE;
+    }
+    return TRUE;
+  });
+
+  return array_map(function ($val) {
+    return $val->realname ?? $val->mail;
+  }, $users);
+}
+
+function express_permissions_form_user_external_invite_form_alter(&$form, &$form_state) {
+  $form['#validate'][] = 'express_permissions_invite_site_owner_cap';
+}
+
+function express_permissions_invite_site_owner_cap(&$form, &$form_state) {
+  // Limit of how many of the role we should allow.
+  $limit = variable_get("express_permissions_owner_cap", 4);
+  $addon_limit = variable_get('express_permissions_addon_cap', 3);
+
+  // Get Role ID.
+  $role = user_role_load_by_name('site_owner');
+  $config_managers = user_role_load_by_name('configuration_manager');
+  $access_managers = user_role_load_by_name('access_manager');
+
+  if ($form_state['values']['core_rid'] == $role->rid) {
+    $email_value = $form_state['values']['email'];
+    // Split on , or line break.
+    $emails = preg_split("/[\r\n,\s]+/", $email_value, -1, PREG_SPLIT_NO_EMPTY);
+    $email_count = count($emails);
+    $users_in_role = express_permissions_get_users_in_role('site_owner');
+    if (($users_in_role['count'] + $email_count) >= $limit) {
+      form_set_error("", "You have exceeded the allowed limit for Site Owners. To grant this role you must first remove it from someone else. Current Site Owners include: " .  $users_in_role['list']);
+    }
+  }
+  if ($form_state['values']['addon_rids'][$config_managers->rid] === $config_managers->rid) {
+    $email_value = $form_state['values']['email'];
+    // Split on , or line break.
+    $emails = preg_split("/[\r\n,\s]+/", $email_value, -1, PREG_SPLIT_NO_EMPTY);
+    $email_count = count($emails);
+    $config_managers_role = express_permissions_get_users_in_role('configuration_manager');
+    if (($config_managers_role['count'] + $email_count) >= $addon_limit) {
+      form_set_error("", "You have exceeded the allowed limit for Configuration Managers. To grant this role you must first remove it from someone else. Current Configuration Managers include: " .  $config_managers_role['list']);
+    }
+  }
+  if ($form_state['values']['addon_rids'][$access_managers->rid] === $access_managers->rid) {
+    $email_value = $form_state['values']['email'];
+    // Split on , or line break.
+    $emails = preg_split("/[\r\n,\s]+/", $email_value, -1, PREG_SPLIT_NO_EMPTY);
+    $email_count = count($emails);
+    $access_managers_role = express_permissions_get_users_in_role('access_manager');
+    if (($access_managers_role['count'] + $email_count) >= $addon_limit) {
+      form_set_error("", "You have exceeded the allowed limit for Access Managers. To grant this role you must first remove it from someone else. Current Access Managers include: " .  $access_managers_role['list']);
+    }
+  }
+}
+
+/**
+ * Helper funciton for form validation.
+ *
+ * @param string $role_name
+ *
+ * @return array An array with users rid, uid, name, mail, and realname.
+ */
+function express_permissions_get_users_in_role($role_name) {
+  // Get Role ID.
+  $role = user_role_load_by_name($role_name);
+
+  // Get the total number of users with the role.
+  $query = db_select('users_roles', 'ur');
+  $query->fields('ur');
+  $query->fields('u', ['name', 'mail']);
+  $query->fields('rn', ['realname']);
+
+  $query->join('users', 'u', 'u.uid = ur.uid');
+  $query->join('realname', 'rn', 'rn.uid = ur.uid');
+
+  $query->condition('ur.rid', $role->rid, '=');
+
+  try {
+    return (array) $query->execute()->fetchAll();
+  } catch (Exception $exception) {
+    watchdog('express_permissions', $exception->getMessage());
+  }
+}
+
+/**
+ * Implements hook_form_formid_alter().
+ *
+ * Remove underscores from roles to make the permissions table display better.
+ */
+function express_permissions_form_user_admin_permissions_alter(&$form, &$form_state) {
+
+  $roles = $form['role_names'];
+  // Get just the role arrays.
+  $roles = array_intersect_key($roles, array_flip(element_children($roles)));
+  // Get the role id to modify form array
+  $roles_keys = array_keys($roles);
+
+  // Replace underscores with spaces.
+  foreach ($roles_keys as $id) {
+    $name = str_replace('_', ' ', $form['role_names'][$id]['#markup']);
+    $form['role_names'][$id]['#markup'] = $name;
+  }
+
+  // Add some css to make the permissions table headers smaller.
+  // @TODO: fix to work with sticky header
+  drupal_add_css(drupal_get_path('module','express_permissions') . '/css/express-permissions.css');
+}
+
+/**
+ * Implements hook_form_formid_alter().
+ *
+ * Remove hidden roles from the UI.
+ */
+function express_permissions_form_views_exposed_form_alter(&$form, &$form_state) {
+  $hidden_roles_array = array(
+    'edit_only',
+    'administrator',
+    'developer',
+  );
+  if (isset($form['rid']['#options'])) {
+    foreach ($form['rid']['#options'] as $id => $option) {
+      if (in_array($option, $hidden_roles_array)) {
+        unset($form['rid']['#options'][$id]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_user_role_insert().
+ *
+ */
+function express_permissions_user_role_insert() {
+  express_permissions_order_roles();
+}
+
+/**
+ * Implements hook_user_role_delete().
+ *
+ */
+function express_permissions_user_role_delete() {
+  express_permissions_order_roles();
+}
+
+/**
+ * Resave the core roles in order of lowest permission level to highest
+ *
+ */
+function express_permissions_order_roles() {
+  $weight = 1;
+  $ordered_core_roles = array('anonymous user','authenticated user','edit_my_content', 'edit_only', 'content_editor', 'site_editor', 'site_owner', 'administrator','developer','access_manager','configuration_manager');
+  $all_roles = user_roles();
+  $addon_roles = array_diff($all_roles,$ordered_core_roles);
+  asort($addon_roles);
+
+  // Force core roles to be weighted by increasing permissions.
+  foreach ($ordered_core_roles as $role_name) {
+    if ($role = user_role_load_by_name($role_name)) {
+      $role->weight = $weight;
+      user_role_save($role);
+      $weight++;
+    }
+  }
+  // Weight remaining roles in alphabetical order at the end of the core roles
+  foreach ($addon_roles as $role_name) {
+    if ($role = user_role_load_by_name($role_name)) {
+      $role->weight = $weight;
+      user_role_save($role);
+      $weight++;
+    }
+  }
+
+}

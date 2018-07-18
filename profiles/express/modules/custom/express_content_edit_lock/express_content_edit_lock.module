@@ -1,0 +1,269 @@
+<?php
+
+/**
+ * @file
+ * Drupal hooks for express_content_edit_lock module.
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Adding user Dashboard.
+ */
+function express_content_edit_lock_menu() {
+  $items['admin/people/lock'] = array(
+    'title' => 'Content edit lock',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array(
+      'express_content_edit_lock_admin_form',
+    ),
+    'access arguments' => array('dashboard user lock'),
+    'weight' => 100,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form() and builds out lock users options on admin/dashboard/lock.
+ */
+function express_content_edit_lock_admin_form($form, &$form_state) {
+  $users_list = implode(',', variable_get('lock_allow_users'), array());
+
+  /**
+   * Implements custom function to get role by name.
+   */
+  function get_role_by_name($name) {
+    $roles = user_roles();
+    return array_search($name, $roles);
+  }
+
+  $form['lock_by_role'] = array(
+    '#type' => 'checkboxes',
+    '#multiple' => TRUE,
+    '#title' => t('Lock users based on their role'),
+    '#options' => array(
+      // The keys for the array are user role ID #s.
+      get_role_by_name('edit_my_content') => t('Edit my content'),
+      get_role_by_name('content_editor') => t('Content editors'),
+      get_role_by_name('site_owner') => t('Site owners'),
+      get_role_by_name('administrator') => t('Administrators'),
+    ),
+    '#default_value' => variable_get('lock_by_role', array()),
+    '#description' => t('Every user with a role selected above will be locked out.'),
+  );
+  $form['lock_allow_users'] = array(
+    '#type' => 'textfield',
+    '#multiple' => TRUE,
+    '#title' => t('Allow specific users to be exempt from their role\'s lock'),
+    '#default_value' => $users_list,
+    '#description' => t('Separate usernames with commas. For example, "user1, user2, user3".'),
+  );
+  $form['lock_leave_message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Leave a message for locked out users'),
+    '#default_value' => variable_get('lock_leave_message', t('This site has been locked. For more information contact the Site Owner.')),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ *
+ * You can't lock yourself out while submitting the form.
+ */
+function express_content_edit_lock_admin_form_submit($form, &$form_state) {
+  global $user;
+  // Exclude unnecessary elements.
+  form_state_values_clean($form_state);
+  $allowed_users = explode(',', $form_state['values']['lock_allow_users']);
+
+  foreach ($allowed_users as $user) {
+    trim($user);
+  }
+
+  $form_state['values']['lock_allow_users'] = $allowed_users;
+
+  foreach ($form_state['values'] as $key => $value) {
+    if (is_array($value) && isset($form_state['values']['array_filter'])) {
+      $value = array_keys(array_filter($value));
+    }
+    variable_set($key, $value);
+  }
+
+  if (!in_array($user->name, $allowed_users)) {
+    drupal_set_message(t('You just locked yourself out. Goodbye.'));
+  }
+
+  drupal_set_message(t('Lock has been enabled.'));
+}
+
+/**
+ * Implements hook_permission().
+ */
+function express_content_edit_lock_permission() {
+  return array(
+    'dashboard user lock' => array(
+      'title' => 'Lock users via the dashboard',
+      'description' => 'Allows you to lock out users.',
+    ),
+    'dev user lock' => array(
+      'title' => 'Lock users from logging in',
+      'description' => 'Allows you to prevent users from logging in.',
+    ),
+  );
+}
+
+/**
+ * Implements hook_secure_permissions().
+ */
+function express_content_edit_lock_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'dashboard user lock',
+    ),
+    'developer' => array(
+      'dashboard user lock',
+      'dev user lock',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Check to see if user->name is in lock_allow_users variable.
+ */
+function _lock_allow_users_check($username) {
+  $output = FALSE;
+  $allowed_users = variable_get('lock_allow_users', array());
+
+  if (in_array($username, $allowed_users)) {
+    $output = TRUE;
+  }
+  return $output;
+}
+
+/**
+ * Check roles to see if they have access.
+ */
+function _lock_by_role_check() {
+  global $user;
+  $user_roles = variable_get('lock_by_role', array());
+  foreach (array_keys($user->roles) as $rid) {
+    if (in_array($rid, $user_roles)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Locked or not? If this returns false, you may pass.
+ */
+function _lock_final_check() {
+  global $user;
+  if (isset($user->name)) {
+    if (cu_users_user_has_role('developer') || cu_users_user_has_role('admin') || _lock_allow_users_check($user->name)) {
+      return FALSE;
+    }
+    if (_lock_by_role_check()) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function express_content_edit_lock_form_alter(&$form, &$form_state, $form_id) {
+  if (_lock_final_check()) {
+    $exceptions = array(
+      'user_login',
+      'views_exposed_form',
+      'ctools_export_ui_list_form',
+      'user_external_invite_form',
+      'atlas_admin_settings',
+    );
+    if (!in_array($form_id, $exceptions)) {
+      $form['#after_build'][] = '_express_content_edit_lock_recursive';
+    }
+  }
+}
+
+/**
+ * If the lock message is set, show it to people.
+ */
+function express_content_edit_lock_page_alter(&$page) {
+  if (_lock_by_role_check() && variable_get('lock_leave_message', '')) {
+    drupal_set_message(t(variable_get('lock_leave_message', '')), 'warning');
+  }
+
+  $onConfPage = strpos(current_path(), 'admin/settings/bundles/list/confirm');
+  if (variable_get('lock_user_dev') == 1 && $onConfPage === 0) {
+    $page['content']['system_main']['main']['#markup'] = '<p>Enabling bundles has been disabled on this site while it is locked.</p>';
+  }
+}
+
+/**
+ * Callback function for admin/settings/bundles/list/confirm/%.
+ *
+ * Redirect away from bundle enable while site is locked for that user.
+ */
+function express_content_edit_lock_redirect() {
+  drupal_set_message(t(variable_get('lock_leave_message', '')), 'warning');
+  return '';
+}
+
+/**
+ * Recursively disable form elements.
+ */
+function _express_content_edit_lock_recursive(&$element) {
+  foreach (element_children($element) as $name) {
+    $element[$name]['#attributes']['disabled'] = 'disabled';
+    _cu_atlas_recursive($element[$name]);
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_user_login().
+ *
+ * Lock users as dev with lock_user_dev.
+ */
+function express_content_edit_lock_user_login(&$edit, $account) {
+  if (module_exists('cu_users')) {
+    $devs = cu_users_get_users('developer');
+    $dev_lock = variable_get('lock_user_dev', FALSE);
+
+    if (!array_key_exists($account->name, $devs) && ($dev_lock === TRUE)) {
+      watchdog('express_content_edit_lock', ':name has tried to login to the site while it is locked.', array(':name' => $account->name));
+      user_logout_current_user();
+      drupal_set_message('You are not able to login to the site at this time.', 'error');
+      drupal_goto('user');
+    }
+  }
+}
+
+/**
+ * Implements hook_user_login_alter().
+ *
+ * Prevents non-developers from logging in.
+ */
+function express_content_edit_lock_form_user_login_alter($form, &$form_state) {
+  $dev_lock = variable_get('lock_user_dev', FALSE);
+  if ($dev_lock === TRUE) {
+    drupal_set_message(t('You will not be able to login to this site. It has been locked. Please contact the Web Support team. <a href="http://www.colorado.edu/webcentral/">@link_text</a>',
+      array(
+        '@link_text' => 'Visit Webcentral',
+      )
+    ), 'warning');
+  }
+}

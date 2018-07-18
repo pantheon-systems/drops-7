@@ -1,0 +1,49 @@
+@import "zen";
+@import "../modules/_colors.scss";
+@import "../modules/_global.scss";
+#header-wrapper {
+  padding: 20px 0;
+}
+$zen-column-count: 12;
+#branding {
+  @include zen-grid-item(8, 1);
+}
+#search {
+  @include zen-grid-item(4, 9);
+  padding-top: 13px;
+  display: block;
+}
+img#logo {
+  position:absolute;
+  top:0;
+  left:20px;
+  width:65px;
+  height: auto;
+}
+#name-and-slogan {
+  margin-left:85px;
+  margin-right: 0;
+  padding-top: 13px;
+}
+.two-line-title #name-and-slogan {
+  padding-top: 0;
+}
+h1#site-name,
+h2#site-name {
+  font-size: 28px;
+  margin:0;
+  padding:0;
+  line-height: 110%;
+  font-weight: 200 !important;
+  font-family:$base_font !important;
+}
+.two-line-title h1#site-name,
+.two-line-title h2#site-name {
+  font-size: 25px;
+}
+
+#site-slogan {
+  margin:3px 0 0 0;
+  font-size: 12px;
+  text-transform: uppercase;
+}

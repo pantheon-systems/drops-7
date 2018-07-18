@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_social_media_bundle_enable() {
+
+}
+
+/**
+ * Implements hook_disable().
+ */
+function cu_social_media_bundle_disable() {
+  module_disable(array(
+    'cu_twitter_feed',
+    'cu_facebook_activity',
+    'cu_facebook_like_button',
+    'cu_share',
+    'cu_social_links',
+  ));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function cu_social_media_bundle_uninstall() {
+  drupal_uninstall_modules(array(
+    'cu_twitter_feed',
+    'cu_facebook_activity',
+    'cu_facebook_like_button',
+    'cu_share',
+    'cu_social_links',
+  ));
+}
+/**
+ * Enable cu_share module.
+ */
+function cu_social_media_bundle_update_7001() {
+  module_enable(array('cu_share'));
+  drupal_flush_all_caches();
+}
+
+/**
+ * Enable metatag_twittercards and metatag_opengraph.
+ */
+function cu_social_media_bundle_update_7002() {
+  module_enable(array('metatag_twitter_cards', 'metatag_opengraph'));
+}

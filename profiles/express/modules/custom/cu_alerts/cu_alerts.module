@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Add rave_alerts block to alert region.
+ */
+function cu_alerts_page_alter(&$page) {
+  $block = block_load('rave_alerts', 'rave_alerts');
+  $render_array = _block_get_renderable_array(_block_render_blocks(array($block)));
+  $output = render($render_array);
+  $page['alerts']['rave_alerts']['#markup'] = $output;
+}

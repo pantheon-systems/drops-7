@@ -1,0 +1,174 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ *
+ * Informs libraries module about backstretch.
+ */
+function backstretch_libraries_info() {
+  $libraries['backstretch'] = array(
+    'name' => 'Backstretch',
+    'vendor url' => 'http://srobbin.com/blog/jquery-plugins/jquery-backstretch/',
+    'download url' => 'https://nodeload.github.com/srobbin/jquery-backstretch/zipball/1.2.5',
+    'version arguments' => array(
+      'file' => 'jquery.backstretch.js',
+      // Version 1.2.5
+      'pattern' => '/Version ([\d\.]+)/',
+      'lines' => 5,
+    ),
+    'files' => array(
+      'js' => array('jquery.backstretch.js'),
+    ),
+  );
+  $libraries['scrollto'] = array(
+    'name' => 'ScrollTo',
+    'vener url' => 'http://flesler.blogspot.com/2007/10/jqueryscrollto.html',
+    'download url' => 'http://flesler-plugins.googlecode.com/files/jquery.scrollTo-1.4.2.zip',
+    'version arguments' => array(
+      'file' => 'jquery.scrollTo.js',
+      //@version 1.4.2
+      'pattern' => '/@version ([\d\.]+)/',
+      'lines' => 25,
+    ),
+    'files' => array(
+      'js' => array('jquery.scrollTo-min.js'),
+    ),
+  );
+  $libraries['waypoints'] = array(
+    'name' => 'Waypoints',
+    'vener url' => 'http://imakewebthings.com/jquery-waypoints/',
+    'download url' => 'https://github.com/imakewebthings/jquery-waypoints/zipball/v1.1.6',
+    'version arguments' => array(
+      'file' => 'waypoints.js',
+      'pattern' => '/v([\d\.]+)/',
+      'lines' => 5,
+    ),
+    'files' => array(
+      'js' => array('waypoints.min.js'),
+    ),
+  );
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function backstretch_menu() {
+  $items['admin/appearance/backstretch'] = array(
+    'title' => 'Backstretch',
+    'description' =>  'Configure backstretch background photo.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('backstretch_admin_settings'),
+    'file' => 'backstretch.admin.inc',
+    'access arguments' => array('administer backstretch'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Loads the backstretch library and adds stretched image to page.
+ */
+function backstretch_page_alter(&$page) {
+  if (($library = libraries_load('backstretch')) && !empty($library['loaded'])) {
+    
+    drupal_add_css(drupal_get_path('module', 'backstretch') . '/backstretch.css');
+
+    if (module_exists('context')) { 
+      if ($plugin = context_get_plugin('reaction', 'backstretch')) {
+        $plugin->execute();
+      }
+    }
+
+    if ($url = variable_get('backstretch_image_url', '') || $plugin) {
+      $settings = array(
+        'backstretchURL' => variable_get('backstretch_image_url', ''),
+        'backstretchMinWidth' => variable_get('backstretch_min_width', 0),
+      );
+
+      if (variable_get('backstretch_scroller', FALSE)) {
+        $settings['backstretchScroller'] = TRUE;
+        $settings['backstretchScrollerAdj'] = variable_get('backstretch_scroller_adjustment', 0);
+      } 
+      drupal_add_js($settings, 'setting');
+      drupal_add_js(drupal_get_path('module', 'backstretch') .'/bs.js', array('scope' => 'footer'));
+    } 
+  }
+  
+  if (variable_get('backstretch_scrollto', FALSE)) {
+    $waypoints = libraries_load('waypoints');
+    $scrollto = libraries_load('scrollto');
+     
+    if (!empty($waypoints['loaded']) && !empty($scrollto['loaded'])) {
+      // Enable ScrollTo.
+      $settings['backstretchScrollTo'] = TRUE;
+      drupal_add_js($settings, 'setting');
+
+      // Add footer link.
+      $page['page_bottom']['scrollto'] = array(
+        '#theme' => 'links',
+        '#attributes' => array(
+          'class' => array(
+            'footer-links',
+            'links',
+          ),
+        ),
+        '#links' => array(
+          array(
+            'title' => t('View Photo'),
+            'href' => '<front>',
+            'attributes' => array(
+              'id' => 'backstretch-scrollto',
+            ),
+            'fragment' => 'backstretchmargin',
+          ),
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function backstretch_permission() {
+  return array(
+    'administer backstretch' => array(
+      'title' => t('Administer backstretch'),
+      'description' => t('Administer the backstretch background image.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function backstretch_context_registry() {
+  return array(
+    'reactions' => array(
+      'backstretch' => array(
+        'title' => t('Backstretch'),
+        'plugin' => 'backstretch',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implmenets hook_context_plugins().
+ */
+function backstretch_context_plugins() {
+  $plugins = array();
+  $plugins['backstretch'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'backstretch') . '/plugins',
+      'file' => 'backstretch_context_reaction_backstretch.inc',
+      'class' => 'backstretch_context_reaction_backstretch',
+      'parent' => 'context_reaction',
+    ),
+  );
+  return $plugins;
+}

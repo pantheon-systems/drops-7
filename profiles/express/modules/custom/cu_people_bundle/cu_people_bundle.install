@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function cu_people_bundle_enable() {
+
+}
+
+/**
+ * Implements hook_disable().
+ */
+function cu_people_bundle_disable() {
+
+}
+
+/**
+ * Implements hook_install().
+ */
+function cu_people_bundle_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function cu_people_bundle_uninstall() {
+
+}
+
+

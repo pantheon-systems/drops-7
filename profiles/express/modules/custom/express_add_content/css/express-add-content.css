@@ -1,0 +1,38 @@
+.express-add-group h2:before {
+  font-family: FontAwesome;
+  margin-right:5px;
+}
+.express-add-group {
+  margin-top: 1.5em;
+}
+.bundle-type-express-core h2:before {
+  content: '\f005';
+}
+.bundle-type-news-announcements h2:before {
+  content: '\f1ea';
+}
+.bundle-type-people h2:before {
+  content: '\f0c0';
+}
+.bundle-type-advanced-content h2:before {
+  content: '\f022';
+}
+.bundle-type-advanced-layout h2:before {
+  content: '\f00a';
+}
+.bundle-type-events h2:before {
+  content: '\f073';
+}
+.bundle-type-forms h2:before {
+  content: '\f046';
+}
+.bundle-type-social-media h2:before {
+  content: '\f081';
+}
+.bundle-type-photo-gallery h2:before {
+  content: '\f03e';
+}
+.bundle-type-news-and-articles h2:before {
+  content: "\f1ea";
+}
+

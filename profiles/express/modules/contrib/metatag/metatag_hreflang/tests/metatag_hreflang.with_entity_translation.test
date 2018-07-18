@@ -1,0 +1,283 @@
+<?php
+
+/**
+ * @file
+ * Tests for hreflang handle when Entity Translation is used.
+ */
+
+/**
+ * Tests for hreflang handle when Entity Translation is used.
+ */
+class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tests for hreflang with Entity Translation',
+      'description' => 'Test Metatag:hreflang with the Entity Translation module.',
+      'group' => 'Metatag',
+      'dependencies' => array('devel', 'entity_translation'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Used for debugging some token values.
+    $modules[] = 'devel';
+
+    // Need Locale for the multiple languages.
+    $modules[] = 'locale';
+
+    // Need Entity Translation for the tokens to work.
+    $modules[] = 'entity_translation';
+
+    // This module.
+    $modules[] = 'metatag_hreflang';
+
+    // Enable all of the modules & install the site.
+    parent::setUp($modules);
+
+    // Add some new languages.
+    $this->setupLocales($this->supportedLocales());
+
+    // The content that will be used.
+    $content_type = 'page';
+
+    // Create an admin user that can also manage locales.
+    $perms = array(
+      // For Locale, so languages can be added.
+      'administer languages',
+
+      // For Entity Translation, so content can be translated.
+      'translate any entity',
+
+      // For Devel, for access to the node's "devel" tab.
+      'access devel information',
+
+      // For Field UI, so field settings can be changed.
+      'administer fields',
+
+      // For Node, so content type settings can be changed.
+      'administer content types',
+
+      // For Node, so content can be created and edited.
+      'create ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Enable translation support for the content type.
+    variable_set('language_content_type_' . $content_type, ENTITY_TRANSLATION_ENABLED);
+
+    // Allow the body field to be translated.
+    $this->drupalGet('admin/structure/types/manage/' . $content_type . '/fields/body');
+    $this->assertResponse(200);
+    $this->assertFieldByName('field[translatable]');
+    $edit = array(
+      'field[translatable]' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save settings'));
+
+    // Clear all the caches so that all of the various hooks are activated and
+    // the appropriate tokens, fields, meta tags, etc are available.
+    drupal_flush_all_caches();
+  }
+
+  /**
+   * The list of locales that are being tested.
+   *
+   * @return array
+   *   A simple list of language codes.
+   */
+  private function supportedLocales() {
+    return array(
+      'de',
+      'fr',
+      'es',
+      'en',
+    );
+  }
+
+  /**
+   * Assert that the appropriate hreflang meta tag fields are present.
+   *
+   * @param string $form_langcode
+   *   The langcode of the current form. Defaults to LANGUAGE_NONE, which is
+   *   what is used on an empty node/add form.
+   */
+  private function assertHreflangFields($form_langcode = LANGUAGE_NONE) {
+    // The x-default field has a specific default.
+    $this->assertFieldByName("metatags[{$form_langcode}][hreflang_xdefault][value]", "[node:url-original]", 'Found the hreflang=x-default meta tag and it has the correct default value.');
+
+    // Confirm each of the support locales has its own field and the appropriate
+    // default value.
+    foreach ($this->supportedLocales() as $langcode) {
+      $this->assertFieldByName("metatags[{$form_langcode}][hreflang_{$langcode}][default]", "[node:url-{$langcode}]", format_string('Found the hreflang field for the "%lang" locale and it has the correct default value.', array('%lang' => $langcode)));
+    }
+  }
+
+  /**
+   * Confirm that each locale has a field added and shows the appropriate
+   * default value.
+   */
+  function testFormFields() {
+    $this->drupalGet('node/add/page');
+    $this->assertResponse(200);
+
+    // Confirm the fields exist.
+    $this->assertHreflangFields('en');
+  }
+
+  /**
+   * Confirm that the meta tags output are correct.
+   */
+  function testOutput() {
+    // All of the locales we're supporting in these tests. The languages have
+    // been enabled already, so this gets a list of language objects.
+    $languages = language_list('enabled');
+    $locales = $languages[1];
+
+    // Identify the site's default language.
+    $default_language = language_default('language');
+
+    // Create an English node so it can be translated.
+    $args = array(
+      'language' => $default_language,
+    );
+    $node = $this->drupalCreateNode($args);
+    $this->verbose($node);
+
+    // Load the translation page.
+    $this->drupalGet('node/' . $node->nid . '/translate');
+    $this->assertResponse(200);
+    $this->assertText(t('Not translated'));
+
+    // Confirm that there are links to translate the node.
+    $urls = array();
+    foreach ($locales as $langcode => $locale) {
+      // There won't be a link to translate to English, that's the default
+      // language for thos node.
+      if ($langcode == $default_language) {
+        continue;
+      }
+
+      // Confirm that a link to translate the node into each locale exists.
+      $url = 'node/' . $node->nid . '/edit/add/' . $node->language . '/' . $langcode;
+      $urls[$langcode] = $url;
+      // @todo This fails in testbot.
+      // $this->assertLinkbyHref(url($url));
+    }
+
+    // Check each of the 'translate' pages loads properly.
+    foreach ($urls as $langcode => $url) {
+      // Confirm the 'translate' page loads.
+      $this->drupalGet($url);
+      $this->assertResponse(200);
+
+      // Confirm all of the hreflang fields exist.
+      $this->assertHreflangFields($langcode);
+
+      // Save the translation.
+      $edit = array(
+        // Add a custom title.
+        "metatags[{$langcode}][title][value]" => "Tranlation for {$langcode}",
+      );
+      $this->drupalPost(NULL, $edit, t('Save'));
+    }
+
+    // Load the translation page again to confirm everything was translated.
+    $this->drupalGet('node/' . $node->nid . '/translate');
+    $this->assertResponse(200);
+    $this->assertNoText(t('Not translated'));
+
+    // Load the node's devel page to see the translations data.
+    $this->drupalGet('node/' . $node->nid . '/devel');
+    $this->assertResponse(200);
+
+    // Load the node's devel page and confirm each of the tokens is available.
+    $this->drupalGet('node/' . $node->nid . '/devel/token');
+    $this->assertResponse(200);
+    foreach ($locales as $langcode => $locale) {
+      $this->assertText("[node:url-{$langcode}]");
+    }
+
+    // Load the node page again, confirm each hreflang meta tag.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+    $xpath = $this->xpath("//link[@rel='alternate']");
+    $this->verbose($xpath);
+    $this->assertEqual(count($xpath), count($locales), 'The correct number of hreflang meta tags was found');
+
+    // Try to find the position of the xdefault value in the $xpath structure.
+    $xdefault_pos = NULL;
+    // This is slightly messy logic as the sort order of $locales may be
+    // different to the meta tags.
+    foreach ($locales as $langcode => $locale) {
+      $found = FALSE;
+      foreach ($xpath as $ctr => $item) {
+        if ($item['hreflang'] == 'x-default') {
+          $xdefault_pos = $ctr;
+        }
+        elseif ($item['hreflang'] == $langcode) {
+          $found = TRUE;
+          $this->assertEqual($xpath[$ctr]['hreflang'], $langcode);
+          // @todo Fix this. Not sure why, but the url() call returns the URL
+          // without the language prefix.
+          // $url_options = array(
+          //   'language' => $locale,
+          //   'absolute' => TRUE,
+          // );
+          // $this->assertEqual($xpath[$ctr]['href'], url('node/' . $node->nid, $url_options));
+        }
+      }
+
+      // The node's default language should not have been found, it should have
+      // been turned into an xdefault.
+      if ($langcode == $node->language) {
+        $this->assertFalse((bool) $found, format_string("A regular hreflang meta tag for the node's default language (%lang) was not found.", array('%lang' => $langcode)));
+      }
+
+      // Translations should have been found.
+      else {
+        $this->assertTrue((bool) $found, format_string('The hreflang meta tag for %lang was found.', array('%lang' => $langcode)));
+      }
+    }
+
+    // Confirm the hreflang=xdefault meta tag was found.
+    $this->assertNotNull($xdefault_pos, 'The hreflang=xdefault meta tag was found.');
+    if (!is_null($xdefault_pos)) {
+      $this->assertEqual($xpath[$xdefault_pos]['href'], url('node/' . $node->nid, array('absolute' => TRUE)), 'Found the x-default value.');
+    }
+
+    // Enable the xdefault-dupe option.
+    variable_set('metatag_hreflang_allow_dupe', TRUE);
+    metatag_config_cache_clear();
+
+    // Load the node page again.
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertResponse(200);
+
+    // Confirm there are now more meta tags.
+    $xpath = $this->xpath("//link[@rel='alternate']");
+    $this->verbose($xpath);
+    $this->assertEqual(count($xpath), count($locales) + 1, 'The correct number of hreflang meta tags was found.');
+    $found = FALSE;
+    foreach ($xpath as $ctr => $item) {
+      if ($item['hreflang'] == $node->language) {
+        $found = $ctr;
+      }
+    }
+    $this->assertTrue((bool) $found, "Found an hreflang meta tag for the node's default locale.");
+    if ($found) {
+      $this->assertEqual($xpath[$found]['hreflang'], $node->language);
+    }
+  }
+
+}

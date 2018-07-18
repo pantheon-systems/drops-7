@@ -1,0 +1,191 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Views integration, outside of Metatag:Views.
+ */
+
+/**
+ * Tests for the Views integration, outside of Metatag:Views.
+ */
+class MetatagCoreWithViewsTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Views',
+      'description' => 'Test Metatag integration with the Views module.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token', 'views'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'views';
+    $modules[] = 'views_ui';
+
+    // Need the Path module to set a alias which can then be loaded.
+    $modules[] = 'path';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Test the taxonomy term page still works when displayed via Views.
+   */
+  public function testTermViews() {
+    $vocab_name = 'test_vocab';
+    $term_name = 'Who likes magic';
+    $term_path = 'term-test';
+
+    // Create a vocabulary.
+    $vocabulary = $this->createVocabulary($vocab_name);
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Global admin access.
+      'administer site configuration',
+
+      // Needed for the vocabulary.
+      'administer taxonomy',
+      'edit terms in ' . $vocabulary->vid,
+      'delete terms in ' . $vocabulary->vid,
+
+      // Needed for the Path module.
+      'create url aliases',
+
+      // Needed for Views.
+      'administer views',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Load the "add default configuration" page.
+    $this->drupalGet('admin/config/search/metatags/config/add');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText(t('Select the type of default meta tags you would like to add.'));
+
+    // Submit the initial form to select an entity bundle.
+    $this->drupalPost(NULL, array(
+      'instance' => 'taxonomy_term:' . $vocabulary->name,
+    ), t('Add and configure'));
+    $this->assertResponse(200);
+
+    // @todo Update this to extract the H1 tag.
+    $this->assertText(strip_tags('Taxonomy term: ' . $vocabulary->name));
+
+    // Submit the form with some values.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[term:name]',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify the page loaded correct.
+    $this->assertText(strip_tags(t('The meta tag defaults for @label have been saved.', array('@label' => 'Taxonomy term: ' . $vocabulary->name))));
+
+    // Verify that the user was redirected to the settings page again.
+    $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
+
+    // Create a test term.
+    // Load the term form.
+    $this->drupalGet('admin/structure/taxonomy/' . $vocabulary->machine_name . '/add');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly.
+    // @todo Update this to extract the H1 tag.
+    // $this->assertText(strip_tags(t('Create @name', array('@name' => $vocabulary->name))));
+    // Verify that it's possible to submit values to the form.
+    $this->drupalPost(NULL, array(
+      'metatags[und][abstract][value]' => '[term:name] ponies',
+      'name' => $term_name,
+      'path[alias]' => $term_path,
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify that the node saved correctly.
+    $t_args = array('%name' => $term_name);
+    // This doesn't work for some reason, it seems the HTML is stripped off
+    // during output so the %name's standard Drupal wrappers don't match.
+    // $this->assertText(t('Created new term %name.', $t_args));
+    // .. so this has to be done instead.
+    $this->assertText(strip_tags(t('Created new term %name.', $t_args)));
+
+    // Verify the term data saved correctly.
+    $this->drupalGet($term_path);
+    $this->assertResponse(200);
+
+    // Confirm the page is managed by the default taxonomy term page.
+    $this->assertText(t('There is currently no content classified with this term.'));
+
+    // Enable the taxonomy_term default display.
+    $view = views_get_view('taxonomy_term');
+    ctools_include('export');
+    ctools_export_set_object_status($view, 0);
+    $this->clearAllCaches();
+
+    $this->drupalGet('admin/structure/views');
+    $this->assertResponse(200);
+
+    $vars = variable_get('views_defaults');
+    $this->verbose($vars);
+    $this->assertFalse($vars['taxonomy_term'], 'Taxonomy term page is enabled.');
+
+    // Load the page again.
+    $this->drupalGet($term_path);
+    $this->assertResponse(200);
+
+    // Confirm this page is managed by Views - if it's managed by the default
+    // taxonomy term page this text will show.
+    $this->assertNoText(t('There is currently no content classified with this term.'));
+
+    // Try to extract the 'edit' link.
+    $xpaths = $this->xpath("//ul/li/a");
+    $matches = array();
+    $tid = 0;
+    if (!empty($xpaths)) {
+      foreach ($xpaths as $xpath) {
+        $attributes = $xpath->attributes();
+        if (!empty($attributes['href'])) {
+          if (preg_match('@taxonomy/term/(\d+)/edit$@', $attributes['href'], $matches)) {
+            $tid = $matches[1];
+          }
+        }
+      }
+    }
+
+    // Presuing a term ID was found, load the term.
+    if (!empty($tid)) {
+      $term = taxonomy_term_load($tid);
+
+      // Only the non-default values are stored.
+      $expected = array(
+        'und' => array(
+          'abstract' => array(
+            'value' => '[term:name] ponies',
+          ),
+        ),
+      );
+      $this->assertEqual($expected, $term->metatags);
+    }
+
+    // This shouldn't happen, it indicates a problem.
+    else {
+      $this->fail(t('Could not determine the ID for created term.'));
+    }
+
+    // Verify the title is using the custom default for this vocabulary.
+    $xpath = $this->xpath("//meta[@name='abstract']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
+    $this->assertEqual($xpath[0]['content'], "Who likes magic ponies");
+  }
+
+}

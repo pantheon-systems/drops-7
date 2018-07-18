@@ -1,0 +1,113 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag Hreflang tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag Hreflang tags work correctly.
+ */
+class MetatagHreflangTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Hreflang',
+      'description' => 'Test the Hreflang meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'hreflang_xdefault',
+    // Additional meta tags added at the end of setUp().
+    // @see setUp()
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_hreflang';
+    parent::setUp($modules);
+
+    // Create an admin user that can also manage locales.
+    $perms = array(
+      // For Locale, so languages can be added.
+      'administer languages',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+
+    // Log in the admin user.
+    $this->drupalLogin($this->adminUser);
+
+    // Add some new languages.
+    foreach ($this->supportedLocales() as $langcode) {
+      if ($langcode != 'en') {
+        $this->addSiteLanguage($langcode);
+      }
+    }
+
+    // Clear all the caches so that all of the various hooks are activated and
+    // the appropriate tokens, fields, meta tags, etc are available.
+    drupal_flush_all_caches();
+
+    // Additional meta tags that will be available.
+    foreach ($this->supportedLocales() as $langcode) {
+      $this->tags[] = 'hreflang_' . $langcode;
+    }
+  }
+
+  /**
+   * The list of locales that are being tested.
+   *
+   * @return array
+   *   A simple list of language codes.
+   */
+  private function supportedLocales() {
+    return array(
+      'de',
+      'fr',
+      'es',
+      // English is automatic, so remember to not try enabling it.
+      'en',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_tag = 'link';
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'hreflang';
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_value_attribute = 'href';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagValue() {
+    return base_path() . $this->randomMachineName() . '/' . $this->randomMachineName();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    $tag_name = str_replace('xdefault', 'x-default', $tag_name);
+    return str_replace('hreflang_', '', $tag_name);
+  }
+
+}

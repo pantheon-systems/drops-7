@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function cu_rss_schema() {
+  $schema = array();
+  $schema['rss_feed'] = array(
+    'description' => 'The base table for the RSS Feed entity',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the RSS Feed entity',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Human readable name of the RSS Feed.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'url' => array(
+        'description' => 'RSS Feed URL.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'categories' => array(
+        'description' => 'RSS Feed categories.',
+        'type' => 'blob',
+        'not null' => TRUE,
+      ),
+      'tags' => array(
+        'description' => 'RSS Feed tags.',
+        'type' => 'blob',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}

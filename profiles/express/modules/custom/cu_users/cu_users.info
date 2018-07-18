@@ -1,0 +1,9 @@
+name = CU Users
+description = "Define CU staff users"
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = secure_permissions
+dependencies[] = express_permissions
+dependencies[] = user_external_invite
+stylesheets[all][] = css/cu-users.css

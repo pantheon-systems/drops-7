@@ -1,0 +1,12 @@
+name = honepot_test
+description = Support module for Honeypot internal testing purposes.
+core = 7.x
+package = Testing
+hidden = true
+
+; Information added by Drupal.org packaging script on 2018-02-27
+version = "7.x-1.24"
+core = "7.x"
+project = "honeypot"
+datestamp = "1519706887"
+

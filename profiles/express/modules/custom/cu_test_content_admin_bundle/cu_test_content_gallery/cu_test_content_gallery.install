@@ -1,0 +1,71 @@
+<?php
+
+function cu_test_content_gallery_install() {
+
+  $node = new StdClass();
+  $node->title = 'Photos';
+  $node->type = 'photo_gallery';
+  $node->menu = array(
+    'menu_name' => 'main-menu',
+    'plid' => $plid,
+    'link_title' => 'Photos',
+    'enabled' => TRUE,
+    'weight' => 99,
+  );
+  $node->uid = 1;
+  $count = 0;
+  for($i=0; $i < 11; $i++) {
+    $random = rand(1,96);
+    $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?image=' . $random);
+
+    $file = (object) array(
+      'uid' => $count,
+      'uri' => $file_path,
+      'filemime' => file_get_mimetype($file_path),
+      'status' => 1,
+    );
+
+
+    // You can specify a subdirectory, e.g. public://foo/
+    // Appending extension to file name so images load properly when viewed
+    $file = file_copy($file, 'public://'.'test_image_'.$i.'.jpg');
+    $node->field_photo[LANGUAGE_NONE][$count] = (array) $file;
+    $node->field_photo[LANGUAGE_NONE][$count]['alt'] = _cu_test_content_gallery_dummy_text();
+    $node->field_photo[LANGUAGE_NONE][$count]['title'] = _cu_test_content_gallery_dummy_text();
+    $count++;
+  }
+
+
+
+  node_save($node);
+  $temp_pages = variable_get('cu_test_content_gallery', array());
+  $temp_pages[$node->nid] = $node->title;
+  variable_set('cu_test_content_gallery', $temp_pages);
+  drupal_set_message("Page $node->title - $node->nid created.");
+}
+
+function _cu_test_content_gallery_dummy_text() {
+  $response = drupal_http_request('http://loripsum.net/api/1/short/plaintext');
+  if ($response->code == '200') {
+    return $response->data;
+  } else {
+    return 'No dummy text.';
+  }
+}
+
+/*
+ * Implements hook_uninstall
+ *
+ * remove test pages
+ *
+ */
+function cu_test_content_gallery_uninstall() {
+  $temp_pages = variable_get('cu_test_content_gallery', NULL);
+  if ($temp_pages) {
+    foreach ($temp_pages as $nid => $name) {
+      node_delete($nid);
+      drupal_set_message("Node $name - $nid deleted.");
+    }
+    variable_del('cu_test_content_gallery');
+  }
+}

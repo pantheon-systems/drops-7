@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Contains Drupal hooks for the Embed Templates - Unthemed Page module.
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ *   List of menu items.
+ */
+function et_unthemed_page_menu() {
+  $items = array();
+
+  // Add a page/path for each published Unthemed page.
+  $embed_paths = et_unthemed_page_get_embed_paths();
+  foreach ($embed_paths as $embed) {
+    $access_permission = 'view ' . $embed->type . ' embeds';
+    $items[$embed->path] = array(
+      'title' => $embed->name,
+      'page callback' => 'et_unthemed_page_render',
+      'page arguments' => array($embed),
+      'access arguments' => array($access_permission),
+      'type' => MENU_CALLBACK,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Gets all embeds that use unthemed_page renderer.
+ *
+ * @return array
+ *   A list of paths for published embeds that have the unthemed_page renderer.
+ */
+function et_unthemed_page_get_embed_paths() {
+  $query_options = array(
+    'renderer' => array('unthemed_page'),
+    'status' => array('published'),
+  );
+  // Get published embed names.
+  $matches = embed_templates_get_embeds($query_options);
+  return $matches;
+}
+
+/**
+ * Callback that renders a unthemed page.
+ *
+ * @param object $embed
+ *   Markup of the unthemed page.
+ */
+function et_unthemed_page_render($embed) {
+  print theme('embed_templates_' . $embed->type, unserialize($embed->data));
+  drupal_exit();
+}

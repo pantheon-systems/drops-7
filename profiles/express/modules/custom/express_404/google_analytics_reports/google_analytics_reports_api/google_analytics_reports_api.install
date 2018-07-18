@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Installation file for Google Analytics Reports API module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function google_analytics_reports_api_install() {
+  // Move variables from old Google Analytics API module to
+  // the new Google Analytics Reports API module.
+  if (variable_get('google_analytics_reports_oauth_token', FALSE)) {
+    variable_set('google_analytics_reports_api_cache_length', variable_get('google_analytics_reports_cache_length', 259200));
+    variable_set('google_analytics_reports_api_default_page', variable_get('google_analytics_reports_default_page', '/index.html'));
+    variable_set('google_analytics_reports_api_hd', variable_get('google_analytics_reports_hd', 'default'));
+    variable_set('google_analytics_reports_api_oauth_token', variable_get('google_analytics_reports_oauth_token', FALSE));
+    variable_set('google_analytics_reports_api_oauth_token_secret', variable_get('google_analytics_reports_oauth_token_secret', NULL));
+    variable_set('google_analytics_reports_api_profile_id', variable_get('google_analytics_reports_profile_id', 0));
+
+    variable_del('google_analytics_reports_cache_length');
+    variable_del('google_analytics_reports_default_page');
+    variable_del('google_analytics_reports_hd');
+    variable_del('google_analytics_reports_oauth_token');
+    variable_del('google_analytics_reports_oauth_token_secret');
+    variable_del('google_analytics_reports_profile_id');
+
+    // Remove information of old modules from the database.
+    // module_disable() and drupal_uninstall_modules won't work since
+    // the modules files doesn't exists.
+    db_delete('system')
+      ->condition(
+        db_or()
+          ->condition('name', 'google_analytics_api')
+          ->condition('name', 'google_analytics_views'))
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_analytics_reports_api_uninstall() {
+  // Delete module variables.
+  variable_del('google_analytics_reports_api_access_token');
+  variable_del('google_analytics_reports_api_cache_length');
+  variable_del('google_analytics_reports_api_client_id');
+  variable_del('google_analytics_reports_api_client_secret');
+  variable_del('google_analytics_reports_api_default_page');
+  variable_del('google_analytics_reports_api_expires_at');
+  variable_del('google_analytics_reports_api_profile_id');
+  variable_del('google_analytics_reports_api_redirect_uri');
+  variable_del('google_analytics_reports_api_refresh_token');
+  // From old version.
+  variable_del('google_analytics_reports_api_hd');
+  variable_del('google_analytics_reports_api_oauth_token');
+  variable_del('google_analytics_reports_api_oauth_token_secret');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function google_analytics_reports_api_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  // Report Google Analytics Reports API authorization status.
+  if ($phase == 'runtime') {
+    $access = variable_get('google_analytics_reports_api_access_token', NULL);
+    $value = ($access) ? $t('You have successfully authorized.') : $t('You must <a href="@url">authorize</a> Drupal to use your Google Analytics account before you can view reports.', array('@url' => url('admin/config/system/google-analytics-reports-api')));
+    $severity = ($access) ? REQUIREMENT_OK : REQUIREMENT_ERROR;
+    $requirements['google_analytics_reports_api_authorization'] = array(
+      'title' => $t('Google Analytics Reports API authorization'),
+      'value' => $value,
+      'severity' => $severity,
+    );
+  }
+
+  return $requirements;
+}

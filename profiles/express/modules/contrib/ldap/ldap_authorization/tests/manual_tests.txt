@@ -1,0 +1,32 @@
+
+
+A summary of tests to do manually.  These should all be duplicated in simpletests.
+Queries for group memberships and nested group memberships are in the LDAP Servers
+module.  LDAP Authorization testing is thus about the actual granting of drupal
+roles, og group memberships, etc.
+
+
+
+Event Handlers to Test
+[x] When a user logs on.
+
+
+Mappings Model:
+Mapping of LDAP to drupal role (one per line)
+[x] Only grant drupal roles that match a filter above
+[x] Convert full dn to value of first attribute before mapping.
+
+
+
+Flags to Test:
+
+[x] Enable this Configuration
+[x] Revoke drupal roles previously granted by LDAP Authorization but no longer valid.
+[x] Re grant drupal roles previously granted by LDAP Authorization but removed manually.
+[x] Create drupal roles if they do not exist.
+
+
+Data Structures to Test:
+
+
+$user->ldap_authorizations

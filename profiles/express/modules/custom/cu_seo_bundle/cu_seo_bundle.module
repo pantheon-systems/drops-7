@@ -1,0 +1,187 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_seo_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'edit meta tags',
+      'administer meta tags',
+      'access broken links report',
+      'edit link settings',
+      'administer site verify',
+      'view seo dashboard',
+    ),
+    'content_editor' => array(
+      'access broken links report',
+      'edit meta tags',
+    ),
+    'edit_my_content' => array(
+      'access broken links report',
+    ),
+    'edit_only' => array(
+      'access broken links report',
+    ),
+    'developer' => array(
+      'edit meta tags',
+      'administer meta tags',
+      'administer xmlsitemap',
+      'access broken links report',
+      'administer linkchecker',
+      'edit link settings',
+      'administer site verify',
+      'administer site verify uploads',
+      'view seo dashboard',
+    ),
+    'site_editor' => array(
+      'edit meta tags',
+      'administer meta tags',
+      'administer xmlsitemap',
+      'access broken links report',
+      'edit link settings',
+      'administer site verify',
+      'view seo dashboard',
+    ),
+    'site_owner' => array(
+      'edit meta tags',
+      'administer meta tags',
+      'administer xmlsitemap',
+      'access broken links report',
+      'edit link settings',
+      'administer site verify',
+      'view seo dashboard',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help().
+ *
+ * Add contextual help for the SEO Bundle.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_seo_bundle_express_help($variables) {
+  $variables['admin/config/search/metatags'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => '/node/1218',
+  );
+  $variables['admin/config/search/metatags/settings'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => '/node/1218',
+  );
+  $variables['admin/config/search/metatags/bulk-revert'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => '/node/1218',
+  );
+  $variables['admin/reports/linkchecker'][] = array(
+    'title' => 'Link Checker Help',
+    'short_title' => 'Link Checker Help',
+    'url' => '/node/1268',
+  );
+  $variables['admin/settings/seo/linkchecker-analyze'][] = array(
+    'title' => 'Link Checker Help',
+    'short_title' => 'Link Checker Help',
+    'url' => '/node/1268',
+  );
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_seo_bundle';
+      return $a;
+    },
+    $variables);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_seo_bundle_menu() {
+  $items = array();
+
+  $items['admin/settings/seo'] = array(
+    'title' => 'Search Engine Optimization',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 6,
+  );
+  $items['admin/settings/seo/linkchecker'] = array(
+    'title' => 'Link Checker',
+    'description' => 'Find and fix broken links on your site',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/reports/linkchecker'),
+    'access arguments' => array('access express reports'),
+    'weight' => 20,
+  );
+  $items['admin/settings/seo/verifications'] = array(
+    'title' => 'Verifications',
+    'description' => 'Add, change or remove verifications for your site to search engine providers like Google.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/config/search/verifications'),
+    'access arguments' => array('administer site verify'),
+    'weight' => 50,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function cu_seo_bundle_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['cu_seo_bundle'])) {
+    $group = $implementations['cu_seo_bundle'];
+    unset($implementations['cu_seo_bundle']);
+    $implementations['cu_seo_bundle'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Changes the Twitter Card Metatag form element title to not interfere with Behat tests.
+ *
+ * @param array $form
+ *   Form definition.
+ * @param array $form_state
+ *   Current values/state of the form being altered.
+ * @param string $form_id
+ *   ID of form being altered.
+ */
+function cu_seo_bundle_form_alter(&$form, &$form_state, $form_id) {
+  // We check by the form keys instead of hook_form_FORM_ID_alter() since we
+  // can't assume this field only shows up on page_node_form().
+  if (isset($form['metatags'][LANGUAGE_NONE]['twitter-cards']['twitter:title'])) {
+    $form['metatags'][LANGUAGE_NONE]['twitter-cards']['twitter:title']['value']['#title'] = 'Page Title';
+  }
+}

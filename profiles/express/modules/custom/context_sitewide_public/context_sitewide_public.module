@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * Implementation of hook_context_registry().
+ */
+function context_sitewide_public_context_registry() {
+  return array(
+    'conditions' => array(
+      'sitewide_public' => array(
+        'title' => t('Sitewide public'),
+        'description' => t('Set context sitewide except for admin paths.'),
+        'plugin' => 'context_sitewide_public_context_condition',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_context_plugins().
+ */
+function context_sitewide_public_context_plugins() {
+  $plugins = array();
+  $plugins['context_sitewide_public_context_condition'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'context_sitewide_public'),
+      'file' => 'context_sitewide_public.context.inc',
+      'class' => 'context_sitewide_public_context_condition',
+      'parent' => 'context_condition',
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_init().
+ */
+function context_sitewide_public_init() {
+  if ($plugin = context_get_plugin('condition', 'sitewide_public')) {
+    $plugin->execute(1);
+  }
+}

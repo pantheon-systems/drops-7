@@ -1,0 +1,80 @@
+<?php
+/**
+ * Implements hook_date_format_types.
+ */
+
+function cu_date_formats_date_format_types() {
+  // Define the core date format types.
+  return array(
+    'cu_long_date' => t('Long Date'),
+    'cu_medium_date' => t('Medium Date'),
+    'cu_short_date' => t('Short Date'),
+    'cu_long_date_time' => t('Long Date/Time'),
+    'cu_medium_date_time' => t('Medium Date/Time'),
+    'cu_short_date_time' => t('Short Date/Time'),
+  );
+}
+
+/**
+ * Implements hook_date_formats
+ */
+function cu_date_formats_date_formats() {
+  return array(
+    array(
+      'type' => 'cu_long_date',
+      'format' => 'l, M. j, Y',
+      'locales' => array('en', 'en-us'),
+    ),
+    array(
+      'type' => 'cu_medium_date',
+      'format' => 'M. j, Y',
+      'locales' => array('en', 'en-us'),
+    ),
+    array(
+      'type' => 'cu_short_date',
+      'format' => 'n/j/Y',
+      'locales' => array('en', 'en-us'),
+    ),
+    array(
+      'type' => 'cu_long_date_time',
+      'format' => 'l, M. j, Y - g:i a',
+      'locales' => array('en', 'en-us'),
+    ),
+    array(
+      'type' => 'cu_medium_date_time',
+      'format' => 'M. j, Y - g:i a',
+      'locales' => array('en', 'en-us'),
+    ),
+    array(
+      'type' => 'cu_short_date_time',
+      'format' => 'n/j/Y - g:i a',
+      'locales' => array('en', 'en-us'),
+    ),
+  );
+}
+
+/**
+ * Implements template_preprocess_node
+ * Preprocess 'created date' to put month abbreviations into AP style.
+ * Using in cu_article/node--article.tpl.php
+ */
+function cu_date_formats_preprocess_node(&$variables, $hook) {
+  // AP date style
+  $post_date_raw = new DateTime();
+  $post_date_raw->setTimestamp($variables['created']);
+  $post_date_month = $post_date_raw->format('F');
+  $post_date_day_year = $post_date_raw->format('j, Y');
+
+  if($post_date_month == "September"){
+      $ap_date_sept = "Sept. " . $post_date_day_year;
+      $variables['ap_date_cu_medium_date'] = $ap_date_sept;
+  } elseif (strlen($post_date_month) > 5){
+      $ap_date_short = substr($post_date_month, 0,3) . "." . " " . $post_date_day_year;
+      $variables['ap_date_cu_medium_date'] = $ap_date_short;
+  } else {
+      $ap_date_long = $post_date_month . " " . $post_date_day_year;
+      $variables['ap_date_cu_medium_date'] = $ap_date_long;
+  }
+  // use $ap_date_cu_medium_date in template files instead of
+  // format_date($date, 'cu_medium_date')
+}

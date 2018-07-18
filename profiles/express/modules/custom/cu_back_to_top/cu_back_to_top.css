@@ -1,0 +1,20 @@
+#cu_back_to_top {
+  position: fixed;
+  right:20px;
+  bottom:20px;
+  display: none;
+}
+#cu_back_to_top a {
+  display: block;
+  background-image: url(arrow.png);
+  background-repeat: no-repeat;
+  width: 32px;
+  height: 32px;
+  text-indent: -9999px;
+}
+
+@media only screen and (max-width: 960px) {
+  #cu_back_to_top {
+    display:none !important;  
+  }
+}

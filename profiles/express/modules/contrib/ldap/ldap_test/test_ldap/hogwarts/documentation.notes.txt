@@ -1,0 +1,135 @@
+
+
+-------------------------------------------
+ user entry, open ldap
+ dn: cn=hpotter,ou=people,dc=hogwarts,dc=edu 
+-------------------------------------------
+  cn     = hpotter
+  mail   = hpotter@hogwarts.edu
+  uid    = 1
+  guid   = 101
+  sn     = Potter
+  house  = Gryffindor
+  
+  
+-------------------------------------------
+ user entry, active directory
+ dn: cn=hpotter,ou=people,dc=hogwarts,dc=edu 
+-------------------------------------------
+  cn       = hpotter
+  mail     = hpotter@hogwarts.edu
+  uid      = 1
+  guid     = 101
+  sn       = Potter
+  house    = Gryffindor
+  memberof = cn=gryffindor,ou=groups,dc=hogwarts,dc=edu
+  memberof = cn=students,ou=groups,dc=hogwarts,dc=edu
+  memberof = cn=honors students,ou=groups,dc=hogwarts,dc=edu
+  
+  
+-----------------------------------------------
+ group entry
+ dn: cn=gryffindor,ou=groups,dc=hogwarts,dc=edu
+-----------------------------------------------
+  cn     = gryffindor
+  gid    = 1
+  guid   = 201
+  member = cn=hpotter,ou=people,dc=hogwarts,dc=edu
+  member = cn=hgrainger,ou=people,dc=hogwarts,dc=edu
+  member = cn=rweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=fweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=gweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=mmcgonagall,ou=people,dc=hogwarts,dc=edu
+  member = cn=rhagrid,ou=people,dc=hogwarts,dc=edu
+-------------------------------------------
+
+----------------------------------------------
+ group entry
+ dn: cn=students,ou=groups,dc=hogwarts,dc=edu
+----------------------------------------------
+  cn     = students
+  gid    = 4
+  guid   = 204
+  member = cn=hpotter,ou=people,dc=hogwarts,dc=edu
+  member = cn=hgrainger,ou=people,dc=hogwarts,dc=edu
+  member = cn=rweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=fweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=gweasley,ou=people,dc=hogwarts,dc=edu
+  member = cn=dmalfoy,ou=people,dc=hogwarts,dc=edu
+  member = cn=ggoyle,ou=people,dc=hogwarts,dc=edu
+   
+----------------------------------------------
+ group entry
+ dn: cn=honors students,ou=groups,dc=hogwarts,dc=edu 
+----------------------------------------------
+  cn     = honors students
+  gid    = 5
+  guid   = 205
+  member = cn=hpotter,ou=people,dc=hogwarts,dc=edu
+  member = cn=hgrainger,ou=people,dc=hogwarts,dc=edu
+----------------------------------------------     
+
+----------------------------------------------
+ group entry
+ dn: cn=users,ou=groups,dc=hogwarts,dc=edu
+----------------------------------------------
+  cn     = users
+  gid    = 9
+  guid   = 209    
+  member = cn=students,ou=groups,dc=hogwarts,dc=edu
+  member = cn=faculty,ou=groups,dc=hogwarts,dc=edu
+  member = cn=staff,ou=groups,dc=hogwarts,dc=edu
+
+=======================
+Group Hierarchy
+=======================
+cn=users,ou=groups,dc=hogwarts,dc=edu
+  cn=students,ou=groups,dc=hogwarts,dc=edu
+  cn=faculty,ou=groups,dc=hogwarts,dc=edu
+  cn=staff,ou=groups,dc=hogwarts,dc=edu
+
+cn=faculty,ou=groups,dc=hogwarts,dc=edu
+  ssnape
+  adumbledore
+  mmcgonagall
+  spomana
+  
+cn=staff,ou=groups,dc=hogwarts,dc=edu
+  ggoyle
+  
+cn=students,ou=groups,dc=hogwarts,dc=edu
+  hpotter
+  hgrainger
+  rweasley
+  fweasley
+  gweasley
+  dmalfoy
+  ggoyle
+  
+cn=honors students,ou=groups,dc=hogwarts,dc=edu
+  hpotter
+  hgrainger
+  
+cn=probation students,ou=groups,dc=hogwarts,dc=edu 
+  dmalfoy
+  ggoyle
+  
+cn=gryffindor,ou=groups,dc=hogwarts,dc=edu
+  hpotter
+  hgrainger
+  rweasley
+  fweasley
+  gweasley
+  dmalfoy
+  triddle
+  
+cn=hufflepuff,ou=groups,dc=hogwarts,dc=edu
+  rhagrid
+  
+cn=slytherin,ou=groups,dc=hogwarts,dc=edu
+  dmalfoy
+  triddle
+  adumbledore
+  mmcgonagall
+  spomana
+

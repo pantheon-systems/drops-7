@@ -1,0 +1,15 @@
+name = CU Search
+core = 7.x
+package = CU-Core
+version = 7.x-2.0
+dependencies[] = google_cse
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = google_appliance_autofilter
+features[variable][] = google_appliance_frontend
+features[variable][] = google_appliance_hostname
+features[variable][] = google_appliance_query_inspection
+features[variable][] = google_appliance_results_per_page
+features[variable][] = google_appliance_search_title
+features[variable][] = google_appliance_timeout

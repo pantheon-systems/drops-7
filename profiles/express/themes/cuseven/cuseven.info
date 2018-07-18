@@ -1,0 +1,12 @@
+name = CU Seven
+description = A simple one-column, tableless, fluid width administration theme.
+package = Core
+version = VERSION
+core = 7.x
+base theme = 'seven'
+stylesheets[screen][] = css/styles.css
+settings[shortcut_module_link] = 1
+regions[content] = Content
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the CU Sitewide Required feature.
+ */
+
+include_once 'cu_sitewide_required.features.inc';

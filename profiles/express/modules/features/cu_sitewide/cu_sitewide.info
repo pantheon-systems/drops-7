@@ -1,0 +1,14 @@
+name = CU Sitewide
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = context
+dependencies[] = rave_alerts
+dependencies[] = cu_search
+dependencies[] = cu_site_info
+dependencies[] = menu_block
+dependencies[] = site_navigation_menus
+features[context][] = sitewide
+features[context][] = sitewide-except-homepage
+features[ctools][] = context:context:3
+features[features_api][] = api:2

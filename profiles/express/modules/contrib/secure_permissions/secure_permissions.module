@@ -1,0 +1,640 @@
+<?php
+
+/**
+ * @file
+ * Secure Permissions module file.
+ *
+ * This module was inspired by the Plone security paradigm
+ * of only allowing permissions to be set in code.
+ *
+ * @see http://plone.org/products/plone/security/overview/security-overview-of-plone
+ *
+ * Inspired by @djay75 via Twitter.
+ */
+
+/**
+ * These definitions set the security options for the module, and
+ * can be reset in settings.php using $conf.
+ */
+
+// Disable forms?
+define('SECURE_PERMISSIONS_DISABLE_FORMS', FALSE);
+// Run the rebuild process?
+define('SECURE_PERMISSIONS_ACTIVE', FALSE);
+// Show the permissions page at all?
+define('SECURE_PERMISSIONS_SHOW_PERMISSIONS_PAGE', TRUE);
+// Show the roles page at all?
+define('SECURE_PERMISSIONS_SHOW_ROLES_PAGE', TRUE);
+// Display message when rebuilding permisisons?
+define('SECURE_PERMISSIONS_VERBOSE', TRUE);
+// Rebuild default site permissions?
+define('SECURE_PERMISSIONS_USE_DEFAULT', FALSE);
+
+/**
+ * Internal variable hook.
+ *
+ * @param $name
+ *   The name of the variable to return.
+ * @return
+ *   The value of the variable.
+ */
+function secure_permissions_variable($name) {
+  if (!empty($name)) {
+    return variable_get($name, constant(strtoupper($name)));
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function secure_permissions_menu() {
+  $items = array();
+
+  $items['admin/config/people/secure_permissions'] = array(
+    'title' => 'Secure permissions',
+    'description' => 'Configuration for the secure permissions module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('secure_permissions_form'),
+    'access arguments' => array('export secure permissions'),
+  );
+  $items['admin/config/people/secure_permissions/view'] = array(
+    'title' => 'Secure permissions',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/config/people/secure_permissions/export'] = array(
+    'title' => 'Export permissions',
+    'description' => 'Export site permissions for use by Secure Permissions.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('secure_permissions_export'),
+    'access arguments' => array('export secure permissions'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function secure_permissions_permission() {
+  return array(
+    'export secure permissions' => array(
+      'title' => t('Export permission definitions'),
+      'description' => t('Allows the export of permission settings to code, so that the permission and roles forms may be disabled.')
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * If required, remove access to the permissions and roles screens.
+ */
+function secure_permissions_menu_alter(&$items) {
+  // Permission administration pages.
+  $show_roles = secure_permissions_variable('secure_permissions_show_roles_page');
+  if (!$show_roles) {
+    $items['admin/people/roles'] = array(
+      'access callback' => 'secure_permissions_deny_access',
+      'type' => MENU_CALLBACK,
+    );
+    $items['admin/people/roles/edit'] = array(
+      'access callback' => 'secure_permissions_deny_access',
+      'type' => MENU_CALLBACK,
+    );
+  }
+  $show_permissions = secure_permissions_variable('secure_permissions_show_permissions_page');
+  if (!$show_permissions) {
+    $items['admin/people/permissions'] = array(
+      'access callback' => 'secure_permissions_deny_access',
+      'type' => MENU_CALLBACK,
+    );
+  }
+}
+
+/**
+ * Menu access callback; always return FALSE to deny access
+ * to the roles and permissions screens.
+ */
+function secure_permissions_deny_access() {
+  return FALSE;
+}
+
+/**
+ * Implements hook_modules_enabled().
+ *
+ * Rebuild permissions any time a module is enabled.
+ */
+function secure_permissions_modules_enabled($modules) {
+  secure_permissions_rebuild();
+}
+
+/**
+ * Implements hook_modules_disabled().
+ *
+ * Rebuild permissions any time a module is disabled.
+ */
+function secure_permissions_modules_disabled($modules) {
+  secure_permissions_rebuild();
+}
+
+/**
+ * Rebuild permissions, based on presets from the API.
+ *
+ * It is important to always call this function, instead of the individual
+ * build functions, since this rebuild call sanity-checks the module settings.
+ */
+function secure_permissions_rebuild() {
+  // Killswitch for the module, to let admins export permissions before continuing.
+  // If only one module responds, it is the core module and we cannot rebuild.
+  $modules = module_implements('secure_permissions');
+  if (!secure_permissions_variable('secure_permissions_active') || count($modules) < 2) {
+    return;
+  }
+  $rebuild_roles = secure_permissions_build_roles();
+  $rebuild_perms = secure_permissions_build_permissions();
+  if (secure_permissions_variable('secure_permissions_verbose') && $rebuild_roles && $rebuild_perms) {
+    drupal_set_message(t('Site roles and permissions have been rebuilt successfully.'), 'status', FALSE);
+  }
+}
+
+/**
+ * Get all roles defined by the API.
+ */
+function secure_permissions_get_roles() {
+  $roles = array_unique(module_invoke_all('secure_permissions_roles'));
+  sort($roles);
+  return $roles;
+}
+
+/**
+ * Get all roles stored by Drupal.
+ */
+function secure_permissions_get_existing_roles() {
+  // Function user_roles fetches translated names
+  // for anonymous and authenticated roles.
+  // which leads to inconsistencies in rebuilding.
+  // Query it thus adapted from core user_roles.
+  $query = db_select('role', 'r');
+  $query->fields('r', array('rid', 'name'));
+  $query->orderBy('name');
+  $result = $query->execute();
+  $roles = array();
+  foreach ($result as $role) {
+    $roles[$role->rid] = $role->name;
+  }
+  return $roles;
+}
+
+/**
+ * Build the roles table correctly.
+ */
+function secure_permissions_build_roles() {
+  // Get the currently defined roles for the site, and sort() them so
+  // we can diff the arrays properly.
+  $roles = secure_permissions_get_existing_roles();
+  sort($roles);
+  // Get the roles defined by this module's hook.
+  $secure_roles = secure_permissions_get_roles();
+  if (empty($secure_roles)) {
+    return FALSE;
+  }
+  // Compute the difference for add/delete.
+  $new_roles = array_diff($secure_roles, $roles);
+  $remove_roles = array_diff($roles, $secure_roles);
+  // Add new roles.
+  foreach ($new_roles as $rid => $name) {
+    $role = new stdClass();
+    $role->name = $name;
+    user_role_save($role);
+  }
+  // Delete old roles.
+  $omit = array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID);
+  $admin_rid = variable_get('user_admin_role', 0);
+  if (!empty($admin_rid)) {
+    $omit[] = $admin_rid;
+  }
+  foreach ($remove_roles as $name) {
+    $role = user_role_load_by_name($name);
+    if (!empty($role) && !in_array($role->rid, $omit)) {
+      user_role_delete($name);
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Build function to create the permissions arrays.
+ */
+function secure_permissions_build_permissions() {
+  // Get the active roles on the site.
+  $roles = secure_permissions_get_existing_roles();
+  $admin_rid = variable_get('user_admin_role', 0);
+  // Do not touch the administrative role.
+  if (!empty($admin_rid) && isset($roles[$admin_rid])) {
+    unset($roles[$admin_rid]);
+  }
+  // List all permissions.
+  $permissions = array_keys(module_invoke_all('permission'));
+  // Now set permissions per role, using our hook.
+  $permissions_rebuilt = FALSE;
+  foreach ($roles as $rid => $role) {
+    $perms = array();
+    $new_permissions = module_invoke_all('secure_permissions', $role);
+    // Change dynamically created permission values.
+    $new_permissions = secure_permissions_dynamic_permissions($new_permissions);
+    foreach ($permissions as $perm) {
+      $perms[$perm] = FALSE;
+      if (in_array($perm, $new_permissions)) {
+        $perms[$perm] = TRUE;
+        $permissions_rebuilt = TRUE;
+      }
+    }
+    user_role_change_permissions($rid, $perms);
+  }
+  return $permissions_rebuilt;
+}
+
+/**
+ * Check permissions for dynamic values and replace with consistent values.
+ *
+ * Right now this function can replace permissions for:
+ *   - Role IDs
+ *   - Taxonomy Vocabularies
+ *
+ * Logic has to be added for each check since database schemas differ.
+ *
+ * @param array $perms
+ *   An array of permissions to check for dynamic values.
+ */
+function secure_permissions_dynamic_permissions(array $perms = array()) {
+
+  // Get role IDs.
+  $role_ids = db_select('role', 'r')
+    ->fields('r', array('rid', 'name'))
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Get vocabulary IDs.
+  $vocabulary_ids = db_select('taxonomy_vocabulary', 't')
+    ->fields('t', array('vid', 'machine_name'))
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Check for role permissions and replace role names with role IDs.
+  foreach ($perms as $key => $perm) {
+    // Replace placeholders for Role IDs.
+    $role_split = preg_split('/((edit|cancel) users with role )/', $perm, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    // If there is more than one part, then assume permission is role based.
+    if (count($role_split) >= 2) {
+      // If there second part of the string is a role ID, don't proceed.
+      if (!is_numeric($role_split[2])) {
+        $role_id = array_search($role_split[2], $role_ids);
+        $perm_name = $role_split[0] . $role_id;
+        $perms[$key] = $perm_name;
+      }
+    }
+
+    // Replace placeholders for Vocabulary IDs.
+    $vocab_split = preg_split('/((edit|delete) terms in )/', $perm, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    // If there is more than one part, then assume permission is vocabulary based.
+    if (count($vocab_split) >= 2) {
+      // If there second part of the string is a vocabulary ID, don't proceed.
+      if (!is_numeric($vocab_split[2])) {
+        $vocab_id = array_search($vocab_split[2], $vocabulary_ids);
+        $perm_name = $vocab_split[0] . $vocab_id;
+        $perms[$key] = $perm_name;
+      }
+    }
+  }
+  return $perms;
+}
+
+/**
+ * Implements hook_secure_permissions().
+ *
+ * If configured to do so, this function will restore the default site
+ * permissions that ship with Drupal. It will also maintain an
+ * administrative role that has all permissions.
+ *
+ * Important: If you use this module, you must implement this
+ * hook in your own code, or else risk having permissions reset.
+ */
+function secure_permissions_secure_permissions($role) {
+  $permissions = array();
+  // Use the default permissions granted by Drupal core?
+  if (secure_permissions_variable('secure_permissions_use_default')) {
+    // Enable default permissions for system roles. See standard.install.
+    $filtered_html_format = filter_format_load('filtered_html');
+    $filtered_html_permission = filter_permission_name($filtered_html_format);
+    $permissions['anonymous user'] = array('access content', $filtered_html_permission);
+    $permissions['authenticated user'] = array('access content', 'access comments', 'post comments', 'post comments without approval', $filtered_html_permission);
+  }
+  // Return the permissions.
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_secure_permissions_roles().
+ *
+ * Defines the roles available on a site.
+ *
+ * Important: If you have custom roles on your site, you must
+ * implement this hook to retain those roles.
+ */
+function secure_permissions_secure_permissions_roles() {
+  $roles = array(
+    'anonymous user',
+    'authenticated user',
+  );
+  return $roles;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Disables editing of permissions through the user interface if configured
+ * to do so.
+ */
+function secure_permissions_form_user_admin_permissions_alter(&$form, $form_state) {
+  if (!secure_permissions_variable('secure_permissions_disable_forms')) {
+    return;
+  }
+  foreach (element_children($form['checkboxes']) as $key) {
+    $form['checkboxes'][$key]['#disabled'] = TRUE;
+  }
+  drupal_set_message(t('Editing of permissions is not permitted through the user interface. The table below shows the active permissions for the site.'));
+  unset($form['actions']);
+  unset($form['#submit']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Disables editing of roles through the user interface if configured to do so.
+ */
+function secure_permissions_form_user_admin_role_alter(&$form, $form_state) {
+  if (!secure_permissions_variable('secure_permissions_disable_forms')) {
+    return;
+  }
+  $form['name']['#disabled'] = TRUE;
+  drupal_set_message(t('Editing of roles is not permitted through the user interface.'));
+  unset($form['actions']);
+  unset($form['#submit']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Disables creation of roles through the user interface if configured to do so.
+ */
+function secure_permissions_form_user_admin_roles_alter(&$form, $form_state) {
+  if (!secure_permissions_variable('secure_permissions_disable_forms')) {
+    return;
+  }
+  drupal_set_message(t('Editing of roles is not permitted through the user interface.'));
+  unset($form['actions']);
+  unset($form['add']);
+  unset($form['submit']);
+  unset($form['name']);
+}
+
+/**
+ * Page callback to generate roles and permissions in code.
+ */
+function secure_permissions_export($form, $form_state) {
+  $form = array();
+  $form['help'] = array(
+    '#markup' => t('The Secure permissions module stores the permissions in a module (file) that is inaccessible through
+      the user interface.<br />You now need to create and enable that module in 4 easy steps.<ol><li>Create directory.
+      cd to /sites/all/modules and issue the command: mkdir secure_permissions_data<li>Create 2 empty files. cd to
+      /sites/all/modules/secure_permissions_data and issue the command: touch secure_permissions_data.info
+      secure_permissions_data.module<li>Copy data. Copy the text from the fields below into the respective files you just
+      created using the tools of your choice.<li>Enable the module. Navigate to admin/build/modules/list and enable your
+      new module.</ol>To change permissions with the module enabled, you must now edit your
+      /sites/all/modules/secure_permissions_data/secure_permissions_data.module file. After editing the file navigate to
+      /admin/user/secure_permissions/view select \'Load permissions from code\' and click \'Save configuration\' to update
+      the permissions. You may rename the module; remember to rename all the functions.'),
+  );
+  $output = '';
+  $output .= "name = Secure Permissions Data\n";
+  $output .= "description = Role and permission settings for the site.\n";
+  $output .= "core = 7.x\n";
+  $output .= "dependencies[] = secure_permissions\n";
+  $output .= "files[] = secure_permissions_data.module\n";
+  $lines = explode("\n", $output);
+  $form['info'] = array(
+    '#title' => t('Permissions output -- secure_permissions_data.info'),
+    '#type' => 'textarea',
+    '#cols' => 40,
+    '#rows' => count($lines),
+    '#default_value' => $output,
+    '#description' => t('Module .info file for storing secure permissions.'),
+  );
+  $output = '';
+  $output .= <<<EOT
+<?php
+
+/**
+ * @file Secure Permissions Data
+ * Module file for secure permissions in code.
+ */
+
+/**
+ * Define site roles in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @return
+ *   An array defining all the roles for the site.
+ */
+
+EOT;
+
+  $output .= 'function secure_permissions_data_secure_permissions_roles() {';
+  // Get roles.
+  $roles = secure_permissions_get_existing_roles();
+  $admin_rid = variable_get('user_admin_role', 0);
+  $secure_permissions_ignore_in_export = array(variable_get('secure_permissions_ignore_in_export'));
+  // Do not export the administrative role.
+  if (!empty($admin_rid) && isset($roles[$admin_rid])) {
+    unset($roles[$admin_rid]);
+  }
+  $output .= "\n  return array(\n";
+  foreach ($roles as $role) {
+    $output .= "    '" . $role ."',\n";
+  }
+  $output .= "  );";
+  $output .= "\n}\n\n";
+  // Now get permissions.
+  $output .= <<<EOT
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param \$role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+EOT;
+  $output .= 'function secure_permissions_data_secure_permissions($role) {';
+  $output .= "\n  \$permissions = array(\n";
+  
+  
+  foreach ($roles as $rid => $role) {
+    $output .= "    '$role' => array(\n";
+    $permissions = user_role_permissions(array($rid => $role));
+    foreach (current($permissions) as $permission => $value) {
+      if (!$value) {
+        continue;
+      }
+      if (in_array($permission, $secure_permissions_ignore_in_export)) {
+        continue;
+      }
+      $output .= "      '$permission',\n";
+    }
+    $output .= "    ),\n";
+  }
+  $output .= "  );\n";
+  $output .= "  if (isset(\$permissions[\$role])) {";
+  $output .= "\n    return \$permissions[\$role];\n";
+  $output .= "  }\n";
+  $output .= "}";
+  $lines = explode("\n", $output);
+  $form['export'] = array(
+    '#title' => t('Permissions output -- secure_permissions_data.module'),
+    '#type' => 'textarea',
+    '#cols' => 40,
+    '#rows' => count($lines),
+    '#default_value' => $output,
+    '#description' => t('Module .module file for storing secure permissions.'),
+  );
+  return $form;
+}
+
+/**
+ * Configuration form for the module.
+ */
+function secure_permissions_form() {
+  $form = array();
+  $items = array();
+  
+  // Check which modules run our hook,
+  $modules = module_implements('secure_permissions');
+  $files = system_rebuild_module_data();
+  foreach ($modules as $module) {
+    if ($module != 'secure_permissions') {
+      $items[] = check_plain($files[$module]->info['name']);
+    }
+  }
+  $module_list = theme('item_list', array('items' => $items));
+  $extra = '';
+  if (count($modules) == 1) {
+    $extra = t('Your permissions have not been <a href="!url">exported to code</a> yet. You may need to do so before activating this module.', array('!url' => url('admin/people/secure_permissions/export')));
+  }
+  $form['help'] = array(
+    '#markup' => t('The following modules implement secure permissions: !list !extra', array('!list' => $module_list, '!extra' => $extra)),
+  );
+  $form['user_interface'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User interface settings'),
+  );
+  $form['user_interface']['secure_permissions_disable_forms'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_disable_forms'),
+    '#title' => t('Disable permissions and roles forms'),
+    '#description' => t('Disables the ability to edit or add permissions and roles through the user interface.'),
+  );
+  $form['user_interface']['secure_permissions_show_permissions_page'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_show_permissions_page'),
+    '#title' => t('Show permissions page'),
+    '#description' => t('Allows administrators to view the permissions overview page.'),
+  );
+  $form['user_interface']['secure_permissions_show_roles_page'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_show_roles_page'),
+    '#title' => t('Show roles page'),
+    '#description' => t('Allows administrators to view the roles overview page.'),
+  );
+  $form['user_interface']['secure_permissions_verbose'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_verbose'),
+    '#title' => t('Display permissions updates'),
+    '#description' => t('Prints a message to the screen whenever permissions are updated.'),
+  );
+  $form['code'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('API settings'),
+    '#description' => t('If the <em>Load permissions from code</em> setting is not enabled, none of the features below will be enabled.'),
+  );
+  $form['code']['secure_permissions_active'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_active'),
+    '#title' => t('Load permissions from code'),
+    '#description' => t('Allows permissions and roles to be defined in code, replacing values set through the user interface.'),
+  );
+  $form['code']['secure_permissions_use_default'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => secure_permissions_variable('secure_permissions_use_default'),
+    '#title' => t('Reload default permissions on rebuild'),
+    '#description' => t('Sets the default Drupal permissions for anonymous and authenticated users.'),
+  );
+  
+  $collapsed = (variable_get('secure_permissions_ignore_in_export')) ? FALSE : TRUE;
+
+  
+  $form['advanced_export'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced export settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapsed,
+  );
+  $form['advanced_export']['secure_permissions_ignore_in_export'] = array(
+    '#type' => 'textarea',
+    '#cols' => 40,
+    '#rows' => 5,
+    '#default_value' => variable_get('secure_permissions_ignore_in_export'),
+    '#title' => t('Ignore these permissions'),
+    '#description' => t('Comma seperated list of the machine names of the permissions to ignore like \'access devel information\'.'),
+  );
+  // Make sure the menu is rebuilt correctly.
+  $form['#submit'][] = 'secure_permissions_form_submit';
+  if (isset($_SESSION['secure_permissions_rebuild'])) {
+    unset($_SESSION['secure_permissions_rebuild']);
+    menu_rebuild();
+  }
+  return system_settings_form($form);
+}
+
+/**
+ * We cannot rebuild the menu based on a setting during form submit,
+ * at least, not without special handling.
+ *
+ * So set a session value to indicate we must rebuild the menus.
+ *
+ * Also rebuilds permissions, if necessary.
+ */
+function secure_permissions_form_submit($form, &$form_state) {
+  global $conf;
+  $modules = module_implements('secure_permissions');
+  $_SESSION['secure_permissions_rebuild'] = TRUE;
+  if ($form_state['values']['secure_permissions_active'] && count($modules) > 1) {
+    // We must do this to pass the value to the calling function during submit.
+    $conf['secure_permissions_active'] = TRUE;
+    $conf['secure_permissions_use_default'] = $form_state['values']['secure_permissions_use_default'];
+    secure_permissions_rebuild();
+  }
+  else {
+    drupal_set_message(t('Permissions cannot be rebuilt from code at this time.'));
+  }
+}

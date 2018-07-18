@@ -1,0 +1,191 @@
+<?php
+
+/**
+ * @file
+ * Contains Drupal hooks testing the Embed Templates module.
+ */
+
+/**
+ * Implements hook_embed_templates_types().
+ *
+ * @return array
+ *   List of custom embed types.
+ */
+function et_test_embed_templates_types() {
+  // Create a few initial embed types.
+  $custom_types = array();
+  $module_path = drupal_get_path('module', 'et_test');
+  $default_status = 'unpublished';
+
+  $custom_types['et_bean'] = array(
+    'label' => 'Bean Template',
+    'form_callback' => 'et_test_form',
+    'submission_callback' => 'et_beans_bean_form_submit',
+    'renderer' => 'bean',
+    'default_status' => $default_status,
+    'path' => $module_path,
+    'template' => 'templates/placeholder',
+  );
+
+  $custom_types['et_block'] = array(
+    'label' => 'Block Template',
+    'form_callback' => 'et_test_form',
+    'submission_callback' => NULL,
+    'renderer' => 'block',
+    'default_status' => $default_status,
+    'path' => $module_path,
+    'template' => 'templates/placeholder',
+  );
+
+  $custom_types['et_unthemed_page'] = array(
+    'label' => 'Unthemed Page Template',
+    'form_callback' => 'et_unthemed_page_form',
+    'submission_callback' => NULL,
+    'renderer' => 'unthemed_page',
+    'default_status' => $default_status,
+    'path' => $module_path,
+    'template' => 'templates/placeholder',
+  );
+
+  $custom_types['no_permissions'] = array(
+    'label' => 'No Permissions',
+    'form_callback' => 'et_unthemed_page_form',
+    'submission_callback' => NULL,
+    'renderer' => 'unthemed_page',
+    'default_status' => $default_status,
+    'path' => $module_path,
+    'template' => 'templates/placeholder',
+  );
+
+  $custom_types['alter_type'] = array(
+    'label' => 'Alter Hook Template',
+    'form_callback' => 'et_unthemed_page_form',
+    'submission_callback' => NULL,
+    'renderer' => 'unthemed_page',
+    'default_status' => $default_status,
+    'path' => $module_path,
+    'template' => 'templates/placeholder',
+  );
+
+  return $custom_types;
+}
+
+/**
+ * Change the label of an embed type to see that the alter hook works.
+ *
+ * @param array $types
+ *   Different types of embed definitions to alter.
+ */
+function et_test_embed_templates_types_alter(&$types) {
+  $types['alter_type']['label'] = 'Alter Hook Fun Time';
+}
+
+/**
+ * Implements hook_embed_templates_status().
+ *
+ * @return array
+ *   List of custom embed statuses.
+ */
+function et_test_embed_templates_status() {
+  $custom_status = array();
+
+  $custom_status['no_perms'] = array(
+    'label' => 'No permissions',
+    'operation_callback' => NULL,
+    'bulk_operation_label' => 'No Permissions Test',
+    'confirmation_label' => 'Uh Oh',
+    'add_permission' => 'no permissions',
+  );
+
+  $custom_status['alter_status'] = array(
+    'label' => 'Test Alter Hooks',
+    'operation_callback' => NULL,
+    'bulk_operation_label' => 'Alter Hooks Are Bad',
+    'confirmation_label' => 'Alter',
+    'add_permission' => NULL,
+  );
+
+  return $custom_status;
+}
+
+/**
+ * Testing alter hook for status definitions.
+ *
+ * @param array $statuses
+ *   An array of status definitions.
+ */
+function et_test_embed_templates_status_alter(&$statuses) {
+  $statuses['alter_status']['label'] = 'Alter Hooks Are Good';
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * @return array
+ *   An array of added permissions for testing.
+ */
+function et_permission() {
+  $permissions['no permissions'] = array(
+    'title' => t('You don\'t have permissions'),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Form callback to capture data for placeholder template.
+ *
+ * @param array $form
+ *   Form containing default embed template form options.
+ * @param array $form_state
+ *   State of the default embed template form.
+ * @param int|null $id
+ *   ID of the current embed being edited if that embed exists.
+ * @param array $data
+ *   Data of the current embed if it is being edited.
+ */
+function et_test_form(&$form, &$form_state, $id = NULL, $data = array()) {
+
+  $form['embed']['path']['#access'] = FALSE;
+
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Embed Data'),
+    '#weight' => -10,
+  );
+
+  $form['options']['account_id'] = array(
+    '#title' => t('ID'),
+    '#description' => t('The ID associated with your account.'),
+    '#type' => 'textfield',
+    '#default_value' => !empty($data['account_id']) ? $data['account_id'] : '',
+  );
+}
+
+/**
+ * Form callback to capture data for placeholder template.
+ *
+ * @param array $form
+ *   Form containing default embed template form options.
+ * @param array $form_state
+ *   State of the default embed template form.
+ * @param int|null $id
+ *   ID of the current embed being edited if that embed exists.
+ * @param array $data
+ *   Data of the current embed if it is being edited.
+ */
+function et_unthemed_page_form(&$form, &$form_state, $id = NULL, $data = array()) {
+
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Embed Data'),
+    '#weight' => -10,
+  );
+
+  $form['options']['account_id'] = array(
+    '#title' => t('ID'),
+    '#description' => t('The ID associated with your account.'),
+    '#type' => 'textfield',
+    '#default_value' => !empty($data['account_id']) ? $data['account_id'] : '',
+  );
+}

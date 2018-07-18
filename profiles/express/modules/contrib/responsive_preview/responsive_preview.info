@@ -1,0 +1,13 @@
+name = 'Responsive Preview'
+description = 'Provides a component that previews a page in various device dimensions.'
+dependencies[] = libraries
+package = User interface
+core = 7.x
+files[] = responsive_preview.test
+
+; Information added by Drupal.org packaging script on 2016-03-06
+version = "7.x-1.1+18-dev"
+core = "7.x"
+project = "responsive_preview"
+datestamp = "1457227443"
+

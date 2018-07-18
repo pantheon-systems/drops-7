@@ -1,0 +1,5 @@
+name = Express Top 404s
+description = Provides top 404s page in reports.
+core = 7.x
+
+dependencies[] = google_analytics_reports

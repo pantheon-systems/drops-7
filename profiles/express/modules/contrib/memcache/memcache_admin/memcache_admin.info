@@ -1,0 +1,12 @@
+name = Memcache Admin
+description = Adds a User Interface to monitor the Memcache for this site.
+core = 7.x
+package = Performance and scalability
+configure = admin/config/system/memcache
+
+; Information added by Drupal.org packaging script on 2017-02-24
+version = "7.x-1.6"
+core = "7.x"
+project = "memcache"
+datestamp = "1487954088"
+

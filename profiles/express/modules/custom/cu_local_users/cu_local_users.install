@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the cu_local_users module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function cu_local_users_install() {
+
+  // Add test users.
+  _add_users();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function cu_local_users_uninstall() {
+  // @todo This probably won't work here...
+  // Delete created users.
+  // Since they all have the same email, we can load them by that parameter.
+  $uids = db_query("SELECT uid FROM {users} WHERE mail = 'noreply@nowhere.com'")->fetchCol();
+  user_delete_multiple($uids);
+}
+
+/**
+ * Creates users needed for test runs.
+ */
+function _add_users() {
+
+  // List needed users.
+  $users = array(
+    'developer',
+    'administrator',
+    'content_editor',
+    'site_owner',
+    'edit_my_content',
+    'authenticated user',
+    'site_editor',
+    'edit_only',
+    'access_manager',
+    'configuration_manager',
+  );
+
+  // Create users.
+  foreach ($users as $user_name) {
+    // For some reason, I ran into the issue where the same user was created multiple times.
+    // If user exists, skip creation.
+    if (user_load_by_name($user_name)) {
+      continue;
+    }
+
+    // Get role ID.
+    $role = user_role_load_by_name($user_name);
+    $new_user = array(
+      'name' => $user_name,
+      'pass' => $user_name,
+      'mail' => 'noreply@nowhere.com',
+      'status' => 1,
+      'init' => 'noreply@nowhere.com',
+      'roles' => array(
+        DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+        $role->rid => $user_name,
+      ),
+    );
+
+    // The first parameter is sent blank so a new user is created.
+    user_save('', $new_user);
+  }
+}

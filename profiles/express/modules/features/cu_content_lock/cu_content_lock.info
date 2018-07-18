@@ -1,0 +1,17 @@
+name = Content Lock
+description = Settings for content_lock
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+dependencies[] = content_lock
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = content_lock_admin_cancelbutton
+features[variable][] = content_lock_admin_verbose
+features[variable][] = content_lock_allowed_formats
+features[variable][] = content_lock_allowed_node_types
+features[variable][] = content_lock_unload_js
+features[variable][] = content_lock_unload_js_message
+features[variable][] = content_lock_unload_js_message_enable

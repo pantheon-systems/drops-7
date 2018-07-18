@@ -1,0 +1,88 @@
+<?php
+/**
+ * @file
+ * Requirements for Atlas.
+ */
+
+
+/**
+ * Implements hook_requirements().
+ */
+function atlas_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $atlas_up = atlas_up();
+    $atlas_version = atlas_version();
+    if ($atlas_url = variable_get('atlas_url', FALSE)) {
+      $requirements['atlas_url'] = array(
+        'title' => $t('Atlas URL'),
+        'value' => $t('Connected to !atlas_url - Atlas v!atlas_version.', array('!atlas_url' => $atlas_url, '!atlas_version' => $atlas_version)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['atlas_url'] = array(
+        'title' => $t('Atlas URL'),
+        'value' => $t('not configured.'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    if ($atlas_username = variable_get('atlas_username', FALSE) && $atlas_password = variable_get('atlas_password', FALSE)) {
+      $requirements['atlas_credentials'] = array(
+        'title' => $t('Atlas Credentials'),
+        'value' => $t('Connected to Atlas via a service account - !user', array('!user' => variable_get('atlas_username'))),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['atlas_credentials'] = array(
+        'title' => $t('Atlas Credentials'),
+        'value' => $t('A full set of credentials has not been provided.'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    if (($atlas_id = variable_get('atlas_id', FALSE)) && ($cu_sid = variable_get('cu_sid', FALSE))) {
+      $requirements['atlas_id'] = array(
+        'title' => $t('Atlas Site ID'),
+        'value' => $t('This site reports an Atlas id of !atlas_id and a CU SID of !cu_sid', array('!atlas_id' => $atlas_id, '!cu_sid' => $cu_sid)),
+        'severity' => REQUIREMENT_OK,
+      );
+      // Link to the logging in the Elasticsearch, Logstash, Kibana stack.
+      $logging_url = variable_get('atlas_logging_url');
+      $requirements['cu_log_link'] = array(
+        'title' => $t('Atlas Syslog'),
+        'value' => $t('See <a href="@url" target="_blank">logs on Logstash</a>. <em>Requires authorized Identikey</em>.', array('@url' => $logging_url)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['atlas_sid'] = array(
+        'title' => $t('Atlas Site ID'),
+        'value' => $t('This has no site id'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+      $requirements['cu_log_link'] = array(
+        'title' => $t('Atlas Syslog'),
+        'value' => $t('Site id is required to link to logs'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    if ($atlas_up) {
+      $requirements['atlas_is_up'] = array(
+        'title' => $t('Atlas Status'),
+        'value' => $t('Is up and running.'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['atlas_is_up'] = array(
+        'title' => $t('Atlas Status'),
+        'value' => $t('Atlas is not responding.'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+  }
+  return $requirements;
+}

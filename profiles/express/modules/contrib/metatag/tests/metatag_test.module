@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Primary hook implementations for the Metatag Test module.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function metatag_test_ctools_plugin_api($owner, $api) {
+  if ($owner == 'metatag' && $api == 'metatag') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides simple pages to test against.
+ */
+function metatag_test_menu() {
+  $string = 'moosqueakoinkmeow';
+  $defaults = array(
+    'page callback' => 'metatag_test_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items[$string] = array(
+    'title' => 'Test page',
+    'description' => 'An average page.',
+  ) + $defaults;
+
+  // 255 / 19 chars = 13.
+  $long_path = implode('/', array_pad(array(), 13, $string));
+  $items[$long_path . '/%'] = array(
+    'title' => 'Test page with really long URL',
+    'description' => 'The URL is really, really, really long.',
+    'page arguments' => array(13),
+  ) + $defaults;
+
+  // User-specific meta tags.
+  $items['account-test-page'] = array(
+    'title' => 'User test page',
+    'description' => 'Test how user tokens are handled.',
+    'page callback' => 'metatag_test_user_page_callback',
+  ) + $defaults;
+
+  return $items;
+}
+
+/**
+ * Simple page callback for test pages.
+ */
+function metatag_test_page_callback() {
+  return t('Test page.');
+}
+
+/**
+ * Simple page callback for the user test page.
+ */
+function metatag_test_user_page_callback() {
+  global $user;
+
+  $username = 'Anonymous visitor';
+  if (isset($user->name)) {
+    $username = $user->name;
+  }
+  drupal_set_title('Hello ' . $username);
+
+  return t('Test page for user tokens.');
+}

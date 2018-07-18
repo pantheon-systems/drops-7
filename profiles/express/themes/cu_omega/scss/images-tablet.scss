@@ -1,0 +1,16 @@
+.image-square,
+.image-square_thumbnail {
+  float:left;
+  width:100px;
+  height: 100px;
+  margin:0 10px 10px 0;
+}
+
+
+.grid-2, .grid-3, .grid-4, .grid-5 {
+  .image-square,
+  .image-square_thumbnail  {
+    width:65px;
+    height: 65px;
+  }
+}

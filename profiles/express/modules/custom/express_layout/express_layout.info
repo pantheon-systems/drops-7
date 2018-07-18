@@ -1,0 +1,22 @@
+name = Express Layout
+core = 7.x
+description = Provides a way for nodes to have layouts configured per node to show blocks in different regions.
+configure = admin/config/content/express-layout
+package = Express
+
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = entitycache
+dependencies[] = entityreference
+dependencies[] = image
+dependencies[] = image_url_formatter
+dependencies[] = inline_entity_form
+dependencies[] = list
+dependencies[] = number
+dependencies[] = options
+dependencies[] = views
+
+files[] = express_layout.context.inc
+files[] = bean.inline_entity_form.inc
+stylesheets[all][] = css/express-layout-admin.css
+scripts[] = js/express-layout.js

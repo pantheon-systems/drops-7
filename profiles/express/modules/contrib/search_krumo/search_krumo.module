@@ -1,0 +1,94 @@
+<?php
+/**
+ * @file
+ * Code for the Search Krumo module.
+ */
+
+/**
+ * A function that adds backtracing capability to Devels dpm().
+ *
+ * With this function we can copy the variable that is called in sdpm(), so we
+ * can make life easier for developers.
+ *
+ * @param arbitrary $input
+ *   An arbitrary value to output.
+ * @param string $name
+ *   (optional) Name for identifying the output.
+ */
+function sdpm($input, $name = NULL) {
+  // Get the label that we should prepend to each 'Get path' button.
+  $label = search_krumo_inspect();
+  drupal_add_js(array('searchKrumo' => array('variable' => array($label))), 'setting');
+
+  // Route it to the dpm() function provided by the Devel module.
+  dpm($input, $name);
+}
+
+/**
+ * Implements hook_init().
+ */
+function search_krumo_init() {
+  // We add the search_krumo JavaScript on every page.
+  // If it's not necessary it is removed in hook_js_alter.
+  add_search_krumo();
+}
+
+/**
+ * Implements hook_js_alter().
+ *
+ * With this function we check if there is a krumo present. If there is we can
+ * leave our own Javascript, otherwise our Javascript is not needed either.
+ */
+function search_krumo_js_alter(&$javascript) {
+  // This is the path for the Devel krumo Javascript.
+  $devel_js_path = drupal_get_path('module', 'devel') . '/devel_krumo_path.js';
+
+  // When Devel krumo Javascript is not present, remove Search Krumo Javascript.
+  if (!isset($javascript[$devel_js_path])) {
+    unset($javascript[drupal_get_path('module', 'search_krumo') . '/search_krumo.search.js']);
+    unset($javascript[drupal_get_path('module', 'search_krumo') . '/search_krumo.trail.js']);
+  }
+}
+
+/**
+ * Add required Javascript files for Search Krumo.
+ *
+ * We need this to add the JavaScript every time that we display a krumo.
+ */
+function add_search_krumo() {
+  drupal_add_js(drupal_get_path('module', 'search_krumo') . '/search_krumo.search.js');
+  drupal_add_js(drupal_get_path('module', 'search_krumo') . '/search_krumo.trail.js');
+}
+
+/**
+ * Function that returns the variable name that is the input for sdpm().
+ *
+ * @return string
+ *   Either the real variable name or the default variable name $var.
+ */
+function search_krumo_inspect() {
+  // Start a backtrace.
+  $backtrace = debug_backtrace();
+
+  // Continue on if we can read the the backtrace files.
+  if (is_readable($backtrace[1]['file'])) {
+    $src = file($backtrace[1]['file']);
+    $line = $src[$backtrace[1]['line'] - 1];
+
+    // Match the function call and the last closing bracket.
+    preg_match('#sdpm\((.*?)(,|\))#', $line, $match);
+
+    // If we have a match we return it.
+    if (isset($match[1])) {
+      return $match[1];
+    }
+    else {
+      // Else we return the default variable name.
+      return '$var';
+    }
+  }
+  else {
+    // Else we return the default variable name.
+    return '$var';
+  }
+}

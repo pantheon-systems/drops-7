@@ -1,0 +1,184 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for focal_point.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function focal_point_install() {
+  $t = get_t();
+  $count = focal_point_migrate_imagefield_focus_data();
+  $count_plural = format_plural($count, '%count image', '%count images', array('%count' => $count));
+
+  if (!empty($count)) {
+    drupal_set_message($t('Migrated the imagefield_focus data for @count images. Any changes you make to imagefield_focus data from now on will not be reflected in your focal point data.', array('@count' => $count_plural)));
+  }
+
+  focal_point_update_7005();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function focal_point_uninstall() {
+  variable_del('focal_point_enabled_for');
+  variable_del('focal_point_default_method');
+
+  // Delete the test drive image.
+  $fid = variable_get('focal_point_test_drive_image', -1);
+  if ($file = file_load($fid)) {
+    file_usage_delete($file, 'focal_point');
+    file_delete($file);
+  }
+  variable_del('focal_point_test_drive_image');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function focal_point_schema() {
+  $schema['focal_point'] = array(
+    'fields' => array(
+      'fid' => array(
+        'description' => 'File ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // The longest possible value of this is 100,100 which is 7 characters.
+      'focal_point' => array(
+        'type' => 'varchar',
+        'length' => 7,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('fid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Convert existing imagefield_focus data to focal point.
+ *
+ * @param bool $overwrite
+ *   If TRUE, existing focal point data will be overwritten.
+ *
+ * @return int|null
+ *   Returns the number of images that were converted or NULL.
+ */
+function focal_point_migrate_imagefield_focus_data($overwrite = FALSE) {
+  if (module_exists('imagefield_focus')) {
+    // Get all imagefield_focus data, calculate the center of the focus rect,
+    // and use that as the new focal_point.
+    $select = db_select('imagefield_focus_file', 'iff');
+    if ($overwrite) {
+      $select->join('focal_point', 'fp', 'iff.fid = fp.fid');
+    }
+    $select->addField('iff', 'fid');
+    $select->addField('iff', 'focus_rect');
+    $rows = $select->execute()->fetchAllAssoc('fid');
+
+    foreach ($rows as $row) {
+      $file = file_load($row->fid);
+      list($x1, $y1, $x2, $y2) = explode(',', $row->focus_rect);
+
+      $focal_point_x = $x1 + round($x2 / 2);
+      $focal_point_y = $y1 + round($y2 / 2);
+
+      $file_info = image_get_info($file->uri);
+      $focal_point = round(100 * $focal_point_x / $file_info['width']) . ',' . round(100 * $focal_point_y / $file_info['height']);
+
+      focal_point_save($file->fid, $focal_point);
+    }
+
+    return count($rows);
+  }
+
+  return NULL;
+}
+
+/**
+ * Create a test drive image.
+ *
+ * If the test drive image already exists as a managed file, it will be
+ * replaced by this update.
+ *
+ * @param string $scheme
+ *   The file scheme for saving a test image.
+ */
+function focal_point_create_test_image($scheme) {
+  variable_del('focal_point_test_drive_focal_point');
+
+  // Create an image to use for the "Test Drive" page.
+  $test_drive_image = array(
+    'scheme' => $scheme . '://',
+    'dest_directory' => 'focal_point',
+    'source_path' => drupal_get_path('module', 'focal_point') . '/images/' . 'test-drive.jpg',
+    'file_name' => 'test-drive.jpg',
+  );
+
+  $full_dir = $test_drive_image['scheme'] . $test_drive_image['dest_directory'];
+  $file_uri = $full_dir . '/' . $test_drive_image['file_name'];
+  file_prepare_directory($full_dir, FILE_CREATE_DIRECTORY);
+  file_unmanaged_copy($test_drive_image['source_path'], $file_uri, FILE_EXISTS_REPLACE);
+  $file = (object) array(
+    'uid' => 1,
+    'status' => FILE_STATUS_PERMANENT,
+    'filename' => $test_drive_image['file_name'],
+    'uri' => $file_uri,
+    'filemime' => file_get_mimetype($test_drive_image['source_path']),
+  );
+  $file = file_save($file);
+  if ($file) {
+    variable_set('focal_point_test_drive_image', $file->fid);
+  }
+}
+
+/**
+ * Removed focal_point_update_7001. See https://www.drupal.org/node/2453429.
+ */
+
+/**
+ * Removing the 'focal_point_preview_image_style' variable.
+ */
+function focal_point_update_7002() {
+  variable_del('focal_point_preview_image_style');
+}
+
+/**
+ * Convert the focal_point_use_smart_crop variable to generic default variables.
+ */
+function focal_point_update_7003() {
+  if (variable_get('focal_point_use_smart_crop')) {
+    variable_set('focal_point_default_method', 'smartcrop');
+  }
+  variable_del('focal_point_use_smart_crop');
+}
+
+/**
+ * Removed focal_point_update_7004. See https://www.drupal.org/node/2653332.
+ */
+
+/**
+ * Update test drive image to use file default scheme, so remote schemes work.
+ */
+function focal_point_update_7005() {
+  $scheme = variable_get('file_default_scheme', 'public');
+  $fid = variable_get('focal_point_test_drive_image', NULL);
+
+  if (is_null($fid)) {
+    focal_point_create_test_image($scheme);
+  }
+  else {
+    $file = file_load($fid);
+    if ($file) {
+      $file->scheme = $scheme;
+      file_save($file);
+    }
+  }
+}

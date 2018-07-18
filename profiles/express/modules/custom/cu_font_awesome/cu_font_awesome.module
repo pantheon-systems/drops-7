@@ -1,0 +1,150 @@
+<?php
+
+define('CUFA_FONTAWESOME_LIBRARY', 'fontawesome');
+define('CUFA_FONTAWESOME_NAME', 'Font Awesome');
+define('CUFA_FONTAWESOME_URL', 'http://fontawesome.io');
+define('CUFA_FONTAWESOME_ICONS_URL', 'scss/_icons.scss');
+define('CUFA_FONTAWESOME_DOWNLOAD_URL', 'https://github.com/FortAwesome/Font-Awesome/archive/v4.6.3.zip');
+define('CUFA_FONTAWESOME_PREFIX', 'fa');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function cu_font_awesome_libraries_info() {
+  $libraries[CUFA_FONTAWESOME_LIBRARY] = array(
+    'name' => CUFA_FONTAWESOME_NAME,
+    'vendor url' => CUFA_FONTAWESOME_URL,
+    'download url' => CUFA_FONTAWESOME_DOWNLOAD_URL,
+    'version arguments' => array(
+      'file' => 'css/font-awesome.css',
+      'pattern' => '/((?:\d+\.?){2,3})/',
+      'lines' => 10,
+      'cols' => 14,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/font-awesome.min.css',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Return array of icons for option lists.
+ */
+function cu_font_awesome_icon_list($add_icon = TRUE) {
+  // Check to see if this is saved already
+  $icons = variable_get('cu_font_awesome_icons', array());
+  if (empty($icons)) {
+    // Load icon scss file
+    $library = libraries_load(CUFA_FONTAWESOME_LIBRARY);
+    $icons_file = file_get_contents($library['library path'] . '/' . CUFA_FONTAWESOME_ICONS_URL);
+    $icons = array();
+    // Break each line into array
+    $icons_styles = explode("\n", $icons_file);
+    // Use this to see if it's a line we want
+    $icon_query = 'content: $fa-var-';
+    foreach ($icons_styles as $icon_style) {
+      // Check to see if line includes our query variable
+      if (strpos($icon_style, $icon_query) !== FALSE) {
+        // Get the part out of the string that we want and add to array
+        $icon_name = _cu_font_awesome_regex($icon_style);
+        $icons[] = $icon_name;
+      }
+    }
+    // Sort icons alphabetically
+    asort($icons);
+    // Save icons array
+    variable_set('cu_font_awesome_icons', $icons);
+  }
+  $icon_names = array();
+  // Theme the option list.
+  foreach ($icons as $icon) {
+    if ($add_icon) {
+      // If type is radio, render icon as well
+      $icon_names['fa-' . $icon] = theme('cu_font_awesome_option', array('icon' => $icon));
+    }
+    else {
+      // Otherwise just add name (for a select list).
+      $icon_names['fa-' . $icon] = $icon;
+    }
+  }
+  return $icon_names;
+}
+
+/**
+ * Parse and manipulate css rule to get icon name.
+ */
+function _cu_font_awesome_regex($string) {
+ $prefix = ' $fa-var-';
+ $parts = explode(':', $string);
+ return substr($parts[2], strlen($prefix), -3);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cu_font_awesome_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $registry['cu_font_awesome_option'] = array(
+    'arguments' => array('icon' => NULL),
+  );
+
+  return $registry;
+}
+
+/**
+ * Theme function for icon options.
+ */
+function theme_cu_font_awesome_option($vars) {
+  return '<i class="fa fa-' . $vars['icon'] .'" aria-hidden="true"></i> ' . $vars['icon'];
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_font_awesome_menu() {
+  $items = array();
+
+  $items['admin/settings/font-awesome'] = array(
+    'title' => 'Font Awesome Icons',
+    'description' => 'View all the icons available in Web Express.',
+    'page callback' => 'cu_font_awesome_icons',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  return $items;
+}
+
+/**
+ * Return a list for icon names.
+ */
+function cu_font_awesome_icons() {
+  $icons = cu_font_awesome_icon_list();
+  array_shift($icons);
+  $list = '';
+  foreach ($icons as $icon) {
+    $list .= '<li>' . $icon . '</li>';
+  }
+  $list = '<ul>' . $list . '</ul>';
+  $output = array();
+  $output['#markup'] = $list;
+  $output['#prefix'] = '<div class="column-list column-list-4 clearfix">';
+  $output['#suffix'] = '</div>';
+  return $output;
+}
+
+/**
+ * Implements hook_init().
+ *
+ * Add variables to js settings.
+ */
+function cu_font_awesome_init() {
+  $library = libraries_load(CUFA_FONTAWESOME_LIBRARY);
+  if (!user_is_anonymous()) {
+    // Link to icon list.
+    global $base_url;
+    $icon_url = $base_url . '/admin/settings/font-awesome';
+    drupal_add_js(array('cu_font_awesome' => array('font_awesome_icon_list' => $icon_url)), 'setting');
+  }
+}

@@ -1,0 +1,209 @@
+<?php
+
+/**
+ * @file
+ * Tests Metatag module to ensure there are no XSS scripting vulnerabilities.
+ */
+
+/**
+ * Tests Metatag module to ensure there are no XSS scripting vulnerabilities.
+ */
+class MetatagCoreXSSTest extends MetatagTestHelper {
+
+  /**
+   * String that causes an alert when page titles aren't filtered for xss.
+   *
+   * @var string
+   */
+  private $xssTitleString = '<script>alert("xss");</script>';
+
+  /**
+   * String that causes an alert when metatags aren't filtered for xss.
+   *
+   * @var string
+   */
+  private $xssString = '"><script>alert("xss");</script><meta "';
+
+  /**
+   * Rendered xss tag that has escaped attribute to avoid xss injection.
+   *
+   * @var string
+   */
+  private $escapedXssTag = '<meta name="abstract" content="&quot;&gt;alert(&quot;xss&quot;);" />';
+
+  /**
+   * String that causes an alert when metatags aren't filtered for xss.
+   *
+   * "Image" meta tags are processed differently to others, so this checks for a
+   * different string.
+   *
+   * @var string
+   */
+  private $xssImageString = '/"><script>alert("image xss");</script><meta "';
+
+  /**
+   * Rendered xss tag that has escaped attribute to avoid xss injection.
+   *
+   * @var string
+   */
+  private $escapedXssImageTag = '';
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests for XSS.',
+      'description' => 'Test Metatag for XSS vulnerabilities.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    parent::setUp($modules);
+
+    $content_type = 'page';
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'create ' . $content_type . ' content',
+      'delete any ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+
+      // This permission is required in order to create new revisions.
+      'administer nodes',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->drupalLogin($this->adminUser);
+
+    // Generate the encoded version of $xssImageString.
+    // '<link rel="image_src" href="' . $xssImageString . '" />'
+    $prefix = '<link rel="image_src" href="';
+    // The image tag will be automatically prefixed by the current hostname,
+    // so adjust the escaped string.
+    $url = url('', array('absolute' => TRUE));
+    // Convert the raw string to what it will be when output in the HTML.
+    $value = ltrim($this->xssImageString, '/');
+    $value = urlencode($value);
+    $value = str_replace('+', '%20', $value);
+    $value = str_replace('%2F', '/', $value);
+    $suffix = '" />';
+    $this->escapedXssImageTag = $prefix . $url . $value . $suffix;
+  }
+
+  /**
+   * Verify XSS injected in global Node config is not rendered.
+   */
+  function testXssMetatagConfig() {
+    // Submit the form with some example XSS values.
+    $this->drupalGet('admin/config/search/metatags/config/global');
+    $this->assertResponse(200);
+    $edit = array(
+      'metatags[und][title][value]' => $this->xssTitleString,
+      'metatags[und][abstract][value]' => $this->xssString,
+      'metatags[und][image_src][value]' => $this->xssImageString,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertResponse(200);
+
+    // Use front page to test.
+    $this->drupalGet('<front>');
+
+    // Verify title is clean.
+    $this->assertNoTitle($this->xssTitleString);
+    $this->assertNoRaw($this->xssTitleString);
+
+    // Verify the abstract is clean.
+    $this->assertRaw($this->escapedXssTag);
+    $this->assertNoRaw($this->xssString);
+
+    // Verify the image_src is clean.
+    $this->assertRaw($this->escapedXssImageTag);
+    $this->assertNoRaw($this->xssImageString);
+  }
+
+  /**
+   * Verify XSS injected in the entity metatag override field is not rendered.
+   */
+  public function testXssEntityOverride() {
+    $title = 'Test Page';
+
+    // Load a page node.
+    $this->drupalGet('node/add/page');
+    $this->assertResponse(200);
+
+    // Submit the node with some example XSS values.
+    $edit = array(
+      'title' => $title,
+      'metatags[und][title][value]' => $this->xssTitleString,
+      'metatags[und][description][value]' => $this->xssString,
+      'metatags[und][abstract][value]' => $this->xssString,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify the page saved.
+    $this->assertResponse(200);
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $title)));
+
+    // Verify title is not the injected string and thus cleaned.
+    $this->assertNoTitle($this->xssTitleString);
+    $this->assertNoRaw($this->xssTitleString);
+
+    // Verify the description and abstract are clean.
+    $this->assertRaw($this->escapedXssTag);
+    $this->assertNoRaw($this->xssString);
+  }
+
+  /**
+   * Verify XSS injected in the entity titles are not rendered.
+   */
+  public function testXssEntityTitle() {
+    // Load a page node.
+    $this->drupalGet('node/add/page');
+    $this->assertResponse(200);
+
+    // Submit the node with some example XSS values.
+    $edit = array(
+      'title' => $this->xssTitleString,
+      'body[und][0][value]' => 'hello world',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify the page saved.
+    $this->assertResponse(200);
+    $this->assertText(t('has been created.'));
+
+    // Verify title is not the injected string and thus cleaned.
+    $this->assertNoRaw($this->xssTitleString);
+  }
+
+  /**
+   * Verify XSS injected in the body field is not rendered.
+   */
+  public function testXssEntityBody() {
+    $title = 'Hello World';
+
+    // Load a page node.
+    $this->drupalGet('node/add/page');
+    $this->assertResponse(200);
+
+    // Submit the node with a test body value.
+    $edit = array(
+      'title' => $title,
+      'body[und][0][value]' => $this->xssString,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify the page saved.
+    $this->assertResponse(200);
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $title)));
+
+    // Verify body field is clean.
+    $this->assertNoRaw($this->xssString);
+  }
+
+}

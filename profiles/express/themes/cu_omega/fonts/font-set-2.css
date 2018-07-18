@@ -1,0 +1,11 @@
+#zone-content h2.block-title,
+#zone-after-content h2.block-title,
+#zone-footer h2.block-title,
+#zone-content h1,
+#zone-content h2,
+#zone-content h3,
+#zone-content h4,
+#zone-content h5 {
+  font-family: "HelveticaNeueW01-95Blac", Helvetica, Arial;
+  font-weight: normal;
+}

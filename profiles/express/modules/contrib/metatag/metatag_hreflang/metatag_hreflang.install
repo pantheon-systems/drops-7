@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * @file
+ * Various update scripts for Metatag:hrelang.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function metatag_hreflang_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    // Check if the Alternative Hreflang module is present.
+    if (module_exists('hreflang')) {
+      $requirements['metatag_hreflang'] = array(
+        'severity' => REQUIREMENT_ERROR,
+        'title' => 'Metatag',
+        'value' => $t('The Metatag:hreflang module should not be used at the same time as the hreflang module.'),
+        'description' => $t('If both the Metatag:hreflang module and the Alternative Hreflang (hreflang) module are used at the same time it is likely that they will output duplicate meta tags. As a result, it is recommended to only use one at a time.'),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_hreflang_uninstall() {
+  // Delete any custom variables that are used.
+  variable_del('metatag_hreflang_allow_dupe');
+}
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Clear the Metatag cache so the updated hreflang default is caught.
+ */
+function metatag_hreflang_update_7101() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  return t('All Metatag caches cleared.');
+}
+
+/**
+ * Fix hreflang=xdefault for config definitions.
+ */
+function metatag_hreflang_update_7102() {
+  module_load_include('install', 'metatag');
+  $meta_tag = 'hreflang_xdefault';
+  $old_value = '[node:source:url]';
+  $new_value = '[node:url-original]';
+  return metatag_update_replace_config_value($meta_tag, $old_value, $new_value);
+}
+
+/**
+ * Fix hreflang=xdefault for all entities.
+ */
+function metatag_hreflang_update_7103() {
+  module_load_include('install', 'metatag');
+  $meta_tag = 'hreflang_xdefault';
+  $old_value = '[node:source:url]';
+  $new_value = '[node:url-original]';
+  return metatag_update_replace_entity_value($sandbox, $meta_tag, $old_value, $new_value);
+}

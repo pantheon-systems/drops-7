@@ -1,0 +1,49 @@
+
+user_external_invite 7.x-1.x-dev
+==================
+
+Issue #2969308 by afinnarn: Update DoubleClick and Add Author and Updated Fields
+Issue #2896317 by afinnarn: Embed Template Beans Do Not Update
+Issue #2895736 by afinnarn: $output in et_add_page() is an array and not a string
+Issue #2895398 by afinnarn: Don't Log 404 In Page Top/Bottom
+Issue #2881193 by afinnarn: Check Bean Edit Form On Inline Entity Forms
+Issue #2897961 by afinnarn: Code Climate
+
+user_external_invite 7.x-1.x-beta3
+==================
+
+Issue #2880453 by afinnarn: Legacy Function Name Causes Context To Error
+Issue #2880913 by afinnarn: Add Alter To Hooks
+Issue #2880921 by afinnarn: Block Deltas Are Too Long In Block Renderer
+
+user_external_invite 7.x-1.x-beta2
+==================
+
+Issue #2877113 by afinnarn: Add Hook For Adding Statuses
+Issue #2877115 by afinnarn: Add More Granular Permissions
+Issue #2877412 by afinnarn: Operation Callbacks Should Only Be Passed The Embed Entity
+Issue #2877774 by afinnarn: Move operation callback to entity_presave()
+Issue #2878071 by afinnarn: Status Ends Up Being The Confirm Form Button Text
+Issue #2878066 by afinnarn: Only Run Operation Callback If Status Has Changed
+Issue #2878094 by afinnarn: Add Default Status For Embed Type
+Issue #2878116 by afinnarn: Split Out And Simplify Form Functions
+Issue #2878135 by afinnarn: Add Default Status Key To API Hook
+Issue #2878138 by afinnarn: Make A Tracking Pixels Module
+Issue #2878067 by afinnarn: Write Tests For Permissions
+Issue #2878068 by afinnarn: Write Tests for Statuses
+Issue #2877775 by afinnarn: Add Proper Docblocks To Functions
+Issue #2878605 by afinnarn: Delete Slate Bean template
+
+embed_templates 7.x-1.0-beta1
+==================
+
+Issue #2874964 by afinnarn: Add A Changelog
+Issue #2876178 by afinnarn: Improve Links on Add Embed Screen
+Issue #2876674 by afinnarn: Place Include For Embed Form Elements At End
+Issue #2876182 by afinnarn: Refactor embed_templates_get_embeds() function
+Issue #2875042 by afinnarn: Add Search For Type, Renderer, And Path
+Issue #2876755 by afinnarn: Change status field to be an arbitrary string
+Issue #2874982 by afinnarn: Deal With Bean Deletion Through Entity API
+Issue #2876739 by afinnarn: Change The Name Of et_landing_page
+Issue #2876783 by afinnarn: Deal With 404 On Page Top/Bottom Renderer
+Issue #2876758 by afinnarn: Write Tests for Search

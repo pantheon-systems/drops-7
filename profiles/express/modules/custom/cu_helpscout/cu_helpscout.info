@@ -1,0 +1,4 @@
+name = CU HelpScout
+description = Adds HelpScout Beacon
+core = 7.x
+package = Express

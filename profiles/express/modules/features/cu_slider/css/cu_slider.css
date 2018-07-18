@@ -1,0 +1,101 @@
+/* FLEX SLIDER */
+/* Global styles */
+.block.block-bean-type-slider { margin-bottom: 0; }
+
+.cu-content-slider { overflow: hidden; }
+
+.slider-link-icon { opacity: .5; }
+
+/* Font Styles */
+.cu-slider-caption { font-weight: 900; font-size: 100%; }
+
+.cu-slider-teaser { font-size: 75%; }
+.cu-slider-teaser p:last-child { margin: 0; }
+
+@media screen and (min-width: 768px) { .cu-slider-caption { font-size: 130%; }
+  .cu-slider-teaser { font-size: 100%; } }
+/* Slider Style 1 */
+.cu-slider-style-1 { color: #fff; position: relative; }
+.cu-slider-style-1 .cu-slider-slide-content-wrapper { background: #222; padding: 10px 50px; }
+@media screen and (min-width: 480px) { .cu-slider-style-1 .cu-slider-slide-content-wrapper { background: rgba(0, 0, 0, 0.7); position: absolute; bottom: 0; left: 0; right: 0; z-index: 1; } }
+@media screen and (min-width: 768px) { .cu-slider-style-1 .cu-slider-slide-content-wrapper { padding: 15px; } }
+.cu-slider-style-1 a:link, .cu-slider-style-1 a:visited { color: #fff; }
+.cu-slider-style-1 .cu-slider-teaser a:link, .cu-slider-style-1 .cu-slider-teaser a:visited { text-decoration: underline; }
+
+/* Slider Style 2 */
+.cu-slider-style-2 { color: #fff; position: relative; }
+.cu-slider-style-2 .cu-slider-slide-content-wrapper { background: #222; padding: 10px; }
+@media screen and (min-width: 768px) { .cu-slider-style-2 .cu-slider-slide-content-wrapper { background: rgba(0, 0, 0, 0.7); right: 0; top: 0; bottom: 0; left: 50%; position: absolute; padding: 20px 40px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; } }
+@media screen and (min-width: 960px) { .cu-slider-style-2 .cu-slider-slide-content-wrapper { font-size: 120%; } }
+.cu-slider-style-2 a:link, .cu-slider-style-2 a:visited { color: #fff; }
+.cu-slider-style-2 .cu-slider-teaser a:link, .cu-slider-style-2 .cu-slider-teaser a:visited { text-decoration: underline; }
+
+/* Slider Style 3 */
+.cu-slider-style-3 { color: #fff; position: relative; }
+.cu-slider-style-3 .cu-slider-slide-content-wrapper { background: #222; padding: 10px; }
+@media screen and (min-width: 600px) { .cu-slider-style-3 .cu-slider-slide-content-wrapper { background: rgba(0, 0, 0, 0.5); padding: 20px 80px; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; text-shadow: 0px 0px 30px rgba(0, 0, 0, 0.5); text-align: center; font-size: 120%; display: flex; align-items: center; } }
+.cu-slider-style-3 a:link, .cu-slider-style-3 a:visited { color: #fff; }
+.cu-slider-style-3 .cu-slider-teaser a:link, .cu-slider-style-3 .cu-slider-teaser a:visited { text-decoration: underline; }
+
+/* Slider Style 4 */
+.cu-slider-style-4 { background: #222; color: #fff; position: relative; overflow: hidden; }
+.cu-slider-style-4 .cu-slider-slide-content { padding: 10px; }
+@media screen and (min-width: 768px) { .cu-slider-style-4 .cu-slider-slide-content { padding: 20px 20px 20px 0; font-size: 75%; } }
+@media screen and (min-width: 960px) { .cu-slider-style-4 .cu-slider-slide-content { font-size: 100%; } }
+.cu-slider-style-4 a:link, .cu-slider-style-4 a:visited { color: #fff; }
+.cu-slider-style-4 .cu-slider-teaser a:link, .cu-slider-style-4 .cu-slider-teaser a:visited { text-decoration: underline; }
+
+/* Slider Style 5 */
+.cu-slider-style-5 img { margin-bottom: 10px; }
+.cu-slider-style-5 .cu-slider-slide-content { padding: 0 20px; }
+
+/* Slider Style 6 - Same as 1 but with thumbnails */
+@media screen and (min-width: 768px) { .cu-slider-has-thumbnails .flickity-prev-next-button { display: none; } }
+
+.thumbnail-slider-wrapper .cu-slider-thumbnails { background: #fff; }
+.thumbnail-slider-wrapper .cu-slider-thumbnails .cu-slider-slide { position: relative; padding: 10px; }
+.thumbnail-slider-wrapper .cu-slider-thumbnails .is-nav-selected .cu-slider-slide:after { width: 0; height: 0; border-style: solid; border-width: 0 13px 13px 13px; border-color: transparent transparent #ffffff transparent; position: absolute; top: -13px; left: calc(50% - 13px); z-index: 1; content: ''; }
+.thumbnail-slider-wrapper .flickity-viewport { overflow: visible; }
+.thumbnail-slider-wrapper .cu-slider-has-thumbnails { padding-bottom: 0; }
+@media screen and (min-width: 768px) { .thumbnail-slider-wrapper .cu-slider-has-thumbnails .cu-slider-style-1 .cu-slider-slide-content-wrapper { padding-bottom: 20px; } }
+
+/* Slider Style 7 - Same as 3 but with thumbnails */
+.thumbnail-overlay-slider-wrapper { position: relative; }
+.thumbnail-overlay-slider-wrapper .cu-slider-has-thumbnails { padding-bottom: 0; }
+@media screen and (min-width: 768px) { .thumbnail-overlay-slider-wrapper .cu-slider-has-thumbnails .cu-slider-style-3 .cu-slider-slide-content-wrapper { padding-bottom: 80px; } }
+.thumbnail-overlay-slider-wrapper .cu-slider-thumbnails { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; }
+.thumbnail-overlay-slider-wrapper .cu-slider-thumbnails .cu-slider-slide { position: relative; margin: 10px; -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.25); -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.25); box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.25); filter: grayscale(0.5); }
+.thumbnail-overlay-slider-wrapper .cu-slider-thumbnails .cu-slider-slide:after { content: ''; position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.15); }
+.thumbnail-overlay-slider-wrapper .cu-slider-thumbnails .is-nav-selected .cu-slider-slide { filter: grayscale(0); }
+.thumbnail-overlay-slider-wrapper .cu-slider-thumbnails .is-nav-selected .cu-slider-slide:after { background: none; }
+
+/* Slider Style 8 */
+.cu-slider-style-8 { color: #fff; position: relative; }
+.cu-slider-style-8 .cu-slider-slide-content-wrapper { background: #222; padding: 10px 50px; }
+@media screen and (min-width: 480px) { .cu-slider-style-8 .cu-slider-slide-content-wrapper { background: rgba(0, 0, 0, 0.7); position: absolute; bottom: 0; left: 0; right: 0; z-index: 1; } }
+@media screen and (min-width: 768px) { .cu-slider-style-8 .cu-slider-slide-content-wrapper { background: rgba(0, 0, 0, 0.5); padding: 20px 20px; font-size: 110%; }
+  .cu-slider-style-8 .cu-slider-slide-content-wrapper .cu-slider-caption { font-size: 130%; } }
+@media screen and (min-width: 960px) { .cu-slider-style-8 .cu-slider-slide-content-wrapper { padding: 30px 20px; font-size: 125%; }
+  .cu-slider-style-8 .cu-slider-slide-content-wrapper .cu-slider-caption { font-size: 160%; } }
+.cu-slider-style-8 a:link, .cu-slider-style-8 a:visited { color: #fff; }
+.cu-slider-style-8 .cu-slider-teaser a:link, .cu-slider-style-8 .cu-slider-teaser a:visited { text-decoration: underline; }
+
+/* SLIDER THUMBNAILS */
+.cu-slider-thumbnails { display: none; }
+@media screen and (min-width: 768px) { .cu-slider-thumbnails { display: block; } }
+.cu-slider-thumbnails img { display: block; width: 100%; height: auto; }
+.cu-slider-thumbnails .cu-slider-slide-content-wrapper { display: none; }
+
+/* SLIDER NAVIGATION */
+.cu-slider, .cu-slider-has-thumbnails { padding-bottom: 35px; /* fill-in selected dot */ }
+.cu-slider img, .cu-slider-has-thumbnails img { display: block; width: 100%; height: auto; }
+.cu-slider .field-name-field-slider-slide, .cu-slider-has-thumbnails .field-name-field-slider-slide { width: 100%; }
+.cu-slider .flickity-viewport, .cu-slider-has-thumbnails .flickity-viewport { transition: height 0.5s; }
+.cu-slider .flickity-page-dots, .cu-slider-has-thumbnails .flickity-page-dots { bottom: 10px; }
+.cu-slider .flickity-page-dots .dot, .cu-slider-has-thumbnails .flickity-page-dots .dot { width: 12px; height: 12px; opacity: 1; background: transparent; border: 2px solid #757575; }
+.cu-slider .flickity-page-dots .dot.is-selected, .cu-slider-has-thumbnails .flickity-page-dots .dot.is-selected { background: #757575; }
+.cu-slider .flickity-prev-next-button, .cu-slider-has-thumbnails .flickity-prev-next-button { background: none; opacity: 0; transition: background 0.5s, opacity 0.5s; }
+.cu-slider .flickity-prev-next-button:hover, .cu-slider-has-thumbnails .flickity-prev-next-button:hover { background: rgba(0, 0, 0, 0.3); }
+.cu-slider .flickity-prev-next-button .arrow, .cu-slider-has-thumbnails .flickity-prev-next-button .arrow { fill: #fff; }
+.cu-slider .flickity-prev-next-button svg, .cu-slider-has-thumbnails .flickity-prev-next-button svg { -webkit-filter: drop-shadow(1px 0px 2px rgba(0, 0, 0, 0.75)); filter: drop-shadow(1px 0px 2px rgba(0, 0, 0, 0.75)); }
+.cu-slider:hover .flickity-prev-next-button, .cu-slider-has-thumbnails:hover .flickity-prev-next-button { opacity: 1; }

@@ -1,0 +1,6 @@
+name = Block Styles
+description = Empty module. See cu_block_theme.
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+project = block_styles

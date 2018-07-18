@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * @file
+ * Contains Drupal hooks for Page Top/Bottom Renderer module.
+ */
+
+/**
+ * Implements hook_context_registry().
+ */
+function et_page_top_bottom_context_registry() {
+  return array(
+    'reactions' => array(
+      'et_page_top_bottom' => array(
+        'title' => t('Embeds'),
+        'plugin' => 'et_page_top_bottom',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implmenets hook_context_plugins().
+ *
+ * @return array
+ *   Context definition.
+ */
+function et_page_top_bottom_context_plugins() {
+  $plugins = array();
+  $plugins['et_page_top_bottom'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'et_page_top_bottom') . '/plugins',
+      'file' => 'et_page_top_bottom_context_reaction.inc',
+      'class' => 'et_page_top_bottom_context_reaction',
+      'parent' => 'context_reaction',
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Add JS code to page in correct location: header or footer.
+ *
+ * @param array $page
+ *   Render array for the current page.
+ */
+function et_page_top_bottom_page_alter(&$page) {
+
+  // Don't do anything if page is a 404.
+  if (drupal_get_http_header('status') == '404 Not Found') {
+    return;
+  }
+
+  // If context module exists, see if there is a reaction for the page.
+  if (module_exists('context')) {
+    if ($plugin = context_get_plugin('reaction', 'et_page_top_bottom')) {
+      $plugin->execute($page);
+    }
+  }
+
+  // Try the old fashioned way.
+  $path = current_path();
+  $query_options = array(
+    'path' => array($path),
+    'renderer' => array('page_top_bottom'),
+    'status' => array('published'),
+  );
+  // Get published embed names.
+  $matches = embed_templates_get_embeds($query_options);
+
+  if ($matches) {
+    foreach ($matches as $match) {
+      // Check for permissions.
+      if (user_access('view ' . $match->type . ' embeds')) {
+
+        $data = unserialize($match->data);
+        $type = $match->type;
+
+        // Get JS for embed.
+        $js = _et_page_top_bottom_get_js($data, $type);
+
+        // Add weight based on position.
+        // Set default to show at the bottom of the page.
+        $weight = 9999;
+        $position = 'bottom';
+        if (isset($data['position']) && $data['position'] === 'top') {
+          $weight = -9999;
+          $position = 'top';
+        }
+
+        // Add JS to proper section of $page array.
+        $page['page_' . $position]['et_page_top_bottom'][] = array(
+          '#markup' => $js,
+          '#weight' => $weight,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Builds JS from embed template.
+ *
+ * @param array $data
+ *   Unserialized data for the embed.
+ * @param string $type
+ *   Type associated to the data.
+ *
+ * @return string
+ *   Markup to render on the page.
+ */
+function _et_page_top_bottom_get_js($data = array(), $type = NULL) {
+
+  // Pass data to proper template.
+  return theme('embed_templates_' . $type, $data);
+}

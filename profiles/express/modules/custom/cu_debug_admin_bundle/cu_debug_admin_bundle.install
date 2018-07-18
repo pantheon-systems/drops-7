@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * Implements hook_enable()
+ */
+function cu_debug_admin_bundle_enable() {
+  module_enable(_cu_debug_admin_bundle_enable_modules());
+  drupal_set_message('Enabling ' . join(', ', _cu_debug_admin_bundle_enable_modules()));
+
+  // Get the environmental variable out of the drushrc file.
+  $drush_env = variable_get('env');
+  // Check for local via server or drush.
+  if ($_SERVER['WWWNG_ENV'] == 'local-dev' || $drush_env == 'local-dev') {
+    drupal_set_message('Debugging locally. Do all the things!');
+    module_disable(_cu_debug_admin_bundle_disable_modules());
+    drupal_set_message('Disabling ' . join(', ', _cu_debug_admin_bundle_disable_modules()));
+
+    variable_set('dev_timer', TRUE);
+    variable_set('devel_memory', TRUE);
+
+  } else {
+    drupal_set_message('Debugging on dev, test, or prod with minimum configuration changes.');
+  }
+}
+
+
+/**
+ * Implements hook_disable()
+ */
+function cu_debug_admin_bundle_disable() {
+  module_disable(_cu_debug_admin_bundle_enable_modules());
+  module_enable(_cu_debug_admin_bundle_disable_modules());
+  drupal_set_message('Disabling ' . join(', ', _cu_debug_admin_bundle_enable_modules()));
+  drupal_set_message('Enabling ' . join(', ', _cu_debug_admin_bundle_disable_modules()));
+
+  variable_set('dev_timer', FALSE);
+  variable_set('devel_memory', FALSE);
+
+}
+
+/**
+ * Modules to be enabled/disabled
+ */
+function _cu_debug_admin_bundle_enable_modules() {
+  return array(
+    'devel',
+    'search_krumo',
+    'ds_ui',
+    'views_ui',
+  );
+}
+
+function _cu_debug_admin_bundle_disable_modules() {
+  // This used to alter the varnish configuration, but that's now handled by _hosting modules
+  return array();
+}

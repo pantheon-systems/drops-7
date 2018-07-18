@@ -1,0 +1,165 @@
+<?php
+
+/**
+ * @file
+ * CU Alerts module
+ */
+
+// @TODO: Add hook_init w/ static var so hook exit is skipped when init fires
+// @TODO: Make hook init/exit version checks configurable
+// @TODO: Make javascript rounding configurable
+// @TODO: add hook_cron for sites that are cached by Varnish and never fire hook_edit
+// @TODO: make hook_exit and hook_cron configurable
+
+/**
+ * Implements hook_init().
+ */
+//function rave_alerts_init() {
+
+  // THESE ARE ONLY NEEDED FOR THE JS IMPLEMENTATION
+  //drupal_add_js(array('rave_alerts_rss_url' => variable_get('rave_alerts_rss_url', 'https://www.getrave.com/rss/DemoUniversityAlert/channel8')), 'setting');
+  //drupal_add_js(array('rave_alerts_active_event' => variable_get('rave_alerts_active_event', 0)), 'setting');
+
+  //if ($rave_alerts_read_more_url = variable_get('rave_alerts_deafult_read_more_url', NULL)) {
+    //drupal_add_js(array('rave_alerts_deafult_read_more_url' => $rave_alerts_read_more_url), 'setting');
+  //}
+//}
+
+/**
+ * Implements hook_exit().
+ * Used so this hook is called even if page is cached by Drupal
+ */
+function rave_alerts_exit() {
+  rave_alerts_remote_data();
+}
+
+/**
+ * Implements hook_menu().
+ */
+function rave_alerts_menu() {
+  $items['admin/config/system/rave-alerts'] = array(
+    'title' => 'RAVE Alerts Configuration',
+    'description' => 'Configure the RAVE Alerts',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rave_alerts_admin_settings_form'),
+    'access arguments' => array('administer rave alerts'),
+    'file' => 'rave_alerts.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implemets of hook_permission().
+ */
+function rave_alerts_permission() {
+  return array(
+    'administer rave alerts' => array(
+      'title' => t('Administer RAVE Alerts'),
+      'description' => t('Adminstrer RAVE configuration.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function rave_alerts_block_info() {
+  $blocks['rave_alerts'] = array(
+    'info' => t('RAVE Alerts'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function rave_alerts_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'rave_alerts':
+      $data = rave_alerts_remote_data();
+      $block['content'] = array(
+        '#theme' => 'rave_alerts_alerts',
+        '#data' => $data,
+        '#attached' => array
+        (
+          'js' => array(drupal_get_path('module', 'rave_alerts') . "/js/rave_alerts.js"),
+        ),
+      );
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Gets the remote RSS data and returns sanitized data.
+ */
+function rave_alerts_remote_data() {
+  //@TODO: We only need to set $data to NULL because there is no else handling
+  // if we don't get a valid 200 response
+  $data = NULL;
+  if (variable_get('rave_alerts_check_enable', 0)) {
+    $url = variable_get('rave_alerts_rss_url', 'https://www.getrave.com/rss/DemoUniversityAlert/channel8');
+    if ($cache = cache_get('rave_alert', 'cache_rave_alerts')) {
+      $data = $cache->data;
+    } else {
+      $response = drupal_http_request($url, array('timeout' => 15));
+      if ($response->code == '200') {
+
+        //@TODO: Add check to see if the response is XML to avoid
+        // Exception: String could not be parsed as XML
+
+        // Create new XMLElement
+        $data = new SimpleXMLElement($response->data);
+
+        // Convert into a nice array for us to work with.
+        $data = json_encode($data);
+        $data = json_decode($data, true);
+        //@TODO: Make the cache timeout configurable
+        cache_set('rave_alert', $data, 'cache_rave_alerts', time() + 60);
+
+        watchdog('rave_alerts', 'New RSS item found. Checking tokens.');
+        // There is a new RSS item.  Evaluate the description for triggers.
+
+        // assume we are going to display this
+        variable_set('rave_alerts_display', 1);
+        variable_set('rave_alerts_pubdate', $data['channel']['item']['pubDate']);
+
+        if (strpos($data['channel']['item']['title'], variable_get('rave_alerts_active_text', '[ACTIVE]'))) {
+           variable_set('rave_alerts_active_event', 1);
+           watchdog('rave_alerts', 'ACTIVE token found');
+        }
+
+        if (strpos($data['channel']['item']['title'], variable_get('rave_alerts_clear_text', '[CLEAR]')) !== FALSE) {
+           variable_set('rave_alerts_active_event', 0);
+           variable_set('rave_alerts_display', 0);
+           watchdog('rave_alerts', 'CLEAR token found');
+        }
+        // @TODO: Add option to leave all clear message up for X hours
+      }
+      //@TODO: Add code to handle network failure
+    }
+  }
+  return $data;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function rave_alerts_theme($existing, $type, $theme, $path) {
+  return array(
+    'rave_alerts_alerts' => array(
+      'variables' => array('data' => NULL, 'remote_url' => NULL),
+      'template' => 'rave_alerts',
+    ),
+  );
+}
+
+/**
+* Implements hook_flush_caches().
+*/
+function rave_alerts_flush_caches() {
+  return array('cache_rave_alerts');
+}

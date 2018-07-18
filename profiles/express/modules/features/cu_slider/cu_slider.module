@@ -1,0 +1,263 @@
+<?php
+/**
+ * @file
+ * Code for the CU_Slider feature.
+ */
+
+include_once 'cu_slider.features.inc';
+
+/**
+ * Implements hook_libraries_info().
+ */
+function cu_slider_libraries_info() {
+  $libraries = array();
+  $libraries['flickity'] = array(
+    'name' => t('Flickity'),
+    'vendor url' => 'https://flickity.metafizzy.co',
+    'download url' => 'https://github.com/metafizzy/flickity',
+    'version' => '2.0.9',
+    'files' => array(
+      'js' => array(
+        'js/flickity.pkgd.min.js',
+      ),
+      'css' => array(
+        'css/flickity.css',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_slider_init() {
+
+  $library = libraries_get_path('flickity');
+
+  // Add the library reference.
+  $path = $library . '/js/flickity.pkgd.min.js';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_js($path);
+  }
+
+  $path = $library . '/css/flickity.css';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_css($path);
+  }
+
+  // Add cu slider css
+  drupal_add_css(drupal_get_path('module', 'cu_slider') . '/css/cu_slider.css');
+  // Add cu slider js
+  drupal_add_js(drupal_get_path('module', 'cu_slider') . '/js/cu-slider.js');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--cu-slider.tpl.php in our module directory.
+ */
+function cu_slider_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_slider');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Show examples of what the slider styles look like.
+ */
+function cu_slider_form_bean_form_alter(&$form, &$form_state, &$form_id) {
+  if ($form['#bundle'] == 'slider') {
+    $items = $form['field_slider_slide'][LANGUAGE_NONE];
+    $children = array_intersect_key($items, element_children($items));
+    if (!empty($form['redirect'])) {
+      $form['redirect']['#access'] = FALSE;
+    }
+    if (!empty($children)) {
+      foreach ($children as $key => $value) {
+        $form['field_slider_slide'][LANGUAGE_NONE][$key]['redirect']['#access'] = FALSE;
+      }
+    }
+    if ($form['bean']['#value']->type == 'slider') {
+      if (array_key_exists('field_slider_style', $form)) {
+        unset($form['field_slider_style']);
+      }
+
+      // Hide old url field because we need to migrate date to new link field
+      foreach ($form['field_slider_slide'][LANGUAGE_NONE] as $delta => $field) {
+        if (is_numeric($delta)) {
+          $form['field_slider_slide'][LANGUAGE_NONE][$delta]['field_slider_url']['#access'] = FALSE;
+        }
+      }
+    }
+  }
+}
+
+function cu_slider_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess slider beans.
+  if ($entity_type == 'bean' && $bundle == 'slider') {
+    //global $cu_slider_image_size;
+
+    //$vars['content']['field_slider_image'][0]['#image_style'] = $cu_slider_image_size;
+    //$cu_slider_image_size = $vars['content']['field_slider_size'][0]['#markup'];
+    //global $cu_slider_style;
+    $cu_slider_style = $vars['content']['field_slider_design_style'][0]['#markup'];
+    $style = cu_slider_style_map($cu_slider_style);
+    $style = str_replace(' ', '_', strtolower($style));
+    $vars['theme_hook_suggestions'][] = 'bean__slider__' . $style;
+    // Add slider ui if there is more than 1 slide.
+    $vars['slider_ui'] = count($vars['content']['field_slider_slide']['#items']) > 1 ? 'cu-slider-ui' : FALSE;
+  }
+  // Only preprocess slider field collections.
+  if ($entity_type == 'field_collection_item' && $bundle == 'field_slider_slide') {
+    // Provide theme suggestion based on slider design style
+    global $cu_slider_style;
+    $vars['theme_hook_suggestions'][] = 'field_collection_item__field_slider_slide__style_' . $cu_slider_style;
+
+    // Set image style based on slider image size
+    global $cu_slider_image_size;
+    $vars['content']['field_slider_image'][0]['#image_style'] = $cu_slider_image_size;
+
+    // Prepare slide content variables
+    if (!empty($vars['content']['field_slider_link']['#items'])) {
+      $link = trim(render($vars['content']['field_slider_link']));
+      if (!empty($vars['content']['field_slider_image'])) {
+        $vars['slide_image'] = l(render($vars['content']['field_slider_image']), $link, array('html' => TRUE));
+      }
+      if (!empty($vars['content']['field_slider_caption'])) {
+        $text = $vars['content']['field_slider_caption'][0]['#markup'] . '&nbsp;<i class="fa fa-external-link-square slider-link-icon"></i>';
+        $vars['slide_caption'] = l($text, $link, array('html' => TRUE));
+      }
+    } else {
+      if (!empty($vars['content']['field_slider_image'])) {
+        $vars['slide_image'] = render($vars['content']['field_slider_image']);
+      }
+      if (!empty($vars['content']['field_slider_caption'])) {
+        $vars['slide_caption'] = render($vars['content']['field_slider_caption']);
+      }
+    }
+  }
+}
+/**
+ * Implements hook_preprocess_field().
+ * Set global variables for slider image size and style.
+ */
+function cu_slider_preprocess_field(&$vars) {
+  global $cu_slider_image_size;
+  if ($vars['element']['#field_name'] == 'field_slider_slide') {
+    $cu_slider_image_size = $vars['element']['#object']->field_slider_size['und'][0]['value'];
+    global $cu_slider_style;
+    $cu_slider_style = $vars['element']['#object']->field_slider_design_style['und'][0]['value'];
+  }
+}
+
+/**
+ * Implements hook_image_default_styles().
+ */
+function cu_slider_image_default_styles() {
+  $styles = array();
+
+  // Exported image style: slider.
+  $styles['slider'] = array(
+    'label' => 'slider',
+    'effects' => array(
+      12 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 1500,
+          'height' => 563,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  // Exported image style: slider-large.
+  $styles['slider-large'] = array(
+    'label' => 'slider-large',
+    'effects' => array(
+      15 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 1500,
+          'height' => 1000,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  return $styles;
+}
+
+function cu_slider_style_options() {
+  $options = array(
+    '1' => 'Bottom Content Overlay',
+    '2' => 'Right Side Content Overlay',
+    '3' => 'Center Content Overlay',
+    '4' => 'Right Side Content',
+    '5' => 'Bottom Content',
+    '6' => 'Thumbnails',
+    '7' => 'Thumbnails Overlay',
+    '8' => 'Hero',
+  );
+  return $options;
+}
+
+function cu_slider_style_map($key) {
+  $options = array(
+    '1' => 'Bottom Content Overlay',
+    '2' => 'Right Side Content Overlay',
+    '3' => 'Center Content Overlay',
+    '4' => 'Right Side Content',
+    '5' => 'Bottom Content',
+    '6' => 'Thumbnails',
+    '7' => 'Thumbnails Overlay',
+    '8' => 'Hero',
+  );
+  return $options[$key];
+}
+
+function cu_slider_size_options() {
+  $options = array(
+    'slider' => 'Slider Ultra Wide (cropped)',
+    'widescreen' => 'Widescreen (16x9 cropped)',
+    'slider-large' => 'Large (3x2 cropped)',
+    'large' => 'Original (uncropped)',
+  );
+
+  return $options;
+}

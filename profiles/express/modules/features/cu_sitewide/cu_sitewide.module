@@ -1,0 +1,175 @@
+<?php
+/**
+ * @file
+ * Code for the CU Sitewide feature.
+ */
+
+include_once 'cu_sitewide.features.inc';
+
+
+/**
+ * Implments hook_context_block_info_alter.
+ * Set content group as bean->type so context ui is improved.
+ */
+function cu_sitewide_context_block_info_alter(&$block_info) {
+  // Only do this on context pages
+  if ((arg(0) == 'admin') && (arg(2) == 'context') && (arg(3) == 'list' || arg(3) == 'add') ) {
+    // Loading bean types this way isntead of bean_get_types() so we can get labels, not just machine names.
+    $bean_info = bean_entity_info();
+    // Get all bean types.
+    $bean_types = $bean_info['bean']['bundles'];
+    // Get all beans by delta/type
+    $beans = db_select('bean', 'b')
+      ->fields('b', array('delta','type',))
+      ->execute()
+      ->fetchAllAssoc('delta');
+    // Loop through blocks
+    foreach ($block_info as $key => $block) {
+      // Is the block really a bean?
+      if ($block->module == 'bean') {
+        $delta = $block->delta;
+        // Get the bean type label and add to context_group
+        if (!empty($beans[$delta]) && isset($beans[$delta]->type)) {
+          $type = $beans[$delta]->type;
+          if (!empty($bean_types[$type])) {
+            $block->context_group = strtolower($bean_types[$type]['label']);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_sitewide_permission() {
+  return array(
+    'edit locked contexts' => array(
+      'title' => t('Edit locked contexts'),
+      'description' => t('Any context tagged with \'locked\' will only be editable by those with this permission.'),
+    ),
+  );
+}
+
+
+/**
+ * Process theme variables for a specific theme hook.
+ *
+ * This hook allows modules to process theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme processing for a theme hook it didn't define.
+ *
+ * Implements theme_process_table().
+ *
+ * For more detailed information, see theme().
+ *
+ * @param $variables
+ *   The variables array (modify in place).
+ */
+function cu_sitewide_process_table(&$variables) {
+  // On the context administration table
+  // The first part of this if statement will get rid of that pesky notice.
+  if (array_key_exists('id', $variables['attributes']) && isset($variables['attributes']['id'])) {
+    if (isset($variables['attributes']['class'])) {
+      if ($variables['attributes']['id'] == 'ctools-export-ui-list-items' && in_array('context-admin', $variables['attributes']['class'])) {
+        // If no access to edit locked contexts, remove them from the table.
+        // This only removes them from the UI, access is controlled via cu_sitewide_menu_alter().
+        if (!user_access('edit locked contexts')) {
+          foreach ($variables['rows'] as $key => $row) {
+            if (substr($key, 0, 6) == 'locked') {
+              unset($variables['rows'][$key]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Alter the data being saved to the {menu_router} table after hook_menu is invoked.
+ *
+ * This hook is invoked by menu_router_build(). The menu definitions are passed
+ * in by reference. Each element of the $items array is one item returned
+ * by a module from hook_menu. Additional items may be added, or existing items
+ * altered.
+ *
+ * @param $items
+ *   Associative array of menu router definitions returned from hook_menu().
+ */
+function cu_sitewide_menu_alter(&$items) {
+  // Only allow people who can edit locked contexts to change context settings.
+  if (!empty($items['admin/structure/context/settings'])) {
+    $items['admin/structure/context/settings']['access arguments'] = array('edit locked contexts');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Set access denied on context's whose tag is 'locked' and user doesnt have permission.
+ */
+function cu_sitewide_form_ctools_export_ui_edit_item_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['item']->table) && $form_state['item']->table == 'context' && $form_state['item']->tag == 'locked' && !user_access('edit locked contexts')) {
+    $form['#access'] = FALSE;
+    drupal_access_denied();
+  }
+}
+
+/**
+ * Implements hook_form_alter()
+ *
+ * Clearing the cache cause the block titles were persisiting for a long time even after they were saved.
+ */
+function cu_sitewide_form_alter(&$form, &$form_state, $form_id) {
+  switch($form_id) {
+    case 'ctools_export_ui_edit_item_form':
+      // Rename bean to blocks
+      $form['reactions']['plugins']['block']['selector']['bean']['#title'] = 'blocks';
+
+      if (!user_access('edit locked contexts')) {
+
+        // Unset which conditions are available to use
+        $conditions = &$form['conditions']['selector']['#options'];
+        unset($conditions['environment']);
+        unset($conditions['taxonomy_term']);
+        unset($conditions['user']);
+        unset($conditions['user_page']);
+        unset($conditions['views']);
+
+        // Restrict which blocks are available to place
+        $blocks = &$form['reactions']['plugins']['block']['selector'];
+        $blocks['boxes']['#access'] = FALSE;
+        $blocks['context_ui']['#access'] = FALSE;
+        $blocks['cu_alerts']['#access'] = FALSE;
+        $blocks['cu_block_selector']['#access'] = FALSE;
+        $blocks['devel']['#access'] = FALSE;
+        $blocks['diff']['#access'] = FALSE;
+        $blocks['google_appliance']['#access'] = FALSE;
+        $blocks['node']['#access'] = FALSE;
+        $blocks['quicktabs']['#access'] = FALSE;
+        $blocks['shortcut']['#access'] = FALSE;
+        $blocks['system']['#access'] = FALSE;
+        $blocks['user']['#access'] = FALSE;
+        $blocks['express_layout']['#access'] = FALSE;
+
+        // Unset which regions are available to place blocks in
+        $regions = &$form['reactions']['plugins']['block']['blocks'];
+        unset($regions['branding']);
+        unset($regions['search_box']);
+        unset($regions['menu']);
+        unset($regions['secondary_menu']);
+        unset($regions['help']);
+        unset($regions['alerts']);
+
+        // Unset which reactions are available to use
+        $reactions = &$form['reactions']['selector']['#options'];
+        unset($reactions['debug']);
+        unset($reactions['template_suggestions']);
+        unset($reactions['theme']);
+        unset($reactions['theme_html']);
+      }
+      break;
+  }
+}

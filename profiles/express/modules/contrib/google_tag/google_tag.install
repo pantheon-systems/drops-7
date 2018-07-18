@@ -1,0 +1,262 @@
+<?php
+
+/**
+ * @file
+ * Provides install, update, and uninstall functions.
+ *
+ * @author Jim Berry ("solotandem", http://drupal.org/user/240748)
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function google_tag_enable() {
+  google_tag_assets_create($count);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_tag_uninstall() {
+  db_delete('variable')
+    ->condition('name', db_like('google_tag_') . '%', 'LIKE')
+    ->execute();
+
+  if (module_exists('variable_realm') && module_exists('variable_store')) {
+    db_delete('variable_store')
+      ->condition('name', db_like('google_tag_') . '%', 'LIKE')
+      ->execute();
+
+    // Remove variables from realm variable list.
+    $realms = variable_realm_list();
+    foreach ($realms as $realm => $label) {
+      $variables = variable_get('variable_realm_list_' . $realm, array());
+      if ($variables) {
+        foreach ($variables as $key => $variable) {
+          if (substr($variable, 0, 10) == 'google_tag') {
+            unset($variables[$key]);
+          }
+        }
+        variable_set('variable_realm_list_' . $realm, $variables);
+      }
+    }
+  }
+
+  @file_unmanaged_delete_recursive('public://google_tag');
+
+  // @todo Is this relevant here or in _google_tag_snippets_save()?
+  drupal_clear_js_cache();
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function google_tag_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+  if ($phase == 'runtime') {
+    if (!preg_match('/^GTM-\w{4,}$/', variable_get('google_tag_container_id', ''))) {
+      // Google Tag Manager container ID has not been set.
+      $args = array('@path' => '/admin/config/system/google_tag');
+      $description = $t('Configure this integration module on its <a href="@path">settings page</a>.', $args);
+      $requirements['google_tag'] = array(
+        'title' => $t('Google Tag Manager'),
+        'description' => $description,
+        'severity' => REQUIREMENT_WARNING,
+        'value' => $t('Not configured'),
+      );
+    }
+  }
+  if ($phase == 'runtime' || $phase == 'update' || $phase == 'install') {
+    // Adapted from system_requirements().
+    $directory = 'public://google_tag';
+    if (!is_dir($directory) || !is_writable($directory)) {
+      file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+    }
+    $is_writable = is_writable($directory);
+    $is_directory = is_dir($directory);
+    if (!$is_writable || !$is_directory) {
+      // The snippet directory does not exist or is not writable.
+
+      // If applicable, get the directory path of stream wrapper.
+      $wrapper = file_stream_wrapper_get_instance_by_uri($directory);
+      if (method_exists($wrapper, 'getDirectoryPath') && ($path = $wrapper->getDirectoryPath())) {
+        // getDirectoryPath() is not defined in StreamWrapperInterface; it
+        // exists in LocalStream and the local storage replacement classes in
+        // google_appengine; s3fs returns an empty string.
+        $path .= '/google_tag';
+      }
+      elseif (!($path = $wrapper->getExternalUrl())) {
+        $path = $directory;
+      }
+
+      if (!$is_directory) {
+        $error = $t('The directory %directory does not exist.', array('%directory' => $path));
+        $description = $t('An automated attempt to create the directory failed, possibly due to a permissions problem. Create the directory and make it writable.');
+        $value = $t('Does not exist');
+      }
+      else {
+        $error = $t('The directory %directory is not writable.', array('%directory' => $path));
+        $description = $t('An automated attempt to make the directory writable failed, possibly due to a permissions problem. Make the directory writable.');
+        $value = $t('Not writable');
+      }
+      if ($phase == 'install') {
+        $description .= $t(' For more information, see INSTALL.txt or the <a href=":handbook_url">online handbook</a>.', array(':handbook_url' => 'https://www.drupal.org/server-permissions'));
+        $value = '';
+      }
+      $requirements['google_tag_snippet_directory'] = array(
+        'title' => $t('Google Tag Manager snippet directory'),
+        'description' => "$error $description",
+        'severity' => REQUIREMENT_ERROR,
+        'value' => $value,
+      );
+    }
+  }
+  return $requirements;
+}
+
+/**
+ * Convert values in role_list variable from rid to role name.
+ */
+function google_tag_update_7101(&$sandbox) {
+  $roles = user_roles();
+  $old_values = variable_get('google_tag_role_list', array());
+  $new_values = array();
+  foreach ($old_values as $rid => $old_value) {
+    $role_name = $roles[$rid];
+    $new_values[$role_name] = $old_value ? $role_name : $old_value;
+  }
+  variable_set('google_tag_role_list', $new_values);
+  return t('Converted @count role IDs to role names in google_tag_role_list variable', array('@count' => count($old_values)));
+}
+
+/**
+ * Create directory for snippet files, if not present.
+ */
+function google_tag_update_7102(&$sandbox) {
+  $result = _google_tag_snippet_directory_prepare();
+  return t('The directory exists (or was created) and is writable: @result', array('@result' => $result ? 1 : 0));
+}
+
+/**
+ * Creates directory for snippet files, if not present.
+ *
+ * @return bool
+ *   Whether the directory exists (or was created) and is writable.
+ */
+function _google_tag_snippet_directory_prepare() {
+  // Create directory if not present.
+  $directory = 'public://google_tag';
+  $result = file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+  if (!$result) {
+    drupal_set_message(t('An error occurred creating a directory for snippet files. Please try again or contact the site administrator if it persists.'));
+  }
+  return $result;
+}
+
+/**
+ * Convert toggle settings from integer to string.
+ */
+function google_tag_update_7103(&$sandbox) {
+  $types = array('path', 'role', 'status');
+  $count = 0;
+
+  if (module_exists('variable_realm') && module_exists('variable_store')) {
+    // i18n_variable module depends on variable_realm, variable_store
+    // In the course of variable_realm_set() calls will be made to:
+    // - cache_clear_all('variables', 'cache_bootstrap');
+    // - cache_clear_all('variable:' . $realm . ':' . $key, 'cache_bootstrap');
+    // which will clear all relevant cache tables except for cache_variable.
+    // Clear the latter at end.
+    $realms = variable_realm_list();
+    foreach ($realms as $realm_name => $realm_title) {
+      $keys = variable_realm_keys($realm_name);
+      foreach ($keys as $key_name => $key_title) {
+        foreach ($types as $type) {
+          $name = "google_tag_{$type}_toggle";
+          $value = variable_realm_get($realm_name, $key_name, $name);
+          // Safer to set status toggle to 'all except' regardless of prior value.
+          $value = $type == 'status' ? 0 : $value;
+          if (!is_null($value)) {
+            $new_value = $value ? GOOGLE_TAG_INCLUDE_LISTED : GOOGLE_TAG_EXCLUDE_LISTED;
+            variable_realm_set($realm_name, $key_name, $name, $new_value, FALSE);
+            $count++;
+          }
+        }
+      }
+    }
+    variable_cache_clear();
+  }
+  else {
+    global $conf;
+    foreach ($types as $type) {
+      $name = "google_tag_{$type}_toggle";
+      if (isset($conf[$name])) {
+        $new_value = $conf[$name] ? GOOGLE_TAG_INCLUDE_LISTED : GOOGLE_TAG_EXCLUDE_LISTED;
+        variable_set($name, $new_value);
+        $count++;
+      }
+    }
+  }
+
+  return t('Converted @count toggle settings', array('@count' => $count));
+}
+
+/**
+ * Rename 'compact_tag' setting to 'compact_snippet'.
+ */
+function google_tag_update_7104(&$sandbox) {
+  $count = 0;
+  $tables = array('variable');
+  if (module_exists('variable_realm') && module_exists('variable_store')) {
+    $tables[] = 'variable_store';
+    $args = array(
+      ':old' => 's:22:"google_tag_compact_tag"',
+      ':new' => 's:26:"google_tag_compact_snippet"',
+    );
+    $count += db_update('variable')
+      ->expression('value', 'REPLACE(value, :old, :new)', $args)
+      ->condition('name', 'variable_realm_list_language')
+      ->execute();
+  }
+
+  foreach ($tables as $table) {
+    $count += db_update($table)
+      ->fields(array('name' => 'google_tag_compact_snippet'))
+      ->condition('name', 'google_tag_compact_tag')
+      ->execute();
+  }
+
+  cache_clear_all('variables', 'cache_bootstrap');
+  cache_clear_all('variable:', 'cache_bootstrap', TRUE);
+  if (module_exists('variable')) {
+    variable_cache_clear();
+  }
+
+  return t('Converted @count occurrences of setting', array('@count' => $count));
+}
+
+/**
+ * Save snippet files and data layer classes based on current settings.
+ */
+function google_tag_update_7105(&$sandbox) {
+  // This applies if the module is updated from 1.0 release to this commit and
+  // the settings have not been updated manually.
+  // This should have been done in 1.1 release which added the file option and
+  // made it the default over inline. Without snippet files, a site using the
+  // 1.0 release will no longer have anything inserted on any page after update.
+  // (Given the scope of the setting changes, it is arguable whether manual
+  // intervention to update the settings should be required; and hence why this
+  // was omitted in the first place.)
+  google_tag_assets_create($count);
+  return t('Created @count snippet files based on configuration', array('@count' => 3 * $count));
+}
+
+/**
+ * Save snippet files and data layer classes based on current settings.
+ */
+function google_tag_update_7106(&$sandbox) {
+  // Recreate the snippet files in the 'google_tag' directory.
+  // Leave files in the 'js' directory as they will eventually be flushed.
+  return google_tag_update_7105($sandbox);
+}

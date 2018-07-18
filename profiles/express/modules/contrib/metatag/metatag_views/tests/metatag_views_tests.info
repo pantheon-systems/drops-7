@@ -1,0 +1,16 @@
+name = Metatag:Views Tests
+description = Helper module for testing metatag_views.module.
+core = 7.x
+
+; Don't show this on the modules admin page.
+hidden = TRUE
+
+dependencies[] = metatag:metatag
+dependencies[] = metatag:metatag_views
+dependencies[] = views:views
+
+; Information added by Drupal.org packaging script on 2018-04-04
+version = "7.x-1.25"
+core = "7.x"
+project = "metatag"
+datestamp = "1522849089"

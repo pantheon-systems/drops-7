@@ -1,0 +1,10 @@
+name = Travis Hosting
+description = Provides CU-specific functionality, like adding variables, to Express Core.
+core = 7.x
+version = 7.x-1.0
+package = Hosting
+
+dependencies[] = cu_behat_tests
+
+; Enable performance module for reporting at end of test run.
+dependencies[] = performance

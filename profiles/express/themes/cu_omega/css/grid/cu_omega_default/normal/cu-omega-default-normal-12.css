@@ -1,0 +1,302 @@
+/*
+ * ==========================================================
+ * Grid
+ * ==========================================================
+ */
+
+.grid-1, .grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9, .grid-10, 
+.grid-11, .grid-12 {
+  display: inline;
+  float: left;
+  position: relative;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.push-1, .pull-1, .push-2, .pull-2, .push-3, .pull-3, .push-4, .pull-4,
+.push-5, .pull-5, .push-6, .pull-6, .push-7, .pull-7, .push-8, .pull-8,
+.push-9, .pull-9, .push-10, .pull-10, .push-11, .pull-11, .push-12, .pull-12 {
+  position: relative;
+}
+
+/*
+ * ==========================================================
+ * Alpha - Omega
+ * ==========================================================
+ */
+
+.alpha {
+  margin-left: 0;
+}
+
+.omega {
+  margin-right: 0;
+}
+
+/*
+ * ==========================================================
+ * Container
+ * ==========================================================
+ */
+
+body {
+  min-width: 960px;
+}
+
+.container-12 {
+  margin-left: auto;
+  margin-right: auto;
+  width: 960px;
+}
+
+/*
+ * ==========================================================
+ * Columns
+ * ==========================================================
+ */
+
+.container-12 .grid-1 {
+	width:40px;
+}
+
+.container-12 .grid-2 {
+	width:120px;
+}
+
+.container-12 .grid-3 {
+	width:200px;
+}
+
+.container-12 .grid-4 {
+	width:280px;
+}
+
+.container-12 .grid-5 {
+	width:360px;
+}
+
+.container-12 .grid-6 {
+	width:440px;
+}
+
+.container-12 .grid-7 {
+	width:520px;
+}
+
+.container-12 .grid-8 {
+	width:600px;
+}
+
+.container-12 .grid-9 {
+	width:680px;
+}
+
+.container-12 .grid-10 {
+	width:760px;
+}
+
+.container-12 .grid-11 {
+	width:840px;
+}
+
+.container-12 .grid-12 {
+	width:920px;
+}
+
+/*
+ * ==========================================================
+ * Prefix
+ * ==========================================================
+ */
+
+.container-12 .prefix-1 {
+	padding-left:80px;
+}
+
+.container-12 .prefix-2 {
+	padding-left:160px;
+}
+
+.container-12 .prefix-3 {
+	padding-left:240px;
+}
+
+.container-12 .prefix-4 {
+	padding-left:320px;
+}
+
+.container-12 .prefix-5 {
+	padding-left:400px;
+}
+
+.container-12 .prefix-6 {
+	padding-left:480px;
+}
+
+.container-12 .prefix-7 {
+	padding-left:560px;
+}
+
+.container-12 .prefix-8 {
+	padding-left:640px;
+}
+
+.container-12 .prefix-9 {
+	padding-left:720px;
+}
+
+.container-12 .prefix-10 {
+	padding-left:800px;
+}
+
+.container-12 .prefix-11 {
+	padding-left:880px;
+}
+/*
+ * ==========================================================
+ * Suffix
+ * ==========================================================
+ */
+
+.container-12 .suffix-1 {
+	padding-right:80px;
+}
+
+.container-12 .suffix-2 {
+	padding-right:160px;
+}
+
+.container-12 .suffix-3 {
+	padding-right:240px;
+}
+
+.container-12 .suffix-4 {
+	padding-right:320px;
+}
+
+.container-12 .suffix-5 {
+	padding-right:400px;
+}
+
+.container-12 .suffix-6 {
+	padding-right:480px;
+}
+
+.container-12 .suffix-7 {
+	padding-right:560px;
+}
+
+.container-12 .suffix-8 {
+	padding-right:640px;
+}
+
+.container-12 .suffix-9 {
+	padding-right:720px;
+}
+
+.container-12 .suffix-10 {
+	padding-right:800px;
+}
+
+.container-12 .suffix-11 {
+	padding-right:880px;
+}
+/*
+ * ==========================================================
+ * Push
+ * ==========================================================
+ */
+
+.container-12 .push-1 {
+	left:80px;
+}
+
+.container-12 .push-2 {
+	left:160px;
+}
+
+.container-12 .push-3 {
+	left:240px;
+}
+
+.container-12 .push-4 {
+	left:320px;
+}
+
+.container-12 .push-5 {
+	left:400px;
+}
+
+.container-12 .push-6 {
+	left:480px;
+}
+
+.container-12 .push-7 {
+	left:560px;
+}
+
+.container-12 .push-8 {
+	left:640px;
+}
+
+.container-12 .push-9 {
+	left:720px;
+}
+
+.container-12 .push-10 {
+	left:800px;
+}
+
+.container-12 .push-11 {
+	left:880px;
+}
+
+/*
+ * ==========================================================
+ * Pull
+ * ==========================================================
+ */
+
+.container-12 .pull-1 {
+	left:-80px;
+}
+
+.container-12 .pull-2 {
+	left:-160px;
+}
+
+.container-12 .pull-3 {
+	left:-240px;
+}
+
+.container-12 .pull-4 {
+	left:-320px;
+}
+
+.container-12 .pull-5 {
+	left:-400px;
+}
+
+.container-12 .pull-6 {
+	left:-480px;
+}
+
+.container-12 .pull-7 {
+	left:-560px;
+}
+
+.container-12 .pull-8 {
+	left:-640px;
+}
+
+.container-12 .pull-9 {
+	left:-720px;
+}
+
+.container-12 .pull-10 {
+	left:-800px;
+}
+
+.container-12 .pull-11 {
+	left:-880px;
+}

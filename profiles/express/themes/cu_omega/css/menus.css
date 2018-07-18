@@ -1,0 +1,31 @@
+.region-background-dark .block-menu ul.menu a { border-bottom: 1px solid #444; }
+
+.region-background-light .block-menu ul.menu a { border-bottom: 1px solid #e0e0e0; }
+
+.block-menu ul.menu, .block-menu ul.menu li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+.block-menu ul.menu a { display: block; padding: 5px 0; }
+.block-menu ul.menu ul.menu a { padding-left: 10px; }
+.block-menu ul.menu ul.menu ul.menu a { padding-left: 20px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 30px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 40px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 50px; }
+
+#footer-links-wrapper { font-size: 90%; padding: 10px 0; font-weight: bold; }
+
+.footer-menu-gray { background-color: #333; }
+
+.footer-menu-gray ul#footer-menu-links a, .footer-menu-gray ul#footer-menu-links a.active, .footer-menu-gray ul#footer-menu-links a.active-trail { color: #fff; margin-right: 20px; }
+.footer-menu-gray ul#footer-menu-links a:hover, .footer-menu-gray ul#footer-menu-links a:focus, .footer-menu-gray ul#footer-menu-links a.active:hover, .footer-menu-gray ul#footer-menu-links a.active:focus, .footer-menu-gray ul#footer-menu-links a.active-trail:hover, .footer-menu-gray ul#footer-menu-links a.active-trail:focus { color: #cfb87c; }
+
+.footer-menu-gold { background-color: #cfb87c; }
+
+.footer-menu-gold ul#footer-menu-links a, .footer-menu-gold ul#footer-menu-links a.active, .footer-menu-gold ul#footer-menu-links a.active-trail { color: #333; margin-right: 20px; }
+.footer-menu-gold ul#footer-menu-links a:hover, .footer-menu-gold ul#footer-menu-links a:focus, .footer-menu-gold ul#footer-menu-links a.active:hover, .footer-menu-gold ul#footer-menu-links a.active:focus, .footer-menu-gold ul#footer-menu-links a.active-trail:hover, .footer-menu-gold ul#footer-menu-links a.active-trail:focus { color: #000; }
+
+#block-menu-block-site-navigation-menus-1 ul.menu, #block-menu-block-site-navigation-menus-1 ul.menu li, #block-menu-block-site-navigation-menus-2 ul.menu, #block-menu-block-site-navigation-menus-2 ul.menu li, #block-menu-block-site-navigation-menus-3 ul.menu, #block-menu-block-site-navigation-menus-3 ul.menu li, #section-navigation ul.menu, #section-navigation ul.menu li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+#block-menu-block-site-navigation-menus-1 ul.menu a, #block-menu-block-site-navigation-menus-1 ul.menu li a, #block-menu-block-site-navigation-menus-2 ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu li a, #block-menu-block-site-navigation-menus-3 ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu li a, #section-navigation ul.menu a, #section-navigation ul.menu li a { display: block; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu a, #section-navigation ul.menu ul.menu a { padding-left: 15px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu a { padding-left: 30px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu a { padding-left: 45px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 60px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 75px; }

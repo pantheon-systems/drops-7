@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the cu_atlas module.
+ */
+
+define('ATLAS_OLD_SYMLINKS_DIRECTORIES', variable_get('atlas_old_symlinks_directories', [
+  '/sites/all/modules/custom',
+  '/sites/all/libraries',
+  '/sites/all/themes',
+]));
+
+/**
+ * Implements hook_requirements().
+ *
+ * Look for any module in places where Atlas used to put them.
+ */
+function cu_atlas_requirements($phase) {
+  if ($phase === 'runtime') {
+    $error_values = [];
+    foreach ((array) ATLAS_OLD_SYMLINKS_DIRECTORIES as $directory) {
+      // Find files in directory.
+      // $scanned_directory = array_diff(scandir(DRUPAL_ROOT . $directory, 1), ['..', '.',]);
+
+      // Find symlinks in directory.
+      $scanned_directory = shell_exec('find '. DRUPAL_ROOT. $directory. ' -maxdepth 1 -type l -ls');
+
+      // If there is anything in the directory, then add to error values.
+      if ($scanned_directory) {
+        // For regular files.
+        // $modules = implode(', ', $scanned_directory);
+
+        // For symlinks it is harder to grep since the code above just returns a long string.
+        // It can be parsed for names, but for now, just add the directory.
+        // $modules = ;
+
+        $error_values[] =  "$directory contains symlinks.";
+      }
+    }
+
+    if ($error_values) {
+      return [
+        'cu_atlas_get_freaky' => [
+          'title' => 'Old Atlas SymLinks',
+          'description' => 'Check for the existence of symlinks in: <br>'. implode(', ', ATLAS_OLD_SYMLINKS_DIRECTORIES),
+          'value' => implode('<br>', $error_values),
+          'severity' => REQUIREMENT_ERROR,
+        ],
+      ];
+    }
+
+    return [
+      'cu_atlas_get_freaky' => [
+        'title' => 'Old Atlas SymLinks',
+        'description' => 'Check for the existence of symlinks in: <br>'. implode(', ', ATLAS_OLD_SYMLINKS_DIRECTORIES),
+        'value' => 'No symlinks found in specified directories.',
+        'severity' => REQUIREMENT_OK,
+      ],
+    ];
+  }
+}

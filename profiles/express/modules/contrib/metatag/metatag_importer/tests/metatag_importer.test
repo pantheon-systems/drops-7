@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag Importer module.
+ */
+
+/**
+ * Tests for the Metatag Importer module.
+ */
+class MetatagImporterTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag Importer tests',
+      'description' => 'Test the Metatag:Importer module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_importer';
+
+    parent::setUp($modules);
+
+    // Create an admin user and log them in.
+    $this->adminUser = $this->createAdminUser();
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Confirm that it's possible to load the importer admin page.
+   */
+  public function testAdminPage() {
+    $this->drupalGet('admin/config/search/metatags/importer');
+    $this->assertResponse(200);
+
+    // Confirm the page is loaded.
+    $this->assertText(t('Use the links above to import data from another module.'));
+  }
+
+}

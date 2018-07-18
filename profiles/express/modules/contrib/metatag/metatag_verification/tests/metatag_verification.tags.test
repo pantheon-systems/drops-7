@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag Verification tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag Verification tags work correctly.
+ */
+class MetatagVerificationTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: Verification',
+      'description' => 'Test the Verification meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'baidu-site-verification',
+    'google-site-verification',
+    'msvalidate.01',
+    'norton-safeweb-site-verification',
+    'p:domain_verify',
+    'yandex-verification',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_verification';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    $tag_name = str_replace('_', '-', $tag_name);
+    $tag_name = str_replace('msvalidate-01', 'msvalidate.01', $tag_name);
+    $tag_name = str_replace('p-domain-verify', 'p:domain_verify', $tag_name);
+    return $tag_name;
+  }
+
+}

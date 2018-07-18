@@ -1,0 +1,13 @@
+name = Embed Templates - Unthemed Page
+description = Provides a way for users to render embed templates as the only content of a path.
+core = 7.x
+package = Embed Templates
+
+dependencies[] = embed_templates
+test_dependencies[] = context:context
+
+; Information added by Drupal.org packaging script on 2018-05-04
+version = "7.x-1.0-beta4+1-dev"
+core = "7.x"
+project = "embed_templates"
+datestamp = "1525470484"

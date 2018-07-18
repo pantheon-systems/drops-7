@@ -1,0 +1,19 @@
+name = Express Theme Picker
+description = Allows Site Owner to change without 'administer themes' permission.
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0
+
+; Information added by Drupal.org packaging script on 2015-12-21
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "express_theme_picker"
+datestamp = "1450738758"
+
+
+; Information added by Drupal.org packaging script on 2016-02-12
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "express_theme_picker"
+datestamp = "1455316440"
+

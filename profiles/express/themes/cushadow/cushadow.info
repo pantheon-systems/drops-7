@@ -1,0 +1,34 @@
+name = 'Shadow'
+screenshot = screenshot.png
+engine = phptemplate
+core = 7.x
+base theme = 'expressbase'
+
+stylesheets[screen][] = css/shadow-styles.css
+
+; Regions
+regions[content] = 'Content'
+regions[branding] = 'Branding'
+regions[search_box] = 'Search'
+regions[secondary_menu] = 'Secondary Menu'
+regions[menu] = 'Menu'
+regions[sidebar_first] = 'Sidebar First'
+regions[sidebar_second] = 'Sidebar Second'
+regions[intro] = 'Wide Intro'
+regions[slider] = 'Slider'
+regions[help] = 'Help'
+regions[post_title_wide] = 'Post Title Wide'
+regions[post_title] = 'Post Title'
+regions[wide_2] = 'Wide Post'
+regions[after_content] = 'After Content'
+regions[lower] = 'After Content 2'
+regions[footer] = 'Footer'
+regions[site_info] = 'Site Information'
+regions[alerts] = 'Alerts'
+regions[content_sidebar_right] = 'Content Sidebar Right'
+regions[content_sidebar_left] = 'Content Sidebar Left'
+regions[content_bottom] = 'Content Bottom'
+
+
+settings[layout_style] = 'layout-wide'
+settings[banner_color] = 'black'

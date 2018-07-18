@@ -1,0 +1,200 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+
+function cu_people_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'administer department vocabulary terms',
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'anonymous user' => array(
+      'view any people_list_block bean',
+    ),
+    'authenticated user' => array(
+      'view any people_list_block bean',
+    ),
+    'content_editor' => array(
+      'administer department vocabulary terms',
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'developer' => array(
+      'administer department vocabulary terms',
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'edit_my_content' => array(
+      'view any people_list_block bean',
+    ),
+    'site_editor' => array(
+      'administer department vocabulary terms',
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'site_owner' => array(
+      'administer department vocabulary terms',
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Article content type.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_people_bundle_express_help($variables) {
+  $variables['admin/settings/people/settings'][] = array(
+    'title' => 'People Filter Labels Help',
+    'short_title' => 'People Filter Labels Help',
+    'url' => '/node/556',
+  );
+  $variables['block/add/people-list-block'][] = array(
+    'title' => 'People List Block Help',
+    'short_title' => 'People List Block Help',
+    'url' => '/node/586',
+  );
+  $variables['block/edit/people-list-block'][] = array(
+    'title' => 'People List Block Help',
+    'short_title' => 'People List Block Help',
+    'url' => '/node/586',
+  );
+  $variables['node/add/person'][] = array(
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => '/node/620',
+  );
+  $variables['node/add/people-list-page'][] = array(
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => '/node/620',
+  );
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_people_bundle';
+      return $a;
+    },
+    $variables);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_people_bundle_menu() {
+  $items = array();
+  $items['admin/settings/people'] = array(
+    'title' => 'People',
+    'description' => 'Menu Options Related to Feedback',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  return $items;
+}

@@ -1,0 +1,252 @@
+<?php
+
+
+function cu_unused_beans_menu() {
+  $items = array();
+  $items['admin/reports/blocks/unused'] = array(
+    'title' => 'Unused Blocks',
+    'description' => 'A list of blocks that are not being displayed on this site.',
+    'page callback' => 'cu_unused_beans_list',
+    'access arguments' => array('view bean page'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_unused_beans_permission() {
+  return array(
+    'view unused beans' => array(
+      'title' => 'View Unused Beans',
+      'description' => 'View a list of unused/unreferenced beans.',
+    ),
+  );
+}
+
+function cu_unused_beans_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+
+  if ($root_path == 'admin/content/blocks') {
+    if ($data['actions']['output'][0]['#link']['path'] == 'admin/content/blocks/unused') {
+      $item = $data['actions']['output'][0];
+      unset($data['actions']['output'][0]);
+      array_push($data['actions']['output'], $item);
+
+    }
+  }
+}
+
+
+function cu_unused_beans_list() {
+  drupal_set_title('Unused Blocks');
+  $bean_info = bean_entity_info();
+  // Get all bean types.
+  $bean_types = $bean_info['bean']['bundles'];
+
+  $references = array();
+  // Get all bean ids.
+  if (cu_unused_beans_get_all_beans()) {
+    $all_beans = cu_unused_beans_get_all_beans();
+  } else {
+    $all_beans = array();
+  }
+
+  // Get all unused_beans hooks.
+  $hooks = module_invoke_all('unused_beans', $vars = NULL);
+  foreach ($hooks as $module => $field) {
+    foreach ($field as $key => $hook) {
+      $references[$key] = cu_unused_beans_get_beans($hook);
+    }
+  }
+  // Build list of bean ids from hooks.
+  $bean_ids = array();
+  foreach ($references as $field) {
+    foreach ($field as $beans) {
+      $bean_ids[] = $beans;
+    }
+  }
+
+  // Diff the arrays that leave unreferenced beans.
+  $results = array_diff($all_beans, $bean_ids);
+  // Get labels and deltas of remaining beans.
+  $labels = cu_unused_beans_get_beans_labels($results);
+
+  // Output beans as a list.
+
+  if (count($results) == 0) {
+    $output['description']['#markup'] = '<p>There are no unused blocks on your site.</p>';
+  }
+  else {
+    $output['description']['#markup'] = '<p>The following ' . count($results) . ' blocks may be unused on your site.</p>';
+    $output['list']['#markup'] = '';
+
+    if (cu_unused_beans_get_all_beans()) {
+      foreach ($labels as $label) {
+        $type = $bean_types[$label->type]['label'];
+        $output['list']['#markup'] .= '<li>' . l($label->label . ' (' . $type, 'block/' . $label->delta) . ')</li>';
+      }
+      $output['list']['#markup'] = '<ul class="bullet-list">' . $output['list']['#markup'] . '</ul>';
+
+      $output['description2']['#markup'] = '<p></p><p><em>Blocks listed above are not inlcuded in entity references or enabled contexts. Delete at your own risk.</em></p>';
+    }
+  }
+
+
+
+  if (!empty($hooks)) {
+    ksort($hooks);
+    $components = '';
+    foreach ($hooks as $component => $hook) {
+      $components .= '<li>' . $component . '</li>';
+    }
+    $output['hooks']['#markup'] = '<p>The following components were used to determine this list:</p><ul class="bullet-list">' . $components . '</ul>';
+  }
+
+
+
+  return $output;
+}
+
+
+function cu_unused_beans_unused_beans($vars) {
+
+  // Blocks placed with layout.
+  $vars['Express Layout']['field_data_field_header'] = array(
+    'table' => 'field_data_field_header',
+    'column' => 'field_header_target_id',
+  );
+  $vars['Express Layout']['field_data_field_footer'] = array(
+    'table' => 'field_data_field_footer',
+    'column' => 'field_footer_target_id',
+  );
+  $vars['Express Layout']['field_data_field_sidebar_first'] = array(
+    'table' => 'field_data_field_sidebar_first',
+    'column' => 'field_sidebar_first_target_id',
+  );
+  $vars['Express Layout']['field_data_field_sidebar_second'] = array(
+    'table' => 'field_data_field_sidebar_second',
+    'column' => 'field_sidebar_second_target_id',
+  );
+  $vars['Express Layout']['field_data_field_inner_content_right'] = array(
+    'table' => 'field_data_field_inner_content_right',
+    'column' => 'field_inner_content_right_target_id',
+  );
+  $vars['Express Layout']['field_data_field_inner_content_left'] = array(
+    'table' => 'field_data_field_inner_content_left',
+    'column' => 'field_inner_content_left_target_id',
+  );
+  $vars['Express Layout']['field_data_field_intro'] = array(
+    'table' => 'field_data_field_intro',
+    'column' => 'field_intro_target_id',
+  );
+  $vars['Express Layout']['field_data_field_slider'] = array(
+    'table' => 'field_data_field_slider',
+    'column' => 'field_slider_target_id',
+  );
+  $vars['Express Layout']['field_data_field_wide_2'] = array(
+    'table' => 'field_data_field_wide_2',
+    'column' => 'field_wide_2_target_id',
+  );
+  $vars['Express Layout']['field_data_field_content_bottom'] = array(
+    'table' => 'field_data_field_content_bottom',
+    'column' => 'field_content_bottom_target_id',
+  );
+  $vars['Express Layout']['field_data_field_post_title'] = array(
+    'table' => 'field_data_field_post_title',
+    'column' => 'field_post_title_target_id',
+  );
+  $vars['Express Layout']['field_data_field_post_title_wide'] = array(
+    'table' => 'field_data_field_post_title_wide',
+    'column' => 'field_post_title_wide_target_id',
+  );
+
+  // Blocks placed in a block row.
+  $vars['Block Row']['field_data_field_block_row_block'] = array(
+    'table' => 'field_data_field_block_row_block',
+    'column' => 'field_block_row_block_target_id',
+  );
+  // Blocks placed in a block section.
+  $vars['Block Section']['field_data_field_blocks_section_blocks'] = array(
+    'table' => 'field_data_field_blocks_section_blocks',
+    'column' => 'field_blocks_section_blocks_target_id',
+  );
+  // Blocks placed in an expandable block.
+  $vars['Expandable']['field_data_field_expandable_block'] = array(
+    'table' => 'field_data_field_expandable_block',
+    'column' => 'field_expandable_block_target_id',
+  );
+  // Blocks placed with Context
+  $vars['Context']['context'] = array(
+    'callback' => 'cu_unused_beans_get_context_blocks',
+  );
+  return $vars;
+}
+
+function cu_unused_beans_get_context_blocks() {
+  // context
+  $results = array();
+  $contexts = context_enabled_contexts();
+  $block_contexts = array();
+  foreach ($contexts as $context_name => $context) {
+    if (!empty($context->reactions) && !empty($context->reactions['block'])) {
+      $block_contexts[$context_name] = $context->reactions['block']['blocks'];
+    }
+  }
+
+  $context_blocks = array();
+  foreach ($block_contexts as $context) {
+    foreach ($context as $key => $value) {
+      $query = 'bean-';
+      if (substr($key, 0, strlen($query)) === $query) {
+        $context_blocks[] = substr($key, strlen($query));
+      }
+    }
+  }
+  if (!empty($context_blocks)) {
+    $results = db_select('bean', 'b')
+      ->fields('b', array('bid', 'delta'))
+      ->condition('b.delta', $context_blocks, 'IN')
+      ->execute()
+      ->fetchCol();
+  }
+  return $results;
+}
+
+function cu_unused_beans_get_beans($vars) {
+  $query = array();
+  if (!empty($vars['callback'])) {
+    $query = call_user_func($vars['callback']);
+  }
+  elseif (!empty($vars['table']) && !empty($vars['column'])) {
+    if (db_field_exists($vars['table'], $vars['column'])) {
+      $query = db_select($vars['table'], 't')
+        ->fields('t', array($vars['column']))
+        ->execute()
+        ->fetchCol();
+    }
+  }
+  return $query;
+}
+
+function cu_unused_beans_get_all_beans() {
+  $query = db_select('bean', 'b')
+    ->fields('b', array('bid'))
+    ->execute()
+    ->fetchCol();
+
+  return $query;
+}
+
+function cu_unused_beans_get_beans_labels($bean_ids) {
+  if (empty($bean_ids)) {
+    return array();
+  }
+  if (cu_unused_beans_get_all_beans()) {
+    $query = db_select('bean', 'b')
+      ->fields('b', array('bid', 'label', 'delta', 'type'))
+      ->condition('b.bid', $bean_ids, 'IN')
+      ->execute()
+      ->fetchAll();
+    return $query;
+  }
+}

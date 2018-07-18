@@ -1,0 +1,24 @@
+#navbar-administration #navbar-bar .express-environment-indicator, .express-environment-indicator { padding: 0 10px; line-height: 30px; font-size: 11px; overflow: hidden; }
+#navbar-administration #navbar-bar .express-environment-indicator span, .express-environment-indicator span { font-weight: bold; font-size: 12px; }
+#navbar-administration #navbar-bar .express-environment-indicator a:link, #navbar-administration #navbar-bar .express-environment-indicator a:visited, .express-environment-indicator a:link, .express-environment-indicator a:visited { float: right; display: inline-block; text-decoration: none; background: #333; color: #fff !important; padding: 5px; white-space: nowrap; box-shadow: 0 0 5px rgba(0, 0, 0, 0.25); line-height: 10px; margin: 5px 0; }
+#navbar-administration #navbar-bar .express-environment-indicator.indicator-disabled, .express-environment-indicator.indicator-disabled { display: none !important; }
+
+.environment-production.infrastructure-new.status-launched #navbar-administration #navbar-bar .express-environment-indicator, .environment-production.infrastructure-new.status-launched .express-environment-indicator { background: #222; color: #fff; }
+.environment-production.infrastructure-new.status-launched #navbar-administration #navbar-bar .express-environment-indicator *, .environment-production.infrastructure-new.status-launched .express-environment-indicator * { color: inherit; }
+
+.environment-production.infrastructure-new.status-staged #navbar-administration #navbar-bar .express-environment-indicator, .environment-production.infrastructure-new.status-staged .express-environment-indicator { background: #388E3C; color: #fff; }
+.environment-production.infrastructure-new.status-staged #navbar-administration #navbar-bar .express-environment-indicator *, .environment-production.infrastructure-new.status-staged .express-environment-indicator * { color: inherit; }
+.environment-production.infrastructure-new.status-staged #navbar-administration #navbar-bar .express-environment-indicator a, .environment-production.infrastructure-new.status-staged .express-environment-indicator a { display: inline-block; }
+
+.environment-production.infrastructure-new.status-staged.migrate-ready #navbar-administration #navbar-bar .express-environment-indicator, .environment-production.infrastructure-new.status-staged.migrate-ready .express-environment-indicator { background: #388E3C; color: #fff; }
+.environment-production.infrastructure-new.status-staged.migrate-ready #navbar-administration #navbar-bar .express-environment-indicator *, .environment-production.infrastructure-new.status-staged.migrate-ready .express-environment-indicator * { color: inherit; }
+.environment-production.infrastructure-new.status-staged.migrate-ready #navbar-administration #navbar-bar .express-environment-indicator a, .environment-production.infrastructure-new.status-staged.migrate-ready .express-environment-indicator a { display: inline-block; }
+
+.environment-production.infrastructure-old.status-staged #navbar-administration #navbar-bar .express-environment-indicator, .environment-production.infrastructure-old.status-staged .express-environment-indicator, .environment-production.infrastructure-old.status-launched #navbar-administration #navbar-bar .express-environment-indicator, .environment-production.infrastructure-old.status-launched .express-environment-indicator { background: #FFCA28; color: #111; }
+.environment-production.infrastructure-old.status-staged #navbar-administration #navbar-bar .express-environment-indicator *, .environment-production.infrastructure-old.status-staged .express-environment-indicator *, .environment-production.infrastructure-old.status-launched #navbar-administration #navbar-bar .express-environment-indicator *, .environment-production.infrastructure-old.status-launched .express-environment-indicator * { color: inherit; }
+
+.environment-test.status-staged #navbar-administration #navbar-bar .express-environment-indicator, .environment-test.status-staged .express-environment-indicator { background: #E53935; color: #fff; }
+.environment-test.status-staged #navbar-administration #navbar-bar .express-environment-indicator *, .environment-test.status-staged .express-environment-indicator * { color: inherit; }
+
+.environment-test.status-launched #navbar-administration #navbar-bar .express-environment-indicator, .environment-test.status-launched .express-environment-indicator { background: #7E57C2; color: #fff; }
+.environment-test.status-launched #navbar-administration #navbar-bar .express-environment-indicator *, .environment-test.status-launched .express-environment-indicator * { color: inherit; }

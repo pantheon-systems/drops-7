@@ -1,0 +1,17 @@
+name = Default Home Page
+description = Creates a default home page.
+core = 7.x
+package = CU-Core
+version = 7.x-1.0
+project = cu_home_page
+dependencies[] = context
+dependencies[] = cu_page
+dependencies[] = features
+dependencies[] = menu
+dependencies[] = strongarm
+features[context][] = homepage
+features[ctools][] = context:context:3
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[menu_custom][] = main-menu
+features_exclude[dependencies][ctools] = ctools

@@ -1,0 +1,6 @@
+name = Context Sitewide Public
+core = 7.x
+description = A sitewide context condition that is limited to non-admin paths.
+dependencies[] = context
+
+files[] = context_sitewide_public.context.inc

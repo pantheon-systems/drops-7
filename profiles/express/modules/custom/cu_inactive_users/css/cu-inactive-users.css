@@ -1,0 +1,8 @@
+.inactive-time-filter { font-size: 75%; }
+
+.item-list ul.inactive-users-time-filters, .item-list ul.inactive-users-time-filters > li { list-style: none; margin: 0; padding: 0; }
+.item-list ul.inactive-users-time-filters { margin: 0 -5px 20px; }
+.item-list ul.inactive-users-time-filters > li { display: inline-block; padding: 0 5px; }
+.item-list ul.inactive-users-time-filters > li a { display: inline-block; padding: 10px; border: 1px solid #e7e7e7; line-height: 1; }
+.item-list ul.inactive-users-time-filters > li a.active { color: unset; }
+.item-list ul.inactive-users-time-filters > li a.active-time-filter { background-color: #e7e7e7; color: #222; }

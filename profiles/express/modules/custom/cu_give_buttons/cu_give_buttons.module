@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * @file
+ * Give us money.
+ */
+ 
+ 
+/**
+ * Implements hook_menu().
+ */
+function cu_give_buttons_menu() {
+
+  $items['admin/config/content/shortcode/generator/give-button'] = array(
+    'title' => 'Give Button Shortcode Generator',
+    'description' => 'Generate shortcodes for give buttons',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_give_buttons_button_generator_form'),
+    'file' => 'inc/cu_give_buttons_button_generator.inc',
+    'access arguments' => array('use text format wysiwyg'),
+  );
+  return $items;
+}
+
+/**
+ * Verifies the syntax of the given e-mail address.
+ *
+ * @return array
+ *   Array of shortcodes.
+ */
+function cu_give_buttons_shortcode_info() {
+  $shortcodes = array();
+  $shortcodes['give'] = array(
+    'title' => t('Give Button'),
+    'description' => t('Buttons designed for donation purposes'),
+    'process callback' => 'cu_give_buttons_give',
+    'tips callback' => 'cu_give_buttons_give_tips',
+    'default settings' => array(),
+  );
+  return $shortcodes;
+}
+
+
+/**
+ * Verifies the syntax of the given e-mail address.
+ *
+ * @return string
+ *   HTML anchor tag for give button shortcode.
+ */
+function cu_give_buttons_give($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+  'url'        => '',
+  'color' => 'dark',
+  'size' => '',
+  'style' => '',
+  ), $attrs));
+  $classes = array();
+  $classes[] = 'button';
+  $classes[] = 'cu-give-button';
+  $classes[] = $size ? 'button-' . $size : '';
+  if ($style == 'full') {
+    $classes[] = 'button-full';
+  }
+  
+  $classes[] = 'cu-give-button-' . $color;
+  
+  $content = '<i class="icon-cu"></i> ' . $content;
+  return l($content, $url, array(
+    'attributes' => array(
+      'class' => $classes,
+    ),
+    'html' => TRUE,
+    )
+  );
+}
+
+/**
+ * Create give tips.
+ *
+ * @return string
+ *   return html output.
+ */
+function cu_give_buttons_give_tips($format, $long) {
+  $output = '[give url="http://www.colorado.edu"  color="dark/light/gold" style=regular,full size=small,large]Button Text[/give]';
+  return $output;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_give_buttons_page_alter(&$page) {
+  // Add shortcode css.
+  drupal_add_css(drupal_get_path('module', 'cu_give_buttons') . '/styles/give-button.css');
+}

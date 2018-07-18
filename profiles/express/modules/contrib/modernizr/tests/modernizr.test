@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Tests for Modernizr module.
+ */
+
+/**
+ * Tests basic Modernizr API functions.
+ */
+class ModernizrUnitTestCase extends DrupalUnitTestCase {
+  /**
+   * Displays a description in testing UI.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Modernizr module unit tests',
+      'description' => 'Tests basic api functions provided by Modernizr module.',
+      'group' => 'Modernizr',
+    );
+  }
+
+  /**
+   * Basic setup for Modernizr module tests.
+   */
+  function setUp() {
+    drupal_load('module', 'modernizr');
+    parent::setUp();
+  }
+
+  /**
+   * Tests that Modernizr is implementing hook_modernizr_info() correctly.
+   */
+  function testModernizrInfo() {
+    global $conf;
+
+    // By default there are no tests
+    $tests = modernizr_modernizr_info();
+    if (is_array($tests)) {
+      $this->assertEqual(count($tests), 0, 'No tests by default');
+    }
+    else {
+      $this->fail('modernizr_modernizr_info returns an array');
+    }
+    // Now we require the printshiv test.
+    $conf['modernizr_cb_printshiv'] = TRUE;
+    $tests = modernizr_modernizr_info();
+
+    if (is_array($tests)) {
+      $test = array_shift($tests);
+      $this->assertEqual($test, 'printshiv', 'printshiv test enabled');
+    }
+    else {
+      $this->fail('modernizr_modernizr_info returns an array');
+    }
+  }
+}

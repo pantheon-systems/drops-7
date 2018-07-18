@@ -1,0 +1,6 @@
+name = CU Profile Module Manager
+description = CU-specific alteration of contrib PMM.
+core = 7.x
+package = CU-Core
+
+dependencies[] = profile_module_manager

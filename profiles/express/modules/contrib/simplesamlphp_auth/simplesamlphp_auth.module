@@ -1,0 +1,923 @@
+<?php
+
+/**
+ * @file
+ * simpleSAMLphp authentication module for Drupal.
+ *
+ * This authentication module is based on the shibboleth authentication module,
+ * with changes to adopt to use simpleSAMLphp.
+ *
+ * ISSUES and TODOs:
+ *  ISSUE: User is always dropped on user page after login, instead of where
+ *         they were when they clicked "Federated Log In". Because of this, deep
+ *         linking to access controlled content does not work. Usability would
+ *         be considerably increased if this were resolved.
+ *  FYI: Drupal now requires knowledge of the local user password in order to
+ *       change e-mail address, etc. This could be an issue for users of
+ *       accounts that are autoprovisioned by this module, though Drupal does
+ *       give users the ability to reset their password to something they know
+ *       via the Request new password feature.
+ *  KLUDGE: Drupal does not kill the session on logout, even with
+ *          drupal_session_destroy_uid(), so I had to use session_destroy().
+ * @todo Rework the default login limitation logic to use a drupal permission
+ *        rather than a list of UIDs.
+ * @todo When denying access because the administrator has chosen not to allow
+ *        the module to register/create accounts, the user is told to contact
+ *        the administrator; the message should provide the contact information.
+ *  ISSUE: Until Drupal issue #754560 is resolved users will not see logout
+ *         notices.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function simplesamlphp_auth_menu() {
+  $items = array();
+
+  $items['admin/config/people/simplesamlphp_auth'] = array(
+    'title'            => 'SimpleSAMLphp Auth Settings',
+    'description'      => 'Control the various settings of the simpleSAMLphp authentication module',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('simplesamlphp_auth_settings'),
+    'access arguments' => array('administer simpleSAMLphp authentication'),
+    'type'             => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+    'file'             => 'simplesamlphp_auth.admin.inc',
+  );
+
+  $items['saml_login'] = array(
+    'title'           => 'Logon to the site',
+    'description'     => 'Provides a site login page',
+    'page callback'   => 'simplesamlphp_auth_loginpage',
+    'access callback' => TRUE,
+    'type'            => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_help().
+ */
+function simplesamlphp_auth_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/people/simplesamlphp_auth':
+      $output = t('<p>This module integrates Drupal with a SimpleSAMLphp Service Point (SP), effectively federating Drupal.</p>');
+      $output .= t('<p></p>');
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function simplesamlphp_auth_permission() {
+  return array(
+    'administer simpleSAMLphp authentication' => array(
+      'title'       => t('Administer simpleSAMLphp authentication'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
+    ),
+  );
+}
+
+/**
+ * The /saml_login which triggers user authentication to SimpleSAMLphp SP.
+ */
+function simplesamlphp_auth_loginpage() {
+  global $user;
+  global $base_url;
+  global $base_path;
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+
+  $fail   = NULL;
+  $output = NULL;
+
+
+  if (!_simplesamlphp_auth_isEnabled()) {
+    // Exit without initializing.
+    drupal_set_message(t("We're sorry this feature is not yet enabled."));
+    return '';
+  }
+
+  // Do some sanity checking before attempting anything.
+  $config          = SimpleSAML_Configuration::getInstance();
+  $config_store_type = $config->getValue('store.type');
+
+  // Make sure phpsession is NOT being used.
+  if ($config_store_type == 'phpsession') {
+    watchdog('simplesamlphp_auth', 'A user attempted to login using simplesamlphp but the store.type is phpsession, use memcache or sql for simplesamlphp session storage. See: simplesamlphp/config/config.php.', NULL, WATCHDOG_WARNING);
+    $fail = TRUE;
+  }
+
+  // Make sure there is an instance of SimpleSAML_Auth_Simple.
+  if (!$_simplesamlphp_auth_as) {
+    watchdog('simplesamlphp_auth', 'A user attempted to login using this module but there was a problem.', NULL, WATCHDOG_WARNING);
+    $fail = TRUE;
+  }
+
+  // There was a problem, we can't go on, but we don't want to tell the user
+  // any specifics either.
+  if ($fail) {
+    drupal_set_message(t("We're sorry. There was a problem. The issue has been logged for the administrator."));
+    drupal_goto(base_path());
+  }
+
+  $returnto = NULL;
+
+  // Support for deep linking.
+  // See if a URL has been explicitly provided in ReturnTo.
+  if ((isset($_REQUEST['ReturnTo']) && $_REQUEST['ReturnTo']) &&
+    (valid_url($_REQUEST['ReturnTo']) && stristr($_REQUEST['ReturnTo'], $base_url))
+  ) {
+
+    $returnto = $_REQUEST['ReturnTo'];
+
+    // Check if REFERER URL is available and use it if it points to the site.
+  }
+  elseif ((isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER']) &&
+    (valid_url($_SERVER['HTTP_REFERER']) && stristr($_SERVER['HTTP_REFERER'], $base_url))
+  ) {
+
+    $returnto = $_SERVER['HTTP_REFERER'];
+  }
+
+  // If the user is anonymous, set the cookie and require authentication.
+  if ($user->uid == 0) {
+
+    if ($returnto) {
+      // Set the cookie so we can deliver the user to the place they started.
+      setrawcookie('simplesamlphp_auth_returnto', $returnto, time() + 60 * 60);
+    }
+
+    // Require the user to be authenticated.
+    // WAS $_simplesamlphp_auth_as->requireAuth();
+    if (isset($_REQUEST['destination'])) {
+      $_simplesamlphp_auth_as->requireAuth(array(
+        'ReturnTo' => 'https://' . $_SERVER['HTTP_HOST'] . $base_path . $_REQUEST['destination'],
+      ));
+    }  else {
+        $_simplesamlphp_auth_as->requireAuth(array(
+        'ReturnTo' => 'https://' . $_SERVER['HTTP_HOST'] . $base_path . 'user',
+      ));
+    }
+    // If the user is authenticated, send them along.
+
+  }
+  else {
+
+    $gotourl = NULL;
+
+    // Check to see if we've set a cookie. If there is one, give it priority.
+    if (isset($_COOKIE['simplesamlphp_auth_returnto']) && $_COOKIE['simplesamlphp_auth_returnto']) {
+      // Use the cookie for the ReturnTo.
+      $gotourl = $_COOKIE['simplesamlphp_auth_returnto'];
+
+      // Unset the cookie.
+      setrawcookie('simplesamlphp_auth_returnto', '');
+
+    }
+    elseif ($returnto) {
+      $gotourl = $returnto;
+    }
+    // If a ReturnTo has been set.
+    if ($gotourl) {
+      $parsed_gotourl = drupal_parse_url($gotourl);
+      drupal_goto($parsed_gotourl['path'],$parsed_gotourl);
+    }
+    else {
+      drupal_goto('user/' . $user->uid);
+    }
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_init().
+ */
+function simplesamlphp_auth_init() {
+  global $user;
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+  global $_simplesamlphp_auth_saml_config;
+  global $_simplesamlphp_auth_saml_version;
+
+  if (drupal_is_cli() || !_simplesamlphp_auth_isEnabled(TRUE)) {
+    // Exit without initializing.
+    return;
+  }
+
+  // Get the simplesamlphp session.
+  $basedir = variable_get('simplesamlphp_auth_installdir', '/var/simplesamlphp');
+
+  if (file_exists($basedir . '/lib/_autoload.php')) {
+     require_once $basedir . '/lib/_autoload.php';
+  }
+  else {
+    return;
+  }
+
+  $_simplesamlphp_auth_saml_config  = SimpleSAML_Configuration::getInstance();
+  $_simplesamlphp_auth_saml_version = $_simplesamlphp_auth_saml_config->getVersion();
+
+  // Load simpleSAMLphp, configuration and metadata.
+  $_simplesamlphp_auth_as              = new SimpleSAML_Auth_Simple(variable_get('simplesamlphp_auth_authsource', 'default-sp'));
+  $_simplesamlphp_auth_saml_attributes = $_simplesamlphp_auth_as->getAttributes();
+
+  if ($user->uid == 0) {
+    // User is not logged in to Drupal.
+    if ($_simplesamlphp_auth_as->isAuthenticated()) {
+      // User is logged in - SimpleSAMLphp (but not Drupal).
+      // Get unique identifier from saml attributes.
+      $authname = _simplesamlphp_auth_get_authname();
+
+      _simplesaml_auth_debug(t('Authname is [%authname] userid is [%uid]', array(
+        '%authname' => $authname,
+        '%uid'      => $user->uid,
+      )));
+
+      if (!empty($authname)) {
+        // User is logged in with SAML authentication and we got the unique
+        // identifier and try to log into Drupal.
+        _simplesaml_auth_debug(t('Load user [%authname]', array('%authname' => $authname)));
+
+        // Retrieve user mapping and attempt to log the user in.
+        $ext_user               = user_external_load($authname);
+        $skip_user_finalization = FALSE;
+
+        if (!$ext_user) {
+          // First we check the admin settings for simpleSAMLphp and find out
+          // if we are allowed to register users.
+          if (variable_get('simplesamlphp_auth_registerusers', TRUE)) {
+
+            // We are allowed to register new users, but check to see if this user exists first
+            $usercheck = user_load_by_name($authname);
+
+            if (!$usercheck->uid) {
+              _simplesaml_auth_debug(t('Register [%authname]', array('%authname' => $authname)));
+              user_external_login_register($authname, 'authname_ldap_user');
+            } else {
+              _simplesaml_auth_debug(t('[%authname] already exists', array('%authname' => $authname)));
+               user_set_authmaps($usercheck, array("authname_ldap_user" => $authname));
+            }
+            $skip_user_finalization = TRUE;
+
+
+            if (!empty($user->uid)) {
+              // Populate roles based on configuration setting.
+              $roles    = _simplesamlphp_auth_rolepopulation(variable_get('simplesamlphp_auth_rolepopulation', ''));
+              $userinfo = array('roles' => $roles);
+              // @todo Removed role here as it errors when roles are not set.
+              $user     = user_save($user, $userinfo);
+            }
+            else {
+              // We were unable to register this new user on the site.
+              // We let the user know about this, log an error, and redirect to the home page.
+              $msg = t("We are sorry. While you have successfully authenticated, we were unable to create an account for you on this site. Please ask the site administrator to provision access for you.");
+              drupal_set_message(check_plain($msg));
+              watchdog('simplesamlphp_auth', 'Unable to register %authname using simplesamlphp_auth', array('%authname'=>$authname), WATCHDOG_ERROR);
+              $_simplesamlphp_auth_as->logout(base_path());
+            }
+
+          }
+          else {
+            // We are not allowed to register new users on the site through
+            // simpleSAML. We let the user know about this and redirect to the
+            // user/login page.
+            $msg = t("We are sorry. While you have successfully authenticated, you are not yet entitled to access this site. Please ask the site administrator to provision access for you.");
+            drupal_set_message(check_plain($msg));
+            $_simplesamlphp_auth_as->logout(base_path());
+          }
+        }
+        else {
+          // If successfully logged into Drupal.
+          // See if we're supposed to re-evaluate role assignments.
+          if (variable_get('simplesamlphp_auth_roleevaleverytime', 0)) {
+            // If the user is already registered...
+            // Update the roles.
+            // Populate roles based on configuration setting.
+            _simplesaml_auth_debug(t('User already registered [%authname] updating roles.', array('%authname' => $authname)));
+            $roles    = _simplesamlphp_auth_rolepopulation(variable_get('simplesamlphp_auth_rolepopulation', ''));
+            $userinfo = array('roles' => $roles);
+
+            // Save the updated roles and populate the user object.
+            $user = user_save($ext_user, $userinfo);
+          }
+          else {
+            // No need to evaluate roles, populate the user object.
+            $user = $ext_user;
+          }
+
+          if (module_exists('rules')) {
+            rules_invoke_all('simplesamlphp_auth_rules_event_login', $user);
+          }
+
+        }
+
+        // Finalizing the login, calls hook_user op login.
+        // user_external_login_register() calls this for us.
+        if (!$skip_user_finalization) {
+          $edit = array();
+          user_login_finalize($edit);
+        }
+      }
+    }
+  }
+  else {
+    // The user is already logged into Drupal.
+    // If we forbid users from logging in using local accounts.
+    if (FALSE == variable_get('simplesamlphp_auth_allowdefaultlogin', TRUE)) {
+      // If the user has NOT been authenticated via simpleSAML...
+      if (!$_simplesamlphp_auth_as->isAuthenticated()) {
+        // :FYI: Until Drupal issue #754560 is corrected this message will
+        // never be seen by the user.
+        drupal_set_message(t("We are sorry, users are not permitted to log in using local accounts."));
+        // Destroy the user's session (log them out).
+        _simplesamlphp_auth_destroy_drupal_session();
+      }
+    }
+    else {
+      // If we are allowing users to log in with local accounts.
+      // If the user has NOT been authenticated via simpleSAML.
+      if (!$_simplesamlphp_auth_as->isAuthenticated()) {
+
+        // See if we limit this privilege to specified users.
+        $string_allow_def_log_users = variable_get('simplesamlphp_auth_allowdefaultloginusers', '');
+        $array_allow_def_log_users = array();
+        // See if we limit this privilege to specified roles.
+        $array_allow_def_log_roles = variable_get('simplesamlphp_auth_allowdefaultloginroles', array());
+
+        // If user IDs or roles are specified, we let them in. Everyone else
+        // gets logged out.
+        if (drupal_strlen($string_allow_def_log_users) || $array_allow_def_log_roles) {
+
+          // Convert the string into an array.
+          // @todo Perform a test to make sure that only numbers, spaces, or
+          // commas are in the string.
+          $array_allow_def_log_users = explode(',', $string_allow_def_log_users);
+
+          // If we still have something to work with.
+          if (0 < count($array_allow_def_log_users) || 0 < count($array_allow_def_log_roles)) {
+            // Log the user out of Drupal if:
+            // 1) the current user's uid is NOT in the list of allowed uids
+            // 2) or their role does not match and allowed mixed mode role.
+            $match_roles = array_intersect(array_keys($user->roles), $array_allow_def_log_roles);
+            if (!in_array($user->uid, $array_allow_def_log_users) && count($match_roles) == 0) {
+              // User is logged into Drupal, but may not be logged into
+              // simpleSAML. If this is the case we're supposed to log the
+              // user out of Drupal.
+              // :FYI: Until Drupal issue #754560 is corrected this message
+              // will never be seen by the user.
+              drupal_set_message(t('We are sorry, you are not permitted to log in using a local account.'));
+
+              // Write to the watchdog so someone will know what is happening.
+              watchdog('simplesamlphp_auth', 'User %name not authorized to log in using local account.', array('%name' => $user->name));
+
+              _simplesamlphp_auth_destroy_drupal_session();
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function simplesamlphp_auth_user_insert(&$edit, $account, $category = NULL) {
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+
+  if (!_simplesamlphp_auth_isEnabled()) {
+    // Exit without initializing.
+    return;
+  }
+
+  if ($category == 'account') {
+    // If user registration has a valid session...
+    if ($_simplesamlphp_auth_as->isAuthenticated()) {
+      // Get name from default attributes.
+      try {
+        _simplesaml_auth_debug(t('Registering user [%acctname]', array('%acctname' => $account->name)));
+        $account->name = _simplesamlphp_auth_get_default_name($account->uid);
+      }
+      catch (Exception $e) {
+        drupal_set_message(t('Your user name was not provided by your identity provider (IDP).'), "error");
+        watchdog('simplesamlphp_auth', $e->getMessage(), NULL, WATCHDOG_CRITICAL);
+      }
+
+      db_update('users')
+        ->fields(array('name' => $account->name))
+        ->condition('uid', $account->uid)
+        ->execute();
+
+      _simplesaml_auth_debug(t('Updating username [%acctname]', array('%acctname' => $account->name)));
+
+      // Get mail from default attribute.
+      try {
+        $mail_address = _simplesamlphp_auth_get_mail();
+      }
+      catch (Exception $e) {
+        drupal_set_message(t('Your e-mail address was not provided by your identity provider (IDP).'), "error");
+        watchdog('simplesamlphp_auth', $e->getMessage(), NULL, WATCHDOG_CRITICAL);
+      }
+
+      if (!empty($mail_address)) {
+        db_update('users')
+          ->fields(array('mail' => $mail_address))
+          ->condition('uid', $account->uid)
+          ->execute();
+      }
+
+      if (module_exists('rules')) {
+        rules_invoke_event('simplesamlphp_auth_rules_event_register', $account);
+      }
+
+      _simplesaml_auth_debug(t('Updating mail [%mailaddr]', array('%mailaddr' => $mail_address)));
+    }
+  }
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function simplesamlphp_auth_user_logout($account) {
+  global $user;
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+  global $base_url;
+
+  if (!empty($_simplesamlphp_auth_saml_attributes)) {
+
+    $config = SimpleSAML_Configuration::getInstance();
+
+    // :KLUDGE: for some reason Drupal is not killing the session, even if
+    // drupal_session_destroy_uid() is called here.
+    session_destroy();
+
+    $gotourl = base_path();
+    if (variable_get('simplesamlphp_auth_logoutgotourl', '')) {
+      $gotourl = variable_get('simplesamlphp_auth_logoutgotourl', '');
+    }
+
+    // Allow modules to alter $gotourl.
+    drupal_alter('simplesamlphp_auth_logout_gotourl', $gotourl, $account);
+
+    //$_simplesamlphp_auth_as->logout($gotourl);
+    drupal_goto($base_url);
+
+  }
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function simplesamlphp_auth_user_delete($account) {
+  db_delete('authmap')
+    ->condition('uid', $account->uid)
+    ->condition('authname', $account->name)
+    ->execute();
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function simplesamlphp_auth_form_alter(&$form, $form_state, $form_id) {
+  if (!_simplesamlphp_auth_isEnabled()) {
+    // Exit without executing.
+    return;
+  }
+
+  if ($form_id == 'user_login_block') {
+    $link                     = l(t('Federated Log In'), 'saml_login');
+    $links                    = $form['links']['#markup'];
+    $links                    = str_replace('</ul>', '<li class="saml">' . $link . '</li></ul>', $links);
+    $form['links']['#markup'] = $links;
+  }
+
+  if ($form_id == 'user_account_form') {
+    $link                     = l(t('Federated Log In'), 'saml_login');
+    $links                    = $form['links']['#markup'];
+    $links                    = str_replace('</ul>', '<li class="saml">' . $link . '</li></ul>', $links);
+    $form['links']['#markup'] = $links;
+  }
+
+  // If the user has a simplesamlphp_auth authmap record, then don't require
+  // them to know their Drupal password. This will allow them to change their
+  // e-mail address, and set a Drupal password if they want to and are allowed.
+  if ((isset($form['#user']->init) && $form['#user']->init) && (_simplesaml_auth_user_has_authmap($form['#user']->init) && $form_id == 'user_profile_form')) {
+
+    unset($form['account']['current_pass']);
+    unset($form['account']['current_pass_required_values']);
+    $form['#validate'] = array_diff($form['#validate'], array('user_validate_current_pass'));
+
+    // If the user is a simplesamlphp_auth user and is NOT allowed to set their
+    // Drupal password, remove the fields from the form.
+    if (!variable_get('simplesamlphp_auth_allowsetdrupalpwd')) {
+      unset($form['account']['pass']);
+    }
+
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function simplesamlphp_auth_block_view($delta = '') {
+
+  if (!_simplesamlphp_auth_isEnabled()) {
+    // Exit without executing.
+    return;
+  }
+
+  switch ($delta) {
+    case 0:
+      $block = array(
+        'subject' => t('simpleSAMLphp login'),
+        'content' => _simplesamlphp_auth_generate_block_text(),
+      );
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function simplesamlphp_auth_block_info() {
+  $block = array(
+    array(
+      'info'  => t('simpleSAMLphp authentication'),
+      'cache' => DRUPAL_NO_CACHE,
+    ),
+  );
+  return $block;
+}
+
+/****************************************************************************
+ * Private functions ********************************************************
+ ****************************************************************************/
+
+/**
+ * Checks to see if authentication via SimpleSAMLphp should be activated.
+ *
+ * @param bool $show_inactive_msg
+ *   Whether to display the "module not activated" message
+ *
+ * @return bool
+ *   TRUE/FALSE
+ */
+function _simplesamlphp_auth_isEnabled($show_inactive_msg = FALSE) {
+  global $user;
+
+  $failure      = NULL;
+  $is_activated = variable_get('simplesamlphp_auth_activate');
+  $basedir      = variable_get('simplesamlphp_auth_installdir', '/var/simplesamlphp');
+
+  if ($is_activated) {
+    // Make sure we know where SimpleSAMLphp is.
+    if (!file_exists($basedir)) {
+      $failure = t('SimpleSAMLphp could not be found at %basedir . The simplesamlphp_auth module cannot function until the path to the local SimpleSAMLphp instance is configured.', array('%basedir' => $basedir));
+      watchdog('simplesamlphp_auth', $failure, NULL, WATCHDOG_WARNING);
+    }
+  }
+
+  // If there were no failures, then it should be activated.
+  if (!$failure) {
+    return TRUE;
+  }
+  else {
+
+    // Communicate but don't be too annoying.
+    if ($show_inactive_msg && (1 == $user->uid || user_access('access administration pages')) && (preg_match('/admin\/people/', request_uri()) || preg_match('/admin\/modules/', request_uri()) || preg_match('/admin\/config/', request_uri()))) {
+      drupal_set_message($failure);
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Gets the authname attribute from the SAML assertion.
+ *
+ * @return string
+ *   The authname attribute.
+ */
+function _simplesamlphp_auth_get_authname() {
+  global $_simplesamlphp_auth_saml_attributes;
+
+  $authname = '';
+
+  // Check if valid local session exists..
+  if (isset($_simplesamlphp_auth_saml_attributes)) {
+    _simplesaml_auth_debug(t('_simplesamlphp_auth_get_authname: Valid local session exist'));
+    if (isset($_simplesamlphp_auth_saml_attributes[variable_get('simplesamlphp_auth_unique_id', 'eduPersonPrincipalName')])) {
+      $authname = $_simplesamlphp_auth_saml_attributes[variable_get('simplesamlphp_auth_unique_id', 'eduPersonPrincipalName')][0];
+    }
+    else {
+      throw new Exception(t('error in simplesamlphp_auth.module: no valid unique id attribute set'));
+    }
+  }
+  return $authname;
+}
+
+/**
+ * Gets the default name attribute from the SAML assertion.
+ *
+ * @return string
+ *   The name attribute.
+ */
+function _simplesamlphp_auth_get_default_name($account) {
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+
+  $default_name = '';
+
+  // Check if valid local session exists..
+  if ($_simplesamlphp_auth_as->isAuthenticated()) {
+    $auth_user_name_attr = variable_get('simplesamlphp_auth_user_name', 'eduPersonPrincipalName');
+    if ((!isset($_simplesamlphp_auth_saml_attributes[$auth_user_name_attr])) ||
+      (!isset($_simplesamlphp_auth_saml_attributes[$auth_user_name_attr][0])) ||
+      ($_simplesamlphp_auth_saml_attributes[$auth_user_name_attr][0] == '')
+    ) {
+      throw new Exception(t('There was no set attribute named "%auth_user_name_attr" returned for user %uid.',
+        array(
+          '%auth_user_name_attr' => $auth_user_name_attr,
+          '%uid'                 => $account,
+        )));
+    }
+    $default_name = $_simplesamlphp_auth_saml_attributes[$auth_user_name_attr][0];
+  }
+  return $default_name;
+}
+
+/**
+ * Gets the mail attribute.
+ *
+ * @return string
+ *   The mail attribute.
+ */
+function _simplesamlphp_auth_get_mail() {
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+  $mail_address = '';
+  // Check if valid local session exists..
+  if ($_simplesamlphp_auth_as->isAuthenticated()) {
+    if (isset($_simplesamlphp_auth_saml_attributes[variable_get('simplesamlphp_auth_mailattr', 'mail')])) {
+      $mail_address = $_simplesamlphp_auth_saml_attributes[variable_get('simplesamlphp_auth_mailattr', 'mail')][0];
+    }
+    else {
+      throw new Exception(t('Error in simplesamlphp_auth.module: No valid mail attribute set.'));
+    }
+  }
+
+  return $mail_address;
+}
+
+/**
+ * Forces HTTPS connections.
+ */
+function _simplesamlphp_auth_forcehttps_rewrite($url) {
+  if (variable_get('simplesamlphp_auth_forcehttps', TRUE)) {
+    $url = str_replace('http://', 'https://', $url);
+    _simplesaml_auth_debug('forcehttps rewrite: ' . $url);
+  }
+
+  return $url;
+}
+
+/**
+ * Generates the text for the log in block.
+ */
+function _simplesamlphp_auth_generate_block_text() {
+  global $_simplesamlphp_auth_as;
+  $block_content = '';
+  global $user;
+
+  if (!_simplesamlphp_auth_isEnabled()) {
+    // Exit without executing.
+    return;
+  }
+
+  // Check if valid local session exists..
+  if ($_simplesamlphp_auth_as->isAuthenticated()) {
+    $block_content .= '<p>' . t('Logged in as: @username', array('@username' => $user->name))
+    . '<br />' . l(t('Log Out'), 'user/logout') . '</p>';
+  }
+  else {
+    $block_content .= '<p>' . l(t('Federated Log In'), 'saml_login') . '</p>';
+  }
+
+  return $block_content;
+}
+
+/**
+ * Evaluates a role rule.
+ * The rules work as follows:
+ * = does an exact match on an attribute and will iterate over array values if
+ *     the array is multivalued.
+ * @= matches the domain portion of an email address. It assumes the attribute
+ *     is a string, and will not iterate over an array (but take the first value).
+ * ~= does a partial string match on the attribute, and does iterate over multiple
+ *     values, returning true if any of the values match.
+ *
+ *
+ * @param array $roleruleevaluation
+ *   An array containing the role rule to evaluate.
+ * @param array $attributes
+ *   An array containing the identity attributes.
+ *
+ * @return array
+ *   An array containing role value and the attribute, or FALSE.
+ */
+function _simplesamlphp_auth_evaulaterolerule($roleruleevaluation, $attributes) {
+  _simplesaml_auth_debug(t('Evaluate rule (key=%key,operator=%op,value=%val)', array(
+    '%key' => $roleruleevaluation[0],
+    '%op'  => $roleruleevaluation[1],
+    '%val' => $roleruleevaluation[2],
+  )));
+
+  if (!array_key_exists($roleruleevaluation[0], $attributes)) {
+    return FALSE;
+  }
+  $attribute = $attributes[$roleruleevaluation[0]];
+
+  switch ($roleruleevaluation[1]) {
+    case '=':
+      return in_array($roleruleevaluation[2], $attribute);
+
+    case '@=':
+      $dc = explode('@', $attribute[0]);
+      if (count($dc) != 2) {
+        return FALSE;
+      }
+      return ($dc[1] == $roleruleevaluation[2]);
+
+    case '~=':
+      foreach ($attribute as $subattr) {
+        $pos = strpos($subattr, $roleruleevaluation[2]);
+        if ($pos !== FALSE) {
+          return TRUE;
+        }
+      }
+    return FALSE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Performs role population.
+ *
+ * @param array $rolemap
+ *   A string containing the role map.
+ *
+ * @return array
+ *   An array containing user's roles.
+ */
+function _simplesamlphp_auth_rolepopulation($rolemap) {
+  global $_simplesamlphp_auth_as;
+  global $_simplesamlphp_auth_saml_attributes;
+  $roles = array();
+
+  _simplesaml_auth_debug(t('Rolemap: %rolemap', array('%rolemap' => $rolemap)));
+
+  // Check if valid local session exists..
+  if ($_simplesamlphp_auth_as->isAuthenticated()) {
+    $attributes = $_simplesamlphp_auth_saml_attributes;
+
+    if (empty($rolemap)) {
+      return $roles;
+    }
+
+    _simplesaml_auth_debug(t('Evaluate rolemap: %rolemap', array('%rolemap' => $rolemap)));
+
+    $rolerules = explode('|', $rolemap);
+
+    foreach ($rolerules as $rolerule) {
+      _simplesaml_auth_debug(t('Evaluate role rule: %rolerule', array('%rolerule' => $rolerule)));
+
+      $roleruledecompose = explode(':', $rolerule, 2);
+
+      $roleid              = $roleruledecompose[0];
+      $roleruleevaluations = explode(';', $roleruledecompose[1]);
+
+      $addnew = TRUE;
+      foreach ($roleruleevaluations as $roleruleevaluation) {
+
+        _simplesaml_auth_debug(t('Evaluate role evaulation: %roleruleeval', array('%roleruleeval' => $roleruleevaluation)));
+
+        $roleruleevaluationdc = explode(',', $roleruleevaluation);
+        if (!_simplesamlphp_auth_evaulaterolerule($roleruleevaluationdc, $attributes)) {
+          $addnew = FALSE;
+        }
+      }
+      if ($addnew) {
+        $roles[$roleid] = $roleid;
+        _simplesaml_auth_debug(t('Add new role: %roleid', array('%roleid' => $roleid)));
+      }
+
+    }
+  }
+  return $roles;
+}
+
+/**
+ * See if the user has an authmap record for simplesamlphp_auth.
+ */
+function _simplesaml_auth_user_has_authmap($authname) {
+  $authmaps = user_get_authmaps($authname);
+
+  $return = 0;
+
+  if (is_array($authmaps)) {
+    $return = in_array('simplesamlphp_auth', array_keys($authmaps));
+  }
+
+  return $return;
+
+}
+
+/**
+ * Debug the form API workflow.
+ */
+function _simplesaml_auth_debug($message) {
+  watchdog('simplesamlphp', $message, NULL, WATCHDOG_DEBUG);
+}
+
+/**
+ * Logged out user that has an active session in Drupal but not with simpleSAML.
+ */
+function _simplesamlphp_auth_destroy_drupal_session() {
+  module_load_include('pages.inc', 'user');
+  user_logout();
+}
+
+/****************************************************************************
+ * Public functions *********************************************************
+ ****************************************************************************/
+
+/**
+ * Determine if the current user is authenticated through SAML.
+ *
+ * @return bool
+ *   TRUE if the current user is authenticated through SAML.  FALSE otherwise.
+ */
+function simplesamlphp_auth_is_authenticated() {
+  global $_simplesamlphp_auth_as;
+
+  // Assume that the user isn't authenticated until proven otherwise.
+  $authenticated = FALSE;
+
+  // If the global variable exists, and the auth flag is set, note it.
+  if (isset($_simplesamlphp_auth_as) &&$_simplesamlphp_auth_as->isAuthenticated()) {
+    $authenticated = TRUE;
+  }
+
+  // Return the result.
+  return $authenticated;
+}
+
+/**
+ * Return any attributes provided by the SAML IDP.
+ *
+ * @param string $attribute
+ *   The attribute whose value to return.  Can be skipped if all attribute
+ *   values are requested.
+ *
+ * @return array
+ *   If an attribute was provided, the value of the attribute is returned.
+ *   Otherwise, an array of all attribute values is returned, keyed by
+ *   attribute.
+ */
+function simplesamlphp_auth_get_attributes($attribute = NULL) {
+  global $_simplesamlphp_auth_saml_attributes;
+
+  if (isset($attribute)) {
+
+    // Initially, assume that there's nothing to return.
+    $result = NULL;
+
+    // If the specified attribute is set, grab it.
+    if (isset($_simplesamlphp_auth_saml_attributes)) {
+      if (isset($_simplesamlphp_auth_saml_attributes[$attribute])) {
+        $result = $_simplesamlphp_auth_saml_attributes[$attribute];
+      }
+    }
+  }
+
+  // No specific attribute was requested; return all of them.
+  else {
+
+    // Initially, assume that there's nothing to return.
+    $result = array();
+
+    // If the global array exists, return it.
+    if (isset($_simplesamlphp_auth_saml_attributes)) {
+      $result = $_simplesamlphp_auth_saml_attributes;
+    }
+  }
+
+  // Return whatever we've got.
+  return $result;
+}

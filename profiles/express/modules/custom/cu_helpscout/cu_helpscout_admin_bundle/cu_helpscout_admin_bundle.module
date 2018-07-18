@@ -1,0 +1,53 @@
+<?php
+
+function cu_helpscout_admin_bundle_menu() {
+  $items = array();
+
+  $items['admin/config/system/cu-helpscout-admin'] = array(
+    'title' => 'HelpScout Admin Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_helpscout_admin_bundle_config_form'),
+    'access arguments' => array('administer helpscout beacon'),
+  );
+
+  $items['helpscout/config'] = array(
+    'title' => 'HelpScout Configuration',
+    'description' => 'JSON of central HelpScout Config',
+    'page callback' => 'cu_helpscout_admin_bundle_json',
+    'access callback' => TRUE,
+    'delivery callback' =>  'drupal_json_output',
+  );
+
+  return $items;
+}
+
+function cu_helpscout_admin_bundle_config_form($form, &$form_state) {
+  $form = array();
+
+  $form['cu_helpscout_instruction'] = array(
+    '#title' => 'Instruction',
+    '#type' => 'textarea',
+    '#default_value' => variable_get('cu_helpscout_instruction', ''),
+  );
+
+  $form['cu_helpscout_topics'] = array(
+    '#title' => 'Topics',
+    '#type' => 'textarea',
+    '#default_value' => variable_get('cu_helpscout_topics', ''),
+  );
+  $form = system_settings_form($form);
+  return $form;
+}
+
+function cu_helpscout_admin_bundle_json() {
+  $output['helpscout'] = array();
+  $output['helpscout']['topics'] = explode("\n", variable_get('cu_helpscout_topics', ''));
+
+  foreach ($output['helpscout']['topics'] as $key => $topic) {
+    $output['helpscout']['topics'][$key] = trim($topic);
+  }
+  //$output['helpscout']['suggest'] = 'suggested links go here';
+  $output['helpscout']['instructions'] = variable_get('cu_helpscout_instruction', '');
+
+  return $output;
+}

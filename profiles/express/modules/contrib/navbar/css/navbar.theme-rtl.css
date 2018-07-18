@@ -1,0 +1,73 @@
+/**
+ * @file navbar.theme-rtl.css
+ *
+ * RTL styling for navbar.theme.css
+ */
+
+/**
+ * Navbar bar.
+ */
+#navbar-administration .navbar-bar {
+  box-shadow: 1px 0 3px 1px rgba(0, 0, 0, 0.3333);
+}
+
+/**
+ * Navbar tray.
+ */
+#navbar-administration .navbar-tray-horizontal > .navbar-lining {
+  padding-right: 0;
+  padding-left: 5em;
+}
+#navbar-administration .navbar-tray-vertical {
+  border-left: 1px solid #aaaaaa;
+  border-right: 0 none;
+  box-shadow: 1px 0 5px 2px rgba(0, 0, 0, 0.3333);
+}
+#navbar-administration .navbar-tray-horizontal {
+  box-shadow: 2px 1px 3px 1px rgba(0, 0, 0, 0.3333);
+}
+#navbar-administration .navbar-tray-horizontal {
+  box-shadow: 2px 1px 3px 1px rgba(0, 0, 0, 0.3333);
+}
+#navbar-administration .navbar-tray-horizontal .navbar-menu li + li {
+  border-left: 0 none ;
+  border-right: 1px solid #dddddd;
+}
+#navbar-administration .navbar-tray-horizontal .navbar-menu li:last-child {
+  border-left: 1px solid #dddddd;
+}
+#navbar-administration .navbar-tray-vertical .navbar-menu .navbar-menu .navbar-menu .navbar-menu {
+  margin-left: 0;
+  margin-right: 0.25em;
+}
+
+/**
+ * Orientation toggle.
+ */
+
+#navbar-administration .navbar-tray-horizontal .navbar-toggle-orientation {
+  border-left: 0 none;
+  border-right: 1px solid #c9c9c9;
+}
+#navbar-administration .navbar-toggle-orientation > .navbar-lining {
+  float: left;
+}
+/**
+ * Fix Shortcuts Edit link
+ */
+#navbar-administration .navbar-tray-horizontal .edit-shortcuts {
+  float: right;
+}
+#navbar-administration .navbar-tray-vertical .edit-shortcuts {
+  padding-left: 4em;
+  padding-right: 2.75em;
+}
+
+/**
+ * Remove navbar from print view.
+ */
+@media print {
+  body.navbar-tray-open.navbar-vertical.navbar-fixed {
+    margin-right: 0;
+  }
+}

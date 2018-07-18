@@ -1,0 +1,11 @@
+name = Feeds
+description = Create and manage RSS feeds of articles as well as add RSS feeds from other sites. <i>Requires the News and Article Bundle</i>
+core = 7.x
+package = CU-Feeds
+project_demo_url = http://www.colorado.edu/webcentral/node/1084
+dependencies[] = cu_rss
+dependencies[] = cu_rss_block
+dependencies[] = cu_rss_views
+dependencies[] = uuid
+
+bundle_cache_clear = 1

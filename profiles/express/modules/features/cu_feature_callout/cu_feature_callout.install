@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * Revert content grids to 2.0 code.
+ */
+function cu_feature_callout_update_7001() {
+  $features = features_get_features('cu_feature_callout');
+
+  // Check against features that currently can't be reverted.
+  $express_protected_features = array_merge(array(
+    'cu_home_page',
+    'cu_sitewide',
+  ), explode(',', variable_get('express_protected_features', '')));
+
+  foreach ($features as $key => $feature) {
+    if (!in_array($key, $express_protected_features)) {
+      $f = features_get_features($key);
+      $components = array_keys($f->info['features']);
+      features_revert(array($f->name => $components));
+      watchdog('cu_feature_callout', 'Attempting to revert %feature', array('%feature' => $feature->name), WATCHDOG_NOTICE);
+    }
+  }
+}
+
+/**
+ * Update content grids to 2.0.
+ * If Columns were set to 1, style should be set to teaser and columns set to 2.
+ * Otherwise, style should be set to teaser.
+ */
+function cu_feature_callout_update_7002() {
+  $query = db_select('bean', 'b');
+  $query->condition('b.type', 'feature_callout', '=');
+  $query->fields('b', array('bid'));
+  $bids = $query->execute()->fetchCol();
+
+  foreach ($bids as $bid) {
+    if ($bean = bean_load($bid)) {
+      if ($bean->field_callout_columns[LANGUAGE_NONE][0]['value'] == 1) {
+        $bean->field_callout_style[LANGUAGE_NONE][0]['value'] = 'teaser';
+        $bean->field_callout_columns[LANGUAGE_NONE][0]['value'] = 2;
+      }
+      else {
+        $bean->field_callout_style[LANGUAGE_NONE][0]['value'] = 'columns';
+      }
+      $bean->save();
+      watchdog('cu_feature_callout', 'Attempting to update %bid', array('%bid' => $bean->bid), WATCHDOG_NOTICE);
+    }
+  }
+}

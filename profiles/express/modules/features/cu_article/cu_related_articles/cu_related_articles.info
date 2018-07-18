@@ -1,0 +1,7 @@
+name = Related Articles
+description = Block of related articles by category and tag
+core = 7.x
+version = 7.x-1.0
+project = cu_related_articles
+
+stylesheets[all][] = css/cu-related-articles.css

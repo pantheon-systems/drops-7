@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * LDAP Help Install File
+ */
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_help_uninstall() {
+  //$result = db_query('DELETE FROM {variables} WHERE name like "ldap_authentication_%"');
+  variable_del('ldap_help_watchdog_detail');
+  variable_del('ldap_help_user_data_clear');
+  variable_del('ldap_help_user_data_clear_set_date');
+}

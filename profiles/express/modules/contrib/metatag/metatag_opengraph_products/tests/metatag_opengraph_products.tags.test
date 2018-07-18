@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * @file
+ * Tests that each of the Metatag OpenGraph Products tags work correctly.
+ */
+
+/**
+ * Tests that each of the Metatag OpenGraph Products tags work correctly.
+ */
+class MetatagOpenGraphProductsTagsTest extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag tags: OpenGraph Products',
+      'description' => 'Test the OpenGraph Products meta tags.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'product:availability',
+    'product:brand',
+    'product:category',
+    'product:color',
+    'product:condition',
+    'product:ean',
+    'product:expiration_time',
+    'product:isbn',
+    'product:material',
+    'product:mfr_part_no',
+    'product:pattern',
+    'product:plural_title',
+    'product:price:amount',
+    'product:price:currency',
+    'product:product_link',
+    'product:retailer',
+    'product:retailer_part_no',
+    'product:retailer_title',
+    'product:shipping_cost:amount',
+    'product:shipping_cost:currency',
+    'product:shipping_weight:units',
+    'product:shipping_weight:value',
+    'product:size',
+    'product:upc',
+    'product:weight:units',
+    'product:weight:value',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'metatag_opengraph_products';
+    parent::setUp($modules);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $test_name_attribute = 'property';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    // All OG tags use colons to separate levels.
+    $tag_name = str_replace('_', ':', $tag_name);
+
+    // Fix a few specific tags.
+    $tag_name = str_replace(':weight', '_weight', $tag_name);
+    $tag_name = str_replace('product_weight', 'product:weight', $tag_name);
+    $tag_name = str_replace(':cost', '_cost', $tag_name);
+    $tag_name = str_replace(':part:no', '_part_no', $tag_name);
+    $tag_name = str_replace(':title', '_title', $tag_name);
+    $tag_name = str_replace(':link', '_link', $tag_name);
+    $tag_name = str_replace(':time', '_time', $tag_name);
+
+    return $tag_name;
+  }
+
+}

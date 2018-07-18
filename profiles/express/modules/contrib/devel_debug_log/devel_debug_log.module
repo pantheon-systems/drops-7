@@ -1,0 +1,250 @@
+<?php
+
+/**
+ * @file
+ * Creates a page that shows debug messages.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function devel_debug_log_menu() {
+  $items['admin/reports/debug'] = array(
+    'title' => 'Debug messages',
+    'description' => 'View debug messages.',
+    'page callback' => 'devel_debug_log_page',
+    'access arguments' => array('access devel information'),
+  );
+  $items['devel-debug-log/callback'] = array(
+    'title' => 'Debug messages callback',
+    'page callback' => 'devel_debug_log_callback',
+    'access arguments' => array('access devel information'),
+  );
+
+  return $items;
+}
+
+/**
+ * Saves a debug message.
+ *
+ * @param $message
+ *   A debug message to save, which can be:
+ *   - string: saved as is.
+ *   - object or array: saved serialized.
+ */
+function ddl($message, $title = '') {
+  if (is_array($message) || is_object($message)) {
+    $message = serialize($message);
+    $serialized = TRUE;
+  }
+  else {
+    $serialized = FALSE;
+  }
+
+  $query = db_insert('devel_debug_log')->fields(array('timestamp', 'title', 'message', 'serialized'));
+  $query->values(array(
+    'timestamp' => REQUEST_TIME,
+    'title' => $title,
+    'message' => isset($message) ? $message : 'NULL',
+    'serialized' => $serialized ? 1 : 0,
+  ));
+  $query->execute();
+}
+
+/**
+ * Checks if the message has already been saved during the current page request,
+ * and saves the message only if it is not a repetition of a previous one.
+ *
+ * @param $message
+ *   A debug message to save, which can be:
+ *   - string: saved as is.
+ *   - object or array: saved serialized.
+ */
+function ddl_once($message, $title = '') {
+  $message_history = &drupal_static(__FUNCTION__);
+
+  if (!isset($message_history)) {
+    $message_history = array();
+  }
+
+  $serialized = serialize($message);
+  $hash = md5($serialized);
+
+  if (in_array($hash, $message_history)) {
+    return;
+  }
+
+  $message_history[] = $hash;
+
+  ddl($message, $title);
+}
+
+/**
+ * Displays the debug messages table.
+ */
+function devel_debug_log_page() {
+  // Add auto-refresh javascript on the first page only.
+  if (!isset($_GET['page'])) {
+    drupal_add_js(drupal_get_path('module', 'devel_debug_log') . '/devel_debug_log.js');
+  }
+
+  $table_page = array(
+    'devel_debug_log_clear_log_form' => drupal_get_form('devel_debug_log_clear_log_form'),
+    'messages_table' => devel_debug_log_get_messages_table(),
+    'pager' => array(
+      '#theme' => 'pager',
+    ),
+  );
+
+  return $table_page;
+}
+
+/**
+ * Menu callback; Retrieve a JSON object containing data for the debug messages page.
+ */
+function devel_debug_log_callback() {
+  $message_table = devel_debug_log_get_messages_table();
+  $data = array(
+    'content' => drupal_render($message_table),
+  );
+
+  drupal_json_output($data);
+}
+
+/**
+ * Return form for dblog clear button.
+ *
+ * @ingroup forms
+ * @see dblog_clear_log_submit()
+ */
+function devel_debug_log_clear_log_form($form) {
+  $form['devel_debug_log_clear'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Clear debug log messages'),
+    '#description' => t('This will permanently remove the log messages from the database.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['devel_debug_log_clear']['clear'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear log messages'),
+    '#submit' => array('devel_debug_log_clear_log_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback: clear database with log messages.
+ */
+function devel_debug_log_clear_log_submit() {
+  db_delete('devel_debug_log')->execute();
+  drupal_set_message(t('Database debug log cleared.'));
+}
+
+
+/**
+ * Helper function to return the debug messages table.
+ *
+ * @return
+ *   A render array containing the table.
+ */
+function devel_debug_log_get_messages_table() {
+  $results = db_select('devel_debug_log', 'm')
+    ->extend('PagerDefault')
+    ->limit(10)
+    ->fields('m', array('timestamp', 'title', 'message', 'serialized'))
+    ->orderBy('id', 'desc')
+    ->execute();
+
+  $rows = array();
+  foreach ($results as $result) {
+    if ($result->serialized) {
+      $result->message = unserialize($result->message);
+    }
+
+    if (merits_krumo($result->message)) {
+      $result->message = krumo_ob($result->message);
+    }
+    else {
+      $result->message = check_plain($result->message);
+    }
+
+    $rows[] = array(
+      theme('debug_message_header', array('title' => check_plain($result->title), 'time' => format_date($result->timestamp, 'short'))),
+    );
+
+    $rows[] = array(
+      theme('debug_message', array('message' => $result->message)),
+    );
+  }
+
+  if (count($rows) == 0) {
+    $content = array(
+      'messages' => array(
+        '#markup' => t('No messages.'),
+        '#prefix' => '<div id="devel-debug-log-messages-table">',
+        '#suffix' => '</div>',
+      )
+    );
+  }
+  else {
+    $content = array(
+      'messages' => array(
+        '#theme' => 'table',
+        '#rows' => $rows,
+        '#prefix' => '<div id="devel-debug-log-messages-table">',
+        '#suffix' => '</div>',
+      )
+    );
+  }
+
+  return $content;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function devel_debug_log_theme() {
+  return array(
+    'debug_message_header' => array(
+      'variables' => array(
+        'title' => '',
+        'time' => '',
+      ),
+    ),
+    'debug_message' => array(
+      'variables' => array(
+        'message' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Returns HTML for a debug message header.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - title: The title given to the message.
+ *   - time: The time of the message.
+ */
+function theme_debug_message_header($variables) {
+  $output = $variables['time'];
+
+  if (!empty($variables['title'])) {
+    $output = $variables['title'] . ' @ ' . $output;
+  }
+  return $output;
+}
+
+/**
+ * Returns HTML for a debug message.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - message: The rendered message.
+ */
+function theme_debug_message($variables) {
+  return $variables['message'];
+}

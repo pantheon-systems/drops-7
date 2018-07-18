@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Tests for the Metatag module's output caching.
+ */
+
+/**
+ * Tests for the Metatag module's output caching.
+ */
+class MetatagCoreOutputCachingTest extends MetatagTestHelper {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag: output caching',
+      'description' => 'Test the output caching functionality in Metatag.',
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'token'),
+    );
+  }
+
+  /**
+   * Test how user tokens are handled when cache is enabled.
+   */
+  public function testUserTokensCacheEnabled() {
+    // Enable output caching.
+    variable_set('metatag_cache_output', TRUE);
+
+    // Create two user accounts.
+    $account1 = $this->drupalCreateUser();
+    $account2 = $this->drupalCreateUser();
+
+    // Log in the first account.
+    $this->drupalLogin($account1);
+
+    // Load the test page.
+    $this->drupalGet('account-test-page');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly and has the correct title.
+    $this->assertText('Test page for user tokens.');
+    $this->assertText('Hello ' . $account1->name);
+    $xpath = $this->xpath("//h1");
+    $this->verbose($xpath);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account1->name);
+
+    // Confirm the page title itself.
+    $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
+
+    // Log out the user.
+    $this->drupalLogout() .
+    // Log in the second account.
+    $this->drupalLogin($account2);
+
+    // Load the test page.
+    $this->drupalGet('account-test-page');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly and now shows the second user account's
+    // name on the page.
+    $this->assertText('Test page for user tokens.');
+    $this->assertText('Hello ' . $account2->name);
+    $xpath = $this->xpath("//h1");
+    $this->verbose($xpath);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account2->name);
+
+    // Confirm the page title has not been updated, which is as designed.
+    $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
+    $this->assertNoTitle('Hello ' . $account2->name . ' | Drupal');
+  }
+
+  /**
+   * Test how user tokens are handled when cache is Disabled.
+   */
+  public function testUserTokensCacheDisabled() {
+    // Disable output caching.
+    variable_set('metatag_cache_output', FALSE);
+
+    // Create two user accounts.
+    $account1 = $this->drupalCreateUser();
+    $account2 = $this->drupalCreateUser();
+
+    // Log in the first account.
+    $this->drupalLogin($account1);
+
+    // Load the test page.
+    $this->drupalGet('account-test-page');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly and has the correct title.
+    $this->assertText('Test page for user tokens.');
+    $this->assertText('Hello ' . $account1->name);
+    $xpath = $this->xpath("//h1");
+    $this->verbose($xpath);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account1->name);
+
+    // Confirm the page title itself.
+    $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
+
+    // Log out the user.
+    $this->drupalLogout();
+
+    // Log in the second account.
+    $this->drupalLogin($account2);
+
+    // Load the test page.
+    $this->drupalGet('account-test-page');
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly and now shows the second user account's
+    // name on the page.
+    $this->assertText('Test page for user tokens.');
+    $this->assertText('Hello ' . $account2->name);
+    $xpath = $this->xpath("//h1");
+    $this->verbose($xpath);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account2->name);
+
+    // Confirm the page title has changed, i.e. it shows the second account name
+    // rather than the first.
+    $this->assertNoTitle('Hello ' . $account1->name . ' | Drupal');
+    $this->assertTitle('Hello ' . $account2->name . ' | Drupal');
+  }
+
+}

@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_seo_bundle_install() {
+  // Don't cache meta tags so site name can be updated easily
+  variable_set('metatag_cache_output', 0);
+}
+
+/**
+ * Implements hook_enable().
+ */
+function cu_seo_bundle_enable() {
+
+}
+
+function cu_seo_bundle_update_7001() {
+  module_enable(array('linkchecker_bean'));
+  // Don't cache meta tags so site name can be updated easily
+  variable_set('metatag_cache_output', 0);
+}
+
+/**
+ * Enable metatag_opengraph module.
+ */
+
+function cu_seo_bundle_update_7002() {
+  module_enable(array('metatag_opengraph', 'metatag_twitter_cards'));
+}

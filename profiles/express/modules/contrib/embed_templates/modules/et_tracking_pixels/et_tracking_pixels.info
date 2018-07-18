@@ -1,0 +1,12 @@
+name = Embed Templates - Tracking Pixels
+description = Provides several tracking pixel embed types.
+core = 7.x
+package = Embed Templates
+dependencies[] = embed_templates
+dependencies[] = et_page_top_bottom
+
+; Information added by Drupal.org packaging script on 2018-05-04
+version = "7.x-1.0-beta4+1-dev"
+core = "7.x"
+project = "embed_templates"
+datestamp = "1525470484"

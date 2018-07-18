@@ -1,0 +1,355 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ *
+ * @return $schema array
+ */
+function express_layout_schema() {
+  $schema = array();
+
+  $schema['express_layout'] = array(
+    'description' => 'The base table for layout entities.',
+    'fields' => array(
+      'layout_id' => array(
+        'description' => 'Primary key for Layout Entities.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'Name of the Layout Entity',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'node_type' => array(
+        'description' => 'Type of Node Layout is associated with',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('layout_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function express_layout_install() {
+
+  // add fields to Layout entity
+  include 'express_layout.field_bases.inc';
+  include 'express_layout.field_instances.inc';
+  include 'express_layout.admin.inc';
+
+  $add = TRUE;
+  _express_layout_variables($add);
+  _express_layout_default_settings();
+  express_attach_layouts();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function express_layout_uninstall() {
+
+  $add = FALSE;
+  _express_layout_variables($add);
+
+  // Delete field instances related to Express Layout entity
+  field_attach_delete_bundle('express_layout', 'express_layout');
+}
+
+/**
+ * Function to add config variables for layout settings
+ */
+function _express_layout_variables($add = TRUE) {
+
+  // Get all fields of entity
+  $instances = field_info_instances('express_layout', 'express_layout');
+
+  // Get all node types on site
+  $node_types = node_type_get_names();
+  $node_types = array_flip($node_types);
+
+  // Loop through and add variable settings
+  foreach ($node_types as $type) {
+    $values = array();
+    foreach ($instances as $instance) {
+      $values[$instance['field_name']] = 1;
+    }
+    if ($add == TRUE) {
+      variable_set('express_layout_settings_' . $type, $values);
+    } else {
+      variable_del('express_layout_settings_' . $type);
+    }
+  }
+}
+
+function _express_layout_default_settings() {
+  $settings = array();
+  $settings['express_layout_settings_article'] = array(
+    'field_feature_layout_toggle' => 'field_feature_layout_toggle',
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 'field_content_bottom',
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_article_list_page'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_article_list_page'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_faqs'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_file'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 0,
+    'field_footer' => 0,
+    'field_header' => 0,
+    'field_intro' => 0,
+    'field_sidebar_first' => 0,
+    'field_sidebar_second' => 0,
+    'field_slider' => 0,
+    'field_wide_2' => 0,
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+  );
+  $settings['express_layout_settings_page'] = array(
+    'field_feature_layout_toggle' => 'field_feature_layout_toggle',
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 'field_inner_content_left',
+    'field_inner_content_right' => 'field_inner_content_right',
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_people_list_page'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_person'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_photo_gallery'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_video'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+  $settings['express_layout_settings_webform'] = array(
+    'field_feature_layout_toggle' => 0,
+    'field_feature_title_image' => 'field_feature_title_image',
+    'field_footer' => 'field_footer',
+    'field_header' => 'field_header',
+    'field_intro' => 'field_intro',
+    'field_sidebar_first' => 'field_sidebar_first',
+    'field_sidebar_second' => 'field_sidebar_second',
+    'field_slider' => 'field_slider',
+    'field_wide_2' => 'field_wide_2',
+    'field_inner_content_left' => 0,
+    'field_inner_content_right' => 0,
+    'field_content_bottom' => 0,
+    'field_post_title' => 'field_post_title',
+    'field_post_title_wide' => 'field_post_title_wide',
+  );
+
+  foreach ($settings as $key => $setting) {
+    variable_set($key, $setting);
+  }
+
+  $types = array(
+    'article',
+    'article_list_page',
+    'faqs',
+    'page',
+    'people_list_page',
+    'person',
+    'photo_gallery',
+    'video',
+    'webform',
+  );
+  foreach ($types as $key => $type) {
+    $var = 'express_layout_type_' . $type;
+    variable_set($var, $type);
+  }
+}
+/**
+ * Create inner content bottom layout field, updating layout configs.
+ */
+function express_layout_update_7001() {
+  include 'express_layout.field_bases.inc';
+  include 'express_layout.field_instances.inc';
+  _express_layout_default_settings();
+}
+/**
+ * Update layout configs.
+ */
+function express_layout_update_7002() {
+  _express_layout_default_settings();
+}
+/**
+ * Update layout configs.
+ */
+function express_layout_update_7003() {
+  _express_layout_default_settings();
+}
+/**
+ * Add table for entity cache.
+ */
+function express_layout_update_7004() {
+  if (module_exists('entitycache')) {
+    $entity_type = 'express_layout';
+    $table = 'cache_entity_' . $entity_type;
+    if (!db_table_exists($table)) {
+      $schema = drupal_get_schema_unprocessed('system', 'cache');
+      $schema['description'] = 'Cache table used to store' . $entity_type . ' entity records.';
+      db_create_table($table, $schema);
+    }
+  }
+}
+
+/**
+ * Create post title, post title wide fields, updating layout configs, field order.
+ */
+function express_layout_update_7005() {
+  include 'express_layout.field_bases.inc';
+  include 'express_layout.field_instances.inc';
+  _express_layout_default_settings();
+
+  $fields = array(
+    'field_feature_layout_toggle' => 300,
+    'field_feature_title_image' => 290,
+    'field_footer' => 50,
+    'field_header' => 40,
+    'field_intro' => 0,
+    'field_sidebar_first' => 60,
+    'field_sidebar_second' => 70,
+    'field_slider' => 10,
+    'field_wide_2' => 110,
+    'field_inner_content_left' => 90,
+    'field_inner_content_right' => 95,
+    'field_content_bottom' => 100,
+    'field_post_title' => 30,
+    'field_post_title_wide' => 20,
+  );
+  foreach ($fields as $field => $weight) {
+    $instance = field_info_instance('express_layout', $field, 'express_layout');
+    $instance['widget']['weight'] = $weight;
+    field_update_instance($instance);
+  }
+
+}

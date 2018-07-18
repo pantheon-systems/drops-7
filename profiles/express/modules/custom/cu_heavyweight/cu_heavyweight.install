@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_heavyweight_install() {
+  db_query("UPDATE {system} SET weight = 9999 WHERE name = 'cu_heavyweight'");
+}

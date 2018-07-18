@@ -1,0 +1,416 @@
+<?php
+
+/**
+ * Implements hook_entity_info().
+ */
+function cu_rss_entity_info() {
+  $info = array();
+  // Our custom video entity needs to be defined here.
+  // See http://drupal.org/node/1026420 and http://drupal.org/node/878804
+  // for more documentation.
+  $info['rss_feed'] = array(
+    // Human readable label.
+    'label' => t('RSS Feed'),
+    // Table for storing entity data, defined in hook_schema().
+    'base table' => 'rss_feed',
+    // This helps Entity API know how to query your custom table.
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    // This is a uri function provided by the Entity contrib module.
+    // It's a simple wrapper around the uri method in the controller class.
+    'uri callback' => 'entity_class_uri',
+    // These are the default controllers.
+    // 'entity class' => 'Entity',
+    'entity class' => 'Entity',
+    // 'controller class' => 'DrupalDefaultEntityController',
+    // Other options provided by the EntityAPI contrib module:
+    // 'controller class' => 'EntityAPIController ',
+    // 'controller class' => 'EntityAPIControllerExportable',
+    'controller class' => 'EntityAPIController',
+     // The information below is used to extend the EntityDefaultUIController
+
+     'module' => 'cu_rss',
+     // Access callback to determine permisisons.
+     'access callback' => 'cu_tracking_pixel_access_callback',
+     // Tell FieldAPI that fields can be attached to our video entity
+     'fieldable' => FALSE,
+     'bundles' => array(
+        'rss_feed' => array(
+          'label' => t('RSS Feed'),
+          'admin' => array(
+            'path' => 'admin/rss-feed',
+            'access arguments' => array('administer rss feeds'),
+          ),
+        ),
+      ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_rss_menu() {
+  $items = array();
+
+  $items['admin/settings/feeds'] = array(
+    'title' => 'Feeds',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 5,
+  );
+
+  $items['admin/settings/feeds/rss'] = array(
+    'title' => 'RSS Feeds',
+    'description' => 'Create and Manage RSS Feeds.',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/settings/feeds/rss/overview'),
+    'access arguments' => array('administer rss feeds'),
+  );
+  // Add Feeds
+  $items['admin/settings/feeds/rss/add'] = array(
+    'title' => 'Add a RSS Feed',
+    'description' => 'Create and Customize RSS Feeds.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_rss_rss_form'),
+    'access arguments' => array('administer rss feeds'),
+    'file' => 'cu_rss.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+  // Edit Feeds
+  $items['admin/settings/feeds/rss/manage/%cu_rss_feed/edit'] = array(
+    'title' => 'Edit RSS Feed',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_rss_rss_form', 5),
+    'access arguments' => array('administer rss feeds'),
+    'file' => 'cu_rss.admin.inc'
+  );
+  // Set Default Feed
+  $items['admin/settings/feeds/rss/manage/%cu_rss_feed/default'] = array(
+    'title' => 'Set Default RSS Feed',
+    'page callback' => 'cu_rss_feed_set_default',
+    'page arguments' => array(5),
+    'access arguments' => array('administer rss feeds'),
+    'file' => 'cu_rss.admin.inc'
+  );
+
+  $items['node/%node/feed/add'] = array(
+    'title' => 'Create Feed',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_rss_rss_form', NULL, 1),
+    'access callback' => 'cu_rss_node_feed_create_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'cu_rss.admin.inc',
+    'weight' => 50,
+  );
+
+  $items['feed/rss.xml'] = array(
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('feed/all/all/rss.xml'),
+    'access callback' => TRUE,
+    'title' => 'Site RSS Feed',
+  );
+  // feed/all/all/rss.xml
+  $items['feed/%/%/rss.xml'] = array(
+    'page callback' => 'cu_rss_feed_output',
+    'page arguments' => array(1,2),
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Preprocessor for theme('admin_block').
+ *
+ * Add RSS icon to admin setting list
+ */
+function cu_rss_preprocess_admin_block(&$vars) {
+
+  $titles = array(
+    'feeds' => 'rss-square',
+  );
+  $key = strtolower(str_replace(' ','-', $vars['block']['link_title']));
+  if (array_key_exists($key, $titles)) {
+    $vars['block']['title'] = '<i class="fa fa-' . $titles[$key] . '"></i> ' . $vars['block']['link_title'];
+  }
+}
+
+function cu_rss_node_feed_create_access($node) {
+  // Node types that can create feeds
+  $types = array(
+    'article_list_page',
+  );
+  if (in_array($node->type, $types) && user_access('administer rss feeds')) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_admin_paths().
+ * Set edit layout paths to be admin paths.
+ */
+function cu_rss_admin_paths() {
+  $paths = array(
+    'node/*/feed/add' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Add 'Add Feed' link to overview page.
+ */
+function cu_rss_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'node/add' on 'admin/content' page.
+  if ($root_path == 'admin/settings/feeds/rss/overview') {
+    $item = menu_get_item('admin/settings/feeds/rss/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_rss_permission() {
+  return array(
+    'administer rss feeds' => array(
+      'title' => t('Administer RSS Feeds'),
+    ),
+  );
+}
+
+/**
+ * Menu autoloader for for rss feed entities.
+ */
+function cu_rss_feed_load($id) {
+  $feed = entity_load('rss_feed', array($id));
+  return array_pop($feed);
+}
+
+/**
+ * Add auto-discover RSS Feed.
+ */
+function cu_rss_preprocess_html(&$vars) {
+  $default_feed = variable_get('express_rss_feed_default', cu_rss_default_feed());
+  $element = array(
+    '#tag' => 'link',
+    '#attributes' => array(
+      'href' => $default_feed,
+      'rel' => 'alternate',
+    ),
+  );
+  drupal_add_html_head($element, 'article_rss');
+}
+
+/**
+ * Returns default feed.
+ */
+function cu_rss_default_feed() {
+  global $base_url;
+  $parts = array();
+  $parts[] = $base_url;
+  $parts[] = 'feed';
+  $parts[] = 'rss.xml';
+  $url = join('/', $parts);
+
+  return variable_get('express_rss_feed_default', $url);
+}
+
+/**
+* Implements hook_views_api().
+*
+* Enabling using templates inside module
+*/
+function cu_rss_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'cu_rss'),
+    'template path' => drupal_get_path('module', 'cu_rss') . '/templates',
+  );
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_rss_express_help($variables) {
+  $variables['admin/settings/feeds/rss/add'][] = array(
+    'title' => 'RSS Feed help',
+    'short_title' => 'RSS Feed help',
+    'url' => '/node/1078',
+  );
+  $variables['admin/settings/feeds/rss/manage/%/edit'][] = array(
+    'title' => 'RSS Feed help',
+    'short_title' => 'RSS Feed help',
+    'url' => '/node/1078',
+  );
+  $variables['admin/settings/feeds/rss/overview'][] = array(
+    'title' => 'Managing RSS Feeds',
+    'short_title' => 'Managing RSS Feeds',
+    'url' => '/node/1080',
+  );
+
+  return array_map(
+    function($a) {
+      $a[0]['module'] = 'cu_rss';
+      return $a;
+    },
+    $variables);
+}
+
+/**
+ * Implements hook_secure_permissions().
+ *
+ * Adding permissions for RSS entity.
+ */
+function cu_rss_secure_permissions($role) {
+  $permissions = array(
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'administrator' => array(
+      'administer rss feeds',
+    ),
+    'edit_my_content' => array(),
+
+    'edit_only' => array(),
+
+    'content_editor' => array(
+      'administer rss feeds',
+    ),
+    'developer' => array(
+      'administer rss feeds',
+    ),
+    'site_editor' => array(
+      'administer rss feeds',
+    ),
+    'site_owner' => array(
+      'administer rss feeds',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function cu_rss_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_rss');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * Callback function for feed/%/%/rss.xml
+ *
+ * Outputs article rss feed, filterable by categories and tags.
+ */
+function cu_rss_feed_output($categories = NULL, $tags = NULL) {
+  // Start query.
+  $query = db_select('node', 'n');
+  $query->range(0, 10);
+  $query->condition('n.type', 'article', '=');
+  $query->condition('n.status', 1, '=');
+  $query->fields('n', array('nid', 'created'));
+
+  if ($categories == 'all') {
+    $categories = NULL;
+  }
+  if ($tags == 'all') {
+    $tags = NULL;
+  }
+  $categories = isset($categories) ? explode(' ', $categories) : array();
+  $tags = isset($tags) ? explode(' ', $tags) : array();
+  // Filter by tag.
+  if (!empty($tags)) {
+    $terms = array();
+    foreach ($tags as $tid) {
+      $terms[$tid] = $tid;
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('tags');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+    }
+    $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+    $query->fields('tags', array('field_tags_tid'));
+    $query->condition('tags.field_tags_tid', $terms, 'in');
+  }
+
+  // Filter by category.
+  if (!empty($categories)) {
+    $terms = array();
+    foreach ($categories as $tid) {
+      $terms[$tid] = $tid;
+      // Look up children terms and add them to array
+      $v = taxonomy_vocabulary_machine_name_load('category');
+      $children = taxonomy_get_tree($v->vid, $tid);
+      foreach ($children as $child) {
+        $terms[$child->tid] = $child->tid;
+      }
+    }
+    $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+    $query->fields('cats', array('field_article_categories_tid'));
+    $query->condition('cats.field_article_categories_tid', $terms, 'in');
+  }
+
+  $query->distinct();
+  $query->groupBy('n.nid');
+  // Display the newest first.
+  $query->orderBy('created', 'DESC');
+  $nids = $query->execute()->fetchCol();
+  $channel = array();
+
+  // Build channel elements
+  global $base_url;
+  $path = current_path();
+  // convert spaces to + to match against feed url query
+  $path = str_replace(' ', '+', $path);
+  if ($path == 'feed/all/all/rss.xml') {
+    $path = 'feed/rss.xml';
+  }
+  $current_url = $base_url . '/' . $path;
+  $query = db_select('rss_feed', 'rf');
+  $query->fields('rf', array('id', 'name', 'url'));
+  $query->condition('rf.url', $current_url, '=');
+  $feeds = $query->execute()->fetchAssoc();
+  $feed_title = isset($feeds['name']) ? $feeds['name'] : variable_get('site_name') . ' - ' . variable_get('site_slogan');
+
+  $channel['title'] = $feed_title;
+  $channel['description'] = 'Feed from ' . variable_get('site_name', '') . ', University of Colorado Boulder';
+
+
+  node_feed($nids, $channel);
+}

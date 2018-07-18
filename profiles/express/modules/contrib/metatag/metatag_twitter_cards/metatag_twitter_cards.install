@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Update scripts for the Metatag: Twitter Cards module.
+ */
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function metatag_twitter_cards_update_dependencies() {
+  // Twitter Cards update 7100 requires the complete Metatag schema, so lets
+  // wait for Metatag update 7100 just to be sure.
+  $dependencies['metatag_twitter_cards'][7100] = array(
+    'metatag' => 7100,
+  );
+  return $dependencies;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_twitter_cards_uninstall() {
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_twitter:title');
+  variable_del('metatag_maxlength_twitter:description');
+}
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Rename the 'twitter:image:src' meta tag back to 'twitter:image'. Sorry.
+ */
+function metatag_twitter_cards_update_7100(&$sandbox) {
+  module_load_include('install', 'metatag');
+  $old_tag = 'twitter:image:src';
+  $new_tag = 'twitter:image';
+  return metatag_update_replace_entity_tag($sandbox, $old_tag, $new_tag);
+}
+
+/**
+ * Rename the 'twitter:image:src' meta tag back to 'twitter:image', part 2.
+ */
+function metatag_twitter_cards_update_7101() {
+  module_load_include('install', 'metatag');
+  $old_tag = 'twitter:image:src';
+  $new_tag = 'twitter:image';
+  return metatag_update_replace_config_tag($old_tag, $new_tag);
+}
+
+/**
+ * Clear the Metatag cache.
+ */
+function metatag_twitter_cards_update_7102() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  return t('All Metatag caches cleared.');
+}
