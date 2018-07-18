@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+
+  honeypot:
+    image: geerlingguy/drupal-vm
+    container_name: honeypot
+    ports:
+      - 80:80
+      - 443:443
+    privileged: true
+    extra_hosts:
+      local.drupalhoneypot.com: 127.0.0.1
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - ./:/opt/honeypot/:rw,delegated
+    command: /lib/systemd/systemd
+    networks:
+      honeypot:
+        ipv4_address: 192.168.22.33
+
+networks:
+
+  honeypot:
+    driver: bridge
+    driver_opts:
+      ip: 192.168.22.1
+    ipam:
+      config:
+        - subnet: "192.168.22.0/16"

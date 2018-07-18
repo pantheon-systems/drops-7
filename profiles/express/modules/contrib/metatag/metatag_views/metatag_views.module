@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides native meta tag integration with Views.
@@ -49,9 +50,14 @@ function metatag_views_views_preview_info_alter(&$rows, $view) {
   $instance = 'view:' . $view->name;
   $options['token data']['view'] = $view;
   $values = metatag_metatags_values($instance, $metatags, $options);
+  $use_views_tokens = $view->display_handler->get_option('metatags_tokenize');
   foreach ($values as $metatag => $value) {
     $metatag_info = metatag_get_info('tags', $metatag);
-    $values[$metatag] = $metatag_info['label'] . ': ' . check_plain($value);
+    // If enabled, use replacement tokens from the first Views result row.
+    if ($value && $use_views_tokens) {
+      $value = $view->style_plugin->tokenize_value($value, 0);
+    }
+    $values[$metatag] = check_plain($metatag_info['label']) . ': ' . check_plain($value);
   }
   if (!empty($values)) {
     $rows['query'][] = array(
@@ -115,6 +121,23 @@ function metatag_views_page_alter(&$page) {
       // strings.
       metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display, NULL, FALSE);
 
+      // If enabled, use replacement tokens from the first Views result row.
+      if ($view->display_handler->get_option('metatags_tokenize')) {
+        // If the Views output was loaded from the Views output cache, the
+        // fields won't have been rendered and thus the first row tokens would
+        // be empty. Therefore, in this case, we manually trigger rendering of
+        // the first row.
+        _metatag_views_render_first_row($view);
+
+        foreach ($metatags as $langcode => $values) {
+          foreach ($values as $metatag => $config) {
+            if (!empty($config['value']) && is_scalar($config['value'])) {
+              $metatags[$langcode][$metatag]['value'] = $view->style_plugin->tokenize_value($config['value'], 0);
+            }
+          }
+        }
+      }
+
       // Build options for meta tag rendering.
       $options = array();
       $options['token data']['view'] = $view;
@@ -127,4 +150,23 @@ function metatag_views_page_alter(&$page) {
       $page[$region]['metatags'][$instance] = metatag_metatags_view($instance, $metatags, $options);
     }
   }
+}
+
+/**
+ * Triggers rendering of the first row of the Views result set.
+ *
+ * This is used as a helper function in metatag_views_page_alter() to have the
+ * necessary field tokens available.
+ *
+ * @param view $view
+ *   The view for which result fields should be rendered.
+ */
+function _metatag_views_render_first_row(view $view) {
+  $result = $view->result;
+  if (!$result) {
+    return;
+  }
+  // We only need the first row of the results.
+  $result = array_intersect_key($result, array(0 => TRUE));
+  $view->style_plugin->render_fields($result);
 }

@@ -20,10 +20,10 @@
 <?php if(!empty($content['field_person_email']) || !empty($content['field_person_phone'])): ?>
 <div class="people-contact people-section">
   <?php if(!empty($content['field_person_email'])): ?>
-    <div class="person-email person-contact-info-item"><i class="fa fa-envelope"></i> <?php print render($content['field_person_email']); ?></div>
+    <div class="person-email person-contact-info-item"><i class="fa fa-envelope fa-fw"></i> <?php print render($content['field_person_email']); ?></div>
   <?php endif; ?>
   <?php if(!empty($content['field_person_phone'])): ?>
-    <div class="person-phone person-contact-info-item"><i class="fa fa-phone"></i> <?php print render($content['field_person_phone']); ?></div>
+    <div class="person-phone person-contact-info-item"><i class="fa fa-phone fa-fw"></i> <?php print render($content['field_person_phone']); ?></div>
   <?php endif; ?>
 </div>
 <?php endif; ?>

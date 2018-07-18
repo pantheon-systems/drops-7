@@ -1,8 +1,12 @@
 <?php
 
 /**
- * Tests for the Metatag module for Panels integration, outside of
- * Metatag:Panels.
+ * @file
+ * Tests for Panels integration, outside of Metatag:Panels.
+ */
+
+/**
+ * Tests for Panels integration, outside of Metatag:Panels.
  */
 class MetatagCoreWithPanelsTest extends MetatagTestHelper {
 

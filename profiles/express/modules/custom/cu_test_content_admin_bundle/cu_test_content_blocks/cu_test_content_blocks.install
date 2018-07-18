@@ -192,20 +192,7 @@ function _cu_test_content_blocks_hero() {
   $values['field_hero_unit_bg_color'][LANGUAGE_NONE][0]['value'] = 'black';
   $values['field_hero_unit_text_align'][LANGUAGE_NONE][0]['value'] = 'left-half';
 
-  $random = rand(5, 500);
-  $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-  $fetched = FALSE;
-  $tries = 0;
-  // Try 5 times to get an image
-  do {
-    if ($file_path = system_retrieve_file($image)) {
-      $fetched = TRUE;
-      break;
-    }
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $tries++;
-  } while (($fetched == FALSE) && ($tries < 5));
+  $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
 
   $file = (object) array(
     'uid' => $count,
@@ -294,20 +281,7 @@ function _cu_test_content_create_grid_field_collection_item($bean, $title, $imag
   $fc_item->field_callout_text[LANGUAGE_NONE][$order]['value'] = $text;
   $fc_item->field_callout_text[LANGUAGE_NONE][$order]['format'] = 'wysiwyg';
 
-  $random = rand(5, 500);
-  $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-  $fetched = FALSE;
-  $tries = 0;
-  // Try 5 times to get an image
-  do {
-    if ($file_path = system_retrieve_file($image)) {
-      $fetched = TRUE;
-      break;
-    }
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $tries++;
-  } while (($fetched == FALSE) && ($tries < 5));
+  $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
 
   $file = (object) array(
     'uid' => $count,
@@ -357,20 +331,7 @@ function _cu_test_content_create_slider_field_collection_item($bean, $title, $or
   $fc_item->field_slider_teaser[LANGUAGE_NONE][$order]['value'] = $text;
   $fc_item->field_slider_teaser[LANGUAGE_NONE][$order]['format'] = 'wysiwyg';
 
-  $random = rand(5, 500);
-  $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-  $fetched = FALSE;
-  $tries = 0;
-  // Try 5 times to get an image
-  do {
-    if ($file_path = system_retrieve_file($image)) {
-      $fetched = TRUE;
-      break;
-    }
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $tries++;
-  } while (($fetched == FALSE) && ($tries < 5));
+  $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
 
   $file = (object) array(
     'uid' => $count,
@@ -426,20 +387,7 @@ function _cu_test_content_blocks_video_reveal() {
   $bean->field_video_reveal_text[LANGUAGE_NONE][0]['value'] = _cu_test_content_grid_titles_dummy_text();
   $bean->field_video_reveal_text[LANGUAGE_NONE][0]['format'] = 'wysiwyg';
 
-  $random = rand(5, 500);
-  $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-  $fetched = FALSE;
-  $tries = 0;
-  // Try 5 times to get an image
-  do {
-    if ($file_path = system_retrieve_file($image)) {
-      $fetched = TRUE;
-      break;
-    }
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $tries++;
-  } while (($fetched == FALSE) && ($tries < 5));
+  $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
 
   $file = (object) array(
     'uid' => $count,

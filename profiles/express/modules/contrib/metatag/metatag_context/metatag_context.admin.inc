@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Admin settings page for Metatag Context.
@@ -199,7 +200,7 @@ function metatag_context_delete_form($form, &$form_state, $context) {
   $form_state['metatag_context']['context'] = $context;
 
   $form['delete'] = array(
-    '#value' => 'This action will permanently remove this item from your database.'
+    '#value' => 'This action will permanently remove this item from your database.',
   );
 
   $form['actions']['#type'] = 'actions';
@@ -241,8 +242,7 @@ function metatag_context_load_default_context() {
   $context->metatag = TRUE;
   $context->conditions = array(
     'path' => array(
-      'values' => array(
-      ),
+      'values' => array(),
     ),
   );
   $context->reactions = array(

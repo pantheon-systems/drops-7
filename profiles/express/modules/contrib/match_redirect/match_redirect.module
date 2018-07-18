@@ -1,0 +1,234 @@
+<?php
+
+/**
+ * @file
+ * Match redirect module.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function match_redirect_entity_info() {
+  $info['match_redirect'] = array(
+    'label' => t('Match Redirect'),
+    'base table' => 'match_redirect',
+    'entity keys' => array(
+      'id' => 'rid',
+    ),
+    'fieldable' => FALSE,
+    'uuid' => FALSE,
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function match_redirect_menu() {
+  $items['admin/config/search/match_redirect'] = array(
+    'title' => 'Match redirects',
+    'description' => 'Matching pattern redirects to target.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_redirect_list_form'),
+    'access arguments' => array('administer matchredirect'),
+    'file' => 'match_redirect.admin.inc',
+  );
+  $items['admin/config/search/match_redirect/add'] = array(
+    'title' => 'Add match redirect',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_redirect_add_form'),
+    'access arguments' => array('administer matchredirect'),
+    'file' => 'match_redirect.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['admin/config/search/match_redirect/edit/%match_redirect'] = array(
+    'title' => 'Edit match redirect',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_redirect_add_form', 5),
+    'access arguments' => array('administer matchredirect'),
+    'file' => 'match_redirect.admin.inc',
+  );
+  $items['admin/config/search/match_redirect/delete/%match_redirect'] = array(
+    'title' => 'Delete match redirect',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_redirect_delete_form', 5),
+    'access arguments' => array('administer matchredirect'),
+    'file' => 'match_redirect.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function match_redirect_permission() {
+  $perm['administer matchredirect'] = array(
+    'title' => t('Administer Match Redirect'),
+  );
+  return $perm;
+}
+
+/**
+ * Implements hook_init().
+ */
+function match_redirect_init() {
+  // Get all redirects.
+  $results = match_redirect_load_multiple(array());
+  // Alias of page user is on.
+  $current_alias = drupal_get_path_alias();
+  // Check each redirect for a match and stop if found.
+  foreach ($results as $row) {
+    $patterns = $row->source_pattern;
+    $redirect = $row->target;
+    $override = $row->override;
+    $code = $row->status_code;
+    if (drupal_match_path($current_alias, $patterns)) {
+      // Check if the current page exists unless overridden.
+      if ($override || !match_redirect_url_exists()) {
+        // Do the redirect.
+        drupal_goto($redirect, array(), $code);
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Checks if current page is registered as a menu item (exists).
+ *
+ * @return bool
+ *   Whether or not the menu item was found.
+ */
+function match_redirect_url_exists() {
+  return (bool) menu_get_item();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function match_redirect_theme() {
+  return array(
+    'match_redirect_list_form' => array(
+      'render element' => 'form',
+      'file' => 'match_redirect.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Saves a redirect.
+ *
+ * @param object $redirect
+ *   The redirect object to be saved.
+ * 
+ * @throws Exception
+ */
+function match_redirect_save($redirect) {
+  $transaction = db_transaction();
+
+  try {
+    // Load the stored entity, if any.
+    if (!empty($redirect->rid) && !isset($redirect->original)) {
+      $redirect->original = entity_load_unchanged('match_redirect', $redirect->rid);
+    }
+
+    // Invoke hook_entity_presave() on other modules.
+    module_invoke_all('entity_presave', $redirect, 'match_redirect');
+
+    // Save to the database and fire relevent hooks.
+    if (!empty($redirect->rid)) {
+      drupal_write_record('match_redirect', $redirect, array('rid'));
+      // Invoke hook_entity_update() on other modules.
+      module_invoke_all('entity_update', $redirect, 'match_redirect');
+    }
+    else {
+      drupal_write_record('match_redirect', $redirect);
+      // Invoke hook_entity_insert() on other modules.
+      module_invoke_all('entity_insert', $redirect, 'match_redirect');
+    }
+
+    unset($redirect->original);
+  }
+  catch (Exception $e) {
+    $transaction->rollback('match_redirect');
+    watchdog_exception('match_redirect', $e);
+    throw $e;
+  }
+}
+
+/**
+ * Deletes a redirect.
+ *
+ * @param int $rid
+ *   The id of the redirect to be deleted.
+ * 
+ * @throws Exception
+ */
+function match_redirect_delete($rid) {
+  $transaction = db_transaction();
+  $redirect = match_redirect_load($rid);
+  try {
+    // Invoke hook_entity_delete() on other modules.
+    module_invoke_all('entity_delete', $redirect, 'match_redirect');
+
+    db_delete('match_redirect')
+      ->condition('rid', $rid, '=')
+      ->execute();
+  }
+  catch (Exception $e) {
+    $transaction->rollback('match_redirect');
+    watchdog_exception('match_redirect', $e);
+    throw $e;
+  }
+}
+
+/**
+ * Loads a redirect and returns it.
+ *
+ * @param int $rid
+ *   The id of the redirect to be loaded.
+ * @param bool $reset
+ *   Whether to reset the internal cache for the requested entity type.
+ * 
+ * @return mixed
+ *   Returns loaded redirect or FALSE if not found.
+ */
+function match_redirect_load($rid, $reset = FALSE) {
+  $redirects = entity_load('match_redirect', array($rid), array(), $reset);
+  return !empty($redirects) ? reset($redirects) : FALSE;
+}
+
+/**
+ * Loads redirects and returns them ordered by weight.
+ *
+ * @param array $rids
+ *   Array of redirect ids to be loaded.
+ * @param array $conditions
+ *   An associative array of conditions on the base table, where the keys are 
+ *   the database fields and the values are the values those fields must have. 
+ *   Instead, it is preferable to use EntityFieldQuery to retrieve a list of 
+ *   entity IDs loadable by this function.
+ * @param bool $reset
+ *   Whether to reset the internal cache for the requested entity type.
+ * 
+ * @return array
+ *   Returns loaded redirects array or empty array if none found.
+ */
+function match_redirect_load_multiple($rids = array(), array $conditions = array(), $reset = FALSE) {
+  // Order by weight.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'match_redirect');
+  // Get only provided rids but exclude if $rids array is empty.
+  if (!empty($rids)) {
+    $query->propertyCondition('rid', $rids, 'IN');
+  }
+  $query->propertyOrderBy('weight');
+  $result = $query->execute();
+  // Check for result and substitute reordered rids.
+  if (isset($result['match_redirect']) && !empty($result['match_redirect'])) {
+    $rids = array_keys($result['match_redirect']);
+  }
+  return entity_load('match_redirect', $rids, $conditions, $reset);
+}

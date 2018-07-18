@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ * Installation and schema hooks for the embed_templates module.
+ */
+
+/**
+ * Implements hook_schema().
+ *
+ * @return array
+ *   An array of schemas to be added to the database.
+ */
+function embed_templates_schema() {
+  $schema = array();
+
+  $schema['embed_templates'] = array(
+    'description' => 'The base table for the embed entity.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the embed entity.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'author' => array(
+        'description' => 'The user who created the embed.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'N/A',
+      ),
+      'name' => array(
+        'description' => 'Human readable name of the embed.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'renderer' => array(
+        'description' => 'What to use to render the template.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'Pre-defined type of embed.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'path' => array(
+        'description' => 'Path to place the embed.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Published status of the embed.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'updated' => array(
+        'type' => 'int',
+        'description' => 'Timestamp when the embed was last updated.',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'description' => 'Custom options for embed.',
+        'type' => 'blob',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add uid and updated fields.
+ */
+function embed_templates_update_7001() {
+
+  if (!db_field_exists('embed_templates', 'author')) {
+    $spec = array(
+      'description' => 'The user who created the embed.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => 'N/A',
+    );
+    db_add_field('embed_templates', 'author', $spec);
+  }
+
+  if (!db_field_exists('embed_templates', 'updated')) {
+    $spec = array(
+      'description' => 'Timestamp when the embed was last updated.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'unsigned' => TRUE,
+      'default' => 0,
+    );
+    db_add_field('embed_templates', 'updated', $spec);
+  }
+}

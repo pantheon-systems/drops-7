@@ -734,6 +734,7 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
     );
   }
   $check_if_set = array(
+    'block_formats',
     'apply_source_formatting',
     'autoresize_min_height',
     'autoresize_max_height',

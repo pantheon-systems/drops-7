@@ -105,3 +105,8 @@ $conf['metatag_enable_file'] = 0;
 $conf['metatag_enable_bean'] = 0;
 $conf['metatag_enable_user'] = 0;
 $conf['metatag_enable_taxonomy_term'] = 0;
+
+
+// Gets rid of the error on the status report page.
+// To check if this is an actual problem, see if the Update module checks work.
+$conf['drupal_http_request_fails'] = FALSE;

@@ -1,7 +1,8 @@
 {
   "require": {
-    "drupal/drupal-extension": "dev-master",
-    "dmore/behat-chrome-extension": "dev-master@dev"
+    "behat/mink-extension": "~2.3",
+    "behat/mink-goutte-driver": "~1.2",
+    "behat/mink-selenium2-driver": "~1.3"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

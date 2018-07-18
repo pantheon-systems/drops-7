@@ -69,7 +69,7 @@ table.cu-block-row-table-example td { border: 3px solid #fff; }
   .block-row-distribution-left.block-row-columns-5 .block-row-column-1 { flex-grow: 2; }
   .block-row-distribution-right.block-row-columns-5 .block-row-column-5 { flex-grow: 2; }
   /* 6 Columns */
-  .block-row-columns-6 .block-row-column { flex-basis: 14.2857%; }
+  .block-row-columns-6 .block-row-column { flex-basis: 16.666%; }
   .block-row-distribution-right.block-row-columns-6 .block-row-column, .block-row-distribution-left.block-row-columns-6 .block-row-column { flex-basis: 14.2857%; flex-grow: 0; }
   .block-row-distribution-left.block-row-columns-6 .block-row-column-1 { flex-grow: 2; }
   .block-row-distribution-right.block-row-columns-6 .block-row-column-6 { flex-grow: 2; } }

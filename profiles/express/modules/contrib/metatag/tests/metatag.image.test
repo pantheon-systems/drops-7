@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module to ensure image handling doesn't break.
+ */
+
+/**
  * Tests for the Metatag module to ensure image handling doesn't break.
  */
 class MetatagCoreImageTest extends MetatagTestHelper {
@@ -101,8 +106,8 @@ class MetatagCoreImageTest extends MetatagTestHelper {
     // Confirm that the image_src meta tag has the expected values.
     $xpath = $this->xpath("//link[@rel='image_src']");
     $this->assertEqual(count($xpath), 1, 'One image_src meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $image_url);//, 'The image_src meta tag with a URL relative to the Drupal root is being output as an absolute URL.');
-
+    $this->assertEqual((string) $xpath[0]['href'], $image_url);
+    // , 'The image_src meta tag with a URL relative to the Drupal root is being output as an absolute URL.');
     // Confirm the file could be loaded.
     $this->drupalGet($xpath[0]['href']);
     $this->assertResponse(200, "The image_src meta tag's value could be loaded.");
@@ -142,8 +147,8 @@ class MetatagCoreImageTest extends MetatagTestHelper {
     // Confirm that the image_src meta tag has the expected values.
     $xpath = $this->xpath("//link[@rel='image_src']");
     $this->assertEqual(count($xpath), 1, 'One image_src meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $image_url);//, 'The image_src meta tag with an internal URI is being output as an absolute URL.');
-
+    $this->assertEqual((string) $xpath[0]['href'], $image_url);
+    // , 'The image_src meta tag with an internal URI is being output as an absolute URL.');
     // Confirm the file could be loaded.
     $this->drupalGet($xpath[0]['href']);
     $this->assertResponse(200, "The image_src meta tag's value could be loaded.");
@@ -413,7 +418,6 @@ class MetatagCoreImageTest extends MetatagTestHelper {
     $this->assertResponse(200);
 
     // Confirm that the image_src meta tag has the expected values.
-
     $xpath = $this->xpath("//link[@rel='image_src']");
     $this->assertEqual(count($xpath), 1, 'Only one image_src meta tag found.');
     $this->assertEqual($xpath[0]['href'], $image1_url, "The image_src meta tag was found with the node's image field's first value.");

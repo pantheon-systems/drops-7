@@ -1,7 +1,12 @@
 <?php
 
 /**
- * Tests for the Metatag module's output caching
+ * @file
+ * Tests for the Metatag module's output caching.
+ */
+
+/**
+ * Tests for the Metatag module's output caching.
  */
 class MetatagCoreOutputCachingTest extends MetatagTestHelper {
 
@@ -40,14 +45,13 @@ class MetatagCoreOutputCachingTest extends MetatagTestHelper {
     $this->assertText('Hello ' . $account1->name);
     $xpath = $this->xpath("//h1");
     $this->verbose($xpath);
-    $this->assertEqual(trim((string)$xpath[0]), 'Hello ' . $account1->name);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account1->name);
 
     // Confirm the page title itself.
     $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
 
     // Log out the user.
-    $this->drupalLogout().
-
+    $this->drupalLogout() .
     // Log in the second account.
     $this->drupalLogin($account2);
 
@@ -61,7 +65,7 @@ class MetatagCoreOutputCachingTest extends MetatagTestHelper {
     $this->assertText('Hello ' . $account2->name);
     $xpath = $this->xpath("//h1");
     $this->verbose($xpath);
-    $this->assertEqual(trim((string)$xpath[0]), 'Hello ' . $account2->name);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account2->name);
 
     // Confirm the page title has not been updated, which is as designed.
     $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
@@ -91,13 +95,13 @@ class MetatagCoreOutputCachingTest extends MetatagTestHelper {
     $this->assertText('Hello ' . $account1->name);
     $xpath = $this->xpath("//h1");
     $this->verbose($xpath);
-    $this->assertEqual(trim((string)$xpath[0]), 'Hello ' . $account1->name);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account1->name);
 
     // Confirm the page title itself.
     $this->assertTitle('Hello ' . $account1->name . ' | Drupal');
 
     // Log out the user.
-    $this->drupalLogout().
+    $this->drupalLogout();
 
     // Log in the second account.
     $this->drupalLogin($account2);
@@ -112,7 +116,7 @@ class MetatagCoreOutputCachingTest extends MetatagTestHelper {
     $this->assertText('Hello ' . $account2->name);
     $xpath = $this->xpath("//h1");
     $this->verbose($xpath);
-    $this->assertEqual(trim((string)$xpath[0]), 'Hello ' . $account2->name);
+    $this->assertEqual(trim((string) $xpath[0]), 'Hello ' . $account2->name);
 
     // Confirm the page title has changed, i.e. it shows the second account name
     // rather than the first.

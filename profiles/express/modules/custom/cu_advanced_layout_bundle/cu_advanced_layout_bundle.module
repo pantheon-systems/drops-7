@@ -41,6 +41,12 @@ function cu_advanced_layout_bundle_secure_permissions($role) {
     'edit_my_content' => array(
       'view any block_section bean',
     ),
+    'site_editor' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
     'site_owner' => array(
       'create any block_section bean',
       'delete any block_section bean',

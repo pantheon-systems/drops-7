@@ -114,7 +114,13 @@ ul.field-name-field-person-website { list-style: none; margin: 0; padding: 0; }
 
 ul.field-name-field-person-website li { list-style: none; list-style-image: none; margin: 0; padding: 0; overflow: hidden; }
 
-ul.field-name-field-person-website li:before { content: '\f14c '; font-family: 'FontAwesome'; float: left; color: #aaa; margin-right: 5px; text-align: center; }
+ul.field-name-field-person-website li a:before { content: '\f14c '; font-family: 'FontAwesome'; float: left; color: #aaa; margin-right: 5px; text-align: center; width: 1.28571429em; }
+ul.field-name-field-person-website li a[href*="facebook.com"]:before { content: '\f230'; }
+ul.field-name-field-person-website li a[href*="linkedin.com"]:before { content: '\f08c'; }
+ul.field-name-field-person-website li a[href*="twitter.com"]:before { content: '\f099'; }
+ul.field-name-field-person-website li a[href*="youtube.com"]:before { content: '\f167'; }
+ul.field-name-field-person-website li a[href*=".jpg"]:before, ul.field-name-field-person-website li a[href*=".png"]:before, ul.field-name-field-person-website li a[href*=".gif"]:before { content: '\f03e'; }
+ul.field-name-field-person-website li a[href*="fileicon=pdf"]:before { content: '\f1c1'; }
 
 .person-view-mode-teaser-contact, .person-view-mode-embed-contact { padding-top: 20px; }
 
@@ -130,13 +136,22 @@ ul.field-name-field-person-website li:before { content: '\f14c '; font-family: '
 
 @media (max-width: 480px) { .person-view-mode-teaser-contact .person-contact-info-item { display: block; font-size: 85%; }
   .person-view-mode-teaser-contact .person-contact-separator { display: none; } }
-.grid-person { width: 30.66%; float: left; margin-right: 4%; margin-bottom: 20px; }
+.people-list-wrapper-grid { margin: 0 -20px; display: flex; flex-direction: row; flex-wrap: wrap; }
 
-.people-grid-first { clear: both; }
-
-.people-grid-last { margin-right: 0; }
+/*
+.grid-person { width: 30.66%; float:left; margin-right:4%; margin-bottom: 20px;
+}
+.people-grid-first { clear:both;
+}
+.people-grid-last { margin-right:0;
+}
+*/
+.grid-person { margin-bottom: 40px; }
+@media screen and (max-width: 767px) { .grid-person { margin-bottom: 20px; } }
+.grid-person .person-grid-content-wrapper { overflow: hidden; }
 
 .grid-person img.image-large_square_thumbnail { margin-bottom: 10px; width: 100%; height: auto; float: none; display: block; }
+@media screen and (max-width: 767px) { .grid-person img.image-large_square_thumbnail { float: left; margin: 0 10px 10px 0; max-width: 75px; } }
 
 .person-job-titles-grid { font-size: 75%; line-height: 120%; margin-bottom: 5px; }
 

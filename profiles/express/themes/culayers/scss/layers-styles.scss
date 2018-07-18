@@ -55,7 +55,8 @@ body {
   a:focus {
     color:$cugold;
   }
-  a#home-link {
+  a.home-link,
+  a.home-link.active {
     background-color: transparent;
     color: #ccc;
   }

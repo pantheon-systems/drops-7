@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Internationalization (i18n) hooks.
@@ -31,7 +32,7 @@ function metatag_panels_i18n_object_info() {
     if (!empty($tag_info['group'])) {
       $tag_group = $tag_info['group'];
       $group_label = !empty($groups[$tag_group]['label']) ? $groups[$tag_group]['label'] : $tag_group;
-      $title = $group_label . ': '. $title;
+      $title = $group_label . ': ' . $title;
     }
 
     $properties[$tag_name] = array(
@@ -50,7 +51,6 @@ function metatag_panels_i18n_object_info() {
     // 'class' => 'metatag_panels_i18n_metatag',
     // @todo Is this needed? What does it do?
     // 'translation set' => TRUE,
-
     // The object's "key" field, this tells i18n_string to use the $panel->name
     // attribute.
     'key' => 'name',
@@ -63,7 +63,6 @@ function metatag_panels_i18n_object_info() {
     // 'edit path' => 'admin/config/search/metatags/config/%instance',
     // Auto-generate a 'translate' tab.
     // 'translate tab' => 'admin/config/search/metatags/config/%instance/translate',
-
     // Properties for string translation.
     'string translation' => array(
       // The textgroup, type and (below) name will be concatenated into a single

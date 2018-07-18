@@ -1,0 +1,27 @@
+.cu-roles-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin:0 -10px 20px;
+  .cu-role-wrapper {
+    padding:10px;
+    width:100%;
+    @media screen and (min-width:768px) {
+      & {
+        max-width:50%;
+      }
+    }
+    @media screen and (min-width:960px) {
+      & {
+        max-width:25%;
+      }
+    }
+    .cu-role-description {
+      font-size: 75%;
+    }
+  }
+
+}
+.role-type-description {
+  margin-bottom: 10px;
+}

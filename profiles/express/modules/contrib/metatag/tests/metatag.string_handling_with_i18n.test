@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for Metatag's string handling when the i18n module is enabled.
+ */
+
+/**
  * Tests for Metatag's string handling when the i18n module is enabled.
  */
 class MetatagCoreStringHandlingWithI18nTest extends MetatagCoreStringHandlingTest {

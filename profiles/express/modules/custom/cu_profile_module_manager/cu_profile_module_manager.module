@@ -181,6 +181,11 @@ function cu_profile_module_manager_addon_page() {
   /* Variables and whatnot--no form elements. */
   global $base_path;
 
+  if (variable_get('profile_module_manager_disable_enabling_atlas_bundles', 0) == 1) {
+    $output = '<p>' . variable_get('profile_module_manager_disable_enabling_text', 'Bundles are not available at this time. Contact websupport@colorado.edu for questions regarding this.') . '</p>';
+    return $output;
+  }
+
   $atlas_id = variable_get('atlas_id', NULL);
 
   drupal_add_css(drupal_get_path('module', 'cu_profile_module_manager') . '/css/cu-profile-module-manager.css', array('group' => CSS_DEFAULT));
@@ -262,6 +267,11 @@ function cu_profile_module_manager_request_page() {
   /* Variables and whatnot--no form elements. */
   global $base_path;
 
+  if (variable_get('profile_module_manager_disable_enabling_atlas_bundles', 0) == 1) {
+    $output = '<p>' . variable_get('profile_module_manager_disable_enabling_text', 'Bundles are not available at this time. Contact websupport@colorado.edu for questions regarding this.') . '</p>';
+    return $output;
+  }
+
   $atlas_id = variable_get('atlas_id', NULL);
   $site_array = atlas_api_request('sites', $atlas_id);
   if (isset($site_array['code']['package'])) {
@@ -342,6 +352,11 @@ function cu_profile_module_manager_request_page() {
 function cu_profile_module_manager_beta_page() {
   /* Variables and whatnot--no form elements. */
   global $base_path;
+
+  if (variable_get('profile_module_manager_disable_enabling_atlas_bundles', 0) == 1) {
+    $output = '<p>' . variable_get('profile_module_manager_disable_enabling_text', 'Bundles are not available at this time. Contact websupport@colorado.edu for questions regarding this.') . '</p>';
+    return $output;
+  }
 
   $atlas_id = variable_get('atlas_id', NULL);
   $site_array = atlas_api_request('sites', $atlas_id);

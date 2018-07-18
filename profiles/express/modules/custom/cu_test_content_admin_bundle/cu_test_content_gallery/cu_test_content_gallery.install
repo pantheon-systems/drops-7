@@ -15,20 +15,8 @@ function cu_test_content_gallery_install() {
   $node->uid = 1;
   $count = 0;
   for($i=0; $i < 11; $i++) {
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $fetched = FALSE;
-    $tries = 0;
-    // Try 5 times to get an image
-    do {
-      if ($file_path = system_retrieve_file($image)) {
-        $fetched = TRUE;
-        break;
-      }
-      $random = rand(5, 500);
-      $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-      $tries++;
-    } while (($fetched == FALSE) && ($tries < 5));
+    $random = rand(1,96);
+    $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?image=' . $random);
 
     $file = (object) array(
       'uid' => $count,
@@ -39,7 +27,8 @@ function cu_test_content_gallery_install() {
 
 
     // You can specify a subdirectory, e.g. public://foo/
-    $file = file_copy($file, 'public://');
+    // Appending extension to file name so images load properly when viewed
+    $file = file_copy($file, 'public://'.'test_image_'.$i.'.jpg');
     $node->field_photo[LANGUAGE_NONE][$count] = (array) $file;
     $node->field_photo[LANGUAGE_NONE][$count]['alt'] = _cu_test_content_gallery_dummy_text();
     $node->field_photo[LANGUAGE_NONE][$count]['title'] = _cu_test_content_gallery_dummy_text();

@@ -144,10 +144,6 @@ projects[files][version] = "1.0"
 
 projects[fitvids][version] = "1.14"
 
-projects[flexslider][version] = "2.0-alpha3"
-
-projects[flexslider_views_slideshow][version] = "2.x-dev"
-
 projects[globalredirect][version] = "1.5"
 
 projects[google_appliance][version] = "1.11"
@@ -230,8 +226,6 @@ projects[views][version] = "3.10"
 projects[views_accordion][version] = "1.0-rc2"
 
 projects[views_slideshow][version] = "3.0"
-
-projects[webform][version] = "4.5"
 
 projects[wysiwyg][version] = "2.2+23-dev"
 

@@ -32,7 +32,7 @@ body {
     @include gradient($color: #444, $color2: #222);
     margin-bottom:-1px;
   }
-  a#home-link {
+  a.home-link {
     border:none;
   }
 }

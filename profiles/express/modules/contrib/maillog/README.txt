@@ -1,0 +1,4 @@
+
+This module defines drupal_mail_wrapper(), which takes over the handling of mail sending. This wrapper creates a node of type 'Logged Mail', a node type created by the module, sends the e-mail, and displays the e-mail and its details by using devel module API. All 3 tasks can be enabled/disabled from 'admin/settings/maillog'.
+
+The invoking of the handler depends on a system variable 'smtp_library'. Unfortunately, some modules may change the value of this variable, rendering the module dysfunctional. Simply disabling and re-enabling the module should fix this problem. Check 'admin/reports/status' to see the status of the SMTP library.

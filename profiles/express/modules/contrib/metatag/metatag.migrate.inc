@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag support for Migrate.
@@ -125,4 +126,5 @@ class MigrateMetatagHandler extends MigrateDestinationHandler {
       }
     }
   }
+
 }

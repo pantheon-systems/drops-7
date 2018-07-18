@@ -1,23 +1,88 @@
 /* NAVBAR */
 #navbar-administration .navbar-bar {
-  background-color: #007BC8;
+  background-color: #0277BD;
   color:#fff;
 }
+
+/**
+ * Settings icon.
+ */
 .navbar-icon-settings:before {
   background-image: url("../icons/787878/cog.svg");
 }
+.no-svg .navbar-icon-settings:before {
+  background-image: url("../icons/787878/cog.png");
+}
+.navbar-icon-settings:active:before,
+.navbar-icon-settings.navbar-active:before {
+  background-image: url("../icons/000000/cog.svg");
+}
+.no-svg .navbar-icon-settings:before,
+.no-svg .navbar-icon-settings.navbar-active:before {
+  background-image: url("../icons/000000/cog.png");
+}
+
+/**
+ * Design icons.
+ */
 .navbar-icon-design:before {
   background-image: url("../icons/787878/paintbrush.svg");
 }
+.no-svg .navbar-icon-design:before {
+  background-image: url("../icons/787878/paintbrush.png");
+}
+.navbar-icon-design:active:before,
+.navbar-icon-design.navbar-active:before {
+  background-image: url("../icons/000000/paintbrush.svg");
+}
+.no-svg .navbar-icon-design:before,
+.no-svg .navbar-icon-design.navbar-active:before {
+  background-image: url("../icons/000000/paintbrush.png");
+}
+
+/**
+ * Web Express Help icon.
+ */
 .navbar-icon-web-express-help:before {
   background-image: url("../icons/787878/questionmark-disc.svg");
 }
+.no-svg .navbar-icon-web-express-help:before {
+  background-image: url("../icons/787878/questionmark-disc.png");
+}
+.navbar-icon-web-express-help:active:before,
+.navbar-icon-web-express-help.navbar-active:before {
+  background-image: url("../icons/000000/questionmark-disc.svg");
+}
+.no-svg .navbar-icon-web-express-help:before,
+.no-svg .navbar-icon-web-express-help.navbar-active:before {
+  background-image: url("../icons/000000/questionmark-disc.png");
+}
+
+/**
+ * Logout icon.
+ */
 .navbar-icon-logout:before {
   background-image: url("../icons/bebebe/logout-small.png");
 }
+
+/**
+ * Users icon.
+ */
 .navbar-icon-users:before {
   background-image: url("../icons/787878/people.svg");
 }
+.no-svg .navbar-icon-users:before {
+  background-image: url("../icons/787878/people.png");
+}
+.navbar-icon-users:active:before,
+.navbar-icon-users.navbar-active:before {
+  background-image: url("../icons/000000/people.svg");
+}
+.no-svg .navbar-icon-users:before,
+.no-svg .navbar-icon-users.navbar-active:before {
+  background-image: url("../icons/000000/people.png");
+}
+
 #navbar-administration .navbar-tab a {
   border-left: none;
 }

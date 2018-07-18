@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests that each of the Metatag Google CSE tags work correctly.
+ */
+
+/**
  * Tests that each of the Metatag Google CSE tags work correctly.
  */
 class MetatagGoogleCSETagsTest extends MetatagTagsTestBase {

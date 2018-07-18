@@ -9,4 +9,9 @@
     <?php print $publish_date['#publish_date']; ?>
   </p>
 <?php endif; ?>
-<div class="article-grid-summary"><?php print render($content['body']); ?></div>
+<div class="article-grid-summary">
+  <?php print render($content['body']); ?>
+  <?php if (isset($more_link)): ?>
+    <p><?php print $more_link; ?></p>
+  <?php endif; ?>
+</div>

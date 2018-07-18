@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * A base class for the Metatag tests, provides shared methods.
+ */
+
+/**
  * A base class for the Metatag tests, provides shared methods.
  */
 abstract class MetatagTestHelper extends DrupalWebTestCase {
@@ -24,6 +29,10 @@ abstract class MetatagTestHelper extends DrupalWebTestCase {
     // Requirements.
     $modules[] = 'ctools';
     $modules[] = 'token';
+
+    // Used for the tests.
+    $modules[] = 'devel';
+    $modules[] = 'devel_generate';
 
     // Metatag modules. Only enable the main module, submodules will be tested
     // separately.
@@ -55,7 +64,7 @@ abstract class MetatagTestHelper extends DrupalWebTestCase {
   /**
    * Load the Performance admin page and clear all caches.
    */
-  function clearAllCaches() {
+  public function clearAllCaches() {
     $this->drupalGet('admin/config/development/performance');
     $this->assertResponse(200);
     $this->assertText(t('Performance'));
@@ -214,14 +223,13 @@ abstract class MetatagTestHelper extends DrupalWebTestCase {
       'description' => array('value' => 'Test foo description'),
       'abstract' => array('value' => 'Test foo abstract'),
       // 'keywords' => array('value' => ''),
-
       // Advanced meta tags.
       // 'robots' => array('value' => ''),
       // 'news_keywords' => array('value' => ''),
       // 'standout' => array('value' => ''),
       // 'robots' => array('value' => ''),
       // 'standout' => array('value' => ''),
-      'generator' => array('value' => 'Drupal 7 (http://drupal.org)'),
+      'generator' => array('value' => 'Drupal 7 (https://www.drupal.org)'),
       // 'standout' => array('value' => ''),
       // 'image_src' => array('value' => ''),
       'canonical' => array('value' => '[current-page:url:absolute]'),
@@ -634,7 +642,7 @@ abstract class MetatagTestHelper extends DrupalWebTestCase {
    *   The source string to search for.
    * @param string $context
    *   The i18n string context to check for.
-   * @param boolean $assert_true
+   * @param bool $assert_true
    *   By default strings are expeted to be found. If the string is not expected
    *   to be translatable yet then pass in FALSE.
    */

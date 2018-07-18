@@ -91,3 +91,10 @@ function express_block_designer_install() {
     'cu_block_theme',
   ));
 }
+
+/**
+ * Delete orphaned block designer settings.
+ */
+function express_block_designer_update_7001() {
+  express_block_designer_delete_orphans();
+}

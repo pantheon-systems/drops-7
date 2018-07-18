@@ -1,0 +1,233 @@
+<?php
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--articles.tpl.php in our module
+ * directory.
+ */
+function cu_article_slider_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_article_slider');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cu_article_slider_theme(&$existing, $type, $theme, $path) {
+  $registry = array();
+  $template_dir = drupal_get_path('module', 'cu_article_slider') . '/templates';
+  $registry['article_slider_node'] = array(
+    'template' => 'article-slider-node',
+    'path' => $template_dir,
+    'render element' => 'elements',
+  );
+  return $registry;
+}
+
+function cu_article_slider_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  if ($vars['elements']['#bundle'] == 'article_slider') {
+    $bid = $vars['bean']->bid;
+    $content = $vars['content'];
+    global $base_url;
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Set number of items.
+
+    $query->range(0, 6);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Make sure articles have thumbnails
+    $query->join("field_data_field_article_thumbnail", "thumbs", "n.nid = thumbs.entity_id");
+    $query->fields('thumbs', array('field_article_thumbnail_fid'));
+    $query->condition('thumbs.field_article_thumbnail_fid', 'NULL', '!=');
+
+    // Exclude category
+    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('category');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
+      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+
+    // Exclude tags
+    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
+        $tid = $value['tid'];
+        $terms[$tid] = $tid;
+        // Look up children terms and add them to array
+        $v = taxonomy_vocabulary_machine_name_load('tags');
+        $children = taxonomy_get_tree($v->vid, $tid);
+        foreach ($children as $child) {
+          $terms[$child->tid] = $child->tid;
+        }
+      }
+      // Start sub query.
+      $exclude_query = db_select('node', 'n');
+      $exclude_query->condition('n.type', 'article', '=');
+      $exclude_query->condition('n.status', 1, '=');
+      $exclude_query->fields('n', array('nid'));
+      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
+      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
+      $query->condition('n.nid', $exclude_query, 'NOT IN');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    $nodes = node_view_multiple($nodes, 'feature');
+
+    // Build output.
+    if (!empty($nodes)) {
+      $output = array(
+        'articles' => array(),
+      );
+      unset($nodes['nodes']['#sorted']);
+      foreach ($nodes['nodes'] as $key => $node) {
+        $node['field_article_thumbnail'][0]['#image_style'] = 'widescreen';
+        $uri = $node['field_article_thumbnail'][0]['#item']['uri'];
+        $image_path = image_style_url('widescreen', $uri);
+        $node['field_article_thumbnail'][0]['#item']['attributes']['data-flickity-lazyload'] = $image_path;
+        $node_vars = array(
+          'title' => $node['#node']->title,
+          'nid' => $node['#node']->nid,
+          'image' => $node['field_article_thumbnail'],
+        );
+        $content =
+        $output['articles'][]['#markup'] = theme('article_slider_node', $node_vars);
+      }
+
+      $output['articles']['#prefix'] = '<div class="article-slider">';
+      $output['articles']['#suffix'] = '</div>';
+      $vars['content'] = $output;
+    }
+    else {
+      $vars['content'] = array_merge($vars['content'], $output);
+      $vars['content'] = '';
+    }
+
+  }
+}
+
+
+/**
+ * Implements hook_libraries_info().
+ */
+function cu_article_slider_libraries_info() {
+  $libraries = array();
+  $libraries['flickity'] = array(
+    'name' => t('Flickity'),
+    'vendor url' => 'https://flickity.metafizzy.co',
+    'download url' => 'https://github.com/metafizzy/flickity',
+    'version' => '2.0.9',
+    'files' => array(
+      'js' => array(
+        'js/flickity.pkgd.min.js',
+      ),
+      'css' => array(
+        'css/flickity.css',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_article_slider_init() {
+
+  $library = libraries_get_path('flickity');
+
+  // Add the library reference.
+  $path = $library . '/js/flickity.pkgd.min.js';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_js($path);
+
+    drupal_add_js(drupal_get_path('module', 'cu_article_slider') . '/js/cu-article-slider.js');
+  }
+
+  $path = $library . '/css/flickity.css';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_css($path);
+  }
+}

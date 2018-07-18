@@ -8,7 +8,7 @@
 /**
  * Declare job scheduling holding items that need to be run periodically.
  *
- * @return
+ * @return array
  *   An associative array where the key is the queue name and the value is
  *   again an associative array. Possible keys are:
  *   - 'worker callback': The name of the function to call. It will be called
@@ -16,6 +16,9 @@
  *   - 'queue name': The name of the queue to use to queue this task. Must
  *     contain a valid queue name, declared by hook_cron_queue_info().
  *   If queue name is given, worker callback will be ignored.
+ *   - 'jobs': (optional) An array defining jobs for this scheduler. The key is
+ *     immaterial. Each job item is itself a job array, whose properties should
+ *     be the same as the parameter to JobScheduler::set().
  *
  * @see hook_cron_job_scheduler_info_alter()
  * @see hook_cron_queue_info()
@@ -43,8 +46,11 @@ function hook_cron_job_scheduler_info() {
  *
  * @see hook_cron_queue_info()
  * @see drupal_cron_run()
+ *
+ * @codingStandardsIgnoreStart
  */
 function hook_cron_job_scheduler_info_alter(&$info) {
-  // Replace the default callback 'example_cache_clear_worker'
+  // @codingStandardsIgnoreEnd
+  // Replace the default callback 'example_cache_clear_worker'.
   $info['example_reset']['worker callback'] = 'my_custom_reset';
 }

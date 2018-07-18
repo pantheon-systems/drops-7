@@ -8,4 +8,4 @@ features[ctools][] = views:views_default:3.0
 features[features_api][] = api:2
 features[views_view][] = cu_content_administration_override_view
 features_exclude[dependencies][ctools] = ctools
-project path = profiles/cu_fit/modules/features
+project path = profiles/express/modules/features

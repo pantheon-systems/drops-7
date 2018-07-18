@@ -113,7 +113,7 @@ function elysia_cron_permission() {
     'administer elysia_cron' => array(
       'title' => t('Administer elysia cron'),
       'description' => t('Perform changes to cron jobs timings, disable cron or single jobs and access cron execution statistics'),
-      'restrict access' => TRUE,  
+      'restrict access' => TRUE,
     ),
     'execute elysia_cron' => array(
       'title' => t('Execute elysia cron jobs'),
@@ -925,7 +925,7 @@ function elysia_cron_debug($message, $vars = array(), $type = WATCHDOG_NOTICE) {
   if ($type < WATCHDOG_NOTICE || variable_get('elysia_cron_debug_messages', 0)) {
     watchdog('cron', $message, $vars, $type);
   }
-  if (!empty($_elysia_cron_drush) && $_elysia_cron_drush >= 2 && ($type >= WATCHDOG_NOTICE || !drush_get_option("verbose", FALSE))) {
+  if (!empty($_elysia_cron_drush) && $_elysia_cron_drush >= 2 && ($type >= WATCHDOG_NOTICE || drush_get_option("verbose", FALSE))) {
     if ($type >= WATCHDOG_NOTICE) {
       drush_print(strip_tags(dt($message, $vars)));
     }

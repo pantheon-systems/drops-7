@@ -275,7 +275,7 @@ function cu_article_field_default_field_instances() {
     'settings' => array(
       'absolute_url' => 1,
       'attributes' => array(
-        'class' => '',
+        'class' => 'button-ghost',
         'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
@@ -1151,11 +1151,11 @@ function cu_article_field_default_field_instances() {
         'label' => 'hidden',
         'module' => 'smart_trim',
         'settings' => array(
-          'more_link' => 1,
+          'more_link' => 0,
           'more_text' => 'Read more »',
           'summary_handler' => 'full',
           'trim_length' => 50,
-          'trim_link' => FALSE,
+          'trim_link' => 0,
           'trim_options' => array(
             'text' => 'text',
           ),

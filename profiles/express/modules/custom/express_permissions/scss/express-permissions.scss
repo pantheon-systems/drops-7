@@ -1,0 +1,19 @@
+form#user-admin-permissions {
+  position:relative;
+
+  #permissions,
+  table.sticky-header {
+    z-index:2;
+
+    th {
+      font-size:75%;
+      font-weight:bold;
+      z-index:2;
+    }
+  }
+
+  #permissions .permission-machine-name {
+    font-size:75%;
+    opacity:.75;
+  }
+}

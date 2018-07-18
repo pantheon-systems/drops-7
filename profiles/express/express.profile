@@ -199,6 +199,62 @@ function express_menu_alter(&$items) {
   //@TODO: move to express_settings?
   // tried but didn't work.  Not sure why, but out of time.
   $items['admin/people']['title'] = 'Users';
+  $items['admin/people']['description'] = 'Review users and roles.';
+  // Expose reports to SO/CE's
+  $items['admin/reports']['access arguments'] = array('access express reports');
+  $items['admin/reports/status']['access arguments'] = array('access advanced express reports');
+}
+
+function express_permission(){
+  return array(
+    'access express reports' => array(
+      'title' => t('Access Express Reports'),
+      'description' => t('View site reports.'),
+    ),
+    'access advanced express reports' => array(
+      'title' => t('Access Advanced Express Reports'),
+      'description' => t('View advanced site reports.'),
+    ),
+  );
+}
+
+function express_secure_permissions($role) {
+
+  $permissions = array(
+    'access_manager' => array(
+      'access express reports',
+    ),
+    'administrator' => array(
+      'access express reports',
+      'access advanced express reports',
+    ),
+    'configuration_manager' => array(
+      'access express reports',
+    ),
+    'content_editor' => array(
+      'access express reports',
+    ),
+    'edit_my_content' => array(
+      'access express reports',
+    ),
+    'edit_only' => array(
+      'access express reports',
+    ),
+    'site_editor' => array(
+      'access express reports',
+    ),
+    'site_owner' => array(
+      'access express reports',
+    ),
+    'developer' => array(
+      'access express reports',
+      'access advanced express reports',
+    ),
+  );
+
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
 }
 
 /**
@@ -225,16 +281,31 @@ function express_get_node_thumbnail($node, $field, $image_style = 'medium') {
  * @return string
  */
 function express_check_known_hosts() {
-
   // Check for Travis.
   if (isset($_SERVER['TRAVIS'])) {
     return 'travis';
   }
-
   // Check for Pantheon.
-  if (defined('PANTHEON_ENVIRONMENT')) {
+  elseif (defined('PANTHEON_ENVIRONMENT')) {
     return 'pantheon';
   }
-
-  return FALSE;
+  // Check for UCB On Prem.
+  elseif (isset($_SERVER['OSR_ENV'])) {
+    return 'ucb_on_prem_hosting';
+  }
+  // Check for NG.
+  elseif (isset($_SERVER['WWWNG_ENV'])) {
+    return 'ng_hosting';
+  }
+  // Check for Lando.
+  elseif (getenv('LANDO_ENV') === 'yes') {
+    return 'lando';
+  }
+  // Check for Valet.
+  elseif (getenv('VALET_ENV') === 'yes') {
+    return 'valet';
+  }
+  else {
+    return FALSE;
+  }
 }

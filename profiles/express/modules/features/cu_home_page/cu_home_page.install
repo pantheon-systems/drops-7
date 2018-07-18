@@ -24,7 +24,7 @@ function _cu_home_page_node() {
   $nodes = array(
     array(
       'title' => 'Home',
-      'body' => '<p>Welcome to your new Web Express website! This content area is used for your homepage content. You can edit this section by clicking on the Edit link above. Once in edit mode, just edit the body text area. For help with your site, you can <a href="http://www.colorado.edu/express/features/" target="_blank">view examples of all the Web Express Features</a> or <a href="http://www.colorado.edu/webcentral/tutorials" target="_blank">view online tutorials</a>.</p>',
+      'body' => '<p>Welcome to your new Web Express website! This content area is used for your homepage content. You can edit this section by clicking on the Edit link above. Once in edit mode, just edit the body text area. For help with your site, you can <a href="https://www.colorado.edu/webcentral/web-express-features" target="_blank">view examples of all the Web Express Features</a> or <a href="http://www.colorado.edu/webcentral/tutorials" target="_blank">view online tutorials</a>.</p>',
       'language' => LANGUAGE_NONE,
     ),
   );

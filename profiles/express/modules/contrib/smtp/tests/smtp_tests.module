@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Primary hook implementations for the SMTP test helper module.
+ */
+
+/**
+ * Implements hook_mail().
+ */
+function smtp_tests_mail($key, &$message, $params) {
+  // A very rudimentary test.
+  if ($key == 'smtp_basic_test') {
+    $message['subject'] = t('Test email subject');
+    $message['body'][] = t('Test email body.');
+  }
+}

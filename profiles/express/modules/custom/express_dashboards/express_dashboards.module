@@ -19,12 +19,14 @@ function express_dashboards_menu() {
   //$dashboards = module_invoke_all('express_dashboard', $variables = NULL);
   // Get default dashbaord
   $default_dashboard = variable_get('express_dashboard_default', NULL);
+  $dashboard_description = 'Site overview and status.';
   // Loop through dashboards to add menu items
   foreach($dashboards as $key => $dashboard) {
     $path = 'admin/dashboard/' . $key;
     $weight = isset($dashboard['weight']) ? $dashboard['weight'] : 0;
     $items[$path] = array(
       'title' => $dashboard['title'],
+      'description' => $dashboard_description,
       'page callback' => 'express_dashboards_dashboard_output',
       'page arguments' => array($dashboard['callback'], $key),
       'access arguments' => $dashboard['access arguments'],
@@ -38,6 +40,7 @@ function express_dashboards_menu() {
       $items[$path]['type'] = MENU_DEFAULT_LOCAL_TASK;
       $items['admin/dashboard'] = array(
         'title' => 'Dashboard',
+        'description' => $dashboard_description,
         'page callback' => 'express_dashboards_dashboard_output',
         'page arguments' => array($dashboard['callback'], $key),
         'access arguments' => $dashboard['access arguments'],
@@ -53,6 +56,7 @@ function express_dashboards_menu() {
     $items[$path]['type'] = MENU_DEFAULT_LOCAL_TASK;
     $items['admin/dashboard'] = array(
       'title' => 'Dashboard',
+      'description' => $dashboard_description,
       'page callback' => 'express_dashboards_dashboard_output',
       'page arguments' => array($dashboards[$key]['callback'], $key),
       'access arguments' => $dashboards[$key]['access arguments'],

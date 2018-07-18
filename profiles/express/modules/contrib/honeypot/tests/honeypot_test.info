@@ -4,9 +4,9 @@ core = 7.x
 package = Testing
 hidden = true
 
-; Information added by Drupal.org packaging script on 2016-03-11
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2018-02-27
+version = "7.x-1.24"
 core = "7.x"
 project = "honeypot"
-datestamp = "1457672041"
+datestamp = "1519706887"
 

@@ -45,3 +45,10 @@ function cu_article_update_7001() {
 function cu_article_update_7002() {
   module_enable(array('cu_related_articles'));
 }
+
+/**
+ * Enable article slider module.
+ */
+function cu_article_update_7003() {
+  module_enable(array('cu_article_slider'));
+}

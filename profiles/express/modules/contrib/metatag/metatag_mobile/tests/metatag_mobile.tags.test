@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests that each of the Metatag Mobile tags work correctly.
+ */
+
+/**
  * Tests that each of the Metatag Mobile tags work correctly.
  */
 class MetatagMobileTagsTest extends MetatagTagsTestBase {

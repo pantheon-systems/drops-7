@@ -1,5 +1,5 @@
 name = Advanced Layout
-description = Create complex and dynamic layouts of content.
+description = The features in this bundle allow you to create complex and dynamic layouts of content. 
 
 core = 7.x
 package = CU-Advanced Layout

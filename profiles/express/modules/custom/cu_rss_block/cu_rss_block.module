@@ -42,13 +42,13 @@ function cu_rss_block_inline_entity_form_entity_form_alter(&$entity_form, &$form
 function _cu_rss_block_form_validate($form, &$form_state) {
   $url = $form_state['values']['field_rss_bean_feed_url'][LANGUAGE_NONE][0]['url'];
   $response = drupal_http_request($url);
-  if ($response->code == '200') {
+  if ($response->code !== '404') {
     $is_xml = simplexml_load_string($response->data);
     if($is_xml===FALSE) {
-      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed (XML not passed).'));
     }
   } else {
-    form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+    form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed (returns a 404).'));
   }
 }
 
@@ -63,17 +63,17 @@ function _cu_rss_block_form_validate_ief($entity_form, &$form_state) {
   if ($response->code == '200') {
     $is_xml = simplexml_load_string($response->data);
     if($is_xml===FALSE) {
-      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed.'));
+      form_set_error('field_rss_bean_feed_url', t('This is not a valid RSS feed (XML not passed).'));
     }
   } else {
-    form_error($entity_form['field_rss_bean_feed_url'], t('This is not a valid RSS feed.'));
+    form_error($entity_form['field_rss_bean_feed_url'], t('This is not a valid RSS feed (does not return 200).'));
   }
 }
 
 function _cu_rss_block_cdata_filter($matches) {
-    $converted = htmlspecialchars($matches[1]);
-    $trimmed = trim($converted);
-    return $trimmed;
+  $converted = htmlspecialchars($matches[1]);
+  $trimmed = trim($converted);
+  return $trimmed;
 }
 
 /**
@@ -100,13 +100,19 @@ function cu_rss_block_preprocess_entity(&$vars) {
         if($is_xml===FALSE) {
           $watchdog_message = 'Feed is not valid: ' . $url;
           watchdog('cu_rss_block', $watchdog_message, array(), WATCHDOG_NOTICE, NULL);
-        }
-        else {
+        } else {
           // remove <![CDATA[]]>
           $xml = preg_replace_callback('/<!\[CDATA\[(.*)\]\]>/', '_cu_rss_block_cdata_filter', $response->data);
 
           // Create new XMLElement
-          $data = new SimpleXMLElement($xml);
+          try {
+            $data = new SimpleXmlElement($xml);
+          }
+          catch (Exception $e) {
+            /* the data provided is not valid XML */
+            watchdog('cu_rss_block', 'RSS feed is invalid. Check RSS feed.');
+            return null;
+          }
 
           // Convert into a nice array for us to work with.
           $data = json_encode($data);
@@ -114,6 +120,9 @@ function cu_rss_block_preprocess_entity(&$vars) {
           // Save to cache for 30 minutes
           cache_set('rss_feed-' . $url, $data, 'cache', time() + 60 * 30);
         }
+      } else {
+        $watchdog_message = 'Feed is not valid: ' . $url;
+        watchdog('cu_rss_block', $watchdog_message, array(), WATCHDOG_NOTICE, NULL);
       }
     }
     // If the feed only contains a single item
@@ -128,38 +137,42 @@ function cu_rss_block_preprocess_entity(&$vars) {
     }
 
     // Add link to bottom of feed
-    $link = $data['channel']['link'];
-    $description = !empty($data['channel']['description']) ? $data['channel']['description'] : NULL;
-    $feed_title = !empty($data['channel']['title']) ? $data['channel']['title'] : NULL;
-    if (!empty($feed)) {
-      // Generate an item_list of our items and add to $content.
-      $vars['content']['feed'] = array(
-        '#theme' => 'item_list',
-        '#items' => $feed,
-        '#weight' => '0',
-        '#attributes' => array(
-          'class' => array('rss-block-items'),
-        ),
-      );
-      if ($feed_title || $description) {
-        $options = array(
-          'attributes' => array(
-            'class' => 'rss-site-link',
+    if (isset($data)) {
+      $link = $data['channel']['link'];
+      $description = !empty($data['channel']['description']) ? $data['channel']['description'] : NULL;
+      $feed_title = !empty($data['channel']['title']) ? $data['channel']['title'] : NULL;
+      if (!empty($feed)) {
+        // Generate an item_list of our items and add to $content.
+        $vars['content']['feed'] = array(
+          '#theme' => 'item_list',
+          '#items' => $feed,
+          '#weight' => '0',
+          '#attributes' => array(
+            'class' => array('rss-block-items'),
           ),
-          'html' => TRUE,
         );
-        $link_text = isset($description) ? $description : $feed_title;
-        $vars['content']['link'] = array(
-          '#markup' => l('<i class="fa fa-rss-square"></i> ' . $link_text, $link, $options),
-          '#weight' => '1',
-        );
+        if ($feed_title || $description) {
+          $options = array(
+            'attributes' => array(
+              'class' => 'rss-site-link',
+            ),
+            'html' => TRUE,
+          );
+          $link_text = isset($description) ? $description : $feed_title;
+          $vars['content']['link'] = array(
+            '#markup' => l('<i class="fa fa-rss-square"></i> ' . $link_text, $link, $options),
+            '#weight' => '1',
+          );
+        }
       }
+    } else {
+      $vars['content'] = t('<em>Error loading RSS feed.</em>');
     }
 
   }
 }
 
-/*
+/**
  * Implements hook_secure_permissions
  *
  * Adding permissions for rss bean
@@ -178,13 +191,30 @@ function cu_rss_block_secure_permissions($role) {
       'edit any rss bean',
       'view any rss bean',
     ),
+
     'content_editor' => array(
       'create any rss bean',
       'delete any rss bean',
       'edit any rss bean',
       'view any rss bean',
     ),
+
+    'edit_my_content' => array(
+      'view any rss bean',
+    ),
+
+    'edit_only' => array(
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+
     'developer' => array(
+      'create any rss bean',
+      'delete any rss bean',
+      'edit any rss bean',
+      'view any rss bean',
+    ),
+    'site_editor' => array(
       'create any rss bean',
       'delete any rss bean',
       'edit any rss bean',

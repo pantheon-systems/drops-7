@@ -101,3 +101,9 @@ p.tags { margin-top: 20px; }
 .article-list-filter .form-item select { max-width: 250px; }
 
 .article-list-filter .form-submit { float: left; margin-bottom: 10px; margin-top: 5px; font-size: 11px; font-weight: 500; }
+
+.summary-more-link { font-size: 75%; text-transform: uppercase; font-weight: 600; }
+.summary-more-link:after { font-family: FontAwesome; content: '\f101'; padding-left: 5px; }
+
+/* Article Feature Block */
+.article-feature .field-name-field-article-link { clear: both; text-align: center; }

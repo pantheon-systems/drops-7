@@ -12,22 +12,30 @@ function user_external_invite_settings_form() {
   $form = array();
   $form['#validate'][] = 'user_external_invite_settings_form_validate';
 
-  // Define roles that users can have.
+  // Define roles that users can be invited to.
+  // Always exclude anonymous and authenticated roles.
   $user_roles = user_roles();
-  $roles = array();
-  $excluded_roles = module_invoke_all('user_external_invite_excluded_roles', $roles);
+  $excluded_roles = module_invoke_all('user_external_invite_excluded_roles', [1, 2]);
   foreach ($excluded_roles as $role_id) {
     if (isset($user_roles[$role_id])) {
       unset($user_roles[$role_id]);
     }
   }
-  $form['user_external_invite_roles'] = array(
-    '#type' => 'select',
-    '#title' => t('Roles users can be invited to join'),
-    '#description' => t('Users with permission to send invites will be able to invite users to join a site with any of these roles.  GRANT WITH CAUTION!'),
+
+  $form['user_external_invite_core_roles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Core Roles users can be invited to join'),
+    '#description' => t('Users with permission to send invites will be able to invite users to join a site with any of these roles. GRANT WITH CAUTION!'),
     '#options' => $user_roles,
-    '#default_value' => variable_get('user_external_invite_roles', NULL),
-    '#multiple' => TRUE,
+    '#default_value' => variable_get('user_external_invite_core_roles', NULL),
+  );
+
+  $form['user_external_invite_addon_roles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Add-on Roles users can be invited to join'),
+    '#description' => t('Users with permission to send invites will be able to invite users to join a site with any of these roles. GRANT WITH CAUTION!'),
+    '#options' => $user_roles,
+    '#default_value' => variable_get('user_external_invite_addon_roles', NULL),
   );
 
   $form['user_external_invite_default_role'] = array(
@@ -82,6 +90,15 @@ function user_external_invite_settings_form() {
     ),
   );
 
+  global $base_url;
+  $form['user_external_invite_login_link'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login Link'),
+    '#description' => t('Login link sent to user once the invite has been granted.'),
+    '#default_value' => variable_get('user_external_invite_login_link', 'user'),
+    '#field_prefix' => "$base_url/",
+  );
+
   // Message templates.
   $form['user_external_invite_invite_template'] = array(
     '#title' => t('Invitation Email Template'),
@@ -119,12 +136,14 @@ function user_external_invite_settings_form() {
     '#description' => t('Message sent to user being invited confirming the process was completed.'),
   );
 
-  // @TODO: add warning email about expiring invititations.
-  $form['token_help']['content'] = array(
-    '#type' => 'markup',
-    '#token_types' => 'all',
-    '#theme' => 'token_tree',
-  );
+  // @TODO: add warning email about expiring invitations.
+  if (module_exists('token')) {
+    $form['token_help']['content'] = array(
+      '#type' => 'markup',
+      // '#token_types' => 'user_external_invite',
+      '#theme' => 'token_tree',
+    );
+  }
 
   return system_settings_form($form);
 }
@@ -135,7 +154,7 @@ function user_external_invite_settings_form() {
 function user_external_invite_settings_form_validate($form, &$form_state) {
   // Check if Default Role to Invite is set and is one of the roles that can be invited.
   if (isset($form_state['values']['user_external_invite_default_role'])) {
-    if (!in_array($form_state['values']['user_external_invite_default_role'], $form_state['values']['user_external_invite_roles'])) {
+    if (!in_array($form_state['values']['user_external_invite_default_role'], $form_state['values']['user_external_invite_core_roles'])) {
       form_set_error('user_external_invite_default_role', t('Default role can only be one of the roles selected to invite.'));
     }
   }
@@ -157,25 +176,44 @@ function user_external_invite_form($form, &$form_state) {
 
   drupal_set_title(t('Invite New User'));
 
-  $role_options = array();
-  $rids = variable_get('user_external_invite_roles', NULL);
-
-  if (empty($rids)) {
+  $core_rids = variable_get('user_external_invite_core_roles', []);
+  if (empty($core_rids)) {
     drupal_set_message(t('Your site is not yet configured to invite users. Contact the site administrator to configure the invite feature.'), 'status');
   }
   else {
-    foreach ($rids as $rid) {
-      $role_options[$rid] = _user_external_invite_role_name_from_rid($rid);
-    }
-    asort($role_options);
 
-    $form['rid'] = array(
-      '#title' => t('Role'),
+    $core_role_options = [];
+    foreach ($core_rids as $val) {
+      if ($val) {
+        $core_role_options[$val] = _user_external_invite_role_name_from_rid($val);
+      }
+    }
+
+    $addon_rids = variable_get('user_external_invite_addon_roles', []);
+    $addon_role_options = [];
+    foreach ($addon_rids as $val) {
+      if ($val) {
+        $addon_role_options[$val] = _user_external_invite_role_name_from_rid($val);
+      }
+    }
+
+    $form['core_rid'] = array(
+      '#title' => t('Core Role'),
       '#type' => 'radios',
-      '#options' => $role_options,
-      '#default_value' => variable_get('user_external_invite_default_role', key($role_options)),
+      '#options' => $core_role_options,
+      '#default_value' => variable_get('user_external_invite_default_role', key($core_role_options)),
       '#required' => TRUE,
     );
+
+    // Hide Add-on roles if none selected.
+    if ($addon_role_options) {
+      $form['addon_rids'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Add-on Roles'),
+        '#options' => $addon_role_options,
+      );
+    }
+
     $form['email'] = array(
       '#title' => t('Email addresses'),
       '#type' => 'textarea',
@@ -195,10 +233,9 @@ function user_external_invite_form($form, &$form_state) {
       '#type' => 'submit',
       '#value' => t('Send Invites'),
     );
-    return $form;  
+    return $form;
   }
 
-  
 }
 
 /**
@@ -235,6 +272,8 @@ function user_external_invite_form_validate(&$form, &$form_state) {
  */
 function user_external_invite_form_submit(&$form, &$form_state) {
   global $user;
-  _user_external_invite_add_invite($form_state['values']['rid'], $form_state['values']['parsed_mails'], $user->uid, $form_state['values']['custom_message']);
+
+  $addon_rids = $form_state['values']['addon_rids'] ? array_filter($form_state['values']['addon_rids'], function ($val) {return !empty($val);}) : [];
+  _user_external_invite_add_invite($form_state['values']['core_rid'], $addon_rids, $form_state['values']['parsed_mails'], $user->uid, $form_state['values']['custom_message']);
   drupal_set_message(t('Successfully invited new user!'));
 }

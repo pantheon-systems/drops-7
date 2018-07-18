@@ -136,6 +136,36 @@ function honeypot_rules_event_info() {
 }
 
 /**
+ * Implements hook_library().
+ */
+function honeypot_library() {
+  $info = system_get_info('module', 'honeypot');
+  $version = $info['version'];
+
+  // Library for Honeypot JS.
+  $libraries['timestamp.js'] = array(
+    'title' => 'Javascript to support timelimit on cached pages.',
+    'version' => $version,
+    'js' => array(
+      array(
+        'type' => 'setting',
+        'data' => array(
+          'honeypot' => array(
+            'jsToken' => honeypot_get_signed_timestamp('js_token:' . mt_rand(0, 2147483647)),
+           ),
+         ),
+      ),
+      drupal_get_path('module', 'honeypot') . '/js/honeypot.js' => array(
+        'group' => JS_LIBRARY,
+        'weight' => 3,
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
  * Build an array of all the protected forms on the site, by form_id.
  *
  * @todo - Add in API call/hook to allow modules to add to this array.
@@ -233,8 +263,16 @@ function honeypot_add_form_protection(&$form, &$form_state, $options = array()) 
     );
 
     // Disable page caching to make sure timestamp isn't cached.
-    if (user_is_anonymous()) {
-      drupal_page_is_cacheable(FALSE);
+    if (user_is_anonymous() && drupal_page_is_cacheable()) {
+      // Use javascript implementation if this page should be cached.
+      if (variable_get('honeypot_use_js_for_cached_pages', FALSE)) {
+        $form['honeypot_time']['#default_value'] = 'no_js_available';
+        $form['honeypot_time']['#attached']['library'][] = array('honeypot', 'timestamp.js');
+        $form['#attributes']['class'][] = 'honeypot-timestamp-js';
+      }
+      else {
+        drupal_page_is_cacheable(FALSE);
+      }
     }
   }
 
@@ -261,7 +299,7 @@ function _honeypot_honeypot_validate($element, &$form_state) {
 /**
  * Validate honeypot's time restriction field.
  */
-function _honeypot_time_restriction_validate($element, &$form_state) {
+function _honeypot_time_restriction_validate(&$element, &$form_state) {
   if (!empty($form_state['programmed'])) {
     // Don't do anything if the form was submitted programmatically.
     return;
@@ -272,8 +310,43 @@ function _honeypot_time_restriction_validate($element, &$form_state) {
     return;
   }
 
-  // Get the time value.
-  $honeypot_time = honeypot_get_time_from_signed_timestamp($form_state['values']['honeypot_time']);
+  if ($form_state['values']['honeypot_time'] == 'no_js_available') {
+    // Set an error, but do not penalize the user as it might be a legitimate
+    // attempt.
+    form_set_error('', t('You seem to have javascript disabled. Please confirm your form submission.'));
+
+    if (variable_get('honeypot_log', 0)) {
+      $variables = array(
+        '%form'  => $form_state['values']['form_id'],
+      );
+      watchdog('honeypot', 'User tried to submit form %form without javascript enabled.', $variables);
+    }
+
+    // Update the value in $form_state and $element.
+    $form_state['values']['honeypot_time'] = honeypot_get_signed_timestamp(REQUEST_TIME);
+    $element['#value'] = $form_state['values']['honeypot_time'];
+    return;
+  }
+
+  $honeypot_time = FALSE;
+
+  // Update the honeypot_time for JS requests and get the $honeypot_time value.
+  if (strpos($form_state['values']['honeypot_time'], 'js_token:') === 0) {
+    $interval = _honeypot_get_interval_from_signed_js_value($form_state['values']['honeypot_time']);
+    if ($interval) {
+      // Set correct value for timestamp validation.
+      $honeypot_time = REQUEST_TIME - $interval;
+
+      // Update form_state and element values so they're correct.
+      $form_state['values']['honeypot_time'] = honeypot_get_signed_timestamp($honeypot_time);
+      $element['#value'] = $form_state['values']['honeypot_time'];
+    }
+  }
+  // Otherwise just get the $honeypot_time value.
+  else {
+    // Get the time value.
+    $honeypot_time = honeypot_get_time_from_signed_timestamp($form_state['values']['honeypot_time']);
+  }
 
   // Get the honeypot_time_limit.
   $time_limit = honeypot_get_time_limit($form_state['values']);
@@ -284,9 +357,41 @@ function _honeypot_time_restriction_validate($element, &$form_state) {
     _honeypot_log($form_state['values']['form_id'], 'honeypot_time');
     // Get the time limit again, since it increases after first failure.
     $time_limit = honeypot_get_time_limit($form_state['values']);
+    // Update the honeypot_time value in the form state and element.
     $form_state['values']['honeypot_time'] = honeypot_get_signed_timestamp(REQUEST_TIME);
+    $element['#value'] = $form_state['values']['honeypot_time'];
     form_set_error('', t('There was a problem with your form submission. Please wait @limit seconds and try again.', array('@limit' => $time_limit)));
   }
+}
+
+/**
+ * Returns an interval if the given javascript submitted value is valid.
+ *
+ * @param string $honeypot_time
+ *   The signed interval as submitted via javascript.
+ *
+ * @return int|FALSE
+ *   The interval in seconds if the token is valid, FALSE otherwise.
+ */
+function _honeypot_get_interval_from_signed_js_value($honeypot_time) {
+  $t = explode('|', $honeypot_time);
+
+  if (count($t) != 3) {
+    return FALSE;
+  }
+
+  $js_token = $t[0] . '|' . $t[1];
+  $token_check = honeypot_get_time_from_signed_timestamp($js_token);
+  if (!$token_check) {
+    return FALSE;
+  }
+
+  $interval = (int) $t[2];
+  if ($interval == 0) {
+    return FALSE;
+  }
+
+  return $interval;
 }
 
 /**
@@ -398,7 +503,7 @@ function honeypot_log_failure($form_id, $type) {
  *   The path to the honeypot.css file.
  */
 function honeypot_get_css_file_path() {
-  return variable_get('file_public_path', conf_path() . '/files') . '/honeypot/honeypot.css';
+  return file_default_scheme() . '://honeypot/honeypot.css';
 }
 
 /**
@@ -408,7 +513,7 @@ function honeypot_get_css_file_path() {
  *   The honeypot element class name (e.g. 'url').
  */
 function honeypot_create_css($element_name) {
-  $path = 'public://honeypot';
+  $path = file_default_scheme() . '://honeypot';
 
   if (!file_prepare_directory($path, FILE_CREATE_DIRECTORY)) {
     drupal_set_message(t('Unable to create Honeypot CSS directory, %path. Check the permissions on your files directory.', array('%path' => file_uri_target($path))), 'error');

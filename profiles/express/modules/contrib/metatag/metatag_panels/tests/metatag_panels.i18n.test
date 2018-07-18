@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module for the direct Panels integration, using i18n.
+ */
+
+/**
  * Tests for the Metatag module for the direct Panels integration, using i18n.
  */
 class MetatagPanelsI18nTest extends MetatagTestHelper {

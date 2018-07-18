@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module for Me module integration.
+ */
+
+/**
  * Tests for the Metatag module for Me module integration.
  */
 class MetatagCoreWithMeTest extends MetatagTestHelper {
@@ -44,7 +49,7 @@ class MetatagCoreWithMeTest extends MetatagTestHelper {
     // Look for some meta tags that should exist.
     $xpath = $this->xpath("//meta[@name='generator']");
     $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
-    $this->assertEqual($xpath[0]['content'], 'Drupal 7 (http://drupal.org)');
+    $this->assertEqual($xpath[0]['content'], 'Drupal 7 (https://www.drupal.org)');
     $xpath = $this->xpath("//link[@rel='canonical']");
     $this->assertEqual(count($xpath), 1, 'Exactly one canonical meta tag found.');
     $this->assertEqual($xpath[0]['href'], url('user/' . $this->adminUser->uid, array('absolute' => TRUE)));

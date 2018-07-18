@@ -1,0 +1,7 @@
+name = Article Slider
+description = A touch enabled slider of articles
+core = 7.x
+version = 7.x-1.0
+project = cu_articles
+
+stylesheets[all][] = css/cu-article-slider.css

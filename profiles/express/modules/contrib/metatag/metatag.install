@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Install, update, and uninstall functions for the metatag module.
@@ -9,6 +10,7 @@
  */
 function metatag_requirements($phase) {
   $requirements = array();
+
   // Ensure translations don't break during installation.
   $t = get_t();
 
@@ -65,7 +67,7 @@ function metatag_requirements($phase) {
     }
 
     // Releases of Drupal older than 7.40 support did not project:module syntax
-    // for dependencies
+    // for dependencies.
     if ($minor < 40) {
       $requirements['metatag'] = array(
         'severity' => REQUIREMENT_WARNING,
@@ -211,6 +213,25 @@ function metatag_requirements($phase) {
         );
       }
     }
+
+    // Recommend the Schema.org Metatag module.
+    if (!module_exists('schema_metatag')) {
+      $requirements['metatag_schema'] = array(
+        'severity' => REQUIREMENT_INFO,
+        'title' => 'Metatag',
+        'value' => $t('Schema.org Metatag is recommended'),
+        'description' => $t('The <a href="@module">Schema.org Metatag</a> module is highly recommended to add <a href="@jsonld">JSON-LD</a> -formatted <a href="@schema">schema.org</a> compatible data structures to the site.', array('@module' => 'https://www.drupal.org/project/schema_metatag', '@jsonld' => 'https://json-ld.org', '@schema' => 'http://schema.org')),
+      );
+    }
+    else {
+      $requirements['metatag_schema'] = array(
+        'severity' => REQUIREMENT_OK,
+        'title' => 'Metatag',
+        'value' => $t('Schema.org Metatag is installed'),
+        'description' => $t('The <a href="@module">Schema.org Metatag</a> module is installed.', array('@module' => 'https://www.drupal.org/project/schema_metatag')),
+      );
+    }
+
   }
 
   return $requirements;
@@ -475,6 +496,13 @@ function metatag_uninstall() {
       }
     }
   }
+
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_title');
+  variable_del('metatag_maxlength_description');
+  variable_del('metatag_maxlength_abstract');
+  variable_del('metatag_maxlength_keywords');
+  variable_del('metatag_maxlength_news_keywords');
 }
 
 /**
@@ -578,7 +606,7 @@ function metatag_update_replace_entity_value(&$sandbox, $meta_tag, $old_value, $
 
   if (!isset($sandbox['progress'])) {
     // Count of all {metatag} records that contained an entry for the old meta
-    // tag value
+    // tag value.
     $records_count = db_select('metatag', 'm')
       ->condition($db_and)
       ->countQuery()

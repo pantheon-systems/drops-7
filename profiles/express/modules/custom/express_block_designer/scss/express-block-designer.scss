@@ -130,12 +130,24 @@ ul.tabs--primary li a.block-designer:before {
       //font-size: 250%;
     }
     & > .block-inner > .exbd-block-title {
-      font-size: 150%;
+      font-size: 110%;
+      @media screen and (min-width:768px) {
+        font-size: 125%;
+      }
+      @media screen and (min-width:960px) {
+        font-size: 150%;
+      }
     }
   }
   &.exbd-font-scale-content-increase {
     & > .block-inner > .content {
-      font-size: 150%;
+      font-size: 110%;
+      @media screen and (min-width:768px) {
+        font-size: 125%;
+      }
+      @media screen and (min-width:960px) {
+        font-size: 150%;
+      }
     }
   }
   &.exbd-font-scale-title-decrease {

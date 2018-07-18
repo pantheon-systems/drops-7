@@ -175,6 +175,17 @@ function cu_content_list_secure_permissions($role) {
       'edit any content_list_page content',
       'edit own content_list_page content',
     ),
+    'site_editor' => array(
+      'create any content_list bean',
+      'delete any content_list bean',
+      'edit any content_list bean',
+      'view any content_list bean',
+      'create content_list_page content',
+      'delete any content_list_page content',
+      'delete own content_list_page content',
+      'edit any content_list_page content',
+      'edit own content_list_page content',
+    ),
     'site_owner' => array(
       'create any content_list bean',
       'delete any content_list bean',

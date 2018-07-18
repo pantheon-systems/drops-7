@@ -4,7 +4,15 @@
  * Implements hook_install().
  */
 function cu_linkchecker_install() {
+  $content_types = node_type_get_types();
 
+  foreach (array_keys($content_types) as $type) {
+    if ($type !== 'file' && $type !== 'video') {
+      variable_set('linkchecker_scan_node_' . $type, 1);
+    }
+  }
+
+  watchdog('cu_linkchecker', 'Linkchecker has been enabled on all current content types.');
 }
 
 /**
@@ -12,4 +20,19 @@ function cu_linkchecker_install() {
  */
 function cu_linkchecker_enable() {
 
+}
+
+/**
+ * Enable linkchecking on all current content types.
+ */
+function cu_linkchecker_update_7001() {
+  $content_types = node_type_get_types();
+
+  foreach (array_keys($content_types) as $type) {
+    if ($type !== 'file' && $type !== 'video') {
+      variable_set('linkchecker_scan_node_' . $type, 1);
+    }
+  }
+
+  watchdog('cu_linkchecker', 'Linkchecker has been enabled on all current content types.');
 }

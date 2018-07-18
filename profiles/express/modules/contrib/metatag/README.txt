@@ -37,6 +37,10 @@ The primary features include:
 
 * Automatically extracts URLs from image fields, no need for extra modules.
 
+* String-based meta tags may be automatically trimmed to a certain length, and
+  the lengths may be easily customized to accommodate changes in search engine
+  algorithms.
+
 * A custom pager string may be added to meta tags by inserting the token
   [current-page:pager] into e.g. page titles, description tags, etc. The
   replacement string may be customized from the settings page.
@@ -127,8 +131,9 @@ The primary features include:
 
 * Several advanced options may be controlled via the Settings page.
 
-* An import script is provided in the Metatag:Importer submodule for D6 sites
-  that used Nodewords and need to migrate the data.
+* An import script is provided in the Metatag:Importer submodule for sites that
+  need to import data from Metatags Quick, Nodewords (Drupal 6 only), or Page
+  Title.
 
 * If the Media module (v2) is installed, the Media WYSIWYG submodule will be
   used to automatically filter out Media's embed codes.
@@ -331,6 +336,10 @@ Related modules
 --------------------------------------------------------------------------------
 Some modules are available that extend Metatag with additional or complimentary
 functionality:
+
+* Schema.org Metatag
+  https://www.drupal.org/project/schema_metatag
+  Extensive solution for adding schema.org / JSON-LD support to Metatag.
 
 * Transliteration
   https://drupal.org/project/transliteration

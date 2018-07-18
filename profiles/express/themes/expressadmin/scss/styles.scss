@@ -83,6 +83,7 @@ h2, h3, h4, h5, h6 {
   padding: 10px 20px;
   background-color: $blue;
   background-color: #555;
+  background: #545454;
   color:#fff;
   margin: 0;
 }
@@ -243,7 +244,7 @@ ul.action-links li a {
   margin-right: 15px;
 }
 ul.action-links a:before {
-  content: "\f0fe";
+  content: "\f0a9";
   padding-right:5px;
   font-family: FontAwesome;
 }
@@ -753,6 +754,12 @@ div.messages {
 .form-item {
   margin-bottom: 5px;
 }
+.form-item input.error.form-checkbox {
+  & + label {
+    border:2px solid red;
+    padding:3px;
+  }
+}
 .filterable-option {
   padding: 10px;
 }
@@ -984,6 +991,21 @@ ul.bullet-list {
     }
   }
 }
+ol.numbered-list {
+  list-style-type:decimal;
+  padding-left: 1.5em;
+  > li {
+    list-style-type:decimal;
+  }
+
+  ul {
+    list-style: circle;
+    padding-left: 1.5em;
+    > li {
+      list-style: circle;
+    }
+  }
+}
 
 /* Bundles */
 
@@ -1028,16 +1050,22 @@ ul.bullet-list {
   flex-wrap: wrap;
   margin:0 -20px;
   margin-bottom: 20px;
+
   .express-card,
   .express-column {
     padding:0 20px;
     margin-bottom: 20px;
-
+    @media screen and (min-width:768px) {
+      & {
+        margin-bottom: 40px;
+      }
+    }
   }
   .express-card {
     display: flex;
     align-items: stretch;
     .content {
+      width:100%;
       padding:20px;
       border:1px solid #e7e7e7;
       & > *:last-child {

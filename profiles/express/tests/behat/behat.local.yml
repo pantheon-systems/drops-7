@@ -1,0 +1,68 @@
+default:
+  # Ignore certain tags so they don't have to be excluded on the commandline.
+  gherkin:
+    filters:
+        tags: "~@broken"
+  # Not sure if this is the best, but it sounds nice.
+  formatters:
+      pretty: true
+  suites:
+    run_first:
+      paths: [ "%paths.base%/features/aaa_run_first" ]
+      contexts: [ FeatureContext ]
+    express:
+      paths: [ "%paths.base%/features/Express" ]
+      contexts: [ FeatureContext ]
+    advanced_content:
+      paths: [ "%paths.base%/features/cu_advanced_content_bundle" ]
+      contexts: [ FeatureContext ]
+    advanced_design:
+      paths: [ "%paths.base%/features/cu_advanced_design_bundle" ]
+      contexts: [ FeatureContext ]
+    advanced_layout:
+      paths: [ "%paths.base%/features/cu_advanced_layout_bundle" ]
+      contexts: [ FeatureContext ]
+    news_articles:
+      paths: [ "%paths.base%/features/cu_news_articles_bundle" ]
+      contexts: [ FeatureContext ]
+    people:
+      paths: [ "%paths.base%/features/cu_people_bundle" ]
+      contexts: [ FeatureContext ]
+    photo_gallery:
+      paths: [ "%paths.base%/features/cu_photo_gallery_bundle" ]
+      contexts: [ FeatureContext ]
+    seo_bundle:
+      paths: [ "%paths.base%/features/cu_seo_bundle" ]
+      contexts: [ FeatureContext ]
+    social_media:
+      paths: [ "%paths.base%/features/cu_social_media_bundle" ]
+      contexts: [ FeatureContext ]
+  extensions:
+      Behat\MinkExtension:
+        base_url: "http://127.0.0.1:8079/"
+        files_path: "%paths.base%/assets"
+        javascript_session: sauce
+        sessions:
+          default:
+            goutte:
+              guzzle_parameters:
+                  verify: false
+          sauce:
+            sauce_labs:
+              # Browser defaults to Firefox if left out.
+              browser: "chrome"
+              #browser: "internet explorer"
+              capabilities:
+                # Need to add this fake data or else Sauce Labs fails.
+                # Problem in the behat/mink-extension project.
+                # Located in vendor/behat/mink-extension/src/Behat/MinkExtension/ServiceContainer/Driver/SauceLabsFactory.php
+                custom-data:
+                  foo: "bar"
+                  baz: "biz"
+                # OS to test against.
+                platform: "macOS 10.13"
+                #platform: "Windows 10"
+                # Version of browser to use.
+                #version: "63.0"
+
+

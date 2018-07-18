@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Custom classes used with the Metatag:Views module.
@@ -7,7 +8,7 @@
 if (class_exists('i18n_string_object_wrapper')) {
 
   /**
-   * i18n object overrides.
+   * I18n object overrides.
    */
   class metatag_views_i18n_metatag extends i18n_string_object_wrapper {
 

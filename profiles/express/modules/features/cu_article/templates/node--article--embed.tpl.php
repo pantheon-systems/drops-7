@@ -6,6 +6,9 @@
   <div class="article-view-mode-embed-content node-view-mode-embed-content">
     <<?php print $tag; ?><?php print $title_attributes; ?>><a href="<?php print $node_url; ?>"><?php print $title; ?></a></<?php print $tag; ?>>
     <p class="date"><?php print $ap_date_cu_medium_date; ?></p>
-    <div class="article-summary"><?php print render($content['body']); ?></div>
+    <div class="article-summary">
+      <?php print render($content['body']); ?>
+      <p><?php print $more_link; ?></p>
+    </div>
   </div>
 </div>

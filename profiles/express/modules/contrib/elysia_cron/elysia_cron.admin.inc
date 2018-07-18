@@ -151,10 +151,26 @@ function elysia_cron_admin_page() {
   $output .= '<br />';
 
   $legend_icons = array(
-    'idle' => theme('image', array('path' => $ipath . 'idle.png')),
-    'waiting' => theme('image', array('path' => $ipath . 'waiting.png')),
-    'running' => theme('image', array('path' => $ipath . 'running.png')),
-    'disabled' => theme('image', array('path' => $ipath . 'disabled.png')),
+    'idle' => theme('image', array(
+      'path' => $ipath . 'idle.png',
+      'alt' => t('Idle'),
+      'title' => t('Idle'),
+    )),
+    'waiting' => theme('image', array(
+      'path' => $ipath . 'waiting.png',
+      'alt' => t('Waiting for execution'),
+      'title' => t('Waiting for execution'),
+    )),
+    'running' => theme('image', array(
+      'path' => $ipath . 'running.png',
+      'alt' => t('Running'),
+      'title' => t('Running'),
+    )),
+    'disabled' => theme('image', array(
+      'path' => $ipath . 'disabled.png',
+      'alt' => t('Disabled'),
+      'title' => t('Disabled'),
+    )),
   );
   $output .= theme('table', array(
     'header' => array(t('Legend')),

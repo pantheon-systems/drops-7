@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Update scripts for the Metatag: Twitter Cards module.
@@ -14,6 +15,15 @@ function metatag_twitter_cards_update_dependencies() {
     'metatag' => 7100,
   );
   return $dependencies;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_twitter_cards_uninstall() {
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_twitter:title');
+  variable_del('metatag_maxlength_twitter:description');
 }
 
 /**

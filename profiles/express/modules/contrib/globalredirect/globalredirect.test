@@ -464,26 +464,6 @@ class GlobalRedirectTestCaseConfigLanguages extends GlobalRedirectTestCase {
       'expected-path' => 'de/test-german-node',
     );
 
-    // Requesting to edit the french node on the english site. Should redirect to the english node edit
-    $paths[] = array(
-      'request' => 'node/3/edit',
-      'return-code' => 301,
-      'expected-path' => 'node/2/edit',
-    );
-
-    // Requesting to edit the english node on the french site - should redirect to edit the french node
-    $paths[] = array(
-      'request' => 'fr/node/2/edit',
-      'return-code' => 301,
-      'expected-path' => 'fr/node/3/edit',
-    );
-
-    // Requesting to edit the german node on the german site. Should return a 200...
-    $paths[] = array(
-      'request' => 'de/node/4/edit',
-      'return-code' => 200,
-    );
-
     return $paths;
   }
 

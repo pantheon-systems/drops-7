@@ -6,16 +6,16 @@
  */
 
 // The Nodwords record types.
-define('NODEWORDS_TYPE_DEFAULT',    1);
-define('NODEWORDS_TYPE_ERRORPAGE',  2);
-define('NODEWORDS_TYPE_FRONTPAGE',  3);
-define('NODEWORDS_TYPE_NONE',       0);
-define('NODEWORDS_TYPE_NODE',       5);
-define('NODEWORDS_TYPE_PAGE',      10);
-define('NODEWORDS_TYPE_PAGER',      4);
-define('NODEWORDS_TYPE_TERM',       6);
-define('NODEWORDS_TYPE_TRACKER',    7);
-define('NODEWORDS_TYPE_USER',       8);
+define('NODEWORDS_TYPE_DEFAULT', 1);
+define('NODEWORDS_TYPE_ERRORPAGE', 2);
+define('NODEWORDS_TYPE_FRONTPAGE', 3);
+define('NODEWORDS_TYPE_NONE', 0);
+define('NODEWORDS_TYPE_NODE', 5);
+define('NODEWORDS_TYPE_PAGE', 10);
+define('NODEWORDS_TYPE_PAGER', 4);
+define('NODEWORDS_TYPE_TERM', 6);
+define('NODEWORDS_TYPE_TRACKER', 7);
+define('NODEWORDS_TYPE_USER', 8);
 define('NODEWORDS_TYPE_VOCABULARY', 9);
 
 /**
@@ -32,7 +32,6 @@ function metatag_importer_nodewords_form($form, &$form_state) {
       '#type' => 'checkboxes',
       '#title' => t('Records to import'),
       '#options' => $types,
-      '#disabled' => TRUE,
     );
 
     $form['notes'] = array(
@@ -128,16 +127,28 @@ function _metatag_importer_list_nodewords() {
 function _metatag_importer_import(array $types = array()) {
   $batch = array(
     'title' => t('Importing Nodewords data..'),
+    'init_message' => t('Nodewords import is starting.'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Nodewords import has encountered an error.'),
     'operations' => array(
       array('_metatag_importer_migrate', array($types)),
     ),
     'finished' => '_metatag_importer_finished',
     'file' => drupal_get_path('module', 'metatag_importer') . '/metatag_importer.nodewords.inc',
   );
-  batch_set($batch);
 
-  // Kick off the batch.
-  batch_process();
+  // Kick off the batch, using Drush if available.
+  if (drupal_is_cli() && function_exists('drush_backend_batch_process')) {
+    // Add some special magic for CLI before setting the batch.
+    $batch['progressive'] = FALSE;
+    batch_set($batch);
+    // Process the batch.
+    drush_backend_batch_process();
+  }
+  else {
+    batch_set($batch);
+    batch_process();
+  }
 }
 
 /**
@@ -227,7 +238,6 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
     // Process the meta tag value, possibly also rename the meta tag name
     // itself.
     list($meta_tag, $value) = _metatag_importer_convert_data($result->name, unserialize($result->content));
-
     // Don't import empty values.
     if (!empty($value)) {
       // Add the value to the stack.
@@ -287,13 +297,13 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
           metatag_config_save($config);
           break;
 
-        // // A 'vocabulary' setting becomes a default configuration.
-        // case 'vocabulary':
-        //   $metatags = metatag_metatags_load($record->entity_type, $record->entity_id);
-        //   $metatags = array_merge($metatags, $record->data);
-        //   $vocabulary = taxonomy_vocabulary_load($record->entity_id);
-        //   metatag_metatags_save($record->entity_type, $record->entity_id, $vocabulary->vid, $metatags);
-        //   break;
+        // @todo: A 'vocabulary' setting becomes a default configuration?
+        case 'vocabulary':
+          //   $metatags = metatag_metatags_load($record->entity_type, $record->entity_id);
+          //   $metatags = array_merge($metatags, $record->data);
+          //   $vocabulary = taxonomy_vocabulary_load($record->entity_id);
+          //   metatag_metatags_save($record->entity_type, $record->entity_id, $vocabulary->vid, $metatags);
+          break;
       }
     }
   }
@@ -308,9 +318,26 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
   $context['finished'] = (empty($context['sandbox']['max']) || $context['sandbox']['progress'] >= $context['sandbox']['max']) ? TRUE : ($context['sandbox']['progress'] / $context['sandbox']['max']);
 
   if ($context['finished'] === TRUE) {
-    drupal_set_message(t('Imported @imported Nodewords records.', array('@imported' => $context['sandbox']['progress'])));
+    $message = 'Imported @imported Nodewords records.';
+    $vars = array('@imported' => $context['sandbox']['progress']);
+
+    if (drupal_is_cli() && function_exists('drush_print')) {
+      drush_print(dt($message, $vars));
+    }
+    else {
+      drupal_set_message(t($message, $vars));
+    }
+
     if (!empty($context['sandbox']['skipped'])) {
-      drupal_set_message(t('@skipped records were skipped because the corresponding entities were previously deleted.', array('@skipped' => count($context['sandbox']['skipped']))));
+      $message = '@skipped records were skipped because the corresponding entities were previously deleted.';
+      $vars = array('@skipped' => count($context['sandbox']['skipped']));
+
+      if (drupal_is_cli() && function_exists('drush_print')) {
+        drush_print(dt($message, $vars));
+      }
+      else {
+        drupal_set_message(t($message, $vars));
+      }
     }
   }
 }
@@ -320,22 +347,35 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
  */
 function _metatag_importer_finished($success, $results, $operations) {
   if ($success) {
-    // Here we do something meaningful with the results.
-    $message = t("!count items were processed.", array(
-      '!count' => count($results),
-    ));
-    $message .= theme('item_list', array('items' => $results));
-    drupal_set_message($message);
+    if (drupal_is_cli() && function_exists('drush_print')) {
+      // Make a bulleted list of messages for the command line.
+      foreach ($results as $result) {
+        drush_print(dt('* ' . $result));
+      }
+    }
+    else {
+      // Make a bulleted list of messages for the browser.
+      $message = theme('item_list', array('items' => $results));
+      drupal_set_message(t($message));
+    }
   }
   else {
     // An error occurred.
     // $operations contains the operations that remained unprocessed.
     $error_operation = reset($operations);
-    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array(
+    $message = 'An error occurred while processing %error_operation';
+    $vars = array(
       '%error_operation' => $error_operation[0],
-      '@arguments' => print_r($error_operation[1], TRUE),
-    ));
-    drupal_set_message($message, 'error');
+    );
+
+    if (drupal_is_cli() && function_exists('drush_print')) {
+      drush_set_error('metatag_importer', dt($message, $vars));
+    }
+    else {
+      $message .= ' with arguments: @arguments';
+      $vars[] = array('@arguments' => print_r($error_operation[1], TRUE));
+      drupal_set_message(t($message, $vars), 'error');
+    }
   }
 }
 
@@ -387,10 +427,9 @@ function _metatag_importer_convert_type($type) {
     case 8:
       return 'user';
 
-    // @todo Vocabulary records need to be converted to a config for that entity
-    // bundle.
-    // case 9:
-    //   return 'vocabulary';
+    // Vocabulary records convert into a config for that entity bundle.
+    case 9:
+      return 'vocabulary';
 
     // @todo Page records need to be converted to Context definitions.
     // case 10:
@@ -536,7 +575,6 @@ function _metatag_importer_convert_data($name, $value) {
 // 0 - NODEWORDS_GENERATION_NEVER - never auto-generate the string.
 // 1 - NODEWORDS_GENERATION_WHEN_EMPTY - when the field is empty. Default.
 // 2 - NODEWORDS_GENERATION_ALWAYS - always use the generated string.
-
 // 'nodewords_metatags_generation_method_' . $type:
 // 1 - NODEWORDS_GENERATION_BODY - use the body field.
 // 2 - NODEWORDS_GENERATION_TEASER - use the node teaser. Default.

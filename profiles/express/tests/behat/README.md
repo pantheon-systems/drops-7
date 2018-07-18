@@ -1,11 +1,12 @@
+## Writing Tests
+
+Writing tests for the Express codebase is [covered in another documentation repository](https://github.com/CuBoulder/express_documentation/blob/master/docs/behat.md).
 
 ## Local Setup
 
-The proper way to develop Behat tests locally is to run a certain setup that differs from express.local or the Express Starter kit. The reason the setup differs for creating tests is that connecting to a browser emulating server is a huge PITA when you are using VMs. 
+While it is ideal to use VMs or Docker images to share local development environments that are used to run tests, maintaining those VMs can be a huge PITA and requires a decent amount of Docker knowledge. Abstraction layers, like Lando, can be slow as hell and contain a bunch of cruft you don't need.
 
-Specifically, when a JS test opens a window and simulates how a user would navigate a site, you aren't able to see what is going on. Having the VM connect to a browser emulating server on your local machine could mitigate this issue; however, if you have to run any PHP, you won't be able to do that since the web application isn't connected to the emualtor server. 
-
-Rather than fiddle with a brittle local setup using VMs connecting to your local machine, it is easiest and most straight-forward to setup your own environment. 
+So, for now it is easiest to setup a local environment on you MacOS laptop to use for running tests at least, if not day-to-day development.
 
 You will need:
 - PHP 7 - [Homebrew works well for this step](https://github.com/Homebrew/homebrew-php).
@@ -21,53 +22,101 @@ You can check the versions of what you have locally, but for this tutorial the v
 
 ## Running Tests
 
-You can now install an Express site however you want to using your MySQL setup for the server. The [Express Starter](https://github.com/CuBoulder/express-starter) kit can build you out a skeleton site that you can run `express_profile_configure_form.express_core_version=cu_testing_core --yes` from after changing the database settings in "sites/default/settings.php". The testing core install all of the bundles, which is needed for running the test suite.
-
-Your local site might be on a version of Express that installs the LDAP module which requires HTTPS to login. In order to disable this check if you have trouble you can `vset` a variable before you start your test runs. 
+You can now install an Express site by downloading Drupal, cloning in the Express profile, and installing the site. 
 
 ```bash
-drush vset ldap_servers_require_ssl_for_credentials 0
+ROOT=$(pwd)
+
+# Add Drupal.
+drush dl drupal-7.59
+mv drupal-7.59 testing
+
+# Make files folder and copy settings.php file.
+cd ${ROOT}/testing/sites/default
+cp default.settings.php settings.php && chmod 777 settings.php
+mkdir files && chmod -R 777 files
+
+# Add the Express profile.
+cd ${ROOT}/testing/profiles
+git clone git@github.com:CuBoulder/express.git
+
+# Installing the site via Drush in the next step should create the database first,
+# but if you have trouble, you can create it manually.
+mysql -u root -p
+# In MYSQL cli...
+> CREATE DATABASE testing;
+> exit
+
+# Express uses environmental variables to choose which hosting module to enable.
+# Add 'export LANDO_ENV="yes"' to your shell configuration file usually ~/.bash_profile on a Mac.
+vim ~/.bash_profile
+source ~/.bash_profile
+
+# Install site. Need to use your db credentials created when installing MySQL.
+drush si express --db-url=mysql://root:@127.0.0.1/testing -y
+
+# Depending on your environment, you might not have a hosting module installed.
+# local_hosting adds users needed for a test run but does not turn on all bundles. 
+# It is the most appropriate hosting module to enable after install.
+drush pm-info local_hosting
+
+# ng_hosting is what is enabled on production and should be disabled locally.
+drush pm-info ng_hosting
+
+# There is a specific bundle that prepares an Express site for a Behat test run.
+drush en cu_behat_tests -y
+
+# Start Drush webserver.
+drush runserver 127.0.0.1:8079
+
+# Or to run the server process in background.
+# I leave it open in another tab to monitor for debugging purposes.
+drush runserver 127.0.0.1:8079 > /dev/null 2>&1 &
 ```
 
-You will need to install Behat's dependencies as well as export an environmental variable in order to run the Behat tests.
+When Express installs, environmental variables are used to determine which "core" to install. If no environment other than the Express deployment servers is found, the "ng_hosting" module will be enabled by default. You can export a variable to enable the Pantheon or other hosting setups, but they might not install the modules and configuration you want. 
+
+It is likely that the hosting modules will be modified to take in local environments and some shared VM solution. For now, you can use different environmental variables for each Express environment you'd want to install. For example, you could use `$_SERVER['WWWNG_ENV'] = TRUE;` in your `settings.php` file to enable "ng_hosting" like is done on production. In that case, you should be able to login to your account via LDAP, but if not, then use Drush.
 
 ```bash
-cd site-path/profiles/express/tests/behat
-mv composer
+drush uli my-username
 
+# If you need the super user login.
+drush uublk 1
+drush uli 1
+```
+
+Once logged in, if using "ng_hosting", make sure that LDAP is in mixed mode by going to "admin/config/people/ldap/authentication" and selecting "Mixed mode. Drupal authentication is tried first. On failure, LDAP authentication is performed." By doing so you can create local users for tests.
+
+If using "local_hosting" users with the same username and password will be created for each role. You can then login via the users, e.g. "developer:developer" for username:password, to your Express site.
+
+Next, the Behat dependencies need to be installed before you can run any tests.  
+
+```bash
+cd <site-path>/profiles/express/tests/behat
 composer install
 ```
 
-Rather than having you change the behat.yml configuration file, it easier to change environmental variables and have Behat pickup on those. This way environmental variables can be used on the CI setup without changing the configuration files as well.
+The test suite uses two different drivers during a test run: one for headless tests and one for browser emulated tests using JavaScript. The JavaScript tests are run via Sauce Labs, and you'll need an API key to use that service and run the tests. You can ask a team member for an API key and username, and they will be shared using LastPass. You'll also need to export those variables. 
+
+The [Sauce Connect Proxy](https://wiki.saucelabs.com/display/DOCS/Sauce+Connect+Proxy) uses those auth keys to tunnel into your machine and accept Behat requests. Please download the latest Mac OS version.
 
 ```bash
+cd sauce-connect-directory
 
-export BEHAT_PARAMS='{"extensions":{"Drupal\\DrupalExtension":{"drupal":{"drupal_root":"BUILD_TOP/drupal"}},"Behat\\MinkExtension":{"base_url":"http://127.0.0.1:8888/","files_path":"BUILD_TOP/drupal/profiles/express/tests/behat/assets/"}}}'
-
+# Start the proxy and wait for the "...you may start your tests" message.
+./bin/sc -u username -k access-key
 ```
 
-To run tests...
+Now you should be able to run the test suite with the following command.
 
 ```bash
-# Chrome is installed already...
-alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-chrome --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 > /dev/null 2>&1 &
-
-./bin/behat --config behat.local.yml --verbose --tags '~@exclude_all_bundles&&~broken'
+cd site-path/profiles/express/tests/behat
+./bin/behat --config behat.local.yml --stop-on-failure --strict --verbose --tags '~@exclude_all_bundles&&~@broken'
 ```
 
 ## Fixing Broken Tests
 
-The headless Chrome driver is used to run tests on Travis. Selenium was dropped due to its brittle nature of not playing nice with different combinations of Chrome/Firefox as Travis updated the default versions of Chrome and Firefox periodically. Many projects have switched to the method we now use on Travis; however, you will need to use Selenium if a JS test is breaking and you want to maunally inspect why. 
+The `--verbose` tag should spit out as much information as possible about a failed test run. You will oftentimes see the stacktrace around the failed test and should be able to investigate the files and line numbers given. For more guidance on debugging, you can read: https://github.com/CuBoulder/express_documentation/blob/master/docs/behat.md
 
-You will need to..
-- [Download standalone server](http://docs.seleniumhq.org/download/)
-- [Download latest Chrome webdriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
-
-```bash
-# Startup Selenium webserver with the proper version of "selenium-server-standalone-3.4.0.jar".
-java -Dwebdriver.chrome.driver=chromedriver -jar selenium-server-standalone-3.4.0.jar > /dev/null 2>&1 &` 
-
-# Run tests using selenium configuration. 
-./bin/behat --config behat.selenium.yml --verbose --tags '~@exclude_all_bundles&&~broken'
-```
+For JavaScript tests, Sauce Labs records the test run so you can go back and actually replay the steps to see what happened. You can also watch the test run as it happens on Sauce Labs to see the output of JavaScript tests in real-time. You will need to have a Sauce Labs account to view the results. Ask a team member if you need access.

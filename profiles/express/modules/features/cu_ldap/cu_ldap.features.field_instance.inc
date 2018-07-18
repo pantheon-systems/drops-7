@@ -49,6 +49,46 @@ function cu_ldap_field_default_field_instances() {
     ),
   );
 
+  // Exported field_instance: 'user-user-field_ldap_last_name'.
+  $field_instances['user-user-field_ldap_last_name'] = array(
+    'bundle' => 'user',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 7,
+      ),
+    ),
+    'entity_type' => 'user',
+    'fences_wrapper' => 'div_div_div',
+    'field_name' => 'field_ldap_last_name',
+    'label' => 'Last Name',
+    'required' => 0,
+    'settings' => array(
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 0,
+        'profile' => '',
+      ),
+      'text_processing' => 0,
+      'user_register_form' => 0,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'text',
+      'settings' => array(
+        'size' => 60,
+      ),
+      'type' => 'text_textfield',
+      'weight' => 40,
+    ),
+  );
+
   // Exported field_instance: 'user-user-field_ldap_primary_affiliation'.
   $field_instances['user-user-field_ldap_primary_affiliation'] = array(
     'bundle' => 'user',
@@ -91,6 +131,7 @@ function cu_ldap_field_default_field_instances() {
   // Translatables
   // Included for use with string extractors like potx.
   t('Display Name');
+  t('Last Name');
   t('Primary Affiliation');
 
   return $field_instances;

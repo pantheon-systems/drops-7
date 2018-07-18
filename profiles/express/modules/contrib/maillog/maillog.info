@@ -1,0 +1,19 @@
+name = Maillog / Mail Developer
+description = Utility to log all Mails for debugging purposes. It's possible to suppress mail delivery for e.g. dev or staging systems.
+package = Mail
+core = 7.x
+
+dependencies[] = views
+
+configure = admin/config/development/maillog
+
+files[] = includes/maillog.mail.inc
+files[] = includes/maillog_handler_field_maillog_entry_link_delete.inc
+files[] = includes/maillog_handler_field_maillog_link_delete.inc
+
+; Information added by Drupal.org packaging script on 2014-07-20
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "maillog"
+datestamp = "1405886928"
+

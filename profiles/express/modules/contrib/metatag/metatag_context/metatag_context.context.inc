@@ -1,9 +1,13 @@
 <?php
+
 /**
  * @file
  * Context reaction for Metatag.
  */
 
+/**
+ * Context reaction for Metatag.
+ */
 class metatag_context_reaction extends context_reaction {
   function options_form($context) {
     $form = array();
@@ -193,6 +197,7 @@ class metatag_context_reaction extends context_reaction {
       }
     }
   }
+
 }
 
 /**

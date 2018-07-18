@@ -66,7 +66,7 @@ function express_dashboard_user_content() {
   }
 
   // Add status.
-  $express_status = module_invoke('express_status', 'block_view', 'express_status');
+  $express_status = module_invoke('cu_status', 'block_view', 'cu_status');
   $output['right']['widgets']['status']['title'] = 'System Status';
   $output['right']['widgets']['status']['content']['#markup'] = $express_status['content'];
 
@@ -74,8 +74,8 @@ function express_dashboard_user_content() {
   $users_online = module_invoke('user', 'block_view', 'online');
   $output['left']['widgets']['online']['title'] = 'Who\'s online';
   $output['left']['widgets']['online']['content']['#markup'] = $users_online['content'];
-
-  $output['left']['widgets']['user']['title'] = $user->name;
+  // Display real name if available.
+  $output['left']['widgets']['user']['title'] = function_exists('realname_load') ? realname_load($user) : $user->name;
   $output['left']['widgets']['user']['content']['#markup'] = theme('express_dashboard_user_profile', (array) $vars);
 
   return $output;
@@ -128,6 +128,9 @@ function express_dashboard_user_secure_permissions($role) {
     'edit_my_content' => array(
       'use user dashboard',
     ),
+    'site_editor' => array(
+      'use user dashboard',
+    ),
     'site_owner' => array(
       'use user dashboard',
     ),
@@ -154,4 +157,15 @@ function express_dashboard_user_theme_registry_alter(&$theme_registry) {
       array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
     }
   }
+}
+
+/**
+ * Implements hook_user_view().
+ */
+function express_dashboard_user_user_view($account) {
+  global $user;
+  if ($account->uid == $user->uid) {
+    drupal_goto('admin/dashboard');
+  }
+
 }

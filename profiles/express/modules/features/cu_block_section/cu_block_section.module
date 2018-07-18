@@ -116,6 +116,11 @@ function cu_block_section_preprocess_entity(&$vars) {
       $dimensions = array();
       $dimensions['height'] = $vars['content']['field_block_section_bg_image']['#items'][0]['height'];
       $dimensions['width'] = $vars['content']['field_block_section_bg_image']['#items'][0]['width'];
+      // Render image for xlarge displays
+      $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'xlarge';
+      $image_xlarge = render($vars['content']['field_block_section_bg_image']);
+      $vars['image_xlarge'] = trim(preg_replace('/\s+/', ' ', $image_xlarge));
+
       // Render image for large displays
       $vars['content']['field_block_section_bg_image'][0]['#image_style'] = 'hero';
       $image_large = render($vars['content']['field_block_section_bg_image']);

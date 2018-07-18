@@ -123,6 +123,10 @@ function express_block_designer_form($form, &$form_state, $delta) {
       '#type' => 'markup',
       '#markup' => "<p>There are no Block Designer Themes available. $create_link.</p>",
     );
+    $form['theme']['block_theme'] = array(
+      '#type' => 'hidden',
+      '#default_value' => 0,
+    );
   }
   // Otherwise, show the select field of available themes, save button, etc.
   else {

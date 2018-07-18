@@ -23,5 +23,10 @@
         background-image:url(<?php print $image_large; ?>);
       }
     }
+    @media all and (min-width: 1600px) {
+      #block-section-<?php print $bean->bid; ?> {
+        background-image:url(<?php print $image_xlarge; ?>);
+      }
+    }
   </style>
 <?php endif; ?>

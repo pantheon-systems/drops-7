@@ -46,7 +46,8 @@ body {
     color:#363839;
 
   }
-  a#home-link {
+  a.home-link,
+  a.home-link.active {
     background-color: transparent;
     color:#fff;
   }

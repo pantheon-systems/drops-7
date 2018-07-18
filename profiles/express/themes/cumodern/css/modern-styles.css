@@ -38,7 +38,7 @@ h2.secondary-menu-label { margin-left: 8px; }
 
 #main-menu-wrapper ul#main-menu a.active, #main-menu-wrapper ul#main-menu a.active-trail { background-color: #cfb87c; color: #000; }
 
-#main-menu-wrapper ul#main-menu a#home-link { background-color: transparent; color: #fff; }
+#main-menu-wrapper ul#main-menu a.home-link, #main-menu-wrapper ul#main-menu a.home-link.active { background-color: transparent; color: #fff; }
 
 ul.action-menu a { color: #fff; }
 

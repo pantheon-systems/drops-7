@@ -159,6 +159,10 @@ function people_content_type_preprocess_node(&$vars) {
   switch ($vars['type']) {
 
     case 'person':
+      // Make phone into a link
+      if (!empty($vars['content']['field_person_phone'])) {
+        $vars['content']['field_person_phone'][0]['#markup'] = l($vars['content']['field_person_phone']['#items'][0]['value'], 'tel:' . $vars['content']['field_person_phone']['#items'][0]['value']);
+      }
       // prepare job titles for output
       $job_titles = array();
       if (!empty($vars['field_person_title'])) {
@@ -348,16 +352,21 @@ function people_content_type_preprocess_node(&$vars) {
             $term = taxonomy_term_load($tid);
             $name = $term->name;
             $vars['content']['people_groups'][$tid] = $listing;
-            $vars['content']['people_groups'][$tid]['#prefix'] = '<h2 class="people-list-group-title people-list-' . $view_mode . '-group-title">' . $name . '</h2>';
+            $vars['content']['people_groups'][$tid]['#prefix'] = '<h2 class="people-list-group-title people-list-' . $view_mode . '-group-title">' . $name . '</h2><div class="people-list-wrapper-' . $view_mode . '">';
+            $vars['content']['people_groups'][$tid]['#suffix'] = '</div>';
           }
         }
       } else {
         // If no grouping, just get a single list
         $vars['content']['people'] = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
+        $vars['content']['people']['#prefix'] = '<div class="people-list-wrapper-' . $view_mode . '">';
+        $vars['content']['people']['#suffix'] = '</div>';
       }
       // Put all list displays at the bottom
       $vars['content']['people']['#weight'] = 100;
       $vars['content']['people_groups']['#weight'] = 100;
+
+
 
       // Add filter form right above list display
       $vars['content']['exposed_filter'] = drupal_get_form('people_content_type_list_filter_form');
@@ -575,6 +584,9 @@ function people_content_type_preprocess_entity(&$vars) {
       $view_mode = $vars['bean']->field_people_block_thumbnail[LANGUAGE_NONE][0]['value'];
       $order = NULL;
       $vars['content']['people'] = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
+
+      $vars['content']['people']['#prefix'] = '<div class="people-list-wrapper-' . $view_mode . '">';
+      $vars['content']['people']['#suffix'] = '</div>';
   }
 }
 

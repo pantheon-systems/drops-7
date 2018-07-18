@@ -16,6 +16,10 @@ function express_settings_permission() {
       'title' => 'Administer Express Settings',
       'description' => 'Configure settings in admin/settings',
     ),
+    'administer express site status' => array(
+      'title' => 'Administer Express Site Status',
+      'description' => 'Configure settings in admin/settings',
+    ),
     'administer redirect settings' => array(
       'title' => 'Administer Redirect Settings',
       'description' => 'Overrides some permissions of the Redirect contrib project to expose specific settings to users',
@@ -41,10 +45,31 @@ function express_settings_menu() {
   // IN ADMIN, BUT NOT ADMIN/CONFIG
   $items['admin/settings'] = array(
     'title' => 'Settings',
+    'description' => 'Change site settings.',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'express_settings_management_page',
     'access arguments' => array('access express settings'),
     'weight' => 8,
+  );
+
+  // DEFINES SITE STATUS SECTION.
+  $items['admin/settings/site-status'] = array(
+    'title' => 'Site Status',
+    'description' => '',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express site status'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => -99,
+  );
+  $items['admin/settings/site-status/verify'] = array(
+    'title' => 'Verify Migration',
+    'description' => 'Confirm that this site has migrated successfully',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'express_settings_site_status_page',
+    'access arguments' => array('administer express site status'),
+    'weight' => -50,
   );
 
   // DEFINES SITE CONFIGURATION SECTION.
@@ -56,7 +81,7 @@ function express_settings_menu() {
     'access arguments' => array('administer express settings'),
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-    'weight' => -99,
+    'weight' => -95,
   );
   $items['admin/settings/site-configuration/site-name'] = array(
     'title' => 'Site Name',
@@ -106,7 +131,7 @@ function express_settings_menu() {
     'weight' => 1,
   );
   $items['admin/settings/url-management/redirects'] = array(
-    'title' => 'URL Redirects',
+    'title' => 'Redirects',
     'description' => 'Redirect users from one URL to another',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_goto',
@@ -184,6 +209,25 @@ function express_settings_menu() {
     'weight' => 999,
   );
 
+  // Menu Settings
+  $items['admin/settings/menus'] = array(
+    'title' => 'Menus',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer menu'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/settings/menus/configure'] = array(
+    'title' => 'Configure Menus',
+    'description' => 'Configure and edit site menus',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/structure/menu'),
+    'access arguments' => array('administer menu'),
+    'weight' => 1,
+  );
+
   return $items;
 }
 
@@ -236,7 +280,7 @@ function express_settings_page_alter(&$page) {
 }
 
 /**
- * Implements hook_navbar_alter().
+ * Implements hook_().
  */
 function express_settings_navbar_alter(&$items) {
   $items['administration']['#title'] = t('Express');
@@ -257,7 +301,7 @@ function express_settings_navbar() {
       '#href' => 'user/logout',
       '#options' => array(
         'attributes' => array(
-          'title' => t('Log out'),
+          'title' => t('Log out and return to homepage'),
           'class' => array('navbar-icon', 'navbar-icon-logout'),
         ),
       ),
@@ -266,6 +310,54 @@ function express_settings_navbar() {
   );
 
   return $items;
+}
+
+function express_settings_site_status_page() {
+  global $base_url;
+  global $user;
+  $html = '<div style="float:left"><form action="https://www.colorado.edu/webcentral/support/report-problem" method="GET">';
+  $html .= '<input type="hidden" id="site_url" name="site_url" value="' . $base_url . '">';
+  $html .= '<input type="hidden" id="contact_email" name="contact_email" value="' . $user->mail . '">';
+  $html .= '<input type="submit" value="Report a Problem" class="form-submit btn btn-danger" />';
+  $html .= '</form></div>';
+  $form = drupal_get_form('express_settings_site_status_form');
+  $html .= drupal_render($form);
+
+  return $html;
+
+}
+
+/**
+ * Page callback for admin/site-configuration/site-status.
+ */
+function express_settings_site_status_form($form, &$form_state) {
+  $form = array();
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Approve Migration'),
+  );
+
+  $form['submit']['#attributes']['class'][] = 'btn-success';
+  return $form;
+
+}
+
+/**
+ * Submit handler for express_settings_site_name_form.
+ */
+function express_settings_site_status_form_submit($form, &$form_state) {
+  global $user;
+  $atlas_id = variable_get('atlas_id', NULL);
+  $site_array = atlas_api_request('sites', $atlas_id);
+  $site_array['verification.verification_status'] = 'approved';
+  $site_array['verification.verification_user'] = $user->name;
+  atlas_api_request('sites', $atlas_id, 'PATCH', $site_array);
+
+  //@TODO Calculate routing change time.
+
+  drupal_set_message("Migration Approved", 'status');
+
 }
 
 /**
@@ -373,22 +465,91 @@ function express_settings_google_analytics_form_validate($form, &$form_state) {
  * Submit handler for express_settings_google_analytics_form().
  */
 function express_settings_google_analytics_form_submit($form, &$form_state) {
+  $js_code_before = '';
+  $js_code_after = '';
   if ($ga_codes = variable_get('ga_account', '')) {
     // Explode the string and trim whitespace.
     $ga_codes = array_map('trim', explode(',', $ga_codes));
-    //add Express specific code to array
+
+    // Add Express specific code to array.
     $ga_codes[] = 'UA-105731679-1';
-    $js_code = '';
     foreach ($ga_codes as $key => $code) {
-      $js_code .= format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker@key'});  ga('customTracker@key.send', 'pageview');", array(
+      $js_code_before .= format_string('ga("create", "@ga_account", "auto", {"name":"customTracker@key"});', array(
         '@ga_account' => $code,
         '@key' => $key,
       ));
+
+      $js_code_after .= format_string('ga("customTracker@key.send", "pageview");', array(
+        '@key' => $key,
+      ));
     }
-    variable_set('googleanalytics_codesnippet_after', $js_code);
   }
-  else {
-    variable_set('googleanalytics_codesnippet_after', '');
+
+  variable_set('googleanalytics_codesnippet_before', $js_code_before);
+  variable_set('googleanalytics_codesnippet_after', $js_code_after);
+}
+
+function express_settings_js_alter(&$javascript) {
+
+  // Find the JS code for GA as well as the index so we can replace it later.
+  $ga_js_code_index = NULL;
+  $js_code = array_filter($javascript, function ($val, $index) use(&$ga_js_code_index) {
+    if (is_string($val['data']) && strpos($val['data'], 'ga("create",')) {
+      $ga_js_code_index = $index;
+      return TRUE;
+    }
+    return FALSE;
+  }, ARRAY_FILTER_USE_BOTH);
+  $js_code = explode(';', array_shift($js_code)['data']);
+
+  // Initialize arrays so that it can be used in array_filter().
+  $ga_create_snippets = [];
+  $everything_else = [];
+
+  $ga_create_snippets = array_filter($js_code, function ($val) {
+    return strpos($val, 'ga("create",') === 0;
+  });
+  $ga_set_snippets = array_filter($js_code, function ($val) {
+    return strpos($val, 'ga("set",') === 0;
+  });
+
+  $everything_else = array_filter($js_code, function ($val) {
+    return strpos($val, 'ga("create",') !== 0 && strpos($val, 'ga("set",') !== 0;
+  });
+
+  // Find index of the first ga("set") metric.
+  $first_send_index = array_search('ga("send", "pageview")', $everything_else, FALSE);
+
+  // Split the array so that the create snippets can be inserted.
+  $first_part = [];
+  $last_part = [];
+  foreach ($everything_else as $key => $item) {
+    if ($key < $first_send_index) {
+      $first_part[] = $item;
+    } else {
+      $last_part[] = $item;
+    }
+  }
+
+  // Duplicate ga("set") for custom trackers.
+  $custom_set_snippets = [];
+  foreach ($ga_set_snippets as $snippet) {
+    $count = 0;
+    foreach ($ga_create_snippets as $create) {
+      if ($count === count($ga_create_snippets) - 1) {
+        continue;
+      }
+      $end_of_string = stristr($snippet, 'set');
+      $custom_set_snippets[] = 'ga("customTracker'. $count. '.'. $end_of_string;
+      $count++;
+    }
+  }
+
+  // Merge the JS snippets in order.
+  $final_js = array_merge($first_part, $ga_create_snippets, $ga_set_snippets, $custom_set_snippets, $last_part);
+
+  if (isset($javascript[$ga_js_code_index])) {
+    $javascript[$ga_js_code_index]['data'] = implode(';', $final_js);
   }
 }
 

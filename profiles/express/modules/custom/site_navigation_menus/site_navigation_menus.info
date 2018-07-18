@@ -13,3 +13,5 @@ features[menu_custom][] = menu-footer-menu
 features[menu_custom][] = menu-mobile-menu
 features[menu_custom][] = menu-secondary-menu
 features[variable][] = menu_block_menu_order
+stylesheets[all][] = css/site-navigation-menus.css
+scripts[] = js/site-navigation-menus.js

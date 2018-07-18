@@ -163,6 +163,12 @@ function cu_expandable_secure_permissions($role) {
       'view any expandable bean',
       'administer block wrapper',
     ),
+    'site_editor' => array(
+      'create any expandable bean',
+      'delete any expandable bean',
+      'edit any expandable bean',
+      'view any expandable bean',
+    ),
     'site_owner' => array(
       'create any expandable bean',
       'delete any expandable bean',

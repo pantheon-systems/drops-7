@@ -29,6 +29,11 @@
         background-image:url(<?php print $image_large; ?>);
       }
     }
+    @media all and (min-width: 1600px) {
+      #hero-<?php print $bid; ?> {
+        background-image:url(<?php print $image_xlarge; ?>);
+      }
+    }
   </style>
   <?php endif; ?>
 <?php else: ?>

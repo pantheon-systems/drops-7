@@ -1,0 +1,5 @@
+# Ignore .patch files
+*.patch
+
+# Ignore IntelliJ files
+*.idea

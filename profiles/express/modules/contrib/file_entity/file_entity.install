@@ -249,6 +249,9 @@ function file_entity_uninstall() {
 
   // Remove any items from the file type queue if still there.
   DrupalQueue::get('file_entity_type_determine')->deleteQueue();
+
+  cache_clear_all('entity_info', 'cache', TRUE);
+  cache_clear_all('schema', 'cache', TRUE);
 }
 
 /**

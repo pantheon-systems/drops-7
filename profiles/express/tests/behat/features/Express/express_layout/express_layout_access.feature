@@ -1,8 +1,8 @@
 Feature: CU Layout Access
 
-  @api @layout
+  @layout
   Scenario Outline: The layout settings form should be available for certain roles.
-    Given  CU - I am logged in as a user with the <role> role
+    Given  I am logged in as a user with the <role> role
     When I am on "admin/config/content/express-layout"
     Then I should not see <message>
 

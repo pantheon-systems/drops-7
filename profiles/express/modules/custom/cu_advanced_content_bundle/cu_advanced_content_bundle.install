@@ -39,3 +39,17 @@ function cu_advanced_content_bundle_update_7002() {
 function cu_advanced_content_bundle_update_7003() {
   module_enable(array('cu_expandable'));
 }
+
+/**
+ * Disable and unistall quicktabs and related modules if no quicktabs exist.
+ */
+function cu_advanced_content_bundle_update_7004() {
+  if (function_exists('quicktabs_load_multiple')) {
+    $quicktabs = quicktabs_load_multiple();
+    if (empty($quicktabs)) {
+      $modules = array('quicktabs', 'quicktab_beans','cu_quicktab_styles');
+      module_disable($modules);
+      drupal_uninstall_modules($modules);
+    }
+  }
+}

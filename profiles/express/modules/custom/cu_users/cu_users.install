@@ -8,7 +8,7 @@
 function cu_users_install() {
   // High module weight in order to come after every module that we declare
   // permissions for.
-  db_query("UPDATE {system} SET weight = 98 WHERE name = 'cu_users'");
+  db_query("UPDATE {system} SET weight = 99 WHERE name = 'cu_users'");
 
   $developer_role = user_role_load_by_name('developer');
   $administrator_role = user_role_load_by_name('administrator');
@@ -351,4 +351,51 @@ function cu_users_update_7026() {
     $query->values(array('uid' => $account->uid, 'rid' => $developer_role->rid));
     $query->execute();
   }
+}
+
+/**
+ * Delete user URL aliases and redirects.
+ */
+function cu_users_update_7027() {
+  db_delete('url_alias')
+    ->condition('source', db_like('user/') . '%', 'LIKE')
+    ->execute();
+
+  db_delete('redirect')
+    ->condition('source', db_like('users/') . '%', 'LIKE')
+    ->execute();
+}
+
+/**
+ * Re-add invite roles for 2.9.0 additions.
+ */
+function cu_users_update_7028() {
+
+  module_load_install('cu_core');
+  _set_external_invite_variables();
+}
+
+/**
+ * Increase module weight so that cu_users_pathauto_pattern_alter() happens in the correct order.
+ */
+function cu_users_update_7029() {
+  // High module weight in order to come after every module that we declare
+  // permissions for.
+  db_query("UPDATE {system} SET weight = 99 WHERE name = 'cu_users'");
+}
+
+/**
+ * Correct invite email templates for addon role code changes.
+ */
+function cu_users_update_7030() {
+  module_load_install('cu_core');
+  _set_external_invite_variables();
+}
+
+/**
+ * Correct invite email templates for login link.
+ */
+function cu_users_update_7031() {
+  module_load_install('cu_core');
+  _set_external_invite_variables();
 }

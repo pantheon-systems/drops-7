@@ -1,0 +1,81 @@
+%item {
+  padding:10px;
+  border:1px solid #e7e7e7;
+  margin-bottom:-1px;
+}
+
+.cu-status {
+  max-width:480px;
+  margin-bottom: 20px;
+  .status-message {
+    color:#fff;
+    font-weight:bold;
+    padding:10px;
+  }
+  .status-message {
+    &.none {
+      background-color: #43A047;
+    }
+    &.minor {
+      background-color:#7E57C2;
+    }
+    &.maintenance {
+      background-color: #3498DB;
+    }
+    &.major,
+    &.critical {
+      background-color: #D84315;
+    }
+  }
+  .incidents {
+    font-size: 85%;
+    @extend %item;
+    display: none;
+    strong {
+
+    }
+    .incident {
+      border-bottom:1px solid #e7e7e7;
+      padding:10px 0;
+    }
+    .incident:last-child {
+      border: none;
+      padding-bottom: 5px;
+    }
+  }
+  .components {
+    font-size: 85%;
+    display: none;
+
+    .components-message {
+      @extend %item;
+      background-color: #f2f2f2;
+    }
+    .component {
+      @extend %item;
+      font-weight: bold;
+    }
+    .operational {
+      color: #43A047;
+    }
+    .under_maintenance {
+      color:#3498DB;
+    }
+    .partial_outage {
+      color: #EF6C00;
+    }
+    .degraded_performance {
+      color: #7E57C2;
+    }
+    .major_outage {
+      color: #D84315;
+    }
+  }
+
+  .status-info {
+    display: none;
+    @extend %item;
+    font-size: 75%;
+    text-align: right;
+  }
+}

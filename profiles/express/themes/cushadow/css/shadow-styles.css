@@ -13,7 +13,7 @@ body { background: none; background-color: #1e1e1e; background-color: #f2f2f2; b
 
 #navigation a { color: #fff; font-size: 90%; font-weight: 600; }
 #navigation a:hover, #navigation a:focus, #navigation a.active, #navigation a.active-trail { background-color: #fff; color: #363839; }
-#navigation a#home-link { background-color: transparent; color: #fff; }
+#navigation a.home-link, #navigation a.home-link.active { background-color: transparent; color: #fff; }
 
 #secondary-navigation { color: #fff; }
 #secondary-navigation a { color: #fff; display: inline-block; }

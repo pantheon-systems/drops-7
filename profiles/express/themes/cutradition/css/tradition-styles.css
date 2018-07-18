@@ -21,8 +21,8 @@ body { background-color: #272727; padding-bottom: 20px; }
 #main-menu-wrapper #navigation #main-menu a { color: #333; font-weight: 600; line-height: 60px; position: relative; }
 #main-menu-wrapper #navigation #main-menu a:after { position: absolute; bottom: 10px; left: 0; right: 0; margin: 0 0 0 10px; width: 100%; width: calc(100% - 20px); content: '.'; color: transparent !important; background: transparent; height: 3px !important; }
 #main-menu-wrapper #navigation #main-menu a.active:after, #main-menu-wrapper #navigation #main-menu a.active-trail:after, #main-menu-wrapper #navigation #main-menu a:hover:after { background-color: #cfb87c !important; }
-#main-menu-wrapper #navigation #main-menu a#home-link { color: #363636; background-color: transparent; }
-#main-menu-wrapper #navigation #main-menu a#home-link:after { background: transparent !important; }
+#main-menu-wrapper #navigation #main-menu a.home-link, #main-menu-wrapper #navigation #main-menu a.home-link.active { color: #363636; background-color: transparent; }
+#main-menu-wrapper #navigation #main-menu a.home-link:after, #main-menu-wrapper #navigation #main-menu a.home-link.active:after { background: transparent !important; }
 
 #action-menu { padding: 10px 0; }
 #action-menu a { color: #656565; }

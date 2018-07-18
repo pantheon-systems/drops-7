@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Context reaction for Metatag:Context tests.

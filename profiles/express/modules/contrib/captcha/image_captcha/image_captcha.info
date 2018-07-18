@@ -11,9 +11,9 @@ files[] = image_captcha.admin.inc
 files[] = image_captcha.user.inc
 files[] = image_captcha.test
 
-; Information added by Drupal.org packaging script on 2017-02-15
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2017-09-06
+version = "7.x-1.5"
 core = "7.x"
 project = "captcha"
-datestamp = "1487198287"
+datestamp = "1504724060"
 

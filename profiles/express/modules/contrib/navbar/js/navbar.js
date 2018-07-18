@@ -530,6 +530,7 @@ Drupal.navbar = {
       $orientationToggle.find('button')
         .val(antiOrientation)
         .text(this.strings[antiOrientation])
+        .attr('title', this.strings[antiOrientation])
         .removeClass(iconClass)
         .addClass(iconAntiClass);
 

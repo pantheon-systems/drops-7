@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Primary hook implementations for the Metatag: OpenGraph module.
+ */
+
+/**
  * Implements hook_preprocess_html().
  */
 function metatag_opengraph_preprocess_html(&$variables) {
@@ -83,4 +88,4 @@ og:audio:type
 
 og:upc
 og:isbn
-*/
+ */

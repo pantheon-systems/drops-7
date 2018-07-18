@@ -200,45 +200,56 @@ function cu_help_express_help($variables) {
   $variables['admin/settings/bundles/list/addon'][] = array(
     'title' => 'Contact Web Support',
     'short_title' => 'Contact Web Support',
-    'url' => '/',
+    'url' => '/node/78',
   );
 
   $variables['admin/settings/bundles/list/request'][] = array(
     'title' => 'Contact Web Support',
     'short_title' => 'Contact Web Support',
-    'url' => '/',
+    'url' => '/node/78',
   );
 
   $variables['admin/settings/cache/clear'][] = array(
     'title' => 'Understanding Cache Clearing',
     'short_title' => 'Cache Clearing',
-    'url' => 'node/1486',
+    'url' => '/node/1350',
   );
 
   $variables['admin/settings/cache/clear/varnish-path'][] = array(
     'title' => 'Understanding Cache Clearing',
     'short_title' => 'Cache Clearing',
-    'url' => 'node/1486',
+    'url' => '/node/1350',
   );
 
   $variables['admin/settings/cache/clear/drupal-full'][] = array(
     'title' => 'Understanding Cache Clearing',
     'short_title' => 'Cache Clearing',
-    'url' => 'node/1486',
+    'url' => '/node/1350',
   );
 
   $variables['admin/settings/cache/clear/varnish-full'][] = array(
     'title' => 'Understanding Cache Clearing',
     'short_title' => 'Cache Clearing',
-    'url' => 'node/1486',
+    'url' => '/node/1350',
   );
 
   $variables['admin/settings/search/search-settings'][] = array(
     'title' => 'Search Box Help',
     'short_title' => 'Search Box',
-    'url' => 'node/1670',
+    'url' => '/node/1670',
   );
 
+  $variables['admin/people/invite'][] = array(
+    'title' => 'Invite Users Help',
+    'short_title' => 'Invite Users',
+    'url' => '/node/654',
+  );
+
+  $variables['admin/people/invite/operations'][] = array(
+    'title' => 'Manage Invites Help',
+    'short_title' => 'Manage Users',
+    'url' => '/node/1946',
+  );
 
   return array_map(
     function ($a) {

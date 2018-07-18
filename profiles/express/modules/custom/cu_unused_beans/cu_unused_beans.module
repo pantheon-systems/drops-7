@@ -3,12 +3,11 @@
 
 function cu_unused_beans_menu() {
   $items = array();
-  $items['admin/content/blocks/unused'] = array(
+  $items['admin/reports/blocks/unused'] = array(
     'title' => 'Unused Blocks',
+    'description' => 'A list of blocks that are not being displayed on this site.',
     'page callback' => 'cu_unused_beans_list',
     'access arguments' => array('view bean page'),
-    'type' => MENU_LOCAL_ACTION,
-    'weight' => 999,
   );
   return $items;
 }

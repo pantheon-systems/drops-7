@@ -1,0 +1,418 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function cu_inactive_users_menu() {
+  $items = array();
+  $items['admin/reports/inactive-users'] = array(
+    'page callback' => 'cu_inactive_users_report_access',
+    'page arguments' => array(3),
+    'access arguments' => array('view inactive users'),
+    'title' => 'Inactive Users',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/reports/inactive-users/access'] = array(
+    'page callback' => 'cu_inactive_users_report_access',
+    'page arguments' => array(4),
+    'access arguments' => array('view inactive users'),
+    'title' => 'Have not logged in recently',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['admin/reports/inactive-users/edits'] = array(
+    'page callback' => 'cu_inactive_users_report_edits',
+    'page arguments' => array(4),
+    'access arguments' => array('view inactive users'),
+    'title' => 'Have not created or edited content',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['admin/reports/inactive-users/roles'] = array(
+    'page callback' => 'cu_inactive_users_report_roles',
+    'page arguments' => array(4),
+    'access arguments' => array('view inactive users'),
+    'title' => 'Have not been assigned a role',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+  );
+  $items['admin/reports/inactive-users/remove'] = array(
+    'page callback' => 'cu_inactive_users_report_remove',
+    'page arguments' => array(4),
+    'access arguments' => array('view delete candidate users'),
+    'title' => 'Can be removed',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1000,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_inactive_users_permission() {
+  return array(
+    'view inactive users' => array(
+      'title' => 'View Inactive Users Report',
+      'description' => 'View a list of inactive users.',
+    ),
+    'view delete candidate users' => array(
+      'title' => 'View Candidates for Deletion',
+      'description' => 'View a list of users that can probably be removed.',
+    ),
+  );
+}
+
+/**
+ * Implements hook_secure_permissions().
+ */
+function cu_inactive_users_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'view inactive users',
+    ),
+    'developer' => array(
+      'view inactive users',
+      'view delete candidate users',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Return Users that have no recent login activity.
+ */
+function cu_inactive_users_report_access($uids = NULL) {
+
+  $output = array();
+  // If uids are provided, git a warning and a link to full report.
+  if ($uids) {
+    $uids = explode(' ', $uids);
+    $path = current_path();
+    $parts = explode('/', $path);
+    array_pop($parts);
+    $path = join('/',$parts);
+    if (!empty($uids)) {
+      $link = l('View this report on all site users', $path);
+      drupal_set_message("This report is being run on a subset of users. $link.", 'warning');
+    }
+  }
+
+  $list = array();
+
+  // Set the default time we want to check access for.
+  $time = isset($_GET['time']) ? check_plain($_GET['time']) : 60*60*24*60;
+
+  // Run query
+  $stale_users = cu_inactive_users_stale_logins($time, $uids);
+
+  // Sort users
+  uasort($stale_users, '_cu_inactive_users_access_sort');
+
+  // Build list
+  foreach ($stale_users as $stale_user) {
+    $access = ($stale_user->access) ? date('F j, Y', $stale_user->access) : 'has never logged in';
+    $name = !empty($stale_user->realname) ? l($stale_user->realname, 'user/' . $stale_user->uid . '/edit') : l($stale_user->name, 'user/' . $stale_user->uid . '/edit');
+    $role = _cu_inactive_users_format_roles($stale_user->roles);
+    $list[$stale_user->uid] = "$name ($access)<br /><small>$role</small>";
+  }
+  // Build a readable date we are checking against
+  $now = time();
+  $since = $now - $time;
+  $since = date('F j, Y', $since);
+
+  // Add some links to allow user to filter by date.
+  $time_filters = array();
+  $time_options = array(
+    '7 Days' => (60*60*24*7),
+    '30 Days' => (60*60*24*30),
+    '90 Days' => (60*60*24*90),
+    '1 Year' => (60*60*24*365),
+  );
+  $path = current_path();
+  global $base_url;
+  // If a time is already set, add a default/reset link.
+  if ($_GET['time']) {
+    $time_filters[] = "<a href=\"$base_url/$path\">Default (60 Days)</a>";
+  }
+  // Loop through time filter options.
+  foreach ($time_options as $label => $interval) {
+    if ($_GET['time'] == $interval) {
+      $class = 'active-time-filter';
+    }
+    else {
+      $class = '';
+    }
+    $time_filters[] = "<a href=\"$base_url/$path?time=$interval\" class=\"$class\">$label</a>";
+  }
+
+  $output['stale_users']['#prefix'] = '<h2>Have not logged in recently</h2>';
+  $output['stale_users']['description']['#markup'] = "<p>The users listed below have not logged in since $since.</p>";
+  $output['stale_users']['filters']['#prefix'] = '<div class="inactive-time-filter">Use the links below to change the date checked.';
+  $output['stale_users']['filters']['#suffix'] = '</div>';
+  $output['stale_users']['filters']['#markup'] = theme('item_list', array('items' => $time_filters, 'attributes' => array('class' => array('inactive-users-time-filters'))));
+  $output['stale_users']['list']['#markup'] = theme('item_list', array('items' => $list, 'attributes' => array('class' => array('bullet-list'))));
+
+  return $output;
+}
+
+/**
+ * Sorting function for recent access.
+ */
+function _cu_inactive_users_access_sort($a, $b) {
+  if ($a->access > $b->access) {
+    return 0;
+  }
+  return 1;
+}
+
+/**
+ * Return users that are not authors and have no edits.
+ */
+function cu_inactive_users_report_edits($uids = NULL) {
+  $output = array();
+
+  // If uids are provided, git a warning and a link to full report.
+  if ($uids) {
+    $uids = explode(' ', $uids);
+    $path = current_path();
+    $parts = explode('/', $path);
+    array_pop($parts);
+    $path = join('/',$parts);
+    if (!empty($uids)) {
+      $link = l('View this report on all site users', $path);
+      drupal_set_message("This report is being run on a subset of users. $link.", 'warning');
+    }
+  }
+
+  // Put this into a list we can output.
+  $list = array();
+  $noedit_users = cu_inactive_users_noedits($uids);
+
+  // Build list.
+  foreach ($noedit_users as $noedit_user) {
+    $name = !empty($noedit_user->realname) ? l($noedit_user->realname, 'user/' . $noedit_user->uid . '/edit') : l($noedit_user->name, 'user/' . $noedit_user->uid . '/edit');
+    $key = strtolower(strip_tags($name));
+    $role = _cu_inactive_users_format_roles($noedit_user->roles);
+    $list[$key] = "$name<br /><small>$role</small>";
+  }
+
+  ksort($list);
+  $output['inactive']['#prefix'] = '<h2>Have not created or edited content</h2>';
+  $output['inactive']['description']['#markup'] = '<p>The users listed below are not authors of any content, blocks or webform submissions and have made no edits to any content or blocks.</p>';
+  $output['inactive']['list']['#markup'] = theme('item_list', array('items' => $list, 'attributes' => array('class' => array('bullet-list'))));
+
+  return $output;
+}
+
+/**
+ * Return users that have no roles assigned.
+ */
+function cu_inactive_users_report_roles($uids = NULL) {
+  $output = array();
+
+  // If uids are provided, git a warning and a link to full report.
+  if ($uids) {
+    $uids = explode(' ', $uids);
+    $path = current_path();
+    $parts = explode('/', $path);
+    array_pop($parts);
+    $path = join('/',$parts);
+    if (!empty($uids)) {
+      $link = l('View this report on all site users', $path);
+      drupal_set_message("This report is being run on a subset of users. $link.", 'warning');
+    }
+  }
+
+  $list = array();
+  $no_role_users = cu_inactive_users_missing_role_get($uids);
+
+  // Build list.
+  foreach ($no_role_users as $no_role_user) {
+    $name = !empty($no_role_user->realname) ? l($no_role_user->realname, 'user/' . $no_role_user->uid . '/edit') : l($no_role_user->name, 'user/' . $no_role_user->uid . '/edit');
+    $key = strip_tags($name);
+    $list[$key] = $name;
+  }
+  ksort($list);
+  $output['missing_role']['#prefix'] = '<h2>Have Not Been Assigned a Role</h2>';
+  $output['missing_role']['description']['#markup'] = '<p>The users listed below have no roles assigned to them.</p>';
+  $output['missing_role']['list']['#markup'] = theme('item_list', array('items' => $list, 'attributes' => array('class' => array('bullet-list'))));
+
+  return $output;
+}
+
+/**
+ * Implements hook_inactive_users().
+ *
+ * Tell inactive users to check node and bean tables + revisions.
+ */
+function cu_inactive_users_inactive_users(&$vars) {
+  $vars['bean'] = array('table' => 'bean', 'column' => 'uid');
+  $vars['bean_revision'] = array('table' => 'bean_revision', 'column' => 'uid');
+  $vars['node'] = array('table' => 'node', 'column' => 'uid');
+  $vars['node_revision'] = array('table' => 'node_revision', 'column' => 'uid');
+
+  return $vars;
+}
+
+/**
+ * Get inactive users.
+ *
+ * $user_list = array of user ids array(1,2,3,4);
+ */
+function cu_inactive_users_noedits($user_list = array()) {
+  $tables = array();
+
+  // Get implementations of hook_inactive_users().
+  $hooks = module_invoke_all('inactive_users', $vars = NULL);
+
+  //$tables[] = array('bean', 'bean_revision', 'node', 'node_revision');
+  $uids = array();
+
+  // Query tables for user/author ids.
+  foreach ($hooks as $table) {
+    $query = db_select($table['table'], 't')
+    ->fields('t', array($table['column']))
+    ->distinct()
+    ->execute()
+    ->fetchCol();
+
+    $uids = array_merge($uids, $query);
+
+  }
+  // Remove duplicate ids.
+  $uids = array_unique($uids);
+
+  // Load users.
+  if (!empty($user_list)) {
+    $users = entity_load('user', $user_list);
+  }
+  else {
+    $users = entity_load('user');
+    // Remove user 0,1;
+    unset($users[0]);
+    unset($users[1]);
+  }
+
+  // Get uids as keys for comparison.
+  $users_uids = array_keys($users);
+
+  // Get the difference between users as uids.
+  // Result is users that do not have edits/submissions/etc.
+  $inactive_user_ids = array_diff($users_uids, $uids);
+  // Make this array easier to compare with the $users array.
+  $inactive_user_ids = array_fill_keys($inactive_user_ids, '1');
+
+  // Get the intersect of inactive ids and all users.
+  $inactive_users = array_intersect_key($users, $inactive_user_ids);
+
+  return $inactive_users;
+}
+
+/**
+ * Users without a role.
+ */
+function cu_inactive_users_missing_role_get($user_list = array()) {
+  // Load users.
+  if (!empty($user_list)) {
+    $users = entity_load('user', $user_list);
+  }
+  else {
+    $users = entity_load('user');
+    // Remove user 0,1;
+    unset($users[0]);
+    unset($users[1]);
+  }
+
+  // Get uids with a role
+  $query = db_select('users_roles', 'ur')
+  ->fields('ur', array('uid'))
+  ->distinct()
+  ->execute()
+  ->fetchCol();
+
+  // Reformat for easier comparison
+  $users_with_role = array_fill_keys($query, '1');
+
+  // Get users that don't have a role
+  $users_without_role = array_diff_key($users, $users_with_role);
+  return $users_without_role;
+}
+
+/**
+ * Users that haven't logged in since $var.
+ * $time default is 13 * 30 days (in seconds).
+ */
+function cu_inactive_users_stale_logins($time = '33696000', $user_list = array()) {
+  // Load users.
+  if (!empty($user_list)) {
+    $users = entity_load('user', $user_list);
+  }
+  else {
+    $users = entity_load('user');
+    // Remove user 0,1;
+    unset($users[0]);
+    unset($users[1]);
+  }
+  $now = time();
+  $since = $now - $time;
+
+  $query = db_select('users', 'u');
+  $query->fields('u', array('uid','login'));
+  $query->condition('u.login', $since, '>');
+  $query->distinct();
+  $results = $query->execute()->fetchCol();
+
+  // Reformat for easier comparison
+  $stale_users = array_fill_keys($results, '1');
+
+  // Get users that don't have a role
+  $stale_users = array_diff_key($users, $stale_users);
+  return $stale_users;
+}
+
+
+/**
+ * Formats roles from machine name to something more readable.
+ */
+function _cu_inactive_users_format_roles($roles) {
+  foreach ($roles as $key => $role) {
+    if ($role == 'authenticated user') {
+      unset($roles[$key]);
+    }
+  }
+  $roles = join(', ', $roles);
+  $roles = str_replace('_', ' ', $roles);
+  $roles = ucwords($roles);
+  return $roles;
+}
+
+function cu_inactive_users_report_remove($uids = NULL) {
+  $output = array();
+  $list = array();
+  $results = cu_inactive_users_report_remove_process();
+  foreach ($results as $result) {
+    $name = !empty($result->realname) ? l($result->realname, 'user/' . $result->uid . '/edit') : l($result->name, 'user/' . $result->uid . '/edit');
+    $key = strip_tags($name);
+    $list[$key] = $name;
+  }
+  ksort($list);
+  $output['missing_role']['#prefix'] = '<h2>Can Probably Be Removed</h2>';
+  $output['missing_role']['description']['#markup'] = '<p>The users listed below have no roles assigned to them, have not authored or edited any content, and have not logged in recently.</p>';
+  $output['missing_role']['list']['#markup'] = theme('item_list', array('items' => $list, 'attributes' => array('class' => array('bullet-list'))));
+
+  return $output;
+}
+
+function cu_inactive_users_report_remove_process() {
+  $time = 60*60*24*395;
+  $list = array();
+  $list['stale'] = cu_inactive_users_stale_logins($time, $uids);
+  $list['role'] = cu_inactive_users_missing_role_get($uids);
+  $list['edits'] = cu_inactive_users_noedits($uids);
+  $results = array_intersect_key($list['stale'], $list['role'], $list['edits']);
+
+  return $results;
+}

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module and taxonomy term entities.
+ */
+
+/**
  * Tests for the Metatag module and taxonomy term entities.
  */
 class MetatagCoreTermTest extends MetatagTestHelper {
@@ -64,7 +69,6 @@ class MetatagCoreTermTest extends MetatagTestHelper {
     $this->drupalLogin($this->adminUser);
 
     // Assign default values for the new vocabulary.
-
     // Load the "add default configuration" page.
     $this->drupalGet('admin/config/search/metatags/config/add');
     $this->assertResponse(200);
@@ -94,7 +98,6 @@ class MetatagCoreTermTest extends MetatagTestHelper {
     $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
 
     // Create a test term.
-
     // Load the term form.
     $this->drupalGet('admin/structure/taxonomy/' . $vocabulary->machine_name . '/add');
     $this->assertResponse(200);
@@ -102,7 +105,6 @@ class MetatagCoreTermTest extends MetatagTestHelper {
     // Verify the page loaded correctly.
     // @todo Update this to extract the H1 tag.
     // $this->assertText(strip_tags(t('Create @name', array('@name' => $vocabulary->name))));
-
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
       'metatags[und][abstract][value]' => '[term:name] ponies',
@@ -163,4 +165,5 @@ class MetatagCoreTermTest extends MetatagTestHelper {
     $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
     $this->assertEqual($xpath[0]['content'], "Who likes magic ponies");
   }
+
 }

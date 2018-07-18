@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the redirect module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function match_redirect_schema() {
+  $schema['match_redirect'] = array(
+    'description' => 'Redirection patterns.',
+    'fields' => array(
+      'rid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'primary Key: unique id.',
+      ),
+      'source_pattern' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'target' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'status_code' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'description' => 'http status code to use send.',
+      ),
+      'override' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'allow existing content to be redirected.',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('rid'),
+  );
+
+  return $schema;
+}

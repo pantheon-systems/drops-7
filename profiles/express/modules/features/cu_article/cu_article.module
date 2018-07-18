@@ -102,8 +102,7 @@ function cu_article_page_alter(&$page) {
   drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article.css');
   drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article-grid.css');
   drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/owl.carousel.css');
-  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/owl.carousel.js');
-  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/article-slider.js');
+
 }
 
 /**
@@ -442,10 +441,12 @@ function cu_article_preprocess_entity(&$vars) {
         if ($i > 3) {
           $i = 1;
         }
-        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid ' . $rows[$i] . '">';
+        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid col-lg-4 col-md-4 col-sm-6 col-xs-12">';
         $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
         $i++;
       }
+      $output['articles']['#prefix'] = '<div class="row">';
+      $output['articles']['#suffix'] = '</div>';
       $vars['content'] = array_merge($vars['content'], $output);
     }
     else {
@@ -596,158 +597,22 @@ function cu_article_preprocess_entity(&$vars) {
         // Insert categories here
       }
       $output['articles']['remaining'] = $remaining_nodes;
-      $output['articles']['more'] = isset($vars['content']['field_article_link']) ? $vars['content']['field_article_link'] : '';
+      $output['more'] = isset($vars['content']['field_article_link']) ? $vars['content']['field_article_link'] : NULL;
+      $output['more']['#weight'] = 100;
       $output['articles']['#prefix'] = '<div class="article-feature-remaining clearfix">';
       $output['articles']['#suffix'] = '</div>';
       $vars['content'] = $output;
+
       // Add classes to set layout
       $vars['content']['#prefix'] = '<div class="article-feature ' . $display . '">';
       $vars['content']['#suffix'] = '</div>';
+      $vars['content']['#display'] = $display;
     }
     else {
       $type = $vars['elements']['#bundle'];
       _cu_article_bean_null_results($vars, $type);
       $vars['content'] = array();
     }
-  }
-
-  if ($vars['elements']['#bundle'] == 'article_slider') {
-    $bid = $vars['bean']->bid;
-    $content = $vars['content'];
-    global $base_url;
-
-    // Start query.
-    $query = db_select('node', 'n');
-
-    // Set number of items.
-
-    $query = $query->extend('PagerDefault')->limit(15);
-    $query->condition('n.type', 'article', '=');
-    $query->condition('n.status', 1, '=');
-    $query->fields('n', array('nid', 'title', 'sticky'));
-
-    // Filter by tag.
-    if (isset($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE])) {
-      $terms = array();
-      foreach ($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE] as $key => $value) {
-        $tid = $value['tid'];
-        $terms[$tid] = $tid;
-        // Look up children terms and add them to array
-        $v = taxonomy_vocabulary_machine_name_load('tags');
-        $children = taxonomy_get_tree($v->vid, $tid);
-        foreach ($children as $child) {
-          $terms[$child->tid] = $child->tid;
-        }
-      }
-      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
-      $query->fields('tags', array('field_tags_tid'));
-      $query->condition('tags.field_tags_tid', $terms, 'in');
-    }
-
-    // Filter by category.
-    if (isset($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE])) {
-      $terms = array();
-      foreach ($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE] as $key => $value) {
-        $tid = $value['tid'];
-        $terms[$tid] = $tid;
-        // Look up children terms and add them to array
-        $v = taxonomy_vocabulary_machine_name_load('category');
-        $children = taxonomy_get_tree($v->vid, $tid);
-        foreach ($children as $child) {
-          $terms[$child->tid] = $child->tid;
-        }
-      }
-      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
-      $query->fields('cats', array('field_article_categories_tid'));
-      $query->condition('cats.field_article_categories_tid', $terms, 'in');
-    }
-
-    // Make sure articles have thumbnails
-    $query->join("field_data_field_article_thumbnail", "thumbs", "n.nid = thumbs.entity_id");
-    $query->fields('thumbs', array('field_article_thumbnail_fid'));
-    $query->condition('thumbs.field_article_thumbnail_fid', 'NULL', '!=');
-
-    // Exclude category
-    if (!empty($vars['elements']['#entity']->field_article_exclude_category)) {
-      $terms = array();
-      foreach ($vars['elements']['#entity']->field_article_exclude_category[LANGUAGE_NONE] as $key => $value) {
-        $tid = $value['tid'];
-        $terms[$tid] = $tid;
-        // Look up children terms and add them to array
-        $v = taxonomy_vocabulary_machine_name_load('category');
-        $children = taxonomy_get_tree($v->vid, $tid);
-        foreach ($children as $child) {
-          $terms[$child->tid] = $child->tid;
-        }
-      }
-      // Start sub query.
-      $exclude_query = db_select('node', 'n');
-      $exclude_query->condition('n.type', 'article', '=');
-      $exclude_query->condition('n.status', 1, '=');
-      $exclude_query->fields('n', array('nid'));
-      $exclude_query->join("field_data_field_article_categories", "excats", "n.nid = excats.entity_id");
-      $exclude_query->condition('excats.field_article_categories_tid', $terms, 'in');
-      $query->condition('n.nid', $exclude_query, 'NOT IN');
-    }
-
-
-    // Exclude tags
-    if (!empty($vars['elements']['#entity']->field_article_exclude_tag)) {
-      $terms = array();
-      foreach ($vars['elements']['#entity']->field_article_exclude_tag[LANGUAGE_NONE] as $key => $value) {
-        $tid = $value['tid'];
-        $terms[$tid] = $tid;
-        // Look up children terms and add them to array
-        $v = taxonomy_vocabulary_machine_name_load('tags');
-        $children = taxonomy_get_tree($v->vid, $tid);
-        foreach ($children as $child) {
-          $terms[$child->tid] = $child->tid;
-        }
-      }
-      // Start sub query.
-      $exclude_query = db_select('node', 'n');
-      $exclude_query->condition('n.type', 'article', '=');
-      $exclude_query->condition('n.status', 1, '=');
-      $exclude_query->fields('n', array('nid'));
-      $exclude_query->join("field_data_field_tags", "extags", "n.nid = extags.entity_id");
-      $exclude_query->condition('extags.field_tags_tid', $terms, 'in');
-      $query->condition('n.nid', $exclude_query, 'NOT IN');
-    }
-
-    $query->distinct();
-    $query->groupBy('n.nid');
-    // Display the newest first.
-    $query->orderBy('sticky', 'DESC');
-    $query->orderBy('created', 'DESC');
-
-    $nids = $query->execute()->fetchCol();
-    $nodes = node_load_multiple($nids);
-
-    // Build output.
-    if (!empty($nodes)) {
-      $output = array();
-      $rows = array();
-      $rows[1] = 'alpha';
-      $rows[2] = '';
-      $rows[3] = 'omega';
-      $i = 1;
-      $output['articles'] = node_view_multiple($nodes, 'grid');
-      unset($output['articles']['nodes']['#sorted']);
-      foreach ($output['articles']['nodes'] as $nid => $node) {
-        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid article-slider-slide">';
-        $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
-        $i++;
-      }
-      $output['articles']['#prefix'] = '<div class="article-slider">';
-      $output['articles']['#suffix'] = '</div>';
-      unset($vars['content']['article_slider_entity_view_1']);
-      $vars['content']['article_slider'] = $output;
-    }
-    else {
-      $vars['content'] = array_merge($vars['content'], $output);
-      $vars['content'] = '';
-    }
-
   }
 }
 
@@ -785,7 +650,7 @@ function cu_article_preprocess_node(&$vars) {
     $vars['content']['article_meta']['#weight'] = 100;
 
     // Add publish date to author meta element
-    $vars['author_meta']['date'] = '<span class="author-meta-date author-meta-item"><i class="fa fa-clock-o"></i><span class="element-invisible">Published:</span>  ' . $vars['ap_date_cu_medium_date'] . '</span>';
+    $vars['author_meta']['date'] = '<span class="author-meta-date author-meta-item"><i class="fa fa-calendar-o"></i><span class="element-invisible">Published:</span>  ' . $vars['ap_date_cu_medium_date'] . '</span>';
 
     // Show/hide publish date
     $article_date_settings = !empty($vars['node']->field_article_date_display) ? $vars['node']->field_article_date_display[LANGUAGE_NONE][0]['value'] : NULL;
@@ -949,6 +814,10 @@ function cu_article_preprocess_node(&$vars) {
       // Add bylines terms to author meta section
       $vars['author_meta']['byline'] = '<span class="author-meta-name author-meta-item">By ' . join(', ', $bylines) . '</span>';
     }
+    if (!empty($vars['content']['links']['node']['#links']['node-readmore'])) {
+      $vars['more_link'] = l($vars['content']['links']['node']['#links']['node-readmore']['title'], $vars['content']['links']['node']['#links']['node-readmore']['href'], array('attributes' => array('aria-hidden' => 'true', 'class' => array('more-link', 'summary-more-link')),
+    'html' => TRUE));
+    }
   }
   if ($vars['node']->type == 'article_list_page') {
     // Start query.
@@ -1079,16 +948,20 @@ function cu_article_preprocess_node(&$vars) {
     foreach ($nodes as $key => $node) {
       $nodes[$key]->heading_tag['#tag'] = 'h2';
     }
-    $output['articles'] = node_view_multiple($nodes, 'teaser');
-    $output['articles']['#weight'] = 99;
-    $output['pager'] = array(
-      '#theme' => 'pager',
-      '#tags' => array(),
-      '#weight' => 100.
-    );
-    $output['exposed_filter'] = drupal_get_form('cu_article_list_filter_form');
-    $output['exposed_filter']['#weight'] = 95;
-    $vars['content'] = array_merge($vars['content'], $output);
+    // Add articles, filter form & pager.
+    if (!empty($nodes)) {
+      $output['articles'] = array();
+      $output['articles'] = node_view_multiple($nodes, 'teaser');
+      $output['articles']['#weight'] = 99;
+      $output['pager'] = array(
+        '#theme' => 'pager',
+        '#tags' => array(),
+        '#weight' => 100.
+      );
+      $output['exposed_filter'] = drupal_get_form('cu_article_list_filter_form');
+      $output['exposed_filter']['#weight'] = 95;
+      $vars['content'] = array_merge($vars['content'], $output);
+    }
   }
 }
 

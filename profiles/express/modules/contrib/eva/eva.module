@@ -31,14 +31,15 @@ function eva_field_extra_fields() {
         $bundles = array_keys($entity_info['bundles']);
       }
       foreach ($bundles as $bundle) {
-        $extras[$entity][$bundle]['display'][$view['name'] . '_' . $view['display']] = array(
+        $context = $view['show_on'];
+        $extras[$entity][$bundle][$context][$view['name'] . '_' . $view['display']] = array(
           'label' => (empty($view['title'])) ? $view['name'] : $view['title'],
           'description' => $view['title'],
           'weight' => 10,
         );
         // Provide a separate extra field for the exposed form if there is any.
-        if (!empty($view['exposed form']) && !empty($view['exposed form split'])) {
-          $extras[$entity][$bundle]['display'][$view['name'] . '_' . $view['display'] . '_' . 'form'] = array(
+        if ($context == 'display' && !empty($view['exposed form']) && !empty($view['exposed form split'])) {
+          $extras[$entity][$bundle][$context][$view['name'] . '_' . $view[$context] . '_' . 'form'] = array(
             'label' => ((empty($view['title'])) ? $view['name'] : $view['title']) . ' (' . t('Exposed form') . ')',
             'description' => t('The exposed filter form of the view.'),
             'weight' => 9,
@@ -53,47 +54,121 @@ function eva_field_extra_fields() {
 
 /**
  * Implements hook_entity_view_alter().
- *
- * This is a terrible, terrible hack that should not be necessary; taxonomy and
- * some other entity types use fields, but don't implement  hook_entity_view().
- * We have to ALTER those entity types after they're built. For the time being,
- * we'll use a list of special cases to trigger this special handling.
  */
-function eva_entity_view_alter(&$build, $type) {
-  $view_mode = $build['#view_mode'];
-
-  if (!$entity = _eva_extract_entity_from_build($build, $type)) {
+function eva_entity_view_alter(&$build, $entity_type) {
+  // If we cannot find the entity, return.
+  if (!$entity = _eva_extract_entity_from_build($build, $entity_type)) {
     return;
   }
 
-  $entity_ids = entity_extract_ids($type, $entity);
-  $fields = field_extra_fields_get_display($type, $entity_ids[2], $view_mode);
-  $views = eva_get_views($type);
+  // If there are no extra fields for this view mode, return.
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  if (!$fields = field_extra_fields_get_display($entity_type, $bundle, $build['#view_mode'])) {
+    return;
+  }
+
+  // If there are no views for this entity type, return.
+  if (!$views = eva_get_views($entity_type)) {
+    return;
+  }
 
   foreach ($views as $info) {
     $longname = $info['name'] . '_' . $info['display'];
     if (isset($fields[$longname]) && $fields[$longname]['visible']) {
-      if ($view = views_get_view($info['name'])) {
-        $view->set_display($info['display']);
-        if ($view->access($info['display'])) {
-          $view->current_entity = $entity;
+      _eva_build_extra_fields($build, $entity_type, $entity, $fields, $info['name'], $info['display'], 'display');
+    }
+  }
+}
 
-          if (isset($fields[$longname . '_form']) && $fields[$longname . '_form']['visible']) {
-            $view->init_handlers();
-            $exposed_form = $view->display_handler->get_plugin('exposed_form');
+/**
+ * Implements hook_field_attach_form().
+ */
+function eva_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  // Retrieve all EVA views for this entity type.
+  if (!$views = eva_get_views($entity_type)) {
+    return;
+  }
 
-            $build[$longname . '_form'] = array(
-              '#markup' => $exposed_form->render_exposed_form(TRUE),
-            );
-          }
-          $result = $view->execute_display($info['display']);
-          if (!empty($result)) {
-            $build[$longname] = array(
-              '#markup' => $result,
-              '#weight' => $fields[$longname]['weight'],
-            );
+  // If there are no extra fields for this entity, return.
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  if (!$fields = field_info_extra_fields($entity_type, $bundle, 'form')) {
+    return;
+  }
+
+  // Loop through each view to see if it is an extra field. Unlike fields on the
+  // display, fields on the form have no concept of visibility, they are always
+  // added to the form.
+  foreach ($views as $info) {
+    if (isset($fields[$info['name'] . '_' . $info['display']])) {
+      _eva_build_extra_fields($form, $entity_type, $entity, $fields, $info['name'], $info['display'], 'form');
+    }
+  }
+}
+
+/**
+ * Adds the EVA to the build, which is either the rendered entity or the form.
+ *
+ * @param array $build
+ *   The rendered entity or the entity form.
+ * @param string $entity_type
+ *   The entity type.
+ * @param object $entity
+ *   The entity object. This is used by the display plugin for processing.
+ * @param array $fields
+ *   The array of extra fields.
+ * @param string $name
+ *   The name of the view.
+ * @param string $display_id
+ *   The display ID of the view.
+ * @param string $context
+ *   Where this EVA is being used, either 'form' or 'display'.
+ */
+function _eva_build_extra_fields(&$build, $entity_type, $entity, $fields, $name, $display_id, $context) {
+  if ($view = views_get_view($name)) {
+    $view->set_display($display_id);
+    if ($view->access($display_id)) {
+      $view->current_entity = $entity;
+      $view->current_entity_type = $entity_type;
+      $view->current_entity_view_mode = ($context === 'form') ? 'form' : $build['#view_mode'];
+
+      $longname = $name . '_' . $display_id;
+      if ($context == 'display' && isset($fields[$longname . '_form'])) {
+        $view->init_handlers();
+        $exposed_form = $view->display_handler->get_plugin('exposed_form');
+
+        $build[$longname . '_form'] = array(
+          '#markup' => $exposed_form->render_exposed_form(TRUE),
+        );
+      }
+
+      $arg_mode = $view->display_handler->get_option('argument_mode');
+      if ($arg_mode == 'token') {
+        $args = array();
+        if ($token_string = $view->display_handler->get_option('default_argument')) {
+          // Now do the token replacement.
+          $token_values = eva_get_arguments_from_token_string($token_string, $entity_type, $entity);
+          // We have to be careful to only replace arguments that have tokens.
+          foreach ($token_values as $key => $value) {
+            $args[$key] = $value;
           }
         }
+      }
+      elseif ($arg_mode == 'id') {
+        list($id,,) = entity_extract_ids($entity_type, $entity);
+        $args = array($id);
+      }
+      else {
+        // We should not get here, but if we are, prevent notices.
+        $args = array();
+      }
+
+
+      $result = $view->execute_display($display_id, $args);
+      if (!empty($result)) {
+        $build[$longname] = array(
+          '#markup' => $result,
+          '#weight' => $fields[$longname]['weight'],
+        );
       }
     }
   }
@@ -146,6 +221,7 @@ function eva_get_views($type = NULL, $reset = FALSE) {
           'name' => $view->name,
           'title' => 'EVA: ' . $view->get_human_name() . ' - ' . $view->display[$display_id]->display_title,
           'display' => $display_id,
+          'show_on' => $view->display_handler->get_option('show_on'),
           'bundles' => $view->display_handler->get_option('bundles'),
           'exposed form' => $view->display_handler->uses_exposed(),
           'exposed form split' => $view->display_handler->get_option('exposed_form_as_field'),
@@ -187,7 +263,8 @@ function _eva_extract_entity_from_build($build, $entity_type = NULL) {
   }
 
   // Other entities stick them here!
-  elseif (!empty($build['#' . $build['#entity_type']])) {
+  // @todo This might be obsolete, eva_entity_view_alter sets $entity_type.
+  elseif (!empty($build['#entity_type']) && !empty($build['#' . $build['#entity_type']])) {
     return $build['#' . $build['#entity_type']];
   }
   elseif ($entity_type && !empty($build['#' . $entity_type])) {
@@ -225,7 +302,7 @@ function eva_get_arguments_from_token_string($string, $type, $object) {
   if (empty($args)) {
     return array();
   }
-  $args = token_replace($args, array($type => $object), array('sanitize' => FALSE));
+  $args = token_replace($args, array($type => $object), array('sanitize' => FALSE, 'clear' => TRUE));
   return explode('/', $args);
 }
 

@@ -219,6 +219,12 @@ function cu_block_to_bean_secure_permissions($role) {
       'view any block_wrapper bean',
       'administer block wrapper',
     ),
+    'site_editor' => array(
+      'create any block_wrapper bean',
+      'delete any block_wrapper bean',
+      'edit any block_wrapper bean',
+      'view any block_wrapper bean',
+    ),
     'site_owner' => array(
       'create any block_wrapper bean',
       'delete any block_wrapper bean',

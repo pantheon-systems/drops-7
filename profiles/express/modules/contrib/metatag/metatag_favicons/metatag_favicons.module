@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Primary hook implementations for Metatag:favicons.
@@ -139,41 +140,29 @@ function metatag_favicons_get_theme_favicon() {
  *  The MIME type on success, an empty string on failure.
  */
 function metatag_favicons_get_mime_type($uri) {
-  // Look for the last period in the URL.
-  $extension_dot = strrpos($uri, '.');
-  $type = '';
-
   // URLs must have a file extension in order for this to work.
-  if ($extension_dot) {
-    $extension = strtolower(substr($uri, $extension_dot + 1));
-
-    // Work out the file's extension.
-    switch ($extension) {
-      case 'ico':
-        $type = 'vnd.microsoft.icon';
-        break;
-
-      // Rename JPEG images as JPG.
-      case 'jpeg':
-        $extension = 'jpeg';
-
-      // Basic image types.
-      case 'gif':
-      case 'jpg':
-      case 'png':
-        // Keep the extension as it is.
-        break;
-
-      // This shouldn't happen, only GIF, JPG, ICO or PNG files are supported.
-      default:
-        $extension = '';
-    }
-
-    // Only compile the MIME type if a supported extension was found.
-    if (!empty($extension)) {
-      $type = 'image/' . $extension;
-    }
+  $extension_dot = strrpos($uri, '.');
+  if (!$extension_dot) {
+    return '';
   }
+  // Return the proper MIME type based on the extension.
+  $extension = strtolower(substr($uri, $extension_dot + 1));
+  switch ($extension) {
+    case 'ico':
+      return 'image/vnd.microsoft.icon';
 
-  return $type;
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+
+    case 'svg':
+      return 'image/svg+xml';
+
+    case 'gif':
+    case 'png':
+      return 'image/' . $extension;
+
+    default:
+      return '';
+  }
 }

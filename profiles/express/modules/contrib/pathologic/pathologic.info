@@ -3,12 +3,11 @@ description = Helps avoid broken links and incorrect paths in content.
 package = "Input filters"
 dependencies[] = filter
 core = 7.x
-configure = admin/config/content/pathologic
-files[] = tests/pathologic.test
+files[] = pathologic.test
 
-; Information added by Drupal.org packaging script on 2015-11-23
-version = "7.x-3.1"
+; Information added by Drupal.org packaging script on 2013-12-14
+version = "7.x-2.12"
 core = "7.x"
 project = "pathologic"
-datestamp = "1448248461"
+datestamp = "1387055607"
 

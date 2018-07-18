@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Custom tokens for Metatag:hreflang.
@@ -13,6 +14,7 @@ function metatag_hreflang_token_info() {
   if (!(module_exists('translation') || module_exists('entity_translation'))) {
     return;
   }
+
   // Don't do anything if the patch was applied to Entity Translation to add
   // these.
   // @see https://www.drupal.org/node/2603056
@@ -57,27 +59,53 @@ function metatag_hreflang_tokens($type, $tokens, array $data = array(), array $o
     // Shortcuts.
     $node = $data['node'];
 
-    // Only generate tokens if there are multiple translations.
-    if (isset($node->translations) && !empty($node->translations->data)) {
-      $languages = language_list('enabled');
-      if (!empty($languages[1]) && is_array($languages[1]) && count($languages[1]) > 1) {
-        foreach ($tokens as $name => $original) {
-          // The original entity's URL.
-          if ($name == 'url-original') {
-            if (isset($node->translations->original, $languages[1][$node->translations->original])) {
-              $url_options = $options;
-              $url_options['language'] = $languages[1][$node->translations->original];
-              $url_options['absolute'] = TRUE;
-              $replacements[$original] = url('node/' . $node->nid, $url_options);
+    $languages = language_list('enabled');
+    if (!empty($languages[1]) && is_array($languages[1]) && count($languages[1]) > 1) {
+      foreach ($tokens as $name => $original) {
+        // The original entity's URL.
+        if ($name == 'url-original') {
+          // Basic options regardless of the translation mechanism used.
+          $url_options = $options;
+          $url_options['absolute'] = TRUE;
+
+          // Core's content translation.
+          if (!empty($node->tnid)) {
+            $node_original = node_load($node->tnid);
+            // Only deal with published nodes.
+            if ($node_original->status) {
+              $url_options['language'] = $languages[1][$node_original->language];
+              $replacements[$original] = url('node/' . $node_original->nid, $url_options);
             }
           }
+          // Entity Translation stores the translation data differently to core.
+          elseif (isset($node->translations, $node->translations->original, $languages[1][$node->translations->original])) {
+            $url_options['language'] = $languages[1][$node->translations->original];
+            $replacements[$original] = url('node/' . $node->nid, $url_options);
+          }
+        }
 
-          // Separate URLs for each translation.
-          foreach ($node->translations->data as $langcode => $translation) {
-            if ($name == 'url-' . $langcode) {
+        // Separate URLs for each translation.
+        // Core's content translation.
+        if (!empty($node->tnid)) {
+          $translations = translation_node_get_translations($node->tnid);
+          foreach ($translations as $langcode => $translation) {
+            // Only deal with published nodes.
+            if ($translation->status && $name == 'url-' . $langcode) {
               $url_options = $options;
-              $url_options['language'] = $languages[1][$langcode];
               $url_options['absolute'] = TRUE;
+              $url_options['language'] = $languages[1][$langcode];
+              $replacements[$original] = url('node/' . $translation->nid, $url_options);
+            }
+          }
+        }
+        // Entity Translation.
+        elseif (isset($node->translations, $node->translations->data)) {
+          foreach ($node->translations->data as $langcode => $translation) {
+            // Only deal with published nodes.
+            if ($translation['status'] && $name == 'url-' . $langcode) {
+              $url_options = $options;
+              $url_options['absolute'] = TRUE;
+              $url_options['language'] = $languages[1][$langcode];
               $replacements[$original] = url('node/' . $node->nid, $url_options);
             }
           }

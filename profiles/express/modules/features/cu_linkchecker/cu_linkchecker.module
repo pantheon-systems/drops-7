@@ -44,7 +44,19 @@ function cu_linkchecker_analyze_form() {
 
 function cu_linkchecker_analyze_form_submit($form, $form_state) {
   module_load_include('inc', 'linkchecker', 'linkchecker.admin');
-  linkchecker_analyze_links_submit();
+  linkchecker_analyze_links_submit($form, $form_state);
   variable_set('cu_linkchecker_status', 1);
   drupal_set_message('The site\'s content has been analyzed for links and the links have been added to the link checker queue.');
+}
+
+/**
+ * Implements hook_node_type_insert().
+ *
+ * Enable linkchecking when new content types are added.
+ */
+function cu_linkchecker_node_type_insert($info) {
+  if ($info->type !== 'video' && $info->type !== 'file') {
+    variable_set('linkchecker_scan_node_' . $info->type, 1);
+  }
+  watchdog('cu_linkchecker', 'Linkchecker has been enabled on the :type content type.', array(':type' => $info->type));
 }

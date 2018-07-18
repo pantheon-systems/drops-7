@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Template functions for the express base theme.
+ */
+
+/**
  * Implements hook_css_alter().
  *
  * Remove jquery UI styles, alter stylesheet type for better printing.
@@ -265,6 +270,14 @@ function expressbase_preprocess_page(&$vars) {
     $vars['title_image_title_class'] = 'element-max-width-padding';
     $vars['title_image_width'] = 'title-image-full-width';
   }
+
+  // Load search blocks.
+  $block = block_load('cu_search', 'cu_search');
+  $vars['search_desktop'] = _block_get_renderable_array(_block_render_blocks(array($block)));
+
+  $block = block_load('cu_search', 'cu_search_mobile');
+  $vars['search_mobile'] = _block_get_renderable_array(_block_render_blocks(array($block)));
+
 }
 
 /**
@@ -686,7 +699,7 @@ function expressbase_home_icon(&$vars, $menu) {
       if($vars[$menu][$key]['href'] == '<front>') {
         $vars[$menu][$key]['html'] = TRUE;
         $vars[$menu][$key]['title'] = '<i class="fa fa-home"></i><span class="element-invisible">Home</span>';
-        $vars[$menu][$key]['attributes']['id'] = 'home-link';
+        $vars[$menu][$key]['attributes']['class'][] = 'home-link';
       }
     }
   }

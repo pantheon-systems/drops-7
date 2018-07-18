@@ -9,11 +9,7 @@
     <?php endif; ?>
     <div id="search" tabindex="-1">
       <div class="element-max-width search-wrapper">
-        <?php
-          if (!empty($page['search_box'])) {
-            print render($page['search_box']);
-          }
-        ?>
+        <?php print render($search_desktop); ?>
       </div>
     </div>
     <div id="header-wrapper" class="section-wrapper header-wrapper">
@@ -32,7 +28,7 @@
               unset($options[$key]);
             }
           }
-            if (!empty($options) && !empty($page['search_box'])):
+            if (!empty($options) && !empty($search_desktop)):
           ?>
             <a href="#search" class="search-toggle"><i class="fa fa-search"></i><span class="element-invisible">Search</span></a>
           <?php endif; ?>
@@ -63,8 +59,8 @@
       <div id="mobile-navigation">
         <div id="mobile-search">
           <?php
-            if (!empty($page['search_box'])) {
-              print render($page['search_box']);
+            if (!empty($search_mobile)) {
+              print render($search_mobile);
             }
           ?>
         </div>
@@ -129,8 +125,8 @@
         ?>
       <?php else: ?>
         <div id="page-title-wrapper" class="page-title-wrapper section-wrapper <?php if (isset($title_hidden)) { print 'element-invisible'; } ?>">
+          <a id="main-content"></a>
           <div class="page-title-inner element-max-width-padding">
-            <a id="main-content"></a>
             <h1 id="page-title"><?php print drupal_get_title(); ?></h1>
             <?php print $breadcrumb; ?>
           </div>

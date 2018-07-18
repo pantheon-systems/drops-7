@@ -19,18 +19,20 @@ function cu_seo_bundle_secure_permissions($role) {
     'administrator' => array(
       'edit meta tags',
       'administer meta tags',
-      'administer xmlsitemap',
       'access broken links report',
       'edit link settings',
       'administer site verify',
       'view seo dashboard',
     ),
-    'anonymous user' => array(
-    ),
-    'authenticated user' => array(
-    ),
     'content_editor' => array(
+      'access broken links report',
       'edit meta tags',
+    ),
+    'edit_my_content' => array(
+      'access broken links report',
+    ),
+    'edit_only' => array(
+      'access broken links report',
     ),
     'developer' => array(
       'edit meta tags',
@@ -43,7 +45,14 @@ function cu_seo_bundle_secure_permissions($role) {
       'administer site verify uploads',
       'view seo dashboard',
     ),
-    'edit_my_content' => array(
+    'site_editor' => array(
+      'edit meta tags',
+      'administer meta tags',
+      'administer xmlsitemap',
+      'access broken links report',
+      'edit link settings',
+      'administer site verify',
+      'view seo dashboard',
     ),
     'site_owner' => array(
       'edit meta tags',
@@ -73,17 +82,17 @@ function cu_seo_bundle_express_help($variables) {
   $variables['admin/config/search/metatags'][] = array(
     'title' => 'Metatag Settings Help',
     'short_title' => 'Metatag Settings Help',
-    'url' => '/node/724',
+    'url' => '/node/1218',
   );
   $variables['admin/config/search/metatags/settings'][] = array(
     'title' => 'Metatag Settings Help',
     'short_title' => 'Metatag Settings Help',
-    'url' => '/node/724',
+    'url' => '/node/1218',
   );
   $variables['admin/config/search/metatags/bulk-revert'][] = array(
     'title' => 'Metatag Settings Help',
     'short_title' => 'Metatag Settings Help',
-    'url' => '/node/724',
+    'url' => '/node/1218',
   );
   $variables['admin/reports/linkchecker'][] = array(
     'title' => 'Link Checker Help',
@@ -125,7 +134,7 @@ function cu_seo_bundle_menu() {
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_goto',
     'page arguments' => array('admin/reports/linkchecker'),
-    'access arguments' => array('administer express settings'),
+    'access arguments' => array('access express reports'),
     'weight' => 20,
   );
   $items['admin/settings/seo/verifications'] = array(

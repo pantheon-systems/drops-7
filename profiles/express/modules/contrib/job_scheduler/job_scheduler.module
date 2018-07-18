@@ -2,16 +2,118 @@
 
 /**
  * @file
- * job scheduler module.
+ * Main file for the Job Scheduler.
  */
+
+/**
+ * Implements hook_help().
+ *
+ * @codingStandardsIgnoreStart
+ */
+function job_scheduler_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#job_scheduler':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Simple API for scheduling tasks once at a predetermined time or periodically at a fixed interval.') . '</p>';
+      $output .= '<h3>' . t('Usage') . '</h3>';
+      $output .= '<p>' . t('Declare scheduler.') . '</p>';
+      $output .= '<xmp>' .
+'function example_cron_job_scheduler_info() {
+  $schedulers - array();
+  $schedulers[\'example_unpublish\'] - array(
+    \'worker callback\' -> \'example_unpublish_nodes\',
+  );
+  return $schedulers;
+}'
+. '</xmp>';
+      
+      $output .= '<p>' . t('Add a job.') . '</p>';
+      $output .= '<xmp>' .
+'$job - array(
+  \'type\' -> \'story\',
+  \'id\' -> 12,
+  \'period\' -> 3600,
+  \'periodic\' -> TRUE,
+);
+JobScheduler::get(\'example_unpublish\')->set($job);'
+. '</xmp>';
+      
+      //
+      
+    $output .= '<p>' . t('Work off a job.') . '</p>';
+    $output .= '<xmp>' .
+'function example_unpublish_nodes($job) {
+  // Do stuff.
+}'
+    . '</xmp>';
+      
+    $output .= '<p>' . t('Remove a job.') . '</p>';
+      $output .= '<xmp>' .
+'$job - array(
+  \'type\' -> \'story\',
+  \'id\' -> 12,
+);
+JobScheduler::get(\'example_unpublish\')->remove($job);'
+    . '</xmp>';
+      
+      $output .= '<p>' . t('Optionally jobs can declared together with a schedule in a: hook_cron_job_scheduler_info().') . '</p>';
+      $output .= '<xmp>' .
+'function example_cron_job_scheduler_info() {
+  $schedulers - array();
+  $schedulers[\'example_unpublish\'] - array(
+    \'worker callback\' -> \'example_unpublish_nodes\',
+    \'jobs\' -> array(
+      array(
+        \'type\' -> \'story\',
+        \'id\' -> 12,
+        \'period\' -> 3600,
+        \'periodic\' -> TRUE,
+      ),
+    )
+  );
+  return $schedulers;
+}'
+      . '</xmp>';
+      
+      $output .= '<p>' . t("Jobs can have a 'crontab' instead of a period. Crontab syntax are Unix-like formatted crontab lines.") . '</p>';
+      $output .= '<p>' . t('Example of job with crontab.') . '</p>';
+      $output .= '<p>' . t("This will create a job that will be triggered from monday to friday, from january to july, every two hours.") . '</p>';
+      
+      
+      $output .= '<xmp>' .
+'function example_cron_job_scheduler_info() {
+  $schedulers - array();
+  $schedulers[\'example_unpublish\'] - array(
+    \'worker callback\' -> \'example_unpublish_nodes\',
+    \'jobs\' -> array(
+      array(
+        \'type\' -> \'story\',
+        \'id\' -> 12,
+        \'crontab\' -> \'0 */2 * january-july mon-fri\',
+        \'periodic\' -> TRUE,
+      ),
+    )
+  );
+  return $schedulers;
+}'
+. '</xmp>';
+      
+      $output .= '<p>' . t('Read more about crontab syntax: <a href="@url_crontab_sintax" target="blank">@url_crontab_sintax</a>', array('@url_crontab_sintax' => 'http://linux.die.net/man/5/crontab')) . '</p>';
+      
+      
+      return $output;
+  }
+}
+// @codingStandardsIgnoreEnd
 
 /**
  * Collects and returns scheduler info.
  *
+ * @param string $name
+ *   Name of the schedule.
+ *
  * @see hook_cron_job_scheduler_info()
  *
- * @param $name
- *   Name of the schedule
  * @return array
  *   Information for the schedule if $name, all the information if not
  */
@@ -54,23 +156,23 @@ function job_scheduler_cron() {
   // Query and dispatch scheduled jobs.
   // Process a maximum of 200 jobs in a maximum of 30 seconds.
   $start = time();
-  $total =
-  $failed = 0;
+  $total = $failed = 0;
   $jobs = db_select('job_schedule', NULL, array('fetch' => PDO::FETCH_ASSOC))
-            ->fields('job_schedule')
-            ->condition('scheduled', 0)
-            ->condition('next', REQUEST_TIME, '<=')
-            ->orderBy('next', 'ASC')
-            ->range(0, 200)
-            ->execute();
+    ->fields('job_schedule')
+    ->condition('scheduled', 0)
+    ->condition('next', REQUEST_TIME, '<=')
+    ->orderBy('next', 'ASC')
+    ->range(0, 200)
+    ->execute();
   foreach ($jobs as $job) {
+    $job['data'] = unserialize($job['data']);
     try {
       JobScheduler::get($job['name'])->dispatch($job);
     }
     catch (Exception $e) {
       watchdog('job_scheduler', $e->getMessage(), array(), WATCHDOG_ERROR);
       $failed++;
-      // Drop jobs that have caused exceptions
+      // Drop jobs that have caused exceptions.
       JobScheduler::get($job['name'])->remove($job);
     }
     $total++;
@@ -79,8 +181,14 @@ function job_scheduler_cron() {
     }
   }
 
-  // Leave a note on how much time we spent processing.
-  watchdog('job_scheduler', 'Finished processing scheduled jobs (!time s, !total total, !failed failed).', array('!time' => format_interval(time() - $start), '!total' => $total, '!failed' => $failed));
+  // If any jobs were processed, log how much time we spent processing.
+  if ($total || $failed) {
+    watchdog('job_scheduler', 'Finished processing scheduled jobs (!time, !total total, !failed failed).', array(
+      '!time' => format_interval(time() - $start),
+      '!total' => $total,
+      '!failed' => $failed,
+    ));
+  }
 }
 
 /**
@@ -98,7 +206,7 @@ function job_scheduler_modules_disabled($modules) {
 }
 
 /**
- * Rebuild scheduled information after enable/disable modules
+ * Rebuild scheduled information after enable/disable modules.
  *
  * @todo What should we do about missing ones when disabling their module?
  */
@@ -107,10 +215,9 @@ function job_scheduler_rebuild_all() {
 }
 
 /**
- * Rebuild a single scheduler
+ * Rebuild a single scheduler.
  */
-function job_scheduler_rebuild_scheduler($name, $info = NULL) {
-  $info = $info ? $info : job_scheduler_info($name);
+function job_scheduler_rebuild_scheduler($name, $info) {
   if (!empty($info['jobs'])) {
     $scheduler = JobScheduler::get($name);
     foreach ($info['jobs'] as $job) {
@@ -129,11 +236,12 @@ function job_scheduler_rebuild_scheduler($name, $info = NULL) {
  */
 function job_scheduler_cron_queue_info() {
   $queue = array();
-  foreach (job_scheduler_info() as $name => $info) {
+  foreach (job_scheduler_info() as $info) {
     if (!empty($info['jobs']) && !empty($info['queue name'])) {
       $queue[$info['queue name']] = array(
         'worker callback' => 'job_scheduler_cron_queue_worker',
-        'time' => 60, // Some reasonable default as we don't know
+        // Some reasonable default as we don't know.
+        'time' => 60,
       );
     }
   }
@@ -141,10 +249,12 @@ function job_scheduler_cron_queue_info() {
 }
 
 /**
- * Execute job worker from queue
+ * Execute job worker from queue.
  *
- * Providing our own worker has the advantage that we can reschedule the job or take care of cleanup
- * Note that as we run the execute() action, the job won't be queued again this time.
+ * Providing our own worker has the advantage that we can reschedule the job or
+ * take care of cleanup
+ * Note that as we run the execute() action, the job won't be queued again this
+ * time.
  */
 function job_scheduler_cron_queue_worker($job) {
   try {
@@ -152,7 +262,7 @@ function job_scheduler_cron_queue_worker($job) {
   }
   catch (Exception $e) {
     watchdog('job_scheduler', $e->getMessage(), array(), WATCHDOG_ERROR);
-    // Drop jobs that have caused exceptions
+    // Drop jobs that have caused exceptions.
     JobScheduler::get($job['name'])->remove($job);
   }
 }

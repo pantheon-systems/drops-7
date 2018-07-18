@@ -35,3 +35,22 @@ function cu_slider_update_7011() {
 function cu_slider_update_7012() {
   image_style_flush('slider');
 }
+
+/**
+ * Set image field to not be translatable.
+ */
+function cu_slider_update_7013() {
+  $field = field_info_field('field_slider_image');
+  $field['translatable'] = 0;
+  field_update_field($field);
+}
+
+/**
+ * Deleting View that had dependency on EVA
+ */
+function cu_slider_update_7014() {
+  if ($view = views_get_view('cu_slider')) {
+    views_delete_view($view);
+  }
+}
+

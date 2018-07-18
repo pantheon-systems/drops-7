@@ -39,6 +39,7 @@ function express_theme_picker_form_system_theme_settings_alter(&$form, &$form_st
 function express_theme_picker_menu() {
   $items['admin/theme'] = array(
     'title' => 'Design',
+    'description' => 'Choose a theme for your site.',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'express_theme_picker_list',
     //'page arguments' => array('express_theme_picker_settings_form'),

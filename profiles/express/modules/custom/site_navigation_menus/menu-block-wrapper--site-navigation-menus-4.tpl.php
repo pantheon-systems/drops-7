@@ -9,19 +9,10 @@
  */
 
 ?>
+<button aria-haspopup="true" aria-expanded="false" aria-controls="section-navigation" aria-label="In this section" class="section-navigation-toggle"><strong><i class="fa fa-fw fa-reorder"></i> In This Section</strong></button>
 
-<a href="#section-navigation" class="section-navigation-toggle"><strong><i class="fa fa-reorder"></i> In This Section</strong></a>
 <div id="section-navigation" style="display:none;">
   <div class="<?php print $classes; ?>">
     <?php print render($content); ?>
   </div>
 </div>
-<script type="text/javascript">
-  jQuery(document).ready(function () {
-    jQuery("a.section-navigation-toggle").click(function () {
-      jQuery("#section-navigation").fadeToggle();
-
-      return false;
-    });
-  });
-</script>

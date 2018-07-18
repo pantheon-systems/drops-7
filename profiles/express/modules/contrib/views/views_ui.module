@@ -435,8 +435,7 @@ function views_ui_preprocess_views_view(&$vars) {
 /**
  * Theme preprocess for theme_views_ui_view_preview_section().
  *
- * @TODO
- *    Perhaps move this to includes/admin.inc or theme/theme.inc
+ * @todo Perhaps move this to includes/admin.inc or theme/theme.inc.
  */
 function template_preprocess_views_ui_view_preview_section(&$vars) {
   switch ($vars['section']) {
@@ -483,12 +482,12 @@ function template_preprocess_views_ui_view_preview_section(&$vars) {
       break;
 
     case 'attachment_before':
-      // @todo: Add links to the attachment configuration page.
+      // @todo Add links to the attachment configuration page.
       $vars['title'] = t('Attachment before');
       break;
 
     case 'attachment_after':
-      // @todo: Add links to the attachment configuration page.
+      // @todo Add links to the attachment configuration page.
       $vars['title'] = t('Attachment after');
       break;
   }
@@ -524,9 +523,8 @@ function theme_views_ui_view_preview_section($vars) {
  * @param string $title
  *   Add a bolded title of this section.
  *
- * @TODO
- *   Bring in relationships
- *   Refactor this function to use much stuff of views_ui_edit_form_get_bucket.
+ * @todo Bring in relationships.
+ * @todo Refactor this function to use much of views_ui_edit_form_get_bucket.
  */
 function views_ui_view_preview_section_handler_links($view, $type, $title = FALSE) {
   $display = $view->display_handler->display;

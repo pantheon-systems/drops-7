@@ -13,7 +13,7 @@ include_once 'cu_sitewide.features.inc';
  */
 function cu_sitewide_context_block_info_alter(&$block_info) {
   // Only do this on context pages
-  if ((arg(0) == 'admin') && (arg(2) == 'context') && (arg(3) == 'list')) {
+  if ((arg(0) == 'admin') && (arg(2) == 'context') && (arg(3) == 'list' || arg(3) == 'add') ) {
     // Loading bean types this way isntead of bean_get_types() so we can get labels, not just machine names.
     $bean_info = bean_entity_info();
     // Get all bean types.
@@ -111,7 +111,7 @@ function cu_sitewide_menu_alter(&$items) {
  * Set access denied on context's whose tag is 'locked' and user doesnt have permission.
  */
 function cu_sitewide_form_ctools_export_ui_edit_item_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_state['item']->table == 'context' && $form_state['item']->tag == 'locked' && !user_access('edit locked contexts')) {
+  if (!empty($form_state['item']->table) && $form_state['item']->table == 'context' && $form_state['item']->tag == 'locked' && !user_access('edit locked contexts')) {
     $form['#access'] = FALSE;
     drupal_access_denied();
   }

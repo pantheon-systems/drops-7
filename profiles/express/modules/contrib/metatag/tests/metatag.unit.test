@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Unit tests for the Metatag module.
+ */
+
+/**
  * Unit tests for the Metatag module.
  *
  * @todo These aren't really unit tests, we might need to fix that.

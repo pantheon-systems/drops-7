@@ -368,51 +368,22 @@ function express_layout_page_alter(&$page) {
         // Check feature/default layout setting
         if (!empty($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value']) && ($layout->field_feature_layout_toggle[LANGUAGE_NONE][0]['value'] == 'feature_layout') && (!path_is_admin(current_path()))) {
           // Get body content
-          $content = $page['content']['system_main']['nodes'][$node->nid]['body'][0]['#markup'];
+          $classes = array();
+          $classes[] = 'feature-story-wrapper';
+          $classes[] = 'feature-layout-wrapper';
 
-          // Remove empty paragraphs
-          $content = str_replace('<p></p>','',$content);
-          $content = mb_convert_encoding($content, 'HTML-ENTITIES', "UTF-8");
-          // Make new DOM element
-          $dom = new DOMDocument;
-          $dom->loadHTML($content);
-          $xpath = new DOMXPath($dom);
-          // Get top level markup elements
-          // These aren't Drupal nodes
-          $content_nodes = $xpath->query('*/*');
-
-          $new_content = '';
-          foreach ($content_nodes as $content_node) {
-
-            // Get the HTML of each node - for < php 5.3.6
-            $newdoc = new DOMDocument();
-            $cloned = $content_node->cloneNode(TRUE);
-            $newdoc->appendChild($newdoc->importNode($cloned,TRUE));
-            $item = $newdoc->saveHTML();
-            //for >= php 5.3.6
-            //$item = $dom->saveHTML($content_node);
-
-            // If a hero image exists in item, add full width wrapper
-            if (strpos($item, 'image-hero') !== FALSE) {
-              $new_content .= '<div class="image-full-width">' . utf8_decode($item) .'</div>';
-            } else {
-              $new_content .= '<div class="content-width-container">' . utf8_decode($item) .'</div>';
-            }
+          // Check to see if there are any callouts in the content.
+          // Additional padding is added if true.
+          $markup = $page['content']['system_main']['nodes'][$node->nid];
+          $markup = render($markup);
+          if (strpos($markup, 'feature-layout-callout') !== FALSE) {
+            $classes[] = 'feature-layout-wrapper-has-callouts';
           }
 
-          // Copy content from main content region to a new variable
-          // page.tpl.php needs to output $page['feature_layout']
-          $page['feature_layout'] = $page['content'];
-          // Remove main content
-          unset($page['content']);
-          // Add blank content so edit tabs display
-          $page['content']['blank'] = array();
-          // Add wrapper element for styling
-          $page['feature_layout']['#prefix'] = '<div class="feature-story-wrapper">';
-          $page['feature_layout']['#suffix'] = '</div>';
-          // Add feature layout formatted content
-          $page['feature_layout']['system_main']['nodes'][$node->nid]['body'][0]['#markup'] = $new_content;
-          $page['feature_layout']['system_main']['#weight'] = 0;
+          // Add wrapper elements
+          $page['content']['#prefix'] = '<div class="' . join(' ', $classes) . '">';
+          $page['content']['#suffix'] = '</div>';
+
           // Remove sidebars
           unset($page['sidebar_first']);
           unset($page['sidebar_second']);
@@ -762,6 +733,9 @@ function express_layout_secure_permissions($role) {
     ),
     'developer' => array(
       'administer express layout',
+      'edit express layouts',
+    ),
+    'site_editor' => array(
       'edit express layouts',
     ),
     'site_owner' => array(

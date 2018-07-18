@@ -10,19 +10,27 @@
  */
 function cu_core_install() {
 
+  // Set the weight high to run last hooks after other modules.
+  db_update('system')
+    ->fields(array('weight' => 999))
+    ->condition('name', 'cu_core', '=')
+    ->execute();
+
   $hosting = express_check_known_hosts();
 
-  if ($hosting == 'travis') {
+  if ($hosting === 'travis') {
     module_enable(array('travis_hosting'));
   }
-
-  if ($hosting == 'pantheon') {
+  elseif ($hosting == 'ucb_on_prem_hosting') {
+    module_enable(array('ucb_on_prem_hosting'));
+  }
+  elseif ($hosting === 'pantheon') {
     module_enable(array('pantheon_hosting'));
   }
-
-  // @TODO: If it's not Travis or Pantheon, assume it's NG for now.
-  // Eventually update to deal with ng (2.0) vs. 3.0
-  if ($hosting == FALSE) {
+  elseif ($hosting === 'lando' || $hosting === 'valet') {
+    module_enable(array('local_hosting'));
+  }
+  else {
     module_enable(array('ng_hosting'));
   }
 
@@ -64,7 +72,8 @@ function cu_core_install() {
   variable_set('express_help_base_url', 'http://www.colorado.edu/webcentral');
 
   // Set message for when enabling of bundles is turned off.
-  variable_set('profile_module_manager_disable_enabling_text', 'Due to unexpectedly high load on the servers, the option to enable bundles has temporarily been disabled.  Please check back tomorrow.');
+  variable_set('profile_module_manager_disable_enabling_atlas_bundles', 0);
+  variable_set('profile_module_manager_disable_enabling_text', 'Bundles are not available at this time. Contact websupport@colorado.edu for questions regarding this.');
   variable_set('rave_alerts_rss_url', 'http://www.getrave.com/rss/cuboulder/channel1');
   variable_set('rave_alerts_check_enable', 1);
   variable_set('rave_alerts_network_fail_message', 'Network Failure: Please go directly to http://alerts.colorado.edu for more information.');
@@ -131,49 +140,55 @@ The block System help was assigned to the invalid region help and has been disab
 
   watchdog('express', 'attempted to disable uid 1');
 
-  variable_set('profile_module_manager_bundle_ignore', array('cu_newsletter_bundle' => 'cu_newsletter_bundle'));
+  variable_set('express_permissions_owner_cap', 4);
+
 }
 
 /**
  * Set default variables for user_external_invite.
  */
 function _set_external_invite_variables() {
-
-  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'message')) {
-    $spec = array(
-      'type' => 'text',
-      'description' => "Custom message included with invite",
-      'not null' => FALSE,
-    );
-    db_add_field('user_external_invite', 'message', $spec);
-  }
-
-  // Add id and drop mail as primary key.
-  if (db_table_exists('user_external_invite') && !db_field_exists('user_external_invite', 'id')) {
-    db_drop_primary_key('user_external_invite');
-    $spec = array(
-      'type' => 'serial',
-      'description' => 'Primary key of the Project entity',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-    );
-    db_add_field('user_external_invite', 'id', $spec, array('primary key' => array('id')));
-  }
-
+  // Set core invite roles.
   $site_owner_role = user_role_load_by_name('site_owner');
+  $site_editor_role = user_role_load_by_name('site_editor');
   $content_editor_role = user_role_load_by_name('content_editor');
   $edit_my_content_role = user_role_load_by_name('edit_my_content');
 
-  variable_set('user_external_invite_roles', array(
-    $site_owner_role->rid,
-    $content_editor_role->rid,
+  variable_set('user_external_invite_core_roles', array(
     $edit_my_content_role->rid,
+    $content_editor_role->rid,
+    $site_editor_role->rid,
+    $site_owner_role->rid,
   ));
+
+  // Set Content Editor as the default role to invite.
+  variable_set('user_external_invite_default_role', $content_editor_role->rid);
+
+  // Set addon invite roles.
+  $addon_roles_array = [];
+  $access_manager_role = user_role_load_by_name('access_manager');
+  $addon_roles_array[] = $access_manager_role->rid;
+  $configuration_manager_role = user_role_load_by_name('configuration_manager');
+  $addon_roles_array[] = $configuration_manager_role->rid;
+
+  // Set form_manager role if it exists.
+  if (module_exists('cu_forms_bundle')) {
+    $form_manager_role = user_role_load_by_name('form_manager');
+    $addon_roles_array[] = $form_manager_role->rid;
+  }
+
+  // Set campaign_manager role if it exists.
+  if (module_exists('cu_digital_campaign_bundle')) {
+    $campaign_manager_role = user_role_load_by_name('campaign_manager');
+    $addon_roles_array[] = $campaign_manager_role->rid;
+  }
+
+  variable_set('user_external_invite_addon_roles', $addon_roles_array);
   variable_set('user_external_invite_days_valid_for', 5);
 
   variable_set('user_external_invite_invite_template', '[user_external_invite:invite_custom]
 
-You have been invited to join the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
+You have been invited to join the [site:name] Web Express website as a user with "[user_external_invite:invite_core_role][user_external_invite:invite_addon_roles]" access privileges.
 
 To accept this invitation:
 1) Go to [user_external_invite:invite_link]
@@ -186,7 +201,7 @@ The Web Express Team
 http://www.colorado.edu/webcentral
 websupport@colorado.edu');
 
-  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant [user_external_invite:invite_role] access to the following users:
+  variable_set('user_external_invite_confirmation_template', 'We have received your request to grant "[user_external_invite:invite_core_role][user_external_invite:invite_addon_roles]" access to the following users:
 
 [user_external_invite:invited_emails]
 
@@ -199,7 +214,7 @@ The Web Express Team
 http://www.colorado.edu/webcentral
 websupport@colorado.edu');
 
-  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has [user_external_invite:invite_role] access to the [site:name], [site:url], website.
+  variable_set('user_external_invite_accepted_template', 'We are confirming [user_external_invite:invited_email] now has "[user_external_invite:invite_core_role][user_external_invite:invite_addon_roles]" access to the [site:name], [site:url], website.
 
 Web Central:
 You can use the Web Central website as your main resource for step-by-step tutorials, information on training sessions, and requesting help. http://www.colorado.edu/webcentral
@@ -209,10 +224,10 @@ The Web Express Team
 http://www.colorado.edu/webcentral
 websupport@colorado.edu');
 
-  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] Web Express website as an editor with [user_external_invite:invite_role] access privileges.
+  variable_set('user_external_invite_accepted_confirmation_template', 'You have successfully joined the [site:name] Web Express website as a user with "[user_external_invite:invite_core_role][user_external_invite:invite_addon_roles]" access privileges.
 
 To access and edit this site:
-1) Go to [site:login-url]
+1) Go to [user_external_invite:invite_login_link]
 2) Login with your IdentiKey name and password.
 
 Web Central:
@@ -328,7 +343,7 @@ function cu_core_update_7003() {
     'cu_transition_fit',
   ));
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish');
 
   // Run on every update
   cu_core_inventory_update('7003');
@@ -348,7 +363,7 @@ function cu_core_update_7004() {
     'cu_shortcuts',
   ));
 
-  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, memcache, entityreference, express_layout, cu_ldap, ldap_authentication, ldap_servers');
+  variable_set('profile_module_manager_ignore', 'secure_permissions, express_permissions, cu_users, cu_core, cu_help, cu_inventory, cu_inventory_stats, express_final, cu_custom_logo, varnish, entityreference, express_layout, cu_ldap, ldap_authentication, ldap_servers');
 
   // Remove duplicates in shortcut menu
   $shortcuts = array();
@@ -910,6 +925,132 @@ function cu_core_update_7038() {
   drupal_uninstall_modules($module_list = array('cu_events_calendar_block'), $uninstall_dependents = FALSE);
   cu_core_revert_features();
 }
+
+/**
+ * Express 2.8.6 Update.
+ *
+ * Revert all features to fix WYSIWYG filter.
+ */
+function cu_core_update_7040() {
+  cu_core_revert_features();
+}
+
+/**
+ * Express 2.9.0 Update.
+ *
+ * Revert all features.  When more than 3 site owners, make all site owners site editors
+ */
+function cu_core_update_7042() {
+  cu_core_revert_features();
+
+  //Set SO/SE role sync variable for existing sites
+  variable_set('secure_permissions_sync_roles', TRUE);
+  secure_permissions_rebuild();
+
+  // Adding Site Editor role for invites.
+  $site_owner_role = user_role_load_by_name('site_owner');
+  $site_editor_role = user_role_load_by_name('site_editor');
+
+  // Remove staff users from site_owner role before calculating if there > 3.
+  $express_team_members = ['brokaw', 'linebarg', 'wetu1300', 'mortone'];
+
+  foreach ($express_team_members as $team_member) {
+    // Load the team member objecy by user name, grab the uid, see if if has the site owner role id and delete.
+    db_delete('users_roles')->condition('uid', user_load_by_name($team_member)->uid)->condition('rid', $site_owner_role->rid)->execute();
+  }
+
+  // Get all the uids of the site owners.
+  $query = db_select('users_roles', 'ur');
+  $query->fields('ur', array('uid', 'rid'));
+  $query->condition('ur.rid', $site_owner_role->rid, '=');
+  $site_owners = $query->execute()->fetchAll();
+
+  // if there are more than 3 other than osr_test_owner, make everyone a site_editor
+  if (count($site_owners) > 4) {
+    foreach ($site_owners as $owner) {
+      // Grant user the role.
+      $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+      $query->values(array('uid' => $owner->uid, 'rid' => $site_editor_role->rid));
+      $query->execute();
+    }
+    // delete everyone from test
+    $query = db_delete('users_roles')->condition('rid', $site_owner_role->rid)->execute();
+
+    // add osr-test-owner back to so role
+    $osr_test_owner = user_load_by_name('osr-test-owner');
+    $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+    $query->values(array('uid' => $osr_test_owner->uid, 'rid' => $site_owner_role->rid));
+    $query->execute();
+  }
+}
+
+/*
+* Updating site and web emails to prepare for new infrastructure smtp configuration
+*/
+function cu_core_update_7043() {
+   variable_set('webform_default_from_address', 'webexpress_noreply@colorado.edu');
+   variable_set('site_mail', 'webexpress_noreply@colorado.edu');
+}
+
+/**
+ * Express 2.9.0 Update - Disable express_status and enable cu_status.
+ */
+function cu_core_update_7046() {
+  module_enable(array('cu_status'));
+  module_disable(array('express_status'));
+}
+
+/**
+ * Reset user_external_invite variables.
+ */
+function cu_core_update_7047() {
+  _set_external_invite_variables();
+}
+
+/**
+ * Revert Features.
+ */
+function cu_core_update_7048() {
+  cu_core_revert_features();
+  secure_permissions_rebuild();
+}
+
+/**
+ * Increase weight of cu_core module.
+ */
+function cu_core_update_7049() {
+  // Set the weight high to run last hooks after other modules.
+  db_update('system')
+    ->fields(array('weight' => 999))
+    ->condition('name', 'cu_core', '=')
+    ->execute();
+}
+
+/**
+ * Enable cu_inactive_users module.
+ */
+function cu_core_update_7050() {
+  module_enable(array(
+    'cu_inactive_users'
+  ));
+}
+
+/**
+ * Revert Features.
+ */
+function cu_core_update_7051() {
+  cu_core_revert_features();
+}
+
+/**
+ * Enable express_content_edit_lock for 2.9.4.
+ */
+function cu_redirect_update_7052() {
+  module_enable(array('express_content_edit_lock'));
+  cu_core_revert_features();
+  secure_permissions_rebuild();
+}
+
 
 /**
  * Revert features by passing features in an array.

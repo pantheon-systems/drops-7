@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module to ensure Locale integration doesn't break.
+ */
+
+/**
  * Tests for the Metatag module to ensure Locale integration doesn't break.
  */
 class MetatagCoreLocaleTest extends MetatagTestHelper {
@@ -79,14 +84,14 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
       $this->assertEqual(count($xpath), 1, 'Exactly one page title field found.');
       // Need to trim() the xpath results because Field API adds a space after
       // every field's label.
-      $this->assertEqual(trim((string)$xpath[0]), 'Page title');
+      $this->assertEqual(trim((string) $xpath[0]), 'Page title');
 
       $this->assertField('edit-metatags-und-description-value', 'Found the description meta tag');
       $xpath = $this->xpath("//label[@for='edit-metatags-und-description-value']");
       $this->assertEqual(count($xpath), 1, 'Exactly one description field found.');
       // Need to trim() the xpath results because Field API adds a space after
       // every field's label.
-      $this->assertEqual(trim((string)$xpath[0]), 'Description');
+      $this->assertEqual(trim((string) $xpath[0]), 'Description');
     }
 
     // Translate the page title and description fields.
@@ -98,7 +103,7 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
     $lid = $this->getTranslationLidBySource($title_source, $textgroup);
     $this->assertNotEqual($lid, 0, 'Found the locales_source string for the page title tag.');
     $this->saveTranslationString($lid, $context, $langcode, $title_source, $title_target);
-    $desc_source= 'Description';
+    $desc_source = 'Description';
     $desc_target = 'Le description';
     $lid = $this->getTranslationLidBySource($desc_source, $textgroup);
     $this->assertNotEqual($lid, 0, 'Found the locales_source string for the description tag.');
@@ -116,14 +121,14 @@ class MetatagCoreLocaleTest extends MetatagTestHelper {
     $this->assertEqual(count($xpath), 1, 'Exactly one page title field found.');
     // Need to trim() the xpath results because Field API adds a space after
     // every field's label.
-    $this->assertEqual(trim((string)$xpath[0]), $title_target);
+    $this->assertEqual(trim((string) $xpath[0]), $title_target);
 
     // Verify the description field's label was translated.
     $xpath = $this->xpath("//label[@for='edit-metatags-und-description-value']");
     $this->assertEqual(count($xpath), 1, 'Exactly one description field found.');
     // Need to trim() the xpath results because Field API adds a space after
     // every field's label.
-    $this->assertEqual(trim((string)$xpath[0]), $desc_target);
+    $this->assertEqual(trim((string) $xpath[0]), $desc_target);
   }
 
   /**

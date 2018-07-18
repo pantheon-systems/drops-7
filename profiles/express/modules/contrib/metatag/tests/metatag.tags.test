@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests that each of the Metatag base tags work correctly.
+ */
+
+/**
  * Tests that each of the Metatag base tags work correctly.
  */
 class MetatagTagsTest extends MetatagTagsTestBase {
@@ -45,6 +50,7 @@ class MetatagTagsTest extends MetatagTagsTestBase {
     // @todo 'revisit-after',
     'rights',
     'robots',
+    // 'set_cookie',
     'shortlink',
     'standout',
     'title',
@@ -282,7 +288,7 @@ class MetatagTagsTest extends MetatagTagsTestBase {
   }
 
   /**
-   * Implements {meta_tag_name}_test_value_attribute() for 'title';
+   * Implements {meta_tag_name}_test_value_attribute() for 'title'.
    */
   public function title_test_value_attribute() {
     return '';

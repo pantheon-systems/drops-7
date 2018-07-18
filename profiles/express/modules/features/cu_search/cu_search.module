@@ -71,6 +71,9 @@ function cu_search_block_info() {
   $blocks['cu_search'] = array(
     'info' => t('CU Search'),
   );
+  $blocks['cu_search_mobile'] = array(
+    'info' => t('CU Search Mobile'),
+  );
   $blocks['cu_search_page'] = array(
     'info' => t('CU Search Page'),
   );
@@ -83,7 +86,16 @@ function cu_search_block_view($delta = '') {
 
       $block['subject'] = '';
 
-      $block['content'] = 'search form goes here';
+      $block['content'] = 'Search';
+      $search_configs = cu_search_configs();
+      $block['options'] = $search_configs['options'];
+      $block['configs'] = $search_configs['configs'];
+      break;
+    case 'cu_search_mobile':
+
+      $block['subject'] = '';
+
+      $block['content'] = 'Search';
       $search_configs = cu_search_configs();
       $block['options'] = $search_configs['options'];
       $block['configs'] = $search_configs['configs'];
@@ -92,7 +104,7 @@ function cu_search_block_view($delta = '') {
 
       $block['subject'] = '';
 
-      $block['content'] = 'search form goes here';
+      $block['content'] = 'Search';
       $search_configs = cu_search_configs();
       $block['options'] = $search_configs['options'];
       $block['configs'] = $search_configs['configs'];
@@ -213,6 +225,9 @@ function cu_search_secure_permissions($role) {
       'search Google CSE',
     ),
     'site_owner' => array(
+      'search Google CSE',
+    ),
+    'site_editor' => array(
       'search Google CSE',
     ),
   );

@@ -374,7 +374,7 @@ function atlas_version() {
  * @param array $data
  *   Array of data to use when creating or updating an item.
  */
-function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NULL) {
+function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NULL, $atlas_url = NULL) {
   // We want to figure out what kind of query we are running (Resource endpoint
   // vs. single item) and adjust the separator.
   if (preg_match('/^where/', $query)) {
@@ -385,7 +385,10 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
   }
 
   // Environmental variable has a trailing slash.
-  $atlas_url = variable_get('atlas_url');
+  if (!$atlas_url) {
+    $atlas_url = variable_get('atlas_url');
+  }
+
   $request_url = $atlas_url . $resource . $query;
 
   $request_options = array(
@@ -431,6 +434,8 @@ function atlas_api_request($resource, $query = NULL, $method = 'GET', $data = NU
     }
     $request_options['data'] = drupal_json_encode($data);
   }
+
+
 
   // Make the request.
   $response = drupal_http_request($request_url, $request_options);

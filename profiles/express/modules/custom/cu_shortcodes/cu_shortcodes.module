@@ -232,6 +232,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_imagecaption_tips',
     'default settings' => array(),
   );
+  $shortcodes['invisible'] = array(
+    'title' => t('Invisible'),
+    'description' => t('Hide content in an accessible way'),
+    'process callback' => 'cu_shortcodes_invisible',
+    'tips callback' => 'cu_shortcodes_invisible_tips',
+    'default settings' => array(),
+  );
   $shortcodes['map'] = array(
     'title' => t('Map'),
     'description' => t('Insert a Campus or Google Map'),
@@ -477,7 +484,7 @@ function cu_shortcodes_callout($attrs, $content = NULL) {
   $classes[] = 'clearfix';
 
   $classes = join(' ', $classes);
-  $output = '<div class="' . $classes . '">' . $content . '</div>';
+  $output = '<div class="' . $classes . '"><div class="feature-layout-callout-inner element-max-width-padding">' . $content . '</div></div>';
   return $output;
 }
 /**
@@ -747,6 +754,23 @@ function cu_shortcodes_imagecaption($attrs, $content = NULL) {
  */
 function cu_shortcodes_imagecaption_tips($format, $long) {
   $output = '<p>[imagecaption align="none"]</p> <p>Image</p> <p>Your image caption here</p> <p>[/imagecaption]</p>';
+  return $output;
+}
+
+/**
+ * Invisible Shortcode.
+ */
+function cu_shortcodes_invisible($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(), $attrs));
+  $tag = 'div';
+  return '<span class="element-invisible shortcode-invisible"> ' . $content . '</span>';
+}
+
+/**
+ * Invisible Tips.
+ */
+function cu_shortcodes_invisible_tips($format, $long) {
+  $output = 'Some of this content [invisible]is invisble[/invisible]';
   return $output;
 }
 

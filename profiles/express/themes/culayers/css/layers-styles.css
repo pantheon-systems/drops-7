@@ -17,7 +17,7 @@ body { background-color: #333; }
 #navigation nav { margin: 0 -10px; }
 #navigation a { color: #ccc; font-weight: 600; }
 #navigation a.active, #navigation a.active-trail, #navigation a:hover, #navigation a:focus { color: #cfb87c; }
-#navigation a#home-link { background-color: transparent; color: #ccc; }
+#navigation a.home-link, #navigation a.home-link.active { background-color: transparent; color: #ccc; }
 
 .slider-wrapper { background-color: #171717; padding: 20px; color: #fff; }
 .slider-wrapper a { color: #cfb87c; }

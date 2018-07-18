@@ -91,7 +91,7 @@ function globalredirect_settings() {
     '#title' => t('Frontpage Redirect Handler'),
     '#description' => t('If enabled, any request to the frontpage path will redirect to the site root.<br />
                          Whatever you set as the path of the front page on the !link settings page will redirect to the site root (e.g. "node" or "node/1" and also its alias (e.g. in case you have set "node/1" as your home page but that page also has an alias "home")).', array(
-      '!link' => l(t('Site Information'), 'admin/settings/site-information'),
+      '!link' => l(t('Site Information'), 'admin/config/system/site-information'),
     )),
     '#default_value' => $settings['frontpage_redirect'],
   );
@@ -103,6 +103,14 @@ function globalredirect_settings() {
                          This is useful if you are experiencing problems with Global Redirect and want to protect the admin section of your website. NOTE: This may not be desirable if you are using path aliases for certain admin URLs.'),
     '#default_value' => $settings['ignore_admin_path'],
   );
+
+  $form['settings']['comment_to_node'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect Comments To Node'),
+    '#description' => t('If enabled, any request to a comment URL will redirect to the associate node.'),
+    '#default_value' => $settings['comment_to_node'],
+  );
+
 
   $form['buttons']['submit'] = array(
     '#type' => 'submit',

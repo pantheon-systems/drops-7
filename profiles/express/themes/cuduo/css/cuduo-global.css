@@ -11,7 +11,7 @@ body { background-color: #272727; }
 .banner-white #zone-menu-wrapper { background-color: #fff; }
 .banner-white #zone-menu-wrapper a { color: #666; font-weight: 600; }
 .banner-white #zone-menu-wrapper a:hover, .banner-white #zone-menu-wrapper a:focus, .banner-white #zone-menu-wrapper a.active, .banner-white #zone-menu-wrapper a.active-trail { color: #333; }
-.banner-white #zone-menu-wrapper a#home-link { color: #666; }
+.banner-white #zone-menu-wrapper a.home-link { color: #666; }
 
 .banner-dark #zone-branding-wrapper { background-color: #333; }
 .banner-dark #zone-secondary-menu-wrapper { background-color: #333; color: #bbb; }
@@ -21,7 +21,7 @@ body { background-color: #272727; }
 .banner-dark #zone-menu-wrapper { background-color: #222; }
 .banner-dark #zone-menu-wrapper a { color: #bbb; font-weight: 600; }
 .banner-dark #zone-menu-wrapper a:hover, .banner-dark #zone-menu-wrapper a:focus, .banner-dark #zone-menu-wrapper a.active, .banner-dark #zone-menu-wrapper a.active-trail { color: #fff; }
-.banner-dark #zone-menu-wrapper a#home-link { color: #aaa; }
+.banner-dark #zone-menu-wrapper a.home-link { color: #aaa; }
 
 .region-menu .navigation ul { margin: 0 -10px; }
 

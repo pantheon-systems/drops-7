@@ -1,0 +1,266 @@
+<?php
+
+/**
+ * @file
+ * Implements the API through which Google Analytics data can be accessed.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function google_analytics_reports_api_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#google_analytics_reports_api':
+      $output = '<p>' . t('Google Analytics Reports and it\'s API module provides site administrators and programmers a rich API to generate graphical reports based on Google Analytics data.  The reports module includes a helpful sitewide report located under <a href="!link">Drupal\'s default administrator reports</a>, and blocks for both sitewide and path-based reports.', array(
+        '!link' => url('admin/reports'),
+      )) . '</p>';
+      $output .= '<p>' . t('Programmers can build complex queries against Google Analytics and display them in any format they like. To get started coding your own reports, visit the <a href="!link">Google Analytics Reports documentation page on drupal.org</a>.', array(
+        '!link' => url('https://www.drupal.org/node/1138274'),
+      )) . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function google_analytics_reports_api_menu() {
+  $items['admin/config/system/google-analytics-reports-api'] = array(
+    'title' => 'Google Analytics Reports API',
+    'description' => 'Configure your account, profiles, and reports.',
+    'page callback' => 'drupal_get_form',
+    'file' => 'google_analytics_reports_api.admin.inc',
+    'page arguments' => array('google_analytics_reports_api_admin'),
+    'access arguments' => array('administer google analytics reports api'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function google_analytics_reports_api_permission() {
+  return array(
+    'administer google analytics reports api' => array(
+      'title' => t('administer google analytics reports api'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function google_analytics_reports_api_theme() {
+  return array(
+    'google_analytics_reports_api_profile_label' => array(
+      'arguments' => array(
+        'profile' => NULL,
+        'active' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Instantiate a new GoogleAnalyticsReportsApiFeed object.
+ *
+ * @return object
+ *   GoogleAnalyticsReportsApiFeed object to authorize access and request data
+ *   from the Google Analytics Core Reporting API.
+ */
+function google_analytics_reports_api_gafeed() {
+  // If the access token is still valid, return an authenticated
+  // GoogleAnalyticsReportsApiFeed.
+  if (variable_get('google_analytics_reports_api_access_token', NULL) && time() < variable_get('google_analytics_reports_api_expires_at', NULL)) {
+    return new GoogleAnalyticsReportsApiFeed(variable_get('google_analytics_reports_api_access_token', NULL));
+  }
+  else {
+    // If the site has an access token and refresh token, but the access
+    // token has expired, authenticate the user with the refresh token.
+    if (variable_get('google_analytics_reports_api_refresh_token', NULL)) {
+      $client_id = variable_get('google_analytics_reports_api_client_id', NULL);
+      $client_secret = variable_get('google_analytics_reports_api_client_secret', NULL);
+      $refresh_token = variable_get('google_analytics_reports_api_refresh_token', NULL);
+
+      try {
+        $gafeed = new GoogleAnalyticsReportsApiFeed();
+        $gafeed->refreshToken($client_id, $client_secret, $refresh_token);
+
+        variable_set('google_analytics_reports_api_access_token', $gafeed->accessToken);
+        variable_set('google_analytics_reports_api_expires_at', $gafeed->expiresAt);
+        return $gafeed;
+      }
+      catch (Exception $e) {
+        drupal_set_message(t('There was an authentication error. Message: @message.', array('@message' => $e->getMessage())), 'error', FALSE);
+        watchdog('google analytics reports api', 'There was an authentication error. Message: @message.', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
+        return NULL;
+      }
+    }
+    else {
+      // If there is no access token or refresh token and client is returned
+      // to the config page with an access code, complete the authentication.
+      if (isset($_GET['code'])) {
+        $client_id = variable_get('google_analytics_reports_api_client_id', NULL);
+        $client_secret = variable_get('google_analytics_reports_api_client_secret', NULL);
+        $redirect_uri = variable_get('google_analytics_reports_api_redirect_uri', NULL);
+
+        try {
+          $gafeed = new GoogleAnalyticsReportsApiFeed();
+          $gafeed->finishAuthentication($client_id, $client_secret, $redirect_uri);
+
+          variable_set('google_analytics_reports_api_access_token', $gafeed->accessToken);
+          variable_set('google_analytics_reports_api_expires_at', $gafeed->expiresAt);
+          variable_set('google_analytics_reports_api_refresh_token', $gafeed->refreshToken);
+          variable_del('google_analytics_reports_api_redirect_uri');
+
+          drupal_set_message(t('You have been successfully authenticated.'), 'status', FALSE);
+          drupal_goto($redirect_uri);
+        }
+        catch (Exception $e) {
+          drupal_set_message(t('There was an authentication error. Message: @message.', array('@message' => $e->getMessage())), 'error', FALSE);
+          watchdog('google analytics reports api', 'There was an authentication error. Message: @message.', array('@message' => $e->getMessage()), WATCHDOG_ERROR);
+          return NULL;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Request report data.
+ *
+ * @param array $params
+ *   An associative array containing:
+ *   - profile_id: required
+ *    [default=variable_get('google_analytics_reports_api_profile_id')].
+ *   - metrics: required.
+ *   - dimensions: optional [default=none].
+ *   - sort_metric: optional [default=none].
+ *   - filters: optional [default=none].
+ *   - segment: optional [default=none].
+ *   - start_date: optional [default=2005-01-01].
+ *   - end_date: optional [default=today].
+ *   - start_index: optional [default=1].
+ *   - max_results: optional [default=10,000].
+ * @param array $cache_options
+ *   An optional associative array containing:
+ *   - cid: optional [default=md5 hash].
+ *   - expire: optional [default=CACHE_TEMPORARY].
+ *   - refresh: optional [default=FALSE].
+ *
+ * @return object
+ *   GoogleAnalyticsReportsApiFeed object to authorize access and request data
+ *   from the Google Analytics Core Reporting API after reporting data.
+ */
+function google_analytics_reports_api_report_data($params = array(), $cache_options = array()) {
+  if (isset($params['profile_id'])) {
+    $params['profile_id'] = 'ga:' . $params['profile_id'];
+  }
+  else {
+    $params['profile_id'] = 'ga:' . variable_get('google_analytics_reports_api_profile_id', 0);
+  }
+
+  $ga_feed = google_analytics_reports_api_gafeed();
+
+  if ($ga_feed) {
+    $ga_feed->queryReportFeed($params, $cache_options);
+    return $ga_feed;
+  }
+  else {
+    drupal_set_message(t('There was an authentication error. Please check your Google Analytics API settings and try again.'), 'error', FALSE);
+    watchdog('google analytics reports api', 'There was an authentication error. Please check your Google Analytics API settings and try again.', array(), WATCHDOG_ERROR);
+    return array('error' => TRUE);
+  }
+}
+
+/**
+ * Programmatically revoke token.
+ */
+function google_analytics_reports_api_revoke() {
+  $ga_feed = google_analytics_reports_api_gafeed();
+  $ga_feed->revokeToken();
+  // Delete module variables.
+  db_delete('variable')
+    ->condition('name', 'google_analytics_reports_api_%', 'LIKE')
+    ->execute();
+}
+
+/**
+ * Sets the expiry timestamp for cached queries.
+ *
+ * Default is 3 days.
+ *
+ * @return int
+ *   The UNIX timestamp to expire the query at.
+ */
+function google_analytics_reports_api_cache_time() {
+  return time() + variable_get('google_analytics_reports_api_cache_length', 259200);
+}
+
+/**
+ * Returns HTML for the full string label of profiles.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - profile: Google Analytics profile object.
+ *
+ * @ingroup themeable
+ */
+function theme_google_analytics_reports_api_profile_label($variables) {
+  if (isset($variables['active']) && ($variables['active'])) {
+    return parse_url($variables['profile']->websiteUrl, PHP_URL_HOST) . ' - ' . $variables['profile']->name . ' (' . $variables['profile']->id . ')';
+  }
+  else {
+    return $variables['profile']->name . ' (' . $variables['profile']->id . ')';
+  }
+}
+
+/**
+ * Implements hook_domain_conf().
+ */
+function google_analytics_reports_api_domain_conf() {
+  $access_token = variable_get('google_analytics_reports_api_access_token', 0);
+
+  $form['google_analytics_reports_api'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Google Analytics Reports API'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  if ($access_token) {
+    // Load file with google_analytics_reports_api_admin() function.
+    module_load_include('inc', 'google_analytics_reports_api', 'google_analytics_reports_api.admin');
+    $admin_form = google_analytics_reports_api_admin();
+    $form['google_analytics_reports_api']['google_analytics_reports_api_profile_id'] = $admin_form['settings']['google_analytics_reports_api_profile_id'];
+    $form['google_analytics_reports_api']['google_analytics_reports_api_profile_id']['#description'] = t('Choose your Google Analytics profile.');
+  }
+  else {
+    $form['google_analytics_reports_api']['google_analytics_reports_api_authorize']['#markup'] = '<p>' . t('You must <a href="@url">authorize</a> Drupal to use your Google Analytics account before you can view reports.',
+        array('@url' => url('admin/config/system/google-analytics-reports-api'))) . '</p>';
+  }
+
+  return $form;
+}
+
+/**
+ * No overlay for config page.
+ *
+ * Implements hook_admin_paths()
+ */
+function google_analytics_reports_admin_paths() {
+  return array(
+    'admin/config/system/google-analytics-reports-api' => FALSE,
+  );
+}
+
+/**
+ * However config page should still use the admin theme.
+ *
+ * Implements hook_custom_theme().
+ */
+function google_analytics_reports_custom_theme() {
+  if ('admin/config/system/google-analytics-reports-api' == current_path()) {
+    return variable_get('admin_theme', 'seven');
+  }
+}

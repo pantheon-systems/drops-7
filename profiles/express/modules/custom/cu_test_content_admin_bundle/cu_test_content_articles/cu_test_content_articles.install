@@ -157,20 +157,7 @@ function _cu_test_content_articles_create_nodes($nodes) {
 
     $node->field_article_categories[$node->language][0]['tid'] = $rand_categories[0];
 
-    $random = rand(5, 500);
-    $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-    $fetched = FALSE;
-    $tries = 0;
-    // Try 5 times to get an image
-    do {
-      if ($file_path = system_retrieve_file($image)) {
-        $fetched = TRUE;
-        break;
-      }
-      $random = rand(5, 500);
-      $image = 'https://picsum.photos/1500/1000/?image=' . $random;
-      $tries++;
-    } while (($fetched == FALSE) && ($tries < 5));
+    $file_path = system_retrieve_file('https://picsum.photos/1500/1000/?random');
 
     $file = (object) array(
       'uid' => $count,
@@ -178,8 +165,6 @@ function _cu_test_content_articles_create_nodes($nodes) {
       'filemime' => file_get_mimetype($file_path),
       'status' => 1,
     );
-
-
 
     // You can specify a subdirectory, e.g. public://foo/
     $file = file_copy($file, 'public://');

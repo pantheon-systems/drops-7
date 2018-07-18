@@ -54,48 +54,29 @@ function atlas_statistics_atlas_statistics() {
 
   // List users.
   $users = entity_load('user');
-  $usernames = array();
-  $useremails = array();
+  $user_roles = [
+    'access_manager',
+    'campaign_manager',
+    'configuration_manager',
+    'content_editor',
+    'edit_my_content',
+    'form_manager',
+    'site_editor',
+    'site_owner',
+  ];
   foreach ($users as $user_id => $user) {
     // Make sure username and email exist before putting them in the array.
     // Removes user 0 (aka Anonymous).
-    if ($user->name) {
-      $usernames[] = $user->name;
-      if (in_array('site_owner', $user->roles)) {
-        $usernames_site_contact[] = $user->name;
-      }
-      if (in_array('content_editor', $user->roles)) {
-        $usernames_content_editor[] = $user->name;
-      }
-      if (in_array('edit_my_content', $user->roles)) {
-        $usernames_edit_my_content[] = $user->name;
-      }
-    }
-    if ($user->mail) {
-      $useremails[] = $user->mail;
-      if (in_array('site_owner', $user->roles)) {
-        $useremails_site_contact[] = $user->mail;
-      }
-      if (in_array('content_editor', $user->roles)) {
-        $useremails_content_editor[] = $user->mail;
-      }
-      if (in_array('edit_my_content', $user->roles)) {
-        $useremails_edit_my_content[] = $user->mail;
+    if ($user->name && $user->mail) {
+      foreach ($user_roles as $role) {
+        if (in_array($role, $user->roles, FALSE)) {
+          $statistics_data['users']['username'][$role][] = $user->name;
+          $statistics_data['users']['email_address'][$role][] = $user->mail;
+          $statistics_data['users']['counts'][$role]++;
+        }
       }
     }
   }
-
-  $statistics_data['users']['username']['site_contact'] = $usernames_site_contact;
-  $statistics_data['users']['username']['content_editor'] = $usernames_content_editor;
-  $statistics_data['users']['username']['edit_my_content'] = $usernames_edit_my_content;
-
-  $statistics_data['users']['email_address']['site_contact'] = $useremails_site_contact;
-  $statistics_data['users']['email_address']['content_editor'] = $useremails_content_editor;
-  $statistics_data['users']['email_address']['edit_my_content'] = $useremails_edit_my_content;
-  
-  $statistics_data['users']['counts']['site_contact'] = count($usernames_site_contact);
-  $statistics_data['users']['counts']['content_editor'] = count($usernames_content_editor);
-  $statistics_data['users']['counts']['edit_my_content'] = count($usernames_edit_my_content);
 
   // Add report of overridden features if the module is enabled and there are
   // overridden features.
@@ -113,6 +94,29 @@ function atlas_statistics_atlas_statistics() {
   if (module_exists('webform')) {
     $statistics_data['webforms'] = $webform_stats;
   }
+
+  // Get role ids to search for in query.
+  $role_ids = [];
+  $user_roles = [
+    'access_manager',
+    'campaign_manager',
+    'configuration_manager',
+    'content_editor',
+    'edit_my_content',
+    'form_manager',
+    'site_editor',
+    'site_owner',
+  ];
+  foreach ($user_roles as $val) {
+    $temp_role = user_role_load_by_name($val);
+    if (isset($temp_role->rid)) {
+      $role_ids[] = $temp_role->rid;
+    }
+  }
+
+  // Add last login of any user.
+  $last_login = db_query('SELECT MAX(login) FROM users INNER JOIN users_roles ON users.uid=users_roles.uid WHERE rid IN (:roles) AND login > 1', [':roles' => $role_ids])->fetchCol('login');
+  $statistics_data['days_since_last_login'] = is_array($last_login) && is_numeric($last_login[0]) ? floor((time() - $last_login[0]) / (60*60*24)) : '-1';
 
   return $statistics_data;
 }

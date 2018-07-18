@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests Metatag module to ensure there are no XSS scripting vulnerabilities.
+ */
+
+/**
  * Tests Metatag module to ensure there are no XSS scripting vulnerabilities.
  */
 class MetatagCoreXSSTest extends MetatagTestHelper {
@@ -41,7 +46,7 @@ class MetatagCoreXSSTest extends MetatagTestHelper {
    *
    * @var string
    */
-  private $escapedXssImageTag = '<link rel="image_src" href="/&quot;&gt;alert(&quot;image%20xss&quot;);" />';
+  private $escapedXssImageTag = '';
 
   /**
    * {@inheritdoc}
@@ -74,6 +79,20 @@ class MetatagCoreXSSTest extends MetatagTestHelper {
     );
     $this->adminUser = $this->createAdminUser($perms);
     $this->drupalLogin($this->adminUser);
+
+    // Generate the encoded version of $xssImageString.
+    // '<link rel="image_src" href="' . $xssImageString . '" />'
+    $prefix = '<link rel="image_src" href="';
+    // The image tag will be automatically prefixed by the current hostname,
+    // so adjust the escaped string.
+    $url = url('', array('absolute' => TRUE));
+    // Convert the raw string to what it will be when output in the HTML.
+    $value = ltrim($this->xssImageString, '/');
+    $value = urlencode($value);
+    $value = str_replace('+', '%20', $value);
+    $value = str_replace('%2F', '/', $value);
+    $suffix = '" />';
+    $this->escapedXssImageTag = $prefix . $url . $value . $suffix;
   }
 
   /**

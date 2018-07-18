@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag controller for Google+.

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests that each of the Metatag Advanced Dublin Core tags work correctly.
+ */
+
+/**
  * Tests that each of the Metatag Advanced Dublin Core tags work correctly.
  */
 class MetatagDcAdvancedTagsTest extends MetatagTagsTestBase {

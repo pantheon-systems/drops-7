@@ -291,10 +291,17 @@ function cu_rss_secure_permissions($role) {
     'administrator' => array(
       'administer rss feeds',
     ),
+    'edit_my_content' => array(),
+
+    'edit_only' => array(),
+
     'content_editor' => array(
       'administer rss feeds',
     ),
     'developer' => array(
+      'administer rss feeds',
+    ),
+    'site_editor' => array(
       'administer rss feeds',
     ),
     'site_owner' => array(

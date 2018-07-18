@@ -987,12 +987,12 @@ function video_filter_youtube($video) {
     $attributes['playlist'] = 'playlist=' . $video['codec']['matches'][1];
   }
 
-  if (preg_match('/t=((\d+[m|s])?(\d+[s]?)?)/', $video['source'], $matches)) {
-    $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches[2]) * 60 + (preg_replace("/[^0-9]/", "", $matches[3])));
+  if (preg_match('/[\?|&]t=((?<minutes>\d+m)?(?<seconds>\d+s?)?)/', $video['source'], $matches)) {
+    $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches['minutes']) * 60 + (preg_replace("/[^0-9]/", "", $matches['seconds'])));
   }
   if (!empty($video['start'])) {
-    if (preg_match('/((\d+[m|s])?(\d+[s]?)?)/', $video['start'], $matches)) {
-      $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches[2]) * 60 + (preg_replace("/[^0-9]/", "", $matches[3])));
+    if (preg_match('/((?<minutes>\d+m)?(?<seconds>\d+s?)?)/', $video['start'], $matches)) {
+      $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches['minutes']) * 60 + (preg_replace("/[^0-9]/", "", $matches['seconds'])));
     }
   }
 
@@ -1039,12 +1039,12 @@ function video_filter_youtube_html5($video) {
     $attributes['playlist'] = 'playlist=' . $video['codec']['matches'][1];
   }
 
-  if (preg_match('/t=((\d+[m|s])?(\d+[s]?)?)/', $video['source'], $matches)) {
-    $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches[2]) * 60 + (preg_replace("/[^0-9]/", "", $matches[3])));
+  if (preg_match('/[\?|&]t=((?<minutes>\d+m)?(?<seconds>\d+s?)?)/', $video['source'], $matches)) {
+    $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches['minutes']) * 60 + (preg_replace("/[^0-9]/", "", $matches['seconds'])));
   }
   if (!empty($video['start'])) {
-    if (preg_match('/((\d+[m|s])?(\d+[s]?)?)/', $video['start'], $matches)) {
-      $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches[2]) * 60 + (preg_replace("/[^0-9]/", "", $matches[3])));
+    if (preg_match('/((?<minutes>\d+m)?(?<seconds>\d+s?)?)/', $video['start'], $matches)) {
+      $attributes['start'] = 'start=' . (preg_replace("/[^0-9]/", "", $matches['minutes']) * 60 + (preg_replace("/[^0-9]/", "", $matches['seconds'])));
     }
   }
 

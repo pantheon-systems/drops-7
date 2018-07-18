@@ -113,7 +113,6 @@ function cu_social_links_preprocess_entity(&$vars) {
         if (isset($vars['field_social_links_homepage_url'])) {
           $link_options['attributes']['itemprop'] = 'sameAs';
         }
-        $link_options['attributes']['title'] = $link_name;
         $items[] = l($link_text, $link_url['url'], $link_options);
       }
     }

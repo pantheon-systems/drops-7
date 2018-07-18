@@ -1,3 +1,64 @@
+Metatag 7.x-1.25, 2018-04-03
+----------------------------
+#2958362 by DamienMcKenna, didierlebouc: Undefined index error in 7.x-1.24.
+#2958208 by DamienMcKenna: Bug in count() statement in metatag.metatag.inc.
+
+
+Metatag 7.x-1.24, 2018-04-03
+----------------------------
+#2958279 by joelpittet: Fatal error:  Call to undefined function int_val().
+
+
+Metatag 7.x-1.23, 2018-04-03
+----------------------------
+#2906312 by DamienMcKenna: Added the twitter:dnt meta tag.
+#2903980 by DamienMcKenna, Chris Charlton: Undefined index in
+  metatag_token_info.
+#2143979 by bpleduc, drunken monkey, DamienMcKenna, thirdender, davidthou:
+  Allow Views meta tags to "Use replacement tokens from the first row".
+#2882769 by DamienMcKenna: List Schema Metatag as a related module.
+#2882769 by DamienMcKenna: Added a hook_requirements() message about the
+  Schema.org Metatag module.
+#2929487 by volkswagenchick, porkloin: Typo in metatag_dc.install, aka "Dublin"
+  misspelled by the guy from Ireland.
+#2931744 by DamienMcKenna: Fix tests for the 7.x-1.x branch,
+  testXssMetatagConfig has a regression.
+#2932110 by thejimbirch: Update Description's meta description to 320 chars
+  (for 2018).
+#2933940 by DamienMcKenna: og:image must be at least 200x200 otherwise it is
+  ignored by Facebook.
+#2946145 by DamienMcKenna, bkosborne: Remove usage of deprecrated each()
+  function for PHP 7.2+ future proofing.
+#2872206 by jenlampton: Drush command for importing from Page Title throws
+  fatal.
+#2872446 by jenlampton, DamienMcKenna: Complete the drush command for importing
+  nodewords meta tags.
+#1282806 by DamienMcKenna, iamEAP, osopolar, victoriachan, malcomio, HyperGlide,
+  Murz, dandaman, klokie: Upgrade script for Meta Tags Quick.
+By DamienMcKenna: Updated README.txt related to the importer module.
+#2950652 by Les Lim: metatag_favicons_get_mime_type() is mostly wrong.
+#2933194 by ocastle: Issue with URL Decoding panel substitutions.
+#2932401 by DamienMcKenna: New tag: Set-Cookie.
+#2945589 by ron_s: Apostrophe encoded in page title when using Panels
+  substitutions.
+#2956465 by DamienMcKenna, alexpott: Make sure $_GET['page'] is an integer.
+#2832101 by DamienMcKenna, jenstechs: hreflang tokens should support Content
+  Translation.
+#2309017 by DamienMcKenna, rodrigoaguilera, nmillin, John_B, David Hernández,
+  ctarres, cmseasy, computerbarry, skein, erwangel, espurnes, zmove:
+  Automatically trim meta tag lengths.
+#2958206 by DamienMcKenna: Fix hreflang tags for entity_translation.
+#2864078 by DamienMcKenna: Improve coding standards on Metatags 7.x-1.x.
+#2924181 by Mike Lewis: Default value for Robots on config form does not
+  reflect stored configuration.
+#2853251 by kpaxman: Code to use only first item doesn't work if first item is
+  blank.
+#1624266 by L-four, angrytoast: Add support Views Bulk Operations for mass
+  updating metatags.
+#2854539 by DamienMcKenna, jalpesh, zhouhana: http://drupal.org instead of
+  https://www.drupal.org in default generator tag.
+
+
 Metatag 7.x-1.22, 2017-07-03
 ----------------------------
 #2853699 by DamienMcKenna: Drupal core 7.40 is the minimum version supported.

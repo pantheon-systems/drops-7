@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests the Metatag:Context module for i18n integration.
+ */
+
+/**
  * Tests the Metatag:Context module for i18n integration.
  */
 class MetatagContextI18nTest extends MetatagTestHelper {
@@ -52,7 +57,7 @@ class MetatagContextI18nTest extends MetatagTestHelper {
 
     // Log in the admin user.
     $this->drupalLogin($this->adminUser);
-    
+
     // Reload the translations.
     drupal_flush_all_caches();
     module_load_include('admin.inc', 'i18n_string');

@@ -35,12 +35,10 @@ function file_entity_download_page($file) {
   if (!is_file($file->uri)) {
     return MENU_NOT_FOUND;
   }
-  // @todo Remove this once drupal_basename is fixed for PHP versions greater
-  //  than '5.3.29'.
-  $basename_function = version_compare(PHP_VERSION,'5.3.29','>') ? 'basename' : 'drupal_basename';
+  // @todo Why basename? Why not drupal_basename which was working up until recently.
   $headers = array(
     'Content-Type' => mime_header_encode($file->filemime),
-    'Content-Disposition' => 'attachment; filename="' . mime_header_encode($basename_function($file->uri)) . '"',
+    'Content-Disposition' => 'attachment; filename="' . mime_header_encode(basename($file->uri)) . '"',
     'Content-Length' => $file->filesize,
     'Content-Transfer-Encoding' => 'binary',
     'Pragma' => 'no-cache',
@@ -256,6 +254,8 @@ function file_entity_add_upload_step_fields($form, &$form_state, array $options 
  * Page callback to show file usage information.
  */
 function file_entity_usage_page($file) {
+  drupal_set_title(t('<em>Usage of @type</em> @title', array('@type' => $file->type, '@title' => $file->filename)), PASS_THROUGH);
+
   $rows = array();
   $occured_entities = array();
 
@@ -355,9 +355,12 @@ function file_entity_add_upload_submit($form, &$form_state) {
   // This var is set to TRUE when we are ready to save the file.
   $save = FALSE;
   $trigger = $form_state['triggering_element']['#id'];
+  $triggered_next = $trigger == 'edit-next' || (strpos($trigger, 'edit-next--') === 0);
+  $triggered_previous = $trigger == 'edit-previous' || (strpos($trigger, 'edit-previous--') === 0);
+  $step_delta = ($triggered_previous) ? -1 : 1;
 
   $steps_to_check = array(2, 3);
-  if ($trigger == 'edit-previous') {
+  if ($triggered_previous) {
     // If the previous button was hit,
     // the step checking order should be reversed 3, 2.
     $steps_to_check = array_reverse($steps_to_check);
@@ -365,7 +368,7 @@ function file_entity_add_upload_submit($form, &$form_state) {
 
   foreach ($steps_to_check as $step) {
     // Check if we can skip step 2 and 3.
-    if (($form['#step'] == $step - 1 && $trigger == 'edit-next') || ($form['#step'] == $step + 1 && $trigger == 'edit-previous')) {
+    if (($form['#step'] == $step - 1 && $triggered_next) || ($form['#step'] == $step + 1 && $triggered_previous)) {
       $file = file_load($form_state['storage']['upload']);
       if ($step == 2) {
         // Check if we can skip step 2.
@@ -374,12 +377,12 @@ function file_entity_add_upload_submit($form, &$form_state) {
           $candidates_keys = array_keys($candidates);
           // There is only one possible filetype for this file.
           // Skip the second page.
-          $form['#step'] += ($trigger == 'edit-previous') ? -1 : 1;
+          $form['#step'] += $step_delta;
           $form_state['storage']['type'] = reset($candidates_keys);
         }
         elseif (!$candidates || variable_get('file_entity_file_upload_wizard_skip_file_type', FALSE)) {
           // Do not assign the file a file type.
-          $form['#step'] += ($trigger == 'edit-previous') ? -1 : 1;
+          $form['#step'] += $step_delta;
           $form_state['storage']['type'] = FILE_TYPE_NONE;
         }
       }
@@ -395,17 +398,17 @@ function file_entity_add_upload_submit($form, &$form_state) {
 
         if (!file_entity_file_is_writeable($file)) {
           // The file is read-only (remote) and must use its provided scheme.
-          $form['#step'] += ($trigger == 'edit-previous') ? -1 : 1;
+          $form['#step'] += $step_delta;
           $form_state['storage']['scheme'] = file_uri_scheme($file->uri);
         }
         elseif (count($schemes) == 1) {
           // There is only one possible stream wrapper for this file.
           // Skip the third page.
-          $form['#step'] += ($trigger == 'edit-previous') ? -1 : 1;
+          $form['#step'] += $step_delta;
           $form_state['storage']['scheme'] = key($schemes);
         }
         elseif (variable_get('file_entity_file_upload_wizard_skip_scheme', FALSE)) {
-          $form['#step'] += ($trigger == 'edit-previous') ? -1 : 1;
+          $form['#step'] += $step_delta;
 
           // Fallback to the URI scheme specified in the field settings
           // otherwise use the default file scheme.
@@ -421,7 +424,7 @@ function file_entity_add_upload_submit($form, &$form_state) {
   }
 
   // We have the filetype, check if we can skip step 4.
-  if (($form['#step'] == 3 && $trigger == 'edit-next')) {
+  if ($form['#step'] == 3 && $triggered_next) {
     $file = file_load($form_state['storage']['upload']);
     $form_state['file'] = $file;
     if (!field_info_instances('file', $form_state['storage']['type'])) {
@@ -436,10 +439,10 @@ function file_entity_add_upload_submit($form, &$form_state) {
 
   // Form id's can vary depending on how many other forms are displayed, so we
   // need to do string comparissons. e.g edit-submit--2.
-  if (strpos($trigger, 'edit-next') !== FALSE) {
+  if ($triggered_next) {
     $form_state['step'] = $form['#step'] + 1;
   }
-  elseif (strpos($trigger, 'edit-previous') !== FALSE) {
+  elseif ($triggered_previous) {
     $form_state['step'] = $form['#step'] - 1;
   }
   elseif (strpos($trigger, 'edit-submit') !== FALSE) {
@@ -675,6 +678,12 @@ function file_entity_edit($form, &$form_state, $file) {
       '#upload_validators' => file_entity_get_upload_validators($replacement_options),
       '#pre_render' => array('file_entity_upload_validators_pre_render'),
     );
+    $form['replace_keep_original_filename'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Keep original filename'),
+      '#default_value' => variable_get('file_entity_file_replace_options_keep_original_filename', FALSE),
+      '#description' => t('Rename the newly uploaded file to the name of the original file. This action cannot be undone.'),
+    );
   }
 
   $form['preview'] = file_view_file($file, 'preview');
@@ -832,7 +841,13 @@ function file_entity_edit_submit($form, &$form_state) {
         file_delete($replacement);
       }
     } else {
-      $destination_uri = rtrim($file->uri, drupal_basename($file->uri)) . drupal_basename($replacement->uri);
+      if (!empty($form_state['values']['replace_keep_original_filename'])
+      && $form_state['values']['replace_keep_original_filename']) {
+        $destination_uri = rtrim($file->uri, drupal_basename($file->uri)) . drupal_basename($file->uri);
+      }
+      else {
+        $destination_uri = rtrim($file->uri, drupal_basename($file->uri)) . drupal_basename($replacement->uri);
+      }
       $replace_mode = $destination_uri == $file->uri ? FILE_EXISTS_REPLACE : FILE_EXISTS_RENAME;
       if ($new_file_uri = file_unmanaged_copy($replacement->uri, $destination_uri, $replace_mode)) {
         // @todo Add watchdog() about replaced file here?

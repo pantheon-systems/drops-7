@@ -1818,7 +1818,7 @@ function file_entity_query_file_access_alter(QueryAlterableInterface $query) {
  * access conditions are added for field values belonging to files only.
  */
 function file_entity_query_entity_field_access_alter(QueryAlterableInterface $query) {
-  _file_entity_query_file_entity_access_alter($query, 'entity');
+  //_file_entity_query_file_entity_access_alter($query, 'entity');
 }
 
 /**
@@ -1844,14 +1844,18 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
     return;
   }
 
-  $tables = $query->getTables();
-  $base_table = $query->getMetaData('base_table');
-  // Do not use the base table for general entity queries unless this is
-  // querying the file_managed table directly.
-  if ($base_table && $type == 'entity' && $base_table != 'file_managed') {
-    $base_table = '';
+  // A conflict with og_query_og_membership_alter() causes a fatal error
+  // if both hooks alter the query.
+  if (module_exists('og') && $query->hasTag('og_membership')) {
+    foreach($query->getMetaData('entity_field_query')->fields as $field) {
+      if (og_is_group_audience_field($field['field_name'])) {
+        return;
+      }
+    }
   }
 
+  $tables = $query->getTables();
+  $base_table = $query->getMetaData('base_table');
   // If no base table is specified explicitly, search for one.
   if (!$base_table) {
     $fallback = '';
@@ -1883,10 +1887,6 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
               $fallback = $table;
             }
           }
-          elseif (isset($schema['fields']['entity_id']) && isset($schema['fields']['entity_type']) && isset($schema['fields']['deleted']) && isset($schema['fields']['delta'])) {
-            // The table is a field data table, use it as fallback.
-            $base_table = $table;
-          }
         }
       }
     }
@@ -1897,11 +1897,6 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         $base_table = $fallback;
       }
       else {
-        // Ignore this query as it was a general field query and no
-        // relationships were found to the file_managed table.
-        if ($type == 'entity') {
-          return;
-        }
         throw new Exception(t('Query tagged for file access but there is no fid. Add foreign keys to file_managed.fid in schema to fix.'));
       }
     }
@@ -1964,36 +1959,33 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
         }
       }
 
-      // If there is no subquery conditions, the query is likely for file usage.
-      // Or user can only access public files.
-      // If there are subquery conditions then add them to the subquery.
-      if ($subquery_conditions->count() >= 1) {
+      if ($subquery_conditions->count()) {
         $subquery->condition($subquery_conditions);
-      }
 
-      $field = 'fid';
-      // Now handle entities.
-      if ($type == 'entity') {
-        // Set a common alias for entities.
-        $base_alias = $falias;
-        $field = ($falias == 'file_managed' ? 'fid' : 'entity_id');
-      }
-      $subquery->where("$falias.$field = fm_access.fid");
+        $field = 'fid';
+        // Now handle entities.
+        if ($type == 'entity') {
+          // Set a common alias for entities.
+          $base_alias = $falias;
+          $field = 'entity_id';
+        }
+        $subquery->where("$falias.$field = fm_access.fid");
 
-      // For an entity query, attach the subquery to entity conditions.
-      if ($type == 'entity') {
-        $file_conditions->exists($subquery);
-      }
-      // Otherwise attach it to the node query itself.
-      elseif ($table == 'file_managed') {
-        // Fix for https://drupal.org/node/2073085
-        $db_or = db_or();
-        $db_or->exists($subquery);
-        $db_or->isNull($falias . '.' . $field);
-        $query->condition($db_or);
-      }
-      else {
-        $query->exists($subquery);
+        // For an entity query, attach the subquery to entity conditions.
+        if ($type == 'entity') {
+          $file_conditions->exists($subquery);
+        }
+        // Otherwise attach it to the node query itself.
+        elseif ($table == 'file_managed') {
+          // Fix for https://drupal.org/node/2073085
+          $db_or = db_or();
+          $db_or->exists($subquery);
+          $db_or->isNull($falias . '.' . $field);
+          $query->condition($db_or);
+        }
+        else {
+          $query->exists($subquery);
+        }
       }
     }
   }
@@ -2001,19 +1993,14 @@ function _file_entity_query_file_entity_access_alter($query, $type) {
   if ($type == 'entity' && $file_conditions->count()) {
     // All the file access conditions are only for field values belonging to
     // files.
-    if ($base_alias !== 'file_managed') {
-      $file_conditions->condition("$base_alias.entity_type", 'file');
-      $or = db_or();
-      $or->condition($file_conditions);
-      // If the field value belongs to a non-file entity type then this function
-      // does not do anything with it.
-      $or->condition("$base_alias.entity_type", 'file', '<>');
-      // Add the compiled set of rules to the query.
-      $query->condition($or);
-    }
-    else {
-      $query->condition($file_conditions);
-    }
+    $file_conditions->condition("$base_alias.entity_type", 'file');
+    $or = db_or();
+    $or->condition($file_conditions);
+    // If the field value belongs to a non-file entity type then this function
+    // does not do anything with it.
+    $or->condition("$base_alias.entity_type", 'file', '<>');
+    // Add the compiled set of rules to the query.
+    $query->condition($or);
   }
 }
 

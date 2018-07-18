@@ -250,6 +250,9 @@ function file_view_file($file, $displays = 'full', $langcode = NULL) {
   if ($langcode != $GLOBALS['language_content']->language) {
     $languages = language_list();
     if (isset($languages[$langcode])) {
+      if (!function_exists('file_entity_set_title_alt_properties')) {
+        module_load_include('file.inc', 'file_entity');
+      }
       file_entity_set_title_alt_properties(array($file), $languages[$langcode]);
     }
   }

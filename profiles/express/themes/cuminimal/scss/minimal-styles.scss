@@ -53,7 +53,8 @@ ul#main-menu {
     border-top: 4px solid $border_color;
     color:#363636;
   }
-  a#home-link {
+  a.home-link,
+  a.home-link.active {
     background-color: transparent;
     background-image: none;
     color:#858585;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Installation and update scripts for Metatag:OpenGraph.
@@ -45,6 +46,15 @@ function metatag_opengraph_update_dependencies() {
     'metatag' => 7100,
   );
   return $dependencies;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_opengraph_uninstall() {
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_og:title');
+  variable_del('metatag_maxlength_og:description');
 }
 
 /**

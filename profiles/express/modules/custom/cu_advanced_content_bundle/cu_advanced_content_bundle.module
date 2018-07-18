@@ -62,10 +62,26 @@ function cu_advanced_content_bundle_error_form($form, &$form_state) {
   );
   $form['#validate'][] = 'cu_advanced_content_bundle_404_validate';
 
-  return system_settings_form($form);
+  $form['actions'] = array(
+    '#type' => 'actions',
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    ),
+    '#weight' => 500,
+  );
+
+  return $form;
 }
 
-
+/**
+ * Validation handler for the error pages form.
+ *
+ * @param array $form
+ *   Generated form.
+ * @param array $form_state
+ *   Form state with user submitted values.
+ */
 function cu_advanced_content_bundle_404_validate($form, &$form_state) {
   // Check for empty 404 submission.
   // Since it's required, this should never be hit...but just in case?
@@ -74,6 +90,34 @@ function cu_advanced_content_bundle_404_validate($form, &$form_state) {
     // I think a 404 value always MUST be set...right?
     form_set_value($form['errors']['site_404'], 'naviagtion404', $form_state);
   }
+
+  // Check for system paths.
+  if ($form_state['values']['site_404'] === drupal_get_normal_path($form_state['values']['site_404'])) {
+    form_set_error($form['errors']['site_404'], 'No page found with that path. Can\'t save default 404 page.');
+  }
+  if (!empty($form_state['values']['site_403']) && $form_state['values']['site_403'] === drupal_get_normal_path($form_state['values']['site_403'])) {
+    form_set_error($form['errors']['site_403'], 'No page found with that path. Can\'t save default 403 page.');
+  }
+
+  // 403 and 404 pages can't be the same.
+  if ($form_state['values']['site_404'] === $form_state['values']['site_403']) {
+    form_set_error($form['errors']['site_403'], 'The 404 and 403 pages can\'t have the same path.');
+  }
+}
+
+
+/**
+ * Submit handler for the error pages form.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function cu_advanced_content_bundle_error_form_submit($form, &$form_state) {
+  // Set 403 and 404 strings as system paths.
+  variable_set('site_404', drupal_get_normal_path($form_state['values']['site_404']));
+  variable_set('site_403', drupal_get_normal_path($form_state['values']['site_403']));
+
+  drupal_set_message('The configuration options have been saved.', 'status');
 }
 
 /**
@@ -186,6 +230,17 @@ function cu_advanced_content_bundle_secure_permissions($role) {
     'edit_my_content' => array(
       'view any video_reveal bean',
       'view any feature_callout bean',
+    ),
+    'site_editor' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
     ),
     'site_owner' => array(
       'create any video_reveal bean',

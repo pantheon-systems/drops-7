@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module for the direct Panels integration.
+ */
+
+/**
  * Tests for the Metatag module for the direct Panels integration.
  */
 class MetatagPanelsTest extends MetatagTestHelper {

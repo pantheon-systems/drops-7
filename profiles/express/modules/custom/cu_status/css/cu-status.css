@@ -1,0 +1,24 @@
+.cu-status .incidents, .cu-status .components .components-message, .cu-status .components .component, .cu-status .status-info { padding: 10px; border: 1px solid #e7e7e7; margin-bottom: -1px; }
+
+.cu-status { max-width: 480px; margin-bottom: 20px; }
+.cu-status .status-message { color: #fff; font-weight: bold; padding: 10px; }
+.cu-status .status-message.none { background-color: #43A047; }
+.cu-status .status-message.none:before { content: "\f118"; font-family: FontAwesome; margin-right: 10px; }
+.cu-status .status-message.minor { background-color: #7E57C2; }
+.cu-status .status-message.minor:before { content: "\f119"; font-family: FontAwesome; margin-right: 10px; }
+.cu-status .status-message.maintenance { background-color: #3498DB; }
+.cu-status .status-message.maintenance:before { content: "\f119"; font-family: FontAwesome; margin-right: 10px; }
+.cu-status .status-message.major, .cu-status .status-message.critical { background-color: #D84315; }
+.cu-status .status-message.major:before, .cu-status .status-message.critical:before { content: "\f119"; font-family: FontAwesome; margin-right: 10px; }
+.cu-status .incidents { font-size: 85%; display: none; }
+.cu-status .incidents .incident { border-bottom: 1px solid #e7e7e7; padding: 10px 0; }
+.cu-status .incidents .incident:last-child { border: none; padding-bottom: 5px; }
+.cu-status .components { font-size: 85%; display: none; }
+.cu-status .components .components-message { background-color: #f2f2f2; }
+.cu-status .components .component { font-weight: bold; }
+.cu-status .components .operational { color: #43A047; }
+.cu-status .components .under_maintenance { color: #3498DB; }
+.cu-status .components .partial_outage { color: #EF6C00; }
+.cu-status .components .degraded_performance { color: #7E57C2; }
+.cu-status .components .major_outage { color: #D84315; }
+.cu-status .status-info { display: none; font-size: 75%; text-align: right; }

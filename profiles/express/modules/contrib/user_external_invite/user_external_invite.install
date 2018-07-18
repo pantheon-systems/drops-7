@@ -25,11 +25,17 @@ function user_external_invite_schema() {
         'not null' => TRUE,
         'default' => variable_get('site_mail', 'admin@example.com'),
       ),
-      'rid' => array(
-        'description' => 'Role ID to be granted',
+      'core_rid' => array(
+        'description' => 'Core role ID to be granted',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 2,
+      ),
+      'addon_rids' => array(
+        'description' => 'Additional roles to be granted',
+        'type' => 'varchar',
+        'length' => 254,
+        'default' => NULL,
       ),
       'expire' => array(
         'description' => 'Valid until unix timestamp',
@@ -141,5 +147,45 @@ function user_external_invite_update_7001() {
 function user_external_invite_update_7002() {
   if (db_field_exists('user_external_invite', 'expire')) {
     db_add_index('user_external_invite', 'invite_expired', array('expire'));
+  }
+}
+
+/**
+ * Add core and add on role id fields.
+ */
+function user_external_invite_update_7003() {
+
+  if (!db_field_exists('user_external_invite', 'core_rid')) {
+    $spec = array(
+      'description' => 'Core role ID to be granted',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 2,
+    );
+    db_add_field('user_external_invite', 'core_rid', $spec);
+  }
+
+  if (!db_field_exists('user_external_invite', 'addon_rids')) {
+    $spec = array(
+      'description' => 'Additional roles to be granted',
+      'type' => 'varchar',
+      'length' => 254,
+      'default' => NULL,
+    );
+    db_add_field('user_external_invite', 'addon_rids', $spec);
+  }
+  
+  // Add new core_rid field to any pending invites.
+  if ($results = db_select('user_external_invite', 'ext')->fields('ext')->execute()->fetchAssoc()) {
+    db_query('UPDATE user_external_invite SET core_rid = rid');
+  }
+}
+
+/**
+ * Delete old rid field.
+ */
+function user_external_invite_update_7004() {
+  if (db_field_exists('user_external_invite', 'rid')) {
+    db_drop_field('user_external_invite', 'rid');
   }
 }

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module of user entities.
+ */
+
+/**
  * Tests for the Metatag module of user entities.
  */
 class MetatagCoreUserTest extends MetatagTestHelper {
@@ -28,7 +33,6 @@ class MetatagCoreUserTest extends MetatagTestHelper {
     $this->drupalLogin($this->adminUser);
 
     // Assign default values for the new vocabulary.
-
     // Load the page for overriding the User configuration.
     $this->drupalGet('admin/config/search/metatags/config/user');
     $this->assertResponse(200);
@@ -56,7 +60,6 @@ class MetatagCoreUserTest extends MetatagTestHelper {
     // Verify the page loaded correctly.
     // @todo Update this to extract the H1 tag.
     // $this->assertText(strip_tags(t('Create @name', array('@name' => $vocabulary->name))));
-
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
       'metatags[und][abstract][value]' => '[user:name] ponies',

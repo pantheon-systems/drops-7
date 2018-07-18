@@ -62,6 +62,8 @@ function cu_helpscout_preprocess_page(&$vars) {
     $name = realname_load($user);
     $roles = join(', ', $user->roles);
     $site_name = variable_get('site_name', '');
+    $site_name = str_replace(' ', '-', $site_name);
+    $site_name = preg_replace('/[^A-Za-z0-9\-]/', '', $site_name);
 
     $beacon = '!function(e,o,n){window.HSCW=o,window.HS=n,n.beacon=n.beacon||{};var t=n.beacon;t.userConfig={},t.readyQueue=[],t.config=function(e){this.userConfig=e},t.ready=function(e){this.readyQueue.push(e)},o.config={docs:{enabled:!0,baseUrl:"//university-of-colorado-boulder-docs.helpscoutdocs.com/"},contact:{enabled:!0,formId:"3ac3ec6d-c002-11e7-b466-0ec85169275a"}};var r=e.getElementsByTagName("script")[0],c=e.createElement("script");c.type="text/javascript",c.async=!0,c.src="https://djtflbt20bdde.cloudfront.net/",r.parentNode.insertBefore(c,r)}(document,window.HSCW||{},window.HS||{});';
 
@@ -128,6 +130,9 @@ function cu_helpscout_secure_permissions($role) {
     'developer' => array(
       'use helpscout beacon',
       'administer helpscout beacon',
+    ),
+    'site_editor' => array(
+      // 'use helpscout beacon',
     ),
     'site_owner' => array(
       // 'use helpscout beacon',

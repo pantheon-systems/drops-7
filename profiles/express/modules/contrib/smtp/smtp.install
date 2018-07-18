@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * @file
+ * The installation instructions for the SMTP Authentication Support.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function smtp_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    if (variable_get('smtp_queue', FALSE) || variable_get('smtp_queue_fail', FALSE)) {
+      $count = db_query("SELECT count('name') FROM {queue} WHERE name='smtp_send_queue'")->fetchField();
+      $requirements['smtp_queue'] = array(
+        'title' => t('SMTP Queue'),
+        'value' => '',
+        'severity' => REQUIREMENT_INFO,
+      );
+      if ($count > 0) {
+        $requirements['smtp_queue']['value'] = format_plural($count, 'There is 1 message queued for delivery.', 'There are @count messages queued for delivery.', array('@count' => $count))
+          . ' '
+          . t('Delivery of the message(s) will be attempted the next time cron runs.');
+      }
+      else {
+        $requirements['smtp_queue']['value'] = t('There are no messages queued for delivery.');
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+ function smtp_install() {
+   variable_set('smtp_on', 0);
+ }
+
+/**
+ * Implements hook_uninstall().
+ */
+function smtp_uninstall() {
+  variable_del('smtp_allowhtml');
+  variable_del('smtp_from');
+  variable_del('smtp_fromname');
+  variable_del('smtp_host');
+  variable_del('smtp_hostbackup');
+  variable_del('smtp_on');
+  variable_del('smtp_password');
+  variable_del('smtp_port');
+  variable_del('smtp_protocol');
+  variable_del('smtp_queue');
+  variable_del('smtp_queue_fail');
+  variable_del('smtp_username');
+  variable_del('smtp_debugging');
+  variable_del('smtp_client_hostname');
+  variable_del('smtp_client_helo');
+  variable_del('smtp_deliver');
+  variable_del('smtp_reroute_address');
+}
+
+/**
+ * Implements hook_disable().
+ */
+function smtp_disable() {
+  $mail_modes = variable_get('mail_system');
+  $mail_modes['default-system'] = 'DefaultMailSystem';
+  variable_set('mail_system', $mail_modes);
+}
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Upgrade to Drupal 7.x
+ */
+function smtp_update_7000() {
+  if (variable_get('smtp_on', 0) != 0) {
+    variable_set('mail_system', array('default-system' => 'SmtpMailSystem'));
+  }
+  // Not used any more in D7.
+  variable_del('smtp_library');
+}
+
+/**
+ * Back to default mail system if the status flag is off.
+ */
+function smtp_update_7100() {
+  $mail_modes = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  if ($mail_modes['default-system'] == 'SmtpMailSystem' && !variable_get('smtp_on', FALSE)) {
+    $mail_modes['default-system'] = 'DefaultMailSystem';
+    variable_set('mail_system', $mail_modes);
+  }
+}
+
+/**
+ * Updating variable value now that new SMTP logging behavior has been
+ * implemented.
+ */
+function smtp_update_7101() {
+  $old_debugging_value = variable_get('smtp_debugging', 0);
+
+  $logging = SMTP_LOGGING_NONE;
+
+  if ($old_debugging_value == 1) {
+    $logging = SMTP_LOGGING_ERRORS;
+  }
+
+  variable_set('smtp_debugging', $logging);
+}
+
+/**
+ * Remove the unused 'smtp_library' variable.
+ */
+function smtp_update_7102() {
+  variable_del('smtp_library');
+}
+
+/**
+ * Delete the variable "smtp_test_address". It is unlikely that this would
+ * actually be set in the normal course of events, and it's no longer needed as
+ * it was replaced with a form submit handler.
+ */
+function smtp_update_7103() {
+  variable_del('smtp_test_address');
+}

@@ -19,3 +19,20 @@ function cu_people_administration_override_menu_alter(&$items) {
   $items['admin/people/create']['page callback'] = 'user_admin';
   $items['admin/people/create']['file'] = 'user.admin.inc';
 }
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function cu_people_administration_override_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_people_administration_override');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'view', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('view');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}

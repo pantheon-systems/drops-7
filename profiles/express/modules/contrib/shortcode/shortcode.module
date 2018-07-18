@@ -87,7 +87,7 @@ function _shortcode_filter_tips($filter, $format, $long = FALSE) {
   $out = NULL;
   $shortcodes = shortcode_list_all_enabled($format);
   if (!empty($shortcodes)) {
-    $tips = [];
+    $tips = array();
     foreach ($filter->settings as $name => $enabled) {
       $callable_name = '';
       if ($enabled && !empty($shortcodes[$name]['tips callback']) && is_callable($shortcodes[$name]['tips callback'], FALSE, $callable_name)) {

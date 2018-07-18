@@ -1,0 +1,24 @@
+#!/bin/bash
+
+drush --always-set vset devel_old_smtp_library "foo/bar"; 
+drush --always-set vset smtp_library "foo/bar"; 
+drush vget smtp_library
+echo -e "\n\t\tUninstall with variables set to 'foo/bar':\n"
+echo y | drush dis maillog
+echo y | drush pm-uninstall maillog
+echo -e "\n\t\t Show variables:\n"
+drush vget smtp_library
+echo y | drush en maillog
+echo -e "\n\t\t Show variables after installation:\n"
+drush vget smtp_library
+drush --always-set vset devel_old_smtp_library "sites/all/modules/maillog/includes/maillog.inc"; 
+drush vget smtp_library
+echo -e "\n\t\tUninstall with variables set to 'sites/all/modules/maillog/includes/maillog.inc:\n"
+echo y | drush dis maillog
+echo y | drush pm-uninstall maillog
+echo -e "\n\t\t Show variables:\n"
+drush vget smtp_library
+echo y | drush en maillog
+echo -e "\n\t\t Show variables after installation:\n"
+drush vget smtp_library
+

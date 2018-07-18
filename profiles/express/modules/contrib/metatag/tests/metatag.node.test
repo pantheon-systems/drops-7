@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module and node entities.
+ */
+
+/**
  * Tests for the Metatag module and node entities.
  */
 class MetatagCoreNodeTest extends MetatagTestHelper {
@@ -49,7 +54,6 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $this->drupalLogin($this->adminUser);
 
     // Assign default values for the new content type.
-
     // Load the "add default configuration" page.
     $this->drupalGet('admin/config/search/metatags/config/add');
     $this->assertResponse(200);
@@ -79,7 +83,6 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
 
     // Create a test node.
-
     // Load the node form.
     $this->drupalGet('node/add/' . $content_type_path);
     $this->assertResponse(200);
@@ -89,9 +92,12 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $this->assertText(strip_tags(t('Create @name', array('@name' => $label))));
 
     // Verify that it's possible to submit values to the form.
+    module_load_include('inc', 'devel_generate');
+    $body = devel_create_para(200);
     $this->drupalPost(NULL, array(
       'metatags[und][abstract][value]' => '[node:title] ponies',
       'title' => 'Who likes magic',
+      'body[und][0][value]' => $body,
     ), t('Save'));
     $this->assertResponse(200);
 
@@ -151,6 +157,23 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     $this->assertEqual(count($xpath), 1, 'Exactly one abstract meta tag found.');
     $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
 
+    // Verify the node summary is being used correctly.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1);
+    $this->assertEqual($xpath[0]['content'], DrupalDefaultMetaTag::text_summary($body, 380));
+
+    // Verify the maxlength functionality is working correctly.
+    $maxlength = 10;
+    variable_set('metatag_maxlength_description', $maxlength);
+    metatag_config_cache_clear();
+    $this->drupalGet('node/' . $nid);
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1);
+    $this->assertEqual($xpath[0]['content'], trim(substr($xpath[0]['content'], 0, $maxlength)));
+    // Delete the variable so it goes back to the default.
+    variable_del('metatag_maxlength_description');
+    metatag_config_cache_clear();
+
     // Core's canonical tag is a relative URL, whereas Metatag outputs an
     // absolute URL.
     $old_canonical = url('node/' . $node->nid);
@@ -187,7 +210,7 @@ class MetatagCoreNodeTest extends MetatagTestHelper {
     // Verify the page submission loaded correctly.
     $this->assertResponse(200);
 
-    // A new version of the expected results
+    // A new version of the expected results.
     $expected_updated = array(
       'und' => array(
         'abstract' => array(

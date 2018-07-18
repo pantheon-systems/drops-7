@@ -1,0 +1,112 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the cu_behat_tests module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function cu_behat_tests_install() {
+
+  // Add test users.
+  _cu_behat_tests_add_users();
+
+  // Change LDAP config.
+
+  // @todo Actually add test content.
+  // Add testing content.
+  // _cu_behat_tests_add_content();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function cu_behat_tests_uninstall() {
+  // @todo This probably won't work here...
+  // Delete created users.
+  // Since they all have the same email, we can load them by that parameter.
+  $uids = db_query("SELECT uid FROM {users} WHERE mail = 'noreply@nowhere.com'")->fetchCol();
+  user_delete_multiple($uids);
+}
+
+/**
+ * Creates users needed for test runs.
+ */
+function _cu_behat_tests_add_users() {
+
+  // List needed users.
+  $users = array(
+    'developer',
+    'administrator',
+    'content_editor',
+    'site_owner',
+    'edit_my_content',
+    'authenticated user',
+  );
+
+  // Create users.
+  foreach ($users as $user_name) {
+    // For some reason, I ran into the issue where the same user was created multiple times.
+    // If user exists, skip creation.
+    if (user_load_by_name($user_name)) {
+      continue;
+    }
+
+    // Get role ID.
+    $role = user_role_load_by_name($user_name);
+    $new_user = array(
+      'name' => $user_name,
+      'pass' => $user_name,
+      'mail' => 'noreply@nowhere.com',
+      'status' => 1,
+      'init' => 'noreply@nowhere.com',
+      'roles' => array(
+        DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+        $role->rid => $user_name,
+      ),
+    );
+
+    // The first parameter is sent blank so a new user is created.
+    user_save('', $new_user);
+  }
+}
+
+/**
+ * Adds fixture data for test runs.
+ */
+function _cu_behat_tests_add_content() {
+  // I create a "photo_gallery" node with the title "New Gallery".
+
+  // I create a "facebook_like_button" block with the label "Facebook Like Block".
+
+  // I create a "facebook_activity" block with the label "Facebook Activity Block".
+
+  // I create a "twitter_block" block with the label "Twitter Block".
+
+  // I create a "social_links" block with the label "Social Links Block".
+
+  // Create Node.
+  /* $node = new stdClass();
+  $node->title = $title;
+  $node->type = $content_type;
+  node_object_prepare($node);
+  node_save($node);
+
+  // Go to node page.
+  // Using vistPath() instead of visit() method since it adds base URL to relative path.
+  $this->visitPath('node/' . $node->nid);
+
+  // Create Block.
+  $values = array(
+  'label' => $label,
+  'type'  => $bean_type,
+  );
+  $entity = entity_create('bean', $values);
+  $saved_entity = entity_save('bean', $entity);
+
+  // Go to bean page.
+  // Using vistPath() instead of visit() method since it adds base URL to relative path.
+  $this->visitPath('block/' . $entity->delta);*/
+}

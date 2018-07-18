@@ -68,8 +68,8 @@ function honeypot_uninstall() {
     }
   }
 
-  // Delete 'honeypot' directory from public file directory.
-  file_unmanaged_delete_recursive('public://honeypot');
+  // Delete 'honeypot' directory from files directory.
+  file_unmanaged_delete_recursive(file_default_scheme() . '://honeypot');
 }
 
 /**

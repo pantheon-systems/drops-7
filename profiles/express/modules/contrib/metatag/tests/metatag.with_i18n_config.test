@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for Metatag's i18n integration for the configurations.
+ */
+
+/**
  * Tests for Metatag's i18n integration for the configurations.
  */
 class MetatagCoreWithI18nConfigTest extends MetatagTestHelper {
@@ -59,7 +64,7 @@ class MetatagCoreWithI18nConfigTest extends MetatagTestHelper {
    */
   public function testI18nDefaultConfig() {
     // Plan out the different translation string tests.
-    $string_en = 'Drupal 7 (http://drupal.org)';
+    $string_en = 'Drupal 7 (https://www.drupal.org)';
     $string_fr = 'French Drupal';
     $config_name = 'metatag_config:global:generator';
 

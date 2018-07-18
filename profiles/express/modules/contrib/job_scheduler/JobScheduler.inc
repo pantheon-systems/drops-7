@@ -16,6 +16,8 @@ class JobSchedulerException extends Exception {}
 class JobScheduler {
   /**
    * The name of this scheduler.
+   *
+   * @var string
    */
   protected $name;
 
@@ -58,12 +60,16 @@ class JobScheduler {
    *
    * A job is uniquely identified by $job = array(type, id).
    *
-   * @param $job
+   * @param array $job
    *   An array that must contain the following keys:
    *   'type'     - A string identifier of the type of job.
    *   'id'       - A numeric identifier of the job.
-   *   'period'   - The time when the task should be executed.
    *   'periodic' - True if the task should be repeated periodically.
+   *
+   *   The array must also contain one of the following keys:
+   *   'period'  - The time when the task should be executed.
+   *   'crontab' - A crontab entry which describes the times a task should be
+   *               executed.
    *
    * @code
    * function worker_callback($job) {
@@ -74,8 +80,11 @@ class JobScheduler {
    *   $scheduler->set($job);
    * }
    * @endcode
+   *
+   * @codingStandardsIgnoreStart
    */
   public function set($job) {
+    // @codingStandardsIgnoreEnd
     $job['name'] = $this->name;
     $job['last'] = REQUEST_TIME;
     if (!empty($job['crontab'])) {
@@ -130,13 +139,16 @@ class JobScheduler {
    * Executes a worker callback or if schedule declares a queue name, queues a
    * job for execution.
    *
-   * @param $job
+   * @param array $job
    *   A $job array as passed into set() or read from job_schedule table.
    *
    * @throws Exception
    *   Exceptions thrown by code called by this method are passed on.
+   *
+   * @codingStandardsIgnoreStart
    */
   public function dispatch($job) {
+    // @codingStandardsIgnoreEnd
     $info = $this->info();
     if (!$job['periodic']) {
       $this->remove($job);
@@ -152,20 +164,27 @@ class JobScheduler {
   }
 
   /**
-   * Executes a job that
+   * Executes a job that.
    *
-   * @param $job
+   * @param array $job
    *   A $job array as passed into set() or read from job_schedule table.
    *
    * @throws Exception
    *   Exceptions thrown by code called by this method are passed on.
+   *
+   * @codingStandardsIgnoreStart
    */
   public function execute($job) {
+    // @codingStandardsIgnoreEnd
     $info = $this->info();
-    // If the job is periodic, re-schedule it before calling the worker, just in case
+    // If the job is periodic, re-schedule it before calling the worker, just in
+    // case.
     if ($job['periodic']) {
       $job['last'] = REQUEST_TIME;
       $this->reschedule($job);
+    }
+    if (!empty($info['file']) && file_exists($info['file'])) {
+      include_once $info['file'];
     }
     if (function_exists($info['worker callback'])) {
       call_user_func($info['worker callback'], $job);
@@ -178,7 +197,7 @@ class JobScheduler {
   }
 
   /**
-   * Re-schedule a job if intended to run again
+   * Re-schedule a job if intended to run again.
    *
    * (If cannot determine the next time, drop the job)
    */
@@ -196,13 +215,13 @@ class JobScheduler {
       drupal_write_record('job_schedule', $job, array('item_id'));
     }
     else {
-      // If no next time, it may mean it wont run again the next year (crontab)
+      // If no next time, it may mean it won't run again the next year (crontab)
       $this->remove($job);
     }
   }
 
   /**
-   * Check whether a job exists in the queue and update its parameters if so
+   * Check whether a job exists in the queue and update its parameters if so.
    */
   public function check($job) {
     $job += array('id' => 0, 'period' => 0, 'crontab' => '');
@@ -213,7 +232,8 @@ class JobScheduler {
       ->condition('id', $job['id'])
       ->execute()
       ->fetchAssoc();
-    // If existing, and changed period or crontab, we need to reschedule the job
+    // If existing, and changed period or crontab, we need to reschedule the
+    // job.
     if ($existing) {
       if ($job['period'] != $existing['period'] || $job['crontab'] != $existing['crontab']) {
         $existing['period'] = $job['period'];
@@ -223,4 +243,5 @@ class JobScheduler {
       return $existing;
     }
   }
+
 }

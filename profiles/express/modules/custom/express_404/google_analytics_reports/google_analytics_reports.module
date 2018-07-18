@@ -1,0 +1,329 @@
+<?php
+
+/**
+ * @file
+ * Front-end interfaces that use the Google Analytics Reports API module.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function google_analytics_reports_permission() {
+  return array(
+    'access google analytics reports' => array(
+      'title' => t('access google analytics reports'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function google_analytics_reports_views_api() {
+  return array(
+    'api' => 3.0,
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function google_analytics_reports_ctools_plugin_directory($owner, $plugin_type) {
+  if (($owner == 'views_ui') && ($plugin_type == 'views_wizard')) {
+    return 'plugins/views_wizard';
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Adds module settings to Google Analytics Reports API admin page.
+ */
+function google_analytics_reports_form_google_analytics_reports_api_admin_alter(&$form, &$form_state, $form_id) {
+  $account = google_analytics_reports_api_gafeed();
+  if (($account) && ($account->isAuthenticated())) {
+    $last_time = variable_get('google_analytics_reports_metadata_last_time');
+    $collapsed = ($last_time) ? TRUE : FALSE;
+    $form['fields'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Import and update fields'),
+      '#collapsible' => TRUE,
+      '#collapsed' => $collapsed,
+    );
+    if ($last_time) {
+      $form['fields']['last_time'] = array(
+        '#type' => 'item',
+        '#title' => t('Google Analytics fields for Views integration'),
+        '#description' => t('Last import was @time.',
+          array(
+            '@time' => format_date(variable_get('google_analytics_reports_metadata_last_time'), 'custom', 'd F Y H:i'))),
+      );
+    }
+    if (variable_get('google_analytics_reports_metadata_last_time')) {
+      $form['fields']['update'] = array(
+        '#type' => 'submit',
+        '#value' => t('Check updates'),
+        '#submit' => array('google_analytics_reports_admin_update_check'),
+      );
+    }
+    $form['fields']['settings'] = array(
+      '#type' => 'submit',
+      '#value' => t('Import fields'),
+      '#submit' => array('google_analytics_reports_fields_import'),
+    );
+
+  }
+}
+
+/**
+ * Import Google Analytics fields to database using Metadata API.
+ *
+ * @see https://developers.google.com/analytics/devguides/reporting/metadata/v3/
+ */
+function google_analytics_reports_fields_import() {
+  $response = drupal_http_request('https://www.googleapis.com/analytics/v3/metadata/ga/columns');
+  if ($response->code == '200') {
+    // Remove old fields and clear cache.
+    if (db_table_exists('google_analytics_reports_fields')) {
+      db_truncate('google_analytics_reports_fields')->execute();
+    }
+    cache_clear_all('google_analytics_reports_fields', 'cache');
+
+    $data = drupal_json_decode($response->data);
+    // Save current time as last executed time.
+    variable_set('google_analytics_reports_metadata_last_time', time());
+    // Save etag identifier. It is used to check updates for the fields.
+    // @see https://developers.google.com/analytics/devguides/reporting/metadata/v3/devguide#etag
+    if (!empty($data['etag'])) {
+      variable_set('google_analytics_reports_metadata_etag', $data['etag']);
+    }
+    if (!empty($data['items'])) {
+      $operations = array();
+      foreach ($data['items'] as $item) {
+        // Do not import deprecated fields.
+        if ($item['attributes']['status'] == 'PUBLIC') {
+          $operations[] = array(
+            'google_analytics_reports_fields_save',
+            array($item),
+          );
+        }
+      }
+      $batch = array(
+        'operations' => $operations,
+        'title' => t('Importing Google Analytics fields'),
+        'finished' => 'google_analytics_reports_import_fields_finished',
+      );
+      batch_set($batch);
+    }
+  }
+  else {
+    drupal_set_message(t('There is a error during request to Google Analytics Metadata API: @error', array('@error' => $response->error)), 'error');
+  }
+}
+
+/**
+ * Save Google Analytics fields from Metadata API to database.
+ */
+function google_analytics_reports_fields_save($field, &$context) {
+  $attributes = &$field['attributes'];
+  $field['id'] = str_replace('ga:', '', $field['id']);
+  $attributes['type'] = strtolower($attributes['type']);
+  $attributes['dataType'] = strtolower($attributes['dataType']);
+  $attributes['status'] = strtolower($attributes['status']);
+  $attributes['description'] = isset($attributes['description']) ? $attributes['description'] : '';
+  $attributes['calculation'] = isset($attributes['calculation']) ? $attributes['calculation'] : NULL;
+
+  // Allow other modules to alter Google Analytics fields before saving
+  // in database.
+  drupal_alter('google_analytics_reports_field_import', $field);
+
+  db_insert('google_analytics_reports_fields')
+    ->fields(array(
+      'gaid' => $field['id'],
+      'type' => $attributes['type'],
+      'data_type' => $attributes['dataType'],
+      'column_group' => $attributes['group'],
+      'ui_name' => $attributes['uiName'],
+      'description' => $attributes['description'],
+      'calculation' => $attributes['calculation'],
+    ))
+    ->execute();
+  $context['results'][] = $field['id'];
+}
+
+/**
+ * Implements hook_google_analytics_reports_field_import_alter().
+ */
+function google_analytics_reports_google_analytics_reports_field_import_alter(&$field) {
+  // Change data type for Date field.
+  if ($field['id'] == 'date') {
+    $field['attributes']['dataType'] = 'date';
+  }
+}
+
+/**
+ * Implements hook_google_analytics_reports_api_reported_data_alter().
+ */
+function google_analytics_reports_google_analytics_reports_api_reported_data_alter(&$name, &$value) {
+  // Get all Google Analytics fields.
+  $fields = google_analytics_reports_get_fields();
+
+  // Date and time datatypes should not have the digits after the zero.
+  if ((isset($fields[$name])) && (in_array($fields[$name]->data_type, array('date', 'time')))) {
+    $value = round($value);
+  }
+
+  switch ($name) {
+    case 'userType':
+      $value = ($value == 'New Visitor') ? t('New Visitor') : t('Returning Visitor');
+      break;
+
+    case 'date':
+      $value = strtotime($value);
+      break;
+
+    case 'yearMonth':
+      $value = strtotime($value . '01');
+      break;
+
+    case 'userGender':
+      $value = ($value == 'male') ? t('Male') : t('Female');
+      break;
+  }
+}
+
+/**
+ * Display messages after importing Google Analytics fields.
+ */
+function google_analytics_reports_import_fields_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(t('Imported @count Google Analytics fields.', array('@count' => count($results))));
+    // Menu links in module's views are not shown by default.
+    menu_rebuild();
+    // Clear cache because it may be empty during module installing.
+    cache_clear_all('google_analytics_reports_fields', 'cache');
+    // Update views data.
+    module_load_include('inc', 'views', 'includes/cache');
+    _views_fetch_data_build();
+  }
+  else {
+    drupal_set_message(t('An error has occurred during importing Google Analytics fields.'), 'error');
+  }
+}
+
+/**
+ * Check updates for new Google Analytics fields.
+ *
+ * @see https://developers.google.com/analytics/devguides/reporting/metadata/v3/devguide#etag
+ */
+function google_analytics_reports_admin_update_check(&$form, &$form_state) {
+  $etag_old = variable_get('google_analytics_reports_metadata_etag');
+  $response = drupal_http_request('https://www.googleapis.com/analytics/v3/metadata/ga/columns?fields=etag');
+  if ($response->code == '200') {
+    $data = drupal_json_decode($response->data);
+    if ($etag_old == $data['etag']) {
+      drupal_set_message(t('All Google Analytics fields is up to date.'));
+    }
+    else {
+      drupal_set_message(t('New Google Analytics fields has been found. Press "Import fields" button to update Google Analytics fields.'));
+    }
+  }
+  else {
+    drupal_set_message(t('An error has occurred: @error.', array('@error' => $response->error)), 'error');
+  }
+}
+
+/**
+ * List of Google Analytics dimensions and metrics.
+ *
+ * @return array
+ *   An associative array containing list of Google Analytics column objects.
+ *  Each object is associative array containing:
+ *   - gid: The primary identifier for a column.
+ *   - type: The type of column.
+ *   - data_type: The type of data this column represents.
+ *   - column_group: The dimensions/metrics group the column belongs to.
+ *   - ui_name: The name/label of the column used in user interfaces (UI).
+ *   - description: The full description of the column.
+ *   - calculation: This shows how the metric is calculated.
+ */
+function google_analytics_reports_get_fields() {
+  $fields = &drupal_static(__FUNCTION__);
+  if (!isset($fields)) {
+    if ($cache = cache_get('google_analytics_reports_fields')) {
+      $fields = $cache->data;
+    }
+    else {
+      $fields = db_select('google_analytics_reports_fields', 'g')
+        ->fields('g')
+        ->execute()
+        ->fetchAllAssoc('gaid');
+      cache_set('google_analytics_reports_fields', $fields, 'cache');
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Determines if a field is custom or not.
+ */
+function google_analytics_reports_is_custom($field) {
+  return preg_match('/XX/', $field) ? TRUE : FALSE;
+}
+
+/**
+ * Converts a base custom field name and number into a specific field name.
+ */
+function google_analytics_reports_custom_to_variable_field($field, $number) {
+  return preg_replace('/XX/', $number, $field);
+}
+
+/**
+ * Converts a specific field name into a base custom field name.
+ */
+function google_analytics_reports_variable_to_custom_field($field) {
+  return preg_replace('/\d+/', 'XX', $field);
+}
+
+/**
+ * Adds custom CSS style for Google Analytics Reports views pages.
+ */
+function google_analytics_reports_preprocess_views_view(&$vars) {
+  $view = &$vars['view'];
+  if (($view->name == 'google_analytics_reports_summary' && $view->current_display == 'page') ||
+    ($view->name == 'google_analytics_reports_page' && $view->current_display == 'page') ||
+    ($view->name == 'google_analytics_reports_page' && $view->current_display == 'page_front')) {
+    $css['#attached']['css'][] = drupal_get_path('module', 'google_analytics_reports') . '/google_analytics_reports.css';
+    drupal_render($css);
+  }
+}
+
+/**
+ * Implements hook_views_pre_build().
+ */
+function google_analytics_reports_views_pre_build(&$view) {
+  if ($view->name == 'google_analytics_reports_page' && $view->current_display == 'page') {
+    // Find page path for Google Analytics.
+    if (!empty($view->display_handler->options['path'])) {
+      // Decode current page url, that might appear due to browsers
+      // particularities.
+      $current_url = check_plain(urldecode(request_uri()));
+      // Return front page path ("/") if it is preview in Views UI.
+      if ($current_url == '/admin/structure/views/view/google_analytics_reports_page/preview/page/ajax') {
+        $view->args[0] = '/';
+        return;
+      }
+      // Menu path for current view without "%" at the end.
+      $menu_path = $view->display_handler->options['path'];
+      $menu_path = str_replace('%', '', $menu_path);
+      // Real url for Google Analytics.
+      $ga_url = str_replace($menu_path, '', $current_url);
+      // Remove old view arguments.
+      foreach ($view->args as $numb => $value) {
+        unset($view->args[$numb]);
+      }
+      // Set up real Google Analytics path as view argument.
+      $view->args[0] = $ga_url;
+    }
+  }
+}

@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * metatag_views_tests.views_default.inc
+ * Views defaults hook implementations.
  */
 
 /**

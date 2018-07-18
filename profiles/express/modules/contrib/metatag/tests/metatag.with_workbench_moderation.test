@@ -1,9 +1,13 @@
 <?php
+
 /**
  * @file
  * Tests for the Metatag module for Workbench Moderation integration.
  */
 
+/**
+ * Tests for the Metatag module for Workbench Moderation integration.
+ */
 class MetatagCoreWithWorkbenchModerationTest extends MetatagTestHelper {
 
   /**

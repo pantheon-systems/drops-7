@@ -1,12 +1,22 @@
 <?php
+
 /**
  * @file
- * Installation and update scripts for metatag_dc_advanced.
+ * Installation and update scripts for metatag_dc.
  */
 
 /**
  * The Dublic Core Additional Tags meta tags are now in a new submodule.
  */
 function metatag_dc_update_7100() {
-  drupal_set_message(t('The Dublic Core Additional Tags meta tags have been moved into the new "Metatag: Dublin Core Advanced" submodule.'));
+  drupal_set_message(t('The Dublin Core Additional Tags meta tags have been moved into the new "Metatag: Dublin Core Advanced" submodule.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_dc_uninstall() {
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_dcterms.subject');
+  variable_del('metatag_maxlength_dcterms.description');
 }

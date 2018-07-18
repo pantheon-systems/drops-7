@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Various update scripts for Metatag: Google Plus.
@@ -21,4 +22,12 @@ function metatag_google_plus_install() {
  */
 function metatag_google_plus_update_7100() {
   drupal_set_message(t("Note that the template's html.tpl.php must be updated in order for the Metatag: Google+ module to work correctly. Please see its README.txt file for details."));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_google_plus_uninstall() {
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_itemprop:description');
 }

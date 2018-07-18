@@ -1,8 +1,12 @@
 <?php
 
 /**
- * Tests for the Metatag module for Views integration, outside of
- * Metatag:Views.
+ * @file
+ * Tests for the Views integration, outside of Metatag:Views.
+ */
+
+/**
+ * Tests for the Views integration, outside of Metatag:Views.
  */
 class MetatagCoreWithViewsTest extends MetatagTestHelper {
 
@@ -92,7 +96,6 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
     $this->assertEqual($this->getUrl(), url('admin/config/search/metatags', array('absolute' => TRUE)));
 
     // Create a test term.
-
     // Load the term form.
     $this->drupalGet('admin/structure/taxonomy/' . $vocabulary->machine_name . '/add');
     $this->assertResponse(200);
@@ -100,7 +103,6 @@ class MetatagCoreWithViewsTest extends MetatagTestHelper {
     // Verify the page loaded correctly.
     // @todo Update this to extract the H1 tag.
     // $this->assertText(strip_tags(t('Create @name', array('@name' => $vocabulary->name))));
-
     // Verify that it's possible to submit values to the form.
     $this->drupalPost(NULL, array(
       'metatags[und][abstract][value]' => '[term:name] ponies',

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for hreflang handle when Entity Translation is used.
+ */
+
+/**
  * Tests for hreflang handle when Entity Translation is used.
  */
 class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
@@ -236,12 +241,12 @@ class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
       // The node's default language should not have been found, it should have
       // been turned into an xdefault.
       if ($langcode == $node->language) {
-        $this->assertFalse((bool)$found, format_string("A regular hreflang meta tag for the node's default language (%lang) was not found.", array('%lang' => $langcode)));
+        $this->assertFalse((bool) $found, format_string("A regular hreflang meta tag for the node's default language (%lang) was not found.", array('%lang' => $langcode)));
       }
 
       // Translations should have been found.
       else {
-        $this->assertTrue((bool)$found, format_string('The hreflang meta tag for %lang was found.', array('%lang' => $langcode)));
+        $this->assertTrue((bool) $found, format_string('The hreflang meta tag for %lang was found.', array('%lang' => $langcode)));
       }
     }
 
@@ -269,7 +274,7 @@ class MetatagHreflangWithEntityTranslationTest extends MetatagTestHelper {
         $found = $ctr;
       }
     }
-    $this->assertTrue((bool)$found, "Found an hreflang meta tag for the node's default locale.");
+    $this->assertTrue((bool) $found, "Found an hreflang meta tag for the node's default locale.");
     if ($found) {
       $this->assertEqual($xpath[$found]['hreflang'], $node->language);
     }

@@ -50,6 +50,11 @@ function cu_hero_unit_preprocess_entity(&$vars) {
       $image = render($vars['content']['field_hero_unit_image']);
       $vars['image'] = trim(preg_replace('/\s+/', ' ', $image));
 
+      // Render image for xlarge displays
+      $vars['content']['field_hero_unit_image'][0]['#image_style'] = 'xlarge';
+      $image_xlarge = render($vars['content']['field_hero_unit_image']);
+      $vars['image_xlarge'] = trim(preg_replace('/\s+/', ' ', $image_xlarge));
+
       // Render image for large displays
       $vars['content']['field_hero_unit_image'][0]['#image_style'] = 'hero';
       $image_large = render($vars['content']['field_hero_unit_image']);

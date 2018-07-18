@@ -116,8 +116,8 @@ function cu_image_styles_image_default_styles() {
         'module' => 'focal_point',
         'name' => 'focal_point_scale_and_crop',
         'data' => array(
-          'width' => 800,
-          'height' => 450,
+          'width' => 1600,
+          'height' => 900,
           'upscale' => 1,
         ),
         'weight' => 2,
@@ -399,6 +399,31 @@ function cu_image_styles_image_default_styles() {
         'weight' => 1,
       ),
     ),
+  );
+
+  // Exported image style: xlarge.
+  $styles['xlarge'] = array(
+    'name' => 'xlarge',
+    'label' => 'xlarge',
+    'effects' => array(
+      5 => array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 2000,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      ),
+    ),
+    'label' => 'xlarge',
   );
 
   return $styles;

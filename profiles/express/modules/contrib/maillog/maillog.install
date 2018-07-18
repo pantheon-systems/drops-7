@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Provides the installation routines for the maillog module
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function maillog_enable() {
+  $mail_system = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  $mail_system['maillog'] = 'MaillogMailSystem';
+  $mail_system['default-system'] = $mail_system['maillog'];
+  variable_set('mail_system', $mail_system);
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Removing smtp_libraries settings.
+ *
+ * If the smptp_library variable refers to the maillog_smtp_library the variable will be resetted. It does not make sense to backup the smtp_library
+ * when enabling the maillog module, because before restoring when the maillog module gets disabled another module could changed the smtp variable.
+ */
+function maillog_disable() {
+  $mail_system = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  unset($mail_system['maillog']);
+  $mail_system['default-system'] = 'DefaultMailSystem';
+  variable_set('mail_system', $mail_system);
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function maillog_schema() {
+  $schema['maillog'] = array(
+    'description' => t("Stores outgoing e-mail details for nodes of type 'maillog'."),
+    'fields' => array(
+      'idmaillog' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The mail_log {node}.nid"),
+      ),
+      'header_message_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'message-id' field of the e-mail."),
+      ),
+      'header_from' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t("The 'From' field of the e-mail."),
+      ),
+      'header_to' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t("The 'To' field of the e-mail."),
+      ),
+      'header_reply_to' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t("The 'Reply-To' field of the e-mail."),
+      ),
+      'header_all' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t("The 'Header' field of the e-mail."),
+      ),
+      'subject' => array(
+        'description' => t("The 'Subject' fieldof the e-mail."),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'body' => array(
+        'description' => 'The body of this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big'
+      ),
+      'sent_date' => array(
+        'description' => 'The Unix timestamp when the mail was sent.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('idmaillog'),
+  );
+
+  return $schema;
+}

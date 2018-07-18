@@ -304,13 +304,37 @@ ul.field-name-field-person-website li {
   padding:0;
   overflow: hidden;
 }
-ul.field-name-field-person-website li:before {
-  content: '\f14c ';
-  font-family: 'FontAwesome';
-  float: left;
-  color:#aaa;
-  margin-right: 5px;
-  text-align: center;
+ul.field-name-field-person-website li a {
+  &:before {
+    content: '\f14c ';
+    font-family: 'FontAwesome';
+    float: left;
+    color:#aaa;
+    margin-right: 5px;
+    text-align: center;
+    width: 1.28571429em;
+  }
+
+  &[href*="facebook.com"]:before {
+    content: '\f230';
+  }
+  &[href*="linkedin.com"]:before {
+    content: '\f08c';
+  }
+  &[href*="twitter.com"]:before {
+    content: '\f099';
+  }
+  &[href*="youtube.com"]:before {
+    content: '\f167';
+  }
+  &[href*=".jpg"]:before,
+  &[href*=".png"]:before,
+  &[href*=".gif"]:before {
+    content: '\f03e';
+  }
+  &[href*="fileicon=pdf"]:before {
+    content: '\f1c1';
+  }
 }
 .person-view-mode-teaser-contact,
 .person-view-mode-embed-contact {
@@ -347,7 +371,13 @@ td.person-table-contact .fa {
   }
 }
 
-
+.people-list-wrapper-grid {
+  margin: 0 -20px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+/*
 .grid-person {
   width: 30.66%;
   float:left;
@@ -360,12 +390,31 @@ td.person-table-contact .fa {
 .people-grid-last {
   margin-right:0;
 }
+*/
+.grid-person {
+  margin-bottom: 40px;
+  @media screen and (max-width:767px) {
+    & {
+      margin-bottom: 20px;
+    }
+  }
+  .person-grid-content-wrapper {
+    overflow: hidden;
+  }
+}
 .grid-person img.image-large_square_thumbnail {
   margin-bottom: 10px;
   width:100%;
   height: auto;
   float:none;
   display: block;
+  @media screen and (max-width:767px) {
+    & {
+      float:left;
+      margin:0 10px 10px 0;
+      max-width:75px;
+    }
+  }
 }
 .person-view-mode-grid-content {
 }

@@ -1,9 +1,15 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag OpenGraph Products module.
+ */
+
+/**
  * Tests for the Metatag OpenGraph Products module.
  */
 class MetatagOpenGraphProductsTest extends MetatagTestHelper {
+
   /**
    * {@inheritdoc}
    */

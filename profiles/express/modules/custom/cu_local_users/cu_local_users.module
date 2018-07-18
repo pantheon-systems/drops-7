@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Contains hooks for cu_local_users module.
+ */
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Mirrors changes cu_ldap makes without the overhead of LDAP.
+ */
+function cu_local_users_form_user_login_alter(&$form, &$form_state) {
+  $form['name']['#title'] = t('CU Login Name');
+  $form['name']['#description'] = '';
+  $form['pass']['#title'] = t('IdentiKey Password');
+  $form['pass']['#description'] = '';
+}
+
+/**
+ * Implements hook_help().
+ */
+function cu_local_users_help($path, $arg) {
+  switch ($path) {
+    case 'admin/people/invite':
+      return '<p>' . t("Any CU-Boulder employee, student, or sponsored vendor with an IdentiKey can be granted access to the website administration area. To add new users, select a role and add the users' colorado.edu email address. You can send multiple invites by separating email addresses with a comma (i.e. jane.doe@colorado.edu, joe.smith@colorado.edu). Once submitted an email will be sent inviting the users.") .
+        '</p><p>' . t("<strong>Site Owner:</strong> Main authority/contact for the website. All site access permissions. Limited to 3 people. Held responsible for the website adhering to university policies.") .
+        '</p><p>' . t("<strong>Site Editor:</strong> Main site builder. Full access to website content and layout tools. Trusted user responsible for the day-to-day maintenance and building of the website. Can receive elevated add-on roles.") .
+        '</p><p>' . t("<strong>Content Editor:</strong> Edit only access. A basic role limited to content edits/updates for existing content. Can’t delete or add content, blocks or layouts.") .
+        '</p><p>' . t('<strong>Edit My Content:</strong> Page specific access. A basic role limited to content edits/updates for specific pages. Can receive limited add-on roles.') .
+        '</p><br/>';
+  }
+}

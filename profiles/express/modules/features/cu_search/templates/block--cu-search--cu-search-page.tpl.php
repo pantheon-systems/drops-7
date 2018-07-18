@@ -12,7 +12,7 @@
     $query = check_plain($_GET['cse']);
   }
 ?>
-  <div class="cu-search-box cu-search-box-big">
+  <div class="cu-search-box cu-search-box-big" role="search">
     <h2 class="element-invisible"><?php print t('Search'); ?></h2>
     <form class="cu-search-form" action="<?php print $active_configs['action']; ?>" method="get">
       <div class="search-form-wrapper">

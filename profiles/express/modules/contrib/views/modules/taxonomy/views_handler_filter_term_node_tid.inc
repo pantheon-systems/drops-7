@@ -11,10 +11,16 @@
  * @ingroup views_filter_handlers
  */
 class views_handler_filter_term_node_tid extends views_handler_filter_many_to_one {
-  // Stores the exposed input for this filter.
-  var $validated_exposed_input = NULL;
 
-  function init(&$view, &$options) {
+  /**
+   * Stores the exposed input for this filter.
+   */
+  public $validated_exposed_input = NULL;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function init(&$view, &$options) {
     parent::init($view, $options);
     if (!empty($this->definition['vocabulary'])) {
       $this->options['vocabulary'] = $this->definition['vocabulary'];
@@ -30,11 +36,24 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     }
   }
 
-  function has_extra_options() { return TRUE; }
+  /**
+   * {@inheritdoc}
+   */
+  public function has_extra_options() {
+    return TRUE;
+  }
 
-  function get_value_options() { /* don't overwrite the value options */ }
+  /**
+   * {@inheritdoc}
+   */
+  public function get_value_options() {
+    // Don't overwrite the value options.
+  }
 
-  function option_definition() {
+  /**
+   * {@inheritdoc}
+   */
+  public function option_definition() {
     $options = parent::option_definition();
 
     $options['type'] = array('default' => 'textfield');
@@ -46,7 +65,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     return $options;
   }
 
-  function extra_options_form(&$form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function extra_options_form(&$form, &$form_state) {
     $vocabularies = taxonomy_get_vocabularies();
     $options = array();
     foreach ($vocabularies as $voc) {
@@ -86,7 +108,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     );
   }
 
-  function value_form(&$form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function value_form(&$form, &$form_state) {
     $vocabulary = taxonomy_vocabulary_machine_name_load($this->options['vocabulary']);
     if (empty($vocabulary) && $this->options['limit']) {
       $form['markup'] = array(
@@ -123,7 +148,8 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
         $options = array();
 
         if ($tree) {
-          // Translation system needs full entity objects, so we have access to label.
+          // Translation system needs full entity objects, so we have access to
+          // label.
           foreach ($tree as $term) {
             $choice = new stdClass();
             $choice->option = array($term->tid => str_repeat('-', $term->depth) . entity_label('taxonomy_term', $term));
@@ -177,8 +203,8 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
             $keys = array_keys($options);
             $default_value = array_shift($keys);
           }
-          // Due to #1464174 there is a chance that array('') was saved in the admin ui.
-          // Let's choose a safe default value.
+          // Due to #1464174 there is a chance that array('') was saved in the
+          // admin UI. Let's choose a safe default value.
           elseif ($default_value == array('')) {
             $default_value = 'All';
           }
@@ -212,7 +238,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     }
   }
 
-  function value_validate($form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function value_validate($form, &$form_state) {
     // We only validate if they've chosen the text field style.
     if ($this->options['type'] != 'textfield') {
       return;
@@ -226,7 +255,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     }
   }
 
-  function accept_exposed_input($input) {
+  /**
+   * {@inheritdoc}
+   */
+  public function accept_exposed_input($input) {
     if (empty($this->options['exposed'])) {
       return TRUE;
     }
@@ -266,7 +298,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     return $rc;
   }
 
-  function exposed_validate(&$form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function exposed_validate(&$form, &$form_state) {
     if (empty($this->options['exposed'])) {
       return;
     }
@@ -298,15 +333,15 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
    * or the exposed filter, this is abstracted out a bit so it can
    * handle the multiple input sources.
    *
-   * @param $form
+   * @param array $form
    *   The form which is used, either the views ui or the exposed filters.
-   * @param $values
+   * @param array $values
    *   The taxonomy names which will be converted to tids.
    *
    * @return array
    *   The taxonomy ids fo all validated terms.
    */
-  function validate_term_strings(&$form, $values) {
+  public function validate_term_strings(&$form, $values) {
     if (empty($values)) {
       return array();
     }
@@ -345,11 +380,17 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     return $tids;
   }
 
-  function value_submit($form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function value_submit($form, &$form_state) {
     // prevent array_filter from messing up our arrays in parent submit.
   }
 
-  function expose_form(&$form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function expose_form(&$form, &$form_state) {
     parent::expose_form($form, $form_state);
     if ($this->options['type'] != 'select') {
       unset($form['expose']['reduce']);
@@ -361,7 +402,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     );
   }
 
-  function admin_summary() {
+  /**
+   * {@inheritdoc}
+   */
+  public function admin_summary() {
     // set up $this->value_options for the parent summary
     $this->value_options = array();
 
@@ -374,4 +418,5 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     }
     return parent::admin_summary();
   }
+
 }

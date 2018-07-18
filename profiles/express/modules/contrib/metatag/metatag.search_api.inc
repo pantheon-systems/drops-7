@@ -19,9 +19,13 @@ function metatag_search_api_alter_callback_info() {
 }
 
 /**
- * Adds meta tag values to the indexed items.
+ * Only add the class if Search API is installed.
  */
 if (class_exists('SearchApiAbstractAlterCallback')) {
+
+  /**
+   * Adds meta tag values to the indexed items.
+   */
   class MetatagSearchAlterCallback extends SearchApiAbstractAlterCallback {
 
     /**
@@ -62,6 +66,7 @@ if (class_exists('SearchApiAbstractAlterCallback')) {
           case 'DrupalLinkMetaTag':
             $type = 'uri';
             break;
+
           default:
             $type = 'text';
             break;

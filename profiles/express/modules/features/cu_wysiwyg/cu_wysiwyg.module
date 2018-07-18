@@ -15,6 +15,12 @@ function cu_wysiwyg_wysiwyg_editor_settings_alter(&$settings, $context) {
   }
 }
 
+/**
+ * Saves Pathologic based on each site's site ID.
+ *
+ * @return string
+ *   A list of pathologic paths for the current site.
+ */
 function _create_cu_pathologic_paths() {
   $cu_sid = variable_get('cu_sid', FALSE);
   $cu_path = variable_get('cu_path', FALSE);
@@ -35,4 +41,50 @@ function _create_cu_pathologic_paths() {
     // Build pathologic settings on one path per line
     return $all_paths = join("\n", $paths);
   }
+}
+
+/**
+ * Prevent feature from being overridden due to additional shortcodes enabled
+ * via external bundles.
+ *
+ * @return array
+ *   An array of shortcode settings required by the Features module.
+ */
+function _cu_wysiwyg_shortcode_settings() {
+
+  // Get enabled shortcodes and turn them into the array Features expects.
+  $enabled_shortcodes = array_map(function () {
+    return 1;
+  }, array_flip(array_keys(shortcode_list_all_enabled('wysiwyg'))));
+
+  // These shortcodes are the initial ones included in the Feature export.
+  // Each time the cu_wysiwyg feature is exported, the list of enabled shortcodes should be updated.
+  return array_merge($enabled_shortcodes, [
+    'give' => 1,
+    'anchors' => 1,
+    'backtotop' => 0,
+    'blockquote' => 1,
+    'box' => 1,
+    'button' => 1,
+    'buttongroup' => 1,
+    'callout' => 1,
+    'clear' => 1,
+    'close-margin' => 1,
+    'column' => 1,
+    'columnlist' => 1,
+    'countup' => 1,
+    'expand' => 1,
+    'googlecalendar' => 1,
+    'icon' => 1,
+    'imagecaption' => 1,
+    'invisible' => 1,
+    'map' => 1,
+    'masonry-images' => 1,
+    'print' => 1,
+    'responsive-table' => 1,
+    'sidebar' => 0,
+    'tooltip' => 0,
+    'tweet' => 0,
+    'soundcloud' => 1,
+  ]);
 }

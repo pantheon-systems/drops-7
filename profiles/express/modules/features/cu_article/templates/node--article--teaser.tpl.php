@@ -12,6 +12,9 @@
         <?php print $ap_date_cu_medium_date; ?>
       </p>
     <?php endif; ?>
-    <div class="article-summary"><?php print render($content['body']); ?></div>
+    <div class="article-summary">
+      <?php print render($content['body']); ?>
+      <p><?php print $more_link; ?></p>
+    </div>
   </div>
 </div>

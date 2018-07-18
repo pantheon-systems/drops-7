@@ -1,4 +1,4 @@
-.cu-search-box .search-form-wrapper { display: flex; flex-direction: column-reverse; margin-bottom: 20px; }
+.cu-search-box .search-form-wrapper { display: flex; flex-direction: column-reverse; }
 
 .search-options { display: flex; flex-direction: row; flex-wrap: wrap; font-size: 85%; }
 
@@ -27,7 +27,7 @@
 .cu-search-box .cu-search .form-item-search-keys { flex-grow: 1; }
 .cu-search-box .cu-search .form-item, .cu-search-box .cu-search .form-actions { margin: 0; }
 .cu-search-box .cu-search input.form-text { width: 100%; line-height: 40px; height: 40px; padding: 0 8px; background-color: #fff; -webkit-appearance: none; border-radius: 0; -webkit-border-radius: 0; border: none; }
-.cu-search-box .cu-search .form-submit { line-height: 40px; height: 40px; background: #cfb87c; color: #000; padding: 0 8px; -webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; -webkit-border-radius: 0; -moz-border-radius: 0; border-radius: 0; border: none; -webkit-appearance: none; display: block; margin: 0; }
+.cu-search-box .cu-search .form-submit { line-height: 40px; height: 40px; background: #CFB87C; color: #000; padding: 0 8px; -webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; -webkit-border-radius: 0; -moz-border-radius: 0; border-radius: 0; border: none; -webkit-appearance: none; display: block; margin: 0; }
 
 #block-google-cse-google-cse .gsc-control-cse, #block-google-cse-google-cse .gsc-control-cse .gsc-table-result { font-size: 100%; font: inherit; }
 
@@ -43,24 +43,24 @@
 #block-google-cse-google-cse .cse .gsc-control-cse, #block-google-cse-google-cse .gsc-control-cse { background: none; border: none; padding: 0; }
 
 #block-google-cse-google-cse .gsc-results .gsc-result.gsc-promotion { border: 1px solid #e0e0e0; padding: 10px; font-size: 110%; background: #f7f7f7; margin-bottom: 20px; }
-#block-google-cse-google-cse .gsc-results .gsc-result.gsc-promotion a.gs-title:link *, #block-google-cse-google-cse .gsc-results .gsc-result.gsc-promotion a.gs-title:visited * { color: #005c95; }
+#block-google-cse-google-cse .gsc-results .gsc-result.gsc-promotion a.gs-title:link *, #block-google-cse-google-cse .gsc-results .gsc-result.gsc-promotion a.gs-title:visited * { color: #01578b; }
 #block-google-cse-google-cse .gsc-results .gsc-result { padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result { display: flex; flex-direction: column; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gsc-thumbnail-inside { order: 1; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gsc-url-top { order: 3; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gsc-table-result { order: 2; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result a.gs-visibleUrl, #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-visibleUrl { color: #757575; }
-#block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling a { color: #007bc8; }
+#block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling a { color: #0277BD; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-spelling-original, #block-google-cse-google-cse .gsc-results .gsc-result .gs-result .gs-visibleUrl { font-size: 75%; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gs-title { height: auto; }
-#block-google-cse-google-cse .gsc-results .gsc-result a.gs-title { color: #007bc8; display: block; text-decoration: none; font-size: 110%; }
-#block-google-cse-google-cse .gsc-results .gsc-result a.gs-title b { font-weight: bold; color: #005c95; }
+#block-google-cse-google-cse .gsc-results .gsc-result a.gs-title { color: #0277BD; display: block; text-decoration: none; font-size: 110%; }
+#block-google-cse-google-cse .gsc-results .gsc-result a.gs-title b { font-weight: bold; color: #01578b; }
 #block-google-cse-google-cse .gsc-results .gsc-result .gsc-url-bottom { font-size: 85%; color: #757575; }
 #block-google-cse-google-cse .gsc-results .gsc-result:hover { -webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; }
 #block-google-cse-google-cse .gsc-results .gsc-cursor { padding: 20px 0; display: block; }
-#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page { display: inline-block; float: left; margin: 0; margin-right: -1px; padding: 0; text-align: center; border: 1px solid #e0e0e0; white-space: nowrap; line-height: 1; padding: 8px; text-decoration: none; color: #007bc8; }
-#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page:hover { background: #e0e0e0; color: #005c95; }
-#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page.gsc-cursor-current-page { background-color: #007bc8; border: 1px solid #007bc8; color: #fff; }
+#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page { display: inline-block; float: left; margin: 0; margin-right: -1px; padding: 0; text-align: center; border: 1px solid #e0e0e0; white-space: nowrap; line-height: 1; padding: 8px; text-decoration: none; color: #0277BD; }
+#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page:hover { background: #e0e0e0; color: #01578b; }
+#block-google-cse-google-cse .gsc-results .gsc-cursor .gsc-cursor-page.gsc-cursor-current-page { background-color: #0277BD; border: 1px solid #0277BD; color: #fff; }
 #block-google-cse-google-cse .gsc-results .gsc-branding-text, #block-google-cse-google-cse .gsc-results .gcsc-branding-text { vertical-align: top; padding-bottom: 2px; text-align: right; font-size: 11px; margin-right: 2px; color: #666; white-space: nowrap; }
 #block-google-cse-google-cse .gsc-results .gs-web-image-box, #block-google-cse-google-cse .gsc-results .gs-promotion-image-box { float: none; padding: 2px 8px 2px 0; width: auto; }
 #block-google-cse-google-cse .gsc-results .gs-web-image-box img.gs-image, #block-google-cse-google-cse .gsc-results .gs-web-image-box img.gs-promotion-image, #block-google-cse-google-cse .gsc-results .gs-promotion-image-box img.gs-image, #block-google-cse-google-cse .gsc-results .gs-promotion-image-box img.gs-promotion-image { width: 100%; height: auto; display: block; vertical-align: middle; max-width: none; }

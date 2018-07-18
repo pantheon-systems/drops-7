@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module for Profile2 integration.
+ */
+
+/**
  * Tests for the Metatag module for Profile2 integration.
  *
  * Inherit from the User test so that its tests can be confirmed to still work

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag Favicons module.
+ */
+
+/**
  * Tests for the Metatag Favicons module.
  */
 class MetatagFaviconsTest extends MetatagTestHelper {
@@ -74,8 +79,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertNotEqual((string)$xpath[0]['href'], $svg_path);
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
 
     // Before proceeding, clear the site's caches.
     drupal_flush_all_caches();
@@ -92,8 +97,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertNotEqual((string)$xpath[0]['href'], $svg_path);
-    $this->assertNotEqual((string)$xpath[0]['href'], $relative_path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $relative_path);
 
     // Before proceeding, clear the site's caches.
     drupal_flush_all_caches();
@@ -110,13 +115,13 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertNotEqual((string)$xpath[0]['href'], $svg_path);
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $svg_path);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
 
     // Before proceeding, clear the site's caches.
     drupal_flush_all_caches();
 
-    // Test filling in an absolute path for an external file
+    // Test filling in an absolute path for an external file.
     $path = 'https://www.example.com/example.svg';
     $config = metatag_config_load('global');
     $config->config['mask-icon']['value'] = $path;
@@ -129,8 +134,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertNotEqual((string)$xpath[0]['href'], $absolute_path);
-    $this->assertEqual((string)$xpath[0]['href'], $path);
+    $this->assertNotEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['href'], $path);
   }
 
   /**
@@ -161,8 +166,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
-    $this->assertEqual((string)$xpath[0]['color'], $color);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
 
     // Before proceeding, clear the site's caches.
     drupal_flush_all_caches();
@@ -183,8 +188,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
-    $this->assertEqual((string)$xpath[0]['color'], $color);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
 
     // Try a color RGB value.
     $color = 'rgb(153, 0, 0)';
@@ -202,8 +207,8 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
-    $this->assertEqual((string)$xpath[0]['color'], $color);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['color'], $color);
 
     // Try empty color.
     $color = '';
@@ -221,7 +226,7 @@ class MetatagFaviconsTest extends MetatagTestHelper {
     // Confirm the meta tag is present.
     $xpath = $this->xpath("//link[@rel='mask-icon']");
     $this->assertEqual(count($xpath), 1, 'One mask-icon meta tag found.');
-    $this->assertEqual((string)$xpath[0]['href'], $absolute_path);
+    $this->assertEqual((string) $xpath[0]['href'], $absolute_path);
     $this->assertFalse(isset($xpath[0]['color']));
   }
 

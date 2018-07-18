@@ -28,7 +28,7 @@ function express_content_edit_lock_menu() {
  * Implements hook_form() and builds out lock users options on admin/dashboard/lock.
  */
 function express_content_edit_lock_admin_form($form, &$form_state) {
-  $users_list = implode(',', variable_get('lock_allow_users'));
+  $users_list = implode(',', variable_get('lock_allow_users'), array());
 
   /**
    * Implements custom function to get role by name.
@@ -142,7 +142,7 @@ function express_content_edit_lock_secure_permissions($role) {
  */
 function _lock_allow_users_check($username) {
   $output = FALSE;
-  $allowed_users = variable_get('lock_allow_users');
+  $allowed_users = variable_get('lock_allow_users', array());
 
   if (in_array($username, $allowed_users)) {
     $output = TRUE;
@@ -202,19 +202,13 @@ function express_content_edit_lock_form_alter(&$form, &$form_state, $form_id) {
  * If the lock message is set, show it to people.
  */
 function express_content_edit_lock_page_alter(&$page) {
-  if (_lock_by_role_check() && variable_get('lock_leave_message')) {
-    drupal_set_message(t(variable_get('lock_leave_message')), 'warning');
+  if (_lock_by_role_check() && variable_get('lock_leave_message', '')) {
+    drupal_set_message(t(variable_get('lock_leave_message', '')), 'warning');
   }
-}
 
-/**
- * Implements hook_menu_alter.
- *
- * Bundle enable isn't an actual form, so we have to alter the menu as well.
- */
-function express_content_edit_lock_menu_alter(&$items) {
-  if (_lock_final_check()) {
-    $items['admin/settings/bundles/list/confirm/%']['page callback'] = 'cu_atlas_redirect';
+  $onConfPage = strpos(current_path(), 'admin/settings/bundles/list/confirm');
+  if (variable_get('lock_user_dev') == 1 && $onConfPage === 0) {
+    $page['content']['system_main']['main']['#markup'] = '<p>Enabling bundles has been disabled on this site while it is locked.</p>';
   }
 }
 
@@ -224,7 +218,7 @@ function express_content_edit_lock_menu_alter(&$items) {
  * Redirect away from bundle enable while site is locked for that user.
  */
 function express_content_edit_lock_redirect() {
-  drupal_set_message(t(variable_get('lock_leave_message')), 'warning');
+  drupal_set_message(t(variable_get('lock_leave_message', '')), 'warning');
   return '';
 }
 
@@ -247,11 +241,13 @@ function _express_content_edit_lock_recursive(&$element) {
 function express_content_edit_lock_user_login(&$edit, $account) {
   if (module_exists('cu_users')) {
     $devs = cu_users_get_users('developer');
-    $dev_lock = variable_get('lock_user_dev');
+    $dev_lock = variable_get('lock_user_dev', FALSE);
 
     if (!array_key_exists($account->name, $devs) && ($dev_lock === TRUE)) {
-      watchdog('express_content_edit_lock', t('Site is locked: lock_user_dev'), array($account), WATCHDOG_NOTICE, NULL);
-      user_logout();
+      watchdog('express_content_edit_lock', ':name has tried to login to the site while it is locked.', array(':name' => $account->name));
+      user_logout_current_user();
+      drupal_set_message('You are not able to login to the site at this time.', 'error');
+      drupal_goto('user');
     }
   }
 }
@@ -262,7 +258,7 @@ function express_content_edit_lock_user_login(&$edit, $account) {
  * Prevents non-developers from logging in.
  */
 function express_content_edit_lock_form_user_login_alter($form, &$form_state) {
-  $dev_lock = variable_get('lock_user_dev');
+  $dev_lock = variable_get('lock_user_dev', FALSE);
   if ($dev_lock === TRUE) {
     drupal_set_message(t('You will not be able to login to this site. It has been locked. Please contact the Web Support team. <a href="http://www.colorado.edu/webcentral/">@link_text</a>',
       array(

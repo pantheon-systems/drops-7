@@ -15,6 +15,16 @@ function express_content_edit_lock_drush_command() {
     'aliases' => array('lud'),
   );
 
+  $commands['express-lock'] = array(
+    'description' => 'This logs everyone out and locks out non-developer roles from logging in.',
+    'aliases' => array('exl'),
+  );
+
+  $commands['express-unlock'] = array(
+    'description' => 'Unlocks site',
+    'aliases' => array('exu'),
+  );
+
   return $commands;
 }
 
@@ -42,12 +52,19 @@ function drush_express_content_edit_lock_lock_user_dev() {
 }
 
 /**
- * Drush command logic.
- *
- * drush_lud().
+ * Function set lock
  */
-function express_content_edit_lock_command($arg1 = 'N/A', $arg2 = 'N/A') {
-  $opt1 = drush_get_option('opt1', 'N/A');
-  $tokens = array('@arg1' => $arg1, '@opt1' => $opt1);
-  drush_print(dt('My custom command. Argument: @arg1 Option: @opt1', $tokens));
+function drush_express_content_edit_lock_express_lock() {
+  _logout_everyone();
+  variable_set('lock_user_dev', true);
+  drush_print(dt('Users have been logged out and site is locked.'));
+}
+
+/**
+ * Function to unset lock
+ */
+function drush_express_content_edit_lock_express_unlock()
+{
+  variable_set('lock_user_dev', false);
+  drush_print(dt('Site is unlocked.'));
 }

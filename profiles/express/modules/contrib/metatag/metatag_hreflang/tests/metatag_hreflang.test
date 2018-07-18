@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag HrefLang module.
+ */
+
+/**
  * Tests for the Metatag HrefLang module.
  */
 class MetatagHreflangTest extends MetatagTestHelper {

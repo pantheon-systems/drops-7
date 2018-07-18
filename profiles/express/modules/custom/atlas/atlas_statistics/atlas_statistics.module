@@ -17,28 +17,49 @@ function atlas_statistics_boot() {
 /**
  * Implements hook_cron().
  */
+function atlas_statistics_cronapi($op, $job = NULL) {
+
+  $items['atlas_statistics_cron'] = array(
+    'description' => 'Update Atals Statistics',
+    'rule' => '0 */4 * * *', // Every 4 hours
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_cron().
+ */
 function atlas_statistics_cron() {
   // Only run cron task if site is installed or launched.
-  $site_status = variable_get('atlas_status');
+  $site_status = variable_get('atlas_status', NULL);
   if ($site_status == 'installed' || $site_status == 'launched') {
-    $cron_last = variable_get('cron_last', NULL);
-    // Run once a day.
-    if (date('ymd', $cron_last) != date('ymd', time())) {
-      // Switch so that we can easily stop the processing.
-      if (variable_get('atlas_statistics_site_cron', TRUE)) {
-        $atlas_id = variable_get('atlas_id', NULL);
-        $site_array = atlas_api_request('sites', $atlas_id);
-        $statistics_id = $site_array['statistics'];
-        $statistics_array = atlas_api_request('statistics', $statistics_id);
+    // Switch so that we can easily stop the processing.
+    if (variable_get('atlas_statistics_site_cron', TRUE)) {
+      $atlas_id = variable_get('atlas_id', NULL);
+      $site_array = atlas_api_request('sites', $atlas_id);
+      $statistics_id = $site_array['statistics'];
+      $pool = $site_array['pool'];
+      $statistics_array = atlas_api_request('statistics', $statistics_id);
 
-        module_load_include('inc', 'atlas_statistics');
-        $request_data = atlas_statistics_get_statistics();
+      module_load_include('inc', 'atlas_statistics');
+      $request_data = atlas_statistics_get_statistics();
+
+      // Set the etag from the form.
+      $request_data['_etag'] = $statistics_array['_etag'];
+      $request_data['site'] = $atlas_id;
+
+      atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+
+      // TEMP - DO EVERYTHING ABOVE A 2ND TIME UNTIL THE SITE IS MIGRATED
+      if (variable_get('atlas_url', FALSE) == "https://osr-atlas03.int.colorado.edu/atlas/" && $pool != 'pool-varnish-new') {
+
+        $statistics_array = atlas_api_request('statistics', $statistics_id, 'GET', FALSE, "https://osr-prod-util01.int.colorado.edu/atlas/");
 
         // Set the etag from the form.
         $request_data['_etag'] = $statistics_array['_etag'];
-        $request_data['site'] = $atlas_id;
 
-        atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+        atlas_api_request('statistics', $statistics_id, 'PUT', $request_data, "https://osr-prod-util01.int.colorado.edu/atlas/");
       }
     }
   }
@@ -77,6 +98,7 @@ function atlas_statistics() {
   $atlas_id = variable_get('atlas_id', NULL);
   $site_array = atlas_api_request('sites', $atlas_id);
   $statistics_id = $site_array['statistics'];
+  $pool = $site_array['pool'];
   $statistics_array = atlas_api_request('statistics', $statistics_id);
 
   if (!$statistics_id) {
@@ -84,7 +106,7 @@ function atlas_statistics() {
     return;
   }
 
-  $atlas_url = variable_get('atlas_url');
+  $atlas_url = variable_get('atlas_url', FALSE);
   $statistics_url = $atlas_url . 'statistics/' . $statistics_id;
   $statistics_url_markup = '<a href="' . $statistics_url . '">' . $statistics_url . '</a>';
 
@@ -118,6 +140,12 @@ function atlas_statistics() {
     '#default_value' => $statistics_id,
   );
 
+   $form['atlas_pool'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pool'),
+    '#default_value' => $pool,
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save Statistics',
@@ -138,8 +166,20 @@ function atlas_statistics_submit($form, &$form_state) {
   // Set the etag from the form.
   $request_data['_etag'] = $form_state['values']['atlas_etag'];
   $statistics_id = $form_state['values']['atlas_statistics_id'];
+  $pool = $form_state['values']['atlas_pool'];
 
   atlas_api_request('statistics', $statistics_id, 'PUT', $request_data);
+
+  // TEMP - DO EVERYTHING ABOVE A 2ND TIME
+  if (variable_get('atlas_url') == "https://osr-atlas03.int.colorado.edu/atlas/" && $pool != 'pool-varnish-new') {
+
+    $statistics_array = atlas_api_request('statistics', $statistics_id, 'GET', FALSE, "https://osr-prod-util01.int.colorado.edu/atlas/");
+
+    // Set the etag from the form.
+    $request_data['_etag'] = $statistics_array['_etag'];
+    atlas_api_request('statistics', $statistics_id, 'PUT', $request_data, "https://osr-prod-util01.int.colorado.edu/atlas/");
+  }
+
 }
 
 /**

@@ -1,5 +1,0 @@
-name = More Menus
-description = Provides additional system menus.
-core = 7.x
-package = CU-Core
-version = 7.x-1.0

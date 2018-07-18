@@ -24,7 +24,7 @@ function express_status_block_view($delta = '') {
       drupal_add_js('https://cdn.statuspage.io/se-v2.js', 'external');
       drupal_add_js(drupal_get_path('module', 'express_status') . '/js/express-status.js');
       drupal_add_css(drupal_get_path('module', 'express_status') . '/css/express-status.css');
-      $statusio_page = variable_get('express_status_page', 'https://universityofcoloradoboulder.statuspage.io');
+      $statusio_page = variable_get('express_status_page', 'http://status.colorado.edu');
       $statusio_id = variable_get('express_status_id', '9sm03v9xr9m6');
       $statusio_apikey = variable_get('express_status_apikey', '');
 

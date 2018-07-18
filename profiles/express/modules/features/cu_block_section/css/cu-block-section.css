@@ -1,4 +1,4 @@
-.block-section { padding: 40px 20px; background-position: center center; background-size: cover; background-repeat: no-repeat; }
+.block-section { padding: 40px 20px; background-position: center center; background-size: cover; background-repeat: no-repeat; width: 100%; }
 
 @media screen and (max-width: 767px) { .block-section.parallax-window { background-attachment: scroll !important; background-position: center center !important; } }
 .block-section-overlay { position: relative; }

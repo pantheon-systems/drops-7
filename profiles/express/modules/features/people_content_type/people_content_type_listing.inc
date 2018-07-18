@@ -140,23 +140,6 @@ function _people_content_type_listing($view_mode, $type, $department, $filter_1,
     $output = node_view_multiple($nodes, $view_mode);
     // Add fisrt and last classes for grid mode
     if ($view_mode =='grid') {
-      // Get nodes only, not other #arrays
-      $nids = element_children($output['nodes']);
-      $count = 0;
-      foreach ($nids as $key => $nid) {
-        if ($count == 0) {
-          $class = 'people-grid-first';
-        } elseif ($count == 2) {
-          $class = 'people-grid-last';
-        } else {
-          $class = '';
-        }
-        $output['nodes'][$nid]['attributes']['classes'][] = $class;
-        $count = $count + 1;
-        // Reset counter
-        $count = ($count > 2) ? 0 : $count;
-
-      }
     }
     if ($view_mode == 'table') {
       // Build an array which can be themed as a table

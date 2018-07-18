@@ -6,15 +6,54 @@
 
 include_once 'cu_slider.features.inc';
 
+/**
+ * Implements hook_libraries_info().
+ */
+function cu_slider_libraries_info() {
+  $libraries = array();
+  $libraries['flickity'] = array(
+    'name' => t('Flickity'),
+    'vendor url' => 'https://flickity.metafizzy.co',
+    'download url' => 'https://github.com/metafizzy/flickity',
+    'version' => '2.0.9',
+    'files' => array(
+      'js' => array(
+        'js/flickity.pkgd.min.js',
+      ),
+      'css' => array(
+        'css/flickity.css',
+      ),
+    ),
+  );
 
+  return $libraries;
+}
 
 
 /**
  * Implements hook_page_alter().
  */
-function cu_slider_page_alter(&$page) {
+function cu_slider_init() {
+
+  $library = libraries_get_path('flickity');
+
+  // Add the library reference.
+  $path = $library . '/js/flickity.pkgd.min.js';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_js($path);
+  }
+
+  $path = $library . '/css/flickity.css';
+  $installed = file_exists($path);
+  if ($installed) {
+    drupal_add_css($path);
+  }
+
   // Add cu slider css
   drupal_add_css(drupal_get_path('module', 'cu_slider') . '/css/cu_slider.css');
+  // Add cu slider js
+  drupal_add_js(drupal_get_path('module', 'cu_slider') . '/js/cu-slider.js');
 }
 
 /**
@@ -64,45 +103,8 @@ function cu_slider_form_bean_form_alter(&$form, &$form_state, &$form_id) {
           $form['field_slider_slide'][LANGUAGE_NONE][$delta]['field_slider_url']['#access'] = FALSE;
         }
       }
-
-      //$form['field_slider_style']['examples']['#markup'] = _cu_slider_examples();
     }
   }
-}
-
-/**
- * Constructs the examples so it's easier to maintain
- */
-function _cu_slider_examples() {
-  $path = base_path() . drupal_get_path('module', 'cu_slider') . '/examples/';
-  $output = '<table cellspacing="0" cellpadding="10" border="0">
-    <thead>
-      <td colspan="2"><strong>' . t('Slider Style Examples') . '</strong></td>
-    </thead>
-    <tr>
-      <th>Wide</th>
-      <th>Wide with Teaser</th>
-    </tr>
-    <tr>
-      <td><img src="' . $path . 'wide.jpg" alt="' . t('Wide') . '" /></td>
-      <td><img src="' . $path . 'wideteaser.jpg" alt="' . t('Wide with Teaser') . '"  /></td>
-    </tr>
-    <tr>
-      <th>Medium</th>
-      <th>Small</th>
-    </tr>
-    <tr>
-      <td><img src="' . $path . 'medium.jpg" alt="' . t('Medium') . '"  /></td>
-      <td><img src="' . $path . 'small.jpg" alt="' . t('Small') . '"  /></td>
-    </tr>
-    </table><br />';
-  return $output;
-}
-
-function cu_slider_update_7000() {
-  module_enable('flexslider');
-  module_enable('flexslider_views');
-  module_enable('flexslider_views_slideshow');
 }
 
 function cu_slider_preprocess_entity(&$vars) {
@@ -116,8 +118,12 @@ function cu_slider_preprocess_entity(&$vars) {
     //$vars['content']['field_slider_image'][0]['#image_style'] = $cu_slider_image_size;
     //$cu_slider_image_size = $vars['content']['field_slider_size'][0]['#markup'];
     //global $cu_slider_style;
-    //$cu_slider_style = $vars['content']['field_slider_design_style'][0]['#markup'];
-    //dpm($vars);
+    $cu_slider_style = $vars['content']['field_slider_design_style'][0]['#markup'];
+    $style = cu_slider_style_map($cu_slider_style);
+    $style = str_replace(' ', '_', strtolower($style));
+    $vars['theme_hook_suggestions'][] = 'bean__slider__' . $style;
+    // Add slider ui if there is more than 1 slide.
+    $vars['slider_ui'] = count($vars['content']['field_slider_slide']['#items']) > 1 ? 'cu-slider-ui' : FALSE;
   }
   // Only preprocess slider field collections.
   if ($entity_type == 'field_collection_item' && $bundle == 'field_slider_slide') {
@@ -136,7 +142,7 @@ function cu_slider_preprocess_entity(&$vars) {
         $vars['slide_image'] = l(render($vars['content']['field_slider_image']), $link, array('html' => TRUE));
       }
       if (!empty($vars['content']['field_slider_caption'])) {
-        $text = $vars['content']['field_slider_caption'][0]['#markup'] . '&nbsp;<i class="fa fa-external-link-square"></i>';
+        $text = $vars['content']['field_slider_caption'][0]['#markup'] . '&nbsp;<i class="fa fa-external-link-square slider-link-icon"></i>';
         $vars['slide_caption'] = l($text, $link, array('html' => TRUE));
       }
     } else {
@@ -215,4 +221,43 @@ function cu_slider_image_default_styles() {
   );
 
   return $styles;
+}
+
+function cu_slider_style_options() {
+  $options = array(
+    '1' => 'Bottom Content Overlay',
+    '2' => 'Right Side Content Overlay',
+    '3' => 'Center Content Overlay',
+    '4' => 'Right Side Content',
+    '5' => 'Bottom Content',
+    '6' => 'Thumbnails',
+    '7' => 'Thumbnails Overlay',
+    '8' => 'Hero',
+  );
+  return $options;
+}
+
+function cu_slider_style_map($key) {
+  $options = array(
+    '1' => 'Bottom Content Overlay',
+    '2' => 'Right Side Content Overlay',
+    '3' => 'Center Content Overlay',
+    '4' => 'Right Side Content',
+    '5' => 'Bottom Content',
+    '6' => 'Thumbnails',
+    '7' => 'Thumbnails Overlay',
+    '8' => 'Hero',
+  );
+  return $options[$key];
+}
+
+function cu_slider_size_options() {
+  $options = array(
+    'slider' => 'Slider Ultra Wide (cropped)',
+    'widescreen' => 'Widescreen (16x9 cropped)',
+    'slider-large' => 'Large (3x2 cropped)',
+    'large' => 'Original (uncropped)',
+  );
+
+  return $options;
 }

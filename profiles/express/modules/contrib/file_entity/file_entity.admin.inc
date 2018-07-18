@@ -612,6 +612,7 @@ function file_entity_list_types_page() {
     switch ($type->ctools_type) {
       // Configuration is in code.
       case 'Default':
+      case t('Default'):
         if (!empty($type->disabled)) {
           $row[] = l(t('enable'), $admin_path . '/enable');
         }
@@ -622,6 +623,7 @@ function file_entity_list_types_page() {
 
       // Configuration is in DB.
       case 'Normal':
+      case t('Normal'):
         if (!empty($type->disabled)) {
           $status = l(t('enable'), $admin_path . '/enable');
         }
@@ -633,6 +635,7 @@ function file_entity_list_types_page() {
 
       // Configuration is in code, but overridden in DB.
       case 'Overridden':
+      case t('Overridden'):
         if (!empty($type->disabled)) {
           $row[] = l(t('enable'), $admin_path . '/enable');
         }
@@ -1156,6 +1159,19 @@ function file_entity_settings_form($form, &$form_state) {
     '#title' => t('Skip available fields.'),
     '#default_value' => variable_get('file_entity_file_upload_wizard_skip_fields', FALSE),
     '#description' => t('The field selection step is only available if the file type the file belongs to has any available fields. If this step is skipped, any fields on the file will be left blank.'),
+  );
+  $form['file_replace_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('File replace optons'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#description' => t('Default settings for how to handle file name changes during replace.'),
+  );
+  $form['file_replace_options']['file_entity_file_replace_options_keep_original_filename'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Keep original file name'),
+    '#default_value' => variable_get('file_entity_file_replace_options_keep_original_filename', FALSE),
+    '#description' => t('Rename the newly uploaded file to the name of the original file. This action cannot be undone.'),
   );
 
   return system_settings_form($form);

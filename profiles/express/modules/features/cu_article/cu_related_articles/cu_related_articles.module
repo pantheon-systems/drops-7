@@ -1,6 +1,62 @@
 <?php
 
 /**
+ * Implements hook_menu.
+ */
+function cu_related_articles_menu() {
+  $items = array();
+
+  $items['admin/settings/news/related-article-settings'] = array(
+    'title' => 'Related Article Settings',
+    'description' => 'Configure how related articles are selected.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_related_articles_settings_form'),
+    'access arguments' => array('administer express settings'),
+  );
+
+  return $items;
+}
+
+/**
+ * Rlated Article Settings Form.
+ * Choose terms to exclude from related article calculation.
+ */
+function cu_related_articles_settings_form($form, &$form_state) {
+  $form = array();
+
+  // Categories
+  $vid = taxonomy_vocabulary_machine_name_load('category')->vid;
+  $terms = taxonomy_get_tree($vid);
+  $options = array();
+  foreach ($terms as $term) {
+    $options[$term->tid] = $term->name;
+  }
+  $form['related_articles_categories_exclude'] = array(
+    '#title' => 'Categories to exclude from related articles',
+    '#type' => 'checkboxes',
+    '#options' => $options,
+    '#default_value' => variable_get('related_articles_categories_exclude', array()),
+  );
+
+  // Tags
+  $vid = taxonomy_vocabulary_machine_name_load('tags')->vid;
+  $terms = taxonomy_get_tree($vid);
+  $options = array();
+  foreach ($terms as $term) {
+    $options[$term->tid] = $term->name;
+  }
+  $form['related_articles_tags_exclude'] = array(
+    '#title' => 'Tags to exclude from related articles',
+    '#type' => 'checkboxes',
+    '#options' => $options,
+    '#default_value' => variable_get('related_articles_tags_exclude', array()),
+  );
+
+  $form = system_settings_form($form);
+  return $form;
+}
+
+/**
  * Implements hook_block_info().
  */
 function cu_related_articles_block_info() {
@@ -36,14 +92,19 @@ function cu_related_articles_block_output($view_mode) {
   // Get current node
   if (($node = menu_get_object()) && $node->type =='article') {
     $current_nid = $node->nid;
+
+    // Get excluded categories and tags
+    $excluded['categories'] = variable_get('related_articles_categories_exclude', array());
+    $excluded['tags'] = variable_get('related_articles_tags_exclude', array());
+
     // Get categories from current article
     $categories = array();
     if (!empty($node->field_article_categories[LANGUAGE_NONE])) {
       foreach ($node->field_article_categories[LANGUAGE_NONE] as $category_term) {
         $tid = $category_term['tid'];
-        // Load term, add to array if term is not hidden
+        // Load term, add to array if term is not hidden, not excluded
         $term = taxonomy_term_load($tid);
-        if ($term->field_category_display[LANGUAGE_NONE][0]['value'] == 'show') {
+        if (($term->field_category_display[LANGUAGE_NONE][0]['value'] == 'show') && (!in_array($tid, $excluded['categories']))) {
           $categories[$tid] = $tid;
         }
       }
@@ -53,14 +114,13 @@ function cu_related_articles_block_output($view_mode) {
     if (!empty($node->field_tags[LANGUAGE_NONE])) {
       foreach ($node->field_tags[LANGUAGE_NONE] as $tag_term) {
         $tid = $tag_term['tid'];
-        // Load term, add to array if term is not hidden
+        // Load term, add to array if term is not hidden, not excluded
         $term = taxonomy_term_load($tid);
-        if ($term->field_tag_display[LANGUAGE_NONE][0]['value'] == 'show') {
+        if (($term->field_tag_display[LANGUAGE_NONE][0]['value'] == 'show') && !in_array($tid, $excluded['tags'])) {
           $tags[$tid] = $tid;
         }
       }
     }
-
     // Start queries
     // Categories + Tags = most related
     // Just categories = second most related

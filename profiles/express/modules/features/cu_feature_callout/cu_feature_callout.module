@@ -464,3 +464,31 @@ function cu_feature_callout_preprocess_block(&$vars) {
     }
   }
 }
+
+/**
+ * Validation function for cu_feature_callout_form_bean_form.
+ *
+ * Some content grid styles require images - let's check to see.
+ */
+function cu_feature_callout_form_bean_form_validate($form, &$form_state) {
+  // These styles require images.
+  $requires_images = array(
+    'overlay',
+    'feature',
+    'tiles_alt',
+  );
+  $style = $form_state['values']['field_callout_style'][LANGUAGE_NONE][0]['value'];
+  $required = FALSE;
+  if (in_array($style, $requires_images)) {
+    unset($form_state['values']['field_callouts'][LANGUAGE_NONE]['add_more']);
+    foreach ($form_state['values']['field_callouts'][LANGUAGE_NONE] as $key => $value) {
+      if (!$form_state['values']['field_callouts'][LANGUAGE_NONE][$key]['field_callout_image'][LANGUAGE_NONE][0]['fid']) {
+        $required = TRUE;
+      }
+    }
+    if ($required) {
+      form_set_error('field_callouts', 'This content grid style requires that each cell have an image set.');
+    }
+
+  }
+}

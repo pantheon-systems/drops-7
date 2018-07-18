@@ -50,7 +50,8 @@ function drush_user_external_invite_send_invite() {
       drush_set_error(dt('That email address already has a pending invite.'));
     }
     else {
-      _user_external_invite_add_invite($roles[$role], array($mail), 0);
+      // Send empty array for addon roles.
+      _user_external_invite_add_invite($roles[$role], array(), array($mail), 0);
       drush_log(dt('Invite email sent!'), 'success');
     }
   }

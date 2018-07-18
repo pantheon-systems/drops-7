@@ -5,5 +5,19 @@
  */
 function cu_redirect_install() {
   cu_redirect_add_redirect('index.html', '<front>');
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'cu_redirect'");
 }
 
+/**
+ * Update module weight so cu_redirect form alter runs after path form alter
+ */
+function cu_redirect_update_7001() {
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'cu_redirect'");
+}
+
+/**
+ * Enable match_redirect for 2.9.4.
+ */
+function cu_redirect_update_7002() {
+  module_enable(array('match_redirect'));
+}

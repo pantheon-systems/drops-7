@@ -366,6 +366,27 @@ class HoneypotCssTestCase extends DrupalWebTestCase {
     // Revert the honeypot element name back to the original.
     variable_set('honeypot_element_name', $original_element_name);
   }
+
+  /**
+   * Test CSS works when default file scheme is not public://
+   */
+  public function testHoneypotCssNonpublicFileSystem() {
+    variable_set('file_default_scheme', 'private');
+
+    $honeypot_css = honeypot_get_css_file_path();
+
+    // Delete the Honeypot CSS file (if it exists).
+    file_unmanaged_delete($honeypot_css);
+
+    // Make sure the Honeypot CSS file doesn't exist.
+    $this->assertFalse(file_exists($honeypot_css));
+
+    // Run cron.
+    honeypot_cron();
+
+    // Make sure the Honeypot CSS file exists.
+    $this->assertTrue(file_exists($honeypot_css));
+  }
 }
 
 /**

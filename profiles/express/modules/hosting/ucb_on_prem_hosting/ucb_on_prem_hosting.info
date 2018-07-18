@@ -1,0 +1,17 @@
+name = UCB On Prem Hosting
+description = Provides CU-specific functionality, like adding variables, to Express Core.
+core = 7.x
+version = 7.x-1.0
+package = Hosting
+
+dependencies[] = varnish
+dependencies[] = ldap_authentication
+dependencies[] = ldap_servers
+dependencies[] = ldap_user
+dependencies[] = cu_ldap
+dependencies[] = noreqnewpass
+dependencies[] = cu_atlas
+dependencies[] = atlas
+dependencies[] = atlas_statistics
+dependencies[] = smtp
+dependencies[] = maillog

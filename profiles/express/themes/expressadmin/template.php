@@ -356,7 +356,7 @@ function expressadmin_preprocess_admin_block(&$vars) {
     'content-authoring' => 'pencil',
     'date-api' => 'calendar',
     'media' => 'picture-o',
-    'search-and-metadata' => 'search',
+    'search' => 'search',
     'regional-and-language' => 'map-marker',
     'system' => 'cog',
     'user-interface' => 'laptop',
@@ -364,13 +364,15 @@ function expressadmin_preprocess_admin_block(&$vars) {
     'web-services' => 'globe',
     'news' => 'newspaper-o',
     'site-configurations' => 'cog',
+    'site-status' => 'rocket',
     'bundles' => 'gift',
     'forms' => 'check-square-o',
     'url-management' => 'link',
     'advanced-content' => 'th-list',
     'search-engine-optimization' => 'line-chart',
     'social-media' => 'share-alt',
-    'cache' => 'refresh'
+    'cache' => 'refresh',
+    'menus' => 'bars',
   );
   $key = strtolower(str_replace(' ','-', $vars['block']['link_title']));
   if (array_key_exists($key, $titles)) {

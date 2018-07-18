@@ -35,7 +35,7 @@ function cu_video_reveal_theme_registry_alter(&$theme_registry) {
 
 /*
  * Implements hook_secure_permissions
- * 
+ *
  * Adding permissions for video reveal bean
  */
 function cu_video_reveal_secure_permissions($role) {
@@ -59,6 +59,12 @@ function cu_video_reveal_secure_permissions($role) {
       'view any video_reveal bean',
     ),
     'developer' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+    ),
+    'site_editor' => array(
       'create any video_reveal bean',
       'delete any video_reveal bean',
       'edit any video_reveal bean',

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Drush integration for Metatag.

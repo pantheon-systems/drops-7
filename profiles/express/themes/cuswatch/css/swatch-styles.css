@@ -20,7 +20,7 @@ body { background-color: #272727; padding-bottom: 20px; }
 #main-menu-wrapper a:hover { background-color: #444; color: #fff; }
 #main-menu-wrapper a.active, #main-menu-wrapper a.active-trail { background-color: #333; color: #fff; }
 #main-menu-wrapper a.active:hover, #main-menu-wrapper a.active-trail:hover { color: #fff; }
-#main-menu-wrapper a#home-link { color: #ccc; background-color: transparent; }
+#main-menu-wrapper a.home-link, #main-menu-wrapper a.home-link.active { color: #ccc; background-color: transparent; }
 
 ul#action-menu a { line-height: 20px; margin: 20px 0 20px 10px; }
 

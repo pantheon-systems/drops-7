@@ -15,7 +15,7 @@
 
 .expandable .expandable-accordion-heading { font-size: 110%; border-bottom: 1px solid #e7e7e7; margin-bottom: -1px; }
 .expandable .expandable-accordion-heading a:link, .expandable .expandable-accordion-heading a:visited { color: #202020; font-weight: normal; padding: 10px 0; display: block; }
-.expandable .expandable-accordion-heading a:before { content: '\f0fe'; font-family: FontAwesome; margin-right: 10px; color: #007bc8; }
+.expandable .expandable-accordion-heading a:before { content: '\f0fe'; font-family: FontAwesome; margin-right: 10px; color: #0277BD; }
 .expandable .expandable-accordion-heading a.is-active:before { content: '\f146'; }
 .expandable .expandable-tabcontent { padding: 20px; border: 1px solid #e7e7e7; margin-bottom: 10px; }
 .expandable .expandable-tabcontent > *:last-child { margin-bottom: 0; }
@@ -31,11 +31,11 @@
 .expandable-tabs ul.expandable-tablist { position: relative; display: flex; flex-direction: row; justify-content: space-between; border-bottom: 1px solid #333; }
 .expandable-tabs ul.expandable-tablist:after { z-index: 0; content: ' '; width: 100%; position: absolute; bottom: 0; left: 0; }
 .expandable-tabs ul.expandable-tablist li { display: flex; flex-grow: 1; text-align: center; align-self: flex-end; }
-.expandable-tabs ul.expandable-tablist a { color: #007bc8; display: block; padding: 5px 10px; font-weight: bold; position: relative; z-index: 1; margin: 0 auto; line-height: 1.2; }
+.expandable-tabs ul.expandable-tablist a { color: #0277BD; display: block; padding: 5px 10px; font-weight: bold; position: relative; z-index: 1; margin: 0 auto; line-height: 1.2; }
 .expandable-tabs ul.expandable-tablist li.is-active a { color: #202020; position: relative; }
 .expandable-tabs ul.expandable-tablist li.is-active a:after { content: ""; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 6px solid #333; bottom: -6px; left: 0; right: 0; margin: 0 auto; position: absolute; }
 
-.expandable.expandable-select a.expandable-prompt { padding: 10px 30px 10px 10px; display: block; background-color: #007bc8; color: #fff; position: relative; font-weight: bold; max-width: 320px; }
+.expandable.expandable-select a.expandable-prompt { padding: 10px 30px 10px 10px; display: block; background-color: #0277BD; color: #fff; position: relative; font-weight: bold; max-width: 320px; }
 .expandable.expandable-select a.expandable-prompt:after { content: '\f105'; font-family: FontAwesome; padding: 10px; position: absolute; top: 0; right: 0; }
 .expandable.expandable-select .expandable-tab-group { max-width: 320px; display: none; position: relative; }
 .expandable.expandable-select .expandable-tab-group ul.expandable-tablist { position: absolute; top: 0; left: 0; right: 0; z-index: 1; background: #fff; }
@@ -69,7 +69,7 @@
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable.expandable-accordion .expandable-tabcontent { border-color: #444; }
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading { border-color: #444; }
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:link, .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:visited { color: #fff; }
-.bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:link:before, .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:visited:before { color: #cfb87c; }
+.bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:link:before, .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-accordion-heading a:visited:before { color: #CFB87C; }
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-select .expandable-select-prompt a:link, .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-select .expandable-select-prompt a:visited { color: #fff; }
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-select .expandable-tablist-item a.expandable-tablist-link { color: #656565; }
 .bean-type-expandable.exbd-block.exbd-style-dark-gray .expandable-select .expandable-tablist-item.is-active a.expandable-tablist-link { color: #202020; }

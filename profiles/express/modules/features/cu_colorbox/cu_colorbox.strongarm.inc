@@ -112,7 +112,7 @@ function cu_colorbox_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'colorbox_mobile_device_width';
-  $strongarm->value = '480px';
+  $strongarm->value = '320px';
   $export['colorbox_mobile_device_width'] = $strongarm;
 
   $strongarm = new stdClass();

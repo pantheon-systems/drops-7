@@ -201,31 +201,5 @@ example.org';
   $strongarm->value = 1;
   $export['linkchecker_scan_blocks'] = $strongarm;
 
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'linkchecker_scan_comments';
-  $strongarm->value = 0;
-  $export['linkchecker_scan_comments'] = $strongarm;
-
-  $strongarm = new stdClass();
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'linkchecker_scan_nodetypes';
-  $strongarm->value = array(
-    'article' => 'article',
-    'article_list_page' => 'article_list_page',
-    'page' => 'page',
-    'content_list_page' => 'content_list_page',
-    'faqs' => 'faqs',
-    'people_list_page' => 'people_list_page',
-    'person' => 'person',
-    'photo_gallery' => 'photo_gallery',
-    'webform' => 'webform',
-    'file' => 0,
-    'video' => 0,
-  );
-  $export['linkchecker_scan_nodetypes'] = $strongarm;
-
   return $export;
 }

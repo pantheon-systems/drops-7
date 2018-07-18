@@ -1,0 +1,7 @@
+#block-menu-block-site-navigation-menus-4 { display: none; }
+#block-menu-block-site-navigation-menus-4 .block-title { display: none !important; }
+
+@media screen and (min-width: 768px) { #block-menu-block-site-navigation-menus-4 { display: none; } }
+button.section-navigation-toggle { background: none; border: 1px solid rgba(117, 117, 117, 0.25); padding: 8px; font-size: 85%; }
+
+#section-navigation { margin-top: 10px; }

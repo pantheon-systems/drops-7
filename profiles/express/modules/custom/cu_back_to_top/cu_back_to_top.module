@@ -18,7 +18,7 @@
  *   The variables array (modify in place).
  */
 function cu_back_to_top_preprocess_html(&$variables) {
-  $variables['page']['page_bottom']['back_to_top']['#markup'] = '<div id="cu_back_to_top"><a href="#page" title="Back to Top">Back to Top</a></div>';
+  $variables['page']['page_bottom']['back_to_top']['#markup'] = '<div id="cu_back_to_top"><a href="#page" title="Back to Top">Return to the top of the page</a></div>';
 }
 
 /**

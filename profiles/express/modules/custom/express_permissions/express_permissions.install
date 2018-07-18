@@ -16,55 +16,26 @@ function express_permissions_install() {
   variable_set('secure_permissions_verbose', 0);
   variable_set('secure_permissions_ignore_in_export', 'access devel information');
 
-  // Load our roles and permissions.
-  secure_permissions_rebuild();
-
-  // force roles to be weighted by increasing permissions
-  $role = user_role_load_by_name('edit_my_content');
-  $role->weight = 2;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('content_editor');
-  $role->weight = 3;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('site_owner');
-  $role->weight = 4;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('administrator');
-  $role->weight = 5;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('developer');
-  $role->weight = 6;
-  user_role_save($role);
-
 }
 
 /**
- * Reset role weight by increasing permissions
+ * Reset role weight by increasing permissions then any additional roles
  */
-function express_permissions_update_7001() {
-    // force roles to be weighted by increasing permissions
-  $role = user_role_load_by_name('edit_my_content');
-  $role->weight = 2;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('content_editor');
-  $role->weight = 3;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('site_owner');
-  $role->weight = 4;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('administrator');
-  $role->weight = 5;
-  user_role_save($role);
-
-  $role = user_role_load_by_name('developer');
-  $role->weight = 6;
-  user_role_save($role);
+function express_permissions_update_7005() {
+  express_permissions_order_roles();
 }
 
+/**
+ * Set variable to 4 for 2.9.1 update.
+ */
+function express_permissions_update_7006() {
+  variable_set('express_permissions_owner_cap', 4);
+  variable_set('express_permissions_addon_cap', 3);
+}
+
+/**
+ * Rebuild permissions.
+ */
+function express_permissions_update_7007() {
+  secure_permissions_rebuild();
+}

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Base class for testing a module's custom tags.
+ */
+
+/**
  * Base class for testing a module's custom tags.
  */
 abstract class MetatagTagsTestBase extends MetatagTestHelper {
@@ -203,17 +208,18 @@ abstract class MetatagTagsTestBase extends MetatagTestHelper {
           $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
         }
         else {
-          if ((string)$xpath[0][$xpath_value_attribute] != $all_values[$tag_name]) {
+          if ((string) $xpath[0][$xpath_value_attribute] != $all_values[$tag_name]) {
             $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
           }
           $this->assertTrue($xpath[0][$xpath_value_attribute]);
-          $this->assertEqual($xpath[0][$xpath_value_attribute], $all_values[$tag_name]);//, "The meta tag was found with the expected value.");
+          $this->assertEqual($xpath[0][$xpath_value_attribute], $all_values[$tag_name]);
+          // , "The meta tag was found with the expected value.");
         }
       }
       else {
         $this->verbose($xpath, $tag_name . ': ' . $xpath_string);
-        $this->assertTrue((string)$xpath[0]);
-        $this->assertEqual((string)$xpath[0], $all_values[$tag_name], "The meta tag was found with the expected value.");
+        $this->assertTrue((string) $xpath[0]);
+        $this->assertEqual((string) $xpath[0], $all_values[$tag_name], "The meta tag was found with the expected value.");
       }
     }
   }
@@ -255,7 +261,7 @@ abstract class MetatagTagsTestBase extends MetatagTestHelper {
    *   An absolute URL to a non-existant image.
    */
   public function randomImageUrl() {
-    return 'http://www.example.com/images/'  . $this->randomMachineName() . '.png';
+    return 'http://www.example.com/images/' . $this->randomMachineName() . '.png';
   }
 
 }

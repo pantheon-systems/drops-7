@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for ucb_on_prem_hosting module.
+ */
+function ucb_on_prem_hosting_install() {
+  module_disable(array(
+    'memcache',
+    'ng_hosting'
+  ));
+  drupal_uninstall_modules($module_list = array('memcache','ng_hosting'), $uninstall_dependents = FALSE);
+
+  // Configure SMTP settings
+  // Don't need to worry about uninstall, SMTP module takes care of these variables.
+  variable_set('smtp_allowhtml', 0);
+  variable_set('smtp_from', 'webexpress_noreply@colorado.edu');
+  variable_set('smtp_fromname', 'Web Express');
+  variable_set('smtp_host', 'smtp.colorado.edu');
+  variable_set('smtp_on', 1);
+  variable_set('smtp_port', 25);
+  variable_set('smtp_protocol', 'tls');
+  variable_set('smtp_queue', 0);
+  variable_set('smtp_queue_fail', 0);
+  variable_set('smtp_username', 'webexpress_noreply');
+  variable_set('smtp_debugging', 2);
+  variable_set('smtp_deliver', 1);
+  variable_set('date_default_timezone', 'America/Denver');
+}
+
+
+/**
+ * Set timezone due to server change
+ */
+function ucb_on_prem_hosting_update_7001() {
+  variable_set('date_default_timezone', 'America/Denver');
+}

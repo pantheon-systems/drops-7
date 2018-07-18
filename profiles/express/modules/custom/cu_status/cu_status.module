@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Contains Drupal hooks for cu_status module.
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_status_block_info() {
+  $blocks['cu_status'] = array(
+    'info' => t('Status'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function cu_status_block_view($delta = '') {
+  switch ($delta) {
+    case 'cu_status':
+      drupal_add_js('https://cdn.statuspage.io/se-v2.js', 'external');
+      drupal_add_js(drupal_get_path('module', 'cu_status') . '/js/cu-status.js');
+      drupal_add_css(drupal_get_path('module', 'cu_status') . '/css/cu-status.css');
+      $statusio_page = variable_get('cu_status_page', 'https://universityofcoloradoboulder.statuspage.io');
+      $statusio_id = variable_get('cu_status_id', '9sm03v9xr9m6');
+      $statusio_apikey = variable_get('cu_status_apikey', '');
+
+      $status_settings = array(
+        'statusio_id' => $statusio_id,
+        'statusio_apikey' => $statusio_apikey,
+      );
+      drupal_add_js(array('cu_status' => $status_settings), 'setting');
+
+      $block['subject'] = 'Status';
+
+      if (!$statusio_id) {
+        $block['content'] = 'CU Status has not been configured.';
+      }
+      else {
+        $block['content'] = '<div class="cu-status">
+          <div class="status-message"></div>
+          <div class="incidents">
+            <strong>Incidents</strong>
+            <div class="incidents-list"></div>
+          </div>
+          <div class="components">
+            <div class="components-message">
+              The following components may be experiencing performance issues:
+            </div>
+            <div class="components-list"></div>
+          </div>
+          <div class="status-info">
+            <a href="' . $statusio_page . '" target="_blank">View status information</a>
+          </div>
+        </div>';
+      }
+      break;
+  }
+  return $block;
+}

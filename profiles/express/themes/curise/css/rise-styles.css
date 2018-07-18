@@ -10,7 +10,7 @@ body { background-color: #1e1e1e; }
 .banner-dark #main-menu-wrapper { background-color: #333; position: static; }
 .banner-dark #main-menu-wrapper a { color: #333; font-weight: 600; }
 .banner-dark #main-menu-wrapper a:hover, .banner-dark #main-menu-wrapper a.active, .banner-dark #main-menu-wrapper a.active-trail { background-color: #cfb87c; color: #000; }
-.banner-dark #main-menu-wrapper a#home-link.active { background: transparent; color: #333; }
+.banner-dark #main-menu-wrapper a.home-link.active { background: transparent; color: #333; }
 .banner-dark #main-menu-wrapper nav { margin: 0 -20px; }
 .banner-dark #main-menu-wrapper .nav-inner { background-color: #f7f7f7; }
 
@@ -20,7 +20,7 @@ body { background-color: #1e1e1e; }
 .banner-light #main-menu-wrapper { background-color: #f2f2f2; position: static; }
 .banner-light #main-menu-wrapper a { color: #fff; font-weight: 600; }
 .banner-light #main-menu-wrapper a:hover, .banner-light #main-menu-wrapper a.active, .banner-light #main-menu-wrapper a.active-trail { background-color: #cfb87c; color: #000; }
-.banner-light #main-menu-wrapper a#home-link.active { background: transparent; color: #cfb87c; }
+.banner-light #main-menu-wrapper a.home-link.active { background: transparent; color: #cfb87c; }
 .banner-light #main-menu-wrapper nav { margin: 0 -20px; }
 .banner-light #main-menu-wrapper .nav-inner { background-color: #333; }
 

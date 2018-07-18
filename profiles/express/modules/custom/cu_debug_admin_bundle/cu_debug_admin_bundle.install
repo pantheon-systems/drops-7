@@ -51,9 +51,6 @@ function _cu_debug_admin_bundle_enable_modules() {
 }
 
 function _cu_debug_admin_bundle_disable_modules() {
-
-  return array(
-    'varnish',
-    'memcache',
-  );
+  // This used to alter the varnish configuration, but that's now handled by _hosting modules
+  return array();
 }

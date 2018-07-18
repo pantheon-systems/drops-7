@@ -381,7 +381,7 @@ function cu_feature_callout_field_default_field_instances() {
       'title_value' => '',
       'url' => 'optional',
       'user_register_form' => FALSE,
-      'validate_url' => 0,
+      'validate_url' => 1,
     ),
     'widget' => array(
       'active' => 0,

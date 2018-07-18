@@ -97,14 +97,14 @@ ul#main-menu {
   }
 }
 
-ul#main-menu a#home-link {
+ul#main-menu a.home-link {
   background: transparent;
   filter:none;
   color:#757575;
   border:none;
 }
-ul#main-menu a#home-link:hover,
-ul#main-menu a#home-link.active {
+ul#main-menu a.home-link:hover,
+ul#main-menu a.home-link.active {
   color:#333;
   background: transparent;
 }

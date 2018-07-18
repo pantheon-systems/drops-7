@@ -1,5 +1,0 @@
-name = CU Feedback
-description = Provides a feedback interface for CU sites
-core = 7.x
-package = CU-Forms
-version = 7.x-1.0

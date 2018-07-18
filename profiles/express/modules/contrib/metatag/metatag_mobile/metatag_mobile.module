@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Primary hook implementations for Metatag:Mobile.
@@ -78,13 +79,13 @@ function theme_metatag_mobile_alt_handheld($variables) {
 }
 
 /*
-* theme-color
-* MobileOptimized
-* HandheldFriendly
-* viewport
-* cleartype
-* apple-mobile-web-app-capable
-* apple-mobile-web-app-status-bar-style
-* format-detection
-* android-app
-*/
+ * theme-color
+ * MobileOptimized
+ * HandheldFriendly
+ * viewport
+ * cleartype
+ * apple-mobile-web-app-capable
+ * apple-mobile-web-app-status-bar-style
+ * format-detection
+ * android-app
+ */

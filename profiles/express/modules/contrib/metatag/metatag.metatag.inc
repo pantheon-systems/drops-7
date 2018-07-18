@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Metatag API implementations to provide the basic meta tags.
+ */
+
+/**
  * Implements hook_metatag_config_default().
  */
 function metatag_metatag_config_default() {
@@ -17,7 +22,7 @@ function metatag_metatag_config_default() {
   $config->disabled = FALSE;
   $config->config = array(
     'title' => array('value' => '[current-page:title] | [current-page:pager][site:name]'),
-    'generator' => array('value' => 'Drupal 7 (http://drupal.org)'),
+    'generator' => array('value' => 'Drupal 7 (https://www.drupal.org)'),
     'canonical' => array('value' => '[current-page:url:absolute]'),
     'shortlink' => array('value' => '[current-page:url:unaliased]'),
   );
@@ -112,7 +117,7 @@ function metatag_metatag_config_instance_info() {
     if (metatag_entity_supports_metatags($entity_type)) {
       $info[$entity_type] = array('label' => $entity_info['label']);
       foreach ($entity_info['bundles'] as $bundle => $bundle_info) {
-        if (count($entity_info['bundles'] == 1) && $bundle == $entity_type) {
+        if (count($entity_info['bundles']) == 1 && $bundle == $entity_type) {
           // Skip default bundles (entities that do not really have bundles).
           continue;
         }
@@ -150,6 +155,7 @@ function metatag_metatag_info() {
   $info['tags']['title'] = array(
     'label' => t('Page title'),
     'description' => t("The text to display in the title bar of a visitor's web browser when they view this page. This meta tag may also be used as the title of the page when a visitor bookmarks or favorites this page."),
+    'maxlength' => 0,
     'class' => 'DrupalTitleMetaTag',
     'group' => 'basic',
     'weight' => ++$weight,
@@ -157,7 +163,8 @@ function metatag_metatag_info() {
 
   $info['tags']['description'] = array(
     'label' => t('Description'),
-    'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. The description meta tag may be used by search engines to display a snippet about the page in search results."),
+    'description' => t("A brief and concise summary of the page's content, preferably 320 characters or less. The description meta tag may be used by search engines to display a snippet about the page in search results."),
+    'maxlength' => 380,
     'class' => 'DrupalTextMetaTag',
     'group' => 'basic',
     'weight' => ++$weight,
@@ -171,6 +178,7 @@ function metatag_metatag_info() {
   $info['tags']['abstract'] = array(
     'label' => t('Abstract'),
     'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. Where as the description meta tag may be used by search engines to display a snippet about the page in search results, the abstract tag may be used to archive a summary about the page. This meta tag is <em>no longer</em> supported by major search engines."),
+    'maxlength' => 0,
     'class' => 'DrupalTextMetaTag',
     'group' => 'basic',
     'weight' => ++$weight,
@@ -184,6 +192,7 @@ function metatag_metatag_info() {
   $info['tags']['keywords'] = array(
     'label' => t('Keywords'),
     'description' => t("A comma-separated list of keywords about the page. This meta tag is <em>not</em> supported by most search engines anymore."),
+    'maxlength' => 0,
     'class' => 'DrupalTextMetaTag',
     'group' => 'basic',
     'weight' => ++$weight,
@@ -215,6 +224,7 @@ function metatag_metatag_info() {
   $info['tags']['news_keywords'] = array(
     'label' => t('Google News Keywords'),
     'description' => t('A comma-separated list of keywords about the page. This meta tag is used as an indicator in <a href="@google_news">Google News</a>.', array('@google_news' => 'http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297')),
+    'maxlength' => 0,
     'class' => 'DrupalTextMetaTag',
     'group' => 'advanced',
     'weight' => ++$weight,
@@ -309,6 +319,18 @@ function metatag_metatag_info() {
     'weight' => ++$weight,
     'devel_generate' => array(
       'type' => 'canonical',
+    ),
+  );
+
+  $info['tags']['set_cookie'] = array(
+    'label' => t('Set cookie'),
+    'description' => t('<a href="https://www.metatags.org/meta_http_equiv_set_cookie">Sets a cookie</a> on the visitor\'s browser. Can be in either NAME=VALUE format, or a more verbose format including the path and expiration date; see the link for full details on the syntax.'),
+    'class' => 'DrupalTextMetaTag',
+    'group' => 'advanced',
+    'weight' => ++$weight,
+    'is_language' => TRUE,
+    'element' => array(
+      '#theme' => 'metatag_http_equiv',
     ),
   );
 

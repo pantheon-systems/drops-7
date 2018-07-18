@@ -189,6 +189,10 @@ function express_block_designer_secure_permissions($role) {
       'administer block designer themes',
       'use block designer',
     ),
+    'site_editor' => array(
+      'administer block designer themes',
+      'use block designer',
+    ),
     'site_owner' => array(
       'administer block designer themes',
       'use block designer',
@@ -387,6 +391,12 @@ function express_block_designer_save($configs) {
   else {
     serialize($record);
     $saved = drupal_write_record('express_block_designer', $record);
+  }
+}
+
+function express_block_designer_delete($delta = NULL) {
+  if ($delta) {
+    $query = db_delete('express_block_designer')->condition('block_delta', $delta)->execute();
   }
 }
 
@@ -707,5 +717,43 @@ function express_block_designer_get_block_info($delta = NULL) {
 
     $block = $query->execute()->fetchAssoc();
     return $block;
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ *
+ * Delete block designer settings when a bean is deleted.
+ */
+
+function express_block_designer_entity_delete($entity, $type) {
+ if ($type == 'bean') {
+   express_block_designer_delete($entity->delta);
+ }
+}
+
+/**
+ * Delete orphaned block designer settings.
+ */
+
+function express_block_designer_delete_orphans() {
+  // Load all block designer settings.
+  $query = db_select('express_block_designer', 'ebd');
+  $query->fields('ebd', array('block_delta'));
+  $query->condition('module', 'bean');
+  $results = $query->execute()->fetchCol();
+
+  // Compare deltas of results to see if a bean with the same delta exists.
+  if (!empty($results)) {
+    foreach ($results as $delta) {
+      $query = db_select('bean', 'n');
+      $query->fields('n', array('delta'));
+      $query->condition('delta', $delta);
+      $result = $query->execute()->fetchCol();
+      // If there is no bean with the same delta, the setting can be deleted.
+      if (!$result) {
+        express_block_designer_delete($delta);
+      }
+    }
   }
 }

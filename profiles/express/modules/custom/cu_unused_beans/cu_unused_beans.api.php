@@ -15,3 +15,5 @@ function hook_unused_beans($vars) {
     'column' => 'FIELD/COLUMN NAME',
     'callback' => 'CALLBACK (optional)'
   );
+  
+}

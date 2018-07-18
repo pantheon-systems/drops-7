@@ -5,6 +5,8 @@
  * Ctools integration.
  */
 
+define('ELYSIA_CRON_CTOOLS_LINEBREAK', "\n");
+
 /**
  * Get default cron jobs.
  *
@@ -203,13 +205,13 @@ function elysia_cron_ctools_export_callback($object, $indent) {
   $schema = ctools_export_get_schema($table);
   $identifier = $schema['export']['identifier'];
 
-  $output = $indent . '$' . $identifier . ' = new ' . get_class($object) . ';' . PHP_EOL;
+  $output = $indent . '$' . $identifier . ' = new ' . get_class($object) . '();' . ELYSIA_CRON_CTOOLS_LINEBREAK;
 
   if ($schema['export']['can disable']) {
-    $output .= $indent . '$' . $identifier . '->disabled = FALSE; /* Edit this to true to make a default ' . $identifier . ' disabled initially */' . PHP_EOL;
+    $output .= $indent . '$' . $identifier . '->disabled = FALSE; /* Edit this to true to make a default ' . $identifier . ' disabled initially */' . ELYSIA_CRON_CTOOLS_LINEBREAK;
   }
   if (!empty($schema['export']['api']['current_version'])) {
-    $output .= $indent . '$' . $identifier . '->api_version = ' . $schema['export']['api']['current_version'] . ';' . PHP_EOL;
+    $output .= $indent . '$' . $identifier . '->api_version = ' . $schema['export']['api']['current_version'] . ';' . ELYSIA_CRON_CTOOLS_LINEBREAK;
   }
 
   $fields = $schema['fields'];
@@ -222,7 +224,7 @@ function elysia_cron_ctools_export_callback($object, $indent) {
     if (!is_null($value) && $info['type'] == 'int') {
       $value = (isset($info['size']) && $info['size'] == 'tiny') ? (bool) $value : (int) $value;
     }
-    $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ';' . PHP_EOL;
+    $output .= $indent . '$' . $identifier . '->' . $field . ' = ' . ctools_var_export($value, $indent) . ';' . ELYSIA_CRON_CTOOLS_LINEBREAK;
   }
 
   return $output;
@@ -253,19 +255,19 @@ function elysia_cron_ctools_to_hook_code(array $names, $name) {
   $objects = array_intersect_key($objects, array_flip($names));
 
   if ($objects) {
-    $output = '/**' . PHP_EOL;
-    $output .= " * Implementation of hook_{$export['default hook']}()" . PHP_EOL;
-    $output .= ' */' . PHP_EOL;
-    $output .= "function " . $name . "_{$export['default hook']}() {" . PHP_EOL;
-    $output .= "  \${$export['identifier']}s = array();" . PHP_EOL . PHP_EOL;
+    $output = '/**' . ELYSIA_CRON_CTOOLS_LINEBREAK;
+    $output .= " * Implementation of hook_{$export['default hook']}()" . ELYSIA_CRON_CTOOLS_LINEBREAK;
+    $output .= ' */' . ELYSIA_CRON_CTOOLS_LINEBREAK;
+    $output .= "function " . $name . "_{$export['default hook']}() {" . ELYSIA_CRON_CTOOLS_LINEBREAK;
+    $output .= "  \${$export['identifier']}s = array();" . ELYSIA_CRON_CTOOLS_LINEBREAK . ELYSIA_CRON_CTOOLS_LINEBREAK;
 
     foreach ($objects as $object) {
       $output .= ctools_export_crud_export($table, $object, '  ');
-      $output .= "  \${$export['identifier']}s['" . check_plain($object->{$export['key']}) . "'] = \${$export['identifier']};" . PHP_EOL . PHP_EOL;
+      $output .= "  \${$export['identifier']}s['" . check_plain($object->{$export['key']}) . "'] = \${$export['identifier']};" . ELYSIA_CRON_CTOOLS_LINEBREAK . ELYSIA_CRON_CTOOLS_LINEBREAK;
     }
 
-    $output .= "  return \${$export['identifier']}s;" . PHP_EOL;
-    $output .= '}' . PHP_EOL;
+    $output .= "  return \${$export['identifier']}s;" . ELYSIA_CRON_CTOOLS_LINEBREAK;
+    $output .= '}' . ELYSIA_CRON_CTOOLS_LINEBREAK;
   }
 
   return $output;

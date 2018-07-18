@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests that each of the Metatag OpenGraph Products tags work correctly.
+ */
+
+/**
  * Tests that each of the Metatag OpenGraph Products tags work correctly.
  */
 class MetatagOpenGraphProductsTagsTest extends MetatagTagsTestBase {

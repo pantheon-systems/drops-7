@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Tests for the Metatag module to ensure removal of core tags works correctly.
+ */
+
+/**
  * Tests for the Metatag module to ensure removal of core tags works correctly.
  */
 class MetatagCoreTagRemovalTest extends MetatagTestHelper {
@@ -21,8 +26,9 @@ class MetatagCoreTagRemovalTest extends MetatagTestHelper {
    * Test that the core meta tags work correctly.
    */
   function testCoreTagRemoval() {
-    // The default generator string that both Metatag and Drupal core use.
-    $generator_default = 'Drupal 7 (http://drupal.org)';
+    // The default generator strings from core and Metatag.
+    $generator_core = 'Drupal 7 (http://drupal.org)';
+    $generator_metatag = 'Drupal 7 (https://www.drupal.org)';
 
     // Load the front page.
     $this->drupalGet('<front>');
@@ -31,7 +37,7 @@ class MetatagCoreTagRemovalTest extends MetatagTestHelper {
     // Confirm that the Generator tag is the default.
     $xpath = $this->xpath("//meta[@name='generator']");
     $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
-    $this->assertEqual($xpath[0]['content'], $generator_default);
+    $this->assertEqual($xpath[0]['content'], $generator_metatag);
 
     // Update the global config to remove the 'generator' value.
     $config = metatag_config_load('global');
@@ -61,12 +67,12 @@ class MetatagCoreTagRemovalTest extends MetatagTestHelper {
     $this->drupalGet('<front>');
     $this->assertResponse(200);
 
-    // Confirm that the Generator tag is the default again, i.e. core is
-    // responsible for adding it. Also, core uses the meta tag name "Generator"
-    // instead of 'generator' like Metatag uses.
+    // Confirm that the Generator tag is using core's default again, i.e. core
+    // is responsible for adding it. Also, core uses the meta tag name
+    // "Generator" instead of 'generator' like Metatag uses.
     $xpath = $this->xpath("//meta[@name='Generator']");
     $this->assertEqual(count($xpath), 1, 'Exactly one generator meta tag found.');
-    $this->assertEqual($xpath[0]['content'], $generator_default);
+    $this->assertEqual($xpath[0]['content'], $generator_core);
   }
 
 }

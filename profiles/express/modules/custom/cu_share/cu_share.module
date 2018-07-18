@@ -378,6 +378,9 @@ function cu_share_settings_form_submit($form, &$form_state) {
   // Save sharing position
   $position = $form_state['values']['cu_share_position'];
   variable_set('cu_share_position', $position);
+  
+  //Display status message
+  drupal_set_message(t('Social Share Settings have been saved.'), 'status');
 
 }
 

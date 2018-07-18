@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag integration for the metatag_opengraph module.
@@ -132,6 +133,7 @@ function metatag_opengraph_metatag_info() {
   $info['tags']['og:title'] = array(
     'label' => t('Content title'),
     'description' => t('The title of the content, e.g., <em>The Rock</em>.'),
+    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $og_defaults;
 
@@ -157,6 +159,7 @@ function metatag_opengraph_metatag_info() {
   $info['tags']['og:description'] = array(
     'label' => t('Content description'),
     'description' => t('A one to two sentence description of the content.'),
+    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $og_defaults;
 
@@ -176,7 +179,7 @@ function metatag_opengraph_metatag_info() {
 
   $info['tags']['og:image'] = array(
     'label' => t('Image'),
-    'description' => t('The URL of an image which should represent the content. For best results use an image that is at least 1200 x 630 pixels in size, but at least 600 x 316 pixels is a recommended minimum. Supports PNG, JPEG and GIF formats. Should not be used if og:image:url is used. Note: if multiple images are added many services (e.g. Facebook) will default to the largest image, not the first one.'),
+    'description' => t('The URL of an image which should represent the content. The image must be at least 200 x 200 pixels in size; 600 x 316 pixels is a recommended minimum size, and for best results use an image least 1200 x 630 pixels in size. Supports PNG, JPEG and GIF formats. Should not be used if og:image:url is used. Note: if multiple images are added many services (e.g. Facebook) will default to the largest image, not specifically the first one.'),
     'multiple' => TRUE,
     'image' => TRUE,
     'weight' => ++$weight,

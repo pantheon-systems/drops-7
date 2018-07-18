@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Display the node form's Metatag fieldset in a pane.
