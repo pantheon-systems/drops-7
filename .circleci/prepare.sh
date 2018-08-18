@@ -2,8 +2,7 @@
 
 ###
 # Prepare a Pantheon site environment for the Behat test suite, by pushing the
-# requested upstream branch to the environment. This script is architected
-# such that it can be run a second time if a step fails.
+# requested upstream branch to the environment.
 ###
 
 set -ex
@@ -14,30 +13,13 @@ if [ -z "$TERMINUS_SITE" ] || [ -z "$TERMINUS_ENV" ]; then
 fi
 
 ###
+# Clean up old unused environments, and make sure the dev site is spun up.
+###
+terminus build:env:delete:ci -n "$TERMINUS_SITE" --keep=2 --yes
+terminus env:wake -n "$TERMINUS_SITE.dev"
+
+###
 # Create a new environment for this particular test run.
 ###
-terminus --yes env:info $TERMINUS_SITE.$TERMINUS_ENV 2>/dev/null || terminus --yes env:create $TERMINUS_SITE.dev $TERMINUS_ENV
-terminus --yes env:wipe $TERMINUS_SITE.$TERMINUS_ENV
-
-###
-# Get all necessary environment details.
-###
-PANTHEON_GIT_URL=$(terminus connection:info $TERMINUS_SITE.$TERMINUS_ENV --field=git_url)
-PANTHEON_SITE_URL="$TERMINUS_ENV-$TERMINUS_SITE.pantheonsite.io"
-BASH_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-###
-# Switch to git mode for pushing the files up
-###
-terminus --yes connection:set $TERMINUS_SITE.$TERMINUS_ENV git
-
-###
-# Push the upstream branch to the environment
-###
-git remote add pantheon $PANTHEON_GIT_URL
-git push -f pantheon $CIRCLE_BRANCH:$TERMINUS_ENV
-
-###
-# Switch to SFTP mode so the site can install plugins and themes
-###
-terminus --yes connection:set $TERMINUS_SITE.$TERMINUS_ENV sftp
+terminus build:env:create -n "$TERMINUS_SITE.dev" "$TERMINUS_ENV" --yes
+terminus drush -n "$TERMINUS_SITE.$TERMINUS_ENV" -- updatedb -y
