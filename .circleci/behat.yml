@@ -5,7 +5,6 @@ default:
       paths:
         - features
       contexts:
-        - Behat\MinkExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\DrupalContext
         - Drupal\DrupalExtension\Context\MinkContext
         - FeatureContext
