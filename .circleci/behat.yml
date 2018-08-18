@@ -6,6 +6,8 @@ default:
         - features
       contexts:
         - Behat\MinkExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
         - FeatureContext
   extensions:
     Behat\MinkExtension:
