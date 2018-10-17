@@ -3,12 +3,12 @@
 if (isset($_SERVER['PRESSFLOW_SETTINGS'])) {
   $pressflow_config = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
   $db = $pressflow_config['databases']['default']['default'];
-  $link = mysql_connect($db['host'] . ':' . $db['port'], $db['username'], $db['password']);
+  $link = mysqli_connect($db['host'] . ':' . $db['port'], $db['username'], $db['password']);
   if (!$link) {
-      fail('Could not connect: ' . mysql_error());
+      fail('Could not connect: ' . mysqli_error());
   }
   echo "OK\n";
-  mysql_close($link);
+  mysqli_close($link);
 }
 else {
   fail("No config found.\n");
