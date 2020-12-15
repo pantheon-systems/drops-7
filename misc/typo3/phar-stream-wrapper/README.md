@@ -1,5 +1,6 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/TYPO3/phar-stream-wrapper/badges/quality-score.png?b=v2)](https://scrutinizer-ci.com/g/TYPO3/phar-stream-wrapper/?branch=v2)
 [![Travis CI Build Status](https://travis-ci.org/TYPO3/phar-stream-wrapper.svg?branch=v2)](https://travis-ci.org/TYPO3/phar-stream-wrapper)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/q4ls5tg4w1d6sf4i/branch/v2?svg=true)](https://ci.appveyor.com/project/ohader/phar-stream-wrapper)
 
 # PHP Phar Stream Wrapper
 
@@ -21,9 +22,11 @@ and has been addressed concerning the specific attack vector and for this generi
 `PharStreamWrapper` in TYPO3 versions 7.6.30 LTS, 8.7.17 LTS and 9.3.1 on 12th
 July 2018.
 
-* https://typo3.org/security/advisory/typo3-core-sa-2018-002/
 * https://blog.secarma.co.uk/labs/near-phar-dangerous-unserialization-wherever-you-are
 * https://youtu.be/GePBmsNJw6Y
+* https://typo3.org/security/advisory/typo3-psa-2018-001/
+* https://typo3.org/security/advisory/typo3-psa-2019-007/
+* https://typo3.org/security/advisory/typo3-psa-2019-008/
 
 ## License
 
@@ -63,7 +66,7 @@ adjusted to according requirements.
 
 ```
 $behavior = new \TYPO3\PharStreamWrapper\Behavior();
-Manager::initialize(
+\TYPO3\PharStreamWrapper\Manager::initialize(
     $behavior->withAssertion(new PharExtensionInterceptor())
 );
 
@@ -90,7 +93,7 @@ if (in_array('phar', stream_get_wrappers())) {
   + `COMMAND_UNLINK`
   + `COMMAND_URL_STAT`
 
-## Interceptor
+## Interceptors
 
 The following interceptor is shipped with the package and ready to use in order
 to block any Phar invocation of files not having a `.phar` suffix. Besides that
@@ -137,9 +140,72 @@ class PharExtensionInterceptor implements Assertable
 }
 ```
 
+### ConjunctionInterceptor
+
+This interceptor combines multiple interceptors implementing `Assertable`.
+It succeeds when all nested interceptors succeed as well (logical `AND`).
+
+```
+$behavior = new \TYPO3\PharStreamWrapper\Behavior();
+\TYPO3\PharStreamWrapper\Manager::initialize(
+    $behavior->withAssertion(new ConjunctionInterceptor(array(
+        new PharExtensionInterceptor(),
+        new PharMetaDataInterceptor()
+    )))
+);
+```
+
+### PharExtensionInterceptor
+
+This (basic) interceptor just checks whether the invoked Phar archive has
+an according `.phar` file extension. Resolving symbolic links as well as
+Phar internal alias resolving are considered as well.
+
+```
+$behavior = new \TYPO3\PharStreamWrapper\Behavior();
+\TYPO3\PharStreamWrapper\Manager::initialize(
+    $behavior->withAssertion(new PharExtensionInterceptor())
+);
+```
+
+### PharMetaDataInterceptor
+
+This interceptor is actually checking serialized Phar meta-data against
+PHP objects and would consider a Phar archive malicious in case not only
+scalar values are found. A custom low-level `Phar\Reader` is used in order to
+avoid using PHP's `Phar` object which would trigger the initial vulnerability.
+
+```
+$behavior = new \TYPO3\PharStreamWrapper\Behavior();
+\TYPO3\PharStreamWrapper\Manager::initialize(
+    $behavior->withAssertion(new PharMetaDataInterceptor())
+);
+```
+
+## Reader
+
+* `Phar\Reader::__construct(string $fileName)`: Creates low-level reader for Phar archive
+* `Phar\Reader::resolveContainer(): Phar\Container`: Resolves model representing Phar archive
+* `Phar\Container::getStub(): Phar\Stub`: Resolves (plain PHP) stub section of Phar archive
+* `Phar\Container::getManifest(): Phar\Manifest`: Resolves parsed Phar archive manifest as
+  documented at http://php.net/manual/en/phar.fileformat.manifestfile.php
+* `Phar\Stub::getMappedAlias(): string`: Resolves internal Phar archive alias defined in stub
+  using `Phar::mapPhar('alias.phar')` - actually the plain PHP source is analyzed here
+* `Phar\Manifest::getAlias(): string` - Resolves internal Phar archive alias defined in manifest
+  using `Phar::setAlias('alias.phar')`
+* `Phar\Manifest::getMetaData(): string`: Resolves serialized Phar archive meta-data
+* `Phar\Manifest::deserializeMetaData(): mixed`: Resolves deserialized Phar archive meta-data
+  containing only scalar values - in case an object is determined, an according
+  `Phar\DeserializationException` will be thrown
+
+```
+$reader = new Phar\Reader('example.phar');
+var_dump($reader->resolveContainer()->getManifest()->deserializeMetaData());
+```
+
 ## Helper
 
-* `Helper::determineBaseFile(string $path)`: Determines base file that can be
+* `Helper::determineBaseFile(string $path): string`: Determines base file that can be
   accessed using the regular file system. For instance the following path
   `phar:///home/user/bundle.phar/content.txt` would be resolved to
   `/home/user/bundle.phar`.
