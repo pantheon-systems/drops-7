@@ -5183,7 +5183,9 @@ function drupal_build_js_cache($files) {
 
     // Allow modules to act on the js_cache before writing to disk.
     drupal_alter('js_cache', $contents);
-
+    
+    // Remove JS source and source mapping urls or these may cause 404 errors.
+    $contents = preg_replace('/\/\/(#|@)\s(sourceURL|sourceMappingURL)=\s*(\S*?)\s*$/m', '', $contents);
     // Prefix filename to prevent blocking by firewalls which reject files
     // starting with "ad*".
     $filename = 'js_' . drupal_hash_base64($contents) . '.js';
