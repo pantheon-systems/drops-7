@@ -323,7 +323,7 @@ $drupal_hash_salt = '';
  *
  * To see what PHP settings are possible, including whether they can be set at
  * runtime (by using ini_set()), read the PHP documentation:
- * http://www.php.net/manual/en/ini.list.php
+ * http://www.php.net/manual/ini.list.php
  * See drupal_environment_initialize() in includes/bootstrap.inc for required
  * runtime settings and the .htaccess file for non-runtime settings. Settings
  * defined there should not be duplicated here so as to avoid conflict issues.
@@ -359,7 +359,7 @@ ini_set('session.cookie_lifetime', 2000000);
  * output filter may not have sufficient memory to process it.  If you
  * experience this issue, you may wish to uncomment the following two lines
  * and increase the limits of these variables.  For more information, see
- * http://php.net/manual/en/pcre.configuration.php.
+ * http://php.net/manual/pcre.configuration.php.
  */
 # ini_set('pcre.backtrack_limit', 200000);
 # ini_set('pcre.recursion_limit', 200000);
@@ -635,15 +635,6 @@ $conf['404_fast_html'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
 # $conf['allow_authorize_operations'] = FALSE;
 
 /**
- * Smart start:
- *
- * If you would prefer to be redirected to the installation system when a
- * valid settings.php file is present but no tables are installed, remove
- * the leading hash sign below.
- */
-# $conf['pressflow_smart_start'] = TRUE;
-
-/**
  * Theme debugging:
  *
  * When debugging is enabled:
@@ -712,6 +703,15 @@ $conf['file_scan_ignore_directories'] = array(
 # $conf['variable_initialize_wait_for_lock'] = FALSE;
 
 /**
+ * Opt in to field_sql_storage_field_storage_write() optimization.
+ *
+ * To reduce unnecessary writes field_sql_storage_field_storage_write() can skip
+ * fields where values have apparently not changed. To opt in to this
+ * optimization, set this variable to TRUE.
+ */
+$conf['field_sql_storage_skip_writing_unchanged_fields'] = TRUE;
+
+/**
  * Use site name as display-name in outgoing mail.
  *
  * Drupal can use the site name (i.e. the value of the site_name variable) as
@@ -725,3 +725,23 @@ $conf['file_scan_ignore_directories'] = array(
  * @see drupal_mail()
  */
 $conf['mail_display_name_site_name'] = TRUE;
+
+/**
+ * SameSite cookie attribute.
+ *
+ * This variable can be used to set a value for the SameSite cookie attribute.
+ *
+ * Versions of PHP before 7.3 have no native support for the SameSite attribute
+ * so it is emulated.
+ *
+ * The session.cookie-samesite setting in PHP 7.3 and later will be overridden
+ * by this variable for Drupal session cookies, and any other cookies managed
+ * with drupal_setcookie().
+ *
+ * Setting this variable to FALSE disables the SameSite attribute on cookies.
+ *
+ * @see drupal_setcookie()
+ * @see drupal_session_start()
+ * @see https://www.php.net/manual/en/session.configuration.php#ini.session.cookie-samesite
+ */
+#$conf['samesite_cookie_value'] = 'None';
