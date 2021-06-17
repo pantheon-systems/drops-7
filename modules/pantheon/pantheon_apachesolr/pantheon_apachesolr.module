@@ -463,7 +463,7 @@ function pantheon_apachesolr_post_schema_form($form, &$form_state) {
   $form['schemas'] = array(
     '#type' => 'fieldset',
     '#title' => t('Solr Schema File'),
-    '#description' => t('The following schema.xml files exist in your Drupal site code. Pantheon uses Apache Solr v3.5.0, so you should use 3.x/schema.xml as the base configuration.') . '<br/><br/>',
+    '#description' => t('The following schema.xml files exist in your Drupal site code. Pantheon uses Apache Solr v3.6, so you should use 3.x/schema.xml as the base configuration.') . '<br/><br/>',
     '#weight' => -10,
   );
   if (count($schemas) > 0) {
