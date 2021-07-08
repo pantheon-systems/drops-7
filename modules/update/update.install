@@ -32,9 +32,9 @@ function update_requirements($phase) {
       module_load_include('inc', 'update', 'update.compare');
       $data = update_calculate_project_data($available);
       // First, populate the requirements for core:
-      $requirements['update_core'] = _update_requirement_check($data['drupal'], 'core');
-      // We don't want to check drupal a second time.
-      unset($data['drupal']);
+      $requirements['update_core'] = _update_requirement_check($data['pantheon'], 'core');
+      // We don't want to check pantheon a second time.
+      unset($data['pantheon']);
       if (!empty($data)) {
         // Now, sort our $data array based on each project's status. The
         // status constants are numbered in the right order of precedence, so
