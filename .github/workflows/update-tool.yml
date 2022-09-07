@@ -1,0 +1,52 @@
+name: Check for Drupal Updates
+
+on:
+    workflow_dispatch:
+    schedule:
+      - cron: '0 0 * * *' # Runs daily at midnight UTC
+
+permissions:
+    pull-requests: write
+    contents: write
+
+jobs:
+    check-updates:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Setup PHP
+              uses: shivammathur/setup-php@ec406be512d7077f68eed36e63f4d91bc006edc4 # v2.35.4
+              with:
+                php-version: '8.0' # hubph throwing warnings on 8.1
+                extensions: mbstring, xml, curl, zip
+                tools: composer
+            - name: Checkout update-tool
+              uses: actions/checkout@v4
+              with:
+                repository: pantheon-systems/update-tool
+                path: update-tool
+            - name: Cache Composer dependencies
+              uses: actions/cache@v3
+              with:
+                path: ~/.composer/cache
+                key: composer-${{ hashFiles('update-tool/composer.lock') }}
+                restore-keys: composer-
+            - name: Install update-tool dependencies
+              run: |
+                cd update-tool
+                composer install --no-dev --optimize-autoloader
+            - name: Install SSH key
+              uses: shimataro/ssh-key-action@d4fffb50872869abe2d9a9098a6d9c5aa7d16be4 # v2.7.0
+              with:
+                key: ${{ secrets.TAG1_SSH_KEY }}
+                known_hosts: ${{ secrets.KNOWN_HOSTS }}
+                if_key_exists: ignore
+            - name: Configure Git
+              run: |
+                git config --global user.name "Pantheon Update Bot"
+                git config --global user.email "update-bot@pantheon.io"
+            - name: Create update PR
+              run: |
+                cd update-tool
+                ./update-tool project:upstream:update drops-7
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
