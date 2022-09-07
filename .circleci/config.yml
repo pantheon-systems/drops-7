@@ -1,0 +1,33 @@
+version: 2
+jobs:
+    test:
+        docker:
+          - image: quay.io/pantheon-public/build-tools-ci:8.x-php8.2
+        working_directory: ~/work/d7
+        environment:
+          TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+          TERM: dumb
+          TERMINUS_SITE: ci-update-drops-7
+        steps:
+            - checkout
+            - run:
+                name: Set up environment
+                command: ./.circleci/set-up-globals.sh
+            - run:
+                name: Prepare
+                command: ./.circleci/prepare.sh
+            - run:
+                name: Test
+                command: ./.circleci/test.sh --strict
+            - run:
+                name: Cleanup
+                command: ./.circleci/cleanup.sh
+            - run:
+                name: Confirm that it is safe to merge
+                command: ./.circleci/confirm-safety.sh
+
+workflows:
+  version: 2
+  drops7:
+    jobs:
+      - test

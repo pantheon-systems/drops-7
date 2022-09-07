@@ -1,0 +1,23 @@
+name: Automerge
+on:
+  push:
+    branches:
+      - default
+
+permissions:
+  contents: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    # This enivronment 'production-approval' prompts for human approval before merging.
+    # Maybe could be removed once we have tests running in GHA blocking automerge, instead of CircleCI.
+    environment:
+      name: production-approval 
+    steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - uses: pantheon-systems/upstream-update-build@v1
+          env:
+            PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
