@@ -1,0 +1,17 @@
+# behat.yml
+default:
+  suites:
+    default:
+      paths:
+        - features
+      contexts:
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - FeatureContext
+  extensions:
+    Behat\MinkExtension:
+      # base_url set by ENV
+      goutte: ~
+    Drupal\DrupalExtension:
+      blackbox: ~
+      api_driver: 'drush'
