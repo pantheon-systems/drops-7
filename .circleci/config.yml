@@ -1,0 +1,55 @@
+version: 2
+jobs:
+    test:
+        docker:
+          - image: quay.io/pantheon-public/build-tools-ci:8.x-php7.4
+        working_directory: ~/work/d7
+        environment:
+          TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+          TERM: dumb
+        steps:
+            - checkout
+            - run:
+                name: Set up environment
+                command: ./.circleci/set-up-globals.sh
+            - run:
+                name: Prepare
+                command: ./.circleci/prepare.sh
+            - run:
+                name: Test
+                command: ./.circleci/test.sh --strict
+            - run:
+                name: Cleanup
+                command: ./.circleci/cleanup.sh
+            - run:
+                name: Confirm that it is safe to merge
+                command: ./.circleci/confirm-safety.sh
+    merge:
+        docker:
+          - image: quay.io/getpantheon/upstream-update-build:1.x
+        working_directory: ~/work/d7
+        environment:
+          TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+          TERM: dumb
+        steps:
+            - checkout
+            - add_ssh_keys:
+                fingerprints:
+                  - "f8:c0:e1:28:4d:f9:1a:01:aa:7f:d0:8c:f6:e1:e6:88"
+            - run:
+                # https://github.com/pantheon-systems/upstream-update-build/blob/1.x/bin/automerge.sh
+                name: Merge the default branch back to the master branch
+                command: automerge.sh
+
+workflows:
+  version: 2
+  drops7:
+    jobs:
+      - test
+      - merge:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - default
