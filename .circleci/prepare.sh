@@ -22,4 +22,5 @@ terminus env:wake -n "$TERMINUS_SITE.dev"
 # Create a new environment for this particular test run.
 ###
 terminus build:env:create -n "$TERMINUS_SITE.dev" "$TERMINUS_ENV" --yes
+terminus env:wake -n "$TERMINUS_SITE.$TERMINUS_ENV"
 terminus drush -n "$TERMINUS_SITE.$TERMINUS_ENV" -- updatedb -y
