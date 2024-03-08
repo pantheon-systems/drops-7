@@ -497,7 +497,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
       // Parse headers.
       $result->headers = array();
-      while ($line = trim(array_shift($split))) {
+      while (!empty($split) && $line = trim(array_shift($split))) {
         list($header, $value) = explode(':', $line, 2);
         if (isset($result->headers[$header]) && $header == 'Set-Cookie') {
           // RFC 2109: the Set-Cookie response header comprises the token Set-
