@@ -104,7 +104,8 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
   protected $luke;
   protected $stats;
   protected $system_info;
-
+  protected $system_info_cid;
+  protected $stats_cid;
 
   /**
    * Call the /admin/ping servlet, to test the connection to the server.
