@@ -144,7 +144,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    * @return
    *   (array) With all the system info
    */
-  public function setSystemInfo() {
+  protected function setSystemInfo() {
     $url = $this->_constructUrl(self::SYSTEM_SERVLET, array('wt' => 'json'));
     if ($this->env_id) {
       $this->system_info_cid = $this->env_id . ":system:" . drupal_hash_base64($url);
@@ -181,7 +181,12 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    */
   protected function setLuke($num_terms = 0) {
     if (empty($this->luke[$num_terms])) {
-      $url = $this->_constructUrl(self::LUKE_SERVLET, array('numTerms' => "$num_terms", 'wt' => 'json'));
+      $params = array(
+        'numTerms' => "$num_terms",
+        'wt' => 'json',
+        'json.nl' => self::NAMED_LIST_FORMAT,
+      );
+      $url = $this->_constructUrl(self::LUKE_SERVLET, $params);
       if ($this->env_id) {
         $cid = $this->env_id . ":luke:" . drupal_hash_base64($url);
         $cache = cache_get($cid, 'cache_apachesolr');
@@ -273,16 +278,16 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
 
     if (!empty($stats)) {
       $docs_pending_xpath = $stats->xpath('//stat[@name="docsPending"]');
-      $summary['@pending_docs'] = (int) trim($docs_pending_xpath[0]);
+      $summary['@pending_docs'] = (int) trim(current($docs_pending_xpath));
       $max_time_xpath = $stats->xpath('//stat[@name="autocommit maxTime"]');
       $max_time = (int) trim(current($max_time_xpath));
       // Convert to seconds.
       $summary['@autocommit_time_seconds'] = $max_time / 1000;
       $summary['@autocommit_time'] = format_interval($max_time / 1000);
       $deletes_id_xpath = $stats->xpath('//stat[@name="deletesById"]');
-      $summary['@deletes_by_id'] = (int) trim($deletes_id_xpath[0]);
+      $summary['@deletes_by_id'] = (int) trim(current($deletes_id_xpath));
       $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
-      $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
+      $summary['@deletes_by_query'] = (int) trim(current($deletes_query_xpath));
       $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
       $schema = $stats->xpath('/solr/schema[1]');
       $summary['@schema_version'] = trim($schema[0]);;
@@ -398,6 +403,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Add default params.
     $params += array(
       'wt' => 'json',
+      'json.nl' => self::NAMED_LIST_FORMAT,
     );
 
     $url = $this->_constructUrl($servlet, $params);
@@ -444,7 +450,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    *
    * This is just a wrapper around drupal_http_request().
    */
-  protected function _makeHttpRequest($url, $options = array()) {
+  protected function _makeHttpRequest($url, array $options = array()) {
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
@@ -812,7 +818,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
   /**
    * Like PHP's built in http_build_query(), but uses rawurlencode() and no [] for repeated params.
    */
-  public function httpBuildQuery(array $query, $parent = '') {
+  protected function httpBuildQuery(array $query, $parent = '') {
     $params = array();
 
     foreach ($query as $key => $value) {
@@ -869,9 +875,15 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // PHP's built in http_build_query() doesn't give us the format Solr wants.
     $queryString = $this->httpBuildQuery($params);
     // Check string length of the query string, change method to POST
-    // if longer than 4000 characters (typical server handles 4096 max).
-    // @todo - make this a per-server setting.
-    if (strlen($queryString) > variable_get('apachesolr_search_post_threshold', 4000)) {
+    $len = strlen($queryString);
+    // Fetch our threshold to find out when to flip to POST
+    $max_len = apachesolr_environment_variable_get($this->env_id, 'apachesolr_search_post_threshold', 3600);
+
+    // if longer than $max_len (default 3600) characters
+    // we should switch to POST (a typical server handles 4096 max).
+    // If this class is used independently (without environments), we switch automatically to POST at an
+    // limit of 1800 chars.
+    if (($len > 1800) && (empty($this->env_id) || ($len > $max_len))) {
       $method = 'POST';
     }
 
