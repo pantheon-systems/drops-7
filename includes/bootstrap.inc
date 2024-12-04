@@ -8,7 +8,7 @@
 /**
  * The current system version.
  */
-define('VERSION', '7.102');
+define('VERSION', '7.103');
 
 /**
  * Core API compatibility.
@@ -457,9 +457,6 @@ abstract class DrupalCacheArray implements ArrayAccess {
     if ($this->bin == 'cache_form' && !variable_get('drupal_cache_array_persist_cache_form', FALSE)) {
       return;
     }
-    if (!is_array($this->keysToPersist)) {
-      throw new UnexpectedValueException();
-    }
     $data = array();
     foreach ($this->keysToPersist as $offset => $persist) {
       if ($persist) {
@@ -732,8 +729,8 @@ function drupal_environment_initialize() {
 /**
  * Validates that a hostname (for example $_SERVER['HTTP_HOST']) is safe.
  *
- * @return
- *  TRUE if only containing valid characters, or FALSE otherwise.
+ * @return bool
+ *   TRUE if it only contains valid characters, FALSE otherwise.
  */
 function drupal_valid_http_host($host) {
   // Limit the length of the host name to 1000 bytes to prevent DoS attacks with
@@ -835,8 +832,8 @@ function drupal_settings_initialize() {
     // Otherwise use $base_url as session name, without the protocol
     // to use the same session identifiers across HTTP and HTTPS.
     list( , $session_name) = explode('://', $base_url, 2);
-    // HTTP_HOST can be modified by a visitor, but we already sanitized it
-    // in drupal_settings_initialize().
+    // HTTP_HOST can be modified by a visitor, but we already sanitized it in
+    // drupal_environment_initialize().
     if (!empty($_SERVER['HTTP_HOST'])) {
       $cookie_domain = _drupal_get_cookie_domain($_SERVER['HTTP_HOST']);
     }
@@ -2747,6 +2744,18 @@ function _drupal_bootstrap_configuration() {
   // Initialize the configuration, including variables from settings.php.
   drupal_settings_initialize();
 
+  // Check trusted HTTP Host headers to protect against header attacks.
+  if (PHP_SAPI !== 'cli') {
+    $host_patterns = variable_get('trusted_host_patterns', array());
+    if (!empty($host_patterns)) {
+      if (!drupal_check_trusted_hosts($_SERVER['HTTP_HOST'], $host_patterns)) {
+        header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
+        print 'The provided host name is not valid for this server.';
+        exit;
+      }
+    }
+  }
+
   // Sanitize unsafe keys from the request.
   DrupalRequestSanitizer::sanitize();
 }
@@ -3990,6 +3999,36 @@ function drupal_clear_opcode_cache($filepath) {
     // @see http://php.net/apc-delete-file
     @apc_delete_file($filepath);
   }
+}
+
+/**
+ * Checks trusted HTTP Host headers to protect against header injection attacks.
+ *
+ * @param string|null $host
+ *   The host name.
+ * @param array $host_patterns
+ *   The array of trusted host patterns.
+ *
+ * @return bool
+ *   TRUE if the host is trusted, FALSE otherwise.
+ */
+function drupal_check_trusted_hosts($host, array $host_patterns) {
+  if (!empty($host) && !empty($host_patterns)) {
+    // Trim and remove the port number from host; host is lowercase as per
+    // RFC 952/2181.
+    $host = strtolower(preg_replace('/:\d+$/', '', trim($host)));
+
+    foreach ($host_patterns as $pattern) {
+      $pattern = sprintf('{%s}i', $pattern);
+      if (preg_match($pattern, $host)) {
+        return TRUE;
+      }
+    }
+
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**
