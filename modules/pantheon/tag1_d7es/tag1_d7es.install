@@ -1,0 +1,95 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for tag1_d7es.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function tag1_d7es_install() {
+  variable_set('tag1_d7es_site_id', tag1_d7es_uuid_generate());
+  if (variable_get('update_fetch_url')) {
+    variable_set('tag1_d7es_original_update_fetch_url', variable_get('update_fetch_url'));
+  }
+  variable_set('tag1_d7es_phone_home', 0);
+  variable_set('tag1_d7es_send_update_emails', 0);
+  drupal_set_message(t('Thank you for installing Tag1 D7ES. Please proceed to the <a href="/admin/config/system/tag1-d7es">configuration page</a> to configure authentication and notifications. Installation and use of this module constitutes your acceptance of and agreement to be bound by Tag1 Consulting Inc\'s Terms of Service and Privacy Policy, as published at D7ES.Tag1.com.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function tag1_d7es_uninstall() {
+  if (variable_get('tag1_d7es_original_update_fetch_url')) {
+    variable_set('update_fetch_url', variable_get('tag1_d7es_original_update_fetch_url'));
+    variable_del('tag1_d7es_original_update_fetch_url');
+  }
+  else {
+    variable_del('update_fetch_url');
+  }
+  variable_del('tag1_d7es_site_id');
+  variable_del('tag1_d7es_phone_home');
+  variable_del('tag1_d7es_billing_email');
+  variable_del('tag1_d7es_email_addresses');
+  variable_del('tag1_d7es_endpoint');
+  variable_del('tag1_d7es_send_update_emails');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function tag1_d7es_requirements($phase) {
+  $requirements = array();
+
+  // Display reporting status.
+  if ($phase == 'runtime') {
+    $description = '';
+    $last_phone_home = variable_get('tag1_d7es_phone_home');
+    if ($last_phone_home == 0) {
+      $value = t('Never');
+      $description = t('The Tag1 D7ES module has not successfully connected. Please visit the <a href="/admin/config/system/tag1-d7es">configuration page</a> to configure authentication and notifications.');
+      $severity = REQUIREMENT_ERROR;
+    }
+    elseif (is_null(variable_get('tag1_d7es_billing_email')) || is_null(variable_get('tag1_d7es_email_addresses'))) {
+      $value = t('Missing configuration');
+      $description = t('The Tag1 D7ES module is missing key configuration. Please visit the <a href="/admin/config/system/tag1-d7es">configuration page</a> to configure authentication and notifications.');
+      $severity = REQUIREMENT_ERROR;
+    }
+    elseif ($last_phone_home <= REQUEST_TIME - 604800) {
+      $value = t('Last run: %phone-home-last ago.', array(
+        '%phone-home-last' => format_interval(REQUEST_TIME - $last_phone_home),
+      ));
+      $description = t('Last report sent over a week ago. Please check that cron is running successfully.');
+      $severity = REQUIREMENT_WARNING;
+    }
+    else {
+      $value = t('Last run: %phone-home-last ago.', array(
+        '%phone-home-last' => format_interval(REQUEST_TIME - $last_phone_home),
+      ));
+      $severity = REQUIREMENT_OK;
+    }
+
+    $requirements['tag1_d7es'] = array(
+      'title' => 'Tag1 D7ES',
+      'value' => $value,
+      'description' => $description,
+      'severity' => $severity,
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Set update_fetch_url if able.
+ */
+function tag1_d7es_update_7100(&$sandbox) {
+  if (variable_get('update_fetch_url')) {
+    variable_set('tag1_d7es_original_update_fetch_url', variable_get('update_fetch_url'));
+  }
+  if (variable_get('tag1_d7es_phone_home')) {
+    variable_set('update_fetch_url', tag1_d7es_personalize_updates_endpoint());
+  }
+}

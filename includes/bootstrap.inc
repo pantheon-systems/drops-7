@@ -766,6 +766,12 @@ function drupal_settings_initialize() {
   if (file_exists(DRUPAL_ROOT . '/' . conf_path() . '/settings.php')) {
     include_once DRUPAL_ROOT . '/' . conf_path() . '/settings.php';
   }
+  
+  // Auth Tag1 D7ES module on Pantheon
+  if (getenv('PANTHEON_D7ES_API_KEY')) {
+    $conf['tag1_d7es_billing_email'] = getenv('PANTHEON_D7ES_API_KEY');
+  }
+
   $is_https = drupal_is_https();
 
   // Load environmental config, if present.

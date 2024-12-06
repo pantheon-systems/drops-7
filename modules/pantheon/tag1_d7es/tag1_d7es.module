@@ -1,0 +1,897 @@
+<?php
+
+/**
+ * @file
+ * Tag1 D7ES primary module file.
+ *
+ * Installation and use of this module constitutes your acceptance of and
+ * agreement to be bound by Tag1 Consulting Inc's Terms of Service and Privacy
+ * Policy, as published at D7ES.Tag1.com.
+ *
+ * @phpcs:disable SlevomatCodingStandard.ControlStructures.RequireNullCoalesceOperator
+ */
+
+define('TAG1_D7ES_PHONE_HOME_PERIOD', 86400);
+define('TAG1_D7ES_ENDPOINT', 'https://analytics-d7es.tag1.com/d7es');
+define('TAG1_D7ES_PLATFORM_PANTHEON', 'pantheon');
+define('TAG1_D7ES_UPDATES_ENDPOINT', 'https://updates.tag1.com/release-history');
+
+/**
+ * Implements hook_cron().
+ */
+function tag1_d7es_cron() {
+  // Check timing of last update before continuing.
+  if (variable_get('tag1_d7es_phone_home', 0) <= REQUEST_TIME - TAG1_D7ES_PHONE_HOME_PERIOD) {
+    $site_id = variable_get('tag1_d7es_site_id');
+    $billing_email = variable_get('tag1_d7es_billing_email');
+    if (tag1_d7es_preflight($site_id, $billing_email)) {
+      $data = _tag1_d7es_payload($site_id);
+      _tag1_d7es_transmit($billing_email, $data);
+    }
+  }
+}
+
+/**
+ * Run preflight checks on API submission data.
+ *
+ * @param string $site_id
+ *   The Site ID to verify.
+ * @param string $billing_email
+ *   The billing email address to verify.
+ * @param bool $display_messages
+ *   Whether messages should be displayed in addition to being logged.
+ *
+ * @return bool
+ *   Whether the API request should be attempted.
+ */
+function tag1_d7es_preflight($site_id, $billing_email, $display_messages = FALSE) {
+  // Ensure a valid Site ID.
+  if (!tag1_d7es_uuid_is_valid($site_id)) {
+    $config_error = 'Unable to send data because the Site ID is not valid.';
+    $log_message = "$config_error Please visit <a href='/admin/config/system/tag1-d7es'>the configuration page (under advanced settings)</a> to correct it.";
+    watchdog(
+      'tag1_d7es',
+      $log_message,
+      array(),
+      WATCHDOG_ERROR
+    );
+    if ($display_messages) {
+      drupal_set_message($config_error, 'error');
+    }
+    return FALSE;
+  }
+
+  // Ensure the billing email address is provided.
+  if (!$billing_email) {
+    $config_error = 'Unable to send data because the billing email address is not provided.';
+    $message = "$config_error Please visit <a href='/admin/config/system/tag1-d7es'>the configuration page</a> to provide it.";
+    watchdog(
+      'tag1_d7es',
+      $message,
+      array(),
+      WATCHDOG_ERROR
+    );
+    if ($display_messages) {
+      drupal_set_message($config_error, 'error');
+    }
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Send data to Tag1.
+ *
+ * @param string $billing_email
+ *   The primary billing email address, used for authentication.
+ * @param array $data
+ *   The data payload.
+ * @param bool $display_messages
+ *   Whether messages should be displayed in addition to being logged.
+ * @param string $override_url
+ *   Allows validation against a new endpoint without officially saving it.
+ *
+ * @return bool
+ *   Returns TRUE if the transmission was successful.
+ */
+function _tag1_d7es_transmit($billing_email, $data, $display_messages = FALSE, $override_url = '') {
+  $url = $override_url ?: _tag1_d7es_get_endpoint();
+  $auth_token = base64_encode($billing_email);
+  $headers = array(
+    'Content-Type' => 'application/json',
+    'Authorization' => 'Basic ' . $auth_token,
+    'x-api-key' => $auth_token,
+  );
+  $options = array(
+    'method' => 'POST',
+    'headers' => $headers,
+    'data' => json_encode($data),
+  );
+
+  $response = drupal_http_request($url, $options);
+  switch ($response->code) {
+    case 200:
+      $message = 'Tag1 D7ES information transmitted successfully.';
+      watchdog(
+        'tag1_d7es',
+        $message,
+        array(),
+        WATCHDOG_INFO
+      );
+      variable_set('tag1_d7es_phone_home', REQUEST_TIME);
+      if ($display_messages) {
+        drupal_set_message($message, 'status');
+      }
+      return TRUE;
+
+    case 403:
+      $message = 'Authentication error. Please review the billing address and API endpoint (if configured).';
+      watchdog(
+        'tag1_d7es',
+        $message,
+        array(),
+        WATCHDOG_ERROR
+      );
+      if ($display_messages) {
+        drupal_set_message($message, 'error');
+      }
+      return FALSE;
+
+    default:
+      $variables = array(
+        '%response_code' => $response->code,
+        '%message' => '',
+        '%error' => '',
+      );
+      $error_data = json_decode($response->data);
+      if (isset($error_data->message)) {
+        $variables['%message'] = $error_data->message;
+      }
+      if (isset($error_data->error)) {
+        $variables['%error'] = $error_data->error;
+      }
+      watchdog(
+        'tag1_d7es',
+        'Failure sending information to Tag1 D7ES: "%response_code %message %error".',
+        $variables,
+        WATCHDOG_ERROR
+      );
+      if ($display_messages) {
+        drupal_set_message(t('Module report failed to submit. Please review the site error logs for more information.'), 'error');
+      }
+  }
+  return FALSE;
+}
+
+/**
+ * Build the phone-home payload.
+ *
+ * @param string $site_id
+ *   Pass the site ID if it's already known.
+ * @param string $billing_email
+ *   Pass the billing email if it's already known.
+ *
+ * @return array
+ *   The data array for the request.
+ */
+function _tag1_d7es_payload($site_id = '', $billing_email = '') {
+  if (!$site_id) {
+    $site_id = variable_get('tag1_d7es_site_id');
+  }
+  if (!$billing_email) {
+    $billing_email = variable_get('tag1_d7es_billing_email');
+  }
+  $data = _tag1_d7es_runtime_info() + array(
+    'siteId' => $site_id,
+    'timestamp' => REQUEST_TIME,
+    'siteUrl' => $GLOBALS['base_url'],
+    'billingEmail' => $billing_email,
+  );
+
+  // Email addresses are optional.
+  $data['emails'] = array();
+  $emails = variable_get('tag1_d7es_email_addresses', NULL);
+  if ($emails) {
+    $data['emails'] = array_map('trim', explode(',', $emails));
+  }
+
+  // Add module and theme data.
+  $data['modules'] = _tag1_d7es_project_info(system_rebuild_module_data());
+  $data['themes'] = _tag1_d7es_project_info(system_rebuild_theme_data());
+
+  // Add platform-specific data.
+  if (tag1_d7es_detect_platform() == TAG1_D7ES_PLATFORM_PANTHEON) {
+    if (getenv('PANTHEON_SITE')) {
+      $data['pantheonSiteId'] = getenv('PANTHEON_SITE');
+    }
+    if (getenv('PANTHEON_DEPLOYMENT_IDENTIFIER')) {
+      $data['pantheonBuildId'] = getenv('PANTHEON_DEPLOYMENT_IDENTIFIER');
+    }
+  }
+
+  return $data;
+}
+
+/**
+ * Determine the endpoint to use.
+ *
+ * @return string
+ *   The URL for the API endpoint.
+ */
+function _tag1_d7es_get_endpoint() {
+  return variable_get('tag1_d7es_endpoint', TAG1_D7ES_ENDPOINT);
+}
+
+/**
+ * Build module/theme information.
+ *
+ * @param array $projects
+ *   A list of projects returned by system_rebuild_module_data() and
+ *   system_rebuild_theme_data().
+ *
+ * @return array
+ *   Parsed data array for projects.
+ */
+function _tag1_d7es_project_info(array $projects) {
+  $data = [];
+
+  // Remove hidden and core projects.
+  foreach ($projects as $project) {
+    if (!isset($project->info['hidden']) && (!isset($project->info['package']) || $project->info['package'] != 'Core')) {
+      $data[] = array(
+        'name' => $project->name,
+        'version' => isset($project->info['version']) ? $project->info['version'] : '',
+        'enabled' => (bool) $project->status,
+      );
+    }
+  }
+
+  return $data;
+}
+
+/**
+ * Build system runtime information.
+ *
+ * @return array
+ *   Specific runtime information to include with the data payload.
+ */
+function _tag1_d7es_runtime_info() {
+  // Map runtime string identifier with desired $data key.
+  $key_mapping = array(
+    'drupal' => 'core',
+    'database_system_version' => 'dbVersion',
+  );
+
+  // Poll runtime information. See system_status();
+  include_once DRUPAL_ROOT . '/includes/install.inc';
+  drupal_load_updates();
+  $runtime = module_invoke('system', 'requirements', 'runtime');
+
+  // Build data array.
+  $data = array();
+  foreach ($key_mapping as $key => $value) {
+    if (array_key_exists($key, $runtime)) {
+      $data[$value] = $runtime[$key]['value'];
+    }
+  }
+
+  // Easier to add PHP info directly.
+  $data['php'] = phpversion();
+
+  return $data;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function tag1_d7es_menu() {
+  $items['admin/config/system/tag1-d7es'] = array(
+    'title' => 'Tag1 D7ES',
+    'description' => 'Configure the credentials and notification settings for Tag1 D7ES.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tag1_d7es_admin_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Form constructor for the tag1_d7es system settings.
+ *
+ * @see tag1_d7es_admin_form_submit()
+ * @ingroup forms
+ */
+function tag1_d7es_admin_form($form, $form_state) {
+  $form['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>' . t("Configure this module to communicate with Tag1's D7ES service. Installation and use of this module constitutes your acceptance of and agreement to be bound by Tag1 Consulting Inc's Terms of Service and Privacy Policy, as published at <a href='https://d7es.tag1.com/'>D7ES.Tag1.com</a>") . '</p>',
+  );
+
+  // The billing email address is only needed for non-platform customers.
+  $form['tag1_d7es_billing_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Billing email address'),
+    '#size' => 80,
+    '#maxlength' => 255,
+    '#default_value' => variable_get('tag1_d7es_billing_email', ''),
+    '#required' => TRUE,
+    '#description' => t('The primary billing email address.'),
+    '#access' => !(tag1_d7es_detect_platform()),
+  );
+
+  $form['tag1_d7es_email_addresses'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notification email addresses'),
+    '#size' => 80,
+    '#maxlength' => 255,
+    '#default_value' => variable_get('tag1_d7es_email_addresses', ''),
+    '#required' => TRUE,
+    '#description' => t('A comma-separated list of email addresses that should receive notifications about available updates.'),
+  );
+
+  $form['tag1_d7es_send_update_emails'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Continue to send core "Available updates" notifications.'),
+    '#access' => module_exists('update') && variable_get('update_notify_emails'),
+    '#description' => t('To prevent duplicate email notifications of an update, this module disables the emails from the <a href="/admin/reports/updates/settings">Update Status module</a> by default.'),
+    '#default_value' => variable_get('tag1_d7es_send_update_emails', 0),
+  );
+
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['advanced']['tag1_d7es_site_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site ID'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('tag1_d7es_site_id', ''),
+    '#description' => t('A UUID created on module installation that is specific to your site. In regular operations this value should not need to be changed.'),
+  );
+  $form['advanced']['tag1_d7es_endpoint'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Endpoint'),
+    '#default_value' => variable_get('tag1_d7es_endpoint'),
+    '#description' => t('A different API endpoint to use (typically for testing purposes). In regular operations this value should not need to be changed.'),
+  );
+
+  $form['advanced']['drush_endpoint'] = array(
+    '#type' => 'markup',
+    '#markup' => '<label>' . t('Drush release XML source') . '</label>
+<code>' . tag1_d7es_personalize_drush_source_endpoint() . '</code>
+<div class="description">You can use this URL to <a href="https://docs.tag1.com/setup/#configuring-drush">configure Drush for updates</a></div>',
+    '#access' => (variable_get('update_fetch_url') && !tag1_d7es_detect_platform()),
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  $form['debugging'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Debugging'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['debugging']['payload'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Payload'),
+    '#default_value' => json_encode(_tag1_d7es_payload()),
+  );
+
+  $form['#validate'][] = 'tag1_d7es_admin_form_validate';
+
+  return $form;
+}
+
+/**
+ * Form validation handler for tag1_d7es_admin_form().
+ */
+function tag1_d7es_admin_form_validate($form, &$form_state) {
+  if (!tag1_d7es_uuid_is_valid($form_state['values']['tag1_d7es_site_id'])) {
+    form_set_error('tag1_d7es_site_id', t('The Site ID is not a valid UUID.'));
+  }
+}
+
+/**
+ * Form submission handler for tag1_d7es_admin_form().
+ */
+function tag1_d7es_admin_form_submit($form, &$form_state) {
+  // If the module is freshly installed, or if the billing address or API
+  // endpoint has changed, verify that we can make a request to the API.
+  if (
+    !drupal_valid_test_ua() && (
+      variable_get('tag1_d7es_phone_home') === 0 ||
+      $form_state['values']['tag1_d7es_billing_email'] != variable_get('tag1_d7es_billing_email') ||
+      (isset($form_state['values']['tag1_d7es_endpoint']) && $form_state['values']['tag1_d7es_endpoint'] != _tag1_d7es_get_endpoint())
+    )
+  ) {
+    $submitted_billing_email = $form_state['values']['tag1_d7es_billing_email'];
+    $submitted_api_endpoint = $form_state['values']['tag1_d7es_endpoint'] ?: TAG1_D7ES_ENDPOINT;
+    $preflight = tag1_d7es_preflight($form_state['values']['tag1_d7es_site_id'], $submitted_billing_email, TRUE);
+    if ($preflight) {
+      $data = _tag1_d7es_payload($form_state['values']['tag1_d7es_site_id'], $form_state['values']['tag1_d7es_billing_email']);
+      $success = _tag1_d7es_transmit($submitted_billing_email, $data, TRUE, $submitted_api_endpoint);
+      if ($success) {
+        variable_set('tag1_d7es_phone_home', REQUEST_TIME);
+        variable_set('update_fetch_url', tag1_d7es_personalize_updates_endpoint($submitted_billing_email));
+      }
+    }
+  }
+
+  system_settings_form_submit($form, $form_state);
+  if ($form_state['values']['tag1_d7es_endpoint'] === '' || $form_state['values']['tag1_d7es_endpoint'] === TAG1_D7ES_ENDPOINT) {
+    variable_del('tag1_d7es_endpoint');
+  }
+
+}
+
+/**
+ * Determine the customer-specific Release XML endpoint.
+ *
+ * @param string $billing_email
+ *   The billing email address for personalization.
+ */
+function tag1_d7es_personalize_updates_endpoint($billing_email = '') {
+  if (!$billing_email) {
+    $billing_email = variable_get('tag1_d7es_billing_email');
+  }
+  $base_url = TAG1_D7ES_UPDATES_ENDPOINT;
+  $auth = $billing_email . ':' . base64_encode($billing_email) . '@';
+  return substr_replace($base_url, $auth, (strpos($base_url, '//') + 2), 0);
+}
+
+/**
+ * Determine the customer-specific Drush source XML endpoint.
+ *
+ * @param string $billing_email
+ *   The billing email address for personalization.
+ */
+function tag1_d7es_personalize_drush_source_endpoint($billing_email = '') {
+  if (!$billing_email) {
+    $billing_email = variable_get('tag1_d7es_billing_email', '');
+  }
+  $base_url = TAG1_D7ES_UPDATES_ENDPOINT;
+  $auth = urlencode($billing_email) . ':' . urlencode(base64_encode($billing_email)) . '@';
+  return substr_replace($base_url, $auth, (strpos($base_url, '//') + 2), 0);
+}
+
+/**
+ * Determine if this is a platform-level customer.
+ *
+ * @return string|bool
+ *   Returns the platform name if detected, FALSE otherwise.
+ */
+function tag1_d7es_detect_platform() {
+  if (getenv('PANTHEON_ENVIRONMENT') && getenv('PANTHEON_D7ES_API_KEY')) {
+    return TAG1_D7ES_PLATFORM_PANTHEON;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Wrapper function to create UUIDs.
+ *
+ * Uses ctools or the UUID module if either is enabled. Like in
+ * ctools_uuid_generate(), we are copying this from the ctools and uuid modules.
+ *
+ * @see http://php.net/uniqid#65879
+ *
+ * @return string
+ *   A generated UUID.
+ */
+function tag1_d7es_uuid_generate() {
+  if (module_exists('ctools')) {
+    return ctools_uuid_generate();
+  }
+  elseif (module_exists('uuid')) {
+    return uuid_generate();
+  }
+  else {
+    module_load_include('inc', 'tag1_d7es', 'includes/uuid');
+
+    $callback = &drupal_static(__FUNCTION__);
+
+    if (empty($callback)) {
+      if (function_exists('uuid_create') && !function_exists('uuid_make')) {
+        $callback = '_tag1_d7es_uuid_generate_pecl';
+      }
+      elseif (function_exists('com_create_guid')) {
+        $callback = '_tag1_d7es_uuid_generate_com';
+      }
+      else {
+        $callback = '_tag1_d7es_uuid_generate_php';
+      }
+    }
+    return $callback();
+  }
+}
+
+/**
+ * Check that a string is in the format of a UUID. Copied from CTools.
+ *
+ * @param string $uuid
+ *   The string to test.
+ *
+ * @return bool
+ *   TRUE if the string is well-formed.
+ *
+ * @see http://drupal.org/project/ctools
+ * @see http://drupal.org/project/uuid
+ */
+function tag1_d7es_uuid_is_valid($uuid = '') {
+  if (empty($uuid)) {
+    return FALSE;
+  }
+  if (module_exists('ctools')) {
+    return ctools_uuid_is_valid($uuid);
+  }
+  elseif (function_exists('uuid_is_valid') || module_exists('uuid')) {
+    return uuid_is_valid($uuid);
+  }
+  else {
+    module_load_include('inc', 'tag1_d7es', 'includes/uuid');
+    return uuid_is_valid($uuid);
+  }
+}
+
+/**
+ * Implements hook_mail_alter().
+ */
+function tag1_d7es_mail_alter(&$message) {
+  if ($message['id'] == 'update_status_notify') {
+    if (variable_get('tag1_d7es_send_update_emails', 0) !== 1) {
+      $message['send'] = FALSE;
+    }
+  }
+}
+
+/**
+ * Determine if the subscription is still active.
+ *
+ * @return bool
+ *   Whether the subscription should be considered active.
+ */
+function tag1_d7es_subscription_is_active() {
+  // We expect the module to report successfully at least once per week.
+  return variable_get('tag1_d7es_phone_home', 0) >= REQUEST_TIME - (TAG1_D7ES_PHONE_HOME_PERIOD * 7);
+}
+
+/**
+ * Implements hook_update_status_alter().
+ */
+function tag1_d7es_update_status_alter(&$projects) {
+  $available = update_get_available();
+  foreach ($projects as &$project_data) {
+    if (tag1_d7es_subscription_is_active()) {
+      // All projects from Drupal.org will have this status at D7 EOL.
+      if ($project_data['status'] === UPDATE_NOT_SUPPORTED) {
+        // See if we can determine an updated release.
+        unset($project_data['status']);
+        unset($project_data['extra']);
+
+        // BEGIN from update_calculate_project_update_status().
+        // Figure out the target major version.
+        $existing_major = $project_data['existing_major'];
+        $supported_majors = array();
+        if (isset($available[$project_data['name']]['supported_majors'])) {
+          $supported_majors = explode(',', $available[$project_data['name']]['supported_majors']);
+        }
+        elseif (isset($available[$project_data['name']]['default_major'])) {
+          // Older release history XML file without supported or recommended.
+          $supported_majors[] = $available[$project_data['name']]['default_major'];
+        }
+
+        if (in_array($existing_major, $supported_majors)) {
+          // Still supported, stay at the current major version.
+          $target_major = $existing_major;
+        }
+        elseif (isset($available[$project_data['name']]['recommended_major'])) {
+          // Since 'recommended_major' is defined, we know this is the new XML
+          // format. Therefore, we know the current release is unsupported since
+          // its major version was not in the 'supported_majors' list. We should
+          // find the best release from the recommended major version.
+          $target_major = $available[$project_data['name']]['recommended_major'];
+          $project_data['status'] = UPDATE_NOT_SUPPORTED;
+        }
+        elseif (isset($available[$project_data['name']]['default_major'])) {
+          // Older release history XML file without recommended, so recommend
+          // the currently defined "default_major" version.
+          $target_major = $available[$project_data['name']]['default_major'];
+        }
+        else {
+          // Malformed XML file? Stick with the current version.
+          $target_major = $existing_major;
+        }
+
+        // Make sure we never tell the admin to downgrade. If we recommended an
+        // earlier version than the one they're running, they'd face an
+        // impossible data migration problem, since Drupal never supports a DB
+        // downgrade path. In the unfortunate case that what they're running is
+        // unsupported, and there's nothing newer for them to upgrade to, we
+        // can't print out a "Recommended version", but just have to tell them
+        // what they have is unsupported and let them figure it out.
+        $target_major = max($existing_major, $target_major);
+
+        $release_patch_changed = '';
+        $patch = '';
+
+        // If the project is marked as UPDATE_FETCH_PENDING, it means that the
+        // data we currently have (if any) is stale, and we've got a task queued
+        // up to (re)fetch the data. In that case, we mark it as such, merge in
+        // whatever data we have (e.g. project title and link), and move on.
+        if (!empty($available[$project_data['name']]['fetch_status']) && $available[$project_data['name']]['fetch_status'] == UPDATE_FETCH_PENDING) {
+          $project_data['status'] = UPDATE_FETCH_PENDING;
+          $project_data['reason'] = t('No available update data');
+          $project_data['fetch_status'] = $available[$project_data['name']]['fetch_status'];
+          return;
+        }
+
+        // Defend ourselves from XML history files that contain no releases.
+        if (empty($available[$project_data['name']]['releases'])) {
+          $project_data['status'] = UPDATE_UNKNOWN;
+          $project_data['reason'] = t('No available releases found');
+          return;
+        }
+        foreach ($available[$project_data['name']]['releases'] as $version => $release) {
+          // First, if this is the existing release, check a few conditions.
+          if ($project_data['existing_version'] === $version) {
+            if (isset($release['terms']['Release type']) &&
+              in_array('Insecure', $release['terms']['Release type'])) {
+              $project_data['status'] = UPDATE_NOT_SECURE;
+            }
+            elseif ($release['status'] == 'unpublished') {
+              $project_data['status'] = UPDATE_REVOKED;
+              if (empty($project_data['extra'])) {
+                $project_data['extra'] = array();
+              }
+              $project_data['extra'][] = array(
+                'class' => array('release-revoked'),
+                'label' => t('Release revoked'),
+                'data' => t('Your currently installed release has been revoked, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
+              );
+            }
+            elseif (isset($release['terms']['Release type']) &&
+              in_array('Unsupported', $release['terms']['Release type'])) {
+              $project_data['status'] = UPDATE_NOT_SUPPORTED;
+              if (empty($project_data['extra'])) {
+                $project_data['extra'] = array();
+              }
+              $project_data['extra'][] = array(
+                'class' => array('release-not-supported'),
+                'label' => t('Release not supported'),
+                'data' => t('Your currently installed release is now unsupported, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
+              );
+            }
+          }
+
+          // Otherwise, ignore unpublished, insecure, or unsupported releases.
+          if ($release['status'] == 'unpublished' ||
+            (isset($release['terms']['Release type']) &&
+              (in_array('Insecure', $release['terms']['Release type']) ||
+                in_array('Unsupported', $release['terms']['Release type'])))) {
+            continue;
+          }
+
+          // See if this is a higher major version than our target and yet still
+          // supported. If so, record it as an "Also available" release.
+          // Note: some projects have a HEAD release from CVS days, which could
+          // be one of those being compared. They would not have version_major
+          // set, so we must call isset first.
+          if (isset($release['version_major']) && $release['version_major'] > $target_major) {
+            if (in_array($release['version_major'], $supported_majors)) {
+              if (!isset($project_data['also'])) {
+                $project_data['also'] = array();
+              }
+              if (!isset($project_data['also'][$release['version_major']])) {
+                $project_data['also'][$release['version_major']] = $version;
+                $project_data['releases'][$version] = $release;
+              }
+            }
+            // Otherwise, this release can't matter to us, since it's neither
+            // from the release series we're currently using nor the recommended
+            // release. We don't even care about security updates for this
+            // branch, since if a project maintainer puts out a security release
+            // at a higher major version and not at the lower major version,
+            // they must remove the lower version from the supported major
+            // versions at the same time, in which case we won't hit this code.
+            continue;
+          }
+
+          // Look for the 'latest version' if we haven't found it yet. Latest is
+          // defined as the most recent version for the target major version.
+          if (!isset($project_data['latest_version'])
+            && $release['version_major'] == $target_major) {
+            $project_data['latest_version'] = $version;
+            $project_data['releases'][$version] = $release;
+          }
+
+          // Look for the development snapshot release for this branch.
+          if (!isset($project_data['dev_version'])
+            && $release['version_major'] == $target_major
+            && isset($release['version_extra'])
+            && $release['version_extra'] == 'dev') {
+            $project_data['dev_version'] = $version;
+            $project_data['releases'][$version] = $release;
+          }
+
+          // Look for the 'recommended' version if we haven't found it yet (see
+          // phpdoc at the top of this function for the definition).
+          if (!isset($project_data['recommended'])
+            && $release['version_major'] == $target_major
+            && isset($release['version_patch'])) {
+            if ($patch != $release['version_patch']) {
+              $patch = $release['version_patch'];
+              $release_patch_changed = $release;
+            }
+            if (empty($release['version_extra']) && $patch == $release['version_patch']) {
+              $project_data['recommended'] = $release_patch_changed['version'];
+              $project_data['releases'][$release_patch_changed['version']] = $release_patch_changed;
+            }
+          }
+
+          // Stop searching once we hit the currently installed version.
+          if ($project_data['existing_version'] === $version) {
+            break;
+          }
+
+          // If we're running a dev snapshot and have a timestamp, stop
+          // searching for security updates once we hit an official release
+          // older than what we've got. Allow 100 seconds of leeway to handle
+          // differences between the datestamp in the .info file and the
+          // timestamp of the tarball itself (which are usually off by 1 or 2
+          // seconds) so that we don't flag that as a new release.
+          if ($project_data['install_type'] == 'dev') {
+            if (empty($project_data['datestamp'])) {
+              // We don't have current timestamp info, so we can't know.
+              continue;
+            }
+            elseif (isset($release['date']) && ($project_data['datestamp'] + 100 > $release['date'])) {
+              // We're newer than this, so we can skip it.
+              continue;
+            }
+          }
+
+          // See if this release is a security update.
+          if (isset($release['terms']['Release type'])
+            && in_array('Security update', $release['terms']['Release type'])) {
+            $project_data['security updates'][] = $release;
+          }
+        }
+
+        // If we were unable to find a recommended version, then make the latest
+        // version the recommended version if possible.
+        if (!isset($project_data['recommended']) && isset($project_data['latest_version'])) {
+          $project_data['recommended'] = $project_data['latest_version'];
+        }
+
+        // Check to see if we need an update or not.
+        if (!empty($project_data['security updates'])) {
+          // If we found security updates, that always trumps any other status.
+          $project_data['status'] = UPDATE_NOT_SECURE;
+        }
+
+        if (isset($project_data['status'])) {
+          // If we already know the status, we're done.
+          return;
+        }
+
+        // If we don't know what to recommend, there's nothing we can report.
+        // Bail out early.
+        if (!isset($project_data['recommended'])) {
+          $project_data['status'] = UPDATE_UNKNOWN;
+          $project_data['reason'] = t('No available releases found');
+          return;
+        }
+
+        // If we're running a dev snapshot, compare the date of the dev snapshot
+        // with the latest official version, and record the absolute latest in
+        // 'latest_dev' so we can correctly decide if there's a newer release
+        // than our current snapshot.
+        if ($project_data['install_type'] == 'dev') {
+          if (isset($project_data['dev_version']) && $available[$project_data['name']]['releases'][$project_data['dev_version']]['date'] > $available[$project_data['name']]['releases'][$project_data['latest_version']]['date']) {
+            $project_data['latest_dev'] = $project_data['dev_version'];
+          }
+          else {
+            $project_data['latest_dev'] = $project_data['latest_version'];
+          }
+        }
+
+        // Figure out the status, based on what we've seen and the install type.
+        switch ($project_data['install_type']) {
+          case 'official':
+            if ($project_data['existing_version'] === $project_data['recommended'] || $project_data['existing_version'] === $project_data['latest_version']) {
+              $project_data['status'] = UPDATE_CURRENT;
+            }
+            else {
+              $project_data['status'] = UPDATE_NOT_CURRENT;
+            }
+            break;
+
+          case 'dev':
+            $latest = $available[$project_data['name']]['releases'][$project_data['latest_dev']];
+            if (empty($project_data['datestamp'])) {
+              $project_data['status'] = UPDATE_NOT_CHECKED;
+              $project_data['reason'] = t('Unknown release date');
+            }
+            elseif (($project_data['datestamp'] + 100 > $latest['date'])) {
+              $project_data['status'] = UPDATE_CURRENT;
+            }
+            else {
+              $project_data['status'] = UPDATE_NOT_CURRENT;
+            }
+            break;
+
+          default:
+            $project_data['status'] = UPDATE_UNKNOWN;
+            $project_data['reason'] = t('Invalid info');
+        }
+        // END from update_calculate_project_update_status().
+      }
+    }
+    else {
+      // Module is enabled but subscription has lapsed.
+      if (in_array($project_data['status'], [UPDATE_NOT_SECURE, UPDATE_NOT_CURRENT])) {
+        if (isset($project_data['recommended'])) {
+          $version = $project_data['recommended'];
+        }
+        elseif (isset($project_data['latest_version'])) {
+          $version = $project_data['latest_version'];
+        }
+        else {
+          $version = NULL;
+        }
+        if ($version && isset($project_data['releases']) && isset($project_data['releases'][$version])) {
+          $release = $project_data['releases'][$version];
+          if (isset($release['terms']['Release type']) &&
+            in_array('Tag1 D7ES', $release['terms']['Release type'])) {
+            $project_data['status'] = UPDATE_NOT_SUPPORTED;
+          }
+        }
+      }
+    }
+
+    // Handle projects that we specify as Insecure via our update XML.
+    if ($project_data['status'] === UPDATE_NOT_SECURE && !isset($project_data['recommended'])) {
+      // Switch to more generic messaging.
+      $project_data['status'] = UPDATE_NOT_SUPPORTED;
+      if (isset($available[$project_data['name']]['recommended_alternative']) && tag1_d7es_subscription_is_active()) {
+        $message = $available[$project_data['name']]['recommended_alternative'];
+      }
+      else {
+        $message = t('This project is no longer supported, and is no longer available for download. Disabling everything included by this project is strongly recommended!');
+      }
+      $project_data['extra'] = array(
+        array(
+          'class' => array('project-not-supported'),
+          'label' => t('Project not supported'),
+          'data' => $message,
+        ),
+      );
+    }
+
+  }
+}
+
+/**
+ * Return the recommended release from the fetched project data.
+ *
+ * @param array $project
+ *   Project information.
+ *
+ * @return array
+ *   Parsed release data.
+ */
+function _tag1_d7es_get_release_data(array $project) {
+  $version = isset($project['recommended']) ? $project['recommended'] : $project['latest_version'];
+  if ($release = $project['releases'][$version]) {
+    return $release;
+  }
+  return array();
+}

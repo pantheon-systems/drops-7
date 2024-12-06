@@ -1,0 +1,18 @@
+name = Tag1 D7ES
+description = Module that communicates with Tag1's D7ES service. <br/>Installation and use of this module constitutes your acceptance of and agreement to be bound by Tag1 Consulting Inc's Terms of Service and Privacy Policy, as published at <a href="https://d7es.tag1.com/">D7ES.Tag1.com</a>.
+core = 7.x
+package = Tag1
+configure = admin/config/system/tag1-d7es
+files[] = tests/tag1_d7es.test
+files[] = tests/tag1_d7es_ctools.test
+files[] = tests/tag1_d7es_admin.test
+files[] = tests/tag1_d7es_admin_ctools.test
+files[] = tests/tag1_d7es_fetch_url.test
+files[] = tests/tag1_d7es_mail.test
+files[] = tests/tag1_d7es_update.test
+
+; Information added by Drupal.org packaging script on 2024-11-27
+version = "7.x-1.1"
+core = "7.x"
+project = "tag1_d7es"
+datestamp = "1732731772"
