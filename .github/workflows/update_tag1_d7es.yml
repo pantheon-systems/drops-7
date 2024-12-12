@@ -22,6 +22,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq wget curl
       - name: Check and Update Module
-        run: .github/scripts/update_tag1_d7es.sh
+        run: .github/update_tag1_d7es.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
