@@ -1,0 +1,68 @@
+#!/bin/bash
+set -euo pipefail
+set +x # remove before merge
+
+main() {
+  # Variables
+  local MODULE_NAME="tag1_d7es"
+  local DRUPAL_PROJECT_PAGE="https://www.drupal.org/project/$MODULE_NAME"
+  local PANTHEON_UPSTREAM_DIR="modules/pantheon/$MODULE_NAME"
+  local LATEST_VERSION
+  local CURRENT_VERSION
+  
+  # TODO: Confirm if this domain needs to change in January
+  local RELEASE_HISTORY_URL="https://updates.drupal.org/release-history/${MODULE_NAME}/7.x"
+  LATEST_VERSION=$(curl -s "$RELEASE_HISTORY_URL" \
+    | grep -oE '<version>[0-9a-zA-Z\.\-]+' \
+    | sed 's/<version>//' \
+    | grep -vE '(-rc|-beta|-alpha)' \
+    | sort -V | tail -n 1
+  )
+
+  CURRENT_VERSION=$(grep '^version' "${PANTHEON_UPSTREAM_DIR}/tag1_d7es.info" \
+    | awk -F' = ' '{print $2}' | tr -d '"'
+  )
+
+  echo "Current: ${CURRENT_VERSION}"
+  echo "Latest: ${LATEST_VERSION}"
+
+  if [ "$LATEST_VERSION" == "$CURRENT_VERSION" ]; then
+    exit # Already up to date
+  fi
+
+  local PR_TITLE="Update $MODULE_NAME to version $LATEST_VERSION"
+  local PR_EXISTS
+  PR_EXISTS=$(gh pr list --state open --search "$LATEST_VERSION" --json title \
+    | jq --arg pr_title "$PR_TITLE" '.[] | select(.title | contains($pr_title))'
+  )
+
+  if [ -n "$PR_EXISTS" ]; then
+    echo "A PR for version $LATEST_VERSION already exists. Skipping PR creation."
+    exit # PR already exists
+  fi
+
+  git checkout -b "$TEMP_BRANCH"
+
+  # TODO: Confirm if this domain needs to change in January
+  local DRUPAL_ORG_FTP_GZ_URL="https://ftp.drupal.org/files/projects/$MODULE_NAME-$LATEST_VERSION.tar.gz"
+  wget -qO- "$DRUPAL_ORG_FTP_GZ_URL" | tar -xz -C /tmp
+
+  rsync -ar "/tmp/$MODULE_NAME" "$PANTHEON_UPSTREAM_DIR"
+  rm -rf "$PANTHEON_UPSTREAM_DIR/.github"
+  rm -f "$PANTHEON_UPSTREAM_DIR/.gitlab-ci.yml"
+  rm -rf "$PANTHEON_UPSTREAM_DIR/tests"
+
+  git add "$PANTHEON_UPSTREAM_DIR"
+  git commit -m "Update $MODULE_NAME to version $LATEST_VERSION (cleanup included)"
+  git push origin "$TEMP_BRANCH"
+
+  local PR_BODY="Updates the $MODULE_NAME module to version $LATEST_VERSION."
+  gh pr create --title "$PR_TITLE" \
+      --body "$PR_BODY" \
+      --head "$TEMP_BRANCH" \
+      --base main
+
+  echo "Preparing update PR"
+}
+
+main
