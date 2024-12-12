@@ -12,7 +12,7 @@ files[] = tests/tag1_d7es_mail.test
 files[] = tests/tag1_d7es_update.test
 
 ; Information added by Drupal.org packaging script on 2024-11-27
-version = "7.x-1.1"
+version = "7.x-1.0"
 core = "7.x"
 project = "tag1_d7es"
 datestamp = "1732731772"
