@@ -53,7 +53,7 @@ main() {
   rm -rf "$PANTHEON_UPSTREAM_DIR/tests"
 
   git add "$PANTHEON_UPSTREAM_DIR"
-  git commit -m "Update $MODULE_NAME to version $LATEST_VERSION (cleanup included)"
+  git commit -m "Update $MODULE_NAME to version $LATEST_VERSION"
   git push origin "$TEMP_BRANCH"
 
   local PR_BODY="Updates the $MODULE_NAME module to version $LATEST_VERSION."
