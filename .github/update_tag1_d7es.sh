@@ -5,10 +5,15 @@ set +x # remove before merge
 main() {
   # Variables
   local MODULE_NAME="tag1_d7es"
-  local DRUPAL_PROJECT_PAGE="https://www.drupal.org/project/$MODULE_NAME"
   local PANTHEON_UPSTREAM_DIR="modules/pantheon/$MODULE_NAME"
   local LATEST_VERSION
   local CURRENT_VERSION
+
+
+  # With these credentials, commits will be pushed to 'master' and available on
+  # the upstream immediately.
+  local GIT_USER="bot@getpantheon.com"
+  local GIT_NAME="Pantheon Automation"
   
   # TODO: Confirm if this domain needs to change in January
   local RELEASE_HISTORY_URL="https://updates.drupal.org/release-history/${MODULE_NAME}/7.x"
@@ -52,6 +57,9 @@ main() {
   rm -f "$PANTHEON_UPSTREAM_DIR/.gitlab-ci.yml"
   rm -rf "$PANTHEON_UPSTREAM_DIR/tests"
 
+  git config user.email "${GIT_USER}"
+  git config user.name "${GIT_NAME}"
+
   git add "$PANTHEON_UPSTREAM_DIR"
   git commit -m "Update $MODULE_NAME to version $LATEST_VERSION"
   git push origin "$TEMP_BRANCH"
@@ -61,8 +69,6 @@ main() {
       --body "$PR_BODY" \
       --head "$TEMP_BRANCH" \
       --base main
-
-  echo "Preparing update PR"
 }
 
 main
