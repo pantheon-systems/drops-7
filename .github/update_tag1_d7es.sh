@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-set +x # remove before merge
 
 main() {
   # Variables
@@ -9,8 +8,7 @@ main() {
   local TEMP_BRANCH="update-$MODULE_NAME-$(date +%Y%m%d%H%M%S)"
   local LATEST_VERSION
   local CURRENT_VERSION
-
-
+  local PR_BASE_BRANCH="default"
 
   # With these credentials, commits will be pushed to 'master' and available on
   # the upstream immediately.
@@ -34,7 +32,8 @@ main() {
   echo "Latest: ${LATEST_VERSION}"
 
   if [ "$LATEST_VERSION" == "$CURRENT_VERSION" ]; then
-    exit # Already up to date
+    echo "Already up to date."
+    exit 0
   fi
 
   local PR_TITLE="Update $MODULE_NAME to version $LATEST_VERSION"
@@ -45,7 +44,7 @@ main() {
 
   if [ -n "$PR_EXISTS" ]; then
     echo "A PR for version $LATEST_VERSION already exists. Skipping PR creation."
-    exit # PR already exists
+    exit 0
   fi
 
   git checkout -b "$TEMP_BRANCH"
@@ -70,8 +69,7 @@ main() {
   gh pr create --title "$PR_TITLE" \
       --body "$PR_BODY" \
       --head "$TEMP_BRANCH" \
-      --base default
+      --base "$PR_BASE_BRANCH"
 }
-
 
 main
