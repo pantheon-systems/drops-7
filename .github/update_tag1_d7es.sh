@@ -54,7 +54,7 @@ main() {
   local DRUPAL_ORG_FTP_GZ_URL="https://ftp.drupal.org/files/projects/$MODULE_NAME-$LATEST_VERSION.tar.gz"
   wget -qO- "$DRUPAL_ORG_FTP_GZ_URL" | tar -xz -C /tmp
 
-  rsync -ar "/tmp/$MODULE_NAME" "$PANTHEON_UPSTREAM_DIR"
+  rsync -ar --delete "/tmp/$MODULE_NAME/" "$PANTHEON_UPSTREAM_DIR/"
   rm -rf "$PANTHEON_UPSTREAM_DIR/.github"
   rm -f "$PANTHEON_UPSTREAM_DIR/.gitlab-ci.yml"
   rm -rf "$PANTHEON_UPSTREAM_DIR/tests"
@@ -70,7 +70,7 @@ main() {
   gh pr create --title "$PR_TITLE" \
       --body "$PR_BODY" \
       --head "$TEMP_BRANCH" \
-      --base main
+      --base default
 }
 
 main
