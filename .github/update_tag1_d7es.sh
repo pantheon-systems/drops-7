@@ -6,8 +6,10 @@ main() {
   # Variables
   local MODULE_NAME="tag1_d7es"
   local PANTHEON_UPSTREAM_DIR="modules/pantheon/$MODULE_NAME"
+  local TEMP_BRANCH="update-$MODULE_NAME-$(date +%Y%m%d%H%M%S)"
   local LATEST_VERSION
   local CURRENT_VERSION
+
 
 
   # With these credentials, commits will be pushed to 'master' and available on
