@@ -2,9 +2,9 @@
 on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight UTC
-  # push:
-  #   branches:
-  #     - SITE-2496-ii # Remove this before merge
+  push:
+    branches:
+      - SITE-2496-ii # Remove this before merge
   workflow_dispatch:
 
 permissions:
