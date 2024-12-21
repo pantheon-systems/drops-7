@@ -63,7 +63,7 @@ function tag1_d7es_preflight($site_id, $billing_email, $display_messages = FALSE
 
   // Ensure the billing email address is provided.
   if (!$billing_email) {
-    $config_error = 'Unable to send data because the billing email address is not provided.';
+    $config_error = 'Unable to send data because the customer email address is not provided.';
     $message = "$config_error Please visit <a href='/admin/config/system/tag1-d7es'>the configuration page</a> to provide it.";
     watchdog(
       'tag1_d7es',
@@ -84,7 +84,7 @@ function tag1_d7es_preflight($site_id, $billing_email, $display_messages = FALSE
  * Send data to Tag1.
  *
  * @param string $billing_email
- *   The primary billing email address, used for authentication.
+ *   The primary account email address, used for authentication.
  * @param array $data
  *   The data payload.
  * @param bool $display_messages
@@ -97,7 +97,7 @@ function tag1_d7es_preflight($site_id, $billing_email, $display_messages = FALSE
  */
 function _tag1_d7es_transmit($billing_email, $data, $display_messages = FALSE, $override_url = '') {
   $url = $override_url ?: _tag1_d7es_get_endpoint();
-  $auth_token = base64_encode($billing_email);
+  $auth_token = _tag1_d7es_encode_email($billing_email);
   $headers = array(
     'Content-Type' => 'application/json',
     'Authorization' => 'Basic ' . $auth_token,
@@ -126,7 +126,7 @@ function _tag1_d7es_transmit($billing_email, $data, $display_messages = FALSE, $
       return TRUE;
 
     case 403:
-      $message = 'Authentication error. Please review the billing address and API endpoint (if configured).';
+      $message = 'Authentication error. Please review the customer email address and API endpoint (if configured).';
       watchdog(
         'tag1_d7es',
         $message,
@@ -165,12 +165,23 @@ function _tag1_d7es_transmit($billing_email, $data, $display_messages = FALSE, $
 }
 
 /**
+ * Encode the email address.
+ *
+ * @param string $email
+ *   The email address to encode.
+ */
+function _tag1_d7es_encode_email($email) {
+  $encodedEmail = \base64_encode($email);
+  return \strlen($encodedEmail) < 20 ? \str_pad($encodedEmail, 20, '!', \STR_PAD_RIGHT) : $encodedEmail;
+}
+
+/**
  * Build the phone-home payload.
  *
  * @param string $site_id
  *   Pass the site ID if it's already known.
  * @param string $billing_email
- *   Pass the billing email if it's already known.
+ *   Pass the account email if it's already known.
  *
  * @return array
  *   The data array for the request.
@@ -308,15 +319,16 @@ function tag1_d7es_admin_form($form, $form_state) {
     '#markup' => '<p>' . t("Configure this module to communicate with Tag1's D7ES service. Installation and use of this module constitutes your acceptance of and agreement to be bound by Tag1 Consulting Inc's Terms of Service and Privacy Policy, as published at <a href='https://d7es.tag1.com/'>D7ES.Tag1.com</a>") . '</p>',
   );
 
-  // The billing email address is only needed for non-platform customers.
+  // The account (formerly billing) email address is only needed for non-
+  // platform customers.
   $form['tag1_d7es_billing_email'] = array(
     '#type' => 'textfield',
-    '#title' => t('Billing email address'),
+    '#title' => t('Customer email address'),
     '#size' => 80,
     '#maxlength' => 255,
     '#default_value' => variable_get('tag1_d7es_billing_email', ''),
     '#required' => TRUE,
-    '#description' => t('The primary billing email address.'),
+    '#description' => t('The email address of the customer account.'),
     '#access' => !(tag1_d7es_detect_platform()),
   );
 
