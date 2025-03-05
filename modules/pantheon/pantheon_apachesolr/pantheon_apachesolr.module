@@ -5,8 +5,16 @@
  *
  * Facilitates and debugs communication with Pantheon's Apache Solr service.
  */
-define('PANTHEON_APACHESOLR_PORT', variable_get('pantheon_index_port', 449));
-define('PANTHEON_APACHESOLR_HOST', variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com'));
+if (pantheon_apachesolr_get_search_version() == 8) {
+  $pantheon_apachesolr_host = getenv('PANTHEON_INDEX_HOST');
+  $pantheon_apachesolr_port = intval(getenv('PANTHEON_INDEX_PORT'));
+}
+else {
+  $pantheon_apachesolr_host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+  $pantheon_apachesolr_port = variable_get('pantheon_index_port', 449);
+}
+define('PANTHEON_APACHESOLR_PORT', $pantheon_apachesolr_port);
+define('PANTHEON_APACHESOLR_HOST', $pantheon_apachesolr_host);
 
 /**
  * Implements hook_help().
@@ -166,6 +174,22 @@ function pantheon_apachesolr_platform_detected() {
 }
 
 /**
+ * Return 'true' if the Pantheon Search Version is detected.
+ * @return string
+ */
+function pantheon_apachesolr_search_version_detected() {
+  return isset($_ENV['search_version']);
+}
+
+/**
+ * Return Pantheon Search Version if detected.
+ * @return string
+ */
+function pantheon_apachesolr_get_search_version() {
+  return pantheon_apachesolr_search_version_detected() ? $_ENV['search_version'] : NULL;
+}
+
+/**
  * Return the path to the directory containing the certificates.
  */
 function pantheon_apachesolr_certs_dir() {
@@ -195,6 +219,8 @@ function pantheon_apachesolr_display_error_if_disabled() {
 }
 
 /**
+ * Posts the schema files to the SOLR server.
+ *
  * @param string $schema
  *   Path to local schema XML
  *
@@ -222,36 +248,84 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   }
 
   $ch = curl_init();
-  $host = PANTHEON_APACHESOLR_HOST;
-  $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $host = PANTHEON_APACHESOLR_HOST;
+    $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_SCHEMA');
 
-  $client_cert = pantheon_apachesolr_client_cert();
-  $url = 'https://'. $host .'/'. $path;
+    $client_cert = pantheon_apachesolr_client_cert();
+    $url = 'https://'. $host .'/'. $path;
 
-  $file = fopen($schema, 'r');
-  // set URL and other appropriate options
-  $opts = array(
-    CURLOPT_URL => $url,
-    CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_SSLCERT => $client_cert,
-    CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
-    CURLOPT_PUT => TRUE,
-    CURLOPT_BINARYTRANSFER => 1,
-    CURLOPT_INFILE => $file,
-    CURLOPT_INFILESIZE => filesize($schema),
-  );
-  curl_setopt_array($ch, $opts);
-  $response = curl_exec($ch);
-  $info = curl_getinfo($ch);
-  $success_codes = array(
-    '200',
-    '201',
-    '202',
-    '204'
-  );
-  $success = (in_array($info['http_code'], $success_codes));
-  fclose($file);
+    $schema_directory = dirname($schema);
+    $schema_files = scandir($schema_directory);
+    $files = array('files' => array());
+    foreach ($schema_files as $schema_file) {
+      if (!in_array($schema_file, array('.', '..'))) {
+        $files['files'][] = array(
+          'filename' => $schema_file,
+          'content' => base64_encode(file_get_contents($schema_directory . '/' . $schema_file)),
+        );
+      }
+    }
+    // Set URL and other appropriate options.
+    $opts = array(
+      CURLOPT_URL => $url,
+      CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_SSLCERT => $client_cert,
+      CURLOPT_HTTPHEADER => array('ACCEPT:application/json', 'Content-type:application/json'),
+      CURLOPT_POST => TRUE,
+      CURLOPT_POSTFIELDS => json_encode($files),
+    );
+
+    curl_setopt_array($ch, $opts);
+    $response = curl_exec($ch);
+    $info = curl_getinfo($ch);
+    $success_codes = array(
+      '200',
+      '201',
+      '202',
+      '204'
+    );
+    $success = (in_array($info['http_code'], $success_codes));
+
+    if ($success) {
+      // Call reload on the server.
+      pantheon_apachesolr_reload_server_exec();
+    }
+  }
+  else {
+    $host = PANTHEON_APACHESOLR_HOST;
+    $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+
+    $client_cert = pantheon_apachesolr_client_cert();
+    $url = 'https://'. $host .'/'. $path;
+
+    $file = fopen($schema, 'r');
+    // Set URL and other appropriate options.
+    $opts = array(
+      CURLOPT_URL => $url,
+      CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_SSLCERT => $client_cert,
+      CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
+      CURLOPT_PUT => TRUE,
+      CURLOPT_BINARYTRANSFER => 1,
+      CURLOPT_INFILE => $file,
+      CURLOPT_INFILESIZE => filesize($schema),
+    );
+
+    curl_setopt_array($ch, $opts);
+    $response = curl_exec($ch);
+    $info = curl_getinfo($ch);
+    $success_codes = array(
+      '200',
+      '201',
+      '202',
+      '204'
+    );
+    $success = (in_array($info['http_code'], $success_codes));
+    fclose($file);
+  }
   if (!$success) {
     watchdog('pantheon_apachesolr', 'Error !error posting !schema to !url', array(
       '!error' => curl_error($ch),
@@ -264,6 +338,46 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   }
 
   return $success;
+}
+
+/**
+ * Reloads the SOLR server.
+ */
+function pantheon_apachesolr_reload_server_exec() {
+  if (!pantheon_apachesolr_platform_detected()) {
+    return;
+  }
+
+  $ch = curl_init();
+  $host = PANTHEON_APACHESOLR_HOST;
+  $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_RELOAD_PATH');
+
+  $client_cert = pantheon_apachesolr_client_cert();
+  $url = 'https://'. $host .'/'. $path;
+
+  // Set URL and other appropriate options.
+  $opts = array(
+    CURLOPT_URL => $url,
+    CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_SSLCERT => $client_cert,
+    CURLOPT_HTTPHEADER => array('ACCEPT:application/json', 'Content-type:application/json'),
+    CURLOPT_POST => TRUE,
+  );
+
+  curl_setopt_array($ch, $opts);
+  $response = curl_exec($ch);
+  $info = curl_getinfo($ch);
+  $success_codes = array(
+    '200',
+    '201',
+    '202',
+    '204'
+  );
+  $success = (in_array($info['http_code'], $success_codes));
+  if (!$success) {
+    watchdog('pantheon_apachesolr', 'Unable to reload Pantheon SOLR server.', WATCHDOG_ERROR);
+  }
 }
 
 /**
@@ -335,8 +449,14 @@ function pantheon_apachesolr_query($form, &$form_state) {
     );
   }
 
+
   $host = PANTHEON_APACHESOLR_HOST;
-  $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+  }
+  else {
+    $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  }
   $url = 'https://'. $host .'/'. $path;
 
   $form['query_string'] = array(
@@ -369,7 +489,12 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 
   $host = PANTHEON_APACHESOLR_HOST;
-  $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+  }
+  else {
+    $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  }
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
   $ch = curl_init();
@@ -428,12 +553,22 @@ function pantheon_apachesolr_post_schema_form($form, &$form_state) {
 
   $files = drupal_system_listing('/schema.*\.xml$/', 'modules', 'uri', 0);
   $schemas = array();
-  $recommended = '3.x/schema.xml';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $recommended = '8.x/schema.xml';
+  }
+  else {
+    $recommended = '3.x/schema.xml';
+  }
+
   $wrong_versions = array(
     '4.x',
     '1.4',
     'extra',
   );
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $wrong_versions[] = '3.x';
+    $wrong_versions[] = '1.3';
+  }
 
   $default = '';
 
@@ -451,19 +586,41 @@ function pantheon_apachesolr_post_schema_form($form, &$form_state) {
       }
     }
 
-    if (!$recommended && in_array($data->uri, array(
-      'sites/all/modules/apachesolr/solr-conf/solr-3.x/schema.xml',
-      'sites/all/modules/search_api_solr/solr-conf/3.x/schema.xml',
-    ))) {
+    if (pantheon_apachesolr_get_search_version() == 8) {
+      $uris = array(
+        'sites/all/modules/apachesolr/solr-conf/solr-8.x/schema.xml',
+        'sites/all/modules/search_api_solr/solr-conf/8.x/schema.xml',
+      );
+    }
+    else {
+      $uris = array(
+        'sites/all/modules/apachesolr/solr-conf/solr-3.x/schema.xml',
+        'sites/all/modules/search_api_solr/solr-conf/3.x/schema.xml',
+      );
+    }
+
+    if (!$recommended && in_array($data->uri, $uris)) {
       $recommended = $data->uri;
     }
   }
   asort($schemas);
 
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $translate_parameters = array(
+      '@version' => 'v8.11.0',
+      '@schema' => '8.x/schema.xml',
+    );
+  }
+  else {
+    $translate_parameters = array(
+      '@version' => 'v3.5.0',
+      '@schema' => '3.x/schema.xml',
+    );
+  }
   $form['schemas'] = array(
     '#type' => 'fieldset',
     '#title' => t('Solr Schema File'),
-    '#description' => t('The following schema.xml files exist in your Drupal site code. Pantheon uses Apache Solr v3.5.0, so you should use 3.x/schema.xml as the base configuration.') . '<br/><br/>',
+    '#description' => t('The following schema.xml files exist in your Drupal site code. Pantheon uses Apache Solr @version, so you should use @schema as the base configuration.', $translate_parameters) . '<br/><br/>',
     '#weight' => -10,
   );
   if (count($schemas) > 0) {
@@ -548,7 +705,12 @@ function pantheon_apachesolr_status($form, &$form_state) {
   );
 
   // Ping.
-  $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/ping';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
+  }
+  else {
+    $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/ping';
+  }
 
   if ($schema == 'search_api_solr') {
     $path .= '?q=id:1';
@@ -628,7 +790,12 @@ function pantheon_apachesolr_status($form, &$form_state) {
   }
 
   // Solr Stats.
-  $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/stats.jsp';
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/system';
+  }
+  else {
+    $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/stats.jsp';
+  }
   $url = 'https://'. $host . '/' . $path;
 
   $ch = curl_init();
@@ -642,12 +809,22 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   $response = curl_exec($ch);
   curl_close($ch);
-  $oXML = new SimpleXMLElement($response);
 
-  $debug = array(
-    t('Core') => $oXML->core,
-    t('Schema') => $oXML->schema,
-  );
+  if (pantheon_apachesolr_get_search_version() == 8) {
+    $info = json_decode($response, TRUE);
+    $debug = array(
+      t('Core') => str_replace('/var/solr/data/', '', $info['core']['directory']['instance']),
+      t('Schema') => $info['core']['schema'],
+    );
+  }
+  else {
+    $oXML = new SimpleXMLElement($response);
+
+    $debug = array(
+      t('Core') => $oXML->core,
+      t('Schema') => $oXML->schema,
+    );
+  }
 
   $debug_str = '<h2>' . t('Core and Schema from Solr Server') . '</h2>';
   $debug_str .= '<dl>';
@@ -723,7 +900,12 @@ function pantheon_apachesolr_requirements($phase) {
       ));
       // Ping.
       $host = PANTHEON_APACHESOLR_HOST;
-      $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/ping';
+      if (pantheon_apachesolr_get_search_version() == 8) {
+        $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
+      }
+      else {
+        $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/ping';
+      }
       $schema = strpos($pantheon_apachesolr_schema, 'search_api_solr') !== FALSE ? 'search_api_solr' : 'generic';
 
       if ($schema == 'search_api_solr') {
