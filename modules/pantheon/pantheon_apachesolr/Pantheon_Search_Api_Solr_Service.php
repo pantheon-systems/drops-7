@@ -3,15 +3,29 @@
 /**
  * Current Supported Class for RC4+
  */
+#[\AllowDynamicProperties]
 class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection {
+
+  protected $base_url;
+  protected $http_auth;
+  protected $method;
+  protected $options;
 
   function __construct(array $options) {
 
-    // Adding in custom settings for Pantheon
-    $options['scheme'] = 'https';
-    $options['host'] = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
-    $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
-    $options['port'] = variable_get('pantheon_index_port', 449);
+    // Adding in custom settings for Pantheon.
+    if (pantheon_apachesolr_get_search_version() == 8) {
+      $options['scheme'] = getenv('PANTHEON_INDEX_SCHEME');
+      $options['host'] = getenv('PANTHEON_INDEX_HOST');
+      $options['path'] = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+      $options['port'] = intval(getenv('PANTHEON_INDEX_PORT'));
+    }
+    else {
+      $options['scheme'] = 'https';
+      $options['host'] = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+      $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
+      $options['port'] = variable_get('pantheon_index_port', 449);
+    }
     $this->setStreamContext(
       stream_context_create(
         array(
@@ -22,7 +36,7 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
       )
     );
 
-    // Adding in general settings for Search API
+    // Adding in general settings for Search API.
     $options += array(
       'scheme' => 'http',
       'host' => 'localhost',
@@ -100,22 +114,125 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
 
 class PantheonApachesolrSearchApiSolrService extends SearchApiSolrService {
   protected $connection_class = 'PantheonApachesolrSearchApiSolrConnection';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function connect($clean_path = TRUE) {
+    if (!$this->solr) {
+      $connection_class = $this->getConnectionClass();
+      if (!class_exists($connection_class)) {
+        throw new SearchApiException(t('Invalid class @class set as Solr connection class.', array('@class' => $connection_class)));
+      }
+      $options = $this->options + array('server' => $this->server->machine_name);
+
+      // Adding in custom settings for Pantheon SOLR 8.x.
+      if (pantheon_apachesolr_get_search_version() == 8) {
+        $options['scheme'] = getenv('PANTHEON_INDEX_SCHEME');
+        $options['host'] = getenv('PANTHEON_INDEX_HOST');
+        $options['path'] = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+        $options['port'] = intval(getenv('PANTHEON_INDEX_PORT'));
+      }
+
+      // If clean path is set then remove (/#/) character patterns.
+      if ($clean_path && strpos($options['path'], '/#/')) {
+        $alternative_options = $options;
+        $alternative_options['path'] = str_replace('/#/', '/', $alternative_options['path']);
+
+        $this->solr = new $connection_class($alternative_options);
+        if ($this->solr instanceof SearchApiSolrConnectionInterface) {
+          return;
+        }
+      }
+
+      $this->solr = new $connection_class($options);
+      if (!($this->solr instanceof SearchApiSolrConnectionInterface)) {
+        $this->solr = NULL;
+        throw new SearchApiException(t('Invalid class @class set as Solr connection class.', array('@class' => $connection_class)));
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getServerLink() {
+    if (pantheon_apachesolr_get_search_version() == 8) {
+      $url = getenv('PANTHEON_INDEX_SCHEME') . '://' . getenv('PANTHEON_INDEX_HOST') . ':' . intval(getenv('PANTHEON_INDEX_PORT')) . '/' . getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+    }
+    else {
+      if (!$this->options) {
+        return '';
+      }
+      $host = $this->options['host'];
+      if ($host == 'localhost' && !empty($_SERVER['SERVER_NAME'])) {
+        $host = $_SERVER['SERVER_NAME'];
+      }
+      $url = $this->options['scheme'] . '://' . $host . ':' . $this->options['port'] . $this->options['path'];
+    }
+    return l($url, $url);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function ping() {
+    if (pantheon_apachesolr_get_search_version() == 8) {
+      $host = PANTHEON_APACHESOLR_HOST;
+      $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
+      $pantheon_apachesolr_schema = variable_get('pantheon_apachesolr_schema');
+
+      if (strpos($pantheon_apachesolr_schema, 'search_api_solr') !== FALSE) {
+        $path .= '?q=id:1';
+      }
+
+      $url = 'https://'. $host . '/' . $path;
+
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
+
+      $opts = pantheon_apachesolr_curlopts();
+      $opts[CURLOPT_URL] = $url;
+      $opts[CURLOPT_PORT] = PANTHEON_APACHESOLR_PORT;
+      $opts[CURLOPT_CONNECTTIMEOUT] = 5;
+      $opts[CURLOPT_RETURNTRANSFER] = 1;
+
+      curl_setopt_array($ch, $opts);
+      $response = curl_exec($ch);
+      $info = curl_getinfo($ch);
+      curl_close($ch);
+      return ($info['http_code'] == 200);
+    }
+    else {
+      $this->connect(FALSE);
+      return $this->solr->ping();
+    }
+  }
+
 }
 
 /**
- * Legacy Supported Class for RC2
+ * Legacy Supported Class for RC2.
  */
 class PantheonSearchApiSolrService extends SearchApiSolrConnection {
   /**
-   * Constructor
+   * Constructor.
    */
   public function __construct(array $options) {
-    $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
-    $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+    if (pantheon_apachesolr_get_search_version() == 8) {
+      $host = getenv('PANTHEON_INDEX_HOST');
+      $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+      $port = intval(getenv('PANTHEON_INDEX_PORT'));
+    }
+    else {
+      $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+      $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+      $port = variable_get('pantheon_index_port', 449);
+    }
     $options = array(
       'host' => $host,
       'path' => $path,
-      'port' => 449,
+      'port' => $port,
       'default_field' => 'id',
     );
     parent::__construct($options);
