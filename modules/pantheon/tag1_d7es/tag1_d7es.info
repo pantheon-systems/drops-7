@@ -11,8 +11,10 @@ files[] = tests/tag1_d7es_fetch_url.test
 files[] = tests/tag1_d7es_mail.test
 files[] = tests/tag1_d7es_update.test
 
-; Information added by Drupal.org packaging script on 2024-11-27
-version = "7.x-1.1"
+test_dependencies[] = ctools:ctools
+
+; Information added by Drupal.org packaging script on 2025-04-01
+version = "7.x-1.3"
 core = "7.x"
 project = "tag1_d7es"
-datestamp = "1732731772"
+datestamp = "1743544113"

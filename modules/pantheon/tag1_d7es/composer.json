@@ -1,0 +1,13 @@
+{
+  "name": "drupal/tag1_d7es",
+  "type": "drupal-module",
+  "description": "Module that communicates with Tag1's D7ES service.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "authors": [],
+  "support": {},
+  "require": {},
+  "require-dev": {
+    "drupal/ctools": "^1"
+  }
+}
