@@ -415,7 +415,9 @@ function tag1_d7es_admin_form_validate($form, &$form_state) {
     // Allow only valid email addresses.
     $addresses = array_map('trim', explode(',', $form_state['values'][$email]));
     foreach ($addresses as $address) {
-      if (!valid_email_address($address)) {
+      // Handle instances where the email address is hidden. Don't validate it.
+      $access = !isset($form[$email]['#access']) || $form[$email]['#access'];
+      if ($access && !valid_email_address($address)) {
         form_set_error($email, t('(@address) is not a valid email address.', array('@address' => $address)));
       }
     }

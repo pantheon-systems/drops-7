@@ -13,8 +13,8 @@ files[] = tests/tag1_d7es_update.test
 
 test_dependencies[] = ctools:ctools
 
-; Information added by Drupal.org packaging script on 2025-04-01
-version = "7.x-1.3"
+; Information added by Drupal.org packaging script on 2025-04-10
+version = "7.x-1.4"
 core = "7.x"
 project = "tag1_d7es"
-datestamp = "1743544113"
+datestamp = "1744296929"
