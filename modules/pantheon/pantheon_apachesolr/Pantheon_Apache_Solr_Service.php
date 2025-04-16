@@ -458,7 +458,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       // $url = str_replace('http://', 'https://', $url);
 
       // These options only need to be set once
-      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+      pantheon_curl_setopt_sslcert($ch, $client_cert);
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_PORT] = $port;
       curl_setopt_array($ch, $opts);

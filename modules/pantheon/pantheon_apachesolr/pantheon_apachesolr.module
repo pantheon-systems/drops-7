@@ -183,6 +183,15 @@ function pantheon_apachesolr_client_cert() {
   return pantheon_apachesolr_certs_dir() . '/binding.pem';
 }
 
+function pantheon_apachesolr_curl_setopt_sslcert($ch, $client_cert) {
+  if (getenv("MTLSPROXY_ENABLED") === 'true') {
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    return;
+  }
+  curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+}
+
 /**
  * Display an error message if not running on the Pantheon platform.
  */
@@ -226,6 +235,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
   $client_cert = pantheon_apachesolr_client_cert();
+  pantheon_apachesolr_curl_setopt_sslcert($ch, $client_cert);
   $url = 'https://'. $host .'/'. $path;
 
   $file = fopen($schema, 'r');
@@ -234,7 +244,6 @@ function pantheon_apachesolr_post_schema_exec($schema) {
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_SSLCERT => $client_cert,
     CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
     CURLOPT_PUT => TRUE,
     CURLOPT_BINARYTRANSFER => 1,
@@ -373,12 +382,12 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
   $ch = curl_init();
+  pantheon_apachesolr_curl_setopt_sslcert($ch, pantheon_apachesolr_client_cert());
   curl_setopt_array($ch, pantheon_apachesolr_curlopts());
 
   curl_setopt_array($ch, array(
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_HEADER => 0,
   ));
 
@@ -557,7 +566,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $url = 'https://'. $host . '/' . $path;
 
   $ch = curl_init();
-  curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
+  pantheon_apachesolr_curl_setopt_sslcert($ch, pantheon_apachesolr_client_cert());
 
   $opts = pantheon_apachesolr_curlopts();
   $opts[CURLOPT_URL] = $url;
@@ -632,11 +641,11 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $url = 'https://'. $host . '/' . $path;
 
   $ch = curl_init();
+  pantheon_apachesolr_curl_setopt_sslcert($ch, pantheon_apachesolr_client_cert());
   curl_setopt_array($ch, array(
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_RETURNTRANSFER => 1,
   ));
 
@@ -733,7 +742,7 @@ function pantheon_apachesolr_requirements($phase) {
       $url = 'https://'. $host . '/' . $path;
 
       $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
+      pantheon_apachesolr_curl_setopt_sslcert($ch, pantheon_apachesolr_client_cert());
 
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_URL] = $url;
