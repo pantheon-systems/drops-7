@@ -193,7 +193,7 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       $client_cert = pantheon_apachesolr_client_cert();
       $port = variable_get('pantheon_index_port', 449);
       $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+      pantheon_curl_setopt_sslcert($ch, $client_cert);
 
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_URL] = $url;
