@@ -190,10 +190,8 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       // WHY ARG WHY!?!?!
       $parts = explode('?', $url);
       $url = $parts[0] .'?'. $parts[1];
-      $client_cert = pantheon_apachesolr_client_cert();
       $port = variable_get('pantheon_index_port', 449);
-      $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($method) && ($method != 'POST')) ? $method : NULL);
 
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_URL] = $url;

@@ -448,17 +448,15 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
-    $client_cert = pantheon_apachesolr_client_cert();
     $port = variable_get('pantheon_index_port', 449);
 
     if (!isset($ch)) {
-      $ch = curl_init();
+      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($options['method']) && ($options['method'] != 'POST')) ? $options['method'] : NULL);
 
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
 
       // These options only need to be set once
-      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_PORT] = $port;
       curl_setopt_array($ch, $opts);

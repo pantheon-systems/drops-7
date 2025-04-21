@@ -221,12 +221,13 @@ function pantheon_apachesolr_post_schema_exec($schema) {
     return NULL;
   }
 
-  $ch = curl_init();
   $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
   $client_cert = pantheon_apachesolr_client_cert();
   $url = 'https://'. $host .'/'. $path;
+
+  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
   $file = fopen($schema, 'r');
   // set URL and other appropriate options
@@ -234,7 +235,6 @@ function pantheon_apachesolr_post_schema_exec($schema) {
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_SSLCERT => $client_cert,
     CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
     CURLOPT_PUT => TRUE,
     CURLOPT_BINARYTRANSFER => 1,
@@ -372,13 +372,12 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
-  $ch = curl_init();
+  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
   curl_setopt_array($ch, pantheon_apachesolr_curlopts());
 
   curl_setopt_array($ch, array(
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_HEADER => 0,
   ));
 
@@ -556,8 +555,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   $url = 'https://'. $host . '/' . $path;
 
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
+  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
   $opts = pantheon_apachesolr_curlopts();
   $opts[CURLOPT_URL] = $url;
@@ -631,12 +629,12 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/stats.jsp';
   $url = 'https://'. $host . '/' . $path;
 
-  $ch = curl_init();
+  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+
   curl_setopt_array($ch, array(
     CURLOPT_URL => $url,
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_SSLCERT => pantheon_apachesolr_client_cert(),
     CURLOPT_RETURNTRANSFER => 1,
   ));
 
@@ -732,8 +730,7 @@ function pantheon_apachesolr_requirements($phase) {
 
       $url = 'https://'. $host . '/' . $path;
 
-      $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSLCERT, pantheon_apachesolr_client_cert());
+      list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
       $opts = pantheon_apachesolr_curlopts();
       $opts[CURLOPT_URL] = $url;
