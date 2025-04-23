@@ -476,42 +476,15 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
     $port = variable_get('pantheon_index_port', 449);
-    watchdog(
-      'pantheon_apachesolr',
-      'options before pantheon_curl_setup: <pre>@options</pre>',
-      array('@options' => print_r($options, TRUE)),
-      WATCHDOG_NOTICE
-    );
-    
-  $job_runtime = getenv('JOB_RUNTIME');
-  $mtlsproxy_enabled = getenv('MTLSPROXY_ENABLED');
-  $pantheon_index_port = getenv('PANTHEON_INDEX_PORT');
-  watchdog(
-    'pantheon_apachesolr',
-    "job runtime: $job_runtime, mtlsproxy_enabled: $mtlsproxy_enabled, pantheon_index_port: $pantheon_index_port, port: $port",
-    array(),
-    WATCHDOG_NOTICE
-  );
 
     if (!isset($ch)) {
       list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($options['method']) && ($options['method'] != 'POST')) ? $options['method'] : NULL);
 
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
-      watchdog(
-        'pantheon_apachesolr',
-        'opts after pantheon_curl_setup before curlops: <pre>@opts</pre>',
-        array('@opts' => print_r($this->curl_opts_to_string($opts), TRUE)),
-        WATCHDOG_NOTICE
-      );
+
       // These options only need to be set once
       $opts = pantheon_apachesolr_curlopts($opts);
-      watchdog(
-        'pantheon_apachesolr',
-        'opts after pantheon_apachesolr_curlopts: <pre>@opts</pre>',
-        array('@opts' => print_r($this->curl_opts_to_string($opts), TRUE)),
-        WATCHDOG_NOTICE
-      );
       curl_setopt_array($ch, $opts);
     }
     curl_setopt($ch, CURLOPT_URL, $url);

@@ -182,14 +182,6 @@ function pantheon_apachesolr_certs_dir() {
 }
 
 /**
- * Return the path to the client certificate.
- * @return string
- */
-function pantheon_apachesolr_client_cert() {
-  return pantheon_apachesolr_certs_dir() . '/binding.pem';
-}
-
-/**
  * Display an error message if not running on the Pantheon platform.
  */
 function pantheon_apachesolr_display_error_if_disabled() {
@@ -230,24 +222,20 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
-  $client_cert = pantheon_apachesolr_client_cert();
   $url = 'https://'. $host .'/'. $path;
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
-  TODO: Combine $opts below.
 
   $file = fopen($schema, 'r');
   // set URL and other appropriate options
-  $opts = array(
-    CURLOPT_URL => $url,
-    CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
+  $opts = array_replace($opts, array(
     CURLOPT_RETURNTRANSFER => 1,
     CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
     CURLOPT_PUT => TRUE,
     CURLOPT_BINARYTRANSFER => 1,
     CURLOPT_INFILE => $file,
     CURLOPT_INFILESIZE => filesize($schema),
-  );
+  ));
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
   $info = curl_getinfo($ch);
@@ -380,13 +368,9 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
-  curl_setopt_array($ch, pantheon_apachesolr_curlopts());
-
-  curl_setopt_array($ch, array(
-    CURLOPT_URL => $url,
-    CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_HEADER => 0,
-  ));
+  $opts = pantheon_apachesolr_curlopts($opts);
+  $opts[CURLOPT_HEADER] = 0;
+  curl_setopt_array($ch, $opts);
 
   $response = curl_exec($ch);
   $info = curl_getinfo($ch);
@@ -564,9 +548,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
-  $opts = pantheon_apachesolr_curlopts();
-  $opts[CURLOPT_URL] = $url;
-  $opts[CURLOPT_PORT] = PANTHEON_APACHESOLR_PORT;
+  $opts = pantheon_apachesolr_curlopts($opts);
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
   $opts[CURLOPT_RETURNTRANSFER] = 1;
 
@@ -739,9 +721,7 @@ function pantheon_apachesolr_requirements($phase) {
 
       list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
-      $opts = pantheon_apachesolr_curlopts();
-      $opts[CURLOPT_URL] = $url;
-      $opts[CURLOPT_PORT] = PANTHEON_APACHESOLR_PORT;
+      $opts = pantheon_apachesolr_curlopts($opts);
       $opts[CURLOPT_CONNECTTIMEOUT] = 5;
       $opts[CURLOPT_RETURNTRANSFER] = 1;
 
