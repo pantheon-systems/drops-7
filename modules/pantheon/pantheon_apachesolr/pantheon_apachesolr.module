@@ -142,19 +142,25 @@ function pantheon_apachesolr_search_api_service_info_alter(array &$service_info)
 }
 
 /**
- * Default CURL options for Solr requests.
+ * Default CURL options for Solr requests, with support for overrides.
+ *
+ * @param array $opts
+ *   Optional overrides for default cURL options.
  *
  * @return array
- *   Clean standards.
+ *   Final cURL options with defaults merged.
  */
-function pantheon_apachesolr_curlopts() {
-  return array(
-    CURLOPT_HEADER => 1,
-    CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_TIMEOUT_MS => 5000,
+function pantheon_apachesolr_curlopts(array $opts = array()) {
+  $defaults = [
+    CURLOPT_HEADER            => 1,
+    CURLOPT_RETURNTRANSFER    => 1,
+    CURLOPT_TIMEOUT_MS        => 5000,
     CURLOPT_CONNECTTIMEOUT_MS => 5000,
-    CURLOPT_HTTPHEADER => array('Content-type:text/xml;', 'Expect:'),
-  );
+    CURLOPT_HTTPHEADER        => ['Content-type:text/xml;', 'Expect:'],
+  ];
+
+  // Merge defaults with user-provided options (user-provided are overridden).
+  return array_replace($opts, $defaults);
 }
 
 /**
