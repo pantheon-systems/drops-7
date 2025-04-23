@@ -234,6 +234,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   $url = 'https://'. $host .'/'. $path;
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  TODO: Combine $opts below.
 
   $file = fopen($schema, 'r');
   // set URL and other appropriate options
