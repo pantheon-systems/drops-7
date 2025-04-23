@@ -193,7 +193,7 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       $port = variable_get('pantheon_index_port', 449);
       list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($method) && ($method != 'POST')) ? $method : NULL);
 
-      $opts = pantheon_apachesolr_curlopts();
+      $opts = pantheon_apachesolr_curlopts($opts);
       $opts[CURLOPT_URL] = $url;
       $opts[CURLOPT_PORT] = $port;
 
