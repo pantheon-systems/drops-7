@@ -810,8 +810,6 @@ function pantheon_apachesolr_requirements($phase) {
       list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
       $opts = pantheon_apachesolr_curlopts($opts);
-      $opts[CURLOPT_CONNECTTIMEOUT] = 5;
-      $opts[CURLOPT_RETURNTRANSFER] = 1;
 
       watchdog(
         'pantheon_apachesolr',
