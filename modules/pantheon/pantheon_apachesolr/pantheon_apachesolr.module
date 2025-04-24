@@ -8,6 +8,35 @@
 define('PANTHEON_APACHESOLR_PORT', variable_get('pantheon_index_port', 449));
 define('PANTHEON_APACHESOLR_HOST', variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com'));
 
+
+function curl_opts_to_string(array $opts) {
+  // Get all CURLOPT_* constants
+  $curlConstants = array_filter(get_defined_constants(true)['curl'], function ($key) {
+      return strpos($key, 'CURLOPT_') === 0;
+  }, ARRAY_FILTER_USE_KEY);
+
+  // Flip the array to map int values back to constant names
+  $constMap = array_flip($curlConstants);
+
+  $lines = [];
+
+  foreach ($opts as $key => $value) {
+      $name = $constMap[$key] ?? "UNKNOWN_OPTION_$key";
+
+      if (is_array($value)) {
+          $lines[] = "$name:";
+          foreach ($value as $subValue) {
+              $lines[] = "  - $subValue";
+          }
+      } else {
+          $lines[] = "$name: $value";
+      }
+  }
+
+  return implode("\n", $lines);
+}
+
+
 /**
  * Implements hook_help().
  */
@@ -225,7 +254,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   $url = 'https://'. $host .'/'. $path;
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
-
+  
   $file = fopen($schema, 'r');
   // set URL and other appropriate options
   $opts = array_replace($opts, array(
@@ -234,8 +263,16 @@ function pantheon_apachesolr_post_schema_exec($schema) {
     CURLOPT_PUT => TRUE,
     CURLOPT_BINARYTRANSFER => 1,
     CURLOPT_INFILE => $file,
-    CURLOPT_INFILESIZE => filesize($schema),
+    CURLOPT_INFILESIZE => filesize($schema)
   ));
+
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_post_schema_exec opts: <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+  
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
   $info = curl_getinfo($ch);
@@ -370,6 +407,14 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
   $opts = pantheon_apachesolr_curlopts($opts);
   $opts[CURLOPT_HEADER] = 0;
+
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_query_submit opts: <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+
   curl_setopt_array($ch, $opts);
 
   $response = curl_exec($ch);
@@ -548,10 +593,33 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status opts('.__LINE__.'): <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+  
+
   $opts = pantheon_apachesolr_curlopts($opts);
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status opts('.__LINE__.'): <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+  
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
   $opts[CURLOPT_RETURNTRANSFER] = 1;
 
+
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status opts('.__LINE__.'): <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+  
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
   $info = curl_getinfo($ch);
@@ -618,16 +686,36 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/stats.jsp';
   $url = 'https://'. $host . '/' . $path;
 
+  $opts = array();
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status opts('.__LINE__.') opts: <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
 
-  curl_setopt_array($ch, array(
-    CURLOPT_URL => $url,
-    CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
-    CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_RETURNTRANSFER => 1,
-  ));
+  unset($opts[CURLOPT_CUSTOMREQUEST]);
+  unset($opts[CURLOPT_HTTPHEADER]);
+  $opts[CURLOPT_CONNECTTIMEOUT] = 5;
+  $opts[CURLOPT_HEADER] = false;
+
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status opts('.__LINE__.') opts: <pre>@opts</pre>',
+    array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+    WATCHDOG_NOTICE
+  );
+
+  curl_setopt_array($ch, $opts);
 
   $response = curl_exec($ch);
+  watchdog(
+    'pantheon_apachesolr',
+    'pantheon_apachesolr_status response('.__LINE__.') response: <pre>@response</pre>',
+    array('@response' => print_r($response, TRUE)),
+    WATCHDOG_NOTICE
+  );
   curl_close($ch);
   $oXML = new SimpleXMLElement($response);
 
@@ -724,6 +812,13 @@ function pantheon_apachesolr_requirements($phase) {
       $opts = pantheon_apachesolr_curlopts($opts);
       $opts[CURLOPT_CONNECTTIMEOUT] = 5;
       $opts[CURLOPT_RETURNTRANSFER] = 1;
+
+      watchdog(
+        'pantheon_apachesolr',
+        'pantheon_apachesolr_requirements opts: <pre>@opts</pre>',
+        array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
+        WATCHDOG_NOTICE
+      );
 
       curl_setopt_array($ch, $opts);
       $response = curl_exec($ch);

@@ -426,33 +426,6 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     return $this->checkResponse($response);
   }
 
-  public function curl_opts_to_string(array $opts) {
-    // Get all CURLOPT_* constants
-    $curlConstants = array_filter(get_defined_constants(true)['curl'], function ($key) {
-        return strpos($key, 'CURLOPT_') === 0;
-    }, ARRAY_FILTER_USE_KEY);
-
-    // Flip the array to map int values back to constant names
-    $constMap = array_flip($curlConstants);
-
-    $lines = [];
-
-    foreach ($opts as $key => $value) {
-        $name = $constMap[$key] ?? "UNKNOWN_OPTION_$key";
-
-        if (is_array($value)) {
-            $lines[] = "$name:";
-            foreach ($value as $subValue) {
-                $lines[] = "  - $subValue";
-            }
-        } else {
-            $lines[] = "$name: $value";
-        }
-    }
-
-    return implode("\n", $lines);
-  }
-
   /**
    * Central method for making a POST operation against this Solr Server
    */
@@ -485,6 +458,17 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
 
       // These options only need to be set once
       $opts = pantheon_apachesolr_curlopts($opts);
+      unset($opts[CURLOPT_CUSTOMREQUEST]);
+      watchdog(
+        'pantheon_apachesolr',
+        __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre>',
+        array(
+          '@opts' => print_r(curl_opts_to_string($opts), TRUE),
+        ),
+        WATCHDOG_NOTICE
+      );
+
+      
       curl_setopt_array($ch, $opts);
     }
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -506,12 +490,23 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     if (isset($options['data'])) {
       curl_setopt($ch, CURLOPT_POSTFIELDS, $options['data']);
     }
-
+    watchdog(
+      'pantheon_apachesolr',
+      __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre> options: <pre>@opts</pre>',
+      array(
+        '@options' => print_r($options,TRUE)
+      ),
+      WATCHDOG_NOTICE
+    );
     $response = curl_exec($ch);
 
     if ($response == NULL) {
       // TODO; better error handling
       watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
+      
+      # 2025-04-23 without adding this return errors freak out at  Attempt to assign property "code" on null 
+      # I should refactor this before merging.
+      return NULL; 
     }
     else {
       // mimick the $result object from drupal_http_request()
