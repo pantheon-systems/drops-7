@@ -193,11 +193,67 @@ function pantheon_apachesolr_curlopts(array $opts = array()) {
 }
 
 /**
+ * Return the path to the client certificate.
+ * @return string
+ */
+function pantheon_apachesolr_client_cert() {
+  return pantheon_apachesolr_certs_dir() . '/binding.pem';
+}
+
+/**
  * Return 'true' if the Pantheon platform is detected.
  * @return string
  */
 function pantheon_apachesolr_platform_detected() {
   return isset($_ENV['PANTHEON_ENVIRONMENT']);
+}
+
+/**
+ * Helper function for running CURLs
+ */
+function pantheon_apachesolr_curl_setup($url, $data = NULL, $port = 443, $verb = 'GET') {
+  // create a new cURL resource
+  $ch = curl_init();
+
+  // Redirect to mtlsproxyhost if call is for ygg
+  if (getenv('JOB_RUNTIME') !== "UJR" && getenv('MTLSPROXY_ENABLED') === 'true') {
+    if (strpos($url, 'https://api.live.getpantheon.com') !== FALSE) {
+      $url = str_replace('api.live.getpantheon.com', 'mtlsproxyhost', $url);
+    }
+    if (strpos($url, 'https://api.onebox.getpantheon.com') !== FALSE) {
+      $url = str_replace('api.onebox.getpantheon.com', 'mtlsproxyhost', $url);
+    }
+  }
+
+  $opts = array(
+    CURLOPT_URL => $url,
+    CURLOPT_HEADER => 1,
+    CURLOPT_PORT => $port,
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_CUSTOMREQUEST => $verb,
+    CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'X-Ignore-Agent: 1'),
+  );
+
+  
+  // set URL and other appropriate options
+  if ( getenv('JOB_RUNTIME') !== "UJR" && getenv('MTLSPROXY_ENABLED') === 'true' && ($port == getenv('PANTHEON_INDEX_PORT') || $port == getenv('MTLSPROXY_RESURRECTOR_PORT') || $port == getenv('CUSTOMER_SECRETS_PORT') || $port == getenv('CACHE_PROXY_PORT') || $port == 8443)) {
+    $opts[CURLOPT_SSL_VERIFYPEER] = false;
+    $opts[CURLOPT_SSL_VERIFYHOST] = 0;
+  } else {
+    $cert_path = pantheon_binding_pem_path();
+    $opts[CURLOPT_SSLCERT] = $cert_path;
+  }
+  curl_setopt_array($ch, $opts);
+
+  // If we are posting data...
+  if ($data) {
+    if ($verb == 'POST') {
+      curl_setopt($ch, CURLOPT_POST, 1);
+    }
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+  }
+
+  return array($ch, $opts);
 }
 
 /**

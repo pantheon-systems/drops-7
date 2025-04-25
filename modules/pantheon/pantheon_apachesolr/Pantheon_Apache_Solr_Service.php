@@ -444,6 +444,11 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    *
    * This is just a wrapper around drupal_http_request().
    */
+  /**
+   * Central method for making the actual http request to the Solr Server
+   *
+   * This is just a wrapper around drupal_http_request().
+   */
   protected function _makeHttpRequest($url, $options = array()) {
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
@@ -451,14 +456,9 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     $port = variable_get('pantheon_index_port', 449);
 
     if (!isset($ch)) {
-      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($options['method']) && ($options['method'] != 'POST')) ? $options['method'] : NULL);
-
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
-
-      // These options only need to be set once
-      $opts = pantheon_apachesolr_curlopts($opts);
-      unset($opts[CURLOPT_CUSTOMREQUEST]);
+      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, (isset($options['method']) && ($options['method'] != 'POST')) ? $options['method'] : NULL);
       watchdog(
         'pantheon_apachesolr',
         __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre>',
@@ -468,10 +468,19 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
         WATCHDOG_NOTICE
       );
 
+      // These options only need to be set once
+      $opts = pantheon_apachesolr_curlopts($opts);
+      watchdog(
+        'pantheon_apachesolr',
+        __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre>',
+        array(
+          '@opts' => print_r(curl_opts_to_string($opts), TRUE),
+        ),
+        WATCHDOG_NOTICE
+      );
       
       curl_setopt_array($ch, $opts);
     }
-    curl_setopt($ch, CURLOPT_URL, $url);
 
     // If we are doing a DELETE request...
     if (isset($options['method'])) {
@@ -490,23 +499,13 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     if (isset($options['data'])) {
       curl_setopt($ch, CURLOPT_POSTFIELDS, $options['data']);
     }
-    watchdog(
-      'pantheon_apachesolr',
-      __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre> options: <pre>@opts</pre>',
-      array(
-        '@options' => print_r($options,TRUE)
-      ),
-      WATCHDOG_NOTICE
-    );
+
     $response = curl_exec($ch);
 
     if ($response == NULL) {
       // TODO; better error handling
       watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
-      
-      # 2025-04-23 without adding this return errors freak out at  Attempt to assign property "code" on null 
-      # I should refactor this before merging.
-      return NULL; 
+      return NULL;
     }
     else {
       // mimick the $result object from drupal_http_request()
