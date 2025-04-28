@@ -245,6 +245,12 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
+  watchdog(
+    'pantheon_apachesolr',
+    __FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
+    array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
+    WATCHDOG_NOTICE
+  );
   $info = curl_getinfo($ch);
   $success_codes = array(
     '200',
@@ -382,6 +388,12 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   curl_setopt_array($ch, $opts);
 
   $response = curl_exec($ch);
+  watchdog(
+    'pantheon_apachesolr',
+    __FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
+    array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
+    WATCHDOG_NOTICE
+  );
   $info = curl_getinfo($ch);
   curl_close($ch);
 
@@ -568,6 +580,12 @@ function pantheon_apachesolr_status($form, &$form_state) {
   
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
+  watchdog(
+    'pantheon_apachesolr',
+    __FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
+    array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
+    WATCHDOG_NOTICE
+  );
   $info = curl_getinfo($ch);
 
   if ($response === FALSE) {
@@ -645,7 +663,7 @@ unset($opts[CURLOPT_HEADER]);
   $response = curl_exec($ch);
   watchdog(
     'pantheon_apachesolr',
-    __FUNCTION__. ' ('.__FILE__.') opts: <pre>@response</pre>, url: <pre>@url</pre>',
+    __FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
     array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
     WATCHDOG_NOTICE
   );
@@ -747,6 +765,12 @@ function pantheon_apachesolr_requirements($phase) {
 
       curl_setopt_array($ch, $opts);
       $response = curl_exec($ch);
+      watchdog(
+        'pantheon_apachesolr',
+        __FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
+        array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
+        WATCHDOG_NOTICE
+      );
       $info = curl_getinfo($ch);
       curl_close($ch);
 
