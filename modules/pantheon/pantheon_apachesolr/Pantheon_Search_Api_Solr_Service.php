@@ -191,13 +191,9 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       $parts = explode('?', $url);
       $url = $parts[0] .'?'. $parts[1];
       $port = variable_get('pantheon_index_port', 449);
-      // n.b. setting POST as the fourth arg breaks this as CURLOPT_POST/CURLOPT_POSTFIELDS is wrong
-      // TODO: Confirm with Greg why he thought this POST might be needed or if null is fine.
       list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, NULL);
 
       $opts = pantheon_apachesolr_curlopts($opts);
-      $opts[CURLOPT_URL] = $url;
-      $opts[CURLOPT_PORT] = $port;
 
       if ($timeout) {
         $opts[CURLOPT_CONNECTTIMEOUT] = $timeout;
