@@ -444,11 +444,6 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    *
    * This is just a wrapper around drupal_http_request().
    */
-  /**
-   * Central method for making the actual http request to the Solr Server
-   *
-   * This is just a wrapper around drupal_http_request().
-   */
   protected function _makeHttpRequest($url, $options = array()) {
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
@@ -459,25 +454,9 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
       list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, NULL);
-      watchdog(
-        'pantheon_apachesolr',
-        __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre>',
-        array(
-          '@opts' => print_r(curl_opts_to_string($opts), TRUE),
-        ),
-        WATCHDOG_NOTICE
-      );
 
       // These options only need to be set once
       $opts = pantheon_apachesolr_curlopts($opts);
-      watchdog(
-        'pantheon_apachesolr',
-        __CLASS__.":".__FUNCTION__.":".__LINE__.' opts: <pre>@opts</pre>',
-        array(
-          '@opts' => print_r(curl_opts_to_string($opts), TRUE),
-        ),
-        WATCHDOG_NOTICE
-      );
       
       curl_setopt_array($ch, $opts);
     }

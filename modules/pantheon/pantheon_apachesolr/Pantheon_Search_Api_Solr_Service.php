@@ -199,12 +199,6 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
         $opts[CURLOPT_CONNECTTIMEOUT] = $timeout;
       }
 
-      watchdog(
-        'pantheon_apachesolr',
-        __FUNCTION__. ' ('.__CLASS__.') opts: <pre>@opts</pre>',
-        array('@opts' => print_r(curl_opts_to_string($opts), TRUE)),
-        WATCHDOG_NOTICE
-      );
 
       curl_setopt_array($ch, $opts);
 
