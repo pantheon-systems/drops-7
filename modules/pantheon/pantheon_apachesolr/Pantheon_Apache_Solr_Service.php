@@ -460,7 +460,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       
       curl_setopt_array($ch, $opts);
     }
-
+curl_setopt($ch, CURLOPT_URL, $url);
     // If we are doing a DELETE request...
     if (isset($options['method'])) {
       if ($options['method'] == 'DELETE') {
