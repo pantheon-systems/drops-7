@@ -551,15 +551,12 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
 
-  
-
   $opts = pantheon_apachesolr_curlopts($opts);
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
   $opts[CURLOPT_RETURNTRANSFER] = 1;
-  
+ 
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
-
   $info = curl_getinfo($ch);
 
   if ($response === FALSE) {
