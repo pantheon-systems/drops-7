@@ -142,7 +142,7 @@ function pantheon_apachesolr_search_api_service_info_alter(array &$service_info)
 }
 
 /**
- * Default CURL options for Solr requests, with support for overrides.
+ * Default CURL options for Solr requests, added to existing opts if provided.
  *
  * @param array $opts
  *   Optional overrides for default cURL options.
