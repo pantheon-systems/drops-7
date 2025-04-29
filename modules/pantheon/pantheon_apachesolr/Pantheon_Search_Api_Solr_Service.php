@@ -198,8 +198,6 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       if ($timeout) {
         $opts[CURLOPT_CONNECTTIMEOUT] = $timeout;
       }
-
-
       curl_setopt_array($ch, $opts);
 
       // If we are doing a delete request...
