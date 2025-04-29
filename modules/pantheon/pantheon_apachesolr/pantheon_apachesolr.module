@@ -655,7 +655,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   unset($opts[CURLOPT_HTTPHEADER]);
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
-unset($opts[CURLOPT_HEADER]);
+  $opts[CURLOPT_HEADER] = false;
 
 
   curl_setopt_array($ch, $opts);
