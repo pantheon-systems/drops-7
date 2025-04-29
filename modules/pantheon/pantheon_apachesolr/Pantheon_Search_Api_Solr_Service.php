@@ -219,12 +219,6 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       }
 
       $response = curl_exec($ch);
-      watchdog(
-        'pantheon_apachesolr',
-        __CLASS__.":".__FUNCTION__. ' response: <pre>@response</pre>, url: <pre>@url</pre>',
-        array('@response' => print_r($response, TRUE), '@url' => print_r($url, TRUE)),
-        WATCHDOG_NOTICE
-      );
 
       if ($response == NULL) {
         // TODO; better error handling.
