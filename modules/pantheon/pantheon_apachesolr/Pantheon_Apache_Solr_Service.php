@@ -485,25 +485,24 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
       return NULL;
     }
-    else {
-      // mimick the $result object from drupal_http_request()
-      // TODO; better error handling
-      $result = new stdClass();
-      list($split, $result->data) = explode("\r\n\r\n", $response, 2);
-      $split = preg_split("/\r\n|\n|\r/", $split);
-      list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
-      // Parse headers.
-      $result->headers = array();
-      while (!empty($split) && $line = trim(array_shift($split))) {
-        list($header, $value) = explode(':', $line, 2);
-        if (isset($result->headers[$header]) && $header == 'Set-Cookie') {
-          // RFC 2109: the Set-Cookie response header comprises the token Set-
-          // Cookie:, followed by a comma-separated list of one or more cookies.
-          $result->headers[$header] .= ',' . trim($value);
-        }
-        else {
-          $result->headers[$header] = trim($value);
-        }
+    
+    // mimick the $result object from drupal_http_request()
+    // TODO; better error handling
+    $result = new stdClass();
+    list($split, $result->data) = explode("\r\n\r\n", $response, 2);
+    $split = preg_split("/\r\n|\n|\r/", $split);
+    list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
+    // Parse headers.
+    $result->headers = array();
+    while (!empty($split) && $line = trim(array_shift($split))) {
+      list($header, $value) = explode(':', $line, 2);
+      if (isset($result->headers[$header]) && $header == 'Set-Cookie') {
+        // RFC 2109: the Set-Cookie response header comprises the token Set-
+        // Cookie:, followed by a comma-separated list of one or more cookies.
+        $result->headers[$header] .= ',' . trim($value);
+      }
+      else {
+        $result->headers[$header] = trim($value);
       }
     }
 
@@ -520,13 +519,13 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     if (!isset($result->data)) {
       $result->data = '';
       $result->response = NULL;
+      return $result;
     }
-    else {
-      $response = json_decode($result->data);
-      if (is_object($response)) {
-        foreach ($response as $key => $value) {
-          $result->$key = $value;
-        }
+
+    $response = json_decode($result->data);
+    if (is_object($response)) {
+      foreach ($response as $key => $value) {
+        $result->$key = $value;
       }
     }
     return $result;
