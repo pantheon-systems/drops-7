@@ -1,7 +1,7 @@
 name = Pantheon Apache Solr
 description = Exposes Pantheon's ApacheSolr Service
 package = Pantheon
-version = "7.x-1.1"
+version = "7.x-1.1.1"
 files[] = Pantheon_Apache_Solr_Service.php
 files[] = Pantheon_Search_Api_Solr_Service.php
 configure = admin/config/search/pantheon
