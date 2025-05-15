@@ -20,16 +20,25 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
     
     // pantheon_curl_setup will determine whether binding.pem needed and return
     // path in options if so.
-    list($ch, $opts) = pantheon_curl_setup("", NULL, $options['port'], NULL);
-    if ( isset($opts[CURLOPT_SSLCERT]) ) {
-      $stream_context_ssl = array('local_cert' => $opts[CURLOPT_SSLCERT]);
+    list($ch, $opts) = pantheon_apachesolr_curl_setup("", $options['port']);
+    $sslContext = array();
+
+    // Use ssl cert if provided
+    if (isset($opts[CURLOPT_SSLCERT])) {
+        $sslContext['local_cert'] = $opts[CURLOPT_SSLCERT];
     } else {
-      $stream_context_ssl = array(
-        'verify_peer' => (bool)$opts[CURLOPT_SSL_VERIFYPEER],
-        'verify_peer_name' => (bool)$opts[CURLOPT_SSL_VERIFYHOST]
-      );
+        // Add peer verification settings if available.
+        if (isset($opts[CURLOPT_SSL_VERIFYPEER])) {
+            $sslContext['verify_peer'] = (bool) $opts[CURLOPT_SSL_VERIFYPEER];
+        }
+        if (isset($opts[CURLOPT_SSL_VERIFYHOST])) {
+            $sslContext['verify_peer_name'] = (bool) $opts[CURLOPT_SSL_VERIFYHOST];
+        }
     }
-    $this->setStreamContext(stream_context_create(array('ssl' => $stream_context_ssl)));
+    
+    if ($sslContext) {
+        $this->setStreamContext(stream_context_create(array('ssl' => $sslContext)));
+    }
 
     // Adding in general settings for Search API
     $options += array(

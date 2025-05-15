@@ -172,16 +172,6 @@ function pantheon_apachesolr_platform_detected() {
 }
 
 /**
- * Return the path to the directory containing the certificates.
- */
-function pantheon_apachesolr_certs_dir() {
-  if (pantheon_apachesolr_platform_detected()) {
-    return $_ENV['HOME'] . '/certs';
-  }
-  return './';
-}
-
-/**
  * Display an error message if not running on the Pantheon platform.
  */
 function pantheon_apachesolr_display_error_if_disabled() {
@@ -224,7 +214,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
 
   $url = 'https://'. $host .'/'. $path;
 
-  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
   
   $file = fopen($schema, 'r');
   // set (or override) remaining headers
@@ -368,7 +358,7 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
-  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
   $opts = pantheon_apachesolr_curlopts($opts);
   $opts[CURLOPT_HEADER] = 0;
 
@@ -548,7 +538,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
 
   $url = 'https://'. $host . '/' . $path;
 
-  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
 
   $opts = pantheon_apachesolr_curlopts($opts);
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
@@ -620,7 +610,7 @@ function pantheon_apachesolr_status($form, &$form_state) {
   $url = 'https://'. $host . '/' . $path;
 
   $opts = array();
-  list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+  list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
 
   unset($opts[CURLOPT_HTTPHEADER]);
   $opts[CURLOPT_CONNECTTIMEOUT] = 5;
@@ -719,7 +709,7 @@ function pantheon_apachesolr_requirements($phase) {
 
       $url = 'https://'. $host . '/' . $path;
 
-      list($ch, $opts) = pantheon_curl_setup($url, NULL, PANTHEON_APACHESOLR_PORT, NULL);
+      list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
       $opts = pantheon_apachesolr_curlopts($opts);
 
 
@@ -758,4 +748,40 @@ function pantheon_apachesolr_requirements($phase) {
     }
   }
   return $requirements;
+}
+
+/**
+ * Initializes a cURL handle with default options, or delegates to Pantheon's
+ * `pantheon_curl_setup()` if available.
+ *
+ * When running on the Pantheon platform, this function uses the pre-configured
+ * `pantheon_curl_setup()` logic. Otherwise, it sets up a basic cURL handle with
+ * common defaults for communicating with Apache Solr.
+ *
+ * @param string $url  The URL to set via CURLOPT_URL.
+ * @param int    $port The port to set via CURLOPT_PORT.
+ *
+ * @return array{0: resource, 1: array} An array containing the initialized cURL handle
+ * and an array of the options applied.
+ */
+function pantheon_apachesolr_curl_setup($url, $port) {
+  // If on pantheon, handled in prepend...
+  if (function_exists("pantheon_curl_setup")) {
+    return pantheon_curl_setup($url, NULL, $port, NULL);
+  }
+
+  // create a new cURL resource
+  $ch = curl_init();
+
+  // default options for most cases
+  $opts = array(
+    CURLOPT_URL => $url,
+    CURLOPT_HEADER => 1,
+    CURLOPT_PORT => $port,
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'X-Ignore-Agent: 1'),
+  );
+
+  curl_setopt_array($ch, $opts);
+  return array($ch, $opts);
 }

@@ -453,7 +453,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     if (!isset($ch)) {
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
-      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, NULL);
+      list($ch, $opts) = pantheon_apachesolr_curl_setup($url, $port);
 
       // These options only need to be set once
       $opts = pantheon_apachesolr_curlopts($opts);      
@@ -486,12 +486,19 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       return NULL;
     }
     
-    // mimick the $result object from drupal_http_request()
+    // mimic the $result object from drupal_http_request()
     // TODO; better error handling
     $result = new stdClass();
     list($split, $result->data) = explode("\r\n\r\n", $response, 2);
     $split = preg_split("/\r\n|\n|\r/", $split);
-    list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
+
+    $status_line = trim(array_shift($split));
+    $status_parts = explode(' ', $status_line, 3);
+    
+    $result->protocol = isset($status_parts[0]) ? $status_parts[0] : '';
+    $result->code = isset($status_parts[1]) ? $status_parts[1] : 0;
+    $result->status_message = isset($status_parts[2]) ? $status_parts[2] : 'Unknown';
+    
     // Parse headers.
     $result->headers = array();
     while (!empty($split) && $line = trim(array_shift($split))) {
