@@ -453,7 +453,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     if (!isset($ch)) {
       // The parent PHPSolrClient library assumes http
       // $url = str_replace('http://', 'https://', $url);
-      list($ch, $opts) = pantheon_curl_setup($url, NULL, $port, NULL);
+      list($ch, $opts) = pantheon_apachesolr_curl_setup($url, $port);
 
       // These options only need to be set once
       $opts = pantheon_apachesolr_curlopts($opts);      

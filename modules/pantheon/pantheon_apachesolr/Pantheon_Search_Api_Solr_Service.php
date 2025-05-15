@@ -20,7 +20,7 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
     
     // pantheon_curl_setup will determine whether binding.pem needed and return
     // path in options if so.
-    list($ch, $opts) = pantheon_curl_setup("", NULL, $options['port'], NULL);
+    list($ch, $opts) = pantheon_apachesolr_curl_setup("", $options['port']);
     if ( isset($opts[CURLOPT_SSLCERT]) ) {
       $stream_context_ssl = array('local_cert' => $opts[CURLOPT_SSLCERT]);
     } else {
