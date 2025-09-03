@@ -1,4 +1,4 @@
-
+name: Update Tag1 D7ES Module
 on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight UTC
