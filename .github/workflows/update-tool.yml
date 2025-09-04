@@ -1,0 +1,52 @@
+name: Check for Drupal Updates
+
+on:
+    schedule:
+        # Run daily at 9 AM UTC
+        - cron: '0 9 * * *'
+    workflow_dispatch:
+
+jobs:
+    check-updates:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout drops-7 repository
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                php-version: '8.1'
+                extensions: mbstring, xml, curl, zip
+                tools: composer
+            - name: Cache Composer dependencies
+              uses: actions/cache@v3
+              with:
+                path: ~/.composer/cache
+                key: composer-${{ hashFiles('update-tool/composer.lock') }}
+                restore-keys: composer-
+            - name: Checkout update-tool
+              uses: actions/checkout@v4
+              with:
+                repository: pantheon-systems/update-tool
+                path: update-tool
+            - name: Install update-tool dependencies
+              run: |
+                cd update-tool
+                composer install --no-dev --optimize-autoloader
+
+                  - name: Install SSH key
+                    uses: shimataro/ssh-key-action@v2
+                    with:
+                        key: ${{ secrets.TAG1_SSH_KEY }}
+                        # known_hosts: ${{ secrets.KNOWN_HOSTS }}
+                    if_key_exists: ignore
+            - name: Configure Git
+              run: |
+                git config --global user.name "Pantheon Update Bot"
+                git config --global user.email "update-bot@pantheon.io"
+            - name: Create update PR
+              run: |
+                cd update-tool
+                ./update-tool project:upstream:update drops-7
