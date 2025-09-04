@@ -51,6 +51,10 @@ jobs:
               run: |
                 git config --global user.name "Pantheon Update Bot"
                 git config --global user.email "update-bot@pantheon.io"
+            - name: "Test clone with SSH"
+              run: |
+                git clone git@gitlab.com:tag1consulting/drupal-partner-mirror.git
+                git clone git@gitlab.com:tag1consulting/drupal-partner-mirror-test.git
             - name: Create update PR
               run: |
                 cd update-tool
