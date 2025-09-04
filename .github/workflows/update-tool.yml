@@ -54,7 +54,9 @@ jobs:
             - name: "Test clone with SSH"
               run: |
                 git clone git@gitlab.com:tag1consulting/drupal-partner-mirror.git
+                cd drupal-partner-mirror && ls
                 git clone git@gitlab.com:tag1consulting/drupal-partner-mirror-test.git
+                cd drupal-partner-mirror-test && ls
             - name: Create update PR
               run: |
                 cd update-tool
