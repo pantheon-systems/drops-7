@@ -36,6 +36,7 @@ jobs:
               with:
                 repository: pantheon-systems/update-tool
                 path: update-tool
+                ref: SITE-3048 # TODO Drop once deployed
             - name: Install update-tool dependencies
               run: |
                 cd update-tool
