@@ -51,17 +51,9 @@ jobs:
               run: |
                 git config --global user.name "Pantheon Update Bot"
                 git config --global user.email "update-bot@pantheon.io"
-            - name: "Test clone with SSH"
-              run: |
-                git clone https://github.com/pantheon-systems/drops-7-automation-test-workspace.git
-                cd drops-7-automation-test-workspace && ls
-                git clone git@gitlab.com:tag1consulting/drupal-partner-mirror.git
-                cd drupal-partner-mirror && ls
-                git clone git@gitlab.com:tag1consulting/drupal-partner-mirror-test.git
-                cd drupal-partner-mirror-test && ls
             - name: Create update PR
               run: |
                 cd update-tool
-                ./update-tool project:upstream:update drops-7
+                ./update-tool project:upstream:update drops-7 --as=github
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
