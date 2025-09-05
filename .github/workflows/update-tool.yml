@@ -61,3 +61,5 @@ jobs:
               run: |
                 cd update-tool
                 ./update-tool project:upstream:update drops-7
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
