@@ -54,6 +54,6 @@ jobs:
             - name: Create update PR
               run: |
                 cd update-tool
-                ./update-tool project:upstream:update drops-7 --as=github
+                ./update-tool project:upstream:update drops-7 --as=gha
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
