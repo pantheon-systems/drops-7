@@ -1233,8 +1233,8 @@ function system_library() {
   // jQuery BBQ plugin.
   $libraries['jquery.bbq'] = array(
     'title' => 'jQuery BBQ',
-    'website' => 'http://benalman.com/projects/jquery-bbq-plugin/',
-    'version' => '1.2.1',
+    'website' => 'https://github.com/yiisoft/yii/blob/master/framework/web/js/source/jquery.ba-bbq.js',
+    'version' => '1.4pre',
     'js' => array(
       'misc/jquery.ba-bbq.js' => array(),
     ),
