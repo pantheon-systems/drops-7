@@ -26,13 +26,16 @@ function drupal_error_levels() {
     E_USER_ERROR => array('User error', WATCHDOG_ERROR),
     E_USER_WARNING => array('User warning', WATCHDOG_WARNING),
     E_USER_NOTICE => array('User notice', WATCHDOG_NOTICE),
-    E_STRICT => array('Strict warning', WATCHDOG_DEBUG),
     E_RECOVERABLE_ERROR => array('Recoverable fatal error', WATCHDOG_ERROR),
   );
   // E_DEPRECATED and E_USER_DEPRECATED were added in PHP 5.3.0.
   if (defined('E_DEPRECATED')) {
     $types[E_DEPRECATED] = array('Deprecated function', WATCHDOG_DEBUG);
     $types[E_USER_DEPRECATED] = array('User deprecated function', WATCHDOG_DEBUG);
+  }
+  // E_STRICT is deprecated in PHP 8.4.
+  if (PHP_VERSION_ID < 80400) {
+    $types[E_STRICT] = array('Strict warning', WATCHDOG_DEBUG);
   }
   return $types;
 }

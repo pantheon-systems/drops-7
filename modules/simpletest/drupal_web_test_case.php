@@ -595,7 +595,6 @@ abstract class DrupalTestCase {
   public function errorHandler($severity, $message, $file = NULL, $line = NULL) {
     if ($severity & error_reporting()) {
       $error_map = array(
-        E_STRICT => 'Run-time notice',
         E_WARNING => 'Warning',
         E_NOTICE => 'Notice',
         E_CORE_ERROR => 'Core error',
@@ -605,6 +604,11 @@ abstract class DrupalTestCase {
         E_USER_NOTICE => 'User notice',
         E_RECOVERABLE_ERROR => 'Recoverable error',
       );
+
+      // E_STRICT is deprecated in PHP 8.4.
+      if (PHP_VERSION_ID < 80400) {
+        $error_map[E_STRICT] = 'Run-time notice';
+      }
 
       // PHP 5.3 adds new error logging constants. Add these conditionally for
       // backwards compatibility with PHP 5.2.

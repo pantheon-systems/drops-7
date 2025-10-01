@@ -1,0 +1,10 @@
+Drupal 7.105, 2025-10-01
+------------------------
+- PHP 8.4 support
+  - To reduce noise in logs, consider adding
+    ini_set('error_reporting', E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+    to settings.php or otherwise disable deprecation error reporting.
+
+Drupal 7.104, 2025-10-01
+------------------------
+- Backport Backdrop SA-Contrib 2025-015 for BBQ JavaScript.

@@ -242,7 +242,7 @@ function _drupal_session_write($sid, $value) {
 function drupal_session_initialize() {
   global $user, $is_https;
 
-  session_set_save_handler('_drupal_session_open', '_drupal_session_close', '_drupal_session_read', '_drupal_session_write', '_drupal_session_destroy', '_drupal_session_garbage_collection');
+  session_set_save_handler(new DrupalSessionHandler());
 
   // We use !empty() in the following check to ensure that blank session IDs
   // are not valid.
@@ -619,4 +619,41 @@ function drupal_session_id($id) {
     $id = drupal_hash_base64($id);
   }
   return $id;
+}
+
+/**
+ * Session handler implementation.
+ */
+class DrupalSessionHandler implements SessionHandlerInterface {
+
+  #[ReturnTypeWillChange]
+  public function open($path, $name) {
+    return _drupal_session_open($path, $name);
+  }
+
+  #[ReturnTypeWillChange]
+  public function close() {
+    return _drupal_session_close();
+  }
+
+  #[\ReturnTypeWillChange]
+  public function read($id) {
+    return _drupal_session_read($id);
+  }
+
+  #[\ReturnTypeWillChange]
+  public function write($id, $data) {
+    return _drupal_session_write($id, $data);
+  }
+
+  #[\ReturnTypeWillChange]
+  public function destroy($id) {
+    return _drupal_session_destroy($id);
+  }
+
+  #[\ReturnTypeWillChange]
+  public function gc($max_lifetime) {
+    return _drupal_session_garbage_collection($max_lifetime);
+  }
+
 }
