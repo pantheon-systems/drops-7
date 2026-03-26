@@ -1,0 +1,10 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: drops-7
+  description: Pantheon Upstream for Drupal 7 Sites
+spec:
+  type: template
+  lifecycle: production
+  owner: sitex
