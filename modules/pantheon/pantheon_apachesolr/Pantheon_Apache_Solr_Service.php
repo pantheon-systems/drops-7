@@ -223,18 +223,33 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     $data = $this->getLuke();
     // Only try to get stats if we have connected to the index.
     if (empty($this->stats) && isset($data->index->numDocs)) {
-      $url = $this->_constructUrl(self::STATS_SERVLET);
+      if (pantheon_apachesolr_get_search_version() == 9) {
+        $url = $this->_constructUrl(self::SYSTEM_SERVLET, array('wt' => 'json'));
+      }
+      else {
+        $url = $this->_constructUrl(self::STATS_SERVLET);
+      }
       if ($this->env_id) {
         $this->stats_cid = $this->env_id . ":stats:" . drupal_hash_base64($url);
         $cache = cache_get($this->stats_cid, 'cache_apachesolr');
         if (isset($cache->data)) {
-          $this->stats = simplexml_load_string($cache->data);
+          if (pantheon_apachesolr_get_search_version() == 9) {
+            $this->stats = json_decode($cache->data);
+          }
+          else {
+            $this->stats = simplexml_load_string($cache->data);
+          }
         }
       }
       // Second pass to populate the cache if necessary.
       if (empty($this->stats)) {
         $response = $this->_sendRawGet($url);
-        $this->stats = simplexml_load_string($response->data);
+        if (pantheon_apachesolr_get_search_version() == 9) {
+          $this->stats = json_decode($response->data);
+        }
+        else {
+          $this->stats = simplexml_load_string($response->data);
+        }
         if ($this->env_id) {
           cache_set($this->stats_cid, $response->data, 'cache_apachesolr');
         }
@@ -272,24 +287,30 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     );
 
     if (!empty($stats)) {
-      $docs_pending_xpath = $stats->xpath('//stat[@name="docsPending"]');
-      $summary['@pending_docs'] = (int) trim($docs_pending_xpath[0]);
-      $max_time_xpath = $stats->xpath('//stat[@name="autocommit maxTime"]');
-      $max_time = (int) trim(current($max_time_xpath));
-      // Convert to seconds.
-      $summary['@autocommit_time_seconds'] = $max_time / 1000;
-      $summary['@autocommit_time'] = format_interval($max_time / 1000);
-      $deletes_id_xpath = $stats->xpath('//stat[@name="deletesById"]');
-      $summary['@deletes_by_id'] = (int) trim($deletes_id_xpath[0]);
-      $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
-      $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
-      $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
-      $schema = $stats->xpath('/solr/schema[1]');
-      $summary['@schema_version'] = trim($schema[0]);;
-      $core = $stats->xpath('/solr/core[1]');
-      $summary['@core_name'] = trim($core[0]);
-      $size_xpath = $stats->xpath('//stat[@name="indexSize"]');
-      $summary['@index_size'] = trim(current($size_xpath));
+      if (pantheon_apachesolr_get_search_version() == 9) {
+        $summary['@schema_version'] = isset($stats->core->schema) ? $stats->core->schema : '';
+        $summary['@core_name'] = isset($stats->core->directory->instance) ? str_replace('/var/solr/data/', '', $stats->core->directory->instance) : '';
+      }
+      else {
+        $docs_pending_xpath = $stats->xpath('//stat[@name="docsPending"]');
+        $summary['@pending_docs'] = (int) trim($docs_pending_xpath[0]);
+        $max_time_xpath = $stats->xpath('//stat[@name="autocommit maxTime"]');
+        $max_time = (int) trim(current($max_time_xpath));
+        // Convert to seconds.
+        $summary['@autocommit_time_seconds'] = $max_time / 1000;
+        $summary['@autocommit_time'] = format_interval($max_time / 1000);
+        $deletes_id_xpath = $stats->xpath('//stat[@name="deletesById"]');
+        $summary['@deletes_by_id'] = (int) trim($deletes_id_xpath[0]);
+        $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
+        $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
+        $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
+        $schema = $stats->xpath('/solr/schema[1]');
+        $summary['@schema_version'] = trim($schema[0]);;
+        $core = $stats->xpath('/solr/core[1]');
+        $summary['@core_name'] = trim($core[0]);
+        $size_xpath = $stats->xpath('//stat[@name="indexSize"]');
+        $summary['@index_size'] = trim(current($size_xpath));
+      }
     }
 
     return $summary;
@@ -335,9 +356,16 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Pantheon-specific URL settings.
     // Note: we don't pass a port at this time, because the parent This data
     // is added later in the _makeHttpRequest() method.
-    $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
-    $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
-    $url = 'https://'. $host .'/'. $path;
+    if (pantheon_apachesolr_get_search_version() == 9) {
+      $host = getenv('PANTHEON_INDEX_HOST');
+      $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+      $url = getenv('PANTHEON_INDEX_SCHEME') . '://' . $host . '/' . $path;
+    }
+    else {
+      $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+      $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+      $url = 'https://'. $host .'/'. $path;
+    }
 
 
     $this->setUrl($url);
@@ -448,7 +476,12 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
-    $port = variable_get('pantheon_index_port', 449);
+    if (pantheon_apachesolr_get_search_version() == 9) {
+      $port = intval(getenv('PANTHEON_INDEX_PORT'));
+    }
+    else {
+      $port = variable_get('pantheon_index_port', 449);
+    }
 
     if (!isset($ch)) {
       // The parent PHPSolrClient library assumes http
