@@ -82,7 +82,7 @@ jobs:
 
       - name: Show multidev URL on failure
         if: failure()
-        run: echo "Multidev URL for investigation: https://${MULTIDEV}-${TERMINUS_SITE}.pantheonsite.io"
+        run: 'echo "Multidev URL for investigation: https://${MULTIDEV}-${TERMINUS_SITE}.pantheonsite.io"'
 
       - name: Cleanup stale CI multidevs
         if: always()
