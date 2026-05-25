@@ -83,6 +83,9 @@ jobs:
       - name: CUJ 6 - Configure Solr Server
         run: bash .github/scripts/solr9-cuj6-configure-server.sh
 
+      - name: CUJ 7 - Create and Configure Search Index
+        run: bash .github/scripts/solr9-cuj7-create-index.sh
+
       # TODO: Re-enable after testing is complete
       # - name: Delete multidev on success
       #   if: success()
