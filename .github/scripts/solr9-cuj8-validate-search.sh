@@ -74,15 +74,25 @@ fi
 # Step 3: Check watchdog for Solr errors
 echo "--- Step 3: Check watchdog for Solr errors ---"
 
-ERRORS=$(terminus drush "$SITE_ENV" -- watchdog-show "--type=Apache Solr" --count=10 2>&1) || true
+if [ "$MODULE" = "apachesolr" ]; then
+  WD_TYPE="Apache Solr"
+else
+  WD_TYPE="search_api_solr"
+fi
+
+ERRORS=$(terminus drush "$SITE_ENV" -- watchdog-show "--type=$WD_TYPE" --count=10 2>&1) || true
 
 if echo "$ERRORS" | grep -qiE "Unrecognized message type\|No log messages"; then
-  echo "No Solr log entries in watchdog."
-elif echo "$ERRORS" | grep -qi "error"; then
-  echo "::warning::Solr entries found in watchdog:"
-  echo "$ERRORS"
+  echo "No Solr log entries in watchdog (type '$WD_TYPE' not present)."
 else
-  echo "No Solr errors in watchdog."
+  # Filter out drush meta lines, check for actual error entries
+  REAL_ERRORS=$(echo "$ERRORS" | grep -i "error" | grep -vi "Unrecognized message type\|Exit:\|Command:" || true)
+  if [ -n "$REAL_ERRORS" ]; then
+    echo "::warning::Solr errors found in watchdog:"
+    echo "$REAL_ERRORS"
+  else
+    echo "No Solr errors in watchdog."
+  fi
 fi
 
 # Step 4: Verify Solr ping is healthy
