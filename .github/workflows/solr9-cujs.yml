@@ -89,10 +89,9 @@ jobs:
       - name: CUJ 8 - Validate Search Results
         run: bash .github/scripts/solr9-cuj8-validate-search.sh
 
-      # TODO: Re-enable after testing is complete
-      # - name: Delete multidev on success
-      #   if: success()
-      #   run: terminus multidev:delete "$TERMINUS_SITE.$MULTIDEV" --delete-branch --yes || true
+      - name: Delete multidev on success
+        if: success()
+        run: terminus multidev:delete "$TERMINUS_SITE.$MULTIDEV" --delete-branch --yes || true
 
       - name: Show multidev URL on failure
         if: failure()
