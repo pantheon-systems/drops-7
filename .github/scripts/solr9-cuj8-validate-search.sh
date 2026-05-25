@@ -74,12 +74,12 @@ fi
 # Step 3: Check watchdog for Solr errors
 echo "--- Step 3: Check watchdog for Solr errors ---"
 
-ERRORS=$(terminus drush "$SITE_ENV" -- watchdog-show --type=pantheon_apachesolr --severity=error --count=5 2>&1)
+ERRORS=$(terminus drush "$SITE_ENV" -- watchdog-show "--type=Apache Solr" --count=10 2>&1) || true
 
-if echo "$ERRORS" | grep -qiE "No log messages available|No results"; then
-  echo "No Solr errors in watchdog."
+if echo "$ERRORS" | grep -qiE "Unrecognized message type\|No log messages"; then
+  echo "No Solr log entries in watchdog."
 elif echo "$ERRORS" | grep -qi "error"; then
-  echo "::warning::Solr errors found in watchdog:"
+  echo "::warning::Solr entries found in watchdog:"
   echo "$ERRORS"
 else
   echo "No Solr errors in watchdog."
