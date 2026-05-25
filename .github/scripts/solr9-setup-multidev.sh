@@ -51,8 +51,8 @@ cat pantheon.yml
 
 # Push code to Pantheon (pantheon_apachesolr + Solr 9 config)
 git add -A
-git commit -m "CI: Solr 9 CUJ test - $MODULE (run $GITHUB_RUN_NUMBER)"
-git push origin "$MULTIDEV"
+git commit -m "CI: Solr 9 CUJ test - $MODULE (run $GITHUB_RUN_NUMBER)" || echo "No changes to commit"
+git push origin "$MULTIDEV" || echo "Nothing to push"
 
 cd ..
 
