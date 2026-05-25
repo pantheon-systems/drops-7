@@ -66,19 +66,24 @@ jobs:
 
       - name: Set multidev name
         run: |
-          MODULE_SHORT=$(echo "$MODULE" | tr -d '_' | head -c 3)
-          MULTIDEV="s9${MODULE_SHORT}$(printf '%04d' $(( GITHUB_RUN_NUMBER % 10000 )) )"
-          MULTIDEV="${MULTIDEV:0:11}"
+          if [ "$MODULE" = "apachesolr" ]; then
+            MODULE_SHORT="apch"
+          else
+            MODULE_SHORT="sapi"
+          fi
+          MULTIDEV_NAME="d7s9${MODULE_SHORT}${GITHUB_RUN_NUMBER}"
+          MULTIDEV="${MULTIDEV_NAME:0:11}"
           echo "MULTIDEV=$MULTIDEV" >> "$GITHUB_ENV"
-          echo "MULTIDEV_PREFIX=s9${MODULE_SHORT}" >> "$GITHUB_ENV"
+          echo "MULTIDEV_PREFIX=d7s9${MODULE_SHORT}" >> "$GITHUB_ENV"
           echo "Using multidev: $MULTIDEV"
 
       - name: Create multidev and configure Solr 9
         run: bash .github/scripts/solr9-setup-multidev.sh "$MULTIDEV" "$TERMINUS_SITE"
 
-      - name: Delete multidev on success
-        if: success()
-        run: terminus multidev:delete "$TERMINUS_SITE.$MULTIDEV" --delete-branch --yes || true
+      # TODO: Re-enable after testing is complete
+      # - name: Delete multidev on success
+      #   if: success()
+      #   run: terminus multidev:delete "$TERMINUS_SITE.$MULTIDEV" --delete-branch --yes || true
 
       - name: Show multidev URL on failure
         if: failure()
