@@ -86,6 +86,9 @@ jobs:
       - name: CUJ 7 - Create and Configure Search Index
         run: bash .github/scripts/solr9-cuj7-create-index.sh
 
+      - name: CUJ 8 - Validate Search Results
+        run: bash .github/scripts/solr9-cuj8-validate-search.sh
+
       # TODO: Re-enable after testing is complete
       # - name: Delete multidev on success
       #   if: success()
