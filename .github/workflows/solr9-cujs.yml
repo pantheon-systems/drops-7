@@ -30,18 +30,18 @@ jobs:
       MODULE: ${{ matrix.module }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@8358ee0e2e8afe63c2fb8253d1d52085811ab1e5 # v2
         with:
           php-version: '8.2'
           tools: composer:v2
 
       - name: Install Terminus
-        uses: pantheon-systems/terminus-github-actions@v1
+        uses: pantheon-systems/terminus-github-actions@409451ede17f75acac08f42edc823fee6c435057 # v1.2.8
         with:
           pantheon-machine-token: ${{ env.TERMINUS_TOKEN }}
 
@@ -49,7 +49,7 @@ jobs:
         run: terminus auth:whoami
 
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
         with:
           ssh-private-key: ${{ env.PANTHEON_SSH_KEY }}
 
@@ -79,6 +79,9 @@ jobs:
 
       - name: Create multidev and configure Solr 9
         run: bash .github/scripts/solr9-setup-multidev.sh "$MULTIDEV" "$TERMINUS_SITE"
+
+      - name: CUJ 6 - Configure Solr Server
+        run: bash .github/scripts/solr9-cuj6-configure-server.sh
 
       # TODO: Re-enable after testing is complete
       # - name: Delete multidev on success
