@@ -88,8 +88,13 @@ echo "--- Step 3: Module-specific verification ---"
 if [ "$MODULE" = "apachesolr" ]; then
   # Apache Solr Search auto-configures. Verify default environment exists.
   ENV_CHECK=$(terminus drush "$SITE_ENV" -- ev "
-    \$env = apachesolr_default_environment();
-    echo \$env ? 'ENV_OK:' . \$env['url'] : 'ENV_MISSING';
+    \$env_id = apachesolr_default_environment();
+    if (\$env_id) {
+      \$env = apachesolr_environment_load(\$env_id);
+      echo 'ENV_OK:' . \$env['url'];
+    } else {
+      echo 'ENV_MISSING';
+    }
   " 2>&1)
 
   if echo "$ENV_CHECK" | grep -q "ENV_OK"; then
@@ -101,12 +106,13 @@ if [ "$MODULE" = "apachesolr" ]; then
 
 elif [ "$MODULE" = "search_api_solr" ]; then
   # Search API Solr needs a server created programmatically
+  # Service class is search_api_solr_service (Pantheon overrides it internally)
   echo "Creating Search API server..."
   SERVER_RESULT=$(terminus drush "$SITE_ENV" -- ev "
     \$server = entity_create('search_api_server', array(
       'name' => 'Pantheon Solr 9',
       'machine_name' => 'pantheon_solr9',
-      'class' => 'PantheonApachesolrSearchApiSolrService',
+      'class' => 'search_api_solr_service',
       'enabled' => 1,
       'description' => 'Solr 9 server on Pantheon',
       'options' => array('clean_ids' => TRUE),
