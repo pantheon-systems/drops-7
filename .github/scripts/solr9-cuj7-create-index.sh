@@ -44,7 +44,7 @@ if [ "$MODULE" = "apachesolr" ]; then
     try {
       \$solr = apachesolr_get_solr(\$env_id);
       \$response = \$solr->getLuke();
-      echo 'INDEX_COUNT:' . \$response->index->numDocs;
+      echo 'INDEX_COUNT:' . \$response->index->numDocs . ' ';
     } catch (Exception \$e) {
       echo 'INDEX_ERROR:' . \$e->getMessage();
     }

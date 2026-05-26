@@ -23,7 +23,7 @@ if [ "$MODULE" = "apachesolr" ]; then
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:Solr', array('rows' => 10));
-    echo 'FOUND:' . \$response->response->numFound;
+    echo 'FOUND:' . \$response->response->numFound . ' ';
   ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
   SEARCH_RESULT=$(drush_ev "
@@ -32,7 +32,7 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     \$query->keys('Solr');
     \$query->range(0, 10);
     \$results = \$query->execute();
-    echo 'FOUND:' . \$results['result count'];
+    echo 'FOUND:' . \$results['result count'] . ' ';
   ") || true
 fi
 
@@ -51,7 +51,7 @@ if [ "$MODULE" = "apachesolr" ]; then
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:xyznonexistent99', array('rows' => 1));
-    echo 'FOUND:' . \$response->response->numFound;
+    echo 'FOUND:' . \$response->response->numFound . ' ';
   ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
   EMPTY_RESULT=$(drush_ev "
@@ -60,7 +60,7 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     \$query->keys('xyznonexistent99');
     \$query->range(0, 1);
     \$results = \$query->execute();
-    echo 'FOUND:' . \$results['result count'];
+    echo 'FOUND:' . \$results['result count'] . ' ';
   ") || true
 fi
 
