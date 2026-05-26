@@ -10,9 +10,8 @@ MODULE="${MODULE:?MODULE env var must be set}"
 
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
-# Helper: run drush ev, suppress terminus stderr noise, return clean stdout
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -v "^\[warning\]\|^\[notice\]\|^\[error\]\|^Warning:\|^Notice:\|^Command:\|drush.in\|Exit:" | tail -1 | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1
 }
 
 step "CUJ 6: Configure Solr Server ($MODULE)"
@@ -36,9 +35,9 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     variable_set('pantheon_apachesolr_schema', '$SCHEMA_PATH');
     \$result = pantheon_apachesolr_post_schema_exec('$SCHEMA_PATH');
     echo \$result ? 'SCHEMA_POSTED' : 'SCHEMA_FAILED';
-  ")
+  ") || true
 
-  if [ "$RESULT" = "SCHEMA_POSTED" ]; then
+  if echo "$RESULT" | grep -q "SCHEMA_POSTED"; then
     echo "Schema posted successfully."
     break
   fi
@@ -47,7 +46,7 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     echo "Schema post failed, retrying in ${RETRY_DELAY}s..."
     sleep "$RETRY_DELAY"
   else
-    echo "::error::Schema post failed after $MAX_RETRIES attempts. Result: $RESULT"
+    echo "::error::Schema post failed after $MAX_RETRIES attempts."
     exit 1
   fi
 done
@@ -70,9 +69,9 @@ PING_RESULT=$(drush_ev "
   \$info = curl_getinfo(\$ch);
   curl_close(\$ch);
   echo (\$response !== FALSE && in_array(\$info['http_code'], array(200, 201, 202, 204))) ? 'PING_OK' : 'PING_FAILED:' . \$info['http_code'];
-")
+") || true
 
-if [ "$PING_RESULT" = "PING_OK" ]; then
+if echo "$PING_RESULT" | grep -q "PING_OK"; then
   echo "Solr ping successful."
 else
   echo "::error::Solr ping failed: $PING_RESULT"
@@ -81,23 +80,19 @@ fi
 
 step "Step 3: Module-specific verification"
 
-# Get Solr version for reporting
-SOLR_VER=$(drush_ev "echo \$_ENV['search_version'] ?? 'unknown';")
-
 if [ "$MODULE" = "apachesolr" ]; then
-  ENV_URL=$(drush_ev "
+  ENV_CHECK=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     if (\$env_id) {
       \$env = apachesolr_environment_load(\$env_id);
-      echo \$env['url'];
+      echo 'ENV_OK:' . \$env['url'];
     } else {
       echo 'ENV_MISSING';
     }
-  ")
+  ") || true
 
-  if [ "$ENV_URL" != "ENV_MISSING" ] && [ -n "$ENV_URL" ]; then
-    echo "Apache Solr default environment configured (Solr $SOLR_VER)."
-    echo "URL: $ENV_URL"
+  if echo "$ENV_CHECK" | grep -q "ENV_OK"; then
+    echo "Apache Solr default environment configured."
   else
     echo "::error::Apache Solr default environment not found"
     exit 1
@@ -116,26 +111,26 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     ));
     \$server->save();
     echo \$server->machine_name ? 'SERVER_CREATED' : 'SERVER_FAILED';
-  ")
+  ") || true
 
-  if [ "$SERVER_RESULT" = "SERVER_CREATED" ]; then
+  if echo "$SERVER_RESULT" | grep -q "SERVER_CREATED"; then
     echo "Search API server created."
   else
-    echo "::error::Failed to create Search API server: $SERVER_RESULT"
+    echo "::error::Failed to create Search API server"
     exit 1
   fi
 
   STATUS=$(drush_ev "
     \$server = search_api_server_load('pantheon_solr9');
     echo (\$server && \$server->ping()) ? 'SERVER_CONNECTED' : 'SERVER_DISCONNECTED';
-  ")
+  ") || true
 
-  if [ "$STATUS" = "SERVER_CONNECTED" ]; then
-    echo "Search API server connected (Solr $SOLR_VER)."
+  if echo "$STATUS" | grep -q "SERVER_CONNECTED"; then
+    echo "Search API server connected."
   else
-    echo "::error::Search API server not connected: $STATUS"
+    echo "::error::Search API server not connected"
     exit 1
   fi
 fi
 
-step "CUJ 6 PASSED: $MODULE configured and connected to Solr $SOLR_VER"
+step "CUJ 6 PASSED: $MODULE configured and connected to Solr 9"

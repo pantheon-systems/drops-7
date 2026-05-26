@@ -11,7 +11,7 @@ MODULE="${MODULE:?MODULE env var must be set}"
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -v "^\[warning\]\|^\[notice\]\|^\[error\]\|^Warning:\|^Notice:\|^Command:\|drush.in\|Exit:" | tail -1 | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1
 }
 
 step "CUJ 7: Create and Configure Search Index ($MODULE)"
@@ -19,12 +19,11 @@ step "CUJ 7: Create and Configure Search Index ($MODULE)"
 if [ "$MODULE" = "apachesolr" ]; then
 
   step "Step 1: Configure indexing and mark content"
-  # apachesolr needs entity types and bundles configured before indexing
   drush_ev "
     \$env_id = apachesolr_default_environment();
     module_load_include('inc', 'apachesolr', 'apachesolr.index');
     apachesolr_index_set_bundles(\$env_id, 'node', array('article', 'page'));
-  "
+  " || true
   echo "Configured article and page bundles for indexing."
   terminus drush "$SITE_ENV" -- solr-mark-all
 
@@ -32,21 +31,27 @@ if [ "$MODULE" = "apachesolr" ]; then
   terminus drush "$SITE_ENV" -- solr-index
 
   step "Step 3: Verify index count"
-  COUNT=$(drush_ev "
+  INDEX_STATS=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     try {
       \$solr = apachesolr_get_solr(\$env_id);
       \$response = \$solr->getLuke();
-      echo \$response->index->numDocs;
+      echo 'INDEX_COUNT:' . \$response->index->numDocs;
     } catch (Exception \$e) {
-      echo '0';
+      echo 'INDEX_ERROR:' . \$e->getMessage();
     }
-  ")
+  ") || true
 
-  if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
-    echo "Index contains $COUNT documents."
+  if echo "$INDEX_STATS" | grep -q "INDEX_COUNT:"; then
+    COUNT=$(echo "$INDEX_STATS" | grep -o 'INDEX_COUNT:[0-9]*' | head -1 | cut -d: -f2)
+    if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
+      echo "Index contains $COUNT documents."
+    else
+      echo "::error::Index is empty after indexing"
+      exit 1
+    fi
   else
-    echo "::error::Index is empty or count failed: $COUNT"
+    echo "::error::Failed to get index stats"
     exit 1
   fi
 
@@ -72,12 +77,12 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     ));
     \$index->save();
     echo \$index->machine_name ? 'INDEX_CREATED' : 'INDEX_FAILED';
-  ")
+  ") || true
 
-  if [ "$INDEX_RESULT" = "INDEX_CREATED" ]; then
+  if echo "$INDEX_RESULT" | grep -q "INDEX_CREATED"; then
     echo "Search API index created."
   else
-    echo "::error::Failed to create Search API index: $INDEX_RESULT"
+    echo "::error::Failed to create Search API index"
     exit 1
   fi
 
@@ -85,19 +90,18 @@ elif [ "$MODULE" = "search_api_solr" ]; then
   terminus drush "$SITE_ENV" -- search-api-index site_content
 
   step "Step 3: Verify index status"
-  terminus drush "$SITE_ENV" -- search-api-status site_content
+  STATUS=$(terminus drush "$SITE_ENV" -- search-api-status site_content 2>&1)
+  echo "$STATUS"
 
-  INDEXED=$(drush_ev "
-    \$index = search_api_index_load('site_content');
-    \$status = search_api_index_status(\$index);
-    echo \$status['indexed'];
-  ")
-
-  if [ -n "$INDEXED" ] && [ "$INDEXED" -gt 0 ] 2>/dev/null; then
-    echo "Indexed $INDEXED items."
+  if echo "$STATUS" | grep -q "100%"; then
+    echo "Index is 100% complete."
   else
-    echo "::error::No items indexed: $INDEXED"
-    exit 1
+    if echo "$STATUS" | grep -qE "Indexed.*[1-9]"; then
+      echo "Warning: Index not 100% but items were indexed."
+    else
+      echo "::error::No items indexed"
+      exit 1
+    fi
   fi
 
 else

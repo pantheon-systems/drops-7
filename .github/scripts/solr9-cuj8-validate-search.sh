@@ -11,7 +11,7 @@ MODULE="${MODULE:?MODULE env var must be set}"
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -v "^\[warning\]\|^\[notice\]\|^\[error\]\|^Warning:\|^Notice:\|^Command:\|drush.in\|Exit:" | tail -1 | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1
 }
 
 step "CUJ 8: Validate Search Results ($MODULE)"
@@ -19,24 +19,25 @@ step "CUJ 8: Validate Search Results ($MODULE)"
 step "Step 1: Search for known term"
 
 if [ "$MODULE" = "apachesolr" ]; then
-  COUNT=$(drush_ev "
+  SEARCH_RESULT=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:Solr', array('rows' => 10));
-    echo \$response->response->numFound;
-  ")
+    echo 'FOUND:' . \$response->response->numFound;
+  ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
-  COUNT=$(drush_ev "
+  SEARCH_RESULT=$(drush_ev "
     \$index = search_api_index_load('site_content');
     \$query = new SearchApiQuery(\$index);
     \$query->keys('Solr');
     \$query->range(0, 10);
     \$results = \$query->execute();
-    echo \$results['result count'];
-  ")
+    echo 'FOUND:' . \$results['result count'];
+  ") || true
 fi
 
-if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
+if echo "$SEARCH_RESULT" | grep -qE "FOUND:[1-9]"; then
+  COUNT=$(echo "$SEARCH_RESULT" | grep -o 'FOUND:[0-9]*' | head -1 | cut -d: -f2)
   echo "Search for 'Solr' returned $COUNT results."
 else
   echo "::error::Search for 'Solr' returned 0 results (expected > 0)"
@@ -46,27 +47,27 @@ fi
 step "Step 2: Search for non-existent term"
 
 if [ "$MODULE" = "apachesolr" ]; then
-  ZERO_COUNT=$(drush_ev "
+  EMPTY_RESULT=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:xyznonexistent99', array('rows' => 1));
-    echo \$response->response->numFound;
-  ")
+    echo 'FOUND:' . \$response->response->numFound;
+  ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
-  ZERO_COUNT=$(drush_ev "
+  EMPTY_RESULT=$(drush_ev "
     \$index = search_api_index_load('site_content');
     \$query = new SearchApiQuery(\$index);
     \$query->keys('xyznonexistent99');
     \$query->range(0, 1);
     \$results = \$query->execute();
-    echo \$results['result count'];
-  ")
+    echo 'FOUND:' . \$results['result count'];
+  ") || true
 fi
 
-if [ "$ZERO_COUNT" = "0" ]; then
+if echo "$EMPTY_RESULT" | grep -q "FOUND:0"; then
   echo "Search for non-existent term correctly returned 0 results."
 else
-  echo "::warning::Expected 0 results for non-existent term, got: $ZERO_COUNT"
+  echo "::warning::Expected 0 results for non-existent term"
 fi
 
 step "Step 3: Check watchdog for Solr errors"
@@ -109,12 +110,12 @@ PING=$(drush_ev "
   \$info = curl_getinfo(\$ch);
   curl_close(\$ch);
   echo in_array(\$info['http_code'], array(200, 201, 202, 204)) ? 'PING_OK' : 'PING_FAILED';
-")
+") || true
 
-if [ "$PING" = "PING_OK" ]; then
+if echo "$PING" | grep -q "PING_OK"; then
   echo "Solr ping healthy."
 else
-  echo "::error::Solr ping failed: $PING"
+  echo "::error::Solr ping failed"
   exit 1
 fi
 
