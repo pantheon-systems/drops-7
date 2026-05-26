@@ -8,22 +8,27 @@ set -euo pipefail
 SITE_ENV="${TERMINUS_SITE}.${MULTIDEV}"
 MODULE="${MODULE:?MODULE env var must be set}"
 
-echo "=== CUJ 7: Create and Configure Search Index ($MODULE) ==="
+step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
+
+drush_ev_extract() {
+  local pattern="$1"
+  shift
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -o "${pattern}[^ ]*" || true
+}
+
+step "CUJ 7: Create and Configure Search Index ($MODULE)"
 
 if [ "$MODULE" = "apachesolr" ]; then
-  # Apache Solr Search: no explicit index creation needed.
-  # Mark all content for reindexing and run indexer.
 
-  echo "--- Step 1: Mark all content for reindexing ---"
+  step "Step 1: Mark all content for reindexing"
   terminus drush "$SITE_ENV" -- solr-mark-all
 
-  echo "--- Step 2: Index content ---"
+  step "Step 2: Index content"
   terminus drush "$SITE_ENV" -- solr-index
 
-  echo "--- Step 3: Verify index count ---"
-  INDEX_STATS=$(terminus drush "$SITE_ENV" -- ev "
+  step "Step 3: Verify index count"
+  COUNT=$(drush_ev_extract "INDEX_COUNT:" "
     \$env_id = apachesolr_default_environment();
-    \$env = apachesolr_environment_load(\$env_id);
     try {
       \$solr = apachesolr_get_solr(\$env_id);
       \$response = \$solr->getLuke();
@@ -31,26 +36,20 @@ if [ "$MODULE" = "apachesolr" ]; then
     } catch (Exception \$e) {
       echo 'INDEX_ERROR:' . \$e->getMessage();
     }
-  " 2>&1)
+  ")
+  COUNT="${COUNT#INDEX_COUNT:}"
 
-  if echo "$INDEX_STATS" | grep -q "INDEX_COUNT:"; then
-    COUNT=$(echo "$INDEX_STATS" | grep -o 'INDEX_COUNT:[0-9]*' | cut -d: -f2)
-    if [ "$COUNT" -gt 0 ]; then
-      echo "Index contains $COUNT documents."
-    else
-      echo "::error::Index is empty after indexing"
-      exit 1
-    fi
+  if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
+    echo "Index contains $COUNT documents."
   else
-    echo "::error::Failed to get index stats: $INDEX_STATS"
+    echo "::error::Index is empty or count failed: $COUNT"
     exit 1
   fi
 
 elif [ "$MODULE" = "search_api_solr" ]; then
-  # Search API Solr: create index, add fields, index content.
 
-  echo "--- Step 1: Create Search API index ---"
-  INDEX_RESULT=$(terminus drush "$SITE_ENV" -- ev "
+  step "Step 1: Create Search API index"
+  INDEX_RESULT=$(drush_ev_extract "INDEX_" "
     \$index = entity_create('search_api_index', array(
       'name' => 'Site Content',
       'machine_name' => 'site_content',
@@ -69,26 +68,25 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     ));
     \$index->save();
     echo \$index->machine_name ? 'INDEX_CREATED' : 'INDEX_FAILED';
-  " 2>&1)
+  ")
 
-  if echo "$INDEX_RESULT" | grep -q "INDEX_CREATED"; then
+  if [ "$INDEX_RESULT" = "INDEX_CREATED" ]; then
     echo "Search API index created."
   else
     echo "::error::Failed to create Search API index: $INDEX_RESULT"
     exit 1
   fi
 
-  echo "--- Step 2: Index content ---"
+  step "Step 2: Index content"
   terminus drush "$SITE_ENV" -- search-api-index site_content
 
-  echo "--- Step 3: Verify index status ---"
+  step "Step 3: Verify index status"
   STATUS=$(terminus drush "$SITE_ENV" -- search-api-status site_content 2>&1)
   echo "$STATUS"
 
   if echo "$STATUS" | grep -q "100%"; then
     echo "Index is 100% complete."
   else
-    # Check if items were indexed even if not 100%
     INDEXED=$(echo "$STATUS" | grep -o 'Indexed[[:space:]]*[0-9]*' | grep -o '[0-9]*')
     if [ -n "$INDEXED" ] && [ "$INDEXED" -gt 0 ]; then
       echo "Warning: Index not 100% but $INDEXED items indexed."
@@ -103,4 +101,4 @@ else
   exit 1
 fi
 
-echo "=== CUJ 7 PASSED: $MODULE index created and content indexed ==="
+step "CUJ 7 PASSED: $MODULE index created and content indexed"

@@ -8,71 +8,71 @@ set -euo pipefail
 SITE_ENV="${TERMINUS_SITE}.${MULTIDEV}"
 MODULE="${MODULE:?MODULE env var must be set}"
 
-echo "=== CUJ 8: Validate Search Results ($MODULE) ==="
+step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
-# Step 1: Search for a known term that should return results
-echo "--- Step 1: Search for known term ---"
+drush_ev_extract() {
+  local pattern="$1"
+  shift
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -o "${pattern}[^ ]*" || true
+}
+
+step "CUJ 8: Validate Search Results ($MODULE)"
+
+step "Step 1: Search for known term"
 
 if [ "$MODULE" = "apachesolr" ]; then
-  SEARCH_RESULT=$(terminus drush "$SITE_ENV" -- ev "
+  SEARCH_RESULT=$(drush_ev_extract "FOUND:" "
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:Solr', array('rows' => 10));
     echo 'FOUND:' . \$response->response->numFound;
-  " 2>&1)
+  ")
 elif [ "$MODULE" = "search_api_solr" ]; then
-  SEARCH_RESULT=$(terminus drush "$SITE_ENV" -- ev "
+  SEARCH_RESULT=$(drush_ev_extract "FOUND:" "
     \$index = search_api_index_load('site_content');
     \$query = new SearchApiQuery(\$index);
     \$query->keys('Solr');
     \$query->range(0, 10);
     \$results = \$query->execute();
     echo 'FOUND:' . \$results['result count'];
-  " 2>&1)
+  ")
 fi
 
-if echo "$SEARCH_RESULT" | grep -q "FOUND:"; then
-  COUNT=$(echo "$SEARCH_RESULT" | grep -o 'FOUND:[0-9]*' | cut -d: -f2)
-  if [ "$COUNT" -gt 0 ]; then
-    echo "Search for 'Solr' returned $COUNT results."
-  else
-    echo "::error::Search for 'Solr' returned 0 results (expected > 0)"
-    exit 1
-  fi
+COUNT="${SEARCH_RESULT#FOUND:}"
+if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
+  echo "Search for 'Solr' returned $COUNT results."
 else
-  echo "::error::Search query failed: $SEARCH_RESULT"
+  echo "::error::Search for 'Solr' returned 0 results (expected > 0). Raw: $SEARCH_RESULT"
   exit 1
 fi
 
-# Step 2: Search for a term that should return zero results
-echo "--- Step 2: Search for non-existent term ---"
+step "Step 2: Search for non-existent term"
 
 if [ "$MODULE" = "apachesolr" ]; then
-  EMPTY_RESULT=$(terminus drush "$SITE_ENV" -- ev "
+  EMPTY_RESULT=$(drush_ev_extract "FOUND:" "
     \$env_id = apachesolr_default_environment();
     \$solr = apachesolr_get_solr(\$env_id);
     \$response = \$solr->search('content:xyznonexistent99', array('rows' => 1));
     echo 'FOUND:' . \$response->response->numFound;
-  " 2>&1)
+  ")
 elif [ "$MODULE" = "search_api_solr" ]; then
-  EMPTY_RESULT=$(terminus drush "$SITE_ENV" -- ev "
+  EMPTY_RESULT=$(drush_ev_extract "FOUND:" "
     \$index = search_api_index_load('site_content');
     \$query = new SearchApiQuery(\$index);
     \$query->keys('xyznonexistent99');
     \$query->range(0, 1);
     \$results = \$query->execute();
     echo 'FOUND:' . \$results['result count'];
-  " 2>&1)
+  ")
 fi
 
-if echo "$EMPTY_RESULT" | grep -q "FOUND:0"; then
+if [ "$EMPTY_RESULT" = "FOUND:0" ]; then
   echo "Search for non-existent term correctly returned 0 results."
 else
-  echo "::warning::Expected 0 results for non-existent term: $EMPTY_RESULT"
+  echo "::warning::Expected FOUND:0 for non-existent term, got: $EMPTY_RESULT"
 fi
 
-# Step 3: Check watchdog for Solr errors
-echo "--- Step 3: Check watchdog for Solr errors ---"
+step "Step 3: Check watchdog for Solr errors"
 
 if [ "$MODULE" = "apachesolr" ]; then
   WD_TYPE="Apache Solr"
@@ -82,10 +82,9 @@ fi
 
 ERRORS=$(terminus drush "$SITE_ENV" -- watchdog-show "--type=$WD_TYPE" --count=10 2>&1) || true
 
-if echo "$ERRORS" | grep -qiE "Unrecognized message type\|No log messages"; then
+if echo "$ERRORS" | grep -qiE "Unrecognized message type|No log messages"; then
   echo "No Solr log entries in watchdog (type '$WD_TYPE' not present)."
 else
-  # Filter out drush meta lines, check for actual error entries
   REAL_ERRORS=$(echo "$ERRORS" | grep -i "error" | grep -vi "Unrecognized message type\|Exit:\|Command:" || true)
   if [ -n "$REAL_ERRORS" ]; then
     echo "::warning::Solr errors found in watchdog:"
@@ -95,10 +94,9 @@ else
   fi
 fi
 
-# Step 4: Verify Solr ping is healthy
-echo "--- Step 4: Verify Solr ping ---"
+step "Step 4: Verify Solr ping"
 
-PING=$(terminus drush "$SITE_ENV" -- ev "
+PING=$(drush_ev_extract "PING_" "
   \$host = PANTHEON_APACHESOLR_HOST;
   \$path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
   if ('$MODULE' === 'search_api_solr') {
@@ -114,13 +112,13 @@ PING=$(terminus drush "$SITE_ENV" -- ev "
   \$info = curl_getinfo(\$ch);
   curl_close(\$ch);
   echo in_array(\$info['http_code'], array(200, 201, 202, 204)) ? 'PING_OK' : 'PING_FAILED:' . \$info['http_code'];
-" 2>&1)
+")
 
-if echo "$PING" | grep -q "PING_OK"; then
+if [ "$PING" = "PING_OK" ]; then
   echo "Solr ping healthy."
 else
   echo "::error::Solr ping failed: $PING"
   exit 1
 fi
 
-echo "=== CUJ 8 PASSED: $MODULE search results validated ==="
+step "CUJ 8 PASSED: $MODULE search results validated"
