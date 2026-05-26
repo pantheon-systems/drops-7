@@ -12,7 +12,7 @@ step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
 # Helper: run drush ev, suppress terminus stderr noise, return clean stdout
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tail -1 | tr -d '[:space:]'
 }
 
 step "CUJ 6: Configure Solr Server ($MODULE)"

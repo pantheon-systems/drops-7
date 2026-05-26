@@ -11,14 +11,21 @@ MODULE="${MODULE:?MODULE env var must be set}"
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tail -1 | tr -d '[:space:]'
 }
 
 step "CUJ 7: Create and Configure Search Index ($MODULE)"
 
 if [ "$MODULE" = "apachesolr" ]; then
 
-  step "Step 1: Mark all content for reindexing"
+  step "Step 1: Configure indexing and mark content"
+  # apachesolr needs entity types and bundles configured before indexing
+  drush_ev "
+    \$env_id = apachesolr_default_environment();
+    module_load_include('inc', 'apachesolr', 'apachesolr.index');
+    apachesolr_index_set_bundles(\$env_id, 'node', array('article', 'page'));
+  "
+  echo "Configured article and page bundles for indexing."
   terminus drush "$SITE_ENV" -- solr-mark-all
 
   step "Step 2: Index content"
