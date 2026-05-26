@@ -63,8 +63,7 @@ step "Verifying environment"
 terminus env:info "$SITE_ENV"
 
 step "Checking Solr version"
-SOLR_VER=$(terminus drush "$SITE_ENV" -- ev "echo 'SOLR_VER:' . (isset(\$_ENV['search_version']) ? \$_ENV['search_version'] : 'not_set');" 2>&1 | grep -o 'SOLR_VER:[^ ]*' || true)
-SOLR_VER="${SOLR_VER#SOLR_VER:}"
+SOLR_VER=$(terminus drush "$SITE_ENV" -- ev "echo \$_ENV['search_version'] ?? 'not_set';" 2>/dev/null | tr -d '[:space:]')
 echo "Solr version: $SOLR_VER"
 if [ "$SOLR_VER" != "9" ]; then
   echo "::error::Expected Solr version 9, got: $SOLR_VER"
