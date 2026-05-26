@@ -30,15 +30,7 @@ if [ "$MODULE" = "apachesolr" ]; then
   step "Step 2: Index content"
   terminus drush "$SITE_ENV" -- solr-index
 
-  step "Step 3: Commit index and verify count"
-  # Force Solr commit to ensure docs are searchable before CUJ 8
-  drush_ev "
-    \$env_id = apachesolr_default_environment();
-    \$solr = apachesolr_get_solr(\$env_id);
-    \$solr->commit();
-  " || true
-  sleep 5
-
+  step "Step 3: Verify index count"
   INDEX_STATS=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     try {
