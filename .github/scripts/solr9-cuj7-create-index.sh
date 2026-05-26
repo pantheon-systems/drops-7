@@ -11,7 +11,7 @@ MODULE="${MODULE:?MODULE env var must be set}"
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
 drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tail -1 | tr -d '[:space:]'
+  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -v "^\[warning\]\|^\[notice\]\|^\[error\]\|^Warning:\|^Notice:\|^Command:\|drush.in\|Exit:" | tail -1 | tr -d '[:space:]'
 }
 
 step "CUJ 7: Create and Configure Search Index ($MODULE)"
