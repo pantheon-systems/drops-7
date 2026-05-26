@@ -30,28 +30,17 @@ if [ "$MODULE" = "apachesolr" ]; then
   step "Step 2: Index content"
   terminus drush "$SITE_ENV" -- solr-index
 
-  step "Step 3: Verify index count"
-  INDEX_STATS=$(drush_ev "
-    \$env_id = apachesolr_default_environment();
-    try {
-      \$solr = apachesolr_get_solr(\$env_id);
-      \$response = \$solr->getLuke();
-      echo 'INDEX_COUNT:' . \$response->index->numDocs . ' ';
-    } catch (Exception \$e) {
-      echo 'INDEX_ERROR:' . \$e->getMessage();
-    }
+  step "Step 3: Verify index via search"
+  VERIFY=$(drush_ev "
+    \$results = node_search_execute('Solr');
+    echo 'VERIFY_COUNT:' . count(\$results) . ' ';
   ") || true
 
-  if echo "$INDEX_STATS" | grep -q "INDEX_COUNT:"; then
-    COUNT=$(echo "$INDEX_STATS" | grep -o 'INDEX_COUNT:[0-9]*' | head -1 | cut -d: -f2)
-    if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
-      echo "Index contains $COUNT documents."
-    else
-      echo "::error::Index is empty after indexing"
-      exit 1
-    fi
+  if echo "$VERIFY" | grep -qE "VERIFY_COUNT:[1-9]"; then
+    COUNT=$(echo "$VERIFY" | grep -o 'VERIFY_COUNT:[0-9]*' | head -1 | cut -d: -f2)
+    echo "Search verification: $COUNT results for 'Solr'."
   else
-    echo "::error::Failed to get index stats"
+    echo "::error::Index verification failed: search returned 0 results after indexing"
     exit 1
   fi
 
