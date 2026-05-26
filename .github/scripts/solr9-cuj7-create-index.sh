@@ -10,10 +10,8 @@ MODULE="${MODULE:?MODULE env var must be set}"
 
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
-drush_ev_extract() {
-  local pattern="$1"
-  shift
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -o "${pattern}[^ ]*" || true
+drush_ev() {
+  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tr -d '[:space:]'
 }
 
 step "CUJ 7: Create and Configure Search Index ($MODULE)"
@@ -27,17 +25,16 @@ if [ "$MODULE" = "apachesolr" ]; then
   terminus drush "$SITE_ENV" -- solr-index
 
   step "Step 3: Verify index count"
-  COUNT=$(drush_ev_extract "INDEX_COUNT:" "
+  COUNT=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     try {
       \$solr = apachesolr_get_solr(\$env_id);
       \$response = \$solr->getLuke();
-      echo 'INDEX_COUNT:' . \$response->index->numDocs;
+      echo \$response->index->numDocs;
     } catch (Exception \$e) {
-      echo 'INDEX_ERROR:' . \$e->getMessage();
+      echo '0';
     }
   ")
-  COUNT="${COUNT#INDEX_COUNT:}"
 
   if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ] 2>/dev/null; then
     echo "Index contains $COUNT documents."
@@ -49,7 +46,7 @@ if [ "$MODULE" = "apachesolr" ]; then
 elif [ "$MODULE" = "search_api_solr" ]; then
 
   step "Step 1: Create Search API index"
-  INDEX_RESULT=$(drush_ev_extract "INDEX_" "
+  INDEX_RESULT=$(drush_ev "
     \$index = entity_create('search_api_index', array(
       'name' => 'Site Content',
       'machine_name' => 'site_content',
@@ -81,19 +78,19 @@ elif [ "$MODULE" = "search_api_solr" ]; then
   terminus drush "$SITE_ENV" -- search-api-index site_content
 
   step "Step 3: Verify index status"
-  STATUS=$(terminus drush "$SITE_ENV" -- search-api-status site_content 2>&1)
-  echo "$STATUS"
+  terminus drush "$SITE_ENV" -- search-api-status site_content
 
-  if echo "$STATUS" | grep -q "100%"; then
-    echo "Index is 100% complete."
+  INDEXED=$(drush_ev "
+    \$index = search_api_index_load('site_content');
+    \$status = search_api_index_status(\$index);
+    echo \$status['indexed'];
+  ")
+
+  if [ -n "$INDEXED" ] && [ "$INDEXED" -gt 0 ] 2>/dev/null; then
+    echo "Indexed $INDEXED items."
   else
-    INDEXED=$(echo "$STATUS" | grep -o 'Indexed[[:space:]]*[0-9]*' | grep -o '[0-9]*')
-    if [ -n "$INDEXED" ] && [ "$INDEXED" -gt 0 ]; then
-      echo "Warning: Index not 100% but $INDEXED items indexed."
-    else
-      echo "::error::No items indexed: $STATUS"
-      exit 1
-    fi
+    echo "::error::No items indexed: $INDEXED"
+    exit 1
   fi
 
 else

@@ -10,11 +10,9 @@ MODULE="${MODULE:?MODULE env var must be set}"
 
 step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
 
-# Helper: run drush ev and extract only lines matching a pattern, suppressing terminus noise
-drush_ev_extract() {
-  local pattern="$1"
-  shift
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1 | grep -o "${pattern}[^ ]*" || true
+# Helper: run drush ev, suppress terminus stderr noise, return clean stdout
+drush_ev() {
+  terminus drush "$SITE_ENV" -- ev "$@" 2>/dev/null | tr -d '[:space:]'
 }
 
 step "CUJ 6: Configure Solr Server ($MODULE)"
@@ -34,7 +32,7 @@ MAX_RETRIES=3
 RETRY_DELAY=60
 for attempt in $(seq 1 $MAX_RETRIES); do
   echo "Schema post attempt $attempt of $MAX_RETRIES..."
-  RESULT=$(drush_ev_extract "SCHEMA_" "
+  RESULT=$(drush_ev "
     variable_set('pantheon_apachesolr_schema', '$SCHEMA_PATH');
     \$result = pantheon_apachesolr_post_schema_exec('$SCHEMA_PATH');
     echo \$result ? 'SCHEMA_POSTED' : 'SCHEMA_FAILED';
@@ -56,7 +54,7 @@ done
 
 step "Step 2: Verify Solr ping"
 
-PING_RESULT=$(drush_ev_extract "PING_" "
+PING_RESULT=$(drush_ev "
   \$host = PANTHEON_APACHESOLR_HOST;
   \$path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
   if ('$MODULE' === 'search_api_solr') {
@@ -84,23 +82,22 @@ fi
 step "Step 3: Module-specific verification"
 
 # Get Solr version for reporting
-SOLR_VER=$(drush_ev_extract "SOLR_VER:" "echo 'SOLR_VER:' . (isset(\$_ENV['search_version']) ? \$_ENV['search_version'] : 'unknown');")
-SOLR_VER="${SOLR_VER#SOLR_VER:}"
+SOLR_VER=$(drush_ev "echo \$_ENV['search_version'] ?? 'unknown';")
 
 if [ "$MODULE" = "apachesolr" ]; then
-  ENV_URL=$(drush_ev_extract "ENV_OK:" "
+  ENV_URL=$(drush_ev "
     \$env_id = apachesolr_default_environment();
     if (\$env_id) {
       \$env = apachesolr_environment_load(\$env_id);
-      echo 'ENV_OK:' . \$env['url'];
+      echo \$env['url'];
     } else {
       echo 'ENV_MISSING';
     }
   ")
 
-  if echo "$ENV_URL" | grep -q "ENV_OK:"; then
+  if [ "$ENV_URL" != "ENV_MISSING" ] && [ -n "$ENV_URL" ]; then
     echo "Apache Solr default environment configured (Solr $SOLR_VER)."
-    echo "URL: ${ENV_URL#ENV_OK:}"
+    echo "URL: $ENV_URL"
   else
     echo "::error::Apache Solr default environment not found"
     exit 1
@@ -108,7 +105,7 @@ if [ "$MODULE" = "apachesolr" ]; then
 
 elif [ "$MODULE" = "search_api_solr" ]; then
   echo "Creating Search API server..."
-  SERVER_RESULT=$(drush_ev_extract "SERVER_" "
+  SERVER_RESULT=$(drush_ev "
     \$server = entity_create('search_api_server', array(
       'name' => 'Pantheon Solr 9',
       'machine_name' => 'pantheon_solr9',
@@ -128,7 +125,7 @@ elif [ "$MODULE" = "search_api_solr" ]; then
     exit 1
   fi
 
-  STATUS=$(drush_ev_extract "SERVER_" "
+  STATUS=$(drush_ev "
     \$server = search_api_server_load('pantheon_solr9');
     echo (\$server && \$server->ping()) ? 'SERVER_CONNECTED' : 'SERVER_DISCONNECTED';
   ")
