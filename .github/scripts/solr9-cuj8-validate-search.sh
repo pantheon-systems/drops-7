@@ -20,10 +20,8 @@ step "Step 1: Search for known term"
 
 if [ "$MODULE" = "apachesolr" ]; then
   SEARCH_RESULT=$(drush_ev "
-    \$env_id = apachesolr_default_environment();
-    \$solr = apachesolr_get_solr(\$env_id);
-    \$response = \$solr->search('content:Solr', array('rows' => 10));
-    echo 'FOUND:' . \$response->response->numFound . ' ';
+    \$results = node_search_execute('Solr');
+    echo 'FOUND:' . count(\$results) . ' ';
   ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
   SEARCH_RESULT=$(drush_ev "
@@ -48,10 +46,8 @@ step "Step 2: Search for non-existent term"
 
 if [ "$MODULE" = "apachesolr" ]; then
   EMPTY_RESULT=$(drush_ev "
-    \$env_id = apachesolr_default_environment();
-    \$solr = apachesolr_get_solr(\$env_id);
-    \$response = \$solr->search('content:xyznonexistent99', array('rows' => 1));
-    echo 'FOUND:' . \$response->response->numFound . ' ';
+    \$results = node_search_execute('xyznonexistent99');
+    echo 'FOUND:' . count(\$results) . ' ';
   ") || true
 elif [ "$MODULE" = "search_api_solr" ]; then
   EMPTY_RESULT=$(drush_ev "
