@@ -107,7 +107,25 @@ elif [ "$MODULE" = "search_api_solr" ]; then
       'class' => 'search_api_solr_service',
       'enabled' => 1,
       'description' => 'Solr 9 server on Pantheon',
-      'options' => array('clean_ids' => TRUE),
+      'options' => array(
+        'clean_ids' => 1,
+        'site_hash' => 1,
+        'scheme' => 'http',
+        'host' => 'localhost',
+        'port' => 8983,
+        'path' => '/solr',
+        'http_user' => '',
+        'http_pass' => '',
+        'excerpt' => 0,
+        'retrieve_data' => 0,
+        'highlight_data' => 0,
+        'skip_schema_check' => 0,
+        'solr_version' => '',
+        'http_method' => 'AUTO',
+        'log_query' => 0,
+        'log_response' => 0,
+        'commits_disabled' => 0,
+      ),
     ));
     \$server->save();
     echo \$server->machine_name ? 'SERVER_CREATED' : 'SERVER_FAILED';
