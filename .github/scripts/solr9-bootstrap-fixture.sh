@@ -1,28 +1,117 @@
-#!/bin/bash
-set -euo pipefail
+#!/usr/bin/env bash
+set -eou pipefail
 
-# Bootstrap the D7 Solr 9 CI fixture site from scratch.
-# Installs Drupal and seeds 20 article nodes with real content.
-# Idempotent: drops existing DB and reinstalls.
+# Bootstrap a D7 Solr 9 CI fixture site from scratch.
 #
-# Usage: bash solr9-bootstrap-fixture.sh <site-name> <env>
-# Example: bash solr9-bootstrap-fixture.sh search-api-pantheon-d7 dev
+# Recreates the full dev environment that Solr 9 CUJ tests depend on.
+# Run this if the fixture site is destroyed, corrupted, or needs to be
+# rebuilt from zero.
+#
+# What it sets up:
+#   1. Pantheon site on Drupal 7 upstream
+#   2. Solr add-on enabled
+#   3. Drupal install with admin credentials
+#   4. 20 article nodes with real, searchable content
+#   5. Verification
+#
+# Examples:
+#   .github/scripts/solr9-bootstrap-fixture.sh -n search-api-pantheon-d7
+#   .github/scripts/solr9-bootstrap-fixture.sh -n search-api-pantheon-d7 -o "CI Fixtures for Projects"
+#
+# Prerequisites:
+#   - terminus authenticated (terminus auth:whoami)
 
-SITE="${1:?Usage: $0 <site-name> <env>}"
-ENV="${2:-dev}"
-SITE_ENV="$SITE.$ENV"
+show_help() {
+    echo "Usage: $0 -n <site-name> [-o <org>]"
+    echo "Options:"
+    echo "  -n <arg>         Site name (e.g. search-api-pantheon-d7)"
+    echo "  -o <arg>         Organization name or UUID (default: CI Fixtures for Projects)"
+    echo "  -h               Show help"
+    exit 1
+}
 
-echo "=== Bootstrapping fixture site: $SITE_ENV ==="
+main() {
+    local SITE_NAME=""
+    local ORG="CI Fixtures for Projects"
 
-echo "--- Installing Drupal ---"
-terminus drush "$SITE_ENV" -- site-install standard \
-  --site-name="D7 Solr 9 CI" \
-  --account-name=admin \
-  --account-pass=admin \
-  -y
+    while getopts "n:o:h" opt; do
+        case $opt in
+            n) SITE_NAME="$OPTARG" ;;
+            o) ORG="$OPTARG" ;;
+            h) show_help ;;
+            *) show_help ;;
+        esac
+    done
 
-echo "--- Creating article nodes ---"
-terminus drush "$SITE_ENV" -- ev '
+    shift "$((OPTIND-1))"
+
+    if [[ -z "$SITE_NAME" ]]; then
+        echo "ERROR: -n <site-name> is required"
+        show_help
+    fi
+
+    local SITE_NAME_LC
+    SITE_NAME_LC=$(echo "$SITE_NAME" | tr '[:upper:]' '[:lower:]')
+    local SITE_ENV="${SITE_NAME_LC}.dev"
+
+    echo "=== Bootstrap D7 Solr 9 CI Fixture Site ==="
+    echo "Site: ${SITE_NAME}"
+    echo "Org: ${ORG}"
+    echo ""
+
+    # -----------------------------------------------------------------------
+    # Step 1: Create site (exit if exists)
+    # -----------------------------------------------------------------------
+    if terminus site:info "$SITE_NAME_LC" &>/dev/null; then
+        echo "ERROR: Site ${SITE_NAME} already exists. Exiting to avoid modifying an existing site."
+        echo "Delete it first if you want to recreate: terminus site:delete ${SITE_NAME_LC}"
+        exit 1
+    fi
+
+    echo "[1/5] Creating site..."
+    terminus site:create "$SITE_NAME" "$SITE_NAME" "drupal7" --org="$ORG"
+    echo "Waiting for site creation workflow..."
+    terminus workflow:wait "$SITE_ENV"
+
+    local SITE_ID
+    SITE_ID=$(terminus site:info "$SITE_NAME_LC" --field=ID)
+
+    # -----------------------------------------------------------------------
+    # Step 2: Upgrade plan + enable Solr
+    # -----------------------------------------------------------------------
+    echo "[2/5] Configuring plan and Solr..."
+    local CURRENT_PLAN
+    CURRENT_PLAN=$(terminus site:info "$SITE_NAME_LC" --field=plan_name 2>/dev/null || echo "")
+    if [[ "$CURRENT_PLAN" == *"Sandbox"* ]]; then
+        echo "Upgrading to Performance Small..."
+        terminus plan:set "$SITE_ID" "plan-performance_small-contract-annual-1"
+    else
+        echo "[skip] Already on plan: ${CURRENT_PLAN}"
+    fi
+
+    echo "Enabling Solr..."
+    terminus solr:enable "$SITE_ID" 2>/dev/null || echo "[skip] Solr already enabled or enable failed"
+
+    # -----------------------------------------------------------------------
+    # Step 3: Install Drupal
+    # -----------------------------------------------------------------------
+    echo "[3/5] Installing Drupal..."
+    if terminus drush "$SITE_ENV" -- status --field=bootstrap 2>/dev/null | grep -q "Successful"; then
+        echo "[skip] Drupal already installed"
+    else
+        terminus drush "$SITE_ENV" -- site-install standard \
+            --site-name="D7 Solr 9 CI" \
+            --account-name=admin \
+            --account-pass=admin \
+            -y
+    fi
+
+    # -----------------------------------------------------------------------
+    # Step 4: Create 20 article nodes with real content
+    # -----------------------------------------------------------------------
+    echo "[4/5] Creating article nodes..."
+
+    terminus drush "$SITE_ENV" -- ev '
 $articles = array(
   array("Getting Started with Apache Solr on Pantheon", "Apache Solr is a powerful open-source search platform built on Apache Lucene. Pantheon provides managed Solr instances for every environment, enabling fast full-text search across your Drupal content. This guide covers initial setup, schema posting, and indexing your first batch of content."),
   array("Understanding Drupal Content Types and Fields", "Drupal organizes content into types such as articles, pages, and custom bundles. Each content type can have fields for text, images, taxonomy references, and more. Properly structured content types improve both editorial workflow and search relevance."),
@@ -56,11 +145,41 @@ foreach ($articles as $a) {
   node_save($node);
   echo "Created: " . $node->title . "\n";
 }
-echo "BOOTSTRAP_COMPLETE";
 '
 
-echo "--- Verifying ---"
-NODE_COUNT=$(terminus drush "$SITE_ENV" -- ev "echo db_query('SELECT COUNT(*) FROM {node}')->fetchField();" 2>&1 | head -1)
-echo "Node count: $NODE_COUNT"
+    # -----------------------------------------------------------------------
+    # Step 4: Verify setup
+    # -----------------------------------------------------------------------
+    echo "[5/5] Verifying setup..."
 
-echo "=== Fixture site $SITE_ENV bootstrapped with $NODE_COUNT articles ==="
+    terminus drush "$SITE_ENV" -- ev '
+$count = db_query("SELECT COUNT(*) FROM {node}")->fetchField();
+if ($count < 20) {
+  echo "FAIL: Expected 20 nodes, found " . $count . "\n";
+  exit(1);
+}
+echo "Node count: " . $count . " (OK)\n";
+
+$solr_check = db_query("SELECT COUNT(*) FROM {node} WHERE title LIKE :pattern", array(":pattern" => "%Solr%"))->fetchField();
+echo "Nodes containing Solr: " . $solr_check . "\n";
+
+$terminus_check = db_query("SELECT COUNT(*) FROM {node} WHERE title LIKE :pattern", array(":pattern" => "%Terminus%"))->fetchField();
+echo "Nodes containing Terminus: " . $terminus_check . "\n";
+'
+
+    echo ""
+    echo "=== Bootstrap complete ==="
+    echo "Site: ${SITE_NAME_LC}"
+    echo "Site ID: ${SITE_ID}"
+    echo "Dev URL: https://dev-${SITE_NAME_LC}.pantheonsite.io"
+    echo "Admin: admin / admin"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Add TERMINUS_TOKEN, PANTHEON_SSH_KEY secrets to the drops-7 repo"
+    echo "  2. Add PANTHEON_SITE_D7 repo variable = ${SITE_NAME_LC}"
+    echo ""
+    echo "CI multidevs will inherit article content from dev."
+    echo "Modules (apachesolr, search_api_solr) are installed per-multidev by solr9-setup-multidev.sh."
+}
+
+main "$@"
