@@ -34,10 +34,8 @@ rm -rf modules/pantheon/pantheon_apachesolr
 cp -r "$GITHUB_WORKSPACE/modules/pantheon/pantheon_apachesolr" modules/pantheon/pantheon_apachesolr
 
 step "Setting search version to 9 in pantheon.yml"
-if [ -f pantheon.upstream.yml ]; then
-  cp pantheon.upstream.yml pantheon.yml
-fi
-if grep -q "^search:" pantheon.yml 2>/dev/null; then
+touch pantheon.yml
+if grep -q "^search:" pantheon.yml; then
   sed -i "s/^\([[:space:]]*\)version: [0-9]*/\1version: 9/" pantheon.yml
 else
   echo "search:" >> pantheon.yml
