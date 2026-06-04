@@ -100,13 +100,15 @@ main() {
     # Step 3: Install Drupal
     # -----------------------------------------------------------------------
     echo "[3/5] Installing Drupal..."
+    local ADMIN_PASS
+    ADMIN_PASS=$(openssl rand -base64 18)
     if terminus drush "$SITE_ENV" -- status --field=bootstrap 2>/dev/null | grep -q "Successful"; then
         echo "[skip] Drupal already installed"
     else
         terminus drush "$SITE_ENV" -- site-install standard \
             --site-name="D7 Solr 9 CI" \
             --account-name=admin \
-            --account-pass=admin \
+            --account-pass="$ADMIN_PASS" \
             -y
     fi
 
@@ -176,7 +178,8 @@ echo "Nodes containing Terminus: " . $terminus_check . "\n";
     echo "Site: ${SITE_NAME_LC}"
     echo "Site ID: ${SITE_ID}"
     echo "Dev URL: https://dev-${SITE_NAME_LC}.pantheonsite.io"
-    echo "Admin: admin / admin"
+    echo "Admin: admin / ${ADMIN_PASS}"
+    echo "(generated; re-login any time with: terminus drush ${SITE_ENV} -- uli)"
     echo ""
     echo "Next steps:"
     echo "  1. Add TERMINUS_TOKEN, PANTHEON_SSH_KEY secrets to the drops-7 repo"
