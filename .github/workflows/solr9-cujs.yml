@@ -71,10 +71,10 @@ jobs:
           else
             MODULE_SHORT="sapi"
           fi
-          MULTIDEV_NAME="d7s9${MODULE_SHORT}${GITHUB_RUN_NUMBER}"
+          MULTIDEV_NAME="s9${MODULE_SHORT}${GITHUB_RUN_NUMBER}"
           MULTIDEV="${MULTIDEV_NAME:0:11}"
           echo "MULTIDEV=$MULTIDEV" >> "$GITHUB_ENV"
-          echo "MULTIDEV_PREFIX=d7s9${MODULE_SHORT}" >> "$GITHUB_ENV"
+          echo "MULTIDEV_PREFIX=s9${MODULE_SHORT}" >> "$GITHUB_ENV"
           echo "Using multidev: $MULTIDEV"
 
       - name: Create multidev and configure Solr 9
