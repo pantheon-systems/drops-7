@@ -97,9 +97,35 @@ main() {
     terminus solr:enable "$SITE_ID" 2>/dev/null || echo "[skip] Solr already enabled or enable failed"
 
     # -----------------------------------------------------------------------
-    # Step 3: Install Drupal
+    # Step 3: Set Solr version 9 in pantheon.yml (inherited by all multidevs)
     # -----------------------------------------------------------------------
-    echo "[3/5] Installing Drupal..."
+    echo "[3/6] Setting Solr version 9 in pantheon.yml..."
+    local GIT_URL
+    GIT_URL=$(terminus connection:info "$SITE_ENV" --field=git_url)
+    rm -rf /tmp/bootstrap-pantheon-site
+    GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone "$GIT_URL" /tmp/bootstrap-pantheon-site
+    (
+        cd /tmp/bootstrap-pantheon-site
+        touch pantheon.yml
+        if grep -q "^search:" pantheon.yml; then
+            sed -i "s/^\([[:space:]]*\)version: [0-9]*/\1version: 9/" pantheon.yml
+        else
+            echo "search:" >> pantheon.yml
+            echo "  version: 9" >> pantheon.yml
+        fi
+        echo "pantheon.yml contents:"
+        cat pantheon.yml
+        git add pantheon.yml
+        git commit -m "Set Solr version to 9 for CUJ fixture" || echo "No changes to commit"
+        git push origin HEAD
+    )
+    terminus workflow:wait "$SITE_ENV"
+    rm -rf /tmp/bootstrap-pantheon-site
+
+    # -----------------------------------------------------------------------
+    # Step 4: Install Drupal
+    # -----------------------------------------------------------------------
+    echo "[4/6] Installing Drupal..."
     local ADMIN_PASS
     ADMIN_PASS=$(openssl rand -base64 18)
     if terminus drush "$SITE_ENV" -- status --field=bootstrap 2>/dev/null | grep -q "Successful"; then
@@ -113,9 +139,9 @@ main() {
     fi
 
     # -----------------------------------------------------------------------
-    # Step 4: Create 20 article nodes with real content
+    # Step 5: Create 20 article nodes with real content
     # -----------------------------------------------------------------------
-    echo "[4/5] Creating article nodes..."
+    echo "[5/6] Creating article nodes..."
 
     terminus drush "$SITE_ENV" -- ev '
 $articles = array(
@@ -154,9 +180,9 @@ foreach ($articles as $a) {
 '
 
     # -----------------------------------------------------------------------
-    # Step 4: Verify setup
+    # Step 6: Verify setup
     # -----------------------------------------------------------------------
-    echo "[5/5] Verifying setup..."
+    echo "[6/6] Verifying setup..."
 
     terminus drush "$SITE_ENV" -- ev '
 $count = db_query("SELECT COUNT(*) FROM {node}")->fetchField();

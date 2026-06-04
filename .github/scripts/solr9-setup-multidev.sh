@@ -34,18 +34,6 @@ step "Copying pantheon_apachesolr module"
 rm -rf modules/pantheon/pantheon_apachesolr
 cp -r "$GITHUB_WORKSPACE/modules/pantheon/pantheon_apachesolr" modules/pantheon/pantheon_apachesolr
 
-step "Setting search version to 9 in pantheon.yml"
-touch pantheon.yml
-if grep -q "^search:" pantheon.yml; then
-  sed -i "s/^\([[:space:]]*\)version: [0-9]*/\1version: 9/" pantheon.yml
-else
-  echo "search:" >> pantheon.yml
-  echo "  version: 9" >> pantheon.yml
-fi
-
-echo "pantheon.yml contents:"
-cat pantheon.yml
-
 step "Pushing code to Pantheon"
 git add -A
 git commit -m "CI: Solr 9 CUJ test - $MODULE (run $GITHUB_RUN_NUMBER)" || echo "No changes to commit"
