@@ -15,24 +15,23 @@ set -eou pipefail
 #   5. Verification
 #
 # Examples:
-#   .github/scripts/solr9-bootstrap-fixture.sh -n search-api-pantheon-d7
-#   .github/scripts/solr9-bootstrap-fixture.sh -n search-api-pantheon-d7 -o "CI Fixtures for Projects"
+#   .github/scripts/solr9-bootstrap-fixture.sh -n search-api-pantheon-d7 -o "<org-name-or-uuid>"
 #
 # Prerequisites:
 #   - terminus authenticated (terminus auth:whoami)
 
 show_help() {
-    echo "Usage: $0 -n <site-name> [-o <org>]"
+    echo "Usage: $0 -n <site-name> -o <org>"
     echo "Options:"
     echo "  -n <arg>         Site name (e.g. search-api-pantheon-d7)"
-    echo "  -o <arg>         Organization name or UUID (default: CI Fixtures for Projects)"
+    echo "  -o <arg>         Organization name or UUID (required)"
     echo "  -h               Show help"
     exit 1
 }
 
 main() {
     local SITE_NAME=""
-    local ORG="CI Fixtures for Projects"
+    local ORG=""
 
     while getopts "n:o:h" opt; do
         case $opt in
@@ -47,6 +46,11 @@ main() {
 
     if [[ -z "$SITE_NAME" ]]; then
         echo "ERROR: -n <site-name> is required"
+        show_help
+    fi
+
+    if [[ -z "$ORG" ]]; then
+        echo "ERROR: -o <org> is required"
         show_help
     fi
 
