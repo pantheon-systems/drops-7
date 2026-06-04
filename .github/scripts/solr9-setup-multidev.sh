@@ -9,7 +9,8 @@ MULTIDEV="$1"
 TERMINUS_SITE="$2"
 MODULE="${MODULE:?MODULE env var must be set (apachesolr or search_api_solr)}"
 
-step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
+# shellcheck source=.github/scripts/solr9-shared.sh
+source "$(dirname "$0")/solr9-shared.sh"
 
 step "Phase 1: Create multidev and configure Solr 9"
 

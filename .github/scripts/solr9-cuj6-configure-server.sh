@@ -8,11 +8,8 @@ set -euo pipefail
 SITE_ENV="${TERMINUS_SITE}.${MULTIDEV}"
 MODULE="${MODULE:?MODULE env var must be set}"
 
-step() { echo ""; echo ">>>>>>>>>> $1 <<<<<<<<<<"; echo ""; }
-
-drush_ev() {
-  terminus drush "$SITE_ENV" -- ev "$@" 2>&1
-}
+# shellcheck source=.github/scripts/solr9-shared.sh
+source "$(dirname "$0")/solr9-shared.sh"
 
 step "CUJ 6: Configure Solr Server ($MODULE)"
 
