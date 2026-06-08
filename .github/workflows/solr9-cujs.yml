@@ -26,7 +26,7 @@ jobs:
     env:
       TERMINUS_SITE: ${{ vars.PANTHEON_SITE_D7 }}
       TERMINUS_TOKEN: ${{ secrets.TERMINUS_TOKEN }}
-      PANTHEON_SSH_KEY: ${{ secrets.PANTHEON_SSH_KEY }}
+      PANTHEON_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       MODULE: ${{ matrix.module }}
     steps:
       - name: Checkout
