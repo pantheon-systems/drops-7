@@ -26,7 +26,6 @@ show_help() {
     echo "  -n <arg>         Site name (e.g. search-api-pantheon-d7)"
     echo "  -o <arg>         Organization name or UUID (required)"
     echo "  -h               Show help"
-    exit 1
 }
 
 main() {
@@ -37,8 +36,8 @@ main() {
         case $opt in
             n) SITE_NAME="$OPTARG" ;;
             o) ORG="$OPTARG" ;;
-            h) show_help ;;
-            *) show_help ;;
+            h) show_help; exit 0 ;;
+            *) show_help; exit 1 ;;
         esac
     done
 
@@ -47,11 +46,13 @@ main() {
     if [[ -z "$SITE_NAME" ]]; then
         echo "ERROR: -n <site-name> is required"
         show_help
+        exit 1
     fi
 
     if [[ -z "$ORG" ]]; then
         echo "ERROR: -o <org> is required"
         show_help
+        exit 1
     fi
 
     local SITE_NAME_LC
@@ -72,7 +73,7 @@ main() {
         exit 1
     fi
 
-    echo "[1/5] Creating site..."
+    echo "[1/6] Creating site..."
     terminus site:create "$SITE_NAME" "$SITE_NAME" "drupal7" --org="$ORG"
     echo "Waiting for site creation workflow..."
     terminus workflow:wait "$SITE_ENV"
@@ -83,7 +84,7 @@ main() {
     # -----------------------------------------------------------------------
     # Step 2: Upgrade plan + enable Solr
     # -----------------------------------------------------------------------
-    echo "[2/5] Configuring plan and Solr..."
+    echo "[2/6] Configuring plan and Solr..."
     local CURRENT_PLAN
     CURRENT_PLAN=$(terminus site:info "$SITE_NAME_LC" --field=plan_name 2>/dev/null || echo "")
     if [[ "$CURRENT_PLAN" == *"Sandbox"* ]]; then
@@ -100,6 +101,10 @@ main() {
     # Step 3: Set Solr version 9 in pantheon.yml (inherited by all multidevs)
     # -----------------------------------------------------------------------
     echo "[3/6] Setting Solr version 9 in pantheon.yml..."
+    # pantheon.yml changes are committed over git, so the env must be in git mode.
+    # A freshly created site defaults to SFTP mode, which rejects pushes.
+    terminus connection:set "$SITE_ENV" git
+    terminus workflow:wait "$SITE_ENV"
     local GIT_URL
     GIT_URL=$(terminus connection:info "$SITE_ENV" --field=git_url)
     rm -rf /tmp/bootstrap-pantheon-site
@@ -108,7 +113,9 @@ main() {
         cd /tmp/bootstrap-pantheon-site
         touch pantheon.yml
         if grep -q "^search:" pantheon.yml; then
-            sed -i "s/^\([[:space:]]*\)version: [0-9]*/\1version: 9/" pantheon.yml
+            # sed -i.bak keeps this portable across GNU (Linux/GHA) and BSD (macOS) sed.
+            sed -i.bak "s/^\([[:space:]]*\)version: [0-9]*/\1version: 9/" pantheon.yml
+            rm -f pantheon.yml.bak
         else
             echo "search:" >> pantheon.yml
             echo "  version: 9" >> pantheon.yml
@@ -116,7 +123,15 @@ main() {
         echo "pantheon.yml contents:"
         cat pantheon.yml
         git add pantheon.yml
-        git commit -m "Set Solr version to 9 for CUJ fixture" || echo "No changes to commit"
+        # Only commit when there is a staged change. A real commit failure
+        # (e.g. gpg signing, pre-commit hook) must abort rather than be
+        # swallowed, otherwise the push silently lands nothing and the
+        # fixture ends up without search: version: 9.
+        if ! git diff --cached --quiet; then
+            git commit -m "Set Solr version to 9 for CUJ fixture"
+        else
+            echo "No changes to commit"
+        fi
         git push origin HEAD
     )
     terminus workflow:wait "$SITE_ENV"
@@ -126,6 +141,10 @@ main() {
     # Step 4: Install Drupal
     # -----------------------------------------------------------------------
     echo "[4/6] Installing Drupal..."
+    # site-install writes settings.php, which requires SFTP (read/write) mode.
+    # Git mode mounts the code read-only and the install fails with "Permission denied".
+    terminus connection:set "$SITE_ENV" sftp
+    terminus workflow:wait "$SITE_ENV"
     local ADMIN_PASS
     ADMIN_PASS=$(openssl rand -base64 18)
     if terminus drush "$SITE_ENV" -- status --field=bootstrap 2>/dev/null | grep -q "Successful"; then
@@ -184,7 +203,10 @@ foreach ($articles as $a) {
     # -----------------------------------------------------------------------
     echo "[6/6] Verifying setup..."
 
-    terminus drush "$SITE_ENV" -- ev '
+    # Capture output and assert on a success marker rather than trusting the
+    # drush PHP exit code to propagate through terminus.
+    local VERIFY_OUT
+    VERIFY_OUT=$(terminus drush "$SITE_ENV" -- ev '
 $count = db_query("SELECT COUNT(*) FROM {node}")->fetchField();
 if ($count < 20) {
   echo "FAIL: Expected 20 nodes, found " . $count . "\n";
@@ -197,7 +219,12 @@ echo "Nodes containing Solr: " . $solr_check . "\n";
 
 $terminus_check = db_query("SELECT COUNT(*) FROM {node} WHERE title LIKE :pattern", array(":pattern" => "%Terminus%"))->fetchField();
 echo "Nodes containing Terminus: " . $terminus_check . "\n";
-'
+' 2>&1)
+    echo "$VERIFY_OUT"
+    if ! echo "$VERIFY_OUT" | grep -q "(OK)"; then
+        echo "ERROR: Verification failed (expected 20 nodes)."
+        exit 1
+    fi
 
     echo ""
     echo "=== Bootstrap complete ==="
