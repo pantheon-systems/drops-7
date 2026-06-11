@@ -1,0 +1,109 @@
+name: Solr 9 CUJ Tests
+
+on:
+  push:
+    paths:
+      - 'modules/pantheon/pantheon_apachesolr/**'
+      - '.github/workflows/solr9-cujs.yml'
+      - '.github/scripts/solr9-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 'solr9-cujs-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  solr9-cujs:
+    name: Solr 9 CUJs (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [apachesolr, search_api_solr]
+    env:
+      TERMINUS_SITE: ${{ vars.PANTHEON_SITE_D7 }}
+      TERMINUS_TOKEN: ${{ secrets.TERMINUS_TOKEN }}
+      PANTHEON_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      MODULE: ${{ matrix.module }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@8358ee0e2e8afe63c2fb8253d1d52085811ab1e5 # v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: Install Terminus
+        uses: pantheon-systems/terminus-github-actions@409451ede17f75acac08f42edc823fee6c435057 # v1.2.8
+        with:
+          pantheon-machine-token: ${{ env.TERMINUS_TOKEN }}
+
+      - name: Verify Terminus auth
+        run: terminus auth:whoami
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ env.PANTHEON_SSH_KEY }}
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null\n" > ~/.ssh/config
+
+      - name: Setup Git
+        run: |
+          git config --global user.email "ci@pantheon.io"
+          git config --global user.name "Github Actions"
+          git config --global --add safe.directory '*'
+
+      - name: Set multidev name
+        run: |
+          if [ "$MODULE" = "apachesolr" ]; then
+            MODULE_SHORT="apch"
+          else
+            MODULE_SHORT="sapi"
+          fi
+          MULTIDEV_NAME="s9${MODULE_SHORT}${GITHUB_RUN_NUMBER}"
+          MULTIDEV="${MULTIDEV_NAME:0:11}"
+          echo "MULTIDEV=$MULTIDEV" >> "$GITHUB_ENV"
+          echo "MULTIDEV_PREFIX=s9${MODULE_SHORT}" >> "$GITHUB_ENV"
+          echo "Using multidev: $MULTIDEV"
+
+      - name: Create multidev and configure Solr 9
+        run: bash .github/scripts/solr9-setup-multidev.sh "$MULTIDEV" "$TERMINUS_SITE"
+
+      - name: CUJ 6 - Configure Solr Server
+        run: bash .github/scripts/solr9-cuj6-configure-server.sh
+
+      - name: CUJ 7 - Create and Configure Search Index
+        run: bash .github/scripts/solr9-cuj7-create-index.sh
+
+      - name: CUJ 8 - Validate Search Results
+        run: bash .github/scripts/solr9-cuj8-validate-search.sh
+
+      - name: Delete multidev on success
+        if: success()
+        run: terminus multidev:delete "$TERMINUS_SITE.$MULTIDEV" --delete-branch --yes || true
+
+      - name: Show multidev URL on failure
+        if: failure()
+        run: 'echo "Multidev URL for investigation: https://${MULTIDEV}-${TERMINUS_SITE}.pantheonsite.io"'
+
+      - name: Cleanup stale CI multidevs
+        if: always()
+        run: |
+          MULTIDEVS=$(terminus multidev:list "$TERMINUS_SITE" --format=list 2>/dev/null || echo "")
+          for env in $MULTIDEVS; do
+            if [[ "$env" == ${MULTIDEV_PREFIX}* && "$env" != "$MULTIDEV" ]]; then
+              echo "Deleting stale multidev: $env"
+              terminus multidev:delete "$TERMINUS_SITE.$env" --delete-branch --yes || true
+            fi
+          done
