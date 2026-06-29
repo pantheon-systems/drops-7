@@ -22,10 +22,10 @@ if [ "$MODULE" = "apachesolr" ]; then
     apachesolr_index_set_bundles(\$env_id, 'node', array('article', 'page'));
   " || true
   echo "Configured article and page bundles for indexing."
-  terminus drush "$SITE_ENV" -- solr-mark-all
+  retry terminus drush "$SITE_ENV" -- solr-mark-all
 
   step "Step 2: Index content"
-  terminus drush "$SITE_ENV" -- solr-index
+  retry terminus drush "$SITE_ENV" -- solr-index
 
   step "Step 3: Verify index via search"
   VERIFY=$(drush_ev "
@@ -73,10 +73,10 @@ elif [ "$MODULE" = "search_api_solr" ]; then
   fi
 
   step "Step 2: Index content"
-  terminus drush "$SITE_ENV" -- search-api-index site_content
+  retry terminus drush "$SITE_ENV" -- search-api-index site_content
 
   step "Step 3: Verify index status"
-  STATUS=$(terminus drush "$SITE_ENV" -- search-api-status site_content 2>&1)
+  STATUS=$(retry terminus drush "$SITE_ENV" -- search-api-status site_content)
   echo "$STATUS"
 
   if echo "$STATUS" | grep -q "100%"; then
