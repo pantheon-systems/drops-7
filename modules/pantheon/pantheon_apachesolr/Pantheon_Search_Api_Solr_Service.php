@@ -3,21 +3,30 @@
 /**
  * Current Supported Class for RC4+
  */
+#[\AllowDynamicProperties]
 class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection {
 
-  /**
-   * @var string
-   */
+  protected $base_url;
+  protected $http_auth;
   protected $method;
+  protected $options;
 
   function __construct(array $options) {
 
-    // Adding in custom settings for Pantheon
-    $options['scheme'] = 'https';
-    $options['host'] = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
-    $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
-    $options['port'] = variable_get('pantheon_index_port', 449);
-    
+    // Adding in custom settings for Pantheon.
+    if (pantheon_apachesolr_get_search_version() == 9) {
+      $options['scheme'] = getenv('PANTHEON_INDEX_SCHEME');
+      $options['host'] = getenv('PANTHEON_INDEX_HOST');
+      $options['path'] = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+      $options['port'] = intval(getenv('PANTHEON_INDEX_PORT'));
+    }
+    else {
+      $options['scheme'] = 'https';
+      $options['host'] = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+      $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
+      $options['port'] = variable_get('pantheon_index_port', 449);
+    }
+
     // pantheon_curl_setup will determine whether binding.pem needed and return
     // path in options if so.
     list($ch, $opts) = pantheon_apachesolr_curl_setup("", $options['port']);
@@ -35,12 +44,12 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
             $sslContext['verify_peer_name'] = (bool) $opts[CURLOPT_SSL_VERIFYHOST];
         }
     }
-    
+
     if ($sslContext) {
         $this->setStreamContext(stream_context_create(array('ssl' => $sslContext)));
     }
 
-    // Adding in general settings for Search API
+    // Adding in general settings for Search API.
     $options += array(
       'scheme' => 'http',
       'host' => 'localhost',
@@ -118,5 +127,56 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
 
 class PantheonApachesolrSearchApiSolrService extends SearchApiSolrService {
   protected $connection_class = 'PantheonApachesolrSearchApiSolrConnection';
-}
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getServerLink() {
+    if (pantheon_apachesolr_get_search_version() == 9) {
+      $url = getenv('PANTHEON_INDEX_SCHEME') . '://' . getenv('PANTHEON_INDEX_HOST') . ':' . intval(getenv('PANTHEON_INDEX_PORT')) . '/' . getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE');
+    }
+    else {
+      if (!$this->options) {
+        return '';
+      }
+      $host = $this->options['host'];
+      if ($host == 'localhost' && !empty($_SERVER['SERVER_NAME'])) {
+        $host = $_SERVER['SERVER_NAME'];
+      }
+      $url = $this->options['scheme'] . '://' . $host . ':' . $this->options['port'] . $this->options['path'];
+    }
+    return l($url, $url);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function ping() {
+    if (pantheon_apachesolr_get_search_version() == 9) {
+      $host = PANTHEON_APACHESOLR_HOST;
+      $path = getenv('PANTHEON_INDEX_PATH') . getenv('PANTHEON_INDEX_CORE') . '/admin/ping';
+      $pantheon_apachesolr_schema = variable_get('pantheon_apachesolr_schema');
+
+      if (strpos($pantheon_apachesolr_schema, 'search_api_solr') !== FALSE) {
+        $path .= '?q=id:1';
+      }
+
+      $url = 'https://'. $host . '/' . $path;
+
+      list($ch, $opts) = pantheon_apachesolr_curl_setup($url, PANTHEON_APACHESOLR_PORT);
+      $opts[CURLOPT_CONNECTTIMEOUT] = 5;
+      $opts[CURLOPT_RETURNTRANSFER] = 1;
+
+      curl_setopt_array($ch, $opts);
+      $response = curl_exec($ch);
+      $info = curl_getinfo($ch);
+      curl_close($ch);
+      return ($info['http_code'] == 200);
+    }
+    else {
+      $this->connect(FALSE);
+      return $this->solr->ping();
+    }
+  }
+
+}
