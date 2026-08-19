@@ -1,3 +1,7 @@
+Drupal 7.106, 2026-08-19
+------------------------
+- Security: Addresses information disclosure of image style derivatives stored on file schemes other than the core private scheme.
+
 Drupal 7.105, 2025-10-01
 ------------------------
 - PHP 8.4 support
