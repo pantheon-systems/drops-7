@@ -862,17 +862,12 @@ function image_style_deliver($style, $scheme = NULL) {
   $derivative_uri = image_style_path($style['name'], $image_uri);
   $derivative_scheme = file_uri_scheme($derivative_uri);
 
-  if ($token_is_valid) {
-    $is_public = ($scheme !== 'private');
-  }
-  else {
-    $core_schemes = array('public', 'private', 'temporary');
-    $additional_public_schemes = array_diff(variable_get('file_additional_public_schemes', array()), $core_schemes);
-    $public_schemes = array_merge(array('public'), $additional_public_schemes);
-    $is_public = in_array($derivative_scheme, $public_schemes, TRUE);
-  }
+  $core_schemes = array('public', 'private', 'temporary');
+  $additional_public_schemes = array_diff(variable_get('file_additional_public_schemes', array()), $core_schemes);
+  $public_schemes = array_merge(array('public'), $additional_public_schemes);
+  $is_public = in_array($derivative_scheme, $public_schemes, TRUE);
 
-  if ($scheme == 'private' && file_exists($derivative_uri)) {
+  if (!$is_public && file_exists($derivative_uri)) {
     file_download($scheme, file_uri_target($derivative_uri));
   }
 
