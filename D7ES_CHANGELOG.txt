@@ -1,3 +1,7 @@
+Drupal 7.107, 2026-10-14
+------------------------
+- Backport SA-CORE-2026-014. Site owners should review whether any custom code uses `#region_callback`, and test to ensure the Field UI tables continue to work as expected.
+
 Drupal 7.106, 2026-08-19
 ------------------------
 - Security: Addresses information disclosure of image style derivatives stored on file schemes other than the core private scheme.

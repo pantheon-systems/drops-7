@@ -89,6 +89,40 @@ function _field_ui_reduce_order($array, $a) {
 }
 
 /**
+ * Determines the region to which a row in a Field UI overview table belongs.
+ *
+ * Called during field_ui_table_pre_render().
+ *
+ * @param $row
+ *   The row element.
+ * @param $regions
+ *   The '#regions' array of the field_ui_table element.
+ *
+ * @return string
+ *   The name of the region the row belongs to.
+ */
+function _field_ui_row_region($row, $regions) {
+  // Display Suite rows carry their own region selector.
+  if (isset($row['region'])) {
+    return isset($row['region']['#value']) ? $row['region']['#value'] : 'hidden';
+  }
+
+  // If no input in 'label', assume an 'add new' row has not been dragged out
+  // of the 'add new' section.
+  if (isset($regions['add_new']) && strpos($row['#row_type'], 'add_') === 0 && empty($row['label']['#value'])) {
+    return 'add_new';
+  }
+
+  // Only the 'Manage fields' table has a 'main' region.
+  if (isset($regions['main'])) {
+    return 'main';
+  }
+
+  // 'Manage display' screen.
+  return ($row['format']['type']['#value'] == 'hidden' ? 'hidden' : 'visible');
+}
+
+/**
  * Returns the region to which a row in the 'Manage fields' screen belongs.
  *
  * This function is used as a #region_callback in
@@ -150,8 +184,7 @@ function field_ui_table_pre_render($elements) {
         unset($list[$name]);
 
         // Determine the region for the row.
-        $function = $row['#region_callback'];
-        $region_name = $function($row);
+        $region_name = _field_ui_row_region($row, $regions);
 
         // Add the element in the tree.
         $target = &$trees[$region_name][''];

@@ -5,4 +5,5 @@ version = VERSION
 core = 7.x
 dependencies[] = file
 files[] = image.test
+files[] = tests/image_style_deliver_scheme.test
 configure = admin/config/media/image-styles

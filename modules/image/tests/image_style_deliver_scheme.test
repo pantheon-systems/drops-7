@@ -1,0 +1,150 @@
+<?php
+
+/**
+ * @file
+ * Tests access control for image style derivatives on non-core file schemes.
+ */
+
+/**
+ * Tests that derivatives on schemes other than "private" are access checked.
+ *
+ * image_style_deliver() used to treat every scheme except "private" as public
+ * whenever a valid derivative token was supplied, so hook_file_download() was
+ * never consulted for derivatives served through a contributed stream wrapper.
+ * Access must instead be decided from the derivative's scheme alone.
+ *
+ * The "dummy://" scheme provided by the file_test module stands in for such a
+ * contributed wrapper: it is a registered scheme that is neither "public" nor
+ * "private", and it is not listed in the "file_additional_public_schemes"
+ * variable.
+ *
+ * @see image_style_deliver()
+ * @see hook_file_download()
+ */
+class ImageStyleDeliverSchemeTestCase extends DrupalWebTestCase {
+
+  /**
+   * The name of the image style used to generate the derivative.
+   *
+   * @var string
+   */
+  protected $style_name;
+
+  /**
+   * The URI of the source image, using the "dummy://" scheme.
+   *
+   * @var string
+   */
+  protected $source_uri;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Image style derivative scheme access',
+      'description' => 'Tests that access to image style derivatives is checked for file schemes other than "private".',
+      'group' => 'Image',
+    );
+  }
+
+  function setUp() {
+    // file_test provides the "dummy://" stream wrapper; image_module_test
+    // implements hook_file_download() so that access to the source image can be
+    // granted and revoked through a variable.
+    parent::setUp('image', 'image_module_test', 'file_test');
+
+    // DrupalDummyStreamWrapper reads its directory from the "stream_public_path"
+    // variable, which nothing else sets, so it would otherwise resolve to the
+    // real site's file directory. Point it inside this test's file directory so
+    // that the source image and its derivatives are written to the sandbox.
+    $dummy_directory = $this->public_files_directory . '/dummy';
+    variable_set('stream_public_path', $dummy_directory);
+    $status = file_prepare_directory($dummy_directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+    $this->assertTrue($status, 'Created the directory backing the "dummy://" scheme.');
+
+    $this->style_name = 'style_foo';
+    image_style_save(array('name' => $this->style_name, 'label' => $this->randomString()));
+
+    // A PNG source is required so that the response body can be checked for a
+    // PNG signature when access is denied.
+    $source = NULL;
+    foreach ($this->drupalGetTestFiles('image') as $file) {
+      if (preg_match('/\.png$/i', $file->uri)) {
+        $source = $file;
+        break;
+      }
+    }
+    $this->assertTrue(isset($source), 'Found a PNG test image to use as the source image.');
+
+    $this->source_uri = file_unmanaged_copy($source->uri, 'dummy://', FILE_EXISTS_RENAME);
+    $this->assertNotIdentical(FALSE, $this->source_uri, 'Created the source image using the "dummy://" scheme.');
+  }
+
+  /**
+   * Returns the internal path that generates and delivers the derivative.
+   */
+  protected function getDerivativePath() {
+    return 'system/files/styles/' . $this->style_name . '/dummy/' . file_uri_target($this->source_uri);
+  }
+
+  /**
+   * Returns drupalGet() options carrying a valid derivative token.
+   */
+  protected function getTokenOptions() {
+    return array(
+      'query' => array(
+        IMAGE_DERIVATIVE_TOKEN => image_style_path_token($this->style_name, $this->source_uri),
+      ),
+    );
+  }
+
+  /**
+   * Tests that a valid token alone does not grant access to a derivative.
+   */
+  function testDerivativeAccessOnNonPrivateScheme() {
+    $path = $this->getDerivativePath();
+    $options = $this->getTokenOptions();
+    $derivative_uri = image_style_path($this->style_name, $this->source_uri);
+
+    // No module claims the source image, so hook_file_download() grants no
+    // headers and the derivative must not be generated or served, even though
+    // the derivative token in the URL is valid.
+    $this->drupalGet($path, $options);
+    $this->assertResponse(403, 'Access was denied to a derivative on a non-public scheme when no module granted access.');
+    clearstatcache(TRUE);
+    $this->assertFalse(file_exists($derivative_uri), 'The derivative was not generated for an unauthorized request.');
+
+    // Let image_module_test claim ownership of the source image. The
+    // derivative is now generated and served with the headers that
+    // hook_file_download() returned, which shows the hook was consulted.
+    variable_set('image_module_test_file_download', $this->source_uri);
+    $this->drupalGet($path, $options);
+    $this->assertResponse(200, 'The derivative was served once a module granted access to the source image.');
+    $this->assertEqual($this->drupalGetHeader('X-Image-Owned-By'), 'image_module_test', 'The headers returned by hook_file_download() were sent with the derivative.');
+    clearstatcache(TRUE);
+    $this->assertTrue(file_exists($derivative_uri), 'The derivative was generated for an authorized request.');
+
+    // Revoke access. The derivative now exists on disk, so this covers the
+    // delivery of an already generated derivative rather than its creation.
+    variable_del('image_module_test_file_download');
+    $this->drupalGet($path, $options);
+    $this->assertResponse(403, 'Access was denied to an existing derivative on a non-public scheme after access was revoked.');
+    // Confirm the image itself was not written to the response body, by looking
+    // for the PNG signature of the source image.
+    $this->assertNoRaw(chr(137) . chr(80) . chr(78) . chr(71) . chr(13) . chr(10) . chr(26) . chr(10), 'The derivative was not present in the body of the access denied response.');
+  }
+
+  /**
+   * Tests that a scheme declared public serves derivatives without a grant.
+   */
+  function testDerivativeAccessOnAdditionalPublicScheme() {
+    // Sites serving public files from a contributed wrapper declare the scheme
+    // in the "file_additional_public_schemes" variable. Derivatives on such a
+    // scheme must remain accessible without any hook_file_download() grant.
+    variable_set('file_additional_public_schemes', array('dummy'));
+
+    $derivative_uri = image_style_path($this->style_name, $this->source_uri);
+    $this->drupalGet($this->getDerivativePath(), $this->getTokenOptions());
+    $this->assertResponse(200, 'The derivative was served for a scheme listed in "file_additional_public_schemes".');
+    clearstatcache(TRUE);
+    $this->assertTrue(file_exists($derivative_uri), 'The derivative was generated for a scheme listed in "file_additional_public_schemes".');
+  }
+}
