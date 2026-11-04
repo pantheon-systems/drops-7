@@ -3063,3 +3063,460 @@ class UserActionsTest extends DrupalWebTestCase {
     $this->assert($status, 'A watchdog message was logged by user unblock action.');
   }
 }
+
+/**
+ * Tests that {authmap}.authname is matched case-sensitively.
+ */
+class UserAuthmapCaseSensitivityTestCase extends DrupalWebTestCase {
+
+  /**
+   * The account the test authname is mapped to.
+   *
+   * @var object
+   */
+  protected $account;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Authmap case sensitivity',
+      'description' => 'Tests that external authentication names are matched case-sensitively, both by the database column and by the functions that read it.',
+      'group' => 'User',
+    );
+  }
+
+  protected function setUp() {
+    parent::setUp();
+
+    require_once DRUPAL_ROOT . '/includes/update.inc';
+    module_load_include('install', 'user');
+
+    $this->account = $this->drupalCreateUser();
+    user_set_authmaps($this->account, array('authname_poll' => 'kathy'));
+  }
+
+  /**
+   * Returns TRUE if the site runs on MySQL or MariaDB.
+   */
+  protected function isMysql() {
+    return Database::getConnection()->databaseType() == 'mysql';
+  }
+
+  /**
+   * Returns the collation of {authmap}.authname, or NULL if not on MySQL.
+   */
+  protected function authnameCollation() {
+    if (!$this->isMysql()) {
+      return NULL;
+    }
+    $column = db_query("SHOW FULL COLUMNS FROM {authmap} LIKE 'authname'")->fetchAssoc();
+    return $column['Collation'];
+  }
+
+  /**
+   * Redefines {authmap}.authname with or without the binary flag.
+   *
+   * Used to reproduce the pre-update state of a site whose column still uses
+   * a case-insensitive collation.
+   *
+   * @param bool $binary
+   *   Whether the column should be declared binary.
+   */
+  protected function setAuthnameBinary($binary) {
+    $schema = drupal_get_schema_unprocessed('user', 'authmap');
+    $spec = $schema['fields']['authname'];
+    if (!$binary) {
+      unset($spec['binary']);
+    }
+    db_drop_unique_key('authmap', 'authname');
+    db_change_field('authmap', 'authname', 'authname', $spec);
+    db_add_unique_key('authmap', 'authname', array('authname'));
+  }
+
+  /**
+   * Returns a case-insensitive NO PAD collation for {authmap}, if any.
+   *
+   * MySQL 8 defaults to such collations (utf8mb4_0900_ai_ci) and MariaDB
+   * offers them as *_nopad_ci. Under them trailing spaces are significant, so
+   * 'kathy' and 'kathy ' can coexist despite the unique key on authname.
+   *
+   * @return string|false
+   *   The collation name, or FALSE if the server has none for the column's
+   *   character set.
+   */
+  protected function noPadCollation() {
+    $collation = $this->authnameCollation();
+    $charset = substr($collation, 0, strpos($collation, '_'));
+    $candidates = array($charset . '_0900_ai_ci', $charset . '_general_nopad_ci', $charset . '_unicode_nopad_ci');
+    foreach ($candidates as $candidate) {
+      if (db_query('SHOW COLLATION WHERE Collation = :collation', array(':collation' => $candidate))->fetchField()) {
+        return $candidate;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Redefines {authmap}.authname with the given collation, keeping its key.
+   */
+  protected function setAuthnameCollation($collation) {
+    db_query("ALTER TABLE {authmap} MODIFY authname VARCHAR(128) NOT NULL DEFAULT '' COLLATE " . $collation);
+  }
+
+  /**
+   * Inserts an authmap row directly, without user_set_authmaps().
+   */
+  protected function insertAuthmap($uid, $authname, $module) {
+    db_insert('authmap')
+      ->fields(array('uid' => $uid, 'authname' => $authname, 'module' => $module))
+      ->execute();
+  }
+
+  /**
+   * Calls user_external_login_register() as an anonymous visitor would.
+   *
+   * The test runner does not save sessions, so the login only changes the
+   * global $user, which is restored afterwards.
+   *
+   * @return int
+   *   The uid the call logged in, 0 if it refused, or -1 if it threw.
+   */
+  protected function externalLogin($name) {
+    global $user;
+    $original_user = $user;
+    $user = drupal_anonymous_user();
+    try {
+      user_external_login_register($name, 'example');
+      $uid = (int) $user->uid;
+    }
+    catch (Exception $e) {
+      $this->fail(format_string('External login with %name threw %message.', array('%name' => $name, '%message' => $e->getMessage())));
+      $uid = -1;
+    }
+    $user = $original_user;
+    return $uid;
+  }
+
+  /**
+   * Returns the number of accounts, other than uid 1, without an authmap.
+   */
+  protected function countAccountsWithoutAuthmap() {
+    return (int) db_query('SELECT COUNT(*) FROM {users} u LEFT JOIN {authmap} a ON a.uid = u.uid WHERE u.uid > 1 AND a.aid IS NULL')->fetchField();
+  }
+
+  /**
+   * Returns the number of user module watchdog warnings matching $message.
+   */
+  protected function countWarnings($message) {
+    return (int) db_query("SELECT COUNT(*) FROM {watchdog} WHERE type = 'user' AND severity = :severity AND message = :message", array(':severity' => WATCHDOG_WARNING, ':message' => $message))->fetchField();
+  }
+
+  /**
+   * Tests that the schema and the installed column are both case-sensitive.
+   */
+  function testAuthnameColumnIsBinary() {
+    $schema = drupal_get_schema('authmap');
+    $this->assertTrue(!empty($schema['fields']['authname']['binary']), 'The authname column is declared binary in the schema.');
+
+    if ($this->isMysql()) {
+      $collation = $this->authnameCollation();
+      $this->assertEqual(substr($collation, -4), '_bin', format_string('The installed authname column uses a binary collation (@collation).', array('@collation' => $collation)));
+    }
+  }
+
+  /**
+   * Tests that user_external_load() only matches an identical authname.
+   */
+  function testExternalLoadIsCaseSensitive() {
+    $account = user_external_load('kathy');
+    $this->assertTrue($account && $account->uid == $this->account->uid, 'The exact authname loads the mapped account.');
+
+    foreach (array('kATHy', 'KATHY', 'Kathy', 'kathy ', ' kathy', "kathy\t") as $variant) {
+      $this->assertFalse(user_external_load($variant), format_string('user_external_load() rejects %variant.', array('%variant' => $variant)));
+    }
+  }
+
+  /**
+   * Tests that user_get_authmaps() only matches an identical authname.
+   */
+  function testGetAuthmapsIsCaseSensitive() {
+    $this->assertIdentical(user_get_authmaps('kathy'), array('poll' => 'kathy'), 'The exact authname returns its authmap.');
+
+    foreach (array('kATHy', 'KATHY', 'Kathy', 'kathy ', ' kathy', "kathy\t") as $variant) {
+      $this->assertIdentical(user_get_authmaps($variant), 0, format_string('user_get_authmaps() rejects %variant.', array('%variant' => $variant)));
+    }
+  }
+
+  /**
+   * Tests that the functions stay case-sensitive on an unconverted column.
+   *
+   * A site that has not yet run user_update_7021() still holds the column
+   * under a case-insensitive collation. The comparison in PHP has to keep the
+   * bypass closed there too.
+   */
+  function testUnconvertedColumnIsStillSafe() {
+    if (!$this->isMysql()) {
+      $this->pass('Only MySQL and MariaDB compare varchar values case-insensitively; nothing to test.');
+      return;
+    }
+
+    $this->setAuthnameBinary(FALSE);
+
+    // Confirm the database really did go back to matching case-insensitively,
+    // otherwise the rest of this test proves nothing.
+    $uid = db_query('SELECT uid FROM {authmap} WHERE authname = :authname', array(':authname' => 'KATHY'))->fetchField();
+    $this->assertEqual($uid, $this->account->uid, 'With the old collation the database matches a case-varied authname.');
+
+    $this->assertFalse(user_external_load('KATHY'), 'user_external_load() still rejects a case-varied authname on an unconverted column.');
+    $this->assertFalse(user_external_load('kathy '), 'user_external_load() still rejects a trailing-space authname on an unconverted column.');
+    $this->assertIdentical(user_get_authmaps('KATHY'), 0, 'user_get_authmaps() still rejects a case-varied authname on an unconverted column.');
+
+    $account = user_external_load('kathy');
+    $this->assertTrue($account && $account->uid == $this->account->uid, 'The exact authname still loads the mapped account.');
+  }
+
+  /**
+   * Tests that user_update_7021() converts the column and keeps the data.
+   */
+  function testUpdateConvertsColumn() {
+    if (!$this->isMysql()) {
+      $this->pass('The binary flag only applies to MySQL and MariaDB; nothing to convert.');
+      return;
+    }
+
+    $this->setAuthnameBinary(FALSE);
+    $this->assertNotEqual(substr($this->authnameCollation(), -4), '_bin', 'The column starts out with a case-insensitive collation.');
+
+    user_update_7021();
+
+    $collation = $this->authnameCollation();
+    $this->assertEqual(substr($collation, -4), '_bin', format_string('The update converted the column to a binary collation (@collation).', array('@collation' => $collation)));
+    $this->assertTrue(db_index_exists('authmap', 'authname'), 'The update left the unique key in place.');
+
+    $uid = db_query('SELECT uid FROM {authmap} WHERE authname = :authname', array(':authname' => 'KATHY'))->fetchField();
+    $this->assertFalse($uid, 'After the update the database no longer matches a case-varied authname.');
+
+    $uid = db_query('SELECT uid FROM {authmap} WHERE authname = :authname', array(':authname' => 'kathy'))->fetchField();
+    $this->assertEqual($uid, $this->account->uid, 'The existing mapping survived the conversion.');
+  }
+
+  /**
+   * Tests that user_update_7021() refuses to convert colliding rows.
+   *
+   * The unique key normally makes case collisions impossible, so this only
+   * happens on a site that dropped it. Converting would silently leave one of
+   * the rows authenticating the wrong account, so the update stops instead.
+   */
+  function testUpdateRefusesCollidingRows() {
+    if (!$this->isMysql()) {
+      $this->pass('Case collisions cannot occur on this database; nothing to detect.');
+      return;
+    }
+
+    $other = $this->drupalCreateUser();
+    $this->setAuthnameBinary(FALSE);
+    db_drop_unique_key('authmap', 'authname');
+    db_insert('authmap')
+      ->fields(array('uid' => $other->uid, 'authname' => 'KATHY', 'module' => 'book'))
+      ->execute();
+
+    try {
+      user_update_7021();
+      $this->fail('user_update_7021() converted a table holding case-colliding authnames.');
+    }
+    catch (DrupalUpdateException $e) {
+      $this->pass('user_update_7021() refused to convert a table holding case-colliding authnames.');
+      // Either spelling may be reported, depending on how MySQL groups them.
+      $this->assertTrue(stripos($e->getMessage(), 'kathy') !== FALSE, 'The exception names the colliding authname.');
+    }
+
+    $this->assertNotEqual(substr($this->authnameCollation(), -4), '_bin', 'The failed update left the column unchanged.');
+    $this->assertEqual(db_query('SELECT COUNT(*) FROM {authmap}')->fetchField(), 2, 'The failed update left the rows unchanged.');
+
+    // Once the administrator resolves the collision the update succeeds, and
+    // restores the unique key that the site had dropped.
+    db_delete('authmap')->condition('authname', 'KATHY')->condition('module', 'book')->execute();
+    $message = user_update_7021();
+    $this->assertTrue(is_string($message) && $message !== '', 'The re-run update reports what it did.');
+    $this->assertEqual(substr($this->authnameCollation(), -4), '_bin', 'The re-run update converted the column.');
+    $this->assertTrue(db_index_exists('authmap', 'authname'), 'The re-run update restored the unique key.');
+    $account = user_external_load('kathy');
+    $this->assertTrue($account && $account->uid == $this->account->uid, 'The remaining mapping still loads its account.');
+  }
+
+  /**
+   * Tests that user_update_7021() also refuses trailing-space collisions.
+   *
+   * The binary collation the update converts to ignores trailing spaces, so
+   * 'kathy' and 'kathy ' would collide under the restored unique key.
+   */
+  function testUpdateRefusesTrailingSpaceCollision() {
+    if (!$this->isMysql()) {
+      $this->pass('Trailing-space collisions cannot occur on this database; nothing to detect.');
+      return;
+    }
+
+    $other = $this->drupalCreateUser();
+    $this->setAuthnameBinary(FALSE);
+    db_drop_unique_key('authmap', 'authname');
+    $this->insertAuthmap($other->uid, 'kathy ', 'book');
+
+    try {
+      user_update_7021();
+      $this->fail('user_update_7021() converted a table holding authnames that differ only by trailing spaces.');
+    }
+    catch (DrupalUpdateException $e) {
+      $this->pass('user_update_7021() refused to convert a table holding authnames that differ only by trailing spaces.');
+    }
+    $this->assertNotEqual(substr($this->authnameCollation(), -4), '_bin', 'The failed update left the column unchanged.');
+  }
+
+  /**
+   * Tests user_update_7021() on a column that has a NO PAD collation.
+   *
+   * Such a column, with its unique key intact, can hold 'kathy' and 'kathy '.
+   * The update must detect that before dropping the key, because the binary
+   * collation it converts to pads and could not re-create the key.
+   */
+  function testUpdateRefusesTrailingSpaceCollisionUnderNoPad() {
+    if (!$this->isMysql()) {
+      $this->pass('NO PAD collations only exist on MySQL and MariaDB; nothing to test.');
+      return;
+    }
+    $collation = $this->noPadCollation();
+    if (!$collation) {
+      $this->pass('This server has no NO PAD collation for the authmap table; nothing to test.');
+      return;
+    }
+
+    $other = $this->drupalCreateUser();
+    $this->setAuthnameCollation($collation);
+    $this->insertAuthmap($other->uid, 'kathy ', 'book');
+
+    try {
+      user_update_7021();
+      $this->fail(format_string('user_update_7021() converted a @collation table holding authnames that differ only by trailing spaces.', array('@collation' => $collation)));
+    }
+    catch (DrupalUpdateException $e) {
+      $this->pass(format_string('user_update_7021() refused to convert a @collation table holding authnames that differ only by trailing spaces.', array('@collation' => $collation)));
+    }
+    $this->assertEqual($this->authnameCollation(), $collation, 'The failed update left the column unchanged.');
+    $this->assertTrue(db_index_exists('authmap', 'authname'), 'The failed update left the unique key in place.');
+  }
+
+  /**
+   * Tests that the exact authname wins when the database returns several rows.
+   *
+   * A site that dropped the unique key and has not run user_update_7021() can
+   * hold case variants of one name, which the database returns together.
+   */
+  function testExactRowIsChosenAmongCaseVariants() {
+    if (!$this->isMysql()) {
+      $this->pass('Only MySQL and MariaDB return case variants together; nothing to test.');
+      return;
+    }
+
+    $other = $this->drupalCreateUser();
+    $this->setAuthnameBinary(FALSE);
+    db_drop_unique_key('authmap', 'authname');
+    // Insert the variant before the exact name, so that a lookup that takes
+    // the first row returned would pick the wrong account.
+    db_delete('authmap')->condition('uid', $this->account->uid)->execute();
+    $this->insertAuthmap($other->uid, 'KATHY', 'book');
+    $this->insertAuthmap($this->account->uid, 'kathy', 'poll');
+
+    $account = user_external_load('kathy');
+    $this->assertTrue($account && $account->uid == $this->account->uid, 'user_external_load() picks the exact authname for kathy.');
+    $account = user_external_load('KATHY');
+    $this->assertTrue($account && $account->uid == $other->uid, 'user_external_load() picks the exact authname for KATHY.');
+    $this->assertIdentical(user_get_authmaps('kathy'), array('poll' => 'kathy'), 'user_get_authmaps() returns only the exact authname for kathy.');
+    $this->assertIdentical(user_get_authmaps('KATHY'), array('book' => 'KATHY'), 'user_get_authmaps() returns only the exact authname for KATHY.');
+  }
+
+  /**
+   * Tests that case variants are separate identities once converted.
+   */
+  function testCaseVariantsCoexist() {
+    $other = $this->drupalCreateUser();
+    user_set_authmaps($other, array('authname_book' => 'KATHY'));
+
+    $account = user_external_load('kathy');
+    $this->assertTrue($account && $account->uid == $this->account->uid, 'kathy loads its own account.');
+    $account = user_external_load('KATHY');
+    $this->assertTrue($account && $account->uid == $other->uid, 'KATHY loads its own account.');
+  }
+
+  /**
+   * Tests that a rejected near match is logged.
+   */
+  function testRejectedMatchIsLogged() {
+    $message = 'Rejected external authentication name %authname, which only matches %stored when letter case or trailing spaces are ignored.';
+
+    $this->assertFalse(user_external_load('Kathy'), 'A case variant does not load the account.');
+    if ($this->isMysql()) {
+      // The converted column pads, so the database still returns the row for a
+      // trailing-space variant and the rejection happens in PHP.
+      $this->assertFalse(user_external_load('kathy '), 'A trailing-space variant does not load the account.');
+      $this->assertEqual($this->countWarnings($message), 1, 'The rejected trailing-space variant was logged.');
+
+      $this->setAuthnameBinary(FALSE);
+      $this->assertFalse(user_external_load('Kathy'), 'A case variant does not load the account on an unconverted column.');
+      $this->assertEqual($this->countWarnings($message), 2, 'The rejected case variant was logged.');
+    }
+    else {
+      $this->assertEqual($this->countWarnings($message), 0, 'Nothing is logged when the database already rejects the variant.');
+    }
+
+    user_external_load('kathy');
+    user_external_load('somebody else');
+    $this->assertEqual($this->countWarnings($message), $this->isMysql() ? 2 : 0, 'Exact matches and unknown names are not logged as rejections.');
+  }
+
+  /**
+   * Tests user_external_login_register() with exact and unknown names.
+   */
+  function testExternalLoginRegister() {
+    $this->assertEqual($this->externalLogin('kathy'), $this->account->uid, 'The exact authname logs the mapped account in.');
+
+    $before = db_query('SELECT MAX(uid) FROM {users}')->fetchField();
+    $uid = $this->externalLogin('newcomer');
+    $this->assertTrue($uid > $before, 'An unknown authname registers a new account and logs it in.');
+    $this->assertIdentical(user_get_authmaps('newcomer'), array('example' => 'newcomer'), 'The new account is mapped to the authname.');
+  }
+
+  /**
+   * Tests that near-miss names are refused cleanly instead of registered.
+   *
+   * user_external_load() rejects them, but the unique keys on {users}.name and
+   * {authmap}.authname may still treat them as duplicates. Registering would
+   * then fail with a database error, possibly after creating the account.
+   */
+  function testExternalLoginRegisterRefusesConflictingNames() {
+    $message = 'Refused external login of %name through %module, because the name conflicts with an existing account or authentication name.';
+    db_update('users')->fields(array('name' => 'kathy'))->condition('uid', $this->account->uid)->execute();
+    $local = $this->drupalCreateUser();
+    $orphans = $this->countAccountsWithoutAuthmap();
+
+    $variants = array('KATHY', 'kathy ', $local->name);
+    if ($this->isMysql()) {
+      $variants[] = strtoupper($local->name);
+    }
+    foreach ($variants as $variant) {
+      $uid = $this->externalLogin($variant);
+      $this->assertTrue($uid != $this->account->uid && $uid != $local->uid, format_string('%name did not log in an existing account.', array('%name' => $variant)));
+      $this->assertEqual($this->countAccountsWithoutAuthmap(), $orphans, format_string('%name did not leave an account without an authmap.', array('%name' => $variant)));
+    }
+
+    // The local account name is taken on every database, so it is always
+    // refused rather than registered.
+    $this->assertTrue($this->countWarnings($message) >= 1, 'The refused login was logged.');
+    $this->assertEqual(db_query('SELECT COUNT(*) FROM {authmap} WHERE uid = :uid', array(':uid' => $local->uid))->fetchField(), 0, 'The local account was not mapped to an external name.');
+
+    if ($this->isMysql()) {
+      $this->setAuthnameBinary(FALSE);
+      $uid = $this->externalLogin('KATHY');
+      $this->assertEqual($uid, 0, 'A case variant is refused on an unconverted column.');
+      $this->assertEqual($this->countAccountsWithoutAuthmap(), $orphans, 'The refusal on an unconverted column did not leave an account without an authmap.');
+    }
+  }
+
+}

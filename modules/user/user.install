@@ -29,6 +29,10 @@ function user_schema() {
         'length' => 128,
         'not null' => TRUE,
         'default' => '',
+        // External authentication names are case-sensitive. Without this,
+        // MySQL and MariaDB match them case-insensitively; see
+        // user_update_7021().
+        'binary' => TRUE,
         'description' => 'Unique authentication name.',
       ),
       'module' => array(
@@ -969,6 +973,60 @@ function user_update_7020() {
   }
 
 }
+
+/**
+ * Make {authmap}.authname case-sensitive.
+ *
+ * Throws a DrupalUpdateException, without changing anything, while the table
+ * holds authentication names that differ only by letter case or trailing
+ * spaces.
+ */
+function user_update_7021() {
+  // The 'binary' schema flag only has an effect on MySQL and MariaDB. Every
+  // other supported database already compares varchar values case-sensitively
+  // and without ignoring trailing whitespace, so there is nothing to convert.
+  if (Database::getConnection()->databaseType() != 'mysql') {
+    return t('{authmap}.authname is already case-sensitive on this database.');
+  }
+
+  // Look for names that the converted column, whose binary collation ignores
+  // trailing spaces, could not tell apart, as well as names that differ only
+  // by letter case. Neither can coexist under the usual unique key, so a stock
+  // site has none, but a site that dropped the key or uses a NO PAD collation
+  // can. Refuse to convert rather than guess which row is the legitimate one:
+  // this runs before any schema change, so the site is left untouched and the
+  // update can be re-run once the duplicates have been resolved by hand. The
+  // names are not escaped here, because update.php escapes exception messages.
+  $collisions = db_query("SELECT MIN(authname) FROM {authmap} GROUP BY TRIM(TRAILING ' ' FROM authname) HAVING COUNT(*) > 1")->fetchCol();
+  if ($collisions) {
+    $sample = array_slice($collisions, 0, 10);
+    $message = format_plural(count($collisions),
+      'The authmap table holds an authentication name that matches another one when letter case or trailing spaces are ignored, so the column cannot be made case-sensitive yet.',
+      'The authmap table holds @count authentication names that match other ones when letter case or trailing spaces are ignored, so the column cannot be made case-sensitive yet.');
+    $message .= ' ' . t('Decide which account each name belongs to, delete the rows that do not belong, and run this update again.');
+    $message .= ' Affected: ' . implode(', ', $sample) . (count($collisions) > count($sample) ? ', ...' : '');
+    throw new DrupalUpdateException($message);
+  }
+
+  // MySQL keeps the unique key while it redefines the column and rebuilds it
+  // under the new collation in the same statement, so a failure leaves the
+  // table as it was. Only a site that dropped the key needs it added back.
+  $keys_new = array();
+  if (!db_index_exists('authmap', 'authname')) {
+    $keys_new['unique keys']['authname'] = array('authname');
+  }
+  db_change_field('authmap', 'authname', 'authname', array(
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+    'binary' => TRUE,
+    'description' => 'Unique authentication name.',
+  ), $keys_new);
+
+  return t('{authmap}.authname is now case-sensitive.');
+}
+
 /**
  * @} End of "addtogroup updates-7.x-extra".
  */

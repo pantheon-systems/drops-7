@@ -1,3 +1,8 @@
+Drupal 7.108, 2026-11-04
+------------------------
+- Security: Restores the `DrupalCacheArray::__destruct()` hardening from SA-CORE-2024-008 that was lost in Drupal 7.103.
+- Security: Addresses an access bypass caused by case insensitive matching of external authentication names.
+
 Drupal 7.107, 2026-10-14
 ------------------------
 - Backport SA-CORE-2026-014. Site owners should review whether any custom code uses `#region_callback`, and test to ensure the Field UI tables continue to work as expected.

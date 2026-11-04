@@ -240,6 +240,11 @@ function user_field_extra_fields() {
 /**
  * Fetches a user object based on an external authentication source.
  *
+ * The authentication name must match exactly. Names that differ only in
+ * letter case or trailing whitespace are different external identities and do
+ * not load each other's accounts. Modules whose identity provider treats names
+ * case-insensitively must normalize them before storing and looking them up.
+ *
  * @param string $authname
  *   The external authentication username.
  *
@@ -247,14 +252,26 @@ function user_field_extra_fields() {
  *   A fully-loaded user object if the user is found or FALSE if not found.
  */
 function user_external_load($authname) {
-  $uid = db_query("SELECT uid FROM {authmap} WHERE authname = :authname", array(':authname' => $authname))->fetchField();
+  $result = db_query("SELECT uid, authname FROM {authmap} WHERE authname = :authname", array(':authname' => $authname));
 
-  if ($uid) {
-    return user_load($uid);
+  // On MySQL and MariaDB the query also matches names that differ in letter
+  // case, until user_update_7021() has run, and in trailing spaces, because
+  // the binary collation pads. The visitor controls $authname, so only accept
+  // an exact match.
+  $rejected = array();
+  foreach ($result as $row) {
+    if ($row->authname !== (string) $authname) {
+      $rejected[] = $row->authname;
+    }
+    elseif ($row->uid) {
+      return user_load($row->uid);
+    }
   }
-  else {
-    return FALSE;
+
+  if ($rejected) {
+    watchdog('user', 'Rejected external authentication name %authname, which only matches %stored when letter case or trailing spaces are ignored.', array('%authname' => $authname, '%stored' => implode(', ', $rejected)), WATCHDOG_WARNING);
   }
+  return FALSE;
 }
 
 /**
@@ -2066,13 +2083,25 @@ function user_page_title($account) {
 /**
  * Discover which external authentication module(s) authenticated a username.
  *
+ * The authentication name must match exactly, as in user_external_load().
+ *
  * @param $authname
  *   A username used by an external authentication module.
  * @return
  *   An associative array with module as key and username as value.
  */
 function user_get_authmaps($authname = NULL) {
-  $authmaps = db_query("SELECT module, authname FROM {authmap} WHERE authname = :authname", array(':authname' => $authname))->fetchAllKeyed();
+  $authmaps = array();
+  $result = db_query("SELECT module, authname FROM {authmap} WHERE authname = :authname", array(':authname' => $authname));
+
+  // Discard rows the database matched despite a difference in letter case or
+  // trailing spaces; see user_external_load().
+  foreach ($result as $row) {
+    if ($row->authname === (string) $authname) {
+      $authmaps[$row->module] = $row->authname;
+    }
+  }
+
   return count($authmaps) ? $authmaps : 0;
 }
 
@@ -2363,6 +2392,20 @@ function user_login_submit($form, &$form_state) {
 function user_external_login_register($name, $module) {
   $account = user_external_load($name);
   if (!$account) {
+    // The unique keys on {authmap}.authname and {users}.name can treat $name as
+    // a duplicate of an existing value that user_external_load() rejected,
+    // such as one differing in letter case or trailing spaces. Registering
+    // would then fail with a database error, possibly after the account was
+    // saved, so refuse up front. The queries use the same comparison as the
+    // unique keys.
+    $authname_taken = (bool) db_query_range('SELECT 1 FROM {authmap} WHERE authname = :authname', 0, 1, array(':authname' => $name))->fetchField();
+    $name_taken = (bool) db_query_range('SELECT 1 FROM {users} WHERE name = :name', 0, 1, array(':name' => $name))->fetchField();
+    if ($authname_taken || $name_taken) {
+      watchdog('user', 'Refused external login of %name through %module, because the name conflicts with an existing account or authentication name.', array('%name' => $name, '%module' => $module), WATCHDOG_WARNING);
+      drupal_set_message(t('Unable to log in. Contact the site administrator.'), 'error');
+      return;
+    }
+
     // Register this new user.
     $userinfo = array(
       'name' => $name,

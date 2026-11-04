@@ -192,6 +192,48 @@ class OpenIDFunctionalTestCase extends OpenIDWebTestCase {
   }
 
   /**
+   * Tests that a case-varied Claimed Identifier is a different identity.
+   *
+   * {authmap}.authname used to be compared case-insensitively on MySQL and
+   * MariaDB, so an attacker who controlled kathy on a case-sensitive provider
+   * could obtain a validly signed assertion for KATHY and be logged in as the
+   * account mapped to kathy.
+   */
+  function testLoginWithCaseVariedIdentity() {
+    $server = url('openid-test/yadis/xrds/server', array('absolute' => TRUE));
+    $identity = url('openid-test/yadis/xrds/dummy-user', array('absolute' => TRUE, 'fragment' => 'kathy'));
+    $varied_identity = url('openid-test/yadis/xrds/dummy-user', array('absolute' => TRUE, 'fragment' => 'KATHY'));
+
+    // Map the lower-case identity to the existing account.
+    $this->drupalLogin($this->web_user);
+    variable_set('openid_test_response', array('openid.claimed_id' => $identity, 'openid.identity' => openid_normalize($identity)));
+    $this->addIdentity($server, 2, 'http://specs.openid.net/auth/2.0/identifier_select', $identity);
+    variable_set('openid_test_response', array());
+    $this->drupalLogout();
+
+    // With registration closed, an identity that maps to no account cannot log
+    // in and cannot register, which makes the outcome unambiguous.
+    variable_set('user_register', USER_REGISTER_ADMINISTRATORS_ONLY);
+
+    // The provider asserts the case-varied identity. The assertion is signed
+    // with the negotiated MAC key and survives discovery, because it is a
+    // genuinely different identity that the attacker legitimately holds.
+    variable_set('openid_test_response', array('openid.claimed_id' => $varied_identity, 'openid.identity' => openid_normalize($varied_identity)));
+    $this->submitLoginForm($server);
+    variable_set('openid_test_response', array());
+
+    $this->assertNoLink(t('Log out'), 'A case-varied Claimed Identifier did not log the mapped user in.');
+    $this->assertRaw(t('Only site administrators can create new user accounts.'), 'The case-varied Claimed Identifier was treated as an unknown identity.');
+
+    // The exact identity still logs in.
+    variable_set('openid_test_response', array('openid.claimed_id' => $identity, 'openid.identity' => openid_normalize($identity)));
+    $this->submitLoginForm($server);
+    variable_set('openid_test_response', array());
+
+    $this->assertLink(t('Log out'), 0, 'The exact Claimed Identifier still logs the mapped user in.');
+  }
+
+  /**
    * Test login using OpenID during maintenance mode.
    */
   function testLoginMaintenanceMode() {

@@ -962,6 +962,24 @@ class BootstrapDrupalCacheArrayTestCase extends DrupalWebTestCase {
     $payload2 = db_query_range('SELECT data FROM {cache_form} WHERE cid LIKE :cid', 0, 1, array(':cid' => 'form_DrupalRCE'))->fetchField();
     $this->assertTrue(is_string($payload2) && (strpos($payload2, 'phpinfo') !== FALSE), 'DrupalCacheArray persisted data to cache_form.');
   }
+
+  /**
+   * Tests that a DrupalCacheArray with a non-array keysToPersist is rejected.
+   */
+  public function testInvalidKeysToPersist() {
+    $payload = 'O:11:"SchemaCache":4:{s:6:"' . "\0*\0" . 'cid";s:16:"DrupalCacheArray";s:6:"' . "\0*\0" . 'bin";s:5:"cache";s:16:"' . "\0*\0" . 'keysToPersist";s:3:"foo";s:10:"' . "\0*\0" . 'storage";a:0:{}}';
+    $object = unserialize($payload);
+    $this->assertTrue($object instanceof SchemaCache, 'Payload was unserialized.');
+
+    // The object then needs to be destructed.
+    try {
+      unset($object);
+      $this->fail('No exception was thrown for a non-array keysToPersist.');
+    }
+    catch (UnexpectedValueException $e) {
+      $this->pass('UnexpectedValueException was thrown for a non-array keysToPersist.');
+    }
+  }
 }
 
 /**
