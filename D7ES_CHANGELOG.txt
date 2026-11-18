@@ -1,3 +1,10 @@
+Drupal 7.110, XXXX-XX-XX
+------------------------
+
+Drupal 7.109, 2026-11-18
+------------------------
+- Security: Removes install.php, see https://www.drupal.org/sa-core-2026-017. Instead use `drush site-install` for new sites.
+
 Drupal 7.108, 2026-11-04
 ------------------------
 - Security: Restores the `DrupalCacheArray::__destruct()` hardening from SA-CORE-2024-008 that was lost in Drupal 7.103.

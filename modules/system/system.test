@@ -3390,3 +3390,23 @@ class HtaccessTest extends DrupalWebTestCase {
     $this->assertResponse($response_code, "Response code to $path should be $response_code");
   }
 }
+
+/**
+ * Tests that the web installer has been removed.
+ */
+class InstallScriptRemovedTestCase extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Installer removed',
+      'description' => 'Tests that install.php does not exist.',
+      'group' => 'System',
+    );
+  }
+
+  /**
+   * Tests that install.php is not present in the Drupal root.
+   */
+  function testInstallScriptRemoved() {
+    $this->assertFalse(file_exists(DRUPAL_ROOT . '/install.php'), 'install.php does not exist.');
+  }
+}
